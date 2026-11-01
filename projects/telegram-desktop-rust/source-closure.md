@@ -3332,3 +3332,26 @@ Twenty-eight contract, one integration, sixteen fault/recovery and fourteen secu
 Exactly one independent source entry closes: `unknown 16110 -> 16109`, `unread 16083 -> 16082`, `omitted=0`; responsibilities `168 -> 169`, unmapped remains 0. The next independent fixed-U blob is `.github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67` at tree index 125 zero-based.
 
 Stage A zero-CI discipline remained intact: no Actions/check/status/workflow-run query or trigger; no push/pull_request execution, third-party Action/bootstrap/cache execution, apt/curl/Poetry/ccache acquisition, submodule fetch, Docker/BuildKit build, cache mutation, validator, test/E2E, artifact upload/download, package, signing, release, deployment, installation, runtime acceptance or platform-core mutation was performed.
+
+
+## Round 169 / source-entry closure — repository scheduled thread-lock workflow (2026-11-01)
+
+From desktop checkpoint `e7cbb3bca87cdde4a807557649dc00e88e502b08`, live authority was reread without drift before the spec-first write. Non-force expected-SHA CAS `0f260b8af810d0cedc47cadffec080e61a159e41` authored source-neutral contracts in `AGENTS.md`, shared `TEST_STRATEGY.md`, shared `evidence-contract.md`, and `projects/telegram-desktop-rust/dossiers/lock-workflow-complete-read.md`. Desktop main observed remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core checkpoint remains `bhrumom/fabushi-platform-core@e92b51e23b39dae5719f033fa1f7a20d6579dc8c`; fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`, recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, non-truncated with 7,194 entries.
+
+Exact `.github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67` was read through EOF at tree index 125 zero-based: mode 100644, 274 ASCII bytes/code points, 15 LF, zero CR and trailing newline. The only source trigger is daily `0 0 * * *`; sole job uses mutable `ubuntu-slim`; no explicit permissions/environment/concurrency/timeout/retry/checkout/manual/reusable trigger exists. The step passes implicit `github.token`, issue inactivity 45 days and PR inactivity 45 days to mutable `dessant/lock-threads@v6`.
+
+Observed 2026-11-01 v6 resolution is `89ae32b08ed1a541efecbab17912962a5e38981c`, with Node-24 `action.yml@dd441d19ed1f3fe3d6e5d0c00c77d3b2b767a240`, executable bundle `dist/index.js@78034b629a87f75af21c1cba9f361aa1b42a5d8f`, package 6.0.2/MIT, lockfile v3 and exact source-module identities recorded in the dossier/evidence contract. The source ref remains mutable.
+
+Because `process-only` is omitted, Action semantics process issue -> PR -> discussion. Telegram's explicit 45-day thresholds cover issue/PR; discussion retains default 365 days. Eligibility is closed + unlocked + updated before the computed cutoff. Issue/PR search is updated-descending REST with `per_page: 50` and no pagination; discussion search requests first 50. No comments/labels/date or label filters/log-output are configured. Issue/PR lock reason defaults to `resolved`. Therefore a run cannot prove backlog exhaustion above 50 per type.
+
+The Action configures bounded Octokit request retries and rate-limit callbacks but no workflow-level retry/concurrency/rollback/unlock compensation. Unrecovered failure can leave earlier issue locks settled before PR failure or issue/PR locks settled before discussion failure. Schedule delay, token permission denial, mutable Action/runner drift, >50 backlog, search-to-lock races and cutoff-clock boundaries remain Stage-B evidence.
+
+Security/privacy remain fail-closed: the workflow has no explicit permissions while third-party JavaScript receives `github.token`; the Action README demonstrates issues/pull-requests/discussions write grants, so actual frozen-candidate effective scopes must be proven without secret capture. This exact configuration does not read thread bodies or request comments/label mutation. All 20 fixed-U workflow blobs were inspected for direct reusable/workflow-run coupling; none invokes `lock.yml`.
+
+Existing-owner-first maps applicable guarantees to current Fabushi root issue/PR/reporting/development-process + repository security/privacy + shared quality/evidence governance. No target Telegram locking workflow, second tracker, product automation, runtime/provider/sidecar, Agent/Coordinator/Host/Runner change or platform-core delta is introduced.
+
+Eighteen contract, one integration, twelve fault/recovery and ten security/privacy cases are authored only and not run. Existing `upstream.lock.json` / inventory baseline identity still lags the active fixed-U ledger queue; that pre-existing whole-project reconciliation gap remains explicit.
+
+Exactly one independent source entry closes: `unknown 16109 -> 16108`, `unread 16082 -> 16081`, `omitted=0`; responsibilities `169 -> 170`, unmapped remains 0. The next independent fixed-U blob is `.github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba` at tree index 126 zero-based.
+
+Stage A zero-CI discipline remained intact: no Actions/check/status/workflow-run query or trigger; no scheduled workflow/third-party Action/search/lock/unlock execution, token-scope probe, build, typecheck, lint, validator, test/E2E, package, signing, release, deployment, installation, runtime acceptance or platform-core mutation was performed.
