@@ -2414,3 +2414,20 @@ Authored but not run: `CONTRACT-TDRP-DEPENDENCY-WATCH-SNAPSHOT-001`, `CONTRACT-T
 Exactly one independent source entry closes: `unknown 16156 -> 16155`, `unread 16129 -> 16128`, `omitted=0`; responsibilities remain 134 and unmapped remains 0. Next fixed-U independent blob in tree order is `.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea`.
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
+
+
+## Round 123 / source-entry closure — Dependency Watch upstream regression fixture (2026-11-01)
+
+From desktop checkpoint parent `e4259b9b7b1fabab51a9216632e067bf315cef78`, the live migration branch was reread unchanged before spec publication; spec-first CAS published `d6562479b20149b06fc9980baad5ea2cbefc2375`. Desktop main remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains exact `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; recursive source tree is complete (`truncated=false`, 7,194 entries). Before closure the unique ledger was `source_entries_total=16202 / unknown=16155 / unread=16128 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`.
+
+The exact `.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea` regression fixture was read completely: 4,347 bytes / 99 logical lines, fixed-U tree index 64. Its code dependency is sibling `watch`; executable consumer boundary is standard Python `unittest` discovery / `unittest.main()`. Production Dependency Watch `SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8` invokes `watch.py`, not this test file, so the source owns no advisory runtime or durable findings state.
+
+`VersionTests.test_stable_ordering_and_prefixes` freezes ten comparison cases: patch/minor/major/older/same for supported stable three-component forms and `unknown` for prerelease, hash, milestone, four-component, and legacy-letter OpenSSL forms. `SnapshotTests` builds disposable remote/checkout fixtures and covers fresh remote bytes despite unfinished local edits, exact remote commit identity, synthetic gitlink capture, byte-stable checkout status/HEAD, no `latest.md`, fetch-failure refusal before helper storage, required-manifest failure, offline unverified freshness, and linked-worktree common storage.
+
+Existing-owner-first reuses `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001` under Fabushi repository quality/test-evidence governance. No new responsibility, owner, ADR, product runtime, shipping updater, copied Telegram test harness, dependency mutation, or platform-core production delta is introduced. The ledger's previously inaccurate `DependencyWatchTests` case aliases are corrected to exact `VersionTests` / `SnapshotTests` symbols.
+
+Authored but not run: `CONTRACT-TDRP-DEPENDENCY-WATCH-UPSTREAM-VERSION-REGRESSION-001` and `CONTRACT-TDRP-DEPENDENCY-WATCH-UPSTREAM-SNAPSHOT-REGRESSION-001`.
+
+Exactly one independent source entry closes: `unknown 16155 -> 16154`, `unread 16128 -> 16127`, `omitted=0`; responsibilities remain 134 and unmapped remains 0. The next fixed-U independent blob in tree order is `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.

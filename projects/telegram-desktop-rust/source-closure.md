@@ -2598,3 +2598,18 @@ Authored but not run: `CONTRACT-TDRP-DEPENDENCY-WATCH-SNAPSHOT-001`, `CONTRACT-T
 Exactly one independent source entry closes: `unknown 16156 -> 16155`, `unread 16129 -> 16128`, `omitted=0`; responsibilities remain 134 and unmapped remains 0. Next fixed-U independent blob in tree order is `.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea`.
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
+
+
+## Round 123 / source-entry closure — Dependency Watch upstream regression fixture (2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact `.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea` was completely read at recursive-tree index 64 (4,347 bytes / 99 logical lines). Its executable boundary is Python `unittest`; the production Dependency Watch skill invokes the sibling helper, not the test fixture.
+
+The fixed-U regression contract is now represented exactly under existing `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001`: `VersionTests` locks supported stable-version ordering/prefixes and fail-closed unknown classification for unsupported schemes; `SnapshotTests` locks remote exact-byte/commit authority, working-tree/HEAD immutability, synthetic gitlink capture, absence of `latest.md`, fresh-fetch failure without stale-ref/storage reuse, required-manifest failure, offline unverified freshness, and linked-worktree common report storage. Existing-owner-first remains Fabushi repository quality/test-evidence governance; no new runtime/test owner or platform-core delta.
+
+Spec-first desktop commit `d6562479b20149b06fc9980baad5ea2cbefc2375` extends the existing Test Strategy/Evidence Contract and adds `projects/telegram-desktop-rust/dossiers/dependency-watch-watch-test-complete-read.md`. The unique ledger corrects prior nonexistent `DependencyWatchTests` aliases to exact `watch_test.VersionTests...` and `watch_test.SnapshotTests...` case IDs.
+
+Authored but not run: `CONTRACT-TDRP-DEPENDENCY-WATCH-UPSTREAM-VERSION-REGRESSION-001` and `CONTRACT-TDRP-DEPENDENCY-WATCH-UPSTREAM-SNAPSHOT-REGRESSION-001`.
+
+Coverage after closure is `source_entries_total=16202 / unknown=16154 / unread=16127 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`. Next independent fixed-U blob is `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
+
+No Actions/check/status/workflow query or trigger and no executable validation was performed.
