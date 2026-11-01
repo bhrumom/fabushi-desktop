@@ -704,15 +704,32 @@ pub fn resolve_media_buffer_path(
         .map(|p| p.to_path_buf())
         .unwrap_or_else(get_media_dir);
     let target_dir = resolve_media_scoped_dir(&media_root, subdir, "resolve_media_buffer_path")?;
-    let target_file = target_dir.join(id);
+    let safe_id = resolve_media_relative_path(id, "", "resolve_media_buffer_path")?;
+    let target_file = target_dir.join(safe_id);
 
-    let meta = fs::metadata(&target_file).map_err(|e| {
+    let meta = fs::symlink_metadata(&target_file).map_err(|e| {
         format!("resolveMediaBufferPath: media ID does not resolve to a file: {id:?} ({e})")
     })?;
+    if meta.file_type().is_symlink() {
+        return Err(format!(
+            "resolveMediaBufferPath: media ID must not resolve through a symlink: {id:?}"
+        ));
+    }
     if !meta.is_file() {
         return Err(format!("resolveMediaBufferPath: media ID does not resolve to a file: {id:?}"));
     }
-    Ok(target_file.canonicalize().unwrap_or(target_file))
+    let canonical_dir = target_dir.canonicalize().map_err(|e| {
+        format!("resolveMediaBufferPath: media directory cannot be resolved: {e}")
+    })?;
+    let canonical_file = target_file.canonicalize().map_err(|e| {
+        format!("resolveMediaBufferPath: media file cannot be resolved: {e}")
+    })?;
+    if !canonical_file.starts_with(&canonical_dir) {
+        return Err(format!(
+            "resolveMediaBufferPath: media ID resolves outside its scoped directory: {id:?}"
+        ));
+    }
+    Ok(canonical_file)
 }
 
 pub fn read_media_buffer(
@@ -732,12 +749,15 @@ pub fn read_media_buffer(
     if meta.len() > max_bytes {
         return Err(SaveMediaSourceError::too_large(max_bytes));
     }
-    let data = fs::read(&path).map_err(|e| {
+    let data = read_media_source_bytes(&path, max_bytes).map_err(|e| {
         SaveMediaSourceError::new(
             SaveMediaSourceErrorCode::InvalidPath,
             format!("Failed to read media buffer: {e}"),
         )
     })?;
+    if data.len() as u64 > max_bytes {
+        return Err(SaveMediaSourceError::too_large(max_bytes));
+    }
     Ok((data, path))
 }
 
@@ -750,7 +770,8 @@ pub fn delete_media_buffer(
         .map(|p| p.to_path_buf())
         .unwrap_or_else(get_media_dir);
     let target_dir = resolve_media_scoped_dir(&media_root, subdir, "delete_media_buffer")?;
-    let target_file = target_dir.join(id);
+    let safe_id = resolve_media_relative_path(id, "", "delete_media_buffer")?;
+    let target_file = target_dir.join(safe_id);
     if target_file.exists() {
         fs::remove_file(&target_file).map_err(|e| format!("Failed to delete media buffer: {e}"))?;
     }
@@ -773,8 +794,13 @@ pub fn write_playback_transcode_cache(
     let cache_dir = resolve_media_scoped_dir(&media_root, PLAYBACK_TRANSCODE_SUBDIR, "write_playback_transcode_cache")?;
     fs::create_dir_all(&cache_dir).map_err(|e| format!("Failed to create cache dir: {e}"))?;
 
-    let target_path = cache_dir.join(file_name);
-    let temp_name = format!(".{file_name}.tmp-{}", Uuid::new_v4());
+    let safe_file_name = resolve_media_relative_path(
+        file_name,
+        "",
+        "write_playback_transcode_cache",
+    )?;
+    let target_path = cache_dir.join(&safe_file_name);
+    let temp_name = format!(".{safe_file_name}.tmp-{}", Uuid::new_v4());
     let temp_path = cache_dir.join(&temp_name);
 
     {

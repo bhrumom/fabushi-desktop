@@ -176,6 +176,31 @@ fn test_ocrm_media_store_subdir_traversal_protection() {
             "an existing symlinked ancestor must not escape the media root"
         );
     }
+
+    let escaped_file = temp.path.join("escaped.txt");
+    fs::write(&escaped_file, b"must stay inaccessible").unwrap();
+    assert!(
+        read_media_buffer("../escaped.txt", "inbound", MEDIA_MAX_BYTES, Some(&temp.path))
+            .is_err(),
+        "media IDs must not traverse out of the scoped directory"
+    );
+    assert!(
+        delete_media_buffer("../escaped.txt", "inbound", Some(&temp.path)).is_err(),
+        "media deletion IDs must not traverse out of the scoped directory"
+    );
+    assert!(escaped_file.exists());
+
+    #[cfg(unix)]
+    {
+        let inbound = temp.path.join("inbound");
+        fs::create_dir_all(&inbound).unwrap();
+        std::os::unix::fs::symlink(&escaped_file, inbound.join("linked.txt")).unwrap();
+        assert!(
+            read_media_buffer("linked.txt", "inbound", MEDIA_MAX_BYTES, Some(&temp.path))
+                .is_err(),
+            "media readers must reject symlinked files"
+        );
+    }
 }
 
 #[test]
