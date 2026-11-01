@@ -28,8 +28,8 @@ are approved and then implemented with focused oracles.
 - Fabushi source subject captured for this decision (before this
   documentation-only provenance publication):
   `codex/openclaw-rust-fusion-chat-20261101-writer`, commit
-  `39e7ef0577ce62d4914708cae00ef0c16d7df751`, tree
-  `6a609cc41b37dcffeb77ece44f583c33f27d8a73`.
+  `fa20399eb77dd9d63eb067efb18820663ccc66d6`, tree
+  `06fd7a8df912735ca4b499cbad319372c85fa784`.
 - Fixed OpenClaw implementation subject: commit
   `ad8d12f126d29b0db204187adf5092db80294e70`, tree
   `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`.
