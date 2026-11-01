@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 97,
+    "responsibilities_total": 98,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -24614,6 +24614,224 @@
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
       ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "source_blob_sha": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "source_kind": "schema",
+      "module_id": "tdesktop.mtproto.tls-template",
+      "responsibility_id": "TDRP-R9-MTPROTO-TLS-CLIENT-HELLO-TEMPLATE-001",
+      "source_symbols": [
+        "tlsClientHello",
+        "tlsBlockString",
+        "tlsBlockRandom",
+        "tlsBlockZero",
+        "tlsBlockDomain",
+        "tlsBlockGrease",
+        "tlsBlockPublicKey",
+        "tlsBlockScope",
+        "tlsBlockPermutation",
+        "tlsBlockM",
+        "tlsBlockE",
+        "tlsBlockPadding",
+        "PrepareClientHelloRules",
+        "Generator::Part::writeBlock"
+      ],
+      "capability_ids": [
+        "CAP-MTPROTO-TRANSPORT-TLS-CAMOUFLAGE"
+      ],
+      "dependency_ids": [
+        "telegram-network transport lifecycle",
+        "TLS ClientHello generator",
+        "randomness/grease/key material"
+      ],
+      "source_analysis_path": "docs/specs/telegram-mtproto-tls-client-hello-template.md",
+      "behavior_contract": "Fixed-U tlsClientHello/TlsBlock is a local typed template AST consumed by the TLS camouflage ClientHello generator, not an independently shipped MTProto request/response object. Do not claim wire closure through unused protocol parsers/serializers.",
+      "state_machine": "mtproto.tl generated types -> PrepareClientHelloRules local AST -> Generator::Part::writeBlock -> TLS ClientHello bytes -> TLS socket lifecycle",
+      "side_effects": [
+        "None in telegram-protocol for this disposition; actual effects belong to the missing canonical TLS camouflage transport/generator lifecycle."
+      ],
+      "failure_cases": [
+        "Dead standalone TL API falsely counted as production closure",
+        "TLS cryptographic/generation semantics misplaced into telegram-protocol",
+        "Template AST treated as inbound/outbound MTProto object"
+      ],
+      "ui_disposition": "Not applicable.",
+      "non_ui_responsibilities": [
+        "Template schema provenance",
+        "TLS generator ownership boundary",
+        "No-dead-API fail-closed disposition"
+      ],
+      "platform_delta": "No production delta. Current canonical transport lacks a shipping TLS camouflage ClientHello generator/socket lifecycle.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol"
+      ],
+      "existing_owner": "Canonical telegram-network transport/TLS lifecycle when implemented; telegram-protocol may host source-neutral schema types only when a real shipping consumer requires them.",
+      "rejected_existing_owners": [
+        "telegram-protocol alone: the fixed-U family is an in-memory generator template with no independent MTProto wire lifecycle; standalone encode/decode APIs would be dead code."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-mtproto-tls-client-hello-template.md"
+      ],
+      "fabushi_target_symbols": [],
+      "target_language": "Rust",
+      "language_rationale": "The eventual non-UI transport/generator responsibility belongs in the shared Rust networking stack, not a duplicate Telegram-specific product subsystem.",
+      "command_event_contracts": [],
+      "state_owner": "Future existing canonical telegram-network TLS camouflage generator lifecycle; currently absent.",
+      "lifecycle_owner": "Future existing canonical telegram-network transport/TLS lifecycle; currently absent.",
+      "persistence_and_restart": "No new persistence for this disposition.",
+      "concurrency_and_cancellation": "Transport lifecycle remains outside this schema-template disposition.",
+      "security_boundary": "Do not invent cryptography or move key generation/HMAC/randomness semantics into a schema-only protocol owner.",
+      "network_service_dependencies": [
+        "A real canonical TLS camouflage transport/generator owner is required before implementation can be claimed."
+      ],
+      "service_owner": "Existing canonical telegram-network transport stack, currently missing this lifecycle.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "blocked",
+      "blockers": [
+        "Canonical native/telegram-network has no TLS camouflage ClientHello generator/socket lifecycle.",
+        "The family has no independent MTProto request/response shipping entrypoint; a standalone telegram-protocol parser/serializer would be dead code.",
+        "Stage B executable validation has not run.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16",
+        "platform-core-spec-commit:d2efec8b167386ad70da5607e2fd5833fc6387b0",
+        "platform-core-spec-blob:bc0363cec846718b2fb0d54bf89943fe292714e4",
+        "platform-core-live-api-blob:ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "platform-core-live-lib-blob:abab39e42f100972484191f0e52e9edd9b88c6cf",
+        "desktop-live-api-blob:ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
+        "desktop-live-lib-blob:abab39e42f100972484191f0e52e9edd9b88c6cf"
+      ],
+      "test_evidence": [
+        "Round97 source-level disposition contract authored in durable spec; not executed."
+      ],
+      "target_commit": "d2efec8b167386ad70da5607e2fd5833fc6387b0",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical shared telegram-network transport stack",
+      "composition_slot": "Transport/TLS lifecycle",
+      "capability_component": "TLS camouflage ClientHello generator template",
+      "variation_axes": [
+        "TlsBlock variant",
+        "nested scope",
+        "permutation element"
+      ],
+      "shared_owner_contracts": [
+        "Canonical transport lifecycle",
+        "Canonical telegram-protocol TL primitives"
+      ],
+      "duplicate_root_check": "No second Telegram runtime/provider/transport or dead telegram-protocol API introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "native/telegram-protocol api/lib contain no TlsClientHello/TlsBlock API at live checkpoint",
+        "round65 source evidence records direct TcpTransport and missing TLS camouflage generator lifecycle"
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Wire decoding is side-effect free. Special-config acquisition/decryption/expiry/phone-prefix/DC endpoint application is intentionally unchanged because no proven canonical equivalent lifecycle is present.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-TLS-CLIENT-HELLO-TEMPLATE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-TLS-TEMPLATE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-TLS-TEMPLATE-NO-DEAD-WIRE-API-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-TLS-TEMPLATE-OWNER-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-TLS-TEMPLATE-DISPOSITION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-TLS-CAMOUFLAGE-OWNER-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-MTPROTO-TLS-CAMOUFLAGE-001"
+      ],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-TLS-CRYPTO-OWNER-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-tls-client-hello-template"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16. No upstream C++ implementation is copied.",
+      "notes": "Round97 adjacent reread confirms this family cannot be independently closed by the current telegram-protocol owner without dead code. It remains mapped/blocked, not implemented. Production api/lib blobs remain unchanged and byte-identical between platform-core and desktop. TLS camouflage generation/socket lifecycle is the missing real owner; executable validation remains not-run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
     }
   ],
   "rebaseline_candidate": {

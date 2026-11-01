@@ -1460,3 +1460,14 @@ Platform-core final source-level compliance is `070ff5136f550a3c79f3839d91667857
 Special-config acquisition/decryption/expiry/phone-prefix/DC endpoint application, arbitrary request/container history, connection scheduling, auth-key binding/persistence, `gzip_packed`, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence, and independent release ACCEPT remain outside this wire-only closure or open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+## Stage-A MTProto TLS ClientHello template adjacent disposition (evidence round 97; task round 66, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Fresh readback of `mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8` confirms the complete `tlsClientHello/TlsBlock` family immediately after `help.configSimple`. Fixed-U `mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16` confirms these generated TL types are a local template AST: `PrepareClientHelloRules()` builds nested scopes/permutations and `Generator::Part::writeBlock` interprets them into TLS camouflage ClientHello bytes. They are not independently shipped as MTProto request/response objects.
+
+Spec-first platform-core disposition is `d2efec8b167386ad70da5607e2fd5833fc6387b0` / spec blob `bc0363cec846718b2fb0d54bf89943fe292714e4`. Existing-owner-first review finds no truthful independent telegram-protocol production closure: canonical api/lib remain `ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf`, desktop mirrors are byte-identical, and canonical telegram-network still lacks the TLS camouflage ClientHello generator/socket lifecycle. Therefore this round is **no production delta** and no dead parser/serializer is introduced.
+
+The sole ledger adds `TDRP-R9-MTPROTO-TLS-CLIENT-HELLO-TEMPLATE-001` as `mapped / coverage_disposition=blocked / validation_status=not-run / accepted=false`, not implemented. Coverage becomes `responsibilities_total=98`; `unknown=16172`, `unread=16145`, `omitted=0`, and `unmapped_responsibilities=0` remain unchanged. Real closure requires a source-neutral extension of the existing canonical telegram-network transport/TLS lifecycle; randomness/grease/X25519/HMAC/permutation/padding and connection scheduling remain outside telegram-protocol.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
