@@ -105,8 +105,13 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   const handleMessage = (expectedPort: TransferredCoordinatorPort, value: unknown) => {
     if (port !== expectedPort || disposed) return;
     if (!isRecord(value) || typeof value.kind !== "string") {
-      expectedPort.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "protocol-error", detail: "coordinator posted a malformed frame" });
-      return disconnect(expectedPort, "coordinator posted a malformed frame");
+      const reason = "coordinator posted a malformed frame";
+      try {
+        expectedPort.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "protocol-error", detail: reason });
+      } catch {
+        return disconnect(expectedPort, `${reason}; protocol-error shutdown could not be sent`);
+      }
+      return disconnect(expectedPort, reason);
     }
     if (value.kind === "lifecycle" && value.phase === "ready") {
       if (value.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) return disconnect(expectedPort, "coordinator protocol version mismatch");

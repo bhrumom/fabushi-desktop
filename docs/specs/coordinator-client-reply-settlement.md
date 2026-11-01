@@ -38,6 +38,9 @@ outcomes reject explicitly while preserving no indefinitely pending Promise.
 - R4: Any other outcome status rejects with a protocol error and does not
   leave the request pending.
 - R5: Unmatched request IDs retain the existing ignore behavior.
+- R6: A malformed frame's protocol-error shutdown send cannot prevent the
+  existing disconnect cleanup from reclaiming pending requests and the port
+  claim.
 
 ## 5. Current state
 
@@ -77,15 +80,17 @@ exception. There is no storage or migration.
 
 Cover invalid status, failed status without an object, failed object with
 missing/non-string fields, unmatched request ID, disconnect after malformed
-reply, and disposal after malformed reply. A remote side effect remains
-outcome-unknown and must not be replayed by this client.
+reply, malformed-frame shutdown send failure, and disposal after malformed
+reply. A remote side effect remains outcome-unknown and must not be replayed
+by this client.
 
 ## 11. Implementation strategy
 
 Classify the outcome before removing the pending entry, then remove it exactly
 once and settle it through the existing resolve/reject callbacks. Keep method
 response validation on successful outcomes and preserve the current handling
-for valid failure objects.
+for valid failure objects. Wrap only the malformed-frame shutdown send so its
+failure still reaches the existing disconnect owner.
 
 ## 12. Verification / test strategy
 
@@ -124,7 +129,7 @@ artifacts; no runtime acceptance is claimed here.
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R5 | passed | `frontend/src/production/coordinator-client.ts` now classifies matching replies before removing pending ownership and explicitly rejects malformed outcomes. |
+| R1–R6 | passed | `coordinator-client.ts` classifies replies before pending removal and contains malformed-frame shutdown-send failure before invoking existing disconnect cleanup. |
 | AC-1 | passed | Existing renderer client remains the sole pending/Promise owner; no new transport or business owner was added. |
 | AC-2 | passed | Every matching reply branch removes the pending entry only immediately before resolving or rejecting it. |
 | AC-3 | passed | `git diff --check` and source review passed; runtime, focused test, and packaged acceptance remain pending. |
