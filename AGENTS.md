@@ -1149,3 +1149,61 @@ Stage-A cases are authored only and remain `validation_status=not-run`, `accepte
 - `SEC-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-STAGE-A-EXECUTION-001`
 
 No repository dispatch, schedule/workflow execution, third-party Action execution, npm installation, repository clone through the Action, file mutation, branch creation/push, PR creation, permission probe, build, typecheck, lint, validator, test/E2E, package, release, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.
+
+
+##### Repository Docker build/publish workflow authority
+
+Fixed-U `.github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0` is upstream repository build-container publication provenance, not a Fabushi product runtime, Telegram provider, shipping updater, or workflow to copy verbatim. Existing-owner-first responsibility `TDRP-R9-REPOSITORY-DOCKER-BUILD-WORKFLOW-001` stays with current Fabushi repository container/build/toolchain governance, repository release/process governance, repository security/provenance governance, and shared quality/evidence gates. No target Telegram Docker workflow, second build authority, product service, or platform-core delta is introduced.
+
+The exact source is fixed-U recursive-tree index 122 zero-based, mode 100644, 1,121 ASCII bytes/code points, 42 LF, zero CR, trailing newline. Admission is a `push` whose changed paths intersect exact `.github/workflows/docker.yml` or `Telegram/build/docker/centos_env/**`; there is no branch filter at trigger level. The sole job separately gates on `github.ref_name == github.event.repository.default_branch`, so non-default matching pushes may admit a workflow event but the build job is skipped. There is no explicit `permissions`, environment, concurrency, timeout, retry, manual dispatch, schedule, pull-request, or reusable-workflow declaration.
+
+The job uses mutable `ubuntu-latest`. It sets one mutable publication identity, `IMAGE_TAG=ghcr.io/${{ github.repository }}/centos_env:latest`. Checkout is written as mutable `actions/checkout@v7`; observed tag resolution on 2026-11-01 is commit `3d3c42e5aac5ba805825da76410c181273ba90b1`, whose action metadata defaults token to `github.token`, `persist-credentials=true`, `fetch-depth=1`, and receives `submodules: recursive` from this workflow. The tag remains mutable source lineage and later evidence must bind the actually resolved commit. Disk cleanup is exact commit-pinned `jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6`; its `tool-cache: true` input is the deprecated alias for removing preinstalled runtimes and is coupled with that action's other default cleanup behavior.
+
+Bootstrap performs `sudo apt update`, then executes the network response from `https://install.python-poetry.org` directly via `python3 -` without a version or digest pin. The current public installer observation is not a fixed-U pin and must never be treated as runtime identity. It then pipes `secrets.GITHUB_TOKEN` to `docker login ghcr.io -u $ --password-stdin`; the literal shell username token is `$`, while effective package-write authorization is determined by host token policy because the workflow has no explicit permissions block. Login success, token scope, runner image, installer bytes, apt metadata and registry policy remain Stage-B evidence rather than source assumptions.
+
+The build step enters exact `Telegram/build/docker/centos_env`, runs `poetry install` against `pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f` and `poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788`, then executes `DEBUG= LTO= poetry run gen_dockerfile`. Exact generator `gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d` converts present empty DEBUG and LTO environment variables to boolean false; MINSIZE and ASAN remain false defaults and JOBS remains empty. The resulting rendered Dockerfile is piped directly to `DOCKER_BUILDKIT=1 docker build -t $IMAGE_TAG -`. The source template `Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2` begins from mutable `rockylinux:8`, installs mutable distro/Python packages, and includes the previously inventoried mix of exact-commit, release-tag and mutable network build-time acquisitions. Existing `build-time-acquisitions.json` already classifies this workflow as CI-only/tool-bootstrap and the template acquisition graph remains the build-source authority; this source-entry closure does not duplicate that inventory.
+
+Publication is a single unqualified `docker push $IMAGE_TAG` to mutable `:latest`. The workflow emits no image digest output, immutable tag, SBOM, provenance/attestation, signature, artifact manifest, rollback pointer, or publication receipt. Therefore source success cannot prove a reproducible or immutable image identity. Exact fixed-U `.oss-scanner/Dockerfile@0ba260f72ad88b10a0d613ff5027b7a7640be7f2` explicitly consumes `ghcr.io/telegramdesktop/tdesktop/centos_env:latest` as a prebuilt third-party-library environment, making mutable image replacement a direct downstream trust boundary. Other build lanes may reuse the same generator/local environment independently; that does not make this published GHCR tag a canonical Fabushi runtime.
+
+Failure and recovery remain fail-closed. Matching push with non-default ref yields job skip, checkout/submodule failure blocks setup, bootstrap/apt/Poetry acquisition failure blocks build, disk-cleanup failure may alter the runner before build, generator/render failure blocks Docker, build failure blocks push, login/package permission failure blocks publication, and push interruption may leave registry state ambiguous. There is no retry/backoff, concurrency lock, digest reconciliation, rollback or compensation path. A later successful overwrite of `:latest` is not evidence that earlier consumers saw the same bytes.
+
+Security/provenance boundaries are explicit: implicit token permissions, persisted checkout credentials, recursive submodule network acquisition, mutable checkout tag, mutable ubuntu-latest and rockylinux base, curl-to-Python installer execution, apt/package registry drift, credential-bearing Docker login, mutable latest publication and unpinned downstream consumption all require frozen-candidate qualification. Never capture secret token values as evidence. Source workflow success never grants target release acceptance.
+
+Stage-A cases are authored only and remain `validation_status=not-run`, `accepted=false`:
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-TRIGGER-PATHS-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-DEFAULT-BRANCH-JOB-GATE-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-RUNNER-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-CHECKOUT-LINEAGE-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-RECURSIVE-SUBMODULES-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-POETRY-BOOTSTRAP-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-DISK-CLEANUP-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-REGISTRY-AUTH-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-BUILD-CONTEXT-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-GENERATOR-ENV-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-BUILDKIT-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-IMAGE-TAG-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-PUBLICATION-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-CONSUMER-001`
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-NO-TARGET-COPY-001`
+- `INT-TDRP-DOCKER-WORKFLOW-REPOSITORY-CONTAINER-BUILD-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-NONDEFAULT-SKIP-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-CHECKOUT-SUBMODULE-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-POETRY-BOOTSTRAP-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-DISK-CLEANUP-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-REGISTRY-LOGIN-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-GENERATOR-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-BUILD-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-PUSH-PARTIAL-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-LATEST-OVERWRITE-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-MUTABLE-ACTION-TAG-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-CURL-TO-PYTHON-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-MUTABLE-BASE-ACQUISITIONS-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-REGISTRY-CREDENTIAL-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-MUTABLE-LATEST-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-NO-DIGEST-ATTESTATION-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+No source/target workflow run, push trigger, checkout/action execution, apt/curl/Poetry execution, submodule fetch, Docker/BuildKit build, registry login/push/pull, token probe, validator, test/E2E, package, signing, release, deployment, installation, runtime acceptance, workflow-run/status/check query, or platform-core mutation is performed in Stage A.

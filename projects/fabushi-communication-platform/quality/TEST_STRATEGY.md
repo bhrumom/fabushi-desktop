@@ -1241,3 +1241,55 @@ Security/provenance cases, not run:
 Stage-B oracles are `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-ACTION-LINEAGE-001`, `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-MUTATION-PUBLICATION-001`, and `ORA-TDRP-COPYRIGHT-YEAR-WORKFLOW-FAILURE-BOUNDARY-001`. Invariants are `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-MUTABLE-MASTER-TRUST-001`, `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-HOST-PERMISSION-ASSUMPTION-001`, `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-PARTIAL-PR-SUCCESS-001`, `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-BROAD-SCAN-AUTHORITY-001`, and `INV-TDRP-COPYRIGHT-YEAR-WORKFLOW-NO-STAGE-A-EXECUTION-001`.
 
 No source/target workflow run, dispatch, Action/npm execution, file mutation, branch/PR mutation, token probe, build, lint, validator, test/E2E, package, release, install or runtime acceptance is executed in Stage A.
+
+
+### Repository Docker build/publish workflow qualification
+
+`TDRP-R9-REPOSITORY-DOCKER-BUILD-WORKFLOW-001` qualifies fixed-U `.github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0` as repository container-build/publication provenance. Existing target owners are repository container/build/toolchain governance, release/process governance, security/provenance governance, and shared quality/evidence gates. No target Telegram Docker workflow, second package/release service, product runtime, or platform-core service is introduced. Stage A authors the following cases and executes none.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-TRIGGER-PATHS-001` — push admission is path-scoped to the workflow or centos_env subtree.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-DEFAULT-BRANCH-JOB-GATE-001` — admitted non-default pushes must skip the sole job; publication is default-branch-only by job condition.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-PERMISSIONS-001` — absence of explicit permissions means effective token scope is later host evidence.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-RUNNER-001` — mutable ubuntu-latest and no environment/concurrency/timeout/retry declaration remain explicit.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-CHECKOUT-LINEAGE-001` — written checkout v7 tag is separated from observed commit identity.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-RECURSIVE-SUBMODULES-001` — checkout recursively initializes source gitlinks before build.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-POETRY-BOOTSTRAP-001` — network installer is executed without version/digest pin; poetry lock applies only after bootstrap.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-DISK-CLEANUP-001` — exact free-disk-space commit plus tool-cache alias/default cleanup semantics are recorded.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-REGISTRY-AUTH-001` — GITHUB_TOKEN is piped to GHCR login; actual token/package policy is later evidence.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-BUILD-CONTEXT-001` — exact pyproject/lock/generator/template identities and existing acquisition inventory form the build-source closure.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-GENERATOR-ENV-001` — empty DEBUG and LTO environment values render both feature booleans false.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-BUILDKIT-001` — generated Dockerfile is stdin to BuildKit docker build and tagged only with IMAGE_TAG.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-IMAGE-TAG-001` — publication identity is mutable repository-scoped centos_env:latest.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-PUBLICATION-001` — source emits no digest, attestation, signature or rollback identity.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-CONSUMER-001` — fixed-U OSS scanner consumes exact mutable GHCR latest image.
+- `CONTRACT-TDRP-DOCKER-WORKFLOW-NO-TARGET-COPY-001` — guarantees map into existing Fabushi repository owners instead of copied Telegram automation.
+
+Integration, not run:
+- `INT-TDRP-DOCKER-WORKFLOW-REPOSITORY-CONTAINER-BUILD-001` — frozen-candidate source/action/tool/bootstrap/template/acquisition/image evidence must compose with existing Fabushi build/release/security evidence without promoting source latest-tag publication to target acceptance.
+
+Fault/recovery cases, not run:
+- `FAULT-TDRP-DOCKER-WORKFLOW-NONDEFAULT-SKIP-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-CHECKOUT-SUBMODULE-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-POETRY-BOOTSTRAP-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-DISK-CLEANUP-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-REGISTRY-LOGIN-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-GENERATOR-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-BUILD-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-PUSH-PARTIAL-001`
+- `FAULT-TDRP-DOCKER-WORKFLOW-LATEST-OVERWRITE-001`
+
+Security/provenance cases, not run:
+- `SEC-TDRP-DOCKER-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-CHECKOUT-CREDENTIALS-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-MUTABLE-ACTION-TAG-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-CURL-TO-PYTHON-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-MUTABLE-BASE-ACQUISITIONS-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-REGISTRY-CREDENTIAL-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-MUTABLE-LATEST-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-NO-DIGEST-ATTESTATION-001`
+- `SEC-TDRP-DOCKER-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+Stage-B oracles are `ORA-TDRP-DOCKER-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-DOCKER-WORKFLOW-BUILD-LINEAGE-001`, `ORA-TDRP-DOCKER-WORKFLOW-PUBLICATION-IDENTITY-001`, and `ORA-TDRP-DOCKER-WORKFLOW-FAILURE-BOUNDARY-001`. Invariants are `INV-TDRP-DOCKER-WORKFLOW-NO-IMPLICIT-PERMISSION-TRUST-001`, `INV-TDRP-DOCKER-WORKFLOW-NO-MUTABLE-TAG-ACCEPTANCE-001`, `INV-TDRP-DOCKER-WORKFLOW-NO-UNPINNED-BOOTSTRAP-TRUST-001`, `INV-TDRP-DOCKER-WORKFLOW-NO-SOURCE-RELEASE-AUTHORITY-001`, and `INV-TDRP-DOCKER-WORKFLOW-NO-STAGE-A-EXECUTION-001`.
+
+No source/target workflow run, action/bootstrap execution, container build, registry operation, test, validation, package, release, install or runtime acceptance is executed in Stage A.
