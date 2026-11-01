@@ -3220,16 +3220,25 @@ impl ProductionSessionWorkers {
             if current == &entry {
                 return Ok(current.clone());
             }
-            return owner
-                .update_transcript_entry(
-                    entry
-                        .get("id")
-                        .and_then(serde_json::Value::as_str)
-                        .ok_or_else(|| "remote Human message projection omitted its id".to_string())?,
-                    &entry,
-                )
-                .map_err(|error| error.to_string())?
-                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
+            let entry_id = entry
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "remote Human message projection omitted its id".to_string())?;
+            let updated = if let Some(session_key) = admitted_session_key.as_deref() {
+                entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+                owner
+                    .update_transcript_entry_if_session_admitted(
+                        session_key,
+                        entry_id,
+                        &entry,
+                    )
+                    .map_err(|error| error.to_string())?
+            } else {
+                owner
+                    .update_transcript_entry(entry_id, &entry)
+                    .map_err(|error| error.to_string())?
+            };
+            return updated.ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {

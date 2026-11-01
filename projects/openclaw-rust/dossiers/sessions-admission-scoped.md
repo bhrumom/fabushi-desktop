@@ -826,6 +826,7 @@ checks the live admission record, the existing row's `sessionKey`, and the
 replacement row's `sessionKey` before changing the durable entry identity.
 `ProductionSessionWorkers::materialize_remote_human_message` uses this owner
 when the session key is present and retains the legacy helper only for
-unbound compatibility rows. A focused owner contract covers the bound
-settlement; channel correlation, remote delivery, and runtime acceptance
-remain pending.
+unbound compatibility rows. The same-ID remote refresh branch now uses the
+session-scoped update owner under the same rule. A focused owner contract
+covers the bound settlement; channel correlation, remote delivery, and runtime
+acceptance remain pending.
