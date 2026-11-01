@@ -80,7 +80,9 @@ performs generation-bound admission, issues and consumes the capability once,
 and dispatches the bounded continuation through the existing routed-send/run
 owners; unsupported current Rust identities fail before dispatch. The existing
 Runner terminal owner now settles the matching accepted continuation against
-the captured generation and run identity.
+the captured generation and run identity. If that continuation produces a new
+typed refusal, the same owner CAS replaces the consumed review and releases
+the matching continuation work marker before the new review becomes pending.
 `SandAutoReview` is a separate action-approval owner and is not a valid
 substitute.
 

@@ -653,8 +653,19 @@ impl SandAgentDb {
                 ));
             }
             // An accepted continuation may produce a new terminal refusal. It
-            // replaces the consumed review under the same session generation;
-            // pending reviews remain strict idempotent/conflict-safe CAS.
+            // replaces the consumed review under the same session generation,
+            // and the terminal refusal releases that continuation's work
+            // marker in the same owner CAS. Pending reviews remain strict
+            // idempotent/conflict-safe CAS.
+            if record.provider_review_continuation_run_id.as_deref()
+                != Some(review.run_id.as_str())
+                || record.admitted_work_id.as_deref() != Some(review.run_id.as_str())
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "provider review continuation work identity changed".into(),
+                ));
+            }
+            record.admitted_work_id = None;
         }
         record.provider_review_id = Some(review.id.clone());
         record.provider_review_phase = Some("pending".into());

@@ -600,8 +600,10 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
         .record_session_provider_review("revision-1", &conflicting)
         .is_err());
     let mut accepted = admission.clone();
+    accepted.admitted_work_id = Some("run-2".into());
     accepted.provider_review_id = Some(review.id.clone());
     accepted.provider_review_phase = Some("accepted".into());
+    accepted.provider_review_continuation_run_id = Some("run-2".into());
     accepted.provider_review = Some(review.clone());
     assert!(owner
         .compare_and_set_session_work_admission(Some("revision-1"), &accepted)
@@ -618,6 +620,12 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
             .expect("replace after accepted continuation"),
         continuation_refusal
     );
+    let replaced = owner
+        .read_session_work_admission()
+        .expect("read replaced review admission")
+        .expect("replaced review admission exists");
+    assert_eq!(replaced.provider_review_phase.as_deref(), Some("pending"));
+    assert!(replaced.admitted_work_id.is_none());
     assert!(owner
         .record_session_provider_review("stale", &review)
         .is_err());
