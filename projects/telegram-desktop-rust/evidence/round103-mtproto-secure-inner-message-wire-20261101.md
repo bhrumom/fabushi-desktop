@@ -17,3 +17,12 @@ Production disposition is minimal existing-owner rewrite: add only the fixed-U 1
 Unique ledger row: `TDRP-R9-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001`, implemented / rewritten / validation not-run / accepted false. Coverage after this row: responsibilities_total 104; unknown 16172; unread 16145; omitted 0; unmapped_responsibilities 0.
 
 Focused contracts are authored only and were not run. No CI/status/check query or executable validation was performed.
+
+
+### Round 103 final source-level compliance
+
+Platform-core final compliance is `d6ef0db52ef2cabb480959d358386bedd2bb080e` / spec blob `b0fd5be4e048a0b6ddf737c683c21c76dbf73372`, referencing desktop bookkeeping checkpoint `fa7a222978ce3760ddb78cf5bd4c9a381434fca8`. The unique `TDRP-R9-MTPROTO-SECURE-INNER-MESSAGE-WIRE-001` responsibility is `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Canonical production `crypto.rs` is `32d69573acc6ef4ce7bcc80073f5cdd7e2bea7ad`; canonical/desktop telegram-network remains `54f509474391bb5118ba4678ba5c566ab3e74ec8`; canonical/desktop authored contract blob is `f8e109c74a82ebe860b15c22766f403998e85b81`. The canonical owner now rejects secure-inner bodies above 16 MiB both on outbound validation and early authenticated inbound decode while retaining the exact 8/8/8/4/4 header, padding, session and inbound message-id checks in the existing owner.
+
+Coverage remains `responsibilities_total=104, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Auth-key binding/persistence/expiry/renewal, broader connection scheduling/racing/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open. No executable validation was performed.
