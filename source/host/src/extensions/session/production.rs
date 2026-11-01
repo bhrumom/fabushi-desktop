@@ -2416,10 +2416,12 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: &str,
         review: &SessionProviderReview,
     ) -> Result<SessionProviderReview, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .record_session_provider_review(expected_lifecycle_revision, review)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_session_provider_review(expected_lifecycle_revision, review)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn issue_provider_review_acknowledgment(
@@ -2499,48 +2501,50 @@ impl ProductionSessionWorkers {
             .map_err(|_| "provider review capability owner is poisoned".to_string())?
             .remove(&acknowledgment.token)
             .ok_or_else(|| "provider review acknowledgment is no longer current".to_string())?;
-        self.assert_agent_work_admission(&state.agent_id)?;
-        if provider.trim().is_empty()
-            || model.trim().is_empty()
-            || runtime_id.trim().is_empty()
-            || next_run_id.trim() != state.next_run_id
-        {
-            return Err("provider review run or runtime identity is incomplete or changed".into());
-        }
-        let owner = self.open_agent_db_owner(&state.agent_id)?;
-        let Some(mut record) = owner
-            .read_session_work_admission()
-            .map_err(|error| error.to_string())?
-        else {
-            return Err("session work admission record is unavailable".into());
-        };
-        let review = record
-            .provider_review
-            .clone()
-            .ok_or_else(|| "provider review is unavailable".to_string())?;
-        if record.lifecycle_revision != state.lifecycle_revision
-            || record.session_id != review.session_id
-            || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
-            || record.provider_review_phase.as_deref() != Some("pending")
-            || record.admitted_work_id.as_deref() != Some(state.next_run_id.as_str())
-            || record.deletion_pending
-            || review.id != state.review_id
-            || review.provider != provider.trim()
-            || review.model != model.trim()
-            || review.runtime_id != runtime_id.trim()
-            || review.api.as_deref() != api.map(str::trim)
-        {
-            return Err("provider review runtime or lifecycle identity changed".into());
-        }
-        record.provider_review_phase = Some("accepted".into());
-        record.provider_review_continuation_run_id = Some(state.next_run_id.clone());
-        if !owner
-            .compare_and_set_session_work_admission(Some(&state.lifecycle_revision), &record)
-            .map_err(|error| error.to_string())?
-        {
-            return Err("provider review acknowledgment lost its lifecycle race".into());
-        }
-        Ok(review)
+        self.with_agent_filesystem_mutation(&state.agent_id, || {
+            self.assert_agent_work_admission_locked(&state.agent_id)?;
+            if provider.trim().is_empty()
+                || model.trim().is_empty()
+                || runtime_id.trim().is_empty()
+                || next_run_id.trim() != state.next_run_id
+            {
+                return Err("provider review run or runtime identity is incomplete or changed".into());
+            }
+            let owner = self.open_agent_db_owner_locked(&state.agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Err("session work admission record is unavailable".into());
+            };
+            let review = record
+                .provider_review
+                .clone()
+                .ok_or_else(|| "provider review is unavailable".to_string())?;
+            if record.lifecycle_revision != state.lifecycle_revision
+                || record.session_id != review.session_id
+                || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
+                || record.provider_review_phase.as_deref() != Some("pending")
+                || record.admitted_work_id.as_deref() != Some(state.next_run_id.as_str())
+                || record.deletion_pending
+                || review.id != state.review_id
+                || review.provider != provider.trim()
+                || review.model != model.trim()
+                || review.runtime_id != runtime_id.trim()
+                || review.api.as_deref() != api.map(str::trim)
+            {
+                return Err("provider review runtime or lifecycle identity changed".into());
+            }
+            record.provider_review_phase = Some("accepted".into());
+            record.provider_review_continuation_run_id = Some(state.next_run_id.clone());
+            if !owner
+                .compare_and_set_session_work_admission(Some(&state.lifecycle_revision), &record)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("provider review acknowledgment lost its lifecycle race".into());
+            }
+            Ok(review)
+        })
     }
 
     pub fn settle_provider_review_continuation(
@@ -2550,14 +2554,16 @@ impl ProductionSessionWorkers {
         continuation_run_id: &str,
         outcome: ProviderReviewContinuationOutcome,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .settle_provider_review_continuation(
-                expected_lifecycle_revision,
-                continuation_run_id,
-                outcome,
-            )
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .settle_provider_review_continuation(
+                    expected_lifecycle_revision,
+                    continuation_run_id,
+                    outcome,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn release_provider_review_continuation(
@@ -2566,13 +2572,15 @@ impl ProductionSessionWorkers {
         expected_lifecycle_revision: &str,
         continuation_run_id: &str,
     ) -> Result<bool, String> {
-        self.assert_agent_work_admission(agent_id)?;
-        self.open_agent_db_owner(agent_id)?
-            .release_provider_review_continuation(
-                expected_lifecycle_revision,
-                continuation_run_id,
-            )
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .release_provider_review_continuation(
+                    expected_lifecycle_revision,
+                    continuation_run_id,
+                )
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn transition_session_work_archive(
