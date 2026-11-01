@@ -2432,14 +2432,28 @@ impl SandAgentDb {
                     "session is not admitted for transcript update".into(),
                 ));
             }
-            let present = db
+            let raw_entry = db
                 .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
                     row.get::<_, String>(0)
                 })
-                .optional()?
-                .is_some();
-            if !present {
+                .optional()?;
+            let Some(raw_entry) = raw_entry else {
                 return Ok(None);
+            };
+            let entry = parse_transcript_entry(&raw_entry).ok_or_else(|| {
+                AgentDbProjectionError::WorkAdmissionInvalid(
+                    "target transcript entry is not valid JSON".into(),
+                )
+            })?;
+            if entry
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                != Some(session_key.trim())
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "target transcript entry provenance does not match admitted session".into(),
+                ));
             }
             if db.execute(
                 UPDATE_TRANSCRIPT_ENTRY_SQL,
@@ -4149,15 +4163,29 @@ pub fn update_persisted_transcript_entry_if_session_admitted(
             "session is not admitted for persisted transcript update".into(),
         ));
     }
-    let present = transaction
+    let raw_entry = transaction
         .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
             row.get::<_, String>(0)
         })
-        .optional()?
-        .is_some();
-    if !present {
+        .optional()?;
+    let Some(raw_entry) = raw_entry else {
         transaction.commit()?;
         return Ok(None);
+    };
+    let entry = parse_transcript_entry(&raw_entry).ok_or_else(|| {
+        AgentDbProjectionError::WorkAdmissionInvalid(
+            "target transcript entry is not valid JSON".into(),
+        )
+    })?;
+    if entry
+        .get("sessionKey")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        != Some(session_key)
+    {
+        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+            "target transcript entry provenance does not match admitted session".into(),
+        ));
     }
     if transaction.execute(
         UPDATE_TRANSCRIPT_ENTRY_SQL,

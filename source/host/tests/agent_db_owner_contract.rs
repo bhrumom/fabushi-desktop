@@ -193,6 +193,7 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
         .append_transcript_entries(&[serde_json::json!({
             "id": "permission-1",
             "kind": "send-message",
+            "sessionKey": first.session_key.clone(),
             "message": {"type": "local-tool-permission", "ask": {"status": "pending"}},
         })])
         .expect("seed permission entry");
@@ -209,6 +210,28 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
         .expect("session-admitted update")
         .expect("updated permission entry");
     assert_eq!(updated["message"]["ask"]["status"], "allowed");
+
+    owner
+        .append_transcript_entries(&[serde_json::json!({
+            "id": "legacy-permission-1",
+            "kind": "send-message",
+            "message": {"type": "local-tool-permission", "ask": {"status": "pending"}},
+        })])
+        .expect("seed unbound permission entry");
+    let provenance_error = owner
+        .update_transcript_entry_if_session_admitted(
+            &first.session_key,
+            "legacy-permission-1",
+            &serde_json::json!({
+                "id": "legacy-permission-1",
+                "kind": "send-message",
+                "message": {"type": "local-tool-permission", "ask": {"status": "allowed"}},
+            }),
+        )
+        .expect_err("session admission must not update an unbound entry");
+    assert!(provenance_error
+        .to_string()
+        .contains("target transcript entry provenance"));
 
     let rebound = SessionWorkAdmissionRecord {
         session_key: "agent:other-agent:main".into(),

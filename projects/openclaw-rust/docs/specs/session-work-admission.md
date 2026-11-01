@@ -213,6 +213,12 @@ The session gateway's accepted-send producer now applies the same rule when
 its request carries `sessionKey`/`sessionId`; only legacy non-session-scoped
 fallback sends retain the agent-only append.
 
+Session-admitted transcript updates must validate the target entry's persisted
+`sessionKey` inside the same owner transaction as the admission and update.
+Entry existence alone is insufficient: a caller must not use one admitted
+session key to mutate a legacy or differently bound entry in the same agent
+database after an out-of-transaction provenance read.
+
 ## Direct media-custody boundary recheck — 2026-11-01
 
 `OutgoingMediaCustody` in `source/host/src/attachment_paths.rs` now rolls back

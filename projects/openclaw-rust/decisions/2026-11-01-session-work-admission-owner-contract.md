@@ -139,6 +139,12 @@ The accepted-send session gateway applies the same owner-local append whenever
 its request carries `sessionKey` or `sessionId`; legacy sends without a
 session-scoped selector retain the existing agent-only compatibility path.
 
+The session-admitted transcript update owner also validates the target entry's
+persisted `sessionKey` inside its SQLite transaction. Presence of an entry is
+not enough, because an out-of-transaction provenance read must not allow one
+admitted session to mutate a legacy or differently bound entry in the same
+agent database.
+
 The bounded outgoing-media settlement now carries the producer's canonical
 session key through `ProductionSendMessageSink`, `ProductionTranscriptRuntime`,
 `ProductionSessionWorkers`, and `SandAgentDb`; the final receipt/fence
