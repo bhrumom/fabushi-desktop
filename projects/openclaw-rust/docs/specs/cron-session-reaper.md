@@ -102,7 +102,10 @@ The next D04 slice may publish a typed fence snapshot at the existing Host
 automation terminal boundary. It may read only the current admitted media
 state, runner stream registry, and generated-subagent runtime through their
 existing owners; any unavailable or mismatched fact keeps the row unknown.
-Snapshot publication is not transcript archival or deletion authorization.
+The failure terminal outcome must use the same typed path so a known provider
+failure can retain its row-specific fence snapshot; an unknown or mismatched
+read still keeps the row unknown. Snapshot publication is not transcript
+archival or deletion authorization.
 
 ## Verification and Definition of Done
 

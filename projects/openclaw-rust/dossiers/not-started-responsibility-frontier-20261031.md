@@ -196,6 +196,23 @@ sweep caller, archive or deletion consumer, transcript cleanup, verification,
 or acceptance evidence; the responsibility remains
 `not-started/not-wired/not-run/pending`.
 
+### 2026-11-01 cron failure-fence terminal correction
+
+The Host terminal recheck found that `automation_terminal_from_event` mapped a
+Runner `failed` event directly to `Err(String)`. That shape could not carry the
+typed owner-backed fence snapshot read at the same terminal boundary, so the
+cron row stayed unknown even when the controller/media/subagent reads were
+identity-compatible. The failure event now becomes a typed `Failed` execution
+result; the existing fence attachment path can promote it to
+`FailedWithFences`, and `AutomationRunPath` settles it as the same `error`
+outcome while publishing the snapshot. Background revival still converts the
+typed failure back to its existing error return after releasing its admitted
+work marker.
+
+This closes only the failure-outcome producer-to-fence publication edge. It
+does not make failure a successful run, add cleanup authorization, or change
+the pending verification/acceptance/ledger disposition.
+
 ## 2026-10-31 plugin-owner boundary recheck
 
 The read-only source search was repeated against the current Fabushi checkout.

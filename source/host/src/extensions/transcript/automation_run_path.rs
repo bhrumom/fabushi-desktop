@@ -138,6 +138,13 @@ pub enum AutomationExecutionResult {
         quiesced_for_upgrade: bool,
         fences: AutomationRunFenceSnapshot,
     },
+    Failed {
+        detail: String,
+    },
+    FailedWithFences {
+        detail: String,
+        fences: AutomationRunFenceSnapshot,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -520,6 +527,42 @@ impl AutomationRunPath {
                     fences,
                 )?;
                 Ok(Some(FireAutomationOutcome::Interrupted))
+            }
+            Ok(failed @ (AutomationExecutionResult::Failed { .. }
+            | AutomationExecutionResult::FailedWithFences { .. })) => {
+                let (detail, fences) = match failed {
+                    AutomationExecutionResult::Failed { detail } => (detail, None),
+                    AutomationExecutionResult::FailedWithFences { detail, fences } => {
+                        (detail, Some(fences))
+                    }
+                    _ => unreachable!("failed automation result pattern changed"),
+                };
+                finish_run(
+                    store,
+                    &args.automation.id,
+                    run_id.as_deref(),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&detail),
+                )?;
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "error",
+                    cron_finished_at_ms,
+                    Some(&detail),
+                    fences,
+                )?;
+                self.record_automation_failure(
+                    &args.agent_id,
+                    &args.automation.id,
+                    &detail,
+                    args.trigger,
+                );
+                Ok(Some(FireAutomationOutcome::Error))
             }
             Err(detail) => {
                 finish_run(

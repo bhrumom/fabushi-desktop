@@ -5793,13 +5793,13 @@ fn automation_terminal_from_event(
             detail: "Interrupted before it finished.".into(),
             quiesced_for_upgrade: false,
         })),
-        Some("failed") => Some(Err(
-            payload
+        Some("failed") => Some(Ok(AutomationExecutionResult::Failed {
+            detail: payload
                 .get("message")
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or("automation Runner failed")
                 .to_string(),
-        )),
+        })),
         _ => None,
     }
 }
@@ -6004,6 +6004,9 @@ fn attach_automation_run_fences(
             quiesced_for_upgrade,
             fences,
         },
+        AutomationExecutionResult::Failed { detail } => {
+            AutomationExecutionResult::FailedWithFences { detail, fences }
+        }
         other => other,
     }
 }
@@ -6543,6 +6546,15 @@ fn run_local_background_revival_turn_with_context(
                             quiesced_for_upgrade: false,
                             sent_message_count: 0,
                         });
+                    }
+                    Ok(AutomationExecutionResult::Failed { detail })
+                    | Ok(AutomationExecutionResult::FailedWithFences { detail, .. }) => {
+                        let _ = deps.session_workers.release_session_work_admission(
+                            agent_id,
+                            &admitted_lifecycle_revision,
+                            &stream_id,
+                        );
+                        return Err(detail);
                     }
                     Err(error) => {
                         let _ = deps.session_workers.release_session_work_admission(
@@ -17030,7 +17042,9 @@ mod tests {
         });
         assert_eq!(
             automation_terminal_from_event(&failed, "automation-1"),
-            Some(Err("provider failed".into()))
+            Some(Ok(AutomationExecutionResult::Failed {
+                detail: "provider failed".into(),
+            }))
         );
 
         let other = serde_json::json!({
