@@ -132,6 +132,10 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         )
         .expect_err("deletion-pending work must be rejected");
     assert!(error.contains("new session work is not admitted"));
+    let activity_error = production
+        .mark_agent_activity(&record.id, 42.0)
+        .expect_err("deletion-pending activity must be rejected");
+    assert!(activity_error.contains("new session work is not admitted"));
     production
         .end_agent_delete(&record.id)
         .expect("clear deletion fence");

@@ -2252,6 +2252,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .mark_activity(at)
             .map_err(|error| error.to_string())

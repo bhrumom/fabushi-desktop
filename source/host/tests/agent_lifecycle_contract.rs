@@ -890,6 +890,9 @@ fn deletion_owner_publishes_and_clears_the_durable_session_admission_fence() {
     assert!(agent_db.contains("pub deletion_pending: bool"));
     assert!(production.contains("record.deletion_pending = true"));
     assert!(production.contains("record.deletion_pending = false"));
+    assert!(production.contains("pub fn mark_agent_activity"));
+    assert!(production.contains("pub fn mark_agent_activity")
+        && production.contains("self.assert_agent_work_admission(agent_id)?;"));
     assert!(production.contains("publishing deletion fence"));
     assert!(production.contains("clearing deletion fence"));
     assert!(agent_session.contains("self.production.begin_agent_delete(agent_id)?"));

@@ -661,3 +661,9 @@ durable publication/clear, and the delete-fence path. They were not executed
 under the development freeze. This closes only the deletion-window sub-contract;
 the full detached-result/media/provider-review lifecycle, exact-head
 verification, package, runtime, and acceptance evidence remain pending.
+
+The same deletion fence now covers `mark_agent_activity`, the durable activity
+metadata write used by several transcript/session producers after an accepted
+append. A deletion race therefore cannot update activity metadata after the
+session owner has entered deletion custody. This remains a bounded negative
+admission slice, not full session-work-admission acceptance.
