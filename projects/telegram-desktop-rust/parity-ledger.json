@@ -30387,7 +30387,8 @@
         "Executable validation remains intentionally not-run in Stage A.",
         "Round120 boundary spec fixes future application contracts for 1000+d transient mapping, tcpo_only/secret preservation, bare help.getConfig, total 6000 ms termination, request cancel/session kill, empty-list rejection, endpoint-only replacement, no persistence, and no parallel runtime; no fake executable application test was added.",
         "Four auth-handshake protocol-DC prerequisite contracts are authored in telegram-network lib blob 6023c96c4ee96a7cae37dbd6f9be077cf88779cb and were not executed.",
-        "Round122 adds three authored-only runtime contracts in blob 4983b262346b73c3dc7270bf5feac31780c28496 covering the per-real-DC auth prerequisite; the complete special-config request/timer/application contracts remain unexecuted and pending."
+        "Round122 adds three authored-only runtime contracts in blob 4983b262346b73c3dc7270bf5feac31780c28496 covering the per-real-DC auth prerequisite; the complete special-config request/timer/application contracts remain unexecuted and pending.",
+        "Round124 authored-only protocol/runtime contracts explicitly cover non-empty dc_options replacement that omits current this_dc; fixed-U setFromList permits this, keeps directory metadata unchanged, and publishes endpoint membership changes only. Contracts were not executed."
       ],
       "target_commit": "8cebdbe5634d092773cfda8b4a0b059bd552ccbb",
       "workflow_run": null,

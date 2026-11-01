@@ -20,7 +20,7 @@ Final spec blob: `4109c09f3f92932ac79aa1f6d15d1825a6788359`.
 - telegram-protocol api blob `e032f4dbba09c0a4d912566b4e1c51311b677002`: `build_help_get_config` and independent `parse_config_dc_options_prefix`.
 - telegram-protocol dc blob `f9aecd0370b43317f81b437ee308fb88d141a302`: metadata-preserving, first-wins dc/IP/port-normalized, IP+port-difference `replace_endpoints`.
 - telegram-runtime blob `b502e32e821433a14cc47861e17c10e106fd5af8`: `apply_resolved_special_config_endpoint` uses existing SessionOwner, exact 6000 ms owned attempt, transient logical 1000+d route, bare request and dc-options-only canonical application.
-- protocol contract blob `91a74d91214a06fcef5fcb265204f4deec82c30a`; additional focused runtime contracts are embedded in the runtime source. Authored only, not executed.
+- protocol contract blob `91a74d91214a06fcef5fcb265204f4deec82c30a`; additional focused runtime contracts are embedded in the runtime source. Authored only, not executed. Both layers explicitly cover a non-empty replacement whose endpoint set omits the current `this_dc`; canonical directory metadata stays unchanged while endpoint storage follows fixed-U `setFromList` semantics.
 - Desktop mirror commit `820418b875f227755f6060a5d531dc1596e5c0a6`; mirrored protocol/runtime blobs are byte-identical to platform.
 
 No second RuntimeClient/provider/account/directory/persistence namespace, public special-config JSON command, HTTP dependency, HTTP dispatch, proxy behavior, manifest/lock update, or storage schema was added.
