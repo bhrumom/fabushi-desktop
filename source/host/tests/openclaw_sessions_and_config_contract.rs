@@ -1123,6 +1123,34 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
     ));
     assert!(registry.complete("agent-1", &threaded));
 
+    let missing_thread = registry
+        .register(
+            "agent-1",
+            Some("turn-missing-thread"),
+            "parent-conversation-2",
+            "session-1",
+            Some("thread-3"),
+            Duration::from_secs(30),
+        )
+        .expect("register missing-thread case");
+    assert!(registry.set_outbound_message_id("agent-1", &missing_thread, "outbound-missing-thread"));
+    assert!(registry.mark_ready("agent-1", &missing_thread));
+    assert!(matches!(
+        registry.claim_reply(
+            "agent-1",
+            "thread-conversation-2",
+            Some("parent-conversation-2"),
+            "session-1",
+            "inbound-missing-thread",
+            Some("outbound-missing-thread"),
+            None,
+            "missing thread identity",
+            1729900000003,
+        ),
+        PendingConversationTurnClaimResult::NotFound
+    ));
+    assert!(registry.cancel("agent-1", &missing_thread));
+
     let second = registry
         .register("agent-1", Some("turn-2"), "conversation-1", "session-1", None, Duration::from_secs(30))
         .expect("register second pending turn");

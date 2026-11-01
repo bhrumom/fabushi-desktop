@@ -230,14 +230,21 @@ impl PendingConversationTurnRegistry {
         let mut selected: Option<(String, Instant)> = None;
         for key in candidates {
             let Some(turn) = inner.turns.get(&key) else { continue };
-            let same_conversation = turn.snapshot.conversation_ref == conversation_ref
-                || (turn.snapshot.thread_id.is_some()
-                    && thread_id == turn.snapshot.thread_id.as_deref()
-                    && parent_conversation_ref == Some(turn.snapshot.conversation_ref.as_str()));
+            let same_conversation = match turn.snapshot.thread_id.as_deref() {
+                Some(expected_thread_id) => {
+                    thread_id == Some(expected_thread_id)
+                        && parent_conversation_ref
+                            == Some(turn.snapshot.conversation_ref.as_str())
+                }
+                None => {
+                    thread_id.is_none()
+                        && parent_conversation_ref.is_none()
+                        && turn.snapshot.conversation_ref == conversation_ref
+                }
+            };
             if turn.snapshot.claimed
                 || !same_conversation
                 || turn.snapshot.session_id != session_id
-                || (turn.snapshot.thread_id.is_some() && thread_id.is_some() && turn.snapshot.thread_id.as_deref() != thread_id)
             {
                 continue;
             }
