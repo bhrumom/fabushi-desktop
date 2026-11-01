@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16123,
-    "unread": 16096,
+    "unknown": 16122,
+    "unread": 16095,
     "omitted": 0,
-    "responsibilities_total": 155,
+    "responsibilities_total": 156,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41266,6 +41266,260 @@
       "accepted": false,
       "source_paths": [
         ".github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml",
+      "source_blob_sha": "e2a8becdb9afcbd028b62378321458a2028fe348",
+      "source_kind": "repository_feature_request_issue_form_policy",
+      "module_id": "tdesktop.repository-feature-request-issue-form",
+      "responsibility_id": "TDRP-R9-REPOSITORY-FEATURE-REQUEST-ISSUE-FORM-001",
+      "source_symbols": [
+        "name: 💡 Feature request",
+        "description: Suggest an idea.",
+        "labels:[enhancement]",
+        "Is your feature request related to a problem?",
+        "Describe the solution you'd like",
+        "Describe alternatives you've considered",
+        "Additional context"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/feature-request-issue-form-complete-read.md",
+      "behavior_contract": "Preserve the fixed-U feature-request Issue Form as repository-process provenance: GitHub Issue Forms renders an enhancement-labelled request with required problem, desired-solution and alternatives fields plus optional supporting context/screenshots. Distinguish host-enforced presence checks from triage-quality/scope judgment, keep public supporting material subject to existing privacy/security governance, and never treat form submission or label routing as product approval, priority, roadmap or implementation authority.",
+      "state_machine": "exact FEATURE_REQUEST.yml blob -> GitHub Issue Forms renders four ordered textareas -> reporter completes three required fields plus optional context -> host schema blocks missing required input -> submitted request carries enhancement-label routing intent -> maintainers/triagers evaluate quality/scope/privacy -> clarify/redact/reroute/reject/plan through existing repository process -> later Stage-B qualification; vague/sensitive/authority-escalating cases remain non-passing",
+      "side_effects": [
+        "Stage-A closure changes only Fabushi repository governance/evidence documentation and the unique migration ledger.",
+        "No Telegram-branded issue form, second backlog, roadmap subsystem, screenshot collector, attachment service or product runtime is copied into Fabushi.",
+        "The current Fabushi checkpoint has no .github/ISSUE_TEMPLATE tree; this round records source behavior and owner contracts rather than inventing repository UX.",
+        "No platform-core production delta or shipping runtime owner is introduced."
+      ],
+      "failure_cases": [
+        "A missing required problem/solution/alternatives field is treated as submittable source behavior",
+        "A vague but nonempty answer is falsely claimed to be rejected by a nonexistent semantic validator",
+        "The enhancement label is treated as proof of current Fabushi routing or acceptance",
+        "Form submission is treated as accepted scope, priority, roadmap placement or implementation approval",
+        "Additional context/screenshots are incorrectly made mandatory",
+        "Sensitive context/screenshots are accepted for public persistence without existing privacy/security controls",
+        "Telegram-specific feature policy is copied as Fabushi product scope",
+        "A second issue tracker/backlog, planning runtime or platform-core service is introduced",
+        "Stage-A issue submission/creation/label mutation/screenshot acquisition/build/test/CI is executed",
+        "Stage-A source work is promoted to verified/accepted"
+      ],
+      "ui_disposition": "Not applicable to Fabushi product UI; repository-host GitHub Issue Form only.",
+      "non_ui_responsibilities": [
+        "Issue Form host/schema identity",
+        "required problem/solution/alternatives intake contract",
+        "optional supporting context/screenshots",
+        "enhancement-label routing intent",
+        "schema-presence versus triage-quality distinction",
+        "privacy/security disclosure boundary",
+        "no automatic product-scope/roadmap authority",
+        "failure/recovery through existing repository process"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation and no Stage-A issue/screenshot/build/test execution.",
+      "target_owner": "Existing Fabushi root repository issue/reporting/development-process authority + repository privacy/security governance + shared quality/test-evidence governance",
+      "existing_owner_candidates": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi repository privacy/security governance",
+        "Fabushi repository quality/test-evidence governance",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "rejected_owners": [
+        "Telegram-branded support/issue-form runtime",
+        "Fabushi product Tasks / Automations / Settings / Permissions",
+        "product roadmap/backlog subsystem",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core authorization/runtime/service",
+        "second issue tracker/backlog",
+        "second quality/evidence truth"
+      ],
+      "commands_events": [
+        "GitHub Issue Forms conventional template discovery/rendering",
+        "required-field host validation",
+        "enhancement-label routing intent",
+        "maintainer triage/clarification/redaction/rerouting",
+        "future Stage-B repository-process/privacy qualification"
+      ],
+      "persistence_contract": "This source defines repository feature-request form schema only. It creates no product database, planning store, screenshot store, telemetry persistence, credential store or second evidence system. Public issue persistence is host-owned and later target use remains subject to existing repository privacy/security policy.",
+      "concurrency_contract": "Source qualification binds the exact fixed-U YAML blob. Target publication binds the live Fabushi checkpoint by expected-SHA CAS; concurrent target movement invalidates a stale write and must be reread rather than force-overwritten.",
+      "cancellation_contract": "The source defines no retry/cancellation protocol. An incomplete or unsafe request remains unsubmitted/corrected/redacted; later qualification interrupted before evidence is complete remains non-passing.",
+      "security_boundary": "Reporter-controlled problem/solution/alternatives/context/screenshots are untrusted repository input. They cannot execute, authorize, change product scope, or bypass existing privacy/security governance. The source's lack of redaction/private-report controls cannot weaken target policy.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository feature-request Issue Form only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository feature-request issue-form authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository feature-request issue-form qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository feature-request issue-form evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:79e662e3fcf8745cd57da580a9151544eba3d2d4",
+        "dossier:projects/telegram-desktop-rust/dossiers/feature-request-issue-form-complete-read.md",
+        "upstream-source:.github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348",
+        "fixed-U-tree:91f2b083ab2877c0a17d07868eabec362a5cfca6"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-FEATURE-REQUEST-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-SCHEMA-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-REQUIRED-INPUTS-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-PROBLEM-SCOPE-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-SOLUTION-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-ALTERNATIVES-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-ADDITIONAL-CONTEXT-001 authored, not run",
+        "CONTRACT-TDRP-FEATURE-REQUEST-ENHANCEMENT-ROUTING-001 authored, not run",
+        "INT-TDRP-FEATURE-REQUEST-PROCESS-COMPOSITION-001 authored, not run",
+        "FAULT-TDRP-FEATURE-REQUEST-MISSING-REQUIRED-001 authored, not run",
+        "FAULT-TDRP-FEATURE-REQUEST-LOW-QUALITY-SCOPE-001 authored, not run",
+        "FAULT-TDRP-FEATURE-REQUEST-SENSITIVE-CONTEXT-001 authored, not run",
+        "SEC-TDRP-FEATURE-REQUEST-PRIVACY-BOUNDARY-001 authored, not run",
+        "SEC-TDRP-FEATURE-REQUEST-NO-ACCEPTANCE-ESCALATION-001 authored, not run"
+      ],
+      "target_commit": "79e662e3fcf8745cd57da580a9151544eba3d2d4",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi root repository issue/reporting/development-process authority + privacy/security governance + quality/test-evidence governance",
+      "composition_slot": "Repository feature-request schema / routing / scope-triage / privacy guidance",
+      "capability_component": "Source-neutral repository feature-request Issue Form contract",
+      "variation_axes": [
+        "required vs optional request inputs",
+        "schema-enforced presence vs triage-quality judgment",
+        "problem vs solution vs alternatives",
+        "supporting context absent vs present vs sensitive",
+        "enhancement routing vs prohibited acceptance escalation"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi repository privacy/security governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No Telegram-specific issue/support subsystem, product backlog/runtime, second issue tracker, platform-core service, product UI or second quality/security truth introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository issue form; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "GitHub Issue Forms feature request submission; repository process only",
+      "object_action_scope": "Repository feature-request intake, supporting context disclosure and triage routing only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development/process support",
+      "route_contract": "GitHub hosts the source Issue Form; source routing intent applies the enhancement label. Target routing remains existing repository-process authority and must be independently qualified before acceptance.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Repository host-owned Issue Forms semantics; no Fabushi product UI claim.",
+      "keyboard_contract": "Repository host-owned Issue Forms semantics; no Fabushi product UI claim.",
+      "state_continuity_contract": "Exact source and target checkpoint identities preserve provenance. Changed source/schema, moved target ref, routing/privacy policy drift or changed validation inputs invalidate stale evidence and cannot inherit a pass.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-FEATURE-REQUEST-ISSUE-FORM-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-FEATURE-REQUEST-EXACT-SCHEMA-001",
+        "ORA-TDRP-FEATURE-REQUEST-VALIDATION-BOUNDARY-001",
+        "ORA-TDRP-FEATURE-REQUEST-ROUTING-SCOPE-001",
+        "ORA-TDRP-FEATURE-REQUEST-PRIVACY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FEATURE-REQUEST-ONE-ISSUE-PROCESS-OWNER-001",
+        "INV-TDRP-FEATURE-REQUEST-NO-INVENTED-VALIDATOR-001",
+        "INV-TDRP-FEATURE-REQUEST-NO-ACCEPTANCE-ESCALATION-001",
+        "INV-TDRP-FEATURE-REQUEST-NO-STAGE-A-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FEATURE-REQUEST-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-SCHEMA-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-REQUIRED-INPUTS-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-PROBLEM-SCOPE-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-SOLUTION-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-ALTERNATIVES-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-ADDITIONAL-CONTEXT-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-ENHANCEMENT-ROUTING-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-FEATURE-REQUEST-PROCESS-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-FEATURE-REQUEST-MISSING-REQUIRED-001",
+        "FAULT-TDRP-FEATURE-REQUEST-LOW-QUALITY-SCOPE-001",
+        "FAULT-TDRP-FEATURE-REQUEST-SENSITIVE-CONTEXT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-FEATURE-REQUEST-PRIVACY-BOUNDARY-001",
+        "SEC-TDRP-FEATURE-REQUEST-NO-ACCEPTANCE-ESCALATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Stage-B exact frozen candidate with authorized GitHub repository issue-form/routing/privacy process"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository feature-request Issue Form read from telegramdesktop/tdesktop fixed-U .github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml; no Telegram branding, product scope, backlog runtime or sensitive content is copied into Fabushi shipping product.",
+      "reviewer": null,
+      "notes": "Task round155/source evidence round186. Live desktop checkpoint parent 0db553f32544cd2d5509fe63332dc91eb4627f7d; spec-first 79e662e3fcf8745cd57da580a9151544eba3d2d4; desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core checkpoint e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 complete, 7,194 entries; source index 108 zero-based, mode 100644, 925 Git bytes / 922 Unicode code points, 29 LF, zero CR, trailing newline. Three required textareas; optional Additional context; source enhancement-label routing; no custom validator/private-security route/acceptance gate. One source entry closes: unknown 16123->16122, unread 16096->16095; responsibilities 155->156. Next fixed-U independent blob: .github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348"
       ]
     }
   ],
