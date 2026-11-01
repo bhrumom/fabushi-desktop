@@ -394,7 +394,7 @@ use mahayana_host_runtime::runner::turn_agent_composition::{
     create_turn_subagent_task_review,
 };
 use mahayana_host_runtime::runner::compaction_planning::{
-    CompactionSettings, build_compaction_details, build_compaction_summary_prompt,
+    CompactionSettings, build_compaction_details_with_quality, build_compaction_summary_prompt,
     build_turn_prefix_summary_prompt, compaction_without_summary, fit_compaction_summary,
     prepare_compaction_plan,
 };
@@ -10668,7 +10668,8 @@ fn start_routed_provider_task(
                                 Ok(Some(admission)) => {
                                     match build_compaction_summary_prompt(&plan) {
                                         Ok(summary_prompt) => {
-                                            let commit_compaction = |summary: String| {
+                                            let commit_compaction = |summary: String,
+                                                                      quality_degraded: bool| {
                                                 let commit = CompactionCommit {
                                                     entry_id: format!(
                                                         "compaction:{}:{}",
@@ -10679,7 +10680,10 @@ fn start_routed_provider_task(
                                                     ),
                                                     summary,
                                                     tokens_before: plan.tokens_before,
-                                                    details: build_compaction_details(&plan),
+                                                    details: build_compaction_details_with_quality(
+                                                        &plan,
+                                                        quality_degraded,
+                                                    ),
                                                     source_turn_id: worker_stream_id.clone(),
                                                     expected_lifecycle_revision: admission
                                                         .lifecycle_revision
@@ -10719,24 +10723,25 @@ fn start_routed_provider_task(
                                                                     &prefix_prompt,
                                                                     &should_cancel,
                                                                 ) {
-                                                                    Ok(prefix) if !should_cancel() => Some(format!(
+                                                                    Ok(prefix) if !should_cancel() => Some((format!(
                                                                         "{summary}\n\n---\n\n**Turn Context (split turn):**\n\n{prefix}"
-                                                                    )),
+                                                                    ), false)),
                                                                     Ok(_) => None,
-                                                                    Err(_) => Some(compaction_without_summary(&plan)),
+                                                                    Err(_) => Some((compaction_without_summary(&plan), true)),
                                                                 },
-                                                            Err(_) => Some(compaction_without_summary(&plan)),
+                                                            Err(_) => Some((compaction_without_summary(&plan), true)),
                                                         }
                                                     } else {
-                                                        Some(summary)
+                                                        Some((summary, false))
                                                     };
-                                                    if let Some(summary) = summary {
+                                                    if let Some((summary, mut quality_degraded)) = summary {
                                                         let summary = match fit_compaction_summary(
                                                             &summary,
                                                             plan.summary_token_budget,
                                                         ) {
                                                             Ok(summary) => summary,
                                                             Err(error) => {
+                                                                quality_degraded = true;
                                                                 eprintln!(
                                                                     "mahayana-host compaction_summary_invalid agent={} run={} error={error}",
                                                                     agent_id, worker_stream_id
@@ -10750,7 +10755,7 @@ fn start_routed_provider_task(
                                                                 })
                                                             }
                                                         };
-                                                        commit_compaction(summary);
+                                                        commit_compaction(summary, quality_degraded);
                                                     } else {
                                                         eprintln!(
                                                             "mahayana-host compaction_cancelled_during_split_prefix agent={} run={}",
@@ -10775,6 +10780,7 @@ fn start_routed_provider_task(
                                                                 plan.summary_token_budget,
                                                             )
                                                             .unwrap_or(fallback),
+                                                            true,
                                                         );
                                                     }
                                                 }

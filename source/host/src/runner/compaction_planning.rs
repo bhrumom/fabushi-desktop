@@ -371,10 +371,19 @@ pub fn compaction_without_summary(plan: &CompactionPlan) -> String {
 /// accepted by the compaction entry owner; unknown tool rows are ignored just
 /// as the fixed source ignores tools outside its read/write/edit contract.
 pub fn build_compaction_details(plan: &CompactionPlan) -> Option<Value> {
+    build_compaction_details_with_quality(plan, false)
+}
+
+/// Build details while recording whether the summary was produced by the
+/// no-summary/quality-degraded safeguard path.
+pub fn build_compaction_details_with_quality(
+    plan: &CompactionPlan,
+    quality_degraded: bool,
+) -> Option<Value> {
     let mut read = BTreeSet::new();
     let mut written = BTreeSet::new();
     let mut edited = BTreeSet::new();
-    let mut quality_degraded = false;
+    let mut quality_degraded = quality_degraded;
     let mut previous_latest_request = None::<String>;
 
     if let Some(previous) = plan.previous_details.as_ref().and_then(Value::as_object) {
@@ -777,6 +786,25 @@ mod tests {
         assert!(fallback.contains("without a summary"));
         assert!(fallback.contains("finish this"));
         assert!(fallback.contains("prior decisions"));
+    }
+
+    #[test]
+    fn degraded_fallback_is_recorded_in_compaction_details() {
+        let plan = CompactionPlan {
+            first_kept_entry_id: "keep".into(),
+            entries_to_summarize: vec![json!({"kind":"message","role":"user","content":"old"})],
+            turn_prefix_entries: Vec::new(),
+            previous_summary: None,
+            previous_details: None,
+            tokens_before: 10,
+            summary_token_budget: 10,
+            latest_user_request: None,
+            is_split_turn: false,
+        };
+        assert_eq!(
+            build_compaction_details_with_quality(&plan, true),
+            Some(json!({"readFiles":[],"modifiedFiles":[],"qualityDegraded":true}))
+        );
     }
 
     #[test]

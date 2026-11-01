@@ -161,7 +161,9 @@ authority gates open.
   guarded `ProductionSessionWorkers` commit call. Exact upstream usage
   semantics and frozen verification remain open; split-turn prefix planning,
   the second prefix summarizer call, and a deterministic bounded transcript
-  sampler (recent tail/user asks/head plus canonical fill) are now wired.
+  sampler (recent tail/user asks/head plus canonical fill) are now wired. A
+  no-summary or fitting safeguard sets `qualityDegraded` in the durable
+  details when it commits a fallback.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status is `implementation=partially-wired`, `wiring=partially-wired`,
