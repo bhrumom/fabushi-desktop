@@ -1602,6 +1602,7 @@ impl SandAgentDb {
             || session_id.is_empty()
             || lifecycle_revision.is_empty()
             || outcome.is_empty()
+            || !matches!(outcome, "ok" | "error" | "interrupted")
             || !finished_at_ms.is_finite()
         {
             return Ok(false);
@@ -1667,6 +1668,7 @@ impl SandAgentDb {
             || session_id.is_empty()
             || lifecycle_revision.is_empty()
             || outcome.is_empty()
+            || !matches!(outcome, "ok" | "error" | "interrupted")
             || !finished_at_ms.is_finite()
         {
             return Ok(false);

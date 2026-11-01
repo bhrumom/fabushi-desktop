@@ -551,6 +551,19 @@ fn test_cron_candidate_bridge_releases_throttle_on_owner_read_failure() {
 }
 
 #[test]
+fn test_cron_settlement_accepts_only_typed_terminal_outcomes() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let cron_owner = owner_source
+        .split("pub fn finish_cron_session_run(")
+        .nth(1)
+        .expect("cron settlement owner exists")
+        .split("pub fn list_cron_session_runs(")
+        .next()
+        .expect("cron settlement owner boundary exists");
+    assert_eq!(cron_owner.matches("!matches!(outcome, \"ok\" | \"error\" | \"interrupted\")").count(), 2);
+}
+
+#[test]
 fn test_session_admission_creation_rechecks_create_race_identity() {
     let owner_source = include_str!("../src/extensions/session/production.rs");
     let ensure = owner_source
