@@ -62,6 +62,16 @@ edges, and three malformed lexical candidates (`+`, whitespace, and `:`) from
 the intentionally bounded import recognizer. These are classified frontiers,
 not silently treated as missing registry packages.
 
+The workspace names were independently located in the same exact tree at these
+manifest paths: `packages/acp-core`, `packages/agent-core`, `packages/ai`,
+`packages/gateway-client`, `packages/gateway-protocol`, `packages/llm-core`,
+`packages/media-core`, `packages/model-catalog-core`, `packages/net-policy`,
+`packages/normalization-core`, `packages/retry`, `packages/session-url-contract`,
+`packages/workboard-contract`, `packages/worker-runtime`, and the repository
+root (`openclaw`). This proves fixed-tree manifest presence only; importer
+dependency edges and package archive/integrity provenance remain to be joined
+before closure can be accepted.
+
 ## Disposition
 
 This probe is stronger exact-subject discovery evidence for `CC-01`, but it
