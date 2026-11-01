@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::memory::memory_service::{
     FileMemoryStore, MemoryKind, MemoryOrigin, MemoryService, MemorySynthesisBridge,
+    SynthesisApplyResult,
     agent_memory_has_content, get_agent_memory_dir, get_project_memory_shard_dir,
     get_user_memory_shard_dir, memory_id_for, normalize_memory_content, parse_facts,
 };
@@ -140,6 +141,32 @@ fn production_session_workers_can_share_host_memory_extension_owner() {
     );
     assert!(std::sync::Arc::ptr_eq(&workers.memory_service(), &memory));
     workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn synthesis_apply_fails_closed_until_an_owner_gate_is_bound() {
+    let root = temp_root("synthesis-gate");
+    let service = MemoryService::new(&root);
+    let store = service.store_for_agent("agent-gated");
+    let snapshot = store.prepare_synthesis();
+    assert_eq!(
+        service.apply_synthesis_with_gate("agent-gated", &store, &snapshot, &[], 1),
+        SynthesisApplyResult::Invalid
+    );
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let observed_calls = Arc::clone(&calls);
+    service.set_synthesis_apply_gate(Some(Arc::new(move |_, _, _, _, _| {
+        observed_calls.fetch_add(1, Ordering::SeqCst);
+        SynthesisApplyResult::Stale
+    })));
+    assert_eq!(
+        service.apply_synthesis_with_gate("agent-gated", &store, &snapshot, &[], 2),
+        SynthesisApplyResult::Stale
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+
     let _ = fs::remove_dir_all(root);
 }
 
