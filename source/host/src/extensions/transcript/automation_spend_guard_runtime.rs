@@ -74,6 +74,7 @@ impl AutomationSpendGuardRuntime {
         firing_automation_id: &str,
         now_ms: f64,
     ) -> Result<SpendGuardApplyResult, String> {
+        self.sessions.assert_agent_work_admission(agent_id)?;
         let evaluated = self.evaluate_with_store(agent_id, store, now_ms)?;
         match evaluated.decision {
             SpendGuardDecision::UserActive
@@ -201,6 +202,7 @@ impl AutomationSpendGuardRuntime {
         let Some(answer) = interpret_spend_guard_answer(value) else {
             return Ok(None);
         };
+        self.sessions.assert_agent_work_admission(agent_id)?;
         let current = self
             .sessions
             .get_agent_automation_spend_guard_state(agent_id)?;

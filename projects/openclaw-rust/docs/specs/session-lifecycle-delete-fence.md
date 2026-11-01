@@ -218,6 +218,8 @@ The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain
 the compatibility path and are not treated as equivalent atomic evidence.
+The spend-guard apply and widget-answer entrypoints reject before mutating the
+automation store when deletion custody is active.
 
 ## Release, migration, rollback, and observability
 

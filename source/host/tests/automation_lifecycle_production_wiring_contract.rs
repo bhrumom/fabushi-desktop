@@ -310,6 +310,10 @@ fn shipping_runtime_owns_all_frozen_lifecycle_sources_and_stable_fields() {
     let spend_guard = include_str!("../src/extensions/transcript/automation_spend_guard_runtime.rs");
     assert!(spend_guard.contains("disable_every_enabled_routine"));
     assert!(spend_guard.contains("re_enable_guard_paused_routines"));
+    assert!(spend_guard
+        .matches("self.sessions.assert_agent_work_admission(agent_id)?;")
+        .count()
+        >= 2);
 }
 
 #[test]

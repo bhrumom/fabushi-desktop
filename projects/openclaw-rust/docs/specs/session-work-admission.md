@@ -108,6 +108,9 @@ session-bound widget card: card insertion, spend-guard KV state, and activity
 metadata commit together, or none commit. Legacy databases without a session
 admission record retain their existing compatibility path and remain subject
 to the facade admission checks, including direct spend-guard state responses.
+Both spend-guard mutation entrypoints also reject before changing the
+automation store, so deletion cannot leave a routine-side effect without its
+owner-local state transition.
 
 ## Failure and edge cases
 
