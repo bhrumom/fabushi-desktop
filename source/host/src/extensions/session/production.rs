@@ -2246,6 +2246,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         profile: &SandProfile,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .set_sand_profile(profile)
             .map_err(|error| error.to_string())
@@ -2270,6 +2271,7 @@ impl ProductionSessionWorkers {
         at: f64,
         preserve_manual_unread: bool,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .mark_viewed(at, preserve_manual_unread)
             .map_err(|error| error.to_string())
@@ -2281,6 +2283,7 @@ impl ProductionSessionWorkers {
         unread: bool,
         at: f64,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         let owner = self.open_agent_db_owner(agent_id)?;
         if unread {
             owner.mark_unread(at)
@@ -2341,6 +2344,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         partner_id: &str,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .add_conversation_partner(partner_id)
             .map_err(|error| error.to_string())
@@ -2458,6 +2462,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn clear_agent_profile_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .clear_agent_profile_prompt_snapshot()
             .map_err(|error| error.to_string())

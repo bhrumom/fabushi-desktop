@@ -223,6 +223,8 @@ automation store when deletion custody is active.
 Host turn memory/profile prompt snapshot setters also reject in the production
 facade; clear paths with an external memory-store mutation remain a separate
 atomicity boundary.
+Owner-local viewed/unread, profile, partner-membership, and profile-snapshot
+clears use the same facade admission fence.
 
 ## Release, migration, rollback, and observability
 

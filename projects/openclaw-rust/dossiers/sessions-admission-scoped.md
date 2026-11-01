@@ -700,3 +700,7 @@ Host turn memory/profile prompt snapshot setters now pass the same deletion
 fence. The external-memory clear path remains open because its producer mutates
 the memory store before the SQLite snapshot and requires a separate atomic
 owner contract.
+
+Owner-local viewed/unread projections, profile projection, partner membership,
+and profile-snapshot clearing now use the same deletion fence. This extends the
+session metadata boundary without introducing another lifecycle owner.

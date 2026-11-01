@@ -117,6 +117,11 @@ the same owner fence. Their paired clear paths are intentionally not widened
 here because one production memory-clear caller mutates the external memory
 store before clearing the SQLite snapshot and needs a separate atomic contract.
 
+The same fence covers owner-local viewed/unread projections, the persisted
+session profile projection, conversation-partner membership, and profile
+snapshot clearing. These are session metadata mutations, not alternate
+lifecycle owners.
+
 ## Failure and edge cases
 
 - missing or malformed session identity: reject before durable admission;

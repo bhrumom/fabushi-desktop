@@ -182,6 +182,18 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_profile_prompt_snapshot(&record.id, &serde_json::json!({"name":"blocked"}))
         .expect_err("deletion-pending profile snapshot must be rejected");
     assert!(profile_snapshot_error.contains("new session work is not admitted"));
+    let viewed_error = production
+        .mark_agent_viewed(&record.id, 50.0, false)
+        .expect_err("deletion-pending viewed state must be rejected");
+    assert!(viewed_error.contains("new session work is not admitted"));
+    let unread_error = production
+        .set_agent_unread(&record.id, true, 51.0)
+        .expect_err("deletion-pending unread state must be rejected");
+    assert!(unread_error.contains("new session work is not admitted"));
+    let partner_error = production
+        .add_agent_conversation_partner(&record.id, "partner-delete-fence")
+        .expect_err("deletion-pending partner state must be rejected");
+    assert!(partner_error.contains("new session work is not admitted"));
     let activity_error = production
         .mark_agent_activity(&record.id, 42.0)
         .expect_err("deletion-pending activity must be rejected");
