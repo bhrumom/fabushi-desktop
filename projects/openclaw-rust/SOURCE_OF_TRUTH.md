@@ -664,7 +664,11 @@ candidate 保持不变，`pnpm-lock.yaml` 更新为
 该 exact subject 仍为 discovery-only；前一 candidate 的 inventory、依赖
 闭包、LFS/integrity、语义阅读和 Actions provenance 均不得复用，固定
 implementation subject、ledger 修订及全部 authority/completion flags 不变。
-详见 `dossiers/upstream-current-candidate-probe-02b28c9d-20261101.md`。
+GitHub commit signature verified `reason=valid`；commit API reports exactly 9
+changed paths, all under `scripts/`、`test/scripts/` 或 `ui/`，没有 Rust
+runtime、依赖声明或 Gateway/Agent 生产边界文件。该 bounded delta 仍不构成
+source closure、dependency closure 或生产验收证据。详见
+`dossiers/upstream-current-candidate-probe-02b28c9d-20261101.md`。
 对 `OCRM-RESP-SESSION-LIFECYCLE-DELETE-FENCE-001` 的 requirement crosswalk
 做了静态审计：其专用 spec 的 `SLD-01..06` 是 task-level detail，不是项目
 RTM 行 ID；ledger 已改为合法的项目级 `OCRM-R04`、`OCRM-R08`、`OCRM-AC08`

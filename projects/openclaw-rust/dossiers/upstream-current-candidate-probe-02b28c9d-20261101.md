@@ -11,6 +11,28 @@
 - Parent: `4b709b8565dc42aaa3d4aea76eed7c7bc5d36fb4`
 - Discovery source: read-only `git ls-remote` plus GitHub commit/tree API
 
+The GitHub commit signature is verified (`reason=valid`, verified at
+`2026-11-01T01:18:37Z`).
+
+## Exact commit delta
+
+The commit API reports nine changed paths relative to parent
+`4b709b8565dc42aaa3d4aea76eed7c7bc5d36fb4`:
+
+- `scripts/bench-control-ui-engines.ts`
+- `scripts/lib/control-ui-page-observer.ts`
+- `test/scripts/control-ui-page-observer.test.ts` (added)
+- `ui/src/components/markdown-file-links.ts`
+- `ui/src/components/solid/menu-machine.ts`
+- `ui/src/components/solid/menu-runtime.ts`
+- `ui/src/components/solid/menu.tsx`
+- `ui/src/pages/new-session/new-session-page.session-facts.test.ts`
+- `ui/src/pages/new-session/new-session-page.tsx`
+
+This bounded delta is discovery evidence only. It does not establish that any
+other path is unchanged in semantic responsibility, and it is not production
+Rust wiring, dependency closure, or acceptance evidence.
+
 ## Recursive tree
 
 The GitHub recursive-tree response was not truncated and contained 64,445
