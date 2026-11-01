@@ -218,13 +218,14 @@ The generic compatibility wrappers now also reject writes against an archived
 owner record, so retaining agent-only identity does not bypass the archive
 fence.
 
-The Runner `SendToAgent` sender-side transcript producer now carries its
-already-owned `worker_session_key` through `ProductionAgentManagementSink` and
-`ProductionAgentToAgentMessaging` into the session-admitted append only when
-the owner-local admission record confirms that key. A group-member worker
+The Runner `SendToAgent` sender-side transcript producer now persists its
+already-owned `worker_session_key` on the outbound entry, carries it through
+`ProductionAgentManagementSink` and `ProductionAgentToAgentMessaging` into the
+session-admitted append only when the owner-local admission record confirms
+that key. A group-member worker
 whose group selector has no matching owner record remains on the generic
 archive-fenced compatibility path until that record exists. The
-the recipient wake envelope still carries no canonical target session
+recipient wake envelope still carries no canonical target session
 selector, so inbound materialization resolves the target's existing owner
 record locally rather than deriving an `agent:{id}:main` key. Targets with a
 record use the session-admitted append; targets without one remain on the

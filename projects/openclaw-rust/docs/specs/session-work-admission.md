@@ -254,9 +254,10 @@ transactions when the key is present; controller instances created by legacy
 unbound infrastructure remain on the compatibility path.
 
 The Runner `SendToAgent` producer also already owns the canonical
-`worker_session_key`. Its sender-side transcript append must carry that key
-through the existing agent-management sink and use the session-admitted owner
-transaction only when the owner-local admission record confirms that key. If
+`worker_session_key`. Its sender-side transcript append must persist that key
+on the outbound entry, carry it through the existing agent-management sink, and
+use the session-admitted owner transaction only when the owner-local admission
+record confirms that key. If
 the producer carries a selector that has no matching owner record (for
 example, the current group-member compatibility runner), it remains on the
 generic agent-only path until that session record is established. The

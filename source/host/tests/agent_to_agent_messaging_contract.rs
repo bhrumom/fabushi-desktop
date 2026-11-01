@@ -30,11 +30,17 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
         let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
     },Some({let interrupts=Arc::clone(&interrupts);Arc::new(move|_,_|{interrupts.fetch_add(1,Ordering::SeqCst);1})}));
-    let ack=service.send_to_agent(&alpha.id,&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
+    let alpha_session_key = sessions
+        .read_session_work_admission(&alpha.id)
+        .expect("alpha admission")
+        .expect("alpha admission record")
+        .session_key;
+    let ack=service.send_to_agent_with_session(&alpha.id,Some(&alpha_session_key),&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
     assert!(ack.contains("priority"));
     let a=sessions.read_agent_transcript_entries(&alpha.id).expect("alpha transcript");
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript before admission");
     assert_eq!(a.len(),1);assert_eq!(a[0]["toAgent"]["id"],beta.id);assert_eq!(a[0]["content"],"please review");
+    assert_eq!(a[0].get("sessionKey").and_then(serde_json::Value::as_str),Some(alpha_session_key.as_str()));
     assert!(b.is_empty(), "recipient entry is deferred until execution admission");
     assert_eq!(sessions.get_agent_conversation_partner_ids(&alpha.id).expect("a partners"),vec![beta.id.clone()]);
     assert!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners before admission").is_empty());
