@@ -16,7 +16,7 @@ use super::agent_db::{
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
     read_persisted_transcript_entries, retire_persisted_legacy_conversation_blobs,
     SandAgentDb,
-    set_hidden_entry_repair_version, set_persisted_agent_name,
+    set_hidden_entry_repair_version,
     set_stale_root_cleanup_version, stale_root_cleanup_version,
 };
 use super::conversation_recovery::{
@@ -107,6 +107,7 @@ pub fn sync_recovered_profile_name(
     db_path: &Path,
     busy_timeout_ms: u64,
     profile_name: &str,
+    owner: &SandAgentDb,
 ) -> Result<bool, String> {
     let profile_name = profile_name.trim();
     if profile_name.is_empty()
@@ -117,7 +118,11 @@ pub fn sync_recovered_profile_name(
     {
         return Ok(false);
     }
-    set_persisted_agent_name(db_path, busy_timeout_ms, profile_name)
+    owner
+        .set_metadata(
+            "name",
+            serde_json::Value::String(profile_name.to_string()),
+        )
         .map_err(|error| error.to_string())
 }
 

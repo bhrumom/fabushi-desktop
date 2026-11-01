@@ -5257,6 +5257,7 @@ impl ProductionSessionWorkers {
                 &session_db_path,
                 self.busy_timeout_ms,
                 &materialized.profile.name,
+                db_owner.as_ref(),
             )?;
         }
         let recovery_turns = if recovered_root {
