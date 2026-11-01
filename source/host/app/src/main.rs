@@ -8326,7 +8326,7 @@ fn start_routed_provider_task(
     );
     let auto_review_controller = auto_review.bind_runner_with_session(
         &agent_id,
-        Some(&worker_session_key),
+        worker_session_admitted_key.as_deref(),
         approvals_resolvable,
     );
     let auto_review_cancellation = cancellation.clone();
@@ -10527,11 +10527,13 @@ fn start_routed_provider_task(
                         remote_box_has_desktop,
                         dynamic_tools_enabled,
                     },
-                    local_tool_permission: Some(TurnLocalToolPermissionBinding {
-                        controller: Arc::clone(&turn_local_tool_permission),
-                        agent_id: agent_id.clone(),
-                        session_key: worker_session_key.clone(),
-                        direction_epoch: turn_local_tool_direction_epoch,
+                    local_tool_permission: worker_session_admitted_key.clone().map(|session_key| {
+                        TurnLocalToolPermissionBinding {
+                            controller: Arc::clone(&turn_local_tool_permission),
+                            agent_id: agent_id.clone(),
+                            session_key,
+                            direction_epoch: turn_local_tool_direction_epoch,
+                        }
                     }),
                     box_resources: Some(box_resources),
                     browser_executor: Some(browser_executor),

@@ -587,3 +587,13 @@ dispatch; the producer no longer reconstructs the child `main` key itself.
 The existing `ProductionSessionWorkers`/`SandAgentDb` owner and lifecycle
 revision readback remain unchanged, while subagent cleanup, runtime
 verification, and acceptance remain pending.
+
+## 12.17 Compatibility consumer identity quarantine — 2026-11-01
+
+The routed Runner now gives auto-review and local-tool permission consumers
+only the owner-confirmed admission key. An unbound group-member compatibility
+turn no longer leaks its requested selector into those session-scoped
+consumers; its generic transcript/media compatibility behavior remains
+unchanged. Non-group turns are already rejected before composition when the
+selector is not owner-admitted. No alternate permission or review owner was
+introduced, and runtime/exact-head acceptance remains pending.
