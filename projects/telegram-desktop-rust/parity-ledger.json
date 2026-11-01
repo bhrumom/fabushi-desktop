@@ -25735,7 +25735,10 @@
         "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@a7c10e88172ccd664bad0370acea8fac7a3e2f3d",
         "desktop-mirror-commit:d2aaaf1a4979ad4f825532ec14e6648fd5bbc8eb",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a7c10e88172ccd664bad0370acea8fac7a3e2f3d"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@a7c10e88172ccd664bad0370acea8fac7a3e2f3d",
+        "platform-core-final-compliance-commit:4a3f7c2c6954d1ce69e9373b9ce058b73549e31d",
+        "platform-core-final-spec-blob:28ec5dea119e20220481f672e3c5bc00d1a0ddf7",
+        "desktop-round70-bookkeeping-commit:0d8b5b19d9bab4b509db550f8b6ce57441b80ed5"
       ],
       "test_evidence": [
         "Canonical and desktop authored-only contract covers exact no-padding/padded envelope layout, inclusive length, invalid body/padding alignment and size, invalid inbound declared lengths, mismatch and maximum bounds; not run."
@@ -25861,7 +25864,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f, connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a and mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level implementation. Existing PlaintextEnvelope/TcpTransport shipping path was retained; this round adds fixed-U-equivalent 0..63 random 32-bit padding words to outbound unencrypted auth-key handshake messages and strengthens exact alignment/length fail-closed validation. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Binding/persistence, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
+      "notes": "Stage A source-level implementation. Existing PlaintextEnvelope/TcpTransport shipping path was retained; this round adds fixed-U-equivalent 0..63 random 32-bit padding words to outbound unencrypted auth-key handshake messages and strengthens exact alignment/length fail-closed validation. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Final source-level compliance is platform-core 4a3f7c2c6954d1ce69e9373b9ce058b73549e31d/spec blob 28ec5dea119e20220481f672e3c5bc00d1a0ddf7; desktop bookkeeping checkpoint is 0d8b5b19d9bab4b509db550f8b6ce57441b80ed5. Binding/persistence, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
