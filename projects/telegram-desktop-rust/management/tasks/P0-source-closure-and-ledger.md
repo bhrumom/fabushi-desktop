@@ -1848,3 +1848,16 @@ Platform spec-first commit is `997c7b12cdc8b22368b6f1a04490ea7b602294bc` / spec 
 Coverage becomes `source_entries_total=16202, responsibilities_total=120, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; the two source blobs were already inventoried, so focused semantic reread does not change source-entry unknown/unread counts.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 117 final source-level compliance
+
+Platform-core final source-level compliance is `445f49beed303bd7dbef2f8b998bfb22d8aaadce` / spec blob `94c6b75c471167009aacec4bdb3fd4d00cb2bb27`. It records R1-R13 plus AC-1 through AC-8 as passed at source/implementation/bookkeeping review level.
+
+Final canonical and desktop telegram-network lib/request-normalization/authored-contract blobs are byte-identical at `3743331b0b1453048a98a21ae4ac2d2b91a2b2a5`, `2f3ea627054779296102f13c70be17a3655ddcb9`, and `55d55d5de956cad3d809d64efc97993d270dcd97`. `TDRP-R9-MTPROTO-REQUEST-NORMALIZATION-001` remains `implemented / rewritten / validation_status=not-run / accepted=false`.
+
+`TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false`: remaining scope is actual direct no-proxy HTTP dispatch of normalized descriptors, 800 ms racing/reply cancellation/finalization, global HTTP-derived time mutation, temporary-DC help.getConfig lifecycle and dc_options application.
+
+Coverage remains `source_entries_total=16202, responsibilities_total=120, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

@@ -30252,7 +30252,9 @@
         "desktop-request-normalization-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
         "platform-core-request-normalization-source-review-fix-commit:a65278227c78fac5fd5a6ac41c841b4fc509fcb5",
         "desktop-request-normalization-source-review-fix-commit:712bde77f6f232efafe775ff9390faa47e9595fe",
-        "request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9"
+        "request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9",
+        "platform-core-final-request-normalization-compliance-commit:445f49beed303bd7dbef2f8b998bfb22d8aaadce",
+        "platform-core-final-request-normalization-spec-blob:94c6b75c471167009aacec4bdb3fd4d00cb2bb27"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30373,7 +30375,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round86/source evidence round117. Carrier/application remains mapped/pending after extracting both pure response normalization and pure request shaping. Remaining work is actual direct no-proxy HTTP dispatch/racing/reply lifecycle, global time mutation, temporary-DC help.getConfig and DcOptions application against a shipping existing network/runtime scheduler. Stage-A executable validation remains not-run.",
+      "notes": "Task round86/source evidence round117. Carrier/application remains mapped/pending after extracting both pure response normalization and pure request shaping. Remaining work is actual direct no-proxy HTTP dispatch/racing/reply lifecycle, global time mutation, temporary-DC help.getConfig and DcOptions application against a shipping existing network/runtime scheduler. Final request-normalization source compliance is platform-core 445f49beed303bd7dbef2f8b998bfb22d8aaadce / spec blob 94c6b75c471167009aacec4bdb3fd4d00cb2bb27. Stage-A executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -30499,7 +30501,9 @@
         "desktop-request-normalization-initial-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
         "desktop-request-normalization-source-review-fix-commit:712bde77f6f232efafe775ff9390faa47e9595fe",
         "desktop-request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9",
-        "desktop-request-normalization-contract-blob:55d55d5de956cad3d809d64efc97993d270dcd97"
+        "desktop-request-normalization-contract-blob:55d55d5de956cad3d809d64efc97993d270dcd97",
+        "platform-core-final-request-normalization-compliance-commit:445f49beed303bd7dbef2f8b998bfb22d8aaadce",
+        "platform-core-final-request-normalization-spec-blob:94c6b75c471167009aacec4bdb3fd4d00cb2bb27"
       ],
       "test_evidence": [
         "Internal request_normalization.rs contracts cover padding rejection/range/alphabet plus Google/Mozilla and Firestore component shapes; not executed.",
@@ -30626,7 +30630,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp and special_config_request.cpp. Implementation is source-neutral Rust; no upstream C++ copied.",
-      "notes": "Task round86/source evidence round117. Pure DnsDomains/padding/UA plus Google/Mozilla/Firestore request shaping is implemented in existing telegram-network and mirrored byte-identically. Authored-only padding vectors were source-reviewed and corrected before Stage B; no contract was executed. Actual HTTP dispatch/racing/global HTTP time mutation/temporary-DC/dc-options application remains separately mapped/pending. validation_status=not-run; accepted=false.",
+      "notes": "Task round86/source evidence round117. Pure DnsDomains/padding/UA plus Google/Mozilla/Firestore request shaping is implemented in existing telegram-network and mirrored byte-identically. Authored-only padding vectors were source-reviewed and corrected before Stage B; no contract was executed. Final platform source compliance is 445f49beed303bd7dbef2f8b998bfb22d8aaadce / spec blob 94c6b75c471167009aacec4bdb3fd4d00cb2bb27. Actual HTTP dispatch/racing/global HTTP time mutation/temporary-DC/dc-options application remains separately mapped/pending. validation_status=not-run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
