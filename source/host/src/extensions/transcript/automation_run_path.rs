@@ -528,7 +528,10 @@ impl AutomationRunPath {
                     AutomationExecutionResult::CompletedWithFences { fences } => Some(fences),
                     _ => unreachable!("completed automation result pattern changed"),
                 };
-                finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
+                // The durable projection is the reaper authority: settle it
+                // before compatibility history so a failed owner commit does
+                // not advertise a terminal run while the cleanup row remains
+                // running.
                 finish_cron_session_run(
                     store,
                     &args.agent_id,
@@ -540,6 +543,7 @@ impl AutomationRunPath {
                     None,
                     fences,
                 )?;
+                finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
                 self.clear_automation_failure_state(&args.agent_id, &args.automation.id);
                 Ok(Some(FireAutomationOutcome::Ok))
             }
@@ -552,14 +556,6 @@ impl AutomationRunPath {
                     }
                     _ => unreachable!("interrupted automation result pattern changed"),
                 };
-                finish_run(
-                    store,
-                    &args.automation.id,
-                    run_id.as_deref(),
-                    "error",
-                    args.fired_at_ms,
-                    Some(&detail),
-                )?;
                 finish_cron_session_run(
                     store,
                     &args.agent_id,
@@ -570,6 +566,14 @@ impl AutomationRunPath {
                     cron_finished_at_ms,
                     Some(&detail),
                     fences,
+                )?;
+                finish_run(
+                    store,
+                    &args.automation.id,
+                    run_id.as_deref(),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&detail),
                 )?;
                 Ok(Some(FireAutomationOutcome::Interrupted))
             }
@@ -582,14 +586,6 @@ impl AutomationRunPath {
                     }
                     _ => unreachable!("failed automation result pattern changed"),
                 };
-                finish_run(
-                    store,
-                    &args.automation.id,
-                    run_id.as_deref(),
-                    "error",
-                    args.fired_at_ms,
-                    Some(&detail),
-                )?;
                 finish_cron_session_run(
                     store,
                     &args.agent_id,
@@ -601,6 +597,14 @@ impl AutomationRunPath {
                     Some(&detail),
                     fences,
                 )?;
+                finish_run(
+                    store,
+                    &args.automation.id,
+                    run_id.as_deref(),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&detail),
+                )?;
                 self.record_automation_failure(
                     &args.agent_id,
                     &args.automation.id,
@@ -610,14 +614,6 @@ impl AutomationRunPath {
                 Ok(Some(FireAutomationOutcome::Error))
             }
             Err(detail) => {
-                finish_run(
-                    store,
-                    &args.automation.id,
-                    run_id.as_deref(),
-                    "error",
-                    args.fired_at_ms,
-                    Some(&detail),
-                )?;
                 finish_cron_session_run(
                     store,
                     &args.agent_id,
@@ -628,6 +624,14 @@ impl AutomationRunPath {
                     cron_finished_at_ms,
                     Some(&detail),
                     None,
+                )?;
+                finish_run(
+                    store,
+                    &args.automation.id,
+                    run_id.as_deref(),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&detail),
                 )?;
                 self.record_automation_failure(
                     &args.agent_id,
