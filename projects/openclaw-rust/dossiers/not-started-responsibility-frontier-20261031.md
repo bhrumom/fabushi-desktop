@@ -156,6 +156,29 @@ preservation query, guarded deletion, focused verification, or acceptance was
 added; the ledger remains `not-started/not-wired/not-run/pending` until the
 remaining D04--D05 lifecycle is implemented and verified.
 
+### 2026-11-01 cron maintenance-caller recheck
+
+The current-source caller search was repeated after the D03 bridge was added.
+`source/host/src/extensions/session/extension.rs::start_session_extension`
+invokes `run_session_maintenance` only during Session extension construction;
+the task list currently performs legacy group-member cleanup and reports
+startup-task failures. The caller is reached before
+`source/host/app/src/main.rs` starts the Transcript extension and before the
+Host binds the production automation runtime, so it cannot safely invoke
+`AutomationRuntime::list_expired_cron_session_candidates` without introducing
+a new cross-extension startup contract. The existing application automation
+paths dispatch fires and scheduled runs but do not provide a recurring
+maintenance sweep owner. No separate periodic session/automation maintenance
+owner was found in the current source.
+
+This is a caller-ownership gap, not scheduler evidence. The D03 bridge remains
+implemented as an uncalled, read-only policy/owner composition seam; no generic
+startup task or automation trigger is promoted to cron reaper scheduling. The
+next direct instrument is an approved existing-owner maintenance caller (or a
+decision that selects one), followed by a bounded read-only wiring change. No
+archive, deletion, transcript cleanup, or ledger/global-status promotion is
+authorized by this recheck.
+
 ## 2026-10-31 plugin-owner boundary recheck
 
 The read-only source search was repeated against the current Fabushi checkout.

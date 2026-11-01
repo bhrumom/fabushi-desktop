@@ -73,6 +73,15 @@ existing `AutomationRuntime`. It must parse policy, apply the owner-scope
 throttle, and delegate row selection to `ProductionSessionWorkers`; it must not
 delete, archive, or create a second scheduler/cleanup owner.
 
+The current-source caller recheck remains open. `run_session_maintenance` is a
+startup-only task runner invoked while `start_session_extension` is constructing
+the Session extension, before the Host binds the `TranscriptManager` automation
+runtime. It is therefore not yet an approved caller for the D03 bridge. No
+other recurring maintenance owner was found in the current Host automation,
+session, or application startup paths. A future caller must be explicitly
+selected and documented before wiring the bridge; generic startup maintenance
+must not be treated as a cron scheduler by inference.
+
 The following bounded read slice is also approved: the existing Session owner
 may project expired, terminal, non-base rows while excluding active
 controller/media/subagent fences. This is candidate selection only; it must not
