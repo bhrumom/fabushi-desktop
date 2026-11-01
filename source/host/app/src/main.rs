@@ -5132,8 +5132,19 @@ fn run_agent_posted_group_turn(
     let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
         return Err("no routed provider configured for agent-posted group turn".into());
     };
+    let session_key = deps
+        .session_workers
+        .read_session_work_admission(group_id)?
+        .map(|record| record.session_key)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| {
+            format!(
+                "agent-posted group turn requires an existing admitted session identity for {group_id}"
+            )
+        })?;
     let args = serde_json::json!({
         "agentId": group_id,
+        "sessionKey": session_key,
         "prompt": "[agent] group post",
         "clientNonce": format!("agent-group:{}:{}", group_id, uuid::Uuid::new_v4()),
         "appendUserMessage": false,

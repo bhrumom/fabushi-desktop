@@ -532,3 +532,13 @@ or Runner dispatch.
 This removes an agent-derived group identity guess from a real background
 producer. It does not establish a group-session catalog for selector-less
 remote requests, nor does it claim group runtime or exact-head acceptance.
+
+## 12.12 Agent-posted group turn admission identity — 2026-11-01
+
+The local `run_agent_posted_group_turn` producer now reads the group agent's
+existing owner admission record and carries its exact `sessionKey` into the
+initial `execute_send` payload. If the record is missing or empty, the hidden
+group turn fails closed before routed-send admission; identity is no longer
+deferred until a later Runner lookup. The existing group-chat and Runner
+owners remain unchanged, and group runtime/exact-head acceptance remains
+pending.
