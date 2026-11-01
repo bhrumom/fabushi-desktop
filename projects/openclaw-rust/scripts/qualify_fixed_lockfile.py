@@ -161,6 +161,28 @@ def parse_importer_dependencies(content: str) -> dict[tuple[str, str, str], dict
     return result
 
 
+def parse_patched_dependencies(content: str) -> dict[str, str]:
+    """Read the bounded pnpm patchedDependencies name-to-hash map."""
+    result: dict[str, str] = {}
+    in_section = False
+    child_pattern = re.compile(
+        r"^  (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(\S+)\s*$"
+    )
+    for line in content.splitlines():
+        top = TOP_LEVEL_RE.match(line)
+        if top:
+            in_section = top.group(1) == "patchedDependencies"
+            continue
+        if not in_section:
+            continue
+        child = child_pattern.match(line)
+        if child:
+            groups = child.groups()
+            key = next(value for value in groups[:3] if value is not None).strip()
+            result[key] = groups[3].strip().strip("'\"")
+    return result
+
+
 def package_roots(frontier_path: Path) -> list[str]:
     document = json.loads(frontier_path.read_text(encoding="utf-8"))
     roots = set()
@@ -189,9 +211,11 @@ def manifest_dependency_frontier(
     rows: list[dict[str, Any]] = []
     package_observations: dict[str, set[str]] = {}
     importer_observations: dict[tuple[str, str, str], dict[str, str]] = {}
+    patched_dependencies: dict[str, str] = {}
     for fragment in split_fragments(lock_content):
         parsed_fragment = parse_fragment(fragment)
         importer_observations.update(parse_importer_dependencies(fragment))
+        patched_dependencies.update(parse_patched_dependencies(fragment))
         for key, integrities in parsed_fragment["package_integrities"].items():
             package_observations.setdefault(key, set()).update(integrities)
     sections = (
@@ -287,6 +311,11 @@ def manifest_dependency_frontier(
                             if row["lock_selected_integrities"]
                             else "missing"
                         )
+                        row["lock_patch_status"] = (
+                            "observed"
+                            if any(key in patched_dependencies for key in selected_keys)
+                            else "not-listed"
+                        )
                 if edge_kind == "workspace":
                     dependency_manifest = manifest_paths.get(dependency)
                     expected_link = None
@@ -311,6 +340,7 @@ def manifest_dependency_frontier(
                         row["lock_join_status"] = "workspace-importer-match"
                     row["lock_importer_join_status"] = "workspace-link"
                     row["lock_integrity_status"] = "not-applicable-workspace"
+                    row["lock_patch_status"] = "not-applicable-workspace"
                 elif not candidates:
                     row["lock_join_status"] = "no-lock-name-candidate"
                 elif specifier in {
@@ -324,6 +354,11 @@ def manifest_dependency_frontier(
                         "candidate-integrities-observed"
                         if any(package_observations.get(key) for key in candidates)
                         else "candidate-integrity-missing"
+                    )
+                    row["lock_patch_status"] = (
+                        "candidate-patch-observed"
+                        if any(key in patched_dependencies for key in candidates)
+                        else "not-listed"
                     )
                 rows.append(row)
     return rows
