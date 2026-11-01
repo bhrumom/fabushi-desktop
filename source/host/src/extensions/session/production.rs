@@ -2733,8 +2733,9 @@ impl ProductionSessionWorkers {
         let Some(record) = record else {
             return Ok(None);
         };
+        let expected_session_key = format!("agent:{agent_id}:main");
         if record.session_id != agent_id
-            || record.session_key.trim().is_empty()
+            || record.session_key != expected_session_key
             || record.lifecycle_revision.trim().is_empty()
         {
             return Err(format!(

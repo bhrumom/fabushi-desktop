@@ -416,6 +416,16 @@ fn test_session_admission_rejects_rebound_owner_identity() {
     assert!(owner_source.contains("record.session_id != agent_id"));
     assert!(owner_source.contains("let expected_session_key = format!(\"agent:{agent_id}:main\")"));
     assert!(owner_source.contains("record.session_key != expected_session_key"));
+    assert!(
+        owner_source
+            .split("pub(crate) fn read_session_work_admission_locked(")
+            .nth(1)
+            .expect("locked session admission reader exists")
+            .split("pub fn read_session_communication_policy(")
+            .next()
+            .expect("locked session admission reader boundary exists")
+            .contains("record.session_key != expected_session_key")
+    );
     assert!(owner_source.contains("record.lifecycle_revision.trim().is_empty()"));
     assert!(owner_source.contains("session admission identity is malformed"));
     assert!(owner_source.contains("pub fn read_session_work_admission("));
