@@ -37,6 +37,9 @@ non-candidate state, never an implicit all-clear.
 The existing Host automation terminal boundary may publish a typed snapshot
 only when all three reads are owner-backed and identity-compatible; otherwise
 it must leave the row unknown. This does not authorize cleanup.
+`AutomationRuntime` may expose the corresponding throttled, read-only
+candidate request as the D03 bridge; maintenance/scheduler ownership remains
+outside this slice.
 
 ## Source evidence and exact subjects
 

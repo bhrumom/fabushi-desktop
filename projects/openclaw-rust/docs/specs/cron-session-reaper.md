@@ -68,6 +68,11 @@ per-owner five-minute throttle primitive. It has no scheduler caller and does
 not decide whether a row is deletable; D03 trigger wiring and D04--D05 cleanup
 remain pending.
 
+The bounded D03 bridge may expose a read-only candidate-sweep request from the
+existing `AutomationRuntime`. It must parse policy, apply the owner-scope
+throttle, and delegate row selection to `ProductionSessionWorkers`; it must not
+delete, archive, or create a second scheduler/cleanup owner.
+
 The following bounded read slice is also approved: the existing Session owner
 may project expired, terminal, non-base rows while excluding active
 controller/media/subagent fences. This is candidate selection only; it must not

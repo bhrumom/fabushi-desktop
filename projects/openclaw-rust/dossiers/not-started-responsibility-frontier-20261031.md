@@ -144,6 +144,12 @@ stream makes attribution ambiguous. Any read/identity uncertainty retains the
 old result and leaves `fence_state_known=false`. This is fence publication
 evidence only, not transcript archival or deletion acceptance.
 
+`AutomationRuntime::list_expired_cron_session_candidates` now provides the
+D03 bridge: it parses the caller policy, applies the owner-scope throttle, and
+delegates to `ProductionSessionWorkers` for the read-only candidate
+projection. There is still no scheduler caller and the bridge performs no
+cleanup mutation.
+
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent
 preservation query, guarded deletion, focused verification, or acceptance was

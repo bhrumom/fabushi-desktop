@@ -15,7 +15,9 @@ use super::automation_event_fires::{
 };
 use super::automation_run_path::{
     AutomationExecutionResult, AutomationRunFenceSnapshot, AutomationRunPath,
-    AutomationRunStore, AutomationRunTrigger, FireAutomationArgs, FireAutomationOutcome,
+    AutomationRunStore, AutomationRunTrigger, CronSessionRetentionPolicy,
+    CronSessionSweepThrottle, FireAutomationArgs, FireAutomationOutcome,
+    parse_cron_session_retention,
 };
 use super::automation_spend_guard_runtime::AutomationSpendGuardRuntime;
 use super::automation_snapshot::{
@@ -304,6 +306,7 @@ pub struct AutomationRuntime {
     last_known: Arc<Mutex<HashMap<String, BTreeMap<String, AutomationSnapshot>>>>,
     mutation_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
     lifecycle_reporter: Arc<Mutex<Option<AutomationLifecycleReporter>>>,
+    cron_sweep_throttle: Arc<Mutex<CronSessionSweepThrottle>>,
 }
 
 struct AdmittedAutomationRunStore<'a> {
@@ -463,11 +466,45 @@ impl AutomationRuntime {
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
             lifecycle_reporter: Arc::new(Mutex::new(None)),
+            cron_sweep_throttle: Arc::new(Mutex::new(CronSessionSweepThrottle::default())),
         }
     }
 
     pub fn run_path(&self) -> Arc<AutomationRunPath> {
         Arc::clone(&self.run_path)
+    }
+
+    /// Request a throttled, read-only cron candidate projection through the
+    /// existing automation and session owners. A scheduler may consume the
+    /// result later; this bridge never archives or deletes a row.
+    pub fn list_expired_cron_session_candidates(
+        &self,
+        agent_id: &str,
+        retention_value: Option<&Value>,
+        now_ms: f64,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        let retention_ms = match parse_cron_session_retention(retention_value) {
+            CronSessionRetentionPolicy::Disabled => return Ok(Vec::new()),
+            CronSessionRetentionPolicy::DurationMs(value) => value,
+        };
+        if !now_ms.is_finite() || now_ms < 0.0 {
+            return Ok(Vec::new());
+        }
+        let now_ms_u64 = if now_ms >= u64::MAX as f64 {
+            u64::MAX
+        } else {
+            now_ms.floor() as u64
+        };
+        let admitted = self
+            .cron_sweep_throttle
+            .lock()
+            .map_err(|_| "cron sweep throttle lock poisoned".to_string())?
+            .admit(agent_id, now_ms_u64);
+        if !admitted {
+            return Ok(Vec::new());
+        }
+        self.sessions
+            .list_expired_cron_session_runs(agent_id, now_ms, Some(retention_ms))
     }
 
     pub fn event_fires(&self) -> Arc<AutomationEventFires> {
