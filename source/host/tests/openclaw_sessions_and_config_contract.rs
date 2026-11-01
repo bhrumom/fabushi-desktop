@@ -608,6 +608,30 @@ fn test_session_transcript_append_rolls_back_when_commit_fails() {
 }
 
 #[test]
+fn test_session_transcript_update_and_identity_settlement_roll_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let update_owner = owner_source
+        .split("pub fn update_transcript_entry_if_session_admitted(")
+        .nth(1)
+        .expect("session transcript update owner exists")
+        .split("pub fn settle_transcript_entry_identity(")
+        .next()
+        .expect("session transcript update owner boundary exists");
+    assert!(update_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(update_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+
+    let settlement_owner = owner_source
+        .split("pub fn settle_transcript_entry_identity_if_session_admitted(")
+        .nth(1)
+        .expect("session transcript identity settlement owner exists")
+        .split("pub fn delete_transcript_entry(")
+        .next()
+        .expect("session transcript identity settlement owner boundary exists");
+    assert!(settlement_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(settlement_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_compaction_owner_rolls_back_when_commit_fails() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
     let compaction_owner = owner_source

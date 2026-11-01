@@ -4108,7 +4108,10 @@ impl SandAgentDb {
         })();
         match result {
             Ok(updated) => {
-                db.execute_batch("COMMIT")?;
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
                 drop(guard);
                 if let Some(entry) = updated.as_ref() {
                     publish_entries_upserted(&self.db_path, vec![entry.clone()]);
@@ -4274,7 +4277,10 @@ impl SandAgentDb {
         })();
         match result {
             Ok(updated) => {
-                db.execute_batch("COMMIT")?;
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
                 drop(guard);
                 if let Some(entry) = updated.as_ref() {
                     if entry_id != next_id {
