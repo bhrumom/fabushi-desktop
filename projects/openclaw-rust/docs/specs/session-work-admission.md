@@ -226,7 +226,8 @@ The same owner-local transaction fence now covers request-id history and
 pending episode-memory writes, including the Runner's direct episode clear
 path, as well as the owner-local transient-state clear. A deletion fence
 therefore rejects those metadata mutations at the SQLite write edge; this
-remains a bounded owner-local correction and does not close the separate
+now also covers metadata CAS writes used by transcript/checkpoint owners.
+These remain bounded owner-local corrections and do not close the separate
 cross-filesystem profile/avatar or external memory-store atomicity gaps.
 
 The owner-local admission CAS now preserves the current `deletion_pending`

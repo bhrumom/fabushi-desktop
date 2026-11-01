@@ -369,6 +369,9 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
             agent: "fence".into(),
         })
         .expect("record episode"));
+    assert!(owner
+        .set_metadata("lastActivityAt", serde_json::json!(1.0))
+        .expect("record metadata"));
 
     let mut fenced = admission.clone();
     fenced.deletion_pending = true;
@@ -391,6 +394,16 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
     assert!(!owner
         .clear_transient_state()
         .expect("fenced transient clear"));
+    assert!(!owner
+        .set_metadata("lastActivityAt", serde_json::json!(2.0))
+        .expect("fenced metadata write"));
+    assert_eq!(
+        owner
+            .get_metadata("lastActivityAt")
+            .expect("metadata history")
+            .and_then(|value| value.as_f64()),
+        Some(1.0)
+    );
     assert_eq!(owner.get_request_ids().expect("request history").len(), 1);
     assert_eq!(owner.get_pending_episode_turns().expect("episode history").len(), 1);
 

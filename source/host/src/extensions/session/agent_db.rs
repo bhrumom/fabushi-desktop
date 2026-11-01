@@ -1088,11 +1088,32 @@ impl SandAgentDb {
         }
         let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
         let changed = self.run_write(&format!("setMetadata:{key}"), |db| {
-            db.execute(
-                COMPARE_AND_SET_KV_SQL,
-                params![next_raw, "metadata", raw],
-            )
-            .map(|changes| changes == 1)
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let Some(current_raw) = read_kv(db, "metadata")? else {
+                    return Ok(false);
+                };
+                if current_raw != raw {
+                    return Ok(false);
+                }
+                Ok(db.execute(
+                    COMPARE_AND_SET_KV_SQL,
+                    params![next_raw, "metadata", raw],
+                )? == 1)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
         })?;
         if changed {
             notify_agent_db_listeners(
