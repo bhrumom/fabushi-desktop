@@ -88,6 +88,18 @@ maps them from request JSON, or treats the old Gateway transcript methods as
 the SDK consumer would violate this specification and remains out of scope
 until the owner contract is published.
 
+The 2026-11-01 authenticated-consumer sweep confirms the same boundary against
+the current checkout: `source/host/src/extensions/session/gateway.rs` reaches
+`ProductionSessionWorkers::{read_agent_transcript_entries,
+read_agent_transcript_page, read_agent_transcript_window,
+read_agent_transcript_tail}`, while no production source calls
+`plugin_sdk::session_memory::{paginate_sessions,
+read_visible_transcript_page, SessionTranscriptLockRegistry}`. The only
+callers of the Plugin SDK projection are the focused contract tests in
+`source/host/tests/openclaw_plugin_sdk_core_contract.rs`. Existing Gateway
+authentication therefore does not establish AC1, and the direct Gateway
+transcript methods cannot be relabeled as the required adapter consumer.
+
 ## 6. Target state
 
 An authenticated existing consumer requests a bounded session-memory read.

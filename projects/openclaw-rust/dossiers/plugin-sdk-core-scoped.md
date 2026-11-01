@@ -143,6 +143,32 @@ the existing `ProductionSessionWorkers` snapshot, reset-anchor, generation,
 and admission-fence authorities; until then the static contract test is not
 production equivalence evidence.
 
+## 8.1 Authenticated consumer sweep — 2026-11-01
+
+The current checkout was searched for all Plugin SDK session-memory symbols.
+Only `source/host/tests/openclaw_plugin_sdk_core_contract.rs` calls
+`paginate_sessions`, `read_visible_transcript_page`, or
+`SessionTranscriptLockRegistry`. No production source calls those functions or
+`VisibleTranscriptReadFence`.
+
+The existing authenticated Gateway remains a direct consumer of the canonical
+Session owner: `source/host/src/extensions/session/gateway.rs` dispatches
+`getAgentTranscript`, `getAgentTranscriptPage`, `getAgentTranscriptWindow`,
+and `getAgentTranscriptTail` through the existing
+`ProductionSessionWorkers` transcript methods. Those methods return the
+owner's existing page/window/tail shapes and do not provide the typed
+Plugin-SDK snapshot contract's reset anchor, reset-tail position, or
+current-turn fence. Authentication on that Gateway path therefore does not
+make it an AC1 consumer of the Plugin SDK adapter.
+
+Disposition is unchanged: no adapter is added, no second owner is introduced,
+and `OCRM-RESP-PLUGIN-SDK-SESSION-MEMORY-001` remains
+`implemented/not-wired/not-run/pending` with
+`BL-PLUGIN-SDK-SESSION-WIRING-001` open. The next implementation instrument
+is an owner-approved typed Session snapshot/fence contract plus a named
+existing authenticated consumer; the current static contract tests remain
+policy evidence only.
+
 ## 4. Audited Bundled Channel Contract Invariants
 The following test suites in `src/plugins/contracts/` have been audited line-by-line and mapped to `OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001`:
 1. `channel-config-writes.contract.test.ts` (71 lines):
