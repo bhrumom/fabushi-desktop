@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16165,
-    "unread": 16138,
+    "unknown": 16164,
+    "unread": 16137,
     "omitted": 0,
-    "responsibilities_total": 131,
+    "responsibilities_total": 132,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -34201,6 +34201,300 @@
       "accepted": false,
       "source_paths": [
         ".agents/skills/code-health/scripts/review.py@89f15913714c54467ef40d6f42feb5c526cb0f32"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/code-health/scripts/sources.py",
+      "source_blob_sha": "749ccc1f503e203d4a651c9ac793381e0e0a314b",
+      "source_kind": "repository_source_authority_filter_ref_worktree_git_instrument",
+      "module_id": "tdesktop.code-health-sources",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-SOURCE-AUTHORITY-FILTERING-001",
+      "source_symbols": [
+        "SOURCE_ROOT",
+        "LIB_PREFIX",
+        "LANG_FILE",
+        "TOP_LEVEL",
+        "EXTENSIONS",
+        "git",
+        "wanted",
+        "lib_roots",
+        "SourceTree",
+        "SourceTree.lines",
+        "SourceTree.root_of",
+        "from_worktree",
+        "from_ref",
+        "list_tree",
+        "read_blobs",
+        "submodule_heads",
+        "read_text",
+        "decode"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-SOURCE-AUTHORITY",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f",
+        ".agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43",
+        ".agents/skills/code-health/scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1",
+        ".agents/skills/code-health/scripts/harness_test.py@5d6b2537c9289cb3e1db0904b9f8e1b99dec4b74",
+        ".agents/skills/code-health/scripts/health.py@4fd8d8013d0efb7103a57e4ff7b1d395c448eb0d",
+        ".agents/skills/code-health/scripts/health_test.py@6058fa64a5121c966021d8589b2010480aec8794",
+        ".agents/skills/code-health/scripts/history.py@7c12f5b091936723c6ad005dda4bb8e2b1e549df",
+        ".agents/skills/code-health/scripts/metrics.py@42f42b1100f88bd85977b66dfb6bf13e9dc88e46",
+        ".agents/skills/code-health/scripts/review.py@89f15913714c54467ef40d6f42feb5c526cb0f32"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-sources-script-complete-read.md",
+      "behavior_contract": "Acquire one declared repository source subject without widening its scope: deterministically filter the Telegram code-health file set; distinguish mutable WORKTREE provenance from an immutable ref resolved to an exact commit; enumerate tracked parent blobs and top-level lib_* gitlinks by Git object identity; read exact blobs/submodule pins when available; normalize text representation without converting missing/unsupported input into absence; and propagate Git/process/source incompleteness to existing quality evidence consumers.",
+      "state_machine": "requested ref -> ref^{commit} -> recursive tracked Telegram tree -> eligible parent blobs + lib_* gitlink pins -> exact blob/submodule reads + incompleteness notes -> immutable SourceTree; or current checkout -> eligible top-level traversal + current files + HEAD + Telegram dirty flag + submodule status -> WORKTREE SourceTree",
+      "side_effects": [
+        "No shipping product side effects.",
+        "Exact-ref acquisition is read-only over Git objects; working-tree acquisition reads current files and Git status only.",
+        "No durable finding/task/acceptance state is owned by SourceTree or sources.py."
+      ],
+      "failure_cases": [
+        "Mutable working tree presented as immutable exact-ref authority",
+        "Eligible source scope widened beyond SourceFiles/lib_*/cmake/root CMake/language singleton",
+        "ThirdParty/.git input admitted into the scanner contract",
+        "Pinned lib_* gitlink identity lost or replaced with current checkout HEAD",
+        "Missing local pinned submodule object treated as an empty/complete subtree",
+        "Failed Git command, timeout, missing object or filesystem read treated as a clean scan",
+        "NUL-bearing or otherwise undecoded eligible input silently converted into proof the tracked file is absent",
+        "CRLF normalization presented as source mutation rather than representation normalization",
+        "Stale ref/worktree/index/submodule evidence promoted after the subject changes",
+        "Second source index/scanner/findings store/task queue/runtime introduced"
+      ],
+      "ui_disposition": "Not applicable; repository source-authority/quality evidence only.",
+      "non_ui_responsibilities": [
+        "Deterministic source path filtering",
+        "Exact-ref commit resolution",
+        "Tracked Git tree and blob identity acquisition",
+        "Top-level lib_* gitlink pin discovery and exact pinned-submodule reads",
+        "Mutable working-tree acquisition with HEAD/dirty provenance",
+        "Git command failure/timeout propagation",
+        "Text/binary decoding and CRLF normalization",
+        "SourceTree provenance/root/line helper carrier",
+        "Existing consumer composition without durable-state ownership"
+      ],
+      "platform_delta": "No platform-core production delta. Preserve this fixed-U tooling responsibility in existing Fabushi repository authority and quality/test-evidence governance; do not port the upstream Python source loader or create a second repository scanner/source index/runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "AGENTS.md repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository authority + repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository source acquisition",
+        "Platform-core runtime has no production responsibility for development-source authority",
+        "Configured-build tooling cannot substitute for Git object/source provenance",
+        "A Telegram-specific source loader would duplicate the existing source-neutral repository authority",
+        "A second findings/source index/task queue would split canonical repository governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health governance -> source acquisition to repository authority",
+        "Repository source authority acquisition and filtering qualification",
+        "Repository source authority acquisition and filtering evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream Python source is repository-development instrumentation, not shipping product logic. Fabushi carries the applicable authority/filter/provenance behavior as source-neutral repository quality/evidence contracts under the existing owner instead of copying a Telegram-specific Python runtime.",
+      "command_event_contracts": [
+        "eligible path -> deterministic wanted/not-wanted decision",
+        "explicit ref -> exact commit -> eligible tracked blobs + gitlink pins -> immutable source evidence",
+        "missing pinned submodule object -> explicit skipped/incomplete coverage, never empty proof",
+        "working checkout -> HEAD + Telegram dirty state + eligible files + submodule status -> WORKTREE evidence",
+        "Git/blob/filesystem failure -> non-passing acquisition evidence",
+        "SourceTree -> existing health/report/review/harness/atlas/history consumers without new durable owner"
+      ],
+      "state_owner": "Existing Fabushi repository authority + quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository quality-health command orchestration and GitHub Actions Stage-B evidence review",
+      "persistence_and_restart": "sources.py/SourceTree own no durable state. Exact-ref evidence is recomputable from immutable Git objects and pinned gitlinks; WORKTREE evidence is ephemeral and stale after source/index/submodule change. Durable quality state remains owned by existing repository governance and may only bind to a qualified exact revision.",
+      "concurrency_and_cancellation": "Source acquisition is read-only for one declared subject. If a ref/worktree/index/submodule changes while evidence is assembled, that observation is stale. Git subprocess timeout/non-zero exit and unavailable objects remain explicit non-passing evidence rather than clean cancellation.",
+      "security_boundary": "Cannot authorize source mutation, task insertion, ownership changes, configured-build/runtime truth, credentials, product acceptance, release or deployment. Mutable/incomplete source subjects cannot be promoted to canonical authority.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "Git object database available to the repository checkout",
+        "GitHub Actions hosted runners"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage-B exact-head execution of authored source-authority/filtering contracts is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository source authority acquisition and filtering qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository source authority acquisition and filtering evidence"
+      ],
+      "production_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-sources-script-complete-read.md",
+        "upstream-sources:.agents/skills/code-health/scripts/sources.py@749ccc1f503e203d4a651c9ac793381e0e0a314b",
+        "desktop-spec-commit:7702790394cb5848c10f821e663d0c5cf4c638fc"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-SCOPE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-EXACT-REF-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-WORKTREE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-GITLINK-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-DECODE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-GIT-FAILURE-001 authored, not run",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-PROVENANCE-001 authored, not run",
+        "INT-TDRP-CODE-HEALTH-SOURCE-CONSUMER-COMPOSITION-001 authored, not run"
+      ],
+      "target_commit": "7702790394cb5848c10f821e663d0c5cf4c638fc",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Repository source authority acquisition and filtering",
+      "capability_component": "Source-neutral exact-ref/worktree repository authority evidence",
+      "variation_axes": [
+        "exact ref vs mutable working tree",
+        "clean vs dirty Telegram worktree",
+        "parent-repository blob vs top-level lib_* gitlink",
+        "pinned submodule object available vs unavailable locally",
+        "eligible vs excluded source path",
+        "UTF-8 vs Latin-1 text vs NUL-bearing non-text",
+        "LF vs CRLF working-tree representation",
+        "successful Git command vs timeout/non-zero/missing object"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository authority",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health governance",
+        "Repository quality-health command orchestration",
+        "Repository report/metrics/include/clone/review/harness/atlas/history evidence consumers"
+      ],
+      "duplicate_root_check": "No upstream Python source loader, second source index/scanner/findings store/task queue/product runtime or platform-core owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact-ref evidence remains bound to immutable commit/blob/gitlink identities; WORKTREE evidence is explicitly mutable and must be recomputed after checkout/index/submodule change. Missing/unsupported input remains unknown coverage instead of silently becoming absence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-SOURCE-AUTHORITY-FILTERING-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-SOURCE-SCOPE-001",
+        "ORA-TDRP-CODE-HEALTH-SOURCE-AUTHORITY-001",
+        "ORA-TDRP-CODE-HEALTH-SOURCE-INCOMPLETE-COVERAGE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-SOURCE-EXACT-REF-001",
+        "INV-TDRP-CODE-HEALTH-SOURCE-WORKTREE-MUTABLE-001",
+        "INV-TDRP-CODE-HEALTH-SOURCE-GITLINK-PIN-001",
+        "INV-TDRP-CODE-HEALTH-SOURCE-NO-SILENT-ABSENCE-001",
+        "INV-TDRP-CODE-HEALTH-SOURCE-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-SCOPE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-EXACT-REF-001",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-WORKTREE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-GITLINK-001",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-DECODE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-GIT-FAILURE-001",
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-PROVENANCE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-SOURCE-CONSUMER-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-SOURCE-STALE-WORKTREE-001",
+        "FAULT-TDRP-CODE-HEALTH-SOURCE-MISSING-SUBMODULE-001",
+        "FAULT-TDRP-CODE-HEALTH-SOURCE-GIT-FAILURE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-SOURCE-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-SOURCE-AUTHORITY-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-source-authority-filtering-contract-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository source-authority/filter/ref/worktree/Git contracts read from fixed-U sources.py, code-health SKILL.md and direct fixed-U consumers; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Task round113/source evidence round144. Complete fixed-U tree reread truncated=false confirms sources.py is independently unrepresented after represented review.py and is the last code-health script blob; .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5 is the next independent unrepresented blob in tree order. Exact sources.py plus direct consumers and repository authority governance were read. Exactly one independent source entry closes: unknown 16165->16164, unread 16138->16137, responsibilities 131->132. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": [],
+      "id": "TDRP-R9-CODE-HEALTH-SOURCE-AUTHORITY-FILTERING-001",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/code-health/scripts/sources.py@749ccc1f503e203d4a651c9ac793381e0e0a314b"
       ]
     }
   ],
