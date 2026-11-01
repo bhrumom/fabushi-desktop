@@ -56,13 +56,14 @@ pub enum AckRedrivePreparation {
 
 pub fn build_ack_redrive_send_args(
     agent_id: &str,
+    session_key: &str,
     obligation: &AckObligation,
     trigger: AckRedriveTrigger,
     now_ms: u64,
 ) -> serde_json::Value {
     serde_json::json!({
         "agentId": agent_id,
-        "sessionKey": format!("agent:{agent_id}:main"),
+        "sessionKey": session_key,
         "prompt": build_ack_redrive_prompt(),
         "appendUserMessage": false,
         "awaitTurn": false,

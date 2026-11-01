@@ -6776,6 +6776,26 @@ fn start_ack_redrive_worker(
                             }));
                         }
                         Ok(AckRedrivePreparation::Ready(bumped)) => {
+                            let session_key = match session_workers
+                                .read_session_work_admission(&agent_id)
+                            {
+                                Ok(Some(record)) if !record.session_key.trim().is_empty() => {
+                                    record.session_key
+                                }
+                                Ok(_) => {
+                                    eprintln!(
+                                        "mahayana-host-ack redrive_missing_session_identity agent={agent_id}"
+                                    );
+                                    continue;
+                                }
+                                Err(error) => {
+                                    eprintln!(
+                                        "mahayana-host-ack redrive_session_identity_read_failed agent={} error={error}",
+                                        agent_id
+                                    );
+                                    continue;
+                                }
+                            };
                             let send_now_ms = started_at_ms();
                             events.publish(serde_json::json!({
                                 "channel": "ack-obligation",
@@ -6790,6 +6810,7 @@ fn start_ack_redrive_worker(
                             }));
                             let args = build_ack_redrive_send_args(
                                 &agent_id,
+                                &session_key,
                                 &bumped,
                                 trigger,
                                 send_now_ms,

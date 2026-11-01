@@ -477,3 +477,16 @@ This removes four remaining agent-only main-key guesses from background and
 Runner producer paths. Acknowledgement redrive and newly materialized child
 session/public direct-main projection paths remain separately governed and are
 not promoted by this slice.
+
+## 12.8 Acknowledgement redrive identity correction — 2026-11-01
+
+The production acknowledgement-redrive worker now reads the existing owner
+admission record before constructing its hidden `sendPrompt` payload and passes
+that canonical key into `build_ack_redrive_send_args`. Missing or unreadable
+admission identity skips the redrive rather than synthesizing a main-session
+key. The builder no longer owns or invents session identity; its contract
+requires the producer-supplied key.
+
+The focused contract fixture was updated to pass an explicit canonical test
+key. This is static producer wiring evidence only; redrive runtime,
+conversation-turn settlement, and exact-head acceptance remain pending.
