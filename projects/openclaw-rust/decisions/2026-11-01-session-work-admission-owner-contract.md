@@ -191,6 +191,11 @@ transcript writes rejected it; the deterministic preflight negative is now
 explicit. Missing admission records retain the legacy compatibility behavior
 until their producer establishes the session record.
 
+The shared SQLite write predicate now binds an existing admission record's
+`session_id` to the owner metadata `agentId` at the same write edge. A malformed,
+missing, or rebound metadata identity fails closed; databases without an
+admission record retain the legacy compatibility path.
+
 The owner-local compare-and-set now applies the same invariant to updates:
 advancing a valid lifecycle revision cannot replace the stored `session_key` or
 `session_id`. An attempted identity-rebinding CAS is rejected without changing

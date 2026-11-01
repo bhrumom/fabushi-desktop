@@ -28,6 +28,9 @@ durable state → consumer chain.
   an owner-local admission record whose durable `session_id` is not the
   canonical agent identity, non-empty session key, and non-empty lifecycle
   revision before admitting any session-owned operation.
+  The SQLite write predicate binds that identity to the owner metadata
+  `agentId` at the same transaction edge; missing or malformed owner identity
+  is fail-closed when an admission record exists.
   The production owner read facade applies the same validation before exposing
   an admission record to a producer or consumer.
 - `SWA-02`: Pending agent deletion rejects new writes and retains any owned

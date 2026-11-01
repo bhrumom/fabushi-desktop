@@ -5808,7 +5808,25 @@ fn session_work_write_is_admitted(
     let Ok(admission) = serde_json::from_str::<SessionWorkAdmissionRecord>(&raw) else {
         return Ok(false);
     };
+    let Some(raw_metadata) = read_kv(db, "metadata")? else {
+        return Ok(false);
+    };
+    let Ok(metadata_bytes) = decode_hex(&raw_metadata) else {
+        return Ok(false);
+    };
+    let Ok(metadata) = serde_json::from_slice::<serde_json::Value>(&metadata_bytes) else {
+        return Ok(false);
+    };
+    let Some(agent_id) = metadata
+        .get("agentId")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(false);
+    };
     Ok(session_admission_identity_is_well_formed(&admission)
+        && admission.session_id == agent_id
         && !admission.deletion_pending
         && admission.archived_at_ms.is_none())
 }
