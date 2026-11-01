@@ -225,6 +225,11 @@ cleanup and owner-local transcript transaction. This is an in-process
 deletion-race closure only; the existing cross-storage crash window remains
 explicitly pending because no second blob journal or recovery owner was added.
 
+Channel credential/configuration producers that touch the agent directory now
+use the same boundary and recheck work admission before writing. Their existing
+secret-file and channel-config owners remain separate stores; no cross-store
+transaction or new channel authority was introduced.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

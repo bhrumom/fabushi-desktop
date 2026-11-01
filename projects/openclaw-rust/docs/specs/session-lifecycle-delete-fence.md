@@ -236,6 +236,11 @@ an earlier snapshot and a missing directory remains a no-op; a close or
 removal error is reported as a failed reclaim rather than being converted into
 successful lifecycle evidence.
 
+Channel credential/configuration writes that touch the per-agent channel
+directory also acquire the boundary and recheck deletion admission. The
+connector secret file and channel configuration remain separate stores, so this
+is an in-process deletion-race closure rather than a cross-store transaction.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain

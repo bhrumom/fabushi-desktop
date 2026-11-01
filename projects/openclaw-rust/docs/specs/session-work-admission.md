@@ -432,6 +432,11 @@ after a process interruption between the blob cleanup and owner transaction.
 Pruned-placeholder reclamation uses the same boundary through owner/worker
 close and directory removal, while retaining an explicit failed-reclaim
 outcome for close or removal errors.
+Channel credential/configuration producers that write the per-agent channel
+directory (`store_connector_credential` and `disconnect_channel`) now acquire
+the same boundary and recheck admission while holding it. Secret-file and
+channel-config updates remain separate existing stores; this closes the
+in-process deletion interleaving only and does not claim cross-store atomicity.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.

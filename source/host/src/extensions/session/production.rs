@@ -1401,16 +1401,19 @@ impl ProductionSessionWorkers {
         field: &str,
         value: &str,
     ) -> Result<bool, String> {
-        let stored = self
-            .connector_secret_store()
-            .set_secret(agent_id, platform, field, value)
-            .map_err(|error| error.to_string())?;
-        if !stored {
-            return Ok(false);
-        }
-        self.open_channel_store(agent_id)?
-            .write_metadata(platform, "")
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            let stored = self
+                .connector_secret_store()
+                .set_secret(agent_id, platform, field, value)
+                .map_err(|error| error.to_string())?;
+            if !stored {
+                return Ok(false);
+            }
+            self.open_channel_store(agent_id)?
+                .write_metadata(platform, "")
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_connector_secret(
@@ -1435,13 +1438,16 @@ impl ProductionSessionWorkers {
     }
 
     pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {
-        let _ = self
-            .connector_secret_store()
-            .remove_agent_platform(agent_id, platform)
-            .map_err(|error| error.to_string())?;
-        self.open_channel_store(agent_id)?
-            .remove(platform)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            let _ = self
+                .connector_secret_store()
+                .remove_agent_platform(agent_id, platform)
+                .map_err(|error| error.to_string())?;
+            self.open_channel_store(agent_id)?
+                .remove(platform)
+                .map_err(|error| error.to_string())
+        })
     }
 
     fn existing_session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
