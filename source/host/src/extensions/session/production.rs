@@ -1478,6 +1478,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; owner open is not admitted"
+                ));
+            }
             self.open_agent_db_owner_locked(agent_id)
         })
     }
@@ -1823,6 +1828,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; owner open is not admitted"
+                ));
+            }
             self.open_agent_store_owner_locked(agent_id)
         })
     }

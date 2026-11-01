@@ -531,6 +531,9 @@ AgentStore owner opening now retains that same boundary through DB-owner open,
 blob-store recovery, checkpoint reset, and cache installation. A deletion
 cannot remove the agent directory between those steps and then leave a newly
 opened successor owner cached for the deleted identity.
+Public DB/AgentStore opens also reject the in-memory deletion fast-path after
+acquiring the boundary; deletion's own lifecycle code uses the locked internal
+open path so it can publish and consume its durable fence without recursion.
 
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
