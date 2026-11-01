@@ -21,6 +21,7 @@ pub struct CompactionSettings {
 pub struct CompactionPlan {
     pub first_kept_entry_id: String,
     pub entries_to_summarize: Vec<Value>,
+    pub previous_summary: Option<String>,
     pub tokens_before: u64,
     pub summary_token_budget: u64,
     pub latest_user_request: Option<String>,
@@ -132,6 +133,17 @@ pub fn prepare_compaction_plan(
         .iter()
         .map(estimate_entry_tokens)
         .fold(0u64, u64::saturating_add);
+    let previous_summary = entries[..cut]
+        .iter()
+        .rev()
+        .find(|entry| entry.get("kind").and_then(Value::as_str) == Some("compaction"))
+        .and_then(|entry| entry.get("summary").and_then(Value::as_str))
+        .map(ToOwned::to_owned);
+    let entries_to_summarize = entries[..cut]
+        .iter()
+        .filter(|entry| entry.get("kind").and_then(Value::as_str) != Some("compaction"))
+        .cloned()
+        .collect();
     let latest_user_request = entries[cut..]
         .iter()
         .rev()
@@ -141,7 +153,8 @@ pub fn prepare_compaction_plan(
 
     Some(CompactionPlan {
         first_kept_entry_id,
-        entries_to_summarize: entries[..cut].to_vec(),
+        entries_to_summarize,
+        previous_summary,
         tokens_before,
         summary_token_budget: settings.reserve_tokens.saturating_mul(4) / 5,
         latest_user_request,
@@ -237,5 +250,25 @@ mod tests {
         assert_eq!(plan.first_kept_entry_id, "u2");
         assert_eq!(plan.latest_user_request.as_deref(), Some("latest"));
         assert_eq!(plan.entries_to_summarize.len(), 3);
+    }
+
+    #[test]
+    fn prior_compaction_is_summary_context_not_new_history() {
+        let entries = vec![
+            json!({"id":"c0", "kind":"compaction", "summary":"prior", "tokensBefore":10}),
+            json!({"id":"u1", "kind":"message", "role":"user", "content":"new"}),
+            json!({"id":"a1", "kind":"message", "role":"assistant", "content":"answer"}),
+        ];
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            None,
+        ).expect("plan");
+        assert_eq!(plan.previous_summary.as_deref(), Some("prior"));
+        assert!(plan.entries_to_summarize.iter().all(|entry| {
+            entry.get("kind").and_then(Value::as_str) != Some("compaction")
+        }));
     }
 }
