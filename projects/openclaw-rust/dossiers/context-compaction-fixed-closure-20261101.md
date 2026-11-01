@@ -56,6 +56,12 @@ parser intentionally reports raw lockfile observations and does not resolve
 aliases, peer suffixes, package archives, integrity/license provenance, or the
 unmatched roots.
 
+The `17` unmatched roots split into `15` workspace package names (`@openclaw/*`
+plus `openclaw`) that must be reconciled through importer/workspace manifest
+edges, and three malformed lexical candidates (`+`, whitespace, and `:`) from
+the intentionally bounded import recognizer. These are classified frontiers,
+not silently treated as missing registry packages.
+
 ## Disposition
 
 This probe is stronger exact-subject discovery evidence for `CC-01`, but it
