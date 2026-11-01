@@ -4,6 +4,8 @@ use std::io;
 use std::path::{Component, Path, PathBuf};
 
 use crate::attachment_paths::{get_agent_assets_dir, get_agent_media_store_roots};
+use crate::extensions::attachments::media_reference::read_outbound_media_file_bounded;
+use crate::media_mime::attachment_byte_limit_for_name;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GenerateImageResourceResult {
@@ -141,7 +143,9 @@ impl SandGenerateImageResourceAccessor {
                     .into(),
             });
         };
-        match fs::read(&resolved) {
+        let max_bytes = usize::try_from(attachment_byte_limit_for_name(&resolved))
+            .unwrap_or(usize::MAX);
+        match read_outbound_media_file_bounded(&resolved, max_bytes) {
             Ok(data) => Ok(GenerateImageResourceResult::Success {
                 path: None,
                 file_size: None,
