@@ -119,15 +119,29 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     if (value.kind === "reply" && typeof value.requestId === "string" && isRecord(value.outcome)) {
       const waiting = pending.get(value.requestId);
       if (waiting == null) return;
-      pending.delete(value.requestId);
       if (value.outcome.status === "ok") {
+        pending.delete(value.requestId);
         try { waiting.resolve(validateReply(waiting.method, value.outcome.value)); }
         catch (error) { waiting.reject(error); }
-      } else if (value.outcome.status === "failed" && isRecord(value.outcome.failure)) {
+      } else if (value.outcome.status === "failed") {
+        pending.delete(value.requestId);
+        if (!isRecord(value.outcome.failure)) {
+          waiting.reject(new CoordinatorCallError(
+            "protocol-error",
+            "Coordinator returned a failed reply without a failure object",
+          ));
+          return;
+        }
         waiting.reject(new CoordinatorCallError(
           typeof value.outcome.failure.code === "string" ? value.outcome.failure.code : "failed",
           typeof value.outcome.failure.message === "string" ? value.outcome.failure.message : "Coordinator request failed",
           typeof value.outcome.failure.transportKind === "string" ? value.outcome.failure.transportKind : undefined
+        ));
+      } else {
+        pending.delete(value.requestId);
+        waiting.reject(new CoordinatorCallError(
+          "protocol-error",
+          "Coordinator returned a reply with an invalid outcome status",
         ));
       }
       return;
