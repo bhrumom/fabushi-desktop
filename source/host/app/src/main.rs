@@ -6621,6 +6621,37 @@ fn clear_durable_channel_failure_markers(
     }
 }
 
+fn filter_current_channel_failure_provenance(
+    deps: &LocalRoutedRunnerDeps,
+    agent_id: &str,
+    failures: &mut Vec<serde_json::Value>,
+) -> Result<(), String> {
+    let current_session_key = deps
+        .session_workers
+        .read_session_work_admission(agent_id)?
+        .map(|record| record.session_key)
+        .filter(|value| !value.trim().is_empty());
+    let mut stale = Vec::new();
+    failures.retain(|failure| {
+        let Some(session_key) = failure
+            .get("sessionKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            return true;
+        };
+        if current_session_key.as_deref() == Some(session_key) {
+            true
+        } else {
+            stale.push(failure.clone());
+            false
+        }
+    });
+    clear_durable_channel_failure_markers(deps, agent_id, &stale);
+    Ok(())
+}
+
 fn run_channel_failure_revival_worker(
     deps: LocalRoutedRunnerDeps,
     roster: Arc<ProductionRosterEmit>,
@@ -6628,7 +6659,7 @@ fn run_channel_failure_revival_worker(
     agent_id: String,
 ) {
     loop {
-        let failures = {
+        let mut failures = {
             let mut state = wakes
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
@@ -6652,6 +6683,21 @@ fn run_channel_failure_revival_worker(
         };
         if summary.is_group {
             clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+            continue;
+        }
+        if let Err(error) = filter_current_channel_failure_provenance(
+            &deps,
+            &agent_id,
+            &mut failures,
+        ) {
+            eprintln!(
+                "mahayana-host channel_failure_provenance_resolve_failed agent={} error={error}",
+                agent_id
+            );
+            requeue_channel_failures(&wakes, &agent_id, failures);
+            break;
+        }
+        if failures.is_empty() {
             continue;
         }
         let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {

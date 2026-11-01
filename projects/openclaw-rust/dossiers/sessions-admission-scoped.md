@@ -176,6 +176,9 @@ simulation. The registry is still process-local and has no shipping inbound
 producer or outbound transcript consumer, so its ledger wiring and verification
 remain pending.
 
+follow-up under the same session owner and does not claim full channel receipt
+correlation or runtime acceptance.
+
 The registry is now retained by the existing `ProductionSessionWorkers` owner
 and exposed through `SandAgentSessionStore`, so separately constructed session
 facades share one process-lifetime pending-turn state instead of creating
@@ -609,3 +612,13 @@ through restart/rearm; legacy envelopes without a key retain the existing
 compatibility path. This is a bounded dispatch fence, not full channel
 conversation/receipt correlation; runtime, plugin, and acceptance evidence
 remain pending.
+
+## 12.19 Channel failure follow-up rebind fence — 2026-11-01
+
+The channel-delivery failure consumer now filters persisted failure envelopes
+against the current owner admission before starting its background follow-up.
+Session-bound failures whose key is missing, rebound, or no longer admitted are
+cleared as stale and cannot wake a successor session; legacy failures without a
+key remain on the existing compatibility path. This keeps restart/rearm
+follow-up under the same session owner and does not claim full channel receipt
+correlation or runtime acceptance.
