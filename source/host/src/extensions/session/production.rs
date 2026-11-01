@@ -5029,12 +5029,19 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Vec<AgentSummary>, String> {
         let is_deleting = |agent_id: &str| self.is_agent_being_deleted(agent_id);
+        let with_agent_mutation: &dyn for<'a> Fn(
+            &'a str,
+            Box<dyn FnOnce() -> Result<Option<AgentSummary>, String> + 'a>,
+        ) -> Result<Option<AgentSummary>, String> = &|agent_id, operation| {
+            self.with_agent_filesystem_mutation(agent_id, operation)
+        };
         list_agents(
             &self.agents_root,
             self.busy_timeout_ms,
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            with_agent_mutation,
         )
     }
 
