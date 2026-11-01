@@ -435,3 +435,11 @@ Direct fixed-U source and composition evidence for this responsibility is `.agen
 
 The upstream performer normally executes its selected validation/evidence steps immediately. FMEP-001 deliberately changes that timing for the current Fabushi migration: Stage A records only source-level contracts and authored test/evidence requirements. No upstream performer command, build, test, validator, evidence campaign, runtime driver or Fabushi executable validation is run in this closure. Stage-B exact-candidate evidence remains required before `verified` or acceptance.
 
+
+### OpenAI performer host-adapter evidence
+
+Host-adapter evidence binds the exact fixed-U YAML blob `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a` to its three declarative fields and to the canonical `perform-task` skill it invokes. Passing metadata evidence records the exact display name, short description, default prompt, fixed-U identity, and the fact that the prompt delegates through `$perform-task` rather than embedding a second performer implementation.
+
+Invocation evidence must show that the adapter selects one named ai-tdesktop task and leaves all task identity/ownership, source-lineage, phase/resume, review, evidence, final-state and publication authority to `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`. Peer Claude/Grok wrappers may adapt delegation mechanics, but no host adapter may widen the performer into queue processing, discovery routing, replacement creation, consolidation, shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner ownership, or a second acceptance store.
+
+Stage A records `CONTRACT-TDRP-PERFORM-TASK-OPENAI-HOST-METADATA-001` and `INT-TDRP-PERFORM-TASK-OPENAI-HOST-INVOCATION-001` as authored-only. No adapter invocation, performer execution, build, test, validator, runtime check, evidence campaign or acceptance is executed here.

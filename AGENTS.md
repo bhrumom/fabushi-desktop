@@ -439,3 +439,9 @@ The current Fabushi migration's FMEP-001 Stage A changes only the timing of exec
 
 Final publication is canonical repository state, not a source commit or chat report. An approved result, a genuine exhausted Block, or a split-required result must preserve its required task artifacts, retained-implementation disposition, exact unverified behavior, and clean/recoverable source boundary, then publish through the repository's non-force compare-and-swap path. Ordinary concurrent publication may refresh and retry only after revalidation; a semantic conflict or unavailable remote preserves resumable state. Agent interruption, missing narration, or an incomplete evidence campaign leaves the task in progress and cannot manufacture a Block or approval.
 
+
+##### OpenAI single-task performer host adapter
+
+The OpenAI `perform-task` adapter is discovery and invocation metadata only. Its display name and short description may identify the single-task performer, and its default prompt must delegate to `$perform-task` for one named ai-tdesktop task. It must not widen that invocation into queue draining, follow-up selection, split routing, consolidation, product Tasks/Automations execution, or a second repository task/runtime owner.
+
+Host metadata never establishes task identity, ownership, review state, evidence state, validation, acceptance, or publication. Those remain with the canonical repository performer/process and quality-evidence authorities above. Provider-specific prompt wording may select the shared performer but cannot override its exactly-one-task, source-lineage, resume, review, evidence or non-force publication contracts.

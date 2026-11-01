@@ -470,3 +470,11 @@ FMEP-001 remains the execution-timing authority for this migration: Stage A auth
 
 Stage-A contracts authored, not run: `CONTRACT-TDRP-PERFORM-TASK-STATE-AUTHORITY-001`, `CONTRACT-TDRP-PERFORM-TASK-SOURCE-LINEAGE-001`, `CONTRACT-TDRP-PERFORM-TASK-PHASE-RESUME-001`, `CONTRACT-TDRP-PERFORM-TASK-MECHANICAL-LANE-001`, `CONTRACT-TDRP-PERFORM-TASK-REVIEW-CONVERGENCE-001`, `CONTRACT-TDRP-PERFORM-TASK-EVIDENCE-RECOVERY-001`, `CONTRACT-TDRP-PERFORM-TASK-PUBLICATION-001`, and `INT-TDRP-PERFORM-TASK-HOST-COMPOSITION-001`.
 
+
+#### OpenAI performer host-adapter qualification
+
+Qualify `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a` as a declarative host adapter over the existing single-task performer. The exact metadata must expose `display_name = "Perform AI Task"`, describe implementation/resumption of one Telegram AI task, and use a default prompt that invokes `$perform-task` to implement, adaptively review and test, and publish one named ai-tdesktop task.
+
+The adapter passes only when invocation preserves the canonical perform-task boundary: one already selected/named task, no queue or inbox ownership, no replacement-task creation, no split/consolidation routing, and no independent task/review/evidence/publication state. Claude and Grok command wrappers remain peer host adapters for the same shared skill; provider-specific syntax cannot change semantic ownership. FMEP-001 keeps executable qualification deferred.
+
+Stage-A contracts authored, not run: `CONTRACT-TDRP-PERFORM-TASK-OPENAI-HOST-METADATA-001` and `INT-TDRP-PERFORM-TASK-OPENAI-HOST-INVOCATION-001`.
