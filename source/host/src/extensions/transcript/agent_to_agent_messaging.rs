@@ -460,7 +460,7 @@ pub fn persist_agent_inbound_message(
             Some(&source_admission.session_key),
         )?;
     }
-    if let Some(target_admission) = target_admission.as_ref() {
+    if source_admission.is_some() || target_admission.is_some() {
         let source_endpoint = CommunicationEndpoint {
             agent_id: from_id.to_string(),
             session_key: source_admission
@@ -475,9 +475,14 @@ pub fn persist_agent_inbound_message(
         };
         let target_endpoint = CommunicationEndpoint {
             agent_id: agent_id.to_string(),
-            session_key: target_admission.session_key.clone(),
+            session_key: target_admission
+                .as_ref()
+                .map(|admission| admission.session_key.clone())
+                .unwrap_or_default(),
             store_path: sessions.session_db_path(agent_id)?.to_string_lossy().into_owned(),
-            session_id: Some(target_admission.session_id.clone()),
+            session_id: target_admission
+                .as_ref()
+                .map(|admission| admission.session_id.clone()),
             communication: sessions.read_session_communication_policy(agent_id)?,
         };
         match plan_session_communication(
@@ -495,10 +500,12 @@ pub fn persist_agent_inbound_message(
             }
             SessionCommunicationDecision::Allowed { .. } => {}
         }
-        sessions.assert_session_work_admission(
-            agent_id,
-            Some(&target_admission.session_key),
-        )?;
+        if let Some(target_admission) = target_admission.as_ref() {
+            sessions.assert_session_work_admission(
+                agent_id,
+                Some(&target_admission.session_key),
+            )?;
+        }
     }
     let from_name = source.name.trim();
     let from_name = if from_name.is_empty() { "An agent" } else { from_name };

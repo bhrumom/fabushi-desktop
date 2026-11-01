@@ -191,7 +191,7 @@ fn inbound_policy_recheck_is_target_admission_scoped() {
     let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
     assert!(source.contains("if let Some(source_admission) = source_admission.as_ref()"));
     assert!(source.contains("from_id,\n            Some(&source_admission.session_key)"));
-    assert!(source.contains("if let Some(target_admission) = target_admission.as_ref()"));
+    assert!(source.contains("if source_admission.is_some() || target_admission.is_some()"));
     assert!(source.contains(".map(|admission| admission.session_key.clone())"));
     assert!(source.contains(".unwrap_or_default()"));
     assert!(source.contains("sessions.assert_session_work_admission(\n            agent_id"));
