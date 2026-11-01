@@ -24959,7 +24959,10 @@
         "desktop-contract-sync-commit:4677ae986ea7f9e3156c57883ecfbb6fca7e2f49",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@ebfb3670b5cd097b9ce288782c7954f5cfe9fc43",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@7314ad06c48f9ca87dc08c0bd3b7d08a47579797"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@7314ad06c48f9ca87dc08c0bd3b7d08a47579797",
+        "platform-core-final-compliance-commit:db0fc2f7db9871bedf7076b12b1fa8ab9c9e430d",
+        "platform-core-final-spec-blob:4960f9aba348caf9dcd520a26a9bcc8952faa1a3",
+        "desktop-round67-bookkeeping-commit:a4a75364cb754e6d62ea4c02fc76dc4dc99163eb"
       ],
       "test_evidence": [
         "canonical and desktop tracked authored-only contracts cover empty, one-element, multiple signed long order/bit preservation, exact EOF and vector-count overflow/no-partial-header behavior; not run"
@@ -25087,7 +25090,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping SessionPrivate::tryToSend in Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation bookkeeping only. Remote source review confirms existing build_msgs_ack/TlWriter already satisfy exact fixed-U request-wire semantics, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary ACK scheduling/history/application remains open and fail-closed. Final source-level compliance is pending the post-bookkeeping platform spec update.",
+      "notes": "Stage A implementation bookkeeping only. Existing build_msgs_ack/TlWriter already satisfy exact fixed-U request-wire semantics, so no production behavior change was made. Durable spec and authored-only contracts were added and mirrored but not executed; validation_status=not-run and accepted=false. Arbitrary ACK scheduling/history/application remains open and fail-closed. Final source-level compliance is platform-core db0fc2f7db9871bedf7076b12b1fa8ab9c9e430d/spec blob 4960f9aba348caf9dcd520a26a9bcc8952faa1a3; desktop bookkeeping checkpoint is a4a75364cb754e6d62ea4c02fc76dc4dc99163eb. Executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

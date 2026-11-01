@@ -1344,3 +1344,21 @@ fixed-U source/legal closure, Stage-B executable evidence, and independent relea
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator,
 unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Round 98 final source-level compliance
+
+Platform-core final compliance is `db0fc2f7db9871bedf7076b12b1fa8ab9c9e430d` / spec blob
+`4960f9aba348caf9dcd520a26a9bcc8952faa1a3`, referencing desktop bookkeeping checkpoint
+`a4a75364cb754e6d62ea4c02fc76dc4dc99163eb`. The unique `TDRP-R9-MTPROTO-MSGS-ACK-REQUEST-WIRE-001` responsibility is
+`implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Production disposition remains **no production delta**. Canonical/desktop telegram-protocol api/lib blobs remain
+`ebfb3670b5cd097b9ce288782c7954f5cfe9fc43` / `abab39e42f100972484191f0e52e9edd9b88c6cf`,
+TL remains `89256ab35184b6dc06a095ab34abb9f44e95a264`, and canonical/desktop authored contract blob is
+`7314ad06c48f9ca87dc08c0bd3b7d08a47579797`.
+
+Coverage is `responsibilities_total=99, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+Arbitrary ACK scheduling/history/application, connection/TLS scheduling, auth-key binding/persistence, gzip,
+complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence
+and independent release ACCEPT remain open. No executable validation was performed.
