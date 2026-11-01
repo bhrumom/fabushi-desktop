@@ -1,9 +1,9 @@
 # Coordinator renderer reply settlement — Specification
 
-Status: active  
-Owner: Fabushi Desktop renderer transport owner  
-Last updated: 2026-11-01  
-Related project: `projects/openclaw-rust`  
+Status: active
+Owner: Fabushi Desktop renderer transport owner
+Last updated: 2026-11-01
+Related project: `projects/openclaw-rust`
 Related task / issue / PR: N/A
 
 ## 1. Context / problem
