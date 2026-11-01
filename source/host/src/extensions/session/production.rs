@@ -3410,36 +3410,40 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<AgentAvatarResponse, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        if db_path.is_file() {
-            let _owner = self.open_agent_db_owner(agent_id)?;
-        }
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        Ok(get_profile_avatar(
-            agent_dir,
-            &db_path,
-            self.busy_timeout_ms,
-        ))
+        self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if db_path.is_file() {
+                let _owner = self.open_agent_db_owner_locked(agent_id)?;
+            }
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            Ok(get_profile_avatar(
+                agent_dir,
+                &db_path,
+                self.busy_timeout_ms,
+            ))
+        })
     }
 
     pub fn get_agent_avatar_png(
         &self,
         agent_id: &str,
     ) -> Result<Option<Vec<u8>>, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        if db_path.is_file() {
-            let _owner = self.open_agent_db_owner(agent_id)?;
-        }
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        Ok(get_profile_avatar_png(
-            agent_dir,
-            &db_path,
-            self.busy_timeout_ms,
-        ))
+        self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if db_path.is_file() {
+                let _owner = self.open_agent_db_owner_locked(agent_id)?;
+            }
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            Ok(get_profile_avatar_png(
+                agent_dir,
+                &db_path,
+                self.busy_timeout_ms,
+            ))
+        })
     }
 
     pub fn set_agent_avatar_bytes(
