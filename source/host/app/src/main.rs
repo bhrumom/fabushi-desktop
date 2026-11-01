@@ -6206,6 +6206,21 @@ fn append_channel_inbound_entries(
     Ok(())
 }
 
+fn requeue_channel_inbound_envelopes(
+    wakes: &Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+    agent_id: &str,
+    envelopes: Vec<serde_json::Value>,
+) {
+    let mut state = wakes
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let pending = state.pending_inbound.remove(agent_id).unwrap_or_default();
+    state.pending_inbound.insert(
+        agent_id.to_string(),
+        envelopes.into_iter().chain(pending).collect(),
+    );
+}
+
 fn publish_channel_activity(
     events: &GatewayEventHub,
     agent_id: &str,
@@ -6241,8 +6256,16 @@ fn run_channel_inbound_revival_worker(
             break;
         }
 
-        let Ok(Some(summary)) = deps.session_workers.summarize_agent_by_id(&agent_id, None) else {
-            break;
+        let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
+            Ok(Some(summary)) => summary,
+            Ok(None) => break,
+            Err(error) => {
+                eprintln!(
+                    "mahayana-host channel_inbound_summary_failed agent={agent_id} error={error}"
+                );
+                requeue_channel_inbound_envelopes(&wakes, &agent_id, envelopes);
+                break;
+            }
         };
         if summary.is_group || summary.remote_room.is_some() {
             continue;
