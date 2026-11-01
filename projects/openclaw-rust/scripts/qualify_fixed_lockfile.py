@@ -132,10 +132,15 @@ def workspace_manifest_roots(frontier_path: Path) -> set[str]:
 
 
 def manifest_dependency_frontier(
-    repo: Path, commit: str, frontier_path: Path
+    repo: Path, commit: str, frontier_path: Path, lock_content: str
 ) -> list[dict[str, Any]]:
     document = json.loads(frontier_path.read_text(encoding="utf-8"))
     rows: list[dict[str, Any]] = []
+    package_observations: dict[str, set[str]] = {}
+    for fragment in split_fragments(lock_content):
+        parsed_fragment = parse_fragment(fragment)
+        for key, integrities in parsed_fragment["package_integrities"].items():
+            package_observations.setdefault(key, set()).update(integrities)
     sections = (
         "dependencies",
         "optionalDependencies",
@@ -161,19 +166,36 @@ def manifest_dependency_frontier(
             for dependency, specifier in sorted(values.items()):
                 if not isinstance(specifier, str):
                     continue
-                rows.append(
-                    {
-                        "manifest_blob": blob,
-                        "manifest_path": path,
-                        "package": package,
-                        "section": section,
-                        "dependency": dependency,
-                        "specifier": specifier,
-                        "edge_kind": "workspace"
-                        if specifier.startswith("workspace:")
-                        else "registry-or-path",
-                    }
+                edge_kind = (
+                    "workspace"
+                    if specifier.startswith("workspace:")
+                    else "registry-or-path"
                 )
+                prefix = f"{dependency}@"
+                candidates = sorted(
+                    key for key in package_observations if key.startswith(prefix)
+                )
+                row = {
+                    "manifest_blob": blob,
+                    "manifest_path": path,
+                    "package": package,
+                    "section": section,
+                    "dependency": dependency,
+                    "specifier": specifier,
+                    "edge_kind": edge_kind,
+                    "lock_package_candidates": candidates,
+                }
+                if edge_kind == "workspace":
+                    row["lock_join_status"] = "workspace-importer-required"
+                elif not candidates:
+                    row["lock_join_status"] = "no-lock-name-candidate"
+                elif specifier in {
+                    key[len(prefix) :].split("(", 1)[0] for key in candidates
+                }:
+                    row["lock_join_status"] = "exact-lock-version-candidate"
+                else:
+                    row["lock_join_status"] = "lock-name-candidates"
+                rows.append(row)
     return rows
 
 
@@ -243,7 +265,7 @@ def qualify(
     }
     if include_manifest_dependencies:
         result["manifest_dependency_frontier"] = manifest_dependency_frontier(
-            repo, commit, frontier_path
+            repo, commit, frontier_path, content
         )
     return result
 
