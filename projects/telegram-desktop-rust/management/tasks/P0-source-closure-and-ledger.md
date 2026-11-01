@@ -1414,3 +1414,21 @@ The unique ledger adds `TDRP-R9-MTPROTO-REQ-DH-PARAMS-REQUEST-WIRE-001` as `impl
 Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories, `gzip_packed`, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation, or runtime acceptance was performed.
+
+
+### Round 100 final source-level compliance
+
+Platform-core final compliance is `8832c2ce26819033ea7d06c113ab97345ceda290` / spec blob
+`ac617d4c87a6fe199c1afd5f541f5f12e1ddafc9`, referencing desktop bookkeeping checkpoint
+`cb082b48228fbb2ee43021f41592b605d072bfb9`. The unique
+`TDRP-R9-MTPROTO-REQ-DH-PARAMS-REQUEST-WIRE-001` responsibility is
+`implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Canonical production `handshake.rs` is `b6572c91a450a240c56c15ca80585afb97c19839`; unchanged canonical/desktop lib is
+`abab39e42f100972484191f0e52e9edd9b88c6cf`. Canonical and desktop authored contract blob is
+`071b72be6772117fb174daf86d5c9a19ce372b73`. The builder now fails closed on inconsistent active resPQ factors while preserving the existing exact req_DH_params layout, fingerprint membership and non-empty encrypted-data guards.
+
+Coverage is `responsibilities_total=101, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+Auth-key binding/persistence/expiry/renewal, connection scheduling/racing/send retry, arbitrary request histories,
+gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable
+evidence and independent release ACCEPT remain open. No executable validation was performed.

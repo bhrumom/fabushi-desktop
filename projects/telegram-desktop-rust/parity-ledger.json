@@ -25472,7 +25472,10 @@
         "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@071b72be6772117fb174daf86d5c9a19ce372b73",
         "desktop-contract-mirror-commit:0e0188f5d1ebf96d2ee21444e1f7b65994c88ee2",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@abab39e42f100972484191f0e52e9edd9b88c6cf",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@071b72be6772117fb174daf86d5c9a19ce372b73"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@071b72be6772117fb174daf86d5c9a19ce372b73",
+        "platform-core-final-compliance-commit:8832c2ce26819033ea7d06c113ab97345ceda290",
+        "platform-core-final-spec-blob:ac617d4c87a6fe199c1afd5f541f5f12e1ddafc9",
+        "desktop-round69-bookkeeping-commit:cb082b48228fbb2ee43021f41592b605d072bfb9"
       ],
       "test_evidence": [
         "Canonical and desktop tracked authored-only contracts cover exact field order/EOF plus factor mismatch, unoffered fingerprint and empty encrypted_data rejection; not run."
@@ -25598,7 +25601,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and shipping Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level implementation. Existing req_DH_params serializer and shipping AuthKeyHandshake path already existed; this round closes the responsibility independently and adds the missing factor-consistency fail-closed guard. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Binding/persistence/transport/history/gzip/difference lifecycles remain open.",
+      "notes": "Stage A source-level implementation. Existing req_DH_params serializer and shipping AuthKeyHandshake path already existed; this round closes the responsibility independently and adds the missing factor-consistency fail-closed guard. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Binding/persistence/transport/history/gzip/difference lifecycles remain open. Final source-level compliance is platform-core 8832c2ce26819033ea7d06c113ab97345ceda290/spec blob ac617d4c87a6fe199c1afd5f541f5f12e1ddafc9; desktop bookkeeping checkpoint is cb082b48228fbb2ee43021f41592b605d072bfb9. Executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
