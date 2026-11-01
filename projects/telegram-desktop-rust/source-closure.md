@@ -1893,3 +1893,16 @@ Platform-core final source-level compliance is `1cff6f7176de9d879576e06305036266
 The unique `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` row remains `mapped / pending / validation_status=not-run / accepted=false`. No production blob changed; the responsibility is carrier-independent but cannot be shipped without the canonical unified Settings owner.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Stage-A proxy non-UI consumers boundary (round 114, 2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Manual source review of `external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371`, `calls_call.cpp@a67723f5827e56be3f36033f3ad59bc37d0acf7b`, `mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087`, `config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194`, `core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26` and `mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef` splits three non-UI SettingsProxy consumers without reopening durable ownership.
+
+External proxy automation list/add/remove/use/next/toggle/undo is a command adapter over the same SettingsProxy and Local::writeSettings persistence. The fixed-U call projection is deliberately inert because `ProxyData::supportsCalls()` returns false unconditionally, so no tgcalls proxy descriptor is reachable. MTProto projects proxy-enabled state into ConfigLoader/special-config suppression and maintains transient resolved-IP ordering/expiry; those fields are not serialized, and selected writeback/refresh remains gated through the Settings owner.
+
+Current Fabushi still has no canonical product Settings/application owner. Desktop telegram-network `241cd8ec792070a8de8af9ec6ca5b317e34376d1` and telegram-runtime `10031c5261bb0810ad2df2fca3de2e2fe4f65301` contain no shipping proxy/config-loader/custom-resolution consumer, and the tracked desktop tree has no shipping call/proxy consumer to extend. Therefore three exact responsibilities are recorded as mapped/pending with no production delta: `TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001`, `TDRP-R9-PROXY-CALL-CONSUMER-001`, and `TDRP-R9-PROXY-MTPROTO-CONSUMER-001`.
+
+Spec-first platform commit is `2e155bb7be49b9e745f94cdc8b40fd831e052af7` / initial spec blob `b4220a6ac80b210cc8a969925ea0b180405486d7`. Coverage becomes `source_entries_total=16202, responsibilities_total=116, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; focused semantic review does not decrement global unknown/unread.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

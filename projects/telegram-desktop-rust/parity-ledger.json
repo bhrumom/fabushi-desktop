@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 113,
+    "responsibilities_total": 116,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28932,6 +28932,667 @@
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/core/external_control.cpp",
+      "source_blob_sha": "43327bc03c528b65b41ce72add5e7cca584ea371",
+      "source_kind": "source",
+      "module_id": "tdesktop.core.external-proxy-mutation",
+      "responsibility_id": "TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001",
+      "source_symbols": [
+        "HandleProxyList",
+        "HandleProxyAdd",
+        "HandleProxyRemove",
+        "HandleProxySelect",
+        "HandleProxyUse",
+        "HandleProxyNext",
+        "HandleProxyToggle",
+        "ProxyIndexByArgument"
+      ],
+      "capability_ids": [
+        "CAP-PROXY_EXTERNAL_MUTATION_CONSUMER_001"
+      ],
+      "dependency_ids": [
+        "Canonical Fabushi Settings",
+        "telegram-network/runtime",
+        "fixed-U proxy value semantics"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round114-proxy-non-ui-consumers-boundary-20261101.md",
+      "behavior_contract": "External automation reads and mutates the same canonical proxy Settings state: exact add/remove/use/next/toggle/undo semantics persist through the one Settings owner; the external-control adapter owns no durable proxy truth.",
+      "state_machine": "canonical Settings state -> typed downstream projection/command -> existing consumer boundary; blocked when canonical owner or shipping consumer is absent; executable validation remains not-run",
+      "side_effects": [
+        "Records exact downstream consumer semantics without changing production code",
+        "Preserves one canonical Settings owner and rejects provider-local duplicate state"
+      ],
+      "failure_cases": [
+        "Consumer becomes a second durable proxy settings owner",
+        "Dead production API is added without a shipping call path",
+        "Fixed-U behavior is broadened beyond the source facts"
+      ],
+      "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
+      "non_ui_responsibilities": [
+        "HandleProxyList",
+        "HandleProxyAdd",
+        "HandleProxyRemove",
+        "HandleProxySelect",
+        "HandleProxyUse",
+        "HandleProxyNext",
+        "HandleProxyToggle",
+        "ProxyIndexByArgument"
+      ],
+      "platform_delta": "No production delta in this round; source-level semantics are mapped to existing/future owners with explicit shipping blockers.",
+      "existing_owner_candidates": [
+        "future canonical Fabushi Settings/application owner",
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "existing canonical call/runtime owner when shipping"
+      ],
+      "existing_owner": "Future canonical Fabushi Settings/application owner with existing external-control/automation adapter as a command-only consumer",
+      "rejected_existing_owners": [
+        "mahayana-app-host feature.persistence/ui_state: not canonical product Settings truth",
+        "telegram-storage: provider-private auth/transport persistence",
+        "fabushi-account-service: account/session owner, not proxy preferences",
+        "new Telegram-specific settings/call/proxy subsystem: violates unified architecture"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-proxy-non-ui-consumers-boundary.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/parity-ledger.json"
+      ],
+      "fabushi_target_symbols": [
+        "future SettingsCommand::Add/Remove/Select/ToggleProxy",
+        "future authorized external-control proxy command adapter"
+      ],
+      "target_language": "Rust/TypeScript at existing owner boundary once shipping owner exists; no new production code in this blocked round",
+      "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
+      "command_event_contracts": [
+        "proxy-add duplicate -> existing id/no mutation",
+        "remove selected+Enabled -> empty/System",
+        "remove selected+non-Enabled -> empty/preserve mode",
+        "next -1 -> first",
+        "toggle enabled -> Disabled retaining selected"
+      ],
+      "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
+      "lifecycle_owner": "Future canonical Fabushi Settings/application owner with existing external-control/automation adapter as a command-only consumer",
+      "persistence_and_restart": "No new persistence. Durable proxy state remains in the future canonical Settings owner; transient consumer observations are not persisted.",
+      "concurrency_and_cancellation": "No scheduler or background lifecycle is added in this round. Existing consumer lifecycle remains authoritative when the shipping path exists.",
+      "security_boundary": "Proxy secrets must not be logged or copied into UI/provider-local persistence. External commands must be authorized before forwarding typed mutations.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram/native network stack only when a selectable proxy carrier exists"
+      ],
+      "service_owner": "Future canonical Fabushi Settings/application owner with existing external-control/automation adapter as a command-only consumer",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "No canonical Fabushi product Settings/application owner exists in the current checkpoint.",
+        "No shipping external local-automation proxy command surface exists in the tracked desktop tree.",
+        "Stage B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/core/external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371",
+        "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26",
+        "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
+        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7"
+      ],
+      "test_evidence": [
+        "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
+        "No fake executable contract was added against a nonexistent canonical owner/shipping consumer."
+      ],
+      "target_commit": "2e155bb7be49b9e745f94cdc8b40fd831e052af7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi ProductShell/Settings + existing source-neutral runtime owners",
+      "composition_slot": "Proxy non-UI consumer",
+      "capability_component": "TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001",
+      "variation_axes": [
+        "source-defined consumer state",
+        "shipping owner present vs absent"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Settings ownership",
+        "Existing telegram-network/runtime lifecycle",
+        "No duplicate persistence"
+      ],
+      "duplicate_root_check": "No second Settings, proxy, call, network, account, conversation, UI root, sidecar or subprocess is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop tracked tree contains no shipping call/proxy consumer; telegram-network/runtime contain no proxy/config-loader/custom-resolution symbols at the reviewed blobs."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Settings/Messages surfaces; unchanged",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Proxy settings/runtime projection",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Durable proxy state remains single-owner; consumer projections are recomputed from canonical state/runtime observations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROXY-EXTERNAL-MUTATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PROXY-EXTERNAL-SINGLE-OWNER-001",
+        "INV-TDRP-PROXY-EXTERNAL-UNDO-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROXY-NON-UI-CONSUMERS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-proxy-non-ui-consumer-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/core/external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
+      "notes": "Task round83/source evidence round114. External proxy list/add/remove/use/next/toggle/undo semantics are fully source-read and carrier-independent but cannot ship without the canonical Settings owner. Recorded mapped/pending, no production delta, validation_status=not-run, accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-PROXY-EXTERNAL-MUTATION-CONSUMER-001",
+      "source_paths": [
+        "Telegram/SourceFiles/core/external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/calls/calls_call.cpp",
+      "source_blob_sha": "a67723f5827e56be3f36033f3ad59bc37d0acf7b",
+      "source_kind": "source",
+      "module_id": "tdesktop.calls.proxy-consumer",
+      "responsibility_id": "TDRP-R9-PROXY-CALL-CONSUMER-001",
+      "source_symbols": [
+        "Call::start/create descriptor proxy gate",
+        "Core::SettingsProxy::useProxyForCalls",
+        "MTP::ProxyData::supportsCalls"
+      ],
+      "capability_ids": [
+        "CAP-PROXY_CALL_CONSUMER_001"
+      ],
+      "dependency_ids": [
+        "Canonical Fabushi Settings",
+        "telegram-network/runtime",
+        "fixed-U proxy value semantics"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round114-proxy-non-ui-consumers-boundary-20261101.md",
+      "behavior_contract": "The call descriptor gate includes useProxyForCalls/enabled/selected, but fixed-U ProxyData::supportsCalls() unconditionally returns false, so no call proxy descriptor is ever attached in this U.",
+      "state_machine": "canonical Settings state -> typed downstream projection/command -> existing consumer boundary; blocked when canonical owner or shipping consumer is absent; executable validation remains not-run",
+      "side_effects": [
+        "Records exact downstream consumer semantics without changing production code",
+        "Preserves one canonical Settings owner and rejects provider-local duplicate state"
+      ],
+      "failure_cases": [
+        "Consumer becomes a second durable proxy settings owner",
+        "Dead production API is added without a shipping call path",
+        "Fixed-U behavior is broadened beyond the source facts"
+      ],
+      "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
+      "non_ui_responsibilities": [
+        "Call::start/create descriptor proxy gate",
+        "Core::SettingsProxy::useProxyForCalls",
+        "MTP::ProxyData::supportsCalls"
+      ],
+      "platform_delta": "No production delta in this round; source-level semantics are mapped to existing/future owners with explicit shipping blockers.",
+      "existing_owner_candidates": [
+        "future canonical Fabushi Settings/application owner",
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "existing canonical call/runtime owner when shipping"
+      ],
+      "existing_owner": "Existing canonical call/runtime owner when shipping; no runtime delta is permitted for this fixed-U unreachable branch",
+      "rejected_existing_owners": [
+        "mahayana-app-host feature.persistence/ui_state: not canonical product Settings truth",
+        "telegram-storage: provider-private auth/transport persistence",
+        "fabushi-account-service: account/session owner, not proxy preferences",
+        "new Telegram-specific settings/call/proxy subsystem: violates unified architecture"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-proxy-non-ui-consumers-boundary.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/parity-ledger.json"
+      ],
+      "fabushi_target_symbols": [
+        "fixed-U no-call-proxy projection"
+      ],
+      "target_language": "Rust/TypeScript at existing owner boundary once shipping owner exists; no new production code in this blocked round",
+      "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
+      "command_event_contracts": [
+        "all proxy types x useProxyForCalls/enabled/host combinations -> no call proxy descriptor"
+      ],
+      "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
+      "lifecycle_owner": "Existing canonical call/runtime owner when shipping; no runtime delta is permitted for this fixed-U unreachable branch",
+      "persistence_and_restart": "No new persistence. Durable proxy state remains in the future canonical Settings owner; transient consumer observations are not persisted.",
+      "concurrency_and_cancellation": "No scheduler or background lifecycle is added in this round. Existing consumer lifecycle remains authoritative when the shipping path exists.",
+      "security_boundary": "Proxy secrets must not be logged or copied into UI/provider-local persistence. External commands must be authorized before forwarding typed mutations.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram/native network stack only when a selectable proxy carrier exists"
+      ],
+      "service_owner": "Existing canonical call/runtime owner when shipping; no runtime delta is permitted for this fixed-U unreachable branch",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "Fixed-U supportsCalls() is unconditionally false, so adding SOCKS5 call proxy behavior would be non-equivalent.",
+        "Tracked desktop first-party tree has no shipping call/proxy consumer owner to extend.",
+        "Stage B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/calls/calls_call.cpp@a67723f5827e56be3f36033f3ad59bc37d0acf7b",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+        "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26",
+        "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
+        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7"
+      ],
+      "test_evidence": [
+        "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
+        "No fake executable contract was added against a nonexistent canonical owner/shipping consumer."
+      ],
+      "target_commit": "2e155bb7be49b9e745f94cdc8b40fd831e052af7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi ProductShell/Settings + existing source-neutral runtime owners",
+      "composition_slot": "Proxy non-UI consumer",
+      "capability_component": "TDRP-R9-PROXY-CALL-CONSUMER-001",
+      "variation_axes": [
+        "source-defined consumer state",
+        "shipping owner present vs absent"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Settings ownership",
+        "Existing telegram-network/runtime lifecycle",
+        "No duplicate persistence"
+      ],
+      "duplicate_root_check": "No second Settings, proxy, call, network, account, conversation, UI root, sidecar or subprocess is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop tracked tree contains no shipping call/proxy consumer; telegram-network/runtime contain no proxy/config-loader/custom-resolution symbols at the reviewed blobs."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Settings/Messages surfaces; unchanged",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Proxy settings/runtime projection",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Durable proxy state remains single-owner; consumer projections are recomputed from canonical state/runtime observations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PROXY-CALL-CONSUMER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROXY-CALL-CONSUMER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PROXY-CALL-FIXED-U-NO-PROXY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROXY-NON-UI-CONSUMERS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-proxy-non-ui-consumer-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/calls/calls_call.cpp@a67723f5827e56be3f36033f3ad59bc37d0acf7b plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
+      "notes": "Task round83/source evidence round114. useProxyForCalls is durable compatibility state, but its fixed-U non-UI call consumer is unreachable because supportsCalls()==false. No SOCKS5 call behavior is added. mapped/pending no-production-delta; validation not run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-PROXY-CALL-CONSUMER-001",
+      "source_paths": [
+        "Telegram/SourceFiles/calls/calls_call.cpp@a67723f5827e56be3f36033f3ad59bc37d0acf7b"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+      "source_blob_sha": "d25fe3b72298fab371854f80186ee8e4777ea087",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.proxy-consumer",
+      "responsibility_id": "TDRP-R9-PROXY-MTPROTO-CONSUMER-001",
+      "source_symbols": [
+        "Instance::Private::_proxySettings",
+        "connectionTypeChanges -> ConfigLoader::setProxyEnabled",
+        "requestConfig",
+        "applyDomainIps",
+        "setGoodProxyDomain",
+        "ConfigLoader::refreshSpecialLoader",
+        "ConfigLoader::sendSpecialRequest"
+      ],
+      "capability_ids": [
+        "CAP-PROXY_MTPROTO_CONSUMER_001"
+      ],
+      "dependency_ids": [
+        "Canonical Fabushi Settings",
+        "telegram-network/runtime",
+        "fixed-U proxy value semantics"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round114-proxy-non-ui-consumers-boundary-20261101.md",
+      "behavior_contract": "MTProto consumes canonical proxy-enabled/selected state for config-acquisition suppression and transient resolved-IP ordering. DNS observations are not serialized; selected writeback/session refresh occurs only through the Settings owner and only under the source-defined enabled/change gates.",
+      "state_machine": "canonical Settings state -> typed downstream projection/command -> existing consumer boundary; blocked when canonical owner or shipping consumer is absent; executable validation remains not-run",
+      "side_effects": [
+        "Records exact downstream consumer semantics without changing production code",
+        "Preserves one canonical Settings owner and rejects provider-local duplicate state"
+      ],
+      "failure_cases": [
+        "Consumer becomes a second durable proxy settings owner",
+        "Dead production API is added without a shipping call path",
+        "Fixed-U behavior is broadened beyond the source facts"
+      ],
+      "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
+      "non_ui_responsibilities": [
+        "Instance::Private::_proxySettings",
+        "connectionTypeChanges -> ConfigLoader::setProxyEnabled",
+        "requestConfig",
+        "applyDomainIps",
+        "setGoodProxyDomain",
+        "ConfigLoader::refreshSpecialLoader",
+        "ConfigLoader::sendSpecialRequest"
+      ],
+      "platform_delta": "No production delta in this round; source-level semantics are mapped to existing/future owners with explicit shipping blockers.",
+      "existing_owner_candidates": [
+        "future canonical Fabushi Settings/application owner",
+        "bhrumom/fabushi-platform-core:native/telegram-network",
+        "existing canonical call/runtime owner when shipping"
+      ],
+      "existing_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "rejected_existing_owners": [
+        "mahayana-app-host feature.persistence/ui_state: not canonical product Settings truth",
+        "telegram-storage: provider-private auth/transport persistence",
+        "fabushi-account-service: account/session owner, not proxy preferences",
+        "new Telegram-specific settings/call/proxy subsystem: violates unified architecture"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-proxy-non-ui-consumers-boundary.md",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "fabushi_target_symbols": [
+        "future selected-proxy runtime projection",
+        "future transient resolved-IP cache under existing telegram-network owner"
+      ],
+      "target_language": "Rust/TypeScript at existing owner boundary once shipping owner exists; no new production code in this blocked round",
+      "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
+      "command_event_contracts": [
+        "initial config loader receives isEnabled",
+        "connection type event updates active loader flag",
+        "enabled suppresses special config",
+        "resolved IP cache transient/not serialized",
+        "enabled selected resolution refreshes sessions",
+        "good-IP promotion refreshes global proxy only on actual enabled promotion"
+      ],
+      "state_owner": "Canonical Fabushi Settings/application owner for durable proxy state; downstream consumer owns projection/runtime observations only.",
+      "lifecycle_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "persistence_and_restart": "No new persistence. Durable proxy state remains in the future canonical Settings owner; transient consumer observations are not persisted.",
+      "concurrency_and_cancellation": "No scheduler or background lifecycle is added in this round. Existing consumer lifecycle remains authoritative when the shipping path exists.",
+      "security_boundary": "Proxy secrets must not be logged or copied into UI/provider-local persistence. External commands must be authorized before forwarding typed mutations.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram/native network stack only when a selectable proxy carrier exists"
+      ],
+      "service_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "Canonical/desktop telegram-network@241cd8ec792070a8de8af9ec6ca5b317e34376d1 has no shipping proxy/config-loader/custom-resolution consumer.",
+        "Desktop telegram-runtime@10031c5261bb0810ad2df2fca3de2e2fe4f65301 has no proxy/config-loader/custom-resolution consumer.",
+        "No canonical product Settings event source exists to feed this projection.",
+        "Stage B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087",
+        "fixed-U:Telegram/SourceFiles/mtproto/config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "desktop-runtime-unchanged-blob:10031c5261bb0810ad2df2fca3de2e2fe4f65301",
+        "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
+        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7"
+      ],
+      "test_evidence": [
+        "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
+        "No fake executable contract was added against a nonexistent canonical owner/shipping consumer."
+      ],
+      "target_commit": "2e155bb7be49b9e745f94cdc8b40fd831e052af7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi ProductShell/Settings + existing source-neutral runtime owners",
+      "composition_slot": "Proxy non-UI consumer",
+      "capability_component": "TDRP-R9-PROXY-MTPROTO-CONSUMER-001",
+      "variation_axes": [
+        "source-defined consumer state",
+        "shipping owner present vs absent"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Settings ownership",
+        "Existing telegram-network/runtime lifecycle",
+        "No duplicate persistence"
+      ],
+      "duplicate_root_check": "No second Settings, proxy, call, network, account, conversation, UI root, sidecar or subprocess is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop tracked tree contains no shipping call/proxy consumer; telegram-network/runtime contain no proxy/config-loader/custom-resolution symbols at the reviewed blobs."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Settings/Messages surfaces; unchanged",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Proxy settings/runtime projection",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Durable proxy state remains single-owner; consumer projections are recomputed from canonical state/runtime observations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PROXY-MTPROTO-CONSUMER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROXY-MTPROTO-CONSUMER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PROXY-MTPROTO-TRANSIENT-DNS-001",
+        "INV-TDRP-PROXY-MTPROTO-SETTINGS-NONOWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROXY-NON-UI-CONSUMERS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-proxy-non-ui-consumer-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
+      "notes": "Task round83/source evidence round114. MTProto proxy-enabled/config-loader and transient DNS cache/promotion semantics are understood, but current Fabushi has neither canonical Settings projection nor shipping selectable proxy/config-loader consumer. mapped/pending no-production-delta; validation not run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-PROXY-MTPROTO-CONSUMER-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087"
+      ]
     }
   ],
   "rebaseline_candidate": {
