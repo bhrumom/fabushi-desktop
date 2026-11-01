@@ -1919,12 +1919,12 @@ impl ProductionSessionWorkers {
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.insert(agent_id.to_string());
         }
-        let result = (|| {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
             let db_path = self.session_db_path(agent_id)?;
             if !db_path.is_file() {
                 return Ok(());
             }
-            let owner = self.open_agent_db_owner(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             let Some(mut record) = owner
                 .read_session_work_admission()
                 .map_err(|error| error.to_string())?
@@ -1950,7 +1950,7 @@ impl ProductionSessionWorkers {
                     "agent {agent_id} lifecycle changed while publishing deletion fence"
                 ))
             }
-        })();
+        });
         if result.is_err() {
             let _ = self
                 .deleting_agents
@@ -1967,33 +1967,36 @@ impl ProductionSessionWorkers {
     }
 
     pub fn end_agent_delete(&self, agent_id: &str) -> Result<(), String> {
-        self.clear_agent_delete_fast_path(agent_id);
-        let db_path = self.session_db_path(agent_id)?;
-        if !db_path.is_file() {
-            return Ok(());
-        }
-        let owner = self.open_agent_db_owner(agent_id)?;
-        let Some(mut record) = owner
-            .read_session_work_admission()
-            .map_err(|error| error.to_string())?
-        else {
-            return Ok(());
-        };
-        if !record.deletion_pending {
-            return Ok(());
-        }
-        let expected_revision = record.lifecycle_revision.clone();
-        record.deletion_pending = false;
-        if owner
-            .clear_session_deletion_pending(&expected_revision, &record)
-            .map_err(|error| error.to_string())?
-        {
-            Ok(())
-        } else {
-            Err(format!(
-                "agent {agent_id} lifecycle changed while clearing deletion fence"
-            ))
-        }
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            self.clear_agent_delete_fast_path(agent_id);
+            let db_path = self.session_db_path(agent_id)?;
+            if !db_path.is_file() {
+                return Ok(());
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(());
+            };
+            if !record.deletion_pending {
+                return Ok(());
+            }
+            let expected_revision = record.lifecycle_revision.clone();
+            record.deletion_pending = false;
+            if owner
+                .clear_session_deletion_pending(&expected_revision, &record)
+                .map_err(|error| error.to_string())?
+            {
+                Ok(())
+            } else {
+                Err(format!(
+                    "agent {agent_id} lifecycle changed while clearing deletion fence"
+                ))
+            }
+        });
+        result
     }
 
     pub fn is_agent_being_deleted(&self, agent_id: &str) -> bool {
