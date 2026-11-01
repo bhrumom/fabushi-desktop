@@ -78,6 +78,7 @@ pub fn read_session_model_entry(
 pub fn write_session_model_entry(
     db: &crate::extensions::session::agent_db::SandAgentDb,
     agent_id: &str,
+    expected_lifecycle_revision: &str,
     state: &SessionModelEntryState,
 ) -> Result<bool, String> {
     if state.session_id != agent_id {
@@ -88,7 +89,12 @@ pub fn write_session_model_entry(
     }
     let raw = serde_json::to_string(state)
         .map_err(|error| format!("serialize session model selection: {error}"))?;
-    db.write_kv(SESSION_MODEL_SELECTION_KV, &raw)
+    db.write_session_kv_if_generation(
+        SESSION_MODEL_SELECTION_KV,
+        &raw,
+        agent_id,
+        expected_lifecycle_revision,
+    )
         .map_err(|error| error.to_string())
 }
 

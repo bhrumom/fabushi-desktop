@@ -2369,12 +2369,28 @@ impl ProductionSessionWorkers {
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission_locked(agent_id)?;
             let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session model selection requires session admission".to_string())?;
+            if admission.session_id != agent_id
+                || admission.session_key.trim().is_empty()
+                || admission.lifecycle_revision.trim().is_empty()
+            {
+                return Err("session model selection admission identity is malformed".into());
+            }
+            let expected_lifecycle_revision = admission.lifecycle_revision.clone();
             let mut state = read_session_model_entry(&db, agent_id)?;
             let result = apply_model_selection(&mut state, params, current_time_ms);
             if matches!(&result, ApplySessionModelSelectionResult::Applied(_))
-                && !write_session_model_entry(&db, agent_id, &state)?
+                && !write_session_model_entry(
+                    &db,
+                    agent_id,
+                    &expected_lifecycle_revision,
+                    &state,
+                )?
             {
-                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED".into());
+                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED_OR_STALE".into());
             }
             Ok(result)
         })
