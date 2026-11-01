@@ -65,6 +65,20 @@ impl TempTestDir {
     }
 }
 
+#[test]
+fn remote_media_download_is_bounded_before_payload_acceptance() {
+    let remote_source = MEDIA_STORE_SOURCE
+        .split("pub fn save_remote_media_for_store(")
+        .nth(1)
+        .expect("remote media owner exists")
+        .split("pub fn resolve_media_buffer_path(")
+        .next()
+        .expect("remote media owner boundary exists");
+    assert!(remote_source.contains("take(max_bytes.saturating_add(1))"));
+    assert!(remote_source.contains("read_to_end(&mut bytes)"));
+    assert!(!remote_source.contains("response.bytes()"));
+}
+
 impl Drop for TempTestDir {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.path);

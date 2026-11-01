@@ -673,12 +673,16 @@ pub fn save_remote_media_for_store(
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
 
-    let bytes = response.bytes().map_err(|e| {
-        SaveMediaSourceError::new(
-            SaveMediaSourceErrorCode::InvalidPath,
-            format!("Failed to read remote payload: {e}"),
-        )
-    })?;
+    let mut bytes = Vec::new();
+    response
+        .take(max_bytes.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(|e| {
+            SaveMediaSourceError::new(
+                SaveMediaSourceErrorCode::InvalidPath,
+                format!("Failed to read remote payload: {e}"),
+            )
+        })?;
 
     if bytes.len() as u64 > max_bytes {
         return Err(SaveMediaSourceError::too_large(max_bytes));
