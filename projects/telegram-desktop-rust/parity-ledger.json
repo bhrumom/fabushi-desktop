@@ -35186,7 +35186,9 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository dependency-advisory contract read from telegramdesktop/tdesktop fixed-U authority; no upstream Python implementation copied into Fabushi shipping runtime. Fixed-U source identity: telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.",
       "notes": "Task round118/source evidence round149. Complete fixed-U tree reread was truncated=false with 7,194 entries. Exact dependency-watch/SKILL.md (8932 characters / 150 lines) plus OpenAI adapter, fork/release-trust references, helper and helper tests were read for direct semantics. Existing-owner-first extends source-neutral repository quality/test-evidence governance; the shipping Electron updater is explicitly rejected. Exactly one independent source entry closes: unknown 16160->16159, unread 16133->16132, responsibilities 133->134. Adjacent dependency-watch blobs remain independent inventory entries. Contracts authored, not run; accepted=false.",
-      "test_execution_evidence": []
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
     }
   ],
   "rebaseline_candidate": {
