@@ -83,3 +83,11 @@ No unknown/unread decrement is claimed because this is an exact responsibility i
 No GitHub Actions/check/status/workflow query or trigger was performed. No build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deploy, install or runtime acceptance was executed.
 
 Stage-B executable validation and broader fixed-U source/implementation closure remain open.
+
+## Final source-level compliance
+
+Platform-core final compliance commit: `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`  
+Final durable spec blob: `fd493a83b465c985ec4f8999655e29a7f3090e17`  
+Desktop bookkeeping checkpoint: `77e9dc1a45e9486ea8cf0ebe912b1a15c83c17a7`
+
+The final spec records R1-R8 and AC1-AC7 as source-level passed. This does not advance executable validation: `validation_status=not-run`, `accepted=false`.

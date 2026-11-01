@@ -2343,3 +2343,6 @@ Desktop production/spec mirror checkpoint `23d73b32e301408f9c8aed151cb1f9e442516
 `TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001` is `implemented / validation_status=not-run / accepted=false`. The prior lifecycle row's protocolForFiles blocker is closed. Coverage becomes `source_entries_total=16202, responsibilities_total=124, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Unknown/unread are intentionally not decremented because this round isolates another exact responsibility from already-reviewed adjacent source families rather than claiming whole-file source-entry closure.
 
 Stage A remains execution-free: no GitHub Actions/check/status/workflow query or trigger, build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E execution, visual/a11y, package, deployment, installation or runtime acceptance was performed.
+
+
+Round105 final source-level compliance: platform-core `e92b51e23b39dae5719f033fa1f7a20d6579dc8c` / final spec blob `fd493a83b465c985ec4f8999655e29a7f3090e17` records R1-R8 and AC1-AC7 source-review passed for `TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001`. Desktop bookkeeping checkpoint is `77e9dc1a45e9486ea8cf0ebe912b1a15c83c17a7`; executable validation remains `not-run`, accepted remains false.

@@ -32137,7 +32137,10 @@
         "platform-core-spec-blob:6fca16349ff56f3493854a4a6a78f37ee932a339",
         "desktop-production-mirror-commit:23d73b32e301408f9c8aed151cb1f9e442516e13",
         "desktop-network-blob:6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6",
-        "desktop-spec-blob:6fca16349ff56f3493854a4a6a78f37ee932a339"
+        "desktop-spec-blob:6fca16349ff56f3493854a4a6a78f37ee932a339",
+        "platform-core-final-compliance-commit:e92b51e23b39dae5719f033fa1f7a20d6579dc8c",
+        "platform-core-final-spec-blob:fd493a83b465c985ec4f8999655e29a7f3090e17",
+        "desktop-final-spec-blob:fd493a83b465c985ec4f8999655e29a7f3090e17"
       ],
       "test_evidence": [
         "native/telegram-network/src/lib.rs::file_transfer_socket_buffer_contract_tests::fixed_u_file_socket_buffer_requests_are_two_mebibytes_each authored, not run",
@@ -32271,7 +32274,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_abstract_socket.h / mtproto_tcp_socket.cpp / mtproto_tls_socket.cpp plus SessionPrivate/DC-shift consumers. No upstream C++ implementation is copied; the implementation is source-neutral Rust in the existing carrier owner.",
-      "notes": "Task round105/source evidence round136. Fixed-U exact responsibility is 2 MiB send+receive socket-option requests when protocolForFiles is true. Consumer review proves the predicate is MediaCluster or CDN, with upload-shift explicitly commented out; therefore the Fabushi owner derives Files only from DcPurpose::Media/Cdn. Canonical platform-core implementation is 0ac50a1545c95681213b329e0589683cb11404a7 and desktop production mirror is 23d73b32e301408f9c8aed151cb1f9e442516e13, both network blob 6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6. Contracts are authored but not run; validation_status=not-run; accepted=false. Global unknown/unread counters are intentionally unchanged because this round isolates another responsibility from already-reviewed adjacent source families rather than claiming whole-file source-entry closure.",
+      "notes": "Task round105/source evidence round136. Fixed-U exact responsibility is 2 MiB send+receive socket-option requests when protocolForFiles is true. Consumer review proves the predicate is MediaCluster or CDN, with upload-shift explicitly commented out; therefore the Fabushi owner derives Files only from DcPurpose::Media/Cdn. Canonical platform-core implementation is 0ac50a1545c95681213b329e0589683cb11404a7 and desktop production mirror is 23d73b32e301408f9c8aed151cb1f9e442516e13, both network blob 6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6. Contracts are authored but not run; validation_status=not-run; accepted=false. Global unknown/unread counters are intentionally unchanged because this round isolates another responsibility from already-reviewed adjacent source families rather than claiming whole-file source-entry closure. Final platform source-level compliance is e92b51e23b39dae5719f033fa1f7a20d6579dc8c / spec blob fd493a83b465c985ec4f8999655e29a7f3090e17, with R1-R8 and AC1-AC7 source-review complete while executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
