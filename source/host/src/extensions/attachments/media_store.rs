@@ -181,13 +181,45 @@ pub fn resolve_media_scoped_dir(base_dir: &Path, subdir: &str, caller: &str) -> 
     } else {
         base_dir.join(&safe_subdir)
     };
-    // Ensure target doesn't escape base_dir
-    let normalized_base = base_dir.canonicalize().unwrap_or_else(|_| base_dir.to_path_buf());
-    let normalized_target = target.canonicalize().unwrap_or_else(|_| target.clone());
-    if !normalized_target.starts_with(&normalized_base) && !target.starts_with(base_dir) {
+    // Canonicalize the nearest existing ancestor so a symlinked intermediate
+    // directory cannot bypass containment merely because the final directory
+    // has not been created yet.
+    let normalized_base = canonicalize_with_missing_tail(base_dir).map_err(|error| {
+        format!("{caller}: could not resolve media directory identity: {error}")
+    })?;
+    let normalized_target = canonicalize_with_missing_tail(&target).map_err(|error| {
+        format!("{caller}: could not resolve media target identity: {error}")
+    })?;
+    if !normalized_target.starts_with(&normalized_base) {
         return Err(format!("{caller}: media subdir escapes media directory: {subdir:?}"));
     }
     Ok(target)
+}
+
+fn canonicalize_with_missing_tail(path: &Path) -> io::Result<PathBuf> {
+    let mut missing_tail = Vec::new();
+    let mut cursor = path.to_path_buf();
+    loop {
+        match cursor.canonicalize() {
+            Ok(mut canonical) => {
+                for component in missing_tail.iter().rev() {
+                    canonical.push(component);
+                }
+                return Ok(canonical);
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                let Some(name) = cursor.file_name() else {
+                    return Err(error);
+                };
+                missing_tail.push(name.to_os_string());
+                let Some(parent) = cursor.parent() else {
+                    return Err(error);
+                };
+                cursor = parent.to_path_buf();
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 
 pub fn resolve_media_relative_path(id: &str, subdir: &str, caller: &str) -> Result<String, String> {

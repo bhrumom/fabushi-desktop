@@ -164,6 +164,18 @@ fn test_ocrm_media_store_subdir_traversal_protection() {
     let scoped = resolve_media_scoped_dir(&temp.path, "inbound/documents", "test")
         .expect("Scoped dir resolution");
     assert_eq!(scoped, temp.path.join("inbound/documents"));
+
+    #[cfg(unix)]
+    {
+        let outside = temp.path.join("outside");
+        fs::create_dir_all(&outside).unwrap();
+        let linked = temp.path.join("linked");
+        std::os::unix::fs::symlink(&outside, &linked).unwrap();
+        assert!(
+            resolve_media_scoped_dir(&temp.path, "linked/new", "test").is_err(),
+            "an existing symlinked ancestor must not escape the media root"
+        );
+    }
 }
 
 #[test]
