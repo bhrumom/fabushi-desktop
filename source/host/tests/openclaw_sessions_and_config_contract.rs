@@ -536,6 +536,20 @@ fn test_cron_owner_writes_rollback_when_commit_fails() {
     assert!(cron_owner.matches("db.execute_batch(\"ROLLBACK\")").count() >= 8);
 }
 
+#[test]
+fn test_cron_candidate_bridge_releases_throttle_on_owner_read_failure() {
+    let runtime_source = include_str!("../src/extensions/transcript/automation_runtime.rs");
+    let bridge = runtime_source
+        .split("pub fn list_expired_cron_session_candidates(")
+        .nth(1)
+        .expect("cron candidate bridge exists")
+        .split("pub fn event_fires(")
+        .next()
+        .expect("cron candidate bridge boundary exists");
+    assert!(bridge.contains("list_expired_cron_session_runs"));
+    assert!(bridge.contains("throttle.forget_owner(agent_id)"));
+}
+
 // ---------------------------------------------------------------------------
 // OCRM-SESSION-O01: Session Key Parsing, Classification & Harness Namespace
 // ---------------------------------------------------------------------------

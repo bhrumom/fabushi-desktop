@@ -534,8 +534,18 @@ impl AutomationRuntime {
         if !admitted {
             return Ok(Vec::new());
         }
-        self.sessions
+        match self
+            .sessions
             .list_expired_cron_session_runs(agent_id, now_ms, Some(retention_ms))
+        {
+            Ok(rows) => Ok(rows),
+            Err(error) => {
+                if let Ok(mut throttle) = self.cron_sweep_throttle.lock() {
+                    throttle.forget_owner(agent_id);
+                }
+                Err(error)
+            }
+        }
     }
 
     pub fn event_fires(&self) -> Arc<AutomationEventFires> {
