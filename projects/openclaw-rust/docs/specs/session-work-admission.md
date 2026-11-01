@@ -192,6 +192,15 @@ instrument must
 extend the existing session/transcript owner with those explicit outcomes; it
 must not replace the receipt with a best-effort CAS or add a parallel store.
 
+The Runner's `request_box_help` transcript publication is also an admitted
+session write. Because that producer already carries the canonical
+`session_key`, it must use
+`ProductionSessionWorkers::append_agent_transcript_entries_if_session_admitted`
+so archive state and the durable session identity are checked at the write
+edge. The generic agent-only append remains reserved for producers whose
+existing ownership is not session-scoped; it must not be used to bypass this
+session-bound admission boundary.
+
 ## Direct media-custody boundary recheck — 2026-11-01
 
 `OutgoingMediaCustody` in `source/host/src/attachment_paths.rs` now rolls back

@@ -268,4 +268,15 @@ fn shipping_host_wires_box_listener_mcp_resume_and_error_projection() {
     assert!(SHIPPING_HOST.contains("LISTENER_CONNECT_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("MCP_AUTH_RESUME_TITLE"));
     assert!(SHIPPING_HOST.contains("\"channel\": \"forever-box\""));
+
+    let box_help = SHIPPING_HOST
+        .split("fn request_box_help(")
+        .nth(1)
+        .expect("shipping request_box_help owner exists")
+        .split("fn resolve_attachment_source(")
+        .next()
+        .expect("shipping request_box_help boundary exists");
+    assert!(box_help.contains("append_agent_transcript_entries_if_session_admitted"));
+    assert!(box_help.contains("&self.session_key"));
+    assert!(!box_help.contains("append_agent_transcript_entries(\n                    &self.agent_id"));
 }

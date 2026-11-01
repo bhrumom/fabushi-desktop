@@ -124,6 +124,12 @@ admitted-work marker without retaining the original result remains forbidden
 because it cannot distinguish duplicate, conflicting-payload, stale-generation,
 and outcome-unknown settlement.
 
+The Runner `request_box_help` producer now uses the owner-local
+session-admitted transcript append with its already-captured canonical session
+key. This closes that producer's archive/identity write edge without creating a
+new handoff or transcript owner; the broader detached-result lifecycle remains
+open.
+
 ## Rejected alternatives
 
 - Treating `deleting_agents` or filesystem age as durable work admission.

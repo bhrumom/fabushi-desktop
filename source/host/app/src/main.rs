@@ -811,10 +811,14 @@ impl SendMessageSink for ProductionSendMessageSink {
                         );
                     }
                 }
-                if let Err(error) = self.sessions.append_agent_transcript_entries(
-                    &self.agent_id,
-                    &[entry],
-                ) {
+                if let Err(error) = self
+                    .sessions
+                    .append_agent_transcript_entries_if_session_admitted(
+                        &self.agent_id,
+                        &self.session_key,
+                        &[entry],
+                    )
+                {
                     let _ = self
                         .transcript_runtime
                         .resolve_box_request_tracking(&request_id);
