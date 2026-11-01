@@ -29541,9 +29541,9 @@
         "telegram-network/runtime",
         "fixed-U proxy value semantics"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round131-selected-proxy-mtproto-carrier-consumer-20261101.md",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round134-socks5-http-selectable-proxy-carriers-20261101.md",
       "behavior_contract": "Canonical ProductSettingsOwner mode/selected/IPv6 is consumed only as a post-persistence transient carrier projection. Enabled suppresses special-config acquisition and requires a selected endpoint. MTProto selection uses the selected proxy host/port/secret while retaining protocol DC identity. SOCKS5 and HTTP selection keep the Telegram DC endpoint as the tunnel target, establish the selected forward proxy carrier, then reuse the existing endpoint secret, obfuscated/TLS framing and auth/session lifecycle. SOCKS5 proxy hostnames use the existing direct no-proxy DoH TTL cache and successful-IP promotion; HTTP proxy hostname resolution uses the ordinary socket resolver. Web selection uses the existing relay/browser carrier. No enabled carrier failure falls back to direct Telegram transport.",
-      "state_machine": "ProductSettingsOwner restore/mutation -> persist authoritative network.proxy -> TelegramClientLease carrier projection + existing proxyEnabled special-config projection -> RuntimeClient invalidates live sessions/owned requests on projection change while preserving reusable auth material -> telegram-network opens direct or MTProto-proxy route -> transient DomainResolver cache -> successful IP promotion; no runtime durable proxy state",
+      "state_machine": "ProductSettingsOwner restore/mutation -> persist authoritative network.proxy -> TelegramClientLease carrier projection + existing proxyEnabled special-config projection -> RuntimeClient invalidates live sessions/owned requests on projection change while preserving reusable auth material -> telegram-network selects Web relay, MTProto proxy, SOCKS5 tunnel, HTTP CONNECT tunnel, or direct route only when proxy is disabled -> SOCKS5/MTProto proxy-host resolution stays transient with successful-IP promotion -> existing MTProto framing/auth/session lifecycle; no runtime durable proxy state",
       "side_effects": [
         "Post-persistence mode/selected/IPv6 publication updates the existing RuntimeClient transient projection and invalidates live sessions/owned network requests when changed while reusable auth material remains.",
         "MTProto selected proxy connects through the existing telegram-network obfuscated/TLS carrier using the proxy address and selected secret without changing protocol DC identity.",
@@ -29597,7 +29597,9 @@
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-socks5-http-selectable-proxy-carrier.md",
+        "bhrumom/fabushi-desktop:docs/specs/telegram-socks5-http-selectable-proxy-carrier.md"
       ],
       "fabushi_target_symbols": [
         "NetworkProxyProjection",
@@ -29611,7 +29613,13 @@
         "ProductProxySettings::carrier_projection",
         "TelegramClientLease::apply_network_proxy",
         "publish_product_network_proxy",
-        "telegram.refreshSpecialConfig"
+        "telegram.refreshSpecialConfig",
+        "TcpTransport::connect_forward_proxy_obfuscated_with_attempt",
+        "proxy_addresses",
+        "socks5_connect",
+        "http_connect",
+        "socks5_connect_request",
+        "http_connect_request"
       ],
       "target_language": "Rust in the existing source-neutral product Settings adapter, RuntimeClient/SessionOwner and telegram-network owners; no retained C++ or second runtime/store.",
       "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
