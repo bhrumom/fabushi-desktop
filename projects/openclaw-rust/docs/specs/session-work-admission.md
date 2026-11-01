@@ -222,6 +222,12 @@ CAS semantics remain unchanged. This is a bounded deletion write-edge
 correction, not completion of native continuation identity or the full
 detached lifecycle.
 
+The same owner-local transaction fence now covers request-id history and
+pending episode-memory writes, including the Runner's direct episode clear
+path. A deletion fence therefore rejects those metadata mutations at the
+SQLite write edge; this remains a bounded owner-local correction and does not
+close the separate cross-filesystem profile/avatar atomicity gap.
+
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations
 cannot clear a fence that appeared after their read; only the deletion owner's

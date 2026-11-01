@@ -245,6 +245,12 @@ This is the bounded deletion-window sub-contract; the row remains not-started
 until durable archive, background-result generation, and provider-review
 ownership are implemented and wired.
 
+The owner-local SQLite edge now also fences request-id history and pending
+episode-memory record/clear writes, including the Runner's direct episode
+cleanup path. A focused owner contract preserves both histories when the
+durable deletion fence is active. This remains a bounded metadata correction;
+it does not change the row's not-started/not-wired/not-run/pending disposition.
+
 ### 2026-11-01 background-result consumer recheck
 
 The current Rust producer path was re-read at the interrupted continuation

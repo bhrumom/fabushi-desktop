@@ -333,6 +333,69 @@ fn session_work_admission_deletion_fence_migrates_and_persists() {
 }
 
 #[test]
+fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
+    let root = temp_root("metadata-deletion-fence");
+    let agent_dir = root.join("agent-metadata-deletion-fence");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-metadata-deletion-fence:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+    assert!(owner
+        .record_request_id("request-1", 1.0, None, None)
+        .expect("record request"));
+    assert!(owner
+        .record_episode_turn(&mahayana_host_runtime::extensions::session::agent_db_serde::EpisodeTurn {
+            ts: 1.0,
+            user: "before".into(),
+            agent: "fence".into(),
+        })
+        .expect("record episode"));
+
+    let mut fenced = admission.clone();
+    fenced.deletion_pending = true;
+    assert!(owner
+        .transition_session_deletion_pending(Some("revision-1"), false, &fenced)
+        .expect("publish deletion fence"));
+    assert!(!owner
+        .record_request_id("request-2", 2.0, None, None)
+        .expect("fenced request write"));
+    assert!(!owner
+        .record_episode_turn(&mahayana_host_runtime::extensions::session::agent_db_serde::EpisodeTurn {
+            ts: 2.0,
+            user: "after".into(),
+            agent: "fence".into(),
+        })
+        .expect("fenced episode write"));
+    assert!(!owner
+        .clear_pending_episode_turns()
+        .expect("fenced episode clear"));
+    assert_eq!(owner.get_request_ids().expect("request history").len(), 1);
+    assert_eq!(owner.get_pending_episode_turns().expect("episode history").len(), 1);
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
     let root = temp_root("provider-review-owner");
     let agent_dir = root.join("agent-review");

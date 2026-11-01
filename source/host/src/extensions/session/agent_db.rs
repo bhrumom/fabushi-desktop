@@ -1698,42 +1698,75 @@ impl SandAgentDb {
         if id.is_empty() {
             return Ok(false);
         }
-        let mut records = self.get_request_ids()?;
-        if records.last().is_some_and(|record| record.id == id) {
-            return Ok(false);
-        }
-        let label = prompt
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|value| value.chars().take(REQUEST_ID_PROMPT_MAX).collect::<String>());
-        records.push(RequestRecord {
-            id: id.to_string(),
-            at,
-            prompt: label,
-            source: source.filter(|value| !value.is_empty()).map(ToOwned::to_owned),
-        });
-        if records.len() > REQUEST_ID_HISTORY_MAX {
-            records.drain(0..records.len() - REQUEST_ID_HISTORY_MAX);
-        }
-        let raw = serde_json::Value::Array(
-            records
-                .iter()
-                .map(|record| {
-                    let mut value = serde_json::Map::new();
-                    value.insert("id".into(), serde_json::Value::String(record.id.clone()));
-                    value.insert("at".into(), json_number(record.at));
-                    if let Some(prompt) = &record.prompt {
-                        value.insert("prompt".into(), serde_json::Value::String(prompt.clone()));
+        self.run_write("recordRequestId", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let mut records = parse_request_records(
+                    read_kv(db, KV_REQUEST_IDS)?.as_deref(),
+                );
+                if records.is_empty() {
+                    if let Some(legacy) = read_kv(db, KV_LATEST_REQUEST_ID)?
+                        .map(|value| value.trim().to_string())
+                        .filter(|value| !value.is_empty())
+                    {
+                        records.push(RequestRecord {
+                            id: legacy,
+                            at: 0.0,
+                            prompt: None,
+                            source: None,
+                        });
                     }
-                    if let Some(source) = &record.source {
-                        value.insert("source".into(), serde_json::Value::String(source.clone()));
-                    }
-                    serde_json::Value::Object(value)
-                })
-                .collect(),
-        )
-        .to_string();
-        self.write_kv(KV_REQUEST_IDS, &raw)
+                }
+                if records.last().is_some_and(|record| record.id == id) {
+                    return Ok(false);
+                }
+                let label = prompt
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(|value| value.chars().take(REQUEST_ID_PROMPT_MAX).collect::<String>());
+                records.push(RequestRecord {
+                    id: id.to_string(),
+                    at,
+                    prompt: label,
+                    source: source.filter(|value| !value.is_empty()).map(ToOwned::to_owned),
+                });
+                if records.len() > REQUEST_ID_HISTORY_MAX {
+                    records.drain(0..records.len() - REQUEST_ID_HISTORY_MAX);
+                }
+                let raw = serde_json::Value::Array(
+                    records
+                        .iter()
+                        .map(|record| {
+                            let mut value = serde_json::Map::new();
+                            value.insert("id".into(), serde_json::Value::String(record.id.clone()));
+                            value.insert("at".into(), json_number(record.at));
+                            if let Some(prompt) = &record.prompt {
+                                value.insert("prompt".into(), serde_json::Value::String(prompt.clone()));
+                            }
+                            if let Some(source) = &record.source {
+                                value.insert("source".into(), serde_json::Value::String(source.clone()));
+                            }
+                            serde_json::Value::Object(value)
+                        })
+                        .collect(),
+                )
+                .to_string();
+                Ok(db.execute(SET_KV_SQL, params![KV_REQUEST_IDS, raw])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
     }
 
     pub fn get_pending_episode_turns(
@@ -1746,33 +1779,71 @@ impl SandAgentDb {
         &self,
         turn: &EpisodeTurn,
     ) -> Result<bool, AgentDbProjectionError> {
-        let mut turns = self.get_pending_episode_turns()?;
-        turns.push(EpisodeTurn {
-            ts: turn.ts,
-            user: turn.user.chars().take(EPISODE_TURN_TEXT_CAP).collect(),
-            agent: turn.agent.chars().take(EPISODE_TURN_TEXT_CAP).collect(),
-        });
-        if turns.len() > EPISODE_PENDING_MAX {
-            turns.drain(0..turns.len() - EPISODE_PENDING_MAX);
-        }
-        let raw = serde_json::Value::Array(
-            turns
-                .iter()
-                .map(|turn| {
-                    serde_json::json!({
-                        "ts": turn.ts,
-                        "user": turn.user.clone(),
-                        "agent": turn.agent.clone(),
-                    })
-                })
-                .collect(),
-        )
-        .to_string();
-        self.write_kv(KV_EPISODE, &raw)
+        self.run_write("recordEpisodeTurn", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let mut turns = parse_pending_episode_turns(
+                    read_kv(db, KV_EPISODE)?.as_deref(),
+                );
+                turns.push(EpisodeTurn {
+                    ts: turn.ts,
+                    user: turn.user.chars().take(EPISODE_TURN_TEXT_CAP).collect(),
+                    agent: turn.agent.chars().take(EPISODE_TURN_TEXT_CAP).collect(),
+                });
+                if turns.len() > EPISODE_PENDING_MAX {
+                    turns.drain(0..turns.len() - EPISODE_PENDING_MAX);
+                }
+                let raw = serde_json::Value::Array(
+                    turns
+                        .iter()
+                        .map(|turn| {
+                            serde_json::json!({
+                                "ts": turn.ts,
+                                "user": turn.user.clone(),
+                                "agent": turn.agent.clone(),
+                            })
+                        })
+                        .collect(),
+                )
+                .to_string();
+                Ok(db.execute(SET_KV_SQL, params![KV_EPISODE, raw])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
     }
 
     pub fn clear_pending_episode_turns(&self) -> Result<bool, AgentDbProjectionError> {
-        self.delete_kv(KV_EPISODE)
+        self.run_write("clearPendingEpisodeTurns", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(DELETE_KV_SQL, params![KV_EPISODE])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
     }
 
     pub fn get_memory_prompt_snapshot(
@@ -4759,6 +4830,21 @@ fn read_kv(
 ) -> Result<Option<String>, rusqlite::Error> {
     db.query_row(GET_KV_SQL, params![key], |row| row.get::<_, String>(0))
         .optional()
+}
+
+/// Check owner-local metadata writes at the same SQLite transaction edge as
+/// the write. Legacy stores without an admission record retain compatibility;
+/// malformed or archived/deleting records fail closed.
+fn session_work_write_is_admitted(
+    db: &rusqlite::Connection,
+) -> Result<bool, rusqlite::Error> {
+    let Some(raw) = read_kv(db, KV_SESSION_WORK_ADMISSION)? else {
+        return Ok(true);
+    };
+    let Ok(admission) = serde_json::from_str::<SessionWorkAdmissionRecord>(&raw) else {
+        return Ok(false);
+    };
+    Ok(!admission.deletion_pending && admission.archived_at_ms.is_none())
 }
 
 fn encode_hex(bytes: &[u8]) -> String {
