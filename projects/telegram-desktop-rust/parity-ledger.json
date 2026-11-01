@@ -6,8 +6,8 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16161,
-    "unread": 16134,
+    "unknown": 16160,
+    "unread": 16133,
     "omitted": 0,
     "responsibilities_total": 133,
     "unmapped_responsibilities": 0
@@ -34524,7 +34524,11 @@
         "Aggressive merge decision",
         "Build replacement tasks",
         "Traceability and validation",
-        "Publish and return"
+        "Publish and return",
+        "Read the retained task",
+        "Preserve existing implementation",
+        "Write replacement state",
+        "Validate and publish"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-AUTHORITY",
@@ -34571,7 +34575,14 @@
         "Replacement dependency simulation creates a direct/transitive self-edge or cycle",
         "No-merge path mutates unrelated queue/project/receipt state",
         "Retired source loses task/input history, has a stale retained-content fingerprint, or leaves a non-terminating alias",
-        "Generic publish resumes a consolidation commit without re-running consolidation semantic validation"
+        "Generic publish resumes a consolidation commit without re-running consolidation semantic validation",
+        "Split routing begins without a canonical checkout-owned split-required source and complete retained-work seal",
+        "Replacement boundaries are not independently shippable/testable or lose an original acceptance criterion/source path",
+        "Retained implementation has no single coherent first carrier or is spread across multiple successors",
+        "Carrier is treated as approved/in-progress before canonical Start revalidates the retained worktree seal",
+        "Retired split id remains in a live dependency or project index",
+        "Split publication mutates retained source content beyond state.yaml -> split.yaml",
+        "Changed worktree seal, incoherent carrier, semantic conflict, or remote outage is force-published or partially retired"
       ],
       "ui_disposition": "Not applicable; repository development-process governance only.",
       "non_ui_responsibilities": [
@@ -34589,7 +34600,11 @@
         "Replacement dependency simulation and reverse-dependent fencing",
         "Merge/no-merge criterion preservation and no-repeat completion boundary",
         "Durable superseded aliases with retained-content fingerprinting",
-        "Explicit-path consolidation publication and generic-publish semantic revalidation"
+        "Explicit-path consolidation publication and generic-publish semantic revalidation",
+        "Fail-closed split-required eligibility and independently testable replacement decomposition",
+        "Exclusive retained-implementation carrier ownership and deferred source-ref transfer",
+        "Atomic split dependency/project rewrite with sealed multi-target history",
+        "Explicit-path split publication, worktree-seal validation and recoverable hard-stop handling"
       ],
       "platform_delta": "No platform-core production delta. This fixed-U responsibility is repository-development process governance, not shipping Tasks/Automations, Agent/Coordinator/Host/Runner, or platform runtime behavior.",
       "existing_owner_candidates": [
@@ -34636,7 +34651,15 @@
         "retired source -> retained task/input + superseded alias + receipt + retained-content fingerprint",
         "no compatible cluster -> completion marker STATUS: NO_MERGE with no unrelated mutation",
         "last-moment source/dependent drift -> RACED with no tracked write and pending marker retained",
-        "consolidation commit + fetch/rebase/push -> same semantic validator -> CAS publish | recoverable BLOCKED"
+        "consolidation commit + fetch/rebase/push -> same semantic validator -> CAS publish | recoverable BLOCKED",
+        "canonical checkout-owned split-required source + complete retained artifacts -> split transaction eligible",
+        "split proposal + original criteria/paths/dependencies -> at least two ordered independently testable replacements",
+        "retained implementation -> exactly one first carrier todo + carried_from/owned-path handoff; source refs remain retained",
+        "carrier canonical Start -> revalidate retained worktree seal -> transfer source refs -> retire old refs",
+        "no retained implementation -> no carrier + all replacements unclaimed -> retire obsolete source refs after publication",
+        "source live dependencies/project link -> exact successor rewrite in same split transaction",
+        "source state.yaml -> sealed split.yaml + retained digest while task/input history remains intact",
+        "split publish race -> refresh/revalidate/retry; semantic conflict/remote outage/seal drift/incoherent carrier -> recoverable hard stop, never force"
       ],
       "state_owner": "Existing Fabushi repository development process authority",
       "lifecycle_owner": "Existing repository development lifecycle and quality/test-evidence governance",
@@ -34671,7 +34694,12 @@
         "upstream-sources:.agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
         "upstream-consumer:.agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
         "upstream-contract-tests:.agents/skills/process-inbox/scripts/workspace_test.py@79f943a99809bc6acf173872d9a780346648b5cf",
-        "desktop-spec-commit:f999edc84561fe4d7d97b0eff8cebe068ad8369f"
+        "desktop-spec-commit:f999edc84561fe4d7d97b0eff8cebe068ad8369f",
+        "dossier:projects/telegram-desktop-rust/dossiers/continue-split-required-complete-read.md",
+        "upstream-sources:.agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846",
+        "upstream-consumer:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-consumer:.agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
+        "desktop-spec-commit:b87ed018628e6693e790a29d21815b8a8665da5f"
       ],
       "test_evidence": [
         "CONTRACT-TDRP-CONTINUE-BATCH-FREEZE-001 authored, not run",
@@ -34688,9 +34716,14 @@
         "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-MERGE-NO-MERGE-001 authored, not run",
         "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001 authored, not run",
         "INT-TDRP-CONTINUE-CONSOLIDATION-PUBLISH-001 authored, not run",
-        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001 authored, not run"
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001 authored, not run",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-ELIGIBILITY-001 authored, not run",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-REPLACEMENT-001 authored, not run",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-CARRIER-HANDOFF-001 authored, not run",
+        "INT-TDRP-CONTINUE-SPLIT-PUBLISH-001 authored, not run",
+        "FAULT-TDRP-CONTINUE-SPLIT-RECOVERY-001 authored, not run"
       ],
-      "target_commit": "f999edc84561fe4d7d97b0eff8cebe068ad8369f",
+      "target_commit": "b87ed018628e6693e790a29d21815b8a8665da5f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -34780,7 +34813,11 @@
         "INV-TDRP-CONTINUE-CONSOLIDATION-PRISTINE-CANDIDATE-001",
         "INV-TDRP-CONTINUE-CONSOLIDATION-PARTITION-001",
         "INV-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001",
-        "INV-TDRP-CONTINUE-CONSOLIDATION-NO-REPEAT-001"
+        "INV-TDRP-CONTINUE-CONSOLIDATION-NO-REPEAT-001",
+        "INV-TDRP-CONTINUE-SPLIT-ELIGIBLE-SOURCE-001",
+        "INV-TDRP-CONTINUE-SPLIT-SINGLE-CARRIER-001",
+        "INV-TDRP-CONTINUE-SPLIT-DEPENDENCY-REWRITE-001",
+        "INV-TDRP-CONTINUE-SPLIT-RETAINED-SEAL-001"
       ],
       "unit_case_ids": [],
       "property_state_case_ids": [],
@@ -34795,12 +34832,16 @@
         "CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001",
         "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ELIGIBILITY-001",
         "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-MERGE-NO-MERGE-001",
-        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001"
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-ELIGIBILITY-001",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-REPLACEMENT-001",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-CARRIER-HANDOFF-001"
       ],
       "integration_case_ids": [
         "INT-TDRP-CONTINUE-HOST-ADAPTER-COMPOSITION-001",
         "INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001",
-        "INT-TDRP-CONTINUE-CONSOLIDATION-PUBLISH-001"
+        "INT-TDRP-CONTINUE-CONSOLIDATION-PUBLISH-001",
+        "INT-TDRP-CONTINUE-SPLIT-PUBLISH-001"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
@@ -34814,7 +34855,8 @@
         "FAULT-TDRP-CONTINUE-PUBLICATION-RACE-001",
         "FAULT-TDRP-CONTINUE-SPLIT-CARRIER-CONFLICT-001",
         "FAULT-TDRP-CONTINUE-CONSOLIDATION-RACE-001",
-        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001"
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001",
+        "FAULT-TDRP-CONTINUE-SPLIT-RECOVERY-001"
       ],
       "performance_case_ids": [],
       "security_case_ids": [
@@ -34843,7 +34885,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository task/process authority, batch-freeze, source-lineage, split, discovery-routing and consolidation contracts read from fixed-U continue skill and direct fixed-U host/workflow consumers; no upstream scheduler implementation copied into Fabushi shipping runtime. OpenAI invocation metadata was additionally read from fixed-U agents/openai.yaml; only declarative host-adapter behavior was mapped.",
-      "notes": "Task round114/source evidence round145. Complete fixed-U tree reread truncated=false confirms continue/SKILL.md is the next independent unrepresented blob after represented code-health sources.py. Exact 39,712-character / 722-line continue skill plus host invocation wrappers, process-inbox/perform-task boundaries and split/consolidation references were read. Exactly one independent source entry closes: unknown 16164->16163, unread 16137->16136, responsibilities 132->133. Adjacent continue agents/openai.yaml and reference blobs remain independently unclosed. Contracts authored, not run; accepted=false. Task round115/source evidence round146 independently closes the adjacent OpenAI continue adapter blob. Exact 291-character / 4-line YAML preserves display/discovery metadata plus a default prompt that invokes $continue, resumes active work first, freezes exactly the caller-selected batch, and processes one task at a time. No new responsibility or owner is created; unknown 16163->16162, unread 16136->16135, responsibilities remain 133. OpenAI host-metadata/invocation contracts authored, not run. Task round116/source evidence round147 independently closes the fixed-U pending-task consolidation reference. Exact 14,614-character / 285-line source plus continue scheduler, project-context policy, process-inbox alias consumer, workspace helper, and fixed-U workspace tests were read. Eligibility is pristine unclaimed todo only, partitioned by project and frozen-batch membership; merge/no-merge preserves criteria/inputs/dependencies; retired ids retain durable aliases and content fingerprints; pre-commit drift returns RACED with no write while committed semantic/publication failures preserve a recoverable BLOCKED commit and never force-push. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16162->16161, unread 16135->16134, responsibilities remain 133. Contracts authored, not run; accepted=false.",
+      "notes": "Task round114/source evidence round145. Complete fixed-U tree reread truncated=false confirms continue/SKILL.md is the next independent unrepresented blob after represented code-health sources.py. Exact 39,712-character / 722-line continue skill plus host invocation wrappers, process-inbox/perform-task boundaries and split/consolidation references were read. Exactly one independent source entry closes: unknown 16164->16163, unread 16137->16136, responsibilities 132->133. Adjacent continue agents/openai.yaml and reference blobs remain independently unclosed. Contracts authored, not run; accepted=false. Task round115/source evidence round146 independently closes the adjacent OpenAI continue adapter blob. Exact 291-character / 4-line YAML preserves display/discovery metadata plus a default prompt that invokes $continue, resumes active work first, freezes exactly the caller-selected batch, and processes one task at a time. No new responsibility or owner is created; unknown 16163->16162, unread 16136->16135, responsibilities remain 133. OpenAI host-metadata/invocation contracts authored, not run. Task round116/source evidence round147 independently closes the fixed-U pending-task consolidation reference. Exact 14,614-character / 285-line source plus continue scheduler, project-context policy, process-inbox alias consumer, workspace helper, and fixed-U workspace tests were read. Eligibility is pristine unclaimed todo only, partitioned by project and frozen-batch membership; merge/no-merge preserves criteria/inputs/dependencies; retired ids retain durable aliases and content fingerprints; pre-commit drift returns RACED with no write while committed semantic/publication failures preserve a recoverable BLOCKED commit and never force-push. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16162->16161, unread 16135->16134, responsibilities remain 133. Contracts authored, not run; accepted=false. Task round117/source evidence round148 independently closes the fixed-U split-required routing reference. Exact 5,813-character / 112-line source plus continue scheduler, perform-task producer boundary, process-inbox split consumer, project-context policy, workspace helper and fixed-U workspace tests were read. Split eligibility is canonical checkout-owned split-required state with complete retained-work seal; replacements are at least two independently shippable/testable implement tasks; retained implementation requires exactly one first carrier with carried_from/owned-path handoff while source refs transfer only at the carrier's later canonical Start after seal revalidation. Live dependencies/project links are rewritten atomically, source history becomes sealed split.yaml, and unsafe seal/conflict/remote states remain recoverable hard stops without force publication. Existing repository process owner is extended; no new responsibility/ADR/platform-core runtime is created. Exactly one independent source entry closes: unknown 16161->16160, unread 16134->16133, responsibilities remain 133. Contracts authored, not run; accepted=false.",
       "test_execution_evidence": [],
       "id": "TDRP-R9-REPOSITORY-CONTINUE-TASK-PROCESS-AUTHORITY-001",
       "validation_status": "not-run",
@@ -34851,7 +34893,8 @@
       "source_paths": [
         ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
         ".agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61",
-        ".agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c"
+        ".agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
+        ".agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846"
       ]
     }
   ],
