@@ -27,6 +27,10 @@ pub enum TypedReplaySerializationError {
     UnsupportedAttachment { index: usize, detail: String },
     #[error("tool result {tool_call_id} has no matching replayed tool call")]
     UnpairedToolResult { tool_call_id: String },
+    #[error("tool result {tool_call_id} is duplicated in the replay projection")]
+    DuplicateToolResult { tool_call_id: String },
+    #[error("tool call {tool_call_id} has no replayed result")]
+    UnsettledToolCall { tool_call_id: String },
     #[error("tool call identity {tool_call_id} is duplicated in the replay projection")]
     DuplicateToolCall { tool_call_id: String },
 }
@@ -38,7 +42,7 @@ pub fn serialize_responses_replay(
     entries: &[TypedReplayEntry],
 ) -> Result<Vec<Value>, TypedReplaySerializationError> {
     let mut output = Vec::new();
-    let mut calls = std::collections::HashSet::new();
+    let mut calls = ToolReplayState::default();
     for (index, entry) in entries.iter().enumerate() {
         match entry {
             TypedReplayEntry::CompactionSummary(summary) => output.push(json!({
@@ -56,6 +60,7 @@ pub fn serialize_responses_replay(
             }
         }
     }
+    calls.finish()?;
     Ok(output)
 }
 
@@ -66,7 +71,7 @@ pub fn serialize_chat_replay(
     entries: &[TypedReplayEntry],
 ) -> Result<Vec<Value>, TypedReplaySerializationError> {
     let mut output = Vec::new();
-    let mut calls = std::collections::HashSet::new();
+    let mut calls = ToolReplayState::default();
     for (index, entry) in entries.iter().enumerate() {
         match entry {
             TypedReplayEntry::CompactionSummary(summary) => output.push(json!({
@@ -84,6 +89,7 @@ pub fn serialize_chat_replay(
             }
         }
     }
+    calls.finish()?;
     Ok(output)
 }
 
@@ -94,7 +100,7 @@ pub fn serialize_cursor_replay(
     entries: &[TypedReplayEntry],
 ) -> Result<Vec<CursorCheckpointMessage>, TypedReplaySerializationError> {
     let mut output = Vec::new();
-    let mut calls = std::collections::HashSet::new();
+    let mut calls = ToolReplayState::default();
     for (index, entry) in entries.iter().enumerate() {
         match entry {
             TypedReplayEntry::CompactionSummary(summary) => {
@@ -120,6 +126,7 @@ pub fn serialize_cursor_replay(
             }
         }
     }
+    calls.finish()?;
     Ok(output)
 }
 
@@ -179,7 +186,7 @@ fn serialize_cursor_message(
     index: usize,
     message: &ReplayMessage,
     output: &mut Vec<CursorCheckpointMessage>,
-    calls: &mut std::collections::HashSet<String>,
+    calls: &mut ToolReplayState,
 ) -> Result<(), TypedReplaySerializationError> {
     if !message.attachments.is_empty() {
         return Err(TypedReplaySerializationError::UnsupportedAttachment {
@@ -245,7 +252,7 @@ fn serialize_responses_message(
     index: usize,
     message: &ReplayMessage,
     output: &mut Vec<Value>,
-    calls: &mut std::collections::HashSet<String>,
+    calls: &mut ToolReplayState,
 ) -> Result<(), TypedReplaySerializationError> {
     if let Some(result) = message.tool_result.as_ref() {
         ensure_tool_result_pair(result, calls)?;
@@ -272,7 +279,7 @@ fn serialize_chat_message(
     index: usize,
     message: &ReplayMessage,
     output: &mut Vec<Value>,
-    calls: &mut std::collections::HashSet<String>,
+    calls: &mut ToolReplayState,
 ) -> Result<(), TypedReplaySerializationError> {
     if let Some(result) = message.tool_result.as_ref() {
         ensure_tool_result_pair(result, calls)?;
@@ -412,29 +419,65 @@ fn responses_tool_call(call: &ReplayToolCall) -> Value {
     })
 }
 
+#[derive(Debug, Default)]
+struct ToolReplayState {
+    pending: std::collections::BTreeSet<String>,
+    consumed: std::collections::BTreeSet<String>,
+}
+
+impl ToolReplayState {
+    fn register_call(
+        &mut self,
+        call: &ReplayToolCall,
+    ) -> Result<(), TypedReplaySerializationError> {
+        if self.pending.contains(&call.id) || self.consumed.contains(&call.id) {
+            return Err(TypedReplaySerializationError::DuplicateToolCall {
+                tool_call_id: call.id.clone(),
+            });
+        }
+        self.pending.insert(call.id.clone());
+        Ok(())
+    }
+
+    fn consume_result(
+        &mut self,
+        result: &ReplayToolResult,
+    ) -> Result<(), TypedReplaySerializationError> {
+        if self.consumed.contains(&result.tool_call_id) {
+            return Err(TypedReplaySerializationError::DuplicateToolResult {
+                tool_call_id: result.tool_call_id.clone(),
+            });
+        }
+        if !self.pending.remove(&result.tool_call_id) {
+            return Err(TypedReplaySerializationError::UnpairedToolResult {
+                tool_call_id: result.tool_call_id.clone(),
+            });
+        }
+        self.consumed.insert(result.tool_call_id.clone());
+        Ok(())
+    }
+
+    fn finish(self) -> Result<(), TypedReplaySerializationError> {
+        self.pending
+            .into_iter()
+            .next()
+            .map(|tool_call_id| TypedReplaySerializationError::UnsettledToolCall { tool_call_id })
+            .map_or(Ok(()), Err)
+    }
+}
+
 fn ensure_tool_result_pair(
     result: &ReplayToolResult,
-    calls: &std::collections::HashSet<String>,
+    calls: &mut ToolReplayState,
 ) -> Result<(), TypedReplaySerializationError> {
-    calls
-        .contains(&result.tool_call_id)
-        .then_some(())
-        .ok_or_else(|| TypedReplaySerializationError::UnpairedToolResult {
-            tool_call_id: result.tool_call_id.clone(),
-        })
+    calls.consume_result(result)
 }
 
 fn register_tool_call(
     call: &ReplayToolCall,
-    calls: &mut std::collections::HashSet<String>,
+    calls: &mut ToolReplayState,
 ) -> Result<(), TypedReplaySerializationError> {
-    if calls.insert(call.id.clone()) {
-        Ok(())
-    } else {
-        Err(TypedReplaySerializationError::DuplicateToolCall {
-            tool_call_id: call.id.clone(),
-        })
-    }
+    calls.register_call(call)
 }
 
 #[cfg(test)]
@@ -620,5 +663,89 @@ mod tests {
     fn duplicate_tool_call_identity_is_rejected_by_all_typed_serializers() {
         assert_duplicate_call_rejected(&duplicate_call_entries());
         assert_duplicate_call_rejected(&duplicate_call_entries_in_one_message());
+    }
+
+    #[test]
+    fn duplicate_tool_result_identity_is_rejected_by_all_typed_serializers() {
+        let entries = vec![
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Assistant,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![ReplayToolCall {
+                    id: "call-once".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "a"}),
+                }],
+                tool_result: None,
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Tool,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![],
+                tool_result: Some(ReplayToolResult {
+                    tool_call_id: "call-once".into(),
+                    tool_name: "read".into(),
+                    result: json!({"ok": true}),
+                    is_error: false,
+                }),
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Tool,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![],
+                tool_result: Some(ReplayToolResult {
+                    tool_call_id: "call-once".into(),
+                    tool_name: "read".into(),
+                    result: json!({"ok": "duplicate"}),
+                    is_error: false,
+                }),
+            }),
+        ];
+        for error in [
+            serialize_responses_replay(&entries).expect_err("Responses must reject duplicate result"),
+            serialize_chat_replay(&entries).expect_err("Chat must reject duplicate result"),
+            serialize_cursor_replay(&entries).expect_err("Cursor must reject duplicate result"),
+        ] {
+            assert_eq!(
+                error,
+                TypedReplaySerializationError::DuplicateToolResult {
+                    tool_call_id: "call-once".into(),
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn unsettled_tool_call_is_rejected_instead_of_replayed_without_result() {
+        let entries = vec![TypedReplayEntry::Message(ReplayMessage {
+            id: None,
+            role: ReplayRole::Assistant,
+            content: vec![],
+            attachments: vec![],
+            tool_calls: vec![ReplayToolCall {
+                id: "missing-result".into(),
+                name: "read".into(),
+                arguments: json!({"path": "a"}),
+            }],
+            tool_result: None,
+        })];
+        for error in [
+            serialize_responses_replay(&entries).expect_err("Responses must reject unsettled call"),
+            serialize_chat_replay(&entries).expect_err("Chat must reject unsettled call"),
+            serialize_cursor_replay(&entries).expect_err("Cursor must reject unsettled call"),
+        ] {
+            assert_eq!(
+                error,
+                TypedReplaySerializationError::UnsettledToolCall {
+                    tool_call_id: "missing-result".into(),
+                }
+            );
+        }
     }
 }
