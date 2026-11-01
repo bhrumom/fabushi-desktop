@@ -201,6 +201,14 @@ so archive state and the durable session identity are checked at the write
 edge. The generic agent-only append remains reserved for producers whose
 existing ownership is not session-scoped; it must not be used to bypass this
 session-bound admission boundary.
+
+The same owner boundary applies when a persisted `request_box_help` entry is
+superseded or settled after the Runner returns. Such entries retain the
+producer-owned `sessionKey` provenance, and `resolve_box_request_entry` must
+use the atomic session-admitted update when it is present. Legacy entries
+without that provenance remain on the compatibility path and retain the
+generic deletion/archive fence.
+
 The session gateway's accepted-send producer now applies the same rule when
 its request carries `sessionKey`/`sessionId`; only legacy non-session-scoped
 fallback sends retain the agent-only append.

@@ -130,6 +130,11 @@ key. This closes that producer's archive/identity write edge without creating a
 new handoff or transcript owner; the broader detached-result lifecycle remains
 open.
 
+The persisted `request_box_help` entry now retains that producer-owned session
+key through later supersede/settlement. `resolve_box_request_entry` uses the
+same atomic session-admitted update for entries carrying the key, while older
+entries without provenance remain on the compatibility path.
+
 The accepted-send session gateway applies the same owner-local append whenever
 its request carries `sessionKey` or `sessionId`; legacy sends without a
 session-scoped selector retain the existing agent-only compatibility path.

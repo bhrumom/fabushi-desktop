@@ -793,6 +793,7 @@ impl SendMessageSink for ProductionSendMessageSink {
                     "timestampMs": timestamp_ms,
                     "boxRequestId": request_id.clone(),
                     "boxInstruction": request.instruction,
+                    "sessionKey": self.session_key.clone(),
                 });
                 let tracking = self
                     .transcript_runtime
