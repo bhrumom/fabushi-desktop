@@ -15,10 +15,12 @@ The connector owner already contains `ChannelThreadRouter`, but
 boundary would guess the provider contract and would create a second,
 unreviewed routing authority.
 
-This specification is bound to the current implementation authority at
-`fabushi-desktop` commit `9bf78dbca40fcdb90e852ed11de569cd2e128023`, tree
-`3d4c368a56507f48d87c55fff48c3ac27a9c47f0`, and to the OpenClaw source
-authority recorded by `projects/openclaw-rust/SOURCE_OF_TRUTH.md`.
+This specification is revalidated against the current implementation subject
+at `fabushi-desktop` commit `2d2fbaa601506879fa463b833507ea1308803d04`, tree
+`db77f16fd63aa1976fb0ddfd7b691604011c31b5`. The OpenClaw source identity
+remains the authority recorded by `projects/openclaw-rust/SOURCE_OF_TRUTH.md`;
+the current implementation subject does not promote the discovery-only
+upstream candidate or alter any acceptance flag.
 
 ## 2. Goal
 
