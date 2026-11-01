@@ -197,8 +197,14 @@ pub fn build_compaction_summary_prompt(plan: &CompactionPlan) -> Result<String, 
     let transcript = serialize_entries_with_budget(&plan.entries_to_summarize)?;
     let previous = plan.previous_summary.as_deref().unwrap_or("(none)");
     let latest_request = plan.latest_user_request.as_deref().unwrap_or("(none)");
+    let mode = if plan.previous_summary.is_some() {
+        "The transcript rows are NEW conversation messages. Update the previous summary: preserve existing facts, add new progress and decisions, move completed work into Done, keep blockers separate, and remove only stale or duplicate detail."
+    } else {
+        "The transcript rows are a conversation to summarize. Create a structured context checkpoint for another agent to continue the work."
+    };
     Ok(format!(
-        "Create a concise, durable conversation summary for the next agent turn. Preserve user intent, decisions, constraints, unresolved work, tool outcomes, and important identifiers. Do not invent facts. The summary must stand alone and fit within {budget} tokens.\n\nPrevious compaction summary (already captured; correct it only when the transcript provides newer facts):\n{previous}\n\nLatest retained user request (must remain actionable even when this is a split turn):\n{latest_request}\n\nTranscript rows to summarize (JSON, in canonical order):\n{transcript}",
+        "{mode}\n\nPreserve user intent, constraints, unresolved work, tool outcomes, exact paths, identifiers, and errors. Do not invent facts. The summary must fit within {budget} tokens. Use EXACTLY this format:\n\n## Goal\n- [What the user is trying to accomplish]\n\n## Constraints & Preferences\n- [Constraints or (none)]\n\n## Progress\n### Done\n- [Completed work]\n### In Progress\n- [Current work]\n\n### Blocked\n- [Blockers or (none)]\n\n## Key Decisions\n- **[Decision]**: [Brief rationale]\n\n## Next Steps\n1. [Ordered next action]\n\n## Critical Context\n- [Facts needed to continue or (none)]\n\nPrevious compaction summary:\n<previous-summary>\n{previous}\n</previous-summary>\n\nLatest unresolved user request (keep actionable):\n<latest-request>\n{latest_request}\n</latest-request>\n\nTranscript rows to summarize (bounded JSON/sample, canonical order):\n<conversation>\n{transcript}\n</conversation>",
+        mode = mode,
         budget = plan.summary_token_budget,
     ))
 }
