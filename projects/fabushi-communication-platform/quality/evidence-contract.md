@@ -818,3 +818,22 @@ Consumer evidence identifies GitHub Issue Forms as the direct host consumer and 
 Recovery evidence distinguishes schema-blocked missing fields from prose-quality failures that can still satisfy `required: true`. Ambiguous environment/version, incorrect source routing, missing label routing, sensitive diagnostics or executable treatment of pasted logs remain non-passing until corrected through existing owners and freshly qualified on the exact frozen candidate.
 
 Stage A records the sixteen contract/integration/fault/security cases from TEST_STRATEGY as authored only. No Issue Form submission, issue creation/label mutation, crash/log acquisition, beta toggle, cheat-code invocation, log execution, build, lint, validator, test, CI, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository feature-request issue-form evidence
+
+For `TDRP-R9-REPOSITORY-FEATURE-REQUEST-ISSUE-FORM-001`, source evidence binds fixed-U `.github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348`, recursive-tree index 108 zero-based, mode 100644, 925 Git bytes / 922 Unicode code points, 29 LF newlines, zero CR characters, trailing newline and 30 split lines.
+
+Schema evidence records top-level `💡 Feature request` name, `Suggest an idea.` description, `labels: [enhancement]`, and four ordered textarea controls. Required fields are motivating problem, desired solution, and considered alternatives. Additional context is optional and its placeholder mentions other context or screenshots.
+
+Validation evidence separates actual Issue Forms constraints from triage judgment. Only the three `required: true` declarations are machine constraints in this source. There is no custom regex/script, duplicate detector, scope classifier, prioritization score, feasibility validator, security scanner or attachment rule.
+
+Scope/routing evidence records the form's four-part information model and enhancement-label intent without treating form submission as product approval, roadmap placement, implementation commitment, priority, SLA or migration-scope authority. Current Fabushi product/spec owners remain authoritative for scope and implementation decisions.
+
+Privacy/security evidence is negative but material: optional supporting context may include screenshots, yet the source declares no redaction warning, consent checkbox, private security route, secret detector or protected attachment path. Target evidence must therefore apply existing Fabushi repository privacy/security governance. Sensitive context/screenshots remain redacted/omitted/protected and cannot be normalized into public persistence merely because the source form permits free text.
+
+Consumer evidence identifies GitHub Issue Forms as the direct host consumer and feature reporters plus maintainers/triagers/product planners as human consumers. The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` directory, so no Telegram-specific form is copied. Existing-owner-first remains root repository issue/reporting/development-process authority + shared privacy/security + quality/test-evidence governance; no product UI/runtime, second backlog/issue tracker or platform-core service is introduced.
+
+Recovery evidence distinguishes schema-blocked missing fields from quality/scope/privacy failures that can still satisfy `required: true`. Vague/duplicate/out-of-scope requests, incorrect enhancement routing, sensitive supporting material, or invented acceptance promises remain non-passing until corrected through existing owners and freshly qualified on the exact frozen candidate.
+
+Stage A records the fourteen contract/integration/fault/security cases from TEST_STRATEGY as authored only. No Issue Form submission, issue creation/label mutation, screenshot acquisition/upload, build, lint, validator, test, CI, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.

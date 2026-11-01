@@ -891,3 +891,26 @@ Authored, not run in Stage A:
 - `SEC-TDRP-BUG-REPORT-PRIVACY-BOUNDARY-001` — the source's lack of redaction/private-report guidance cannot weaken Fabushi repository privacy/security policy.
 
 The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` tree. Existing-owner-first therefore records the upstream form behavior in current repository issue/reporting/process and shared security/quality owners rather than copying Telegram branding, beta/cheat-code instructions, distro support policy, or a second issue system. Stage A status is `validation_status=not-run`, `accepted=false`; no issue submission/creation/label mutation, diagnostic acquisition, build, test, validator, CI, package, deploy or runtime acceptance is executed by this qualification.
+
+
+### Repository feature-request issue-form qualification
+
+`TDRP-R9-REPOSITORY-FEATURE-REQUEST-ISSUE-FORM-001` is qualified through authored-only Stage-A contracts and later frozen-candidate Stage-B repository-process evidence. Source identity is fixed-U `.github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348`, recursive-tree index 108 zero-based, mode 100644, 925 Git bytes / 922 Unicode code points, 29 LF newline characters, zero CR characters, trailing newline and 30 split lines.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-FEATURE-REQUEST-HOST-AUTHORITY-001` — GitHub Issue Forms is the repository-host consumer; reporters and maintainers/triagers/product planners are human consumers; no product runtime or second issue tracker is created.
+- `CONTRACT-TDRP-FEATURE-REQUEST-SCHEMA-001` — exact top-level name/description/enhancement-label intent and four ordered textarea controls are preserved as source provenance.
+- `CONTRACT-TDRP-FEATURE-REQUEST-REQUIRED-INPUTS-001` — exactly three source controls carry `required: true`; Additional context remains optional.
+- `CONTRACT-TDRP-FEATURE-REQUEST-PROBLEM-SCOPE-001` — the request captures the motivating problem separately from the desired solution.
+- `CONTRACT-TDRP-FEATURE-REQUEST-SOLUTION-001` — the requested outcome remains an explicit required dimension without implying acceptance or implementation.
+- `CONTRACT-TDRP-FEATURE-REQUEST-ALTERNATIVES-001` — considered alternatives remain a distinct required dimension.
+- `CONTRACT-TDRP-FEATURE-REQUEST-ADDITIONAL-CONTEXT-001` — optional context/screenshots remain supporting material only and do not become mandatory.
+- `CONTRACT-TDRP-FEATURE-REQUEST-ENHANCEMENT-ROUTING-001` — source routing intent is the `enhancement` label; later qualification must verify current target routing rather than infer success.
+- `INT-TDRP-FEATURE-REQUEST-PROCESS-COMPOSITION-001` — issue/reporting/process + privacy/security + shared quality/evidence owners compose without Telegram-specific backlog/runtime duplication.
+- `FAULT-TDRP-FEATURE-REQUEST-MISSING-REQUIRED-001` — a missing required field remains host-blocked/non-submittable in source semantics.
+- `FAULT-TDRP-FEATURE-REQUEST-LOW-QUALITY-SCOPE-001` — vague/duplicate/out-of-scope content can pass presence checks but remains triage-quality failure; no invented validator is claimed.
+- `FAULT-TDRP-FEATURE-REQUEST-SENSITIVE-CONTEXT-001` — sensitive screenshots/context in a public report are non-passing and must be redacted/omitted/protected.
+- `SEC-TDRP-FEATURE-REQUEST-PRIVACY-BOUNDARY-001` — the source's lack of redaction/private-report guidance cannot weaken Fabushi repository privacy/security policy.
+- `SEC-TDRP-FEATURE-REQUEST-NO-ACCEPTANCE-ESCALATION-001` — form submission/label routing cannot mint product approval, prioritization, scope, roadmap or implementation authority.
+
+The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` tree. Existing-owner-first therefore records the upstream form behavior in current repository issue/reporting/process and shared security/quality owners rather than copying Telegram branding or creating a second backlog. Stage A status is `validation_status=not-run`, `accepted=false`; no issue submission/creation/label mutation, screenshot acquisition/upload, build, test, validator, CI, package, deploy or runtime acceptance is executed by this qualification.
