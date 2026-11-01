@@ -3806,9 +3806,12 @@ impl ProductionSessionWorkers {
                 .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
             return Ok(replay);
         }
-        let _ = owner
+        if !owner
             .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())?
+        {
+            return Err("remote Human message activity metadata was not durably updated".into());
+        }
         Ok(entry)
     }
 

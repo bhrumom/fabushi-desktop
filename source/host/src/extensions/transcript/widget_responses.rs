@@ -530,7 +530,9 @@ impl WidgetResponses {
             .as_object_mut()
             .expect("transcript entry must be object")
             .insert("secretProvided".into(), Value::Bool(true));
-        let _ = self.update_entry(agent_id, entry_id, entry)?;
+        if self.update_entry(agent_id, entry_id, entry)?.is_none() {
+            return Err("secret request response was not durably recorded".into());
+        }
         Ok(Some(crate::runner::tools::sand_secret_request::build_secret_provided_ack(
             &label,
             &target_kind,
