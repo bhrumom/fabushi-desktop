@@ -189,6 +189,13 @@ delete now uses the existing owner predicate and remains compatibility-safe
 for legacy databases without an admission record. This does not close the
 full session work-admission responsibility or change its ledger disposition.
 
+The same review found that `agent_clone::rewrite_identity` copied the source
+agent's `sessionWorkAdmission` unchanged. Clone setup now reseeds that record
+for the new canonical agent/session with a fresh lifecycle revision and empty
+custody fields before the clone re-enters normal admission. This is migration
+initialization evidence only; it does not close detached-result, media, or
+provider-review lifecycle ownership.
+
 ## 2026-10-31 auth-profile lifecycle boundary recheck
 
 The current checkout was re-read for possible credential/profile owners. The

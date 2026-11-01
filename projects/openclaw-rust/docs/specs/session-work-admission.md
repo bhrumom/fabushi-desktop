@@ -381,7 +381,10 @@ maintenance now routes its persisted-root CAS through the same `SandAgentDb`
 owner instead of maintaining a second direct SQLite mutation path.
 Runtime profile-name recovery maintenance now uses the same owner metadata
 path as well; clone/materialization initialization remains a separate
-pre-admission setup path.
+pre-admission setup path. Agent cloning now explicitly reseeds the copied
+`sessionWorkAdmission` record with the new canonical agent/session identity,
+a fresh lifecycle revision, and no inherited work, archive, deletion, media,
+or provider-review custody before normal admission resumes.
 Transcript backfill maintenance now also delegates to the same owner append
 transaction, so recovery cannot append entries while deletion custody is
 active.

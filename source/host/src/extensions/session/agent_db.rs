@@ -4582,6 +4582,55 @@ pub fn set_persisted_agent_id(
     Ok(changed)
 }
 
+/// Re-seed the owner-local session admission when an agent database is cloned.
+/// Cloning is a pre-admission setup operation: the copied source record belongs
+/// to the source agent and must never be reused by the new agent identity.
+pub fn reset_persisted_session_work_admission(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    agent_id: &str,
+) -> Result<bool, AgentDbProjectionError> {
+    let agent_id = agent_id.trim();
+    if agent_id.is_empty() {
+        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+            "cloned session admission requires an agent identity".into(),
+        ));
+    }
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let record = SessionWorkAdmissionRecord {
+        session_key: format!("agent:{agent_id}:main"),
+        session_id: agent_id.to_string(),
+        lifecycle_revision: Uuid::new_v4().to_string(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    let encoded = serde_json::to_string(&record)?;
+    let changed = transaction.execute(
+        SET_KV_SQL,
+        params![KV_SESSION_WORK_ADMISSION, encoded],
+    )? > 0;
+    transaction.commit()?;
+    if changed {
+        bump_db_write_generation(db_path);
+        notify_agent_db_listeners(
+            db_path,
+            AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+        );
+    }
+    Ok(changed)
+}
+
 pub fn set_persisted_agent_name(
     db_path: &Path,
     busy_timeout_ms: u64,
