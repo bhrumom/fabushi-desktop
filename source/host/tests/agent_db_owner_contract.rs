@@ -1041,6 +1041,34 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
             .expect("identical media settlement replay"),
         0
     );
+    let rebound_replay = owner
+        .append_transcript_entries_and_release_media(
+            &[serde_json::json!({
+                "id": "send-1",
+                "kind": "send-message",
+                "content": "owned media"
+            })],
+            "agent:other-agent:main",
+            "revision-1",
+            "send-media:tool-1",
+        )
+        .expect_err("media settlement replay must retain session identity");
+    assert!(rebound_replay.to_string().contains("receipt is rebound"));
+    let conflicting_replay = owner
+        .append_transcript_entries_and_release_media(
+            &[serde_json::json!({
+                "id": "send-1",
+                "kind": "send-message",
+                "content": "different content"
+            })],
+            "agent:agent-media-settlement:main",
+            "revision-1",
+            "send-media:tool-1",
+        )
+        .expect_err("media settlement replay must retain transcript identity");
+    assert!(conflicting_replay
+        .to_string()
+        .contains("conflicts with the committed transcript"));
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);
