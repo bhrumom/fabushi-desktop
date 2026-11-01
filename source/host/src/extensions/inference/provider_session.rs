@@ -31,7 +31,7 @@ use super::codex_direct_responses::{
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
     parse_codex_provider_refusal, run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
 };
-use super::typed_replay_serialization::serialize_cursor_replay;
+use super::typed_replay_serialization::{serialize_cursor_replay, serialize_responses_replay};
 
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
     "You are Fabushi, a warm, concise desktop assistant.\n\
@@ -1133,6 +1133,42 @@ fn to_codex_tool(tool: &RoutedToolDefinition) -> CodexDirectTool {
     }
 }
 
+fn responses_input_for_turn(
+    messages: &[ProviderMessage],
+    typed_replay: Option<&[TypedReplayEntry]>,
+) -> Result<Vec<Value>, ProviderSessionError> {
+    let mut input = match typed_replay {
+        Some(entries) => serialize_responses_replay(entries)
+            .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?,
+        None => Vec::new(),
+    };
+    if typed_replay.is_none() {
+        input.extend(messages.iter().filter(|message| message.role != "system").map(
+            |message| {
+                json!({
+                    "role": if message.role == "assistant" { "assistant" } else { "user" },
+                    "content": message.content,
+                })
+            },
+        ));
+        return Ok(input);
+    }
+    let message = messages
+        .iter()
+        .rev()
+        .find(|message| message.role == "user")
+        .ok_or_else(|| {
+            ProviderSessionError::Protocol(
+                "typed compacted replay requires a current user message".into(),
+            )
+        })?;
+    input.push(json!({
+        "role": "user",
+        "content": message.content,
+    }));
+    Ok(input)
+}
+
 pub fn run_codex_provider_text(
     messages: &[ProviderMessage],
     tools: &[RoutedToolDefinition],
@@ -1233,21 +1269,50 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
+    run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
+        messages,
+        None,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        max_steps,
+        tool_step_reminder,
+    )
+}
+
+fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
+    messages: &[ProviderMessage],
+    typed_replay: Option<&[TypedReplayEntry]>,
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new_codex(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
+    let input = responses_input_for_turn(
+        messages,
+        resume_from.is_none().then_some(typed_replay).flatten(),
+    )?;
     let mut request = CodexDirectOptions::new(
         configured_codex_model(),
         system_prompt,
-        messages
-            .iter()
-            .filter(|message| message.role != "system")
-            .map(|message| {
-                json!({
-                    "role": if message.role == "assistant" { "assistant" } else { "user" },
-                    "content": message.content,
-                })
-            })
-            .collect(),
+        input,
     );
     request.reasoning_effort = configured_codex_reasoning_effort();
     request.max_steps = max_steps.max(1);
@@ -1302,25 +1367,54 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
+    run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
+        messages,
+        None,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        resume_from,
+        on_checkpoint,
+        on_usage,
+        max_steps,
+        tool_step_reminder,
+    )
+}
+
+fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
+    messages: &[ProviderMessage],
+    typed_replay: Option<&[TypedReplayEntry]>,
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+    on_usage: &mut dyn FnMut(ProviderTokenUsage),
+    max_steps: usize,
+    tool_step_reminder: Option<&ProviderToolStepReminderHook>,
+) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new_fabushi()?;
     let model = configured_fabushi_model();
     let system_prompt = format!(
         "{}\n\nRuntime inference metadata: provider=Fabushi first-party Responses API; model={model}. If the user asks which provider or model is active, answer from this runtime metadata and do not infer a different vendor identity.",
         assembled_provider_system_prompt(messages),
     );
+    let input = responses_input_for_turn(
+        messages,
+        resume_from.is_none().then_some(typed_replay).flatten(),
+    )?;
     let mut request = CodexDirectOptions::new(
         model,
         system_prompt,
-        messages
-            .iter()
-            .filter(|message| message.role != "system")
-            .map(|message| {
-                json!({
-                    "role": if message.role == "assistant" { "assistant" } else { "user" },
-                    "content": message.content,
-                })
-            })
-            .collect(),
+        input,
     );
     request.max_steps = max_steps.max(1);
     request.tools = tools.iter().map(to_codex_tool).collect();
@@ -1443,7 +1537,9 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
-    if options.typed_replay.is_some() && provider != RoutedProvider::Cursor {
+    if options.typed_replay.is_some()
+        && !matches!(provider, RoutedProvider::Cursor | RoutedProvider::Codex | RoutedProvider::Fabushi)
+    {
         return Err(ProviderSessionError::Protocol(
             "typed compacted replay reached provider serialization before provider-specific message merge was enabled".into(),
         ));
@@ -1472,8 +1568,9 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
             let mut fabushi_checkpoint = |checkpoint: &CodexDirectCheckpoint| {
                 on_checkpoint(&RoutedProviderCheckpoint::Fabushi(checkpoint.clone()))
             };
-            run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+            run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
                 messages,
+                options.typed_replay,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,
@@ -1504,8 +1601,10 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 .on_partial_tool_call
                 .as_deref_mut()
                 .unwrap_or(&mut ignore_partial);
-            let initial_conversation = options
-                .typed_replay
+            let initial_conversation = resume
+                .is_none()
+                .then_some(options.typed_replay)
+                .flatten()
                 .map(serialize_cursor_replay)
                 .transpose()
                 .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?
@@ -1561,8 +1660,9 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                     checkpoint.clone(),
                 ))
             };
-            run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+            run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
                 messages,
+                options.typed_replay,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,

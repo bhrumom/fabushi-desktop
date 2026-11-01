@@ -282,7 +282,7 @@ the typed replay contract:
 | Provider path | Current source boundary | Typed-history coverage | Blocking gap |
 | --- | --- | --- | --- |
 | Cursor | `cursor_inference_transport.rs` has `CursorCheckpointMessage` and protobuf tool-call/tool-result fields | tool-call/result pairing is representable | attachment-bearing content is not represented in the protobuf; the public `ProviderMessage` conversion still discards checkpoint structure |
-| Codex / Fabushi | `provider_session.rs` maps each `ProviderMessage` to Responses input with string `content` | ordinary text and role projection only | tool-call/result replay and attachments require a Responses-native serializer and media resolution |
+| Codex / Fabushi | `provider_session.rs` maps input through the Responses request owner | typed summary/tool-call/result replay is now native through `CodexDirectOptions.input` | attachment resolution still requires provider-usable URLs; live exact-head/provider acceptance is open |
 | OpenRouter | `provider_session.rs` builds Chat Completions `messages` with string `content` | ordinary text and role projection only | tool calls can only be preserved by constructing provider-native assistant/tool messages; attachments require provider-native content parts and resolved media |
 | Claude Code | `provider_session.rs` renders `provider_prompt` and passes one CLI string | text-only prompt | typed roles, tool pairing, and attachments cannot be preserved through the current CLI invocation |
 
@@ -319,8 +319,8 @@ system/current-turn merge, attachment resolution, and provider-specific
 serialization are all wired. Cursor now consumes the channel through its
 existing typed checkpoint conversation; the canonical app entrypoint supplies
 the channel only when an active compaction exists. Cursor attachments remain
-fail-closed because its protobuf has no attachment part. Codex/Fabushi,
-OpenRouter, and Claude remain fail-closed. This is a partial production wiring
+fail-closed because its protobuf has no attachment part. OpenRouter and Claude
+remain fail-closed. This is a partial production wiring
 slice, not full replay acceptance.
 
 The existing attachment resolution evidence is app-owned rather than an
