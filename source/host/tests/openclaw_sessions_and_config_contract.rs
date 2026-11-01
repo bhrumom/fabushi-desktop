@@ -430,6 +430,8 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
     assert!(owner_source.contains("!admission.lifecycle_revision.trim().is_empty()"));
     assert!(owner_source.contains("let expected_session_key = format!(\"agent:{agent_id}:main\")"));
     assert!(owner_source.contains("admission.session_key == expected_session_key"));
+    assert!(owner_source.contains("fn session_admission_identity_is_bound("));
+    assert!(owner_source.contains("session archive transition owner identity is malformed or rebound"));
     assert_eq!(
         owner_source
             .matches("session_admission_identity_is_well_formed(&admission)")

@@ -1074,6 +1074,11 @@ impl SandAgentDb {
                     "session work admission record is unavailable".into(),
                 ))?;
             let mut record: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
+            if !session_admission_identity_is_bound(db, &record)? {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session archive transition owner identity is malformed or rebound".into(),
+                ));
+            }
             if db
                 .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
                     row.get::<_, String>(0)
@@ -6060,6 +6065,19 @@ fn session_work_write_is_admitted(
     let Ok(admission) = serde_json::from_str::<SessionWorkAdmissionRecord>(&raw) else {
         return Ok(false);
     };
+    if !session_admission_identity_is_bound(db, &admission)? {
+        return Ok(false);
+    }
+    Ok(!admission.deletion_pending && admission.archived_at_ms.is_none())
+}
+
+fn session_admission_identity_is_bound(
+    db: &rusqlite::Connection,
+    admission: &SessionWorkAdmissionRecord,
+) -> Result<bool, rusqlite::Error> {
+    if !session_admission_identity_is_well_formed(admission) {
+        return Ok(false);
+    }
     let Some(raw_metadata) = read_kv(db, "metadata")? else {
         return Ok(false);
     };
@@ -6078,11 +6096,7 @@ fn session_work_write_is_admitted(
         return Ok(false);
     };
     let expected_session_key = format!("agent:{agent_id}:main");
-    Ok(session_admission_identity_is_well_formed(&admission)
-        && admission.session_id == agent_id
-        && admission.session_key == expected_session_key
-        && !admission.deletion_pending
-        && admission.archived_at_ms.is_none())
+    Ok(admission.session_id == agent_id && admission.session_key == expected_session_key)
 }
 
 fn session_admission_identity_is_well_formed(
