@@ -1731,3 +1731,14 @@ Stage-B oracles are `ORA-TDRP-MASTER-UPDATER-EXACT-SOURCE-001`, `ORA-TDRP-MASTER
 Frozen-candidate qualification must bind the exact workflow revision used by the release event, actual runner identity, effective token permissions without secret capture, immutable resolved Action commit/tree, composite metadata and executable source, runtime npm package versions/integrities, whether the disable guard is present, and the exact resulting side effects. If re-enabled, evidence must bind clone source, `origin/dev`/`origin/master` heads, duplicate detection, PR request/response identity, and repository branch/ruleset policy separately from the Action. A logged PR API error with a successful step is non-passing mutation evidence.
 
 No source or target workflow/Action/npm/token/clone/PR operation or executable validation is run in Stage A.
+
+
+### Repository needs-user-action issue-lifecycle workflow qualification
+
+For `TDRP-R9-REPOSITORY-NEEDS-USER-ACTION-WORKFLOW-001`, author only and do not execute:
+- Contracts: `CONTRACT-TDRP-NEEDS-USER-ACTION-EXACT-SOURCE-001`, `-TRIGGERS-001`, `-RUNNER-001`, `-PERMISSIONS-001`, `-ACTION-LINEAGE-001`, `-LABEL-001`, `-DEFAULTS-001`, `-SCHEDULE-SEARCH-001`, `-LABEL-AGE-001`, `-CLOSE-ORDER-001`, `-COMMENT-AUTHOR-001`, `-UNMARK-001`, `-REOPEN-001`, `-ISSUE-PR-ROUTING-001`, `-SIBLING-CONSUMERS-001`, `-PUBLIC-COMMENT-001`, `-NO-TARGET-COPY-001`, `-NO-PRODUCT-RUNTIME-001`.
+- Integration: `INT-TDRP-NEEDS-USER-ACTION-REPOSITORY-ISSUE-PROCESS-001`.
+- Fault/recovery: `FAULT-TDRP-NEEDS-USER-ACTION-TOKEN-PERMISSION-001`, `-MUTABLE-TAG-001`, `-LABEL-LOOKUP-CREATE-001`, `-SEARCH-WINDOW-001`, `-POST-LABEL-ACTIVITY-001`, `-COMMENT-BEFORE-CLOSE-001`, `-UNMARK-BEFORE-REOPEN-001`, `-ASYNC-NOT-AWAITED-001`, `-ISSUE-PR-PAYLOAD-001`, `-OVERLAPPING-RUNS-001`, `-RUNNER-UNAVAILABLE-001`, `-NO-ROLLBACK-001`.
+- Security/privacy/provenance: `SEC-TDRP-NEEDS-USER-ACTION-TOKEN-SCOPE-001`, `-MUTABLE-ACTION-TAG-001`, `-THIRD-PARTY-ACTION-001`, `-ISSUE-COMMENT-PRIVACY-001`, `-WORKFLOW-LOG-PRIVACY-001`, `-PUBLIC-CLOSE-COMMENT-001`, `-NO-SECRET-CAPTURE-001`, `-NO-STAGE-A-EXECUTION-001`.
+
+Oracles bind exact workflow identity; trigger/runner/permission surface; observed Action tag/runtime lineage; scheduled label-age close semantics; author-comment unmark/reopen semantics including PR-shaped issue_comment routing; and async/partial-failure settlement. Invariants: mutable tag is not immutable identity; scheduled search remains issue-only; workflow success is not mutation proof; no Telegram support/second issue tracker/product automation owner is introduced; Stage A has no executable validation.

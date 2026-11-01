@@ -1189,3 +1189,24 @@ Direct-consumer evidence records the GitHub release event as the sole workflow c
 Existing-owner evidence binds Fabushi root repository source-maintenance/release/process governance, repository security/provenance governance and shared Test Strategy/Test Evidence Contract. No copied Telegram updater, second source/release truth, product Task/Automation, runtime/provider/sidecar or platform-core delta is introduced.
 
 Stage A records 24 contract, 1 integration, 15 fault/recovery and 14 security/provenance cases as authored only. No release/workflow/Action/npm/token/clone/PR operation, executable validation, build/test/package/release/deploy/install operation, Actions/check/status query or platform-core mutation is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository needs-user-action issue-lifecycle workflow evidence
+
+Evidence for `TDRP-R9-REPOSITORY-NEEDS-USER-ACTION-WORKFLOW-001` binds fixed U `f985723b552b30fe1c17d377d57f44e61a15a8c4`, non-truncated 7,194-entry recursive tree, and exact `.github/workflows/needs-user-action.yml@55ad7891ce36682accae01d739203aa487876053`, index 129 zero-based, mode 100644, 312 ASCII bytes/code points, 16 LF, zero CR and trailing newline.
+
+Trigger evidence must show exactly `issue_comment.created` plus daily cron `0 2 * * *`; job evidence must show one `ubuntu-slim` job, no explicit permissions/environment/concurrency/timeout/retry/checkout, and `lee-dohm/no-response@v0.5.0` receiving `github.token` and exact label `needs user action`.
+
+Action evidence records observed `v0.5.0 -> 9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb`, tree `8600ce78cc9ed1dad710f332ac434cdf1d49fc0d`, `action.yml@1eb04cb05934c6b5d299918356d4042115026b2a`, declared Node12 `dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e`, and MIT repository metadata. The tag remains mutable and must be re-resolved at the frozen candidate.
+
+Schedule evidence binds default 14-day cutoff, default `ffffff` label color, default public close comment, exact issue-only open-label search, first-30 updated-descending window, latest matching labeled-event timestamp and comment-before-close ordering. Comment evidence binds original-author equality, exact-label removal, conditional reopen when closer differs from original author, no body validation, and the fact that `issue_comment` can carry PR-shaped payloads although scheduled search excludes PRs.
+
+Failure evidence preserves broad label-get/create fallback, unawaited create-label/top-level/per-item/reopen calls, search truncation, post-label activity not resetting label age, partial comment-before-close and unmark-before-reopen settlement, lack of concurrency/timeout/retry/rollback, plus runner/token/tag/API drift. A green workflow alone is insufficient mutation proof.
+
+Security/privacy evidence captures effective token permissions without token values, exact third-party code/runtime identity, issue/comment/event/log exposure boundaries and public close-comment behavior. Durable evidence must not retain unnecessary private issue bodies, comments, tokens or debug payloads.
+
+Consumers: GitHub schedule and `issue_comment.created` callers; lee-dohm/no-response Action; GitHub Issues APIs; maintainers/authors/readers. Sibling contrast: `waiting-for-answer.yml@0cccca6b2d434303da915b12a13e7620cf1b8bc4` and schedule-only `cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186`.
+
+Existing-owner evidence binds root repository issue/reporting/development-process governance, repository privacy/security governance, Test Strategy/Test Evidence Contract and FMEP-001. No copied Telegram workflow, support subsystem, second issue tracker, product Tasks/Automations owner, runtime/provider/sidecar or platform-core delta is introduced.
+
+Stage A records 18 contract, 1 integration, 12 fault/recovery and 8 security/privacy/provenance cases as authored only. No workflow trigger, issue/label/comment/state mutation, Action execution, token probe, executable validation, build/test/package/deploy/install, Actions/check/status query or platform-core mutation is performed. `validation_status=not-run`; `accepted=false`.
