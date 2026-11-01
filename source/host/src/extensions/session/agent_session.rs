@@ -806,6 +806,21 @@ impl SandAgentSessionStore {
         self.production.open_automation_store(agent_id)
     }
 
+    /// Run an external automation-store mutation under the canonical session
+    /// filesystem/deletion boundary and its durable work-admission fence.
+    /// Callers must keep all FileAutomationStore writes inside this closure.
+    pub fn with_admitted_filesystem_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        self.production
+            .with_agent_admitted_filesystem_mutation(agent_id, operation)
+    }
+
     pub fn list_agent_automations(&self, agent_id: &str) -> Result<Vec<AutomationRecord>, String> {
         Ok(surface_automations(&self.automation_store_for(agent_id)?))
     }

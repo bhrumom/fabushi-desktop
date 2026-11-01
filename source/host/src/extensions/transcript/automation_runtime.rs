@@ -535,14 +535,14 @@ impl AutomationRuntime {
         let mut args = FireAutomationArgs::manual(agent_id, automation, now_ms());
         args.is_group = Some(false);
         let runtime = self.clone();
-        let outcome = self.run_path.fire_automation_with_on_duplicate(
-            &store,
-            args,
-            move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
-            execute,
-        )?;
+        let outcome = self.with_admitted_agent_mutation(agent_id, || {
+            let outcome = self.run_path.fire_automation_with_on_duplicate(
+                &store,
+                args,
+                move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
+                execute,
+            )?;
 
-        self.with_agent_mutation_lock(agent_id, || {
             let after = store.list_definitions();
             let _ = self.record_changes(
                 agent_id,
@@ -550,7 +550,7 @@ impl AutomationRuntime {
                 &after,
                 AutomationLifecycleSource::Agent,
             );
-            Ok(())
+            Ok(outcome)
         })?;
         Ok(outcome)
     }
@@ -576,7 +576,7 @@ impl AutomationRuntime {
         if self.wakes_suspended() {
             return Ok(None);
         }
-        let Some((store, automation, reminder)) = self.with_agent_mutation_lock(agent_id, || {
+        let Some((store, automation, reminder)) = self.with_admitted_agent_mutation(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let Some(automation) = store.get(automation_id) else {
                 return Ok(None);
@@ -625,14 +625,14 @@ impl AutomationRuntime {
             spend_guard_reminder: reminder,
         };
         let runtime = self.clone();
-        let outcome = self.run_path.fire_automation_with_on_duplicate(
-            &store,
-            args,
-            move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
-            execute,
-        )?;
+        let outcome = self.with_admitted_agent_mutation(agent_id, || {
+            let outcome = self.run_path.fire_automation_with_on_duplicate(
+                &store,
+                args,
+                move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
+                execute,
+            )?;
 
-        self.with_agent_mutation_lock(agent_id, || {
             let current = store.list_definitions();
             let _ = self.record_changes(
                 agent_id,
@@ -640,7 +640,7 @@ impl AutomationRuntime {
                 &current,
                 AutomationLifecycleSource::Agent,
             );
-            Ok(())
+            Ok(outcome)
         })?;
         Ok(outcome)
     }
@@ -733,7 +733,7 @@ impl AutomationRuntime {
         value: &str,
         now_ms: f64,
     ) -> Result<Option<String>, String> {
-        self.with_agent_mutation_lock(agent_id, || {
+        self.with_admitted_agent_mutation(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
             let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
@@ -800,7 +800,7 @@ impl AutomationRuntime {
     where
         Mutation: FnOnce(&FileAutomationStore) -> Result<T, String>,
     {
-        self.with_agent_mutation_lock(agent_id, || {
+        self.with_admitted_agent_mutation(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
             let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
@@ -808,6 +808,17 @@ impl AutomationRuntime {
             let after = store.list_definitions();
             let events = self.record_changes(agent_id, &before, &after, source);
             Ok((result, events))
+        })
+    }
+
+    fn with_admitted_agent_mutation<T>(
+        &self,
+        agent_id: &str,
+        operation: impl FnOnce() -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            SandAgentSessionStore::new(Arc::clone(&self.sessions))
+                .with_admitted_filesystem_mutation(agent_id, operation)
         })
     }
 
