@@ -454,6 +454,12 @@ pub fn persist_agent_inbound_message(
     }
     let source_admission = sessions.read_session_work_admission(from_id)?;
     let target_admission = sessions.read_session_work_admission(agent_id)?;
+    if let Some(source_admission) = source_admission.as_ref() {
+        sessions.assert_session_work_admission(
+            from_id,
+            Some(&source_admission.session_key),
+        )?;
+    }
     if let Some(target_admission) = target_admission.as_ref() {
         let source_endpoint = CommunicationEndpoint {
             agent_id: from_id.to_string(),
