@@ -1022,21 +1022,26 @@ impl ProductionSessionWorkers {
         .map_err(|error| error.to_string())?;
         let mut reclaimed = Vec::new();
         for agent_id in candidates {
-            let db_path = self.session_db_path(&agent_id)?;
-            let blob_path = conversation_blobs_path(&db_path);
-            let _ = self.close_agent_store_owner(&agent_id, false);
-            let _ = self.close_agent_db_owner(&agent_id, false);
-            futures::executor::block_on(self.pool.close_store(&blob_path));
-            match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
-                Ok(()) => reclaimed.push(agent_id),
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(error) => {
-                    report_materialization_failure(
-                        "placeholder_reclaim_failed",
-                        &agent_id,
-                        &format!("io::{:?}", error.kind()),
-                    );
+            let result = self.with_agent_filesystem_mutation(&agent_id, || {
+                let db_path = self.session_db_path(&agent_id)?;
+                let blob_path = conversation_blobs_path(&db_path);
+                let _ = self.close_agent_store_owner(&agent_id, false);
+                let _ = self.close_agent_db_owner(&agent_id, false);
+                futures::executor::block_on(self.pool.close_store(&blob_path));
+                match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
+                    Ok(()) => Ok(true),
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+                    Err(error) => Err(format!("io::{:?}", error.kind())),
                 }
+            });
+            match result {
+                Ok(true) => reclaimed.push(agent_id),
+                Ok(false) => {}
+                Err(error) => report_materialization_failure(
+                    "placeholder_reclaim_failed",
+                    &agent_id,
+                    &error,
+                ),
             }
         }
         Ok(reclaimed)

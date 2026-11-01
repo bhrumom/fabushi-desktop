@@ -230,6 +230,12 @@ conversation clear. This closes the in-process deletion interleaving for that
 path; the external blob cleanup and SQLite commit remain a separate
 cross-storage crash-recovery gap and are not treated as atomic evidence.
 
+Pruned-placeholder reclamation also uses that existing per-agent boundary
+through owner/worker close and directory removal. Candidate discovery remains
+an earlier snapshot and a missing directory remains a no-op; a close or
+removal error is reported as a failed reclaim rather than being converted into
+successful lifecycle evidence.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain

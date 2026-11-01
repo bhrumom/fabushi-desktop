@@ -429,6 +429,9 @@ with directory deletion or profile/memory filesystem mutation. The facade's
 pre-cleared external blob store remains a separate cross-storage crash
 atomicity gap; this change does not add a second blob journal or claim recovery
 after a process interruption between the blob cleanup and owner transaction.
+Pruned-placeholder reclamation uses the same boundary through owner/worker
+close and directory removal, while retaining an explicit failed-reclaim
+outcome for close or removal errors.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.
