@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "57b1699fd047648fef1a8fb4daee81e6527e4836",
+  "target_commit": "e2fa2dc75f52763e126b5f3f7db8492ae26b92b5",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -28013,7 +28013,7 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Stage B executable validation has not run.",
-        "SOCKS5/HTTP carriers and broader remaining fixed-U migration responsibilities are separate/open."
+        "Broader remaining fixed-U migration responsibilities are separate/open."
       ],
       "production_entrypoints": [
         "ProductSettingsOwner -> TelegramClientLease::apply_network_proxy -> RuntimeClient::telegram.applyNetworkProxy -> prepare_web_proxy_relay",
@@ -28183,7 +28183,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop WebProxy frame/transport/socket/webview and connection sources listed in production_evidence. No upstream C++ is copied and no new crypto implementation is introduced.",
-      "notes": "Task round102/source evidence round133. Restored selected-Web startup re-adoption is now production-wired without a second runtime/provider/settings owner: AppHost captures the fresh transient webProxyBootstrapUrl returned by the existing TelegramClientLease/RuntimeClient projection, exposes it once as a source-neutral native-shell event, desktop Host uses the existing unsolicited stdout event transport, Coordinator routes/queues it only on MainData, and Electron reuses the same strict MainEdge 127.0.0.1 bootstrap validator plus existing system-browser shell used by mutation-time adoption. The Host stdout native-shell lane bypasses the SSE-live suppression because this Host-local event is not duplicated by gateway SSE. Contracts are authored only; executable validation remains not-run and accepted remains false.",
+      "notes": "Task round102/source evidence round133. Restored selected-Web startup re-adoption is now production-wired without a second runtime/provider/settings owner: AppHost captures the fresh transient webProxyBootstrapUrl returned by the existing TelegramClientLease/RuntimeClient projection, exposes it once as a source-neutral native-shell event, desktop Host uses the existing unsolicited stdout event transport, Coordinator routes/queues it only on MainData, and Electron reuses the same strict MainEdge 127.0.0.1 bootstrap validator plus existing system-browser shell used by mutation-time adoption. The Host stdout native-shell lane bypasses the SSE-live suppression because this Host-local event is not duplicated by gateway SSE. Contracts are authored only; executable validation remains not-run and accepted remains false. Round134 closes the previously separate SOCKS5/HTTP carrier blocker in the same telegram-network owner; this Web row remains not-run/accepted=false pending Stage B.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
@@ -29542,20 +29542,21 @@
         "fixed-U proxy value semantics"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round131-selected-proxy-mtproto-carrier-consumer-20261101.md",
-      "behavior_contract": "MTProto consumes canonical ProductSettingsOwner mode/selected/IPv6 only as a post-persistence transient carrier projection. Enabled suppresses special-config acquisition and requires a selected endpoint; an enabled MTProto endpoint connects through the existing native obfuscated/TLS transport using the selected host/port/secret while retaining the protocol DC id. MTProto hostnames use the existing direct no-proxy DoH normalization/race with source-bounded TTL; resolved IP order/expiry and successful-IP promotion remain transient. Enabled SOCKS5/HTTP/Web endpoints fail closed until their separate carriers are implemented and never fall back to direct Telegram transport.",
+      "behavior_contract": "Canonical ProductSettingsOwner mode/selected/IPv6 is consumed only as a post-persistence transient carrier projection. Enabled suppresses special-config acquisition and requires a selected endpoint. MTProto selection uses the selected proxy host/port/secret while retaining protocol DC identity. SOCKS5 and HTTP selection keep the Telegram DC endpoint as the tunnel target, establish the selected forward proxy carrier, then reuse the existing endpoint secret, obfuscated/TLS framing and auth/session lifecycle. SOCKS5 proxy hostnames use the existing direct no-proxy DoH TTL cache and successful-IP promotion; HTTP proxy hostname resolution uses the ordinary socket resolver. Web selection uses the existing relay/browser carrier. No enabled carrier failure falls back to direct Telegram transport.",
       "state_machine": "ProductSettingsOwner restore/mutation -> persist authoritative network.proxy -> TelegramClientLease carrier projection + existing proxyEnabled special-config projection -> RuntimeClient invalidates live sessions/owned requests on projection change while preserving reusable auth material -> telegram-network opens direct or MTProto-proxy route -> transient DomainResolver cache -> successful IP promotion; no runtime durable proxy state",
       "side_effects": [
-        "Post-persistence mode/selected/IPv6 publication updates the existing RuntimeClient transient projection and invalidates live sessions/owned network requests when changed.",
-        "MTProto selected proxy connects through existing telegram-network obfuscated/TLS carrier using the proxy address and selected secret without changing protocol DC identity.",
-        "MTProto hostname resolution uses direct no-proxy normalized DoH attempts with 800ms stagger, TTL-bound transient cache and successful-IP promotion.",
-        "Existing mode-derived proxyEnabled continues to suppress special-config acquisition.",
-        "SOCKS5/HTTP/Web enabled selections fail closed at this carrier boundary rather than leaking a direct Telegram connection."
+        "Post-persistence mode/selected/IPv6 publication updates the existing RuntimeClient transient projection and invalidates live sessions/owned network requests when changed while reusable auth material remains.",
+        "MTProto selected proxy connects through the existing telegram-network obfuscated/TLS carrier using the proxy address and selected secret without changing protocol DC identity.",
+        "SOCKS5 selected proxy negotiates RFC1928 CONNECT (and RFC1929 username/password when selected) to the chosen Telegram DC endpoint, then reuses existing MTProto transport framing and endpoint secret.",
+        "HTTP selected proxy negotiates HTTP CONNECT to the chosen Telegram DC endpoint, carrying optional Basic proxy authentication, then reuses existing MTProto transport framing and endpoint secret.",
+        "SOCKS5 hostname resolution reuses direct no-proxy normalized DoH with bounded TTL and transient successful-IP promotion; HTTP proxy hostname resolution remains the ordinary socket resolver.",
+        "Existing mode-derived proxyEnabled continues to suppress special-config acquisition; Web selection continues through the existing relay/browser carrier."
       ],
       "failure_cases": [
         "Consumer becomes a second durable proxy settings owner",
         "Enabled proxy with missing selection silently falls back to direct transport",
-        "Unsupported enabled proxy kind silently falls back to direct transport",
-        "Proxy secret appears in logs/status/error projections",
+        "Proxy handshake, authentication, resolver, cancellation or timeout failure silently falls back to direct Telegram transport",
+        "Proxy credentials appear in logs/status/error projections",
         "Resolved IP/expiry observations become durable ProductSettings fields",
         "Projection change leaves an old live session/request using the previous route"
       ],
@@ -29569,7 +29570,7 @@
         "ConfigLoader::refreshSpecialLoader",
         "ConfigLoader::sendSpecialRequest"
       ],
-      "platform_delta": "Task round100 implements the selected-proxy/custom-resolution slice in the existing source-neutral telegram-network/RuntimeClient owners. NetworkProxyProjection is transient; ProductSettingsOwner v2 remains the only durable source. MTProto proxies use the existing native obfuscated/TLS connection start, direct no-proxy DoH resolution and transient good-IP promotion. Unsupported enabled SOCKS5/HTTP/Web selections fail closed. Desktop AppHost publishes only the restored carrier projection at startup, then publishes carrier plus the existing mode-derived special-config projection after persisted settings mutations.",
+      "platform_delta": "Task round103 closes the remaining SOCKS5/HTTP selectable carrier slice in the existing source-neutral telegram-network owner. ProductSettingsOwner v2 remains the only durable state owner, RuntimeClient keeps transient projection/session fencing, SOCKS5 reuses transient custom proxy-host resolution, HTTP uses ordinary socket resolution, and all carriers reuse the existing MTProto protocol/session owners after tunnel establishment.",
       "existing_owner_candidates": [
         "canonical Fabushi ProductSettingsOwner v2",
         "bhrumom/fabushi-platform-core:native/telegram-network",
@@ -29622,8 +29623,10 @@
         "projection change cancels live owned requests/drops live sessions while reusable auth material remains",
         "Enabled+missing selected -> fail closed",
         "Enabled+MTProto selected -> proxy host/port/secret carrier route",
-        "Enabled+SOCKS5/HTTP/Web -> fail closed pending separate carriers",
-        "hostname MTProto proxy -> direct no-proxy DoH -> transient TTL cache -> successful IP promotion"
+        "Enabled+SOCKS5 selected -> custom-resolved proxy host -> RFC1928/RFC1929 tunnel -> existing MTProto transport",
+        "Enabled+HTTP selected -> ordinary proxy-host resolution -> HTTP CONNECT(+optional Basic auth) -> existing MTProto transport",
+        "Enabled+Web selected -> existing relay/bootstrap carrier",
+        "hostname SOCKS5/MTProto proxy -> direct no-proxy DoH -> transient TTL cache -> successful IP promotion"
       ],
       "state_owner": "Canonical ProductSettingsOwner v2 remains the only durable mode/list/selected/rotation/credential owner. RuntimeClient and telegram-network own transient projection, live sockets, resolver observations and session lifecycle only.",
       "lifecycle_owner": "Existing RuntimeClient SessionOwner owns session/request invalidation and reusable auth material; existing telegram-network owns socket/resolver lifecycle; ProductSettingsOwner owns persistence.",
@@ -29638,8 +29641,7 @@
       "implementation_status": "implemented",
       "coverage_disposition": "implemented",
       "blockers": [
-        "Stage B executable validation has not run.",
-        "SOCKS5/HTTP/Web proxy carriers remain separate open responsibilities; their enabled selections intentionally fail closed in this slice."
+        "Stage B executable validation has not run."
       ],
       "production_entrypoints": [
         "settings.mutateNetworkProxy",
@@ -29678,16 +29680,24 @@
         "platform-core-round100-final-source-compliance-commit:fb44f2b7170558560833a4f2e6cea0533b8e8d56",
         "platform-core-round100-final-spec-blob:d95fcbf209c2c00b75918aec3de3eb18921d57c0",
         "desktop-round100-startup-publication-fix-commit:2f0798e8709b3a3ea6b200f092060db6c1dccb62",
-        "desktop-round100-app-host-blob:1fe55278a834b828b6ffdd8e2ca933fd2eaa3ef9"
+        "desktop-round100-app-host-blob:1fe55278a834b828b6ffdd8e2ca933fd2eaa3ef9",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_abstract_socket.cpp@653033365b543e554104c99a963ee194ddb830d9",
+        "platform-core-round103-carrier-commit:0a8d8f9b1830e989793da934210f699ea5d39d1f",
+        "platform-core-round103-network-blob:b2ce7b4f018494cc806520f0fd241f5264ba2bbd",
+        "platform-core-round103-spec-blob:17e42e6671a2bd553bf6a04610348815124b7e26",
+        "desktop-round103-carrier-mirror-commit:e2fa2dc75f52763e126b5f3f7db8492ae26b92b5",
+        "desktop-round103-network-blob:b2ce7b4f018494cc806520f0fd241f5264ba2bbd",
+        "desktop-round103-spec-blob:17e42e6671a2bd553bf6a04610348815124b7e26"
       ],
       "test_evidence": [
         "Round100 platform/desktop source contracts were authored next to protocol/network/runtime/AppHost/TelegramClientLease production owners and were not executed.",
-        "Network contracts cover Enabled+missing selection and unsupported SOCKS5/HTTP/Web fail-closed behavior.",
         "Resolver contracts cover normalized direct no-proxy request shape and transient successful-IP promotion.",
         "Runtime contracts cover transient secret-free carrier result projection and session invalidation on carrier change.",
-        "AppHost/lease contracts cover source-neutral carrier DTO derivation, mode/selected/IPv6 publication surface and exact request shape."
+        "AppHost/lease contracts cover source-neutral carrier DTO derivation, mode/selected/IPv6 publication surface and exact request shape.",
+        "Round103 telegram-network source contracts cover SOCKS5 CONNECT request framing and HTTP CONNECT + Basic proxy-auth request shape; authored only and not executed.",
+        "Existing RuntimeClient contracts continue to cover transient secret-free projection and projection-change session fencing; not executed in Stage A."
       ],
-      "target_commit": "2f0798e8709b3a3ea6b200f092060db6c1dccb62",
+      "target_commit": "e2fa2dc75f52763e126b5f3f7db8492ae26b92b5",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -29748,7 +29758,15 @@
       "design_reviewer": null,
       "quality_risk": "high",
       "requirement_ids": [
-        "TDRP-R9-PROXY-MTPROTO-CONSUMER-001"
+        "TDRP-R9-PROXY-MTPROTO-CONSUMER-001",
+        "TDRP-PROXY-CARRIER-01",
+        "TDRP-PROXY-CARRIER-02",
+        "TDRP-PROXY-CARRIER-03",
+        "TDRP-PROXY-CARRIER-04",
+        "TDRP-PROXY-CARRIER-05",
+        "TDRP-PROXY-CARRIER-06",
+        "TDRP-PROXY-CARRIER-07",
+        "TDRP-PROXY-CARRIER-08"
       ],
       "oracle_ids": [
         "ORA-TDRP-PROXY-MTPROTO-CONSUMER-001"
@@ -29767,7 +29785,9 @@
       "property_state_case_ids": [],
       "contract_case_ids": [
         "CONTRACT-TDRP-PROXY-NON-UI-CONSUMERS-001",
-        "CONTRACT-TDRP-PROXY-MTPROTO-CARRIER-001"
+        "CONTRACT-TDRP-PROXY-MTPROTO-CARRIER-001",
+        "CONTRACT-TDRP-PROXY-SOCKS5-CARRIER-001",
+        "CONTRACT-TDRP-PROXY-HTTP-CARRIER-001"
       ],
       "integration_case_ids": [
         "INT-TDRP-PROXY-MTPROTO-PUBLICATION-001"
@@ -29806,7 +29826,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round100/source evidence round131. Canonical ProductSettingsOwner v2 publishes restored carrier state through the existing process-lifetime TelegramClientLease before normal host use, without triggering special-config acquisition at startup. Post-persistence mode/selected/IPv6 mutations publish the transient carrier projection and retain the existing mode-derived special-config publication. MTProto selected-proxy plus custom-resolution consumption is implemented; resolver cache/order/expiry remain transient; projection changes fence live sessions/requests while preserving reusable auth material. Enabled SOCKS5/HTTP/Web fail closed and remain separate carrier responsibilities. Contracts are authored but not run; validation_status=not-run; accepted=false.",
+      "notes": "Task round103/source evidence round134. Canonical ProductSettingsOwner v2 remains the only durable proxy owner and publishes its restored/post-persistence carrier projection through the existing TelegramClientLease. RuntimeClient retains projection-change request/session fencing with reusable auth material preserved. The existing telegram-network owner now implements selectable SOCKS5 and HTTP forward-proxy tunnels before the same MTProto obfuscated/TLS/framing path: SOCKS5 uses the existing direct-NoProxy transient proxy-host resolver and successful-IP promotion; HTTP uses ordinary socket resolution and CONNECT with optional Basic proxy authentication. MTProto and Web carrier paths remain in their existing owners. No carrier failure falls back to direct Telegram transport. Contracts are authored but not run; validation_status=not-run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
