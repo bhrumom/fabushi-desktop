@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16154,
-    "unread": 16127,
+    "unknown": 16153,
+    "unread": 16126,
     "omitted": 0,
-    "responsibilities_total": 134,
+    "responsibilities_total": 135,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -35288,6 +35288,341 @@
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".agents/skills/perform-task/SKILL.md",
+      "source_blob_sha": "590e6660cfd8782b37dbc3c6959944f53bb4541c",
+      "source_kind": "repository_single_task_performer_authority",
+      "module_id": "tdesktop.perform-task",
+      "responsibility_id": "TDRP-R9-REPOSITORY-PERFORM-TASK-AUTHORITY-001",
+      "source_symbols": [
+        "Resolve task id",
+        "Task state ownership",
+        "Source lineage gate",
+        "Context and plan",
+        "Independent plan assessment",
+        "Implementation phases",
+        "Mechanical lane",
+        "Adaptive review loop",
+        "Evidence loop",
+        "Final AI state",
+        "Publication"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-AUTHORITY",
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
+        ".agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
+        ".agents/skills/perform-task/references/pipeline.md@3f897572e10438024edd2e316bd0be7eb4171493",
+        ".agents/skills/perform-task/references/phase-prompts.md@f62400b00933fe3757d90b809e456b200389c65c",
+        ".agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        ".agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
+        ".agents/shared/test-loop.md@bb51685e417759939cadc1e2e74b1c0199fcb8f0",
+        ".agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
+        ".agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
+        ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5c",
+        ".agents/skills/code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f",
+        ".agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        ".claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+        ".grok/commands/perform-task.md@313e94a3202c39aa10944b832b45ee80a762f509",
+        ".agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "behavior_contract": "Execute exactly one already selected repository-development task under canonical task ownership: resolve and start/retry/resume fail-closed; gate implementation on source lineage; preserve resumable phase artifacts and explicit owned paths; independently assess scope/approach before edits; use the bounded Q0/Q1/Q2 mechanical lane only while behavior-preserving proofs hold; require independent review with focused invalidation-based re-review and explicit convergence; design falsifiable claim-specific evidence with direct recovery; distinguish already-satisfied/no-change from retained implementation; and canonically publish only approved, genuinely blocked, or split-required final state without becoming a queue scheduler or product runtime.",
+      "state_machine": "canonical selected task -> terminal/foreign/dependency/lineage refusal | Start | Retry | Resume -> context/plan -> independent assessment -> split-required | owned implementation phases -> selected validation boundary -> adaptive review/fix/convergence -> retained implementation/no-change -> evidence design/run/recovery -> approved | genuine blocked | split-required | recoverable hard-stop -> canonical final publication",
+      "side_effects": [
+        "No shipping product runtime side effects.",
+        "Canonical repository task mutation occurs only at Start/Retry/final publication boundaries; local phase/checkpoint artifacts remain recovery state.",
+        "Source edits are limited to task-owned paths and retained only through the existing repository source/task publication contract.",
+        "Under FMEP-001 Stage A no executable validation side effects occur; contracts and test/evidence requirements are authored only."
+      ],
+      "failure_cases": [
+        "Already-approved or already-split-required work is reopened",
+        "Another checkout's unfinished task is stolen",
+        "Todo ownership is inferred from a receipt, batch mark, local ref, or phase file instead of canonical Start",
+        "Unfinished task dependency or missing approved source lineage is ignored",
+        "Pre-Phase-1 source-lineage mismatch mutates phase/source/final task state",
+        "Post-Phase-1 lineage mismatch is hidden by branch integration inside the performer",
+        "Completed phase artifacts are replayed instead of resuming the first incomplete validated boundary",
+        "Source edit escapes the declared owned write set",
+        "Intrinsic split-required scope is forced through one implementation/review/evidence campaign",
+        "Performer creates replacement queue tasks instead of returning split-required state to the scheduler",
+        "Q0/Q1/Q2 mechanical lane retains a behavior-changing, out-of-bounds, or unproved candidate",
+        "Reviewers share findings before independent review or unresolved findings are approved because of a round cap",
+        "A fix causes all prior reviews/evidence to rerun instead of carrying unaffected approvals forward",
+        "Evidence check lacks a changed surface, oracle, window, control, falsifier, or direct durable output",
+        "Missing/ambiguous evidence is treated as product success instead of TEST_FLAW",
+        "A sound failing check is treated as TEST_FLAW instead of IMPL_BUG",
+        "Run/campaign cap, elapsed time, blank capture, or worker interruption is promoted to approval or Block",
+        "Already-satisfied outcome manufactures a source change",
+        "Source commit or chat result is treated as canonical task completion",
+        "Semantic publication conflict is force-pushed or recoverable state is discarded",
+        "Second Telegram-specific performer/queue, review store, shipping Tasks/Automations owner, or platform-core runtime owner is introduced",
+        "Stage-A source implementation is promoted to executable verification or acceptance"
+      ],
+      "ui_disposition": "Not applicable; repository development-process governance only.",
+      "non_ui_responsibilities": [
+        "Single selected repository task authority",
+        "Start/retry/resume ownership and task-state gating",
+        "Approved source-lineage gating",
+        "Resumable phase artifacts and owned-path discipline",
+        "Independent plan/scope assessment",
+        "Bounded Q0/Q1/Q2 mechanical lane",
+        "Independent general and specialist review",
+        "Focused carry-forward review and convergence",
+        "Claim-driven evidence design and directness recovery",
+        "Already-satisfied no-change evidence",
+        "Canonical approved/blocked/split-required publication",
+        "Implementation/validation/acceptance separation"
+      ],
+      "platform_delta": "No platform-core production delta. This fixed-U responsibility is repository-development process/quality governance, not shipping Product Tasks/Automations, Agent/Coordinator/Host/Runner, Telegram runtime, or platform-core behavior.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository task/process authority governance",
+        "AGENTS.md repository development lifecycle and source/spec authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "TDRP-R9-REPOSITORY-CONTINUE-TASK-PROCESS-AUTHORITY-001"
+      ],
+      "existing_owner": "Fabushi repository development process authority + repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Product Tasks/Automations own user/runtime task execution, not repository-development performer state",
+        "Agent/Coordinator/Host/Runner own shipping execution, not repository-development task ownership/review/publication",
+        "Platform-core runtime has no repository performer/task-review/publication authority at e92b51e23b39dae5719f033fa1f7a20d6579dc8c",
+        "A Telegram-specific performer/queue runtime would duplicate source-neutral repository governance",
+        "A second review/evidence state store would split qualification truth"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository single-task performer governance",
+        "Repository single-task performer qualification",
+        "Repository single-task performer evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream source is repository-development orchestration expressed as a skill contract, not shipping Telegram product logic. Fabushi preserves its applicable state/review/evidence/publication semantics in existing source-neutral repository governance instead of copying a host-specific performer runtime.",
+      "command_event_contracts": [
+        "selected canonical task -> terminal/foreign/dependency refusal | Start | Retry | Resume",
+        "approved source prerequisites + current source -> source-lineage pass | clean routing stop | later task-local blocker",
+        "context/plan -> independent assessment -> assessed phases | approach retry | split-required",
+        "assessed phase + owned write set -> task-owned source delta + phase checkpoint",
+        "retained diff -> independent general/lenses -> approved | blocking fix + focused re-review | convergence decision",
+        "evidence design -> selected check -> APPROVED | TEST_FLAW | IMPL_BUG | UNRECOVERABLE",
+        "TEST_FLAW -> directness recovery carrying unaffected passes",
+        "IMPL_BUG -> retained fix attempt + focused review + invalidated evidence only",
+        "final result -> approved | genuine blocked | split-required canonical publication",
+        "publication race/conflict -> refresh+revalidate safe race | preserve recoverable semantic conflict, never force"
+      ],
+      "state_owner": "Existing Fabushi repository development process authority",
+      "lifecycle_owner": "Existing repository development lifecycle and quality/test-evidence governance",
+      "persistence_and_restart": "Canonical task state persists in repository/project task artifacts and exact Git history. Context/plan/review/test/result/checkpoint artifacts and task-local refs preserve resumable phase state but do not supersede canonical ownership. Resume starts at the first incomplete validated boundary; split-required preserves proposal/owned paths/retained-work inputs for the scheduler transaction.",
+      "concurrency_and_cancellation": "Exactly one stateful performer owns one selected task. Disposable phase workers never own publication. Concurrent claim/publication changes are fail-closed; ordinary publication races may refresh and retry only after the same semantic validation. Interruption leaves in-progress resumable state unless an exact genuine blocked/split-required boundary was already established.",
+      "security_boundary": "Cannot authorize shipping product task execution, credentials, deployment, branch-protection changes, CI execution, release acceptance, queue widening, ownership theft, forced publication, or unsafe test-account/desktop actions. Host adapters and local phase artifacts cannot elevate themselves to canonical authority.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "Git repository object/ref authority",
+        "GitHub Actions Stage-B evidence environment"
+      ],
+      "service_owner": "Existing Fabushi repository development/quality workflow",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Stage-B exact-head execution of authored repository performer/review/evidence contracts is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository single-task performer governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository single-task performer qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository single-task performer evidence"
+      ],
+      "production_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+        "upstream-source:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "desktop-spec-commit:c18b66863b7d94262e6e6b81385f67b82d89c073"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-PERFORM-TASK-STATE-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-PERFORM-TASK-SOURCE-LINEAGE-001 authored, not run",
+        "CONTRACT-TDRP-PERFORM-TASK-PHASE-RESUME-001 authored, not run",
+        "CONTRACT-TDRP-PERFORM-TASK-MECHANICAL-LANE-001 authored, not run",
+        "CONTRACT-TDRP-PERFORM-TASK-REVIEW-CONVERGENCE-001 authored, not run",
+        "CONTRACT-TDRP-PERFORM-TASK-EVIDENCE-RECOVERY-001 authored, not run",
+        "CONTRACT-TDRP-PERFORM-TASK-PUBLICATION-001 authored, not run",
+        "INT-TDRP-PERFORM-TASK-HOST-COMPOSITION-001 authored, not run"
+      ],
+      "target_commit": "c18b66863b7d94262e6e6b81385f67b82d89c073",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Single selected repository task performer, review/evidence and final publication",
+      "capability_component": "Source-neutral single-task ownership, phase/resume, mechanical-lane, review/convergence, evidence-recovery and publication governance",
+      "variation_axes": [
+        "todo Start vs owned blocked Retry vs owned in-progress Resume",
+        "already approved/split-required vs runnable unfinished",
+        "foreign owner vs current owner",
+        "task dependency ready vs unfinished",
+        "source lineage satisfied vs missing before Phase 1 vs discovered later",
+        "assessed cohesive task vs rejected approach vs split-required intrinsic scope",
+        "normal full pipeline vs Q0/Q1/Q2 mechanical lane",
+        "review approval vs blocking fix vs convergence decision",
+        "evidence APPROVED vs TEST_FLAW vs IMPL_BUG vs UNRECOVERABLE",
+        "changed retained implementation vs already-satisfied no-change",
+        "canonical approval vs genuine block vs split-required vs recoverable hard stop",
+        "clean CAS publication vs concurrent safe retry vs semantic conflict"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository development lifecycle",
+        "Fabushi repository task/process authority governance",
+        "Fabushi repository continue task/process authority",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Git/GitHub compare-and-swap repository authority"
+      ],
+      "duplicate_root_check": "No Telegram-specific performer/queue, second task ownership/review/evidence store, shipping Tasks/Automations duplication, Agent/Coordinator/Host/Runner repository owner, or platform-core runtime owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Canonical task state survives interruption through published task artifacts and Git history; task-local phase artifacts/checkpoints are resumable but non-authoritative. Resume begins at the first incomplete validated boundary; split-required retains its proposal and implementation handoff inputs without creating replacement tasks.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-PERFORM-TASK-AUTHORITY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PERFORM-TASK-AUTHORITY-001",
+        "ORA-TDRP-PERFORM-TASK-PHASE-001",
+        "ORA-TDRP-PERFORM-TASK-REVIEW-001",
+        "ORA-TDRP-PERFORM-TASK-EVIDENCE-001",
+        "ORA-TDRP-PERFORM-TASK-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PERFORM-TASK-SINGLE-OWNER-001",
+        "INV-TDRP-PERFORM-TASK-SOURCE-LINEAGE-001",
+        "INV-TDRP-PERFORM-TASK-RESUME-BOUNDARY-001",
+        "INV-TDRP-PERFORM-TASK-OWNED-PATHS-001",
+        "INV-TDRP-PERFORM-TASK-MECHANICAL-NO-BEHAVIOR-001",
+        "INV-TDRP-PERFORM-TASK-REVIEW-INDEPENDENCE-001",
+        "INV-TDRP-PERFORM-TASK-APPROVAL-CARRY-FORWARD-001",
+        "INV-TDRP-PERFORM-TASK-EVIDENCE-POSITIVE-001",
+        "INV-TDRP-PERFORM-TASK-NO-CAP-APPROVAL-001",
+        "INV-TDRP-PERFORM-TASK-NO-SECOND-OWNER-001",
+        "INV-TDRP-PERFORM-TASK-NO-FORCE-PUBLISH-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PERFORM-TASK-STATE-AUTHORITY-001",
+        "CONTRACT-TDRP-PERFORM-TASK-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-PERFORM-TASK-PHASE-RESUME-001",
+        "CONTRACT-TDRP-PERFORM-TASK-MECHANICAL-LANE-001",
+        "CONTRACT-TDRP-PERFORM-TASK-REVIEW-CONVERGENCE-001",
+        "CONTRACT-TDRP-PERFORM-TASK-EVIDENCE-RECOVERY-001",
+        "CONTRACT-TDRP-PERFORM-TASK-PUBLICATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PERFORM-TASK-HOST-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-PERFORM-TASK-INTERRUPTION-RESUME-001",
+        "TEMP-TDRP-PERFORM-TASK-CONCURRENT-PUBLICATION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PERFORM-TASK-PHASE-WORKER-RECOVERY-001",
+        "FAULT-TDRP-PERFORM-TASK-REVIEW-CONVERGENCE-001",
+        "FAULT-TDRP-PERFORM-TASK-EVIDENCE-CAMPAIGN-001",
+        "FAULT-TDRP-PERFORM-TASK-PUBLICATION-RACE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PERFORM-TASK-OWNERSHIP-AUTHORITY-001",
+        "SEC-TDRP-PERFORM-TASK-EVIDENCE-SAFETY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-PERFORM-TASK-AUTHORITY-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "repository-perform-task-contract-fixture",
+        "repository-perform-task-mechanical-lane-fixture",
+        "repository-perform-task-review-evidence-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository single-task performer, phase/resume, mechanical-lane, review/convergence, evidence-recovery and publication contracts read from telegramdesktop/tdesktop fixed-U authority and direct fixed-U host/scheduler/code-health consumers; no upstream performer implementation copied into Fabushi shipping runtime.",
+      "notes": "Task round124/source evidence round155. Live desktop checkpoint d06d2df14f36de9990541f4a21af67ab3b2084bb and platform-core e92b51e23b39dae5719f033fa1f7a20d6579dc8c were reread before work. Fixed-U recursive tree is complete with 7,194 entries; target perform-task/SKILL.md is tree index 66, exact 12,740-byte / 234-line blob. The complete skill, pipeline, phase prompts, test loop, mechanical lane, effort/delegation/build-lock/UI-driver references and direct AGENTS/Claude/Grok/OpenAI/continue/code-health consumers were read. Existing-owner-first maps the portable responsibility to Fabushi repository development process authority + repository quality/test-evidence governance; no shipping runtime/platform-core owner or ADR. Spec-first CAS commit c18b66863b7d94262e6e6b81385f67b82d89c073 extends existing governance/evidence and adds the complete-read dossier. Exactly one independent source entry closes: unknown 16154->16153, unread 16127->16126, responsibilities 134->135. Contracts authored, not run; accepted=false.",
+      "test_execution_evidence": [],
+      "id": "TDRP-R9-REPOSITORY-PERFORM-TASK-AUTHORITY-001",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c"
+      ]
     }
   ],
   "rebaseline_candidate": {
