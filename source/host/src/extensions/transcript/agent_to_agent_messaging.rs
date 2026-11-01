@@ -379,15 +379,14 @@ pub fn persist_agent_inbound_message(
     if from_id == agent_id || sessions.is_agent_being_deleted(from_id) {
         return Ok(false);
     }
-    if sessions.summarize_agent_by_id(from_id, None)?.is_none() {
+    let Some(source) = sessions.summarize_agent_by_id(from_id, None)? else {
+        return Ok(false);
+    };
+    if source.is_group || source.remote_room.is_some() {
         return Ok(false);
     }
-    let from_name = from
-        .get("name")
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or("An agent");
+    let from_name = source.name.trim();
+    let from_name = if from_name.is_empty() { "An agent" } else { from_name };
     let text = inbound
         .get("text")
         .and_then(Value::as_str)

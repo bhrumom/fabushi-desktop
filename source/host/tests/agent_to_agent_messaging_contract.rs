@@ -112,18 +112,22 @@ fn persisted_ask_policy_rejects_without_approval_consumer(){
 }
 
 #[test]
-fn inbound_consumer_rejects_self_and_unknown_source_identities(){
+fn inbound_consumer_binds_source_identity_and_rejects_self_or_unknown(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let source=sessions.materialize_new_session(Some(&profile("Canonical Source")),"user",None).expect("source");
     let inbound=|source:&str| serde_json::json!({
-        "from":{"id":source,"name":"source"},
+        "from":{"id":source,"name":"spoofed source name"},
         "text":"must not be accepted",
         "timestampMs":100,
     });
     assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound(&target.id)).expect("self inbound"));
     assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound("missing-source")).expect("unknown inbound"));
-    assert!(sessions.read_agent_transcript_entries(&target.id).expect("target transcript").is_empty());
-    assert!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners").is_empty());
+    let accepted = persist_agent_inbound_message(&sessions,&target.id,&inbound(&source.id)).expect("known inbound");
+    assert!(accepted);
+    let entries=sessions.read_agent_transcript_entries(&target.id).expect("target transcript");
+    assert_eq!(entries[0]["fromAgent"]["name"],"Canonical Source");
+    assert_eq!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners"),vec![source.id]);
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }
 
