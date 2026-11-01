@@ -2373,6 +2373,99 @@ impl SandAgentDb {
                     )
                 })?;
             let mut admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            let receipt_id = format!("outgoing-media-settlement:{}", media_work_id.trim());
+            if let Some(raw_receipt) = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![&receipt_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+            {
+                let receipt = parse_transcript_entry(&raw_receipt).ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "outgoing media settlement receipt is malformed".into(),
+                    )
+                })?;
+                let receipt_matches = receipt
+                    .get("kind")
+                    .and_then(serde_json::Value::as_str)
+                    == Some("outgoing-media-settlement")
+                    && receipt
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(expected_session_key.trim())
+                    && receipt
+                        .get("mediaWorkId")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(media_work_id.trim())
+                    && receipt
+                        .get("lifecycleRevision")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(expected_lifecycle_revision.trim());
+                if !receipt_matches {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "outgoing media settlement receipt is rebound".into(),
+                    ));
+                }
+                if admission.admitted_media_work_id.is_some()
+                    || !admission.admitted_media_paths.is_empty()
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "outgoing media settlement receipt conflicts with a pending media fence"
+                            .into(),
+                    ));
+                }
+                let receipt_entry_ids = receipt
+                    .get("transcriptEntryIds")
+                    .and_then(serde_json::Value::as_array)
+                    .ok_or_else(|| {
+                        AgentDbProjectionError::WorkAdmissionInvalid(
+                            "outgoing media settlement receipt is missing transcript identities"
+                                .into(),
+                        )
+                    })?;
+                let incoming_entry_ids = entries
+                    .iter()
+                    .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+                    .collect::<Vec<_>>();
+                if receipt_entry_ids.len() != incoming_entry_ids.len()
+                    || !receipt_entry_ids.iter().zip(incoming_entry_ids.iter()).all(
+                        |(expected, actual)| expected.as_str() == Some(*actual),
+                    )
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "outgoing media settlement replay conflicts with the committed transcript"
+                            .into(),
+                    ));
+                }
+                for entry in entries {
+                    let entry_id = entry
+                        .get("id")
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| {
+                            AgentDbProjectionError::WorkAdmissionInvalid(
+                                "outgoing media settlement replay has no entry identity".into(),
+                            )
+                        })?;
+                    let raw_existing = db
+                        .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                            row.get::<_, String>(0)
+                        })
+                        .optional()?
+                        .ok_or_else(|| {
+                            AgentDbProjectionError::WorkAdmissionInvalid(
+                                "outgoing media settlement replay lost its transcript entry"
+                                    .into(),
+                            )
+                        })?;
+                    if parse_transcript_entry(&raw_existing).as_ref() != Some(entry) {
+                        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                            "outgoing media settlement replay conflicts with transcript content"
+                                .into(),
+                        ));
+                    }
+                }
+                return Ok(Vec::new());
+            }
             if admission.session_key != expected_session_key.trim()
                 || admission.lifecycle_revision != expected_lifecycle_revision.trim()
                 || admission.admitted_media_work_id.as_deref() != Some(media_work_id.trim())
@@ -2408,9 +2501,9 @@ impl SandAgentDb {
                     }
                 }
             }
-            let receipt_id = format!("outgoing-media-settlement:{}", media_work_id.trim());
             let receipt = media_settlement_receipt_entry(
                 &receipt_id,
+                expected_session_key.trim(),
                 media_work_id.trim(),
                 expected_lifecycle_revision.trim(),
                 &admission.admitted_media_paths,
@@ -3355,6 +3448,7 @@ fn session_work_result_receipt_entry(
 
 fn media_settlement_receipt_entry(
     entry_id: &str,
+    session_key: &str,
     media_work_id: &str,
     lifecycle_revision: &str,
     media_paths: &[String],
@@ -3368,6 +3462,7 @@ fn media_settlement_receipt_entry(
     serde_json::json!({
         "id": entry_id,
         "kind": "outgoing-media-settlement",
+        "sessionKey": session_key,
         "mediaWorkId": media_work_id,
         "lifecycleRevision": lifecycle_revision,
         "mediaPaths": media_paths,

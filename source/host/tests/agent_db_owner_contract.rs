@@ -1022,6 +1022,25 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         receipt.get("kind").and_then(serde_json::Value::as_str),
         Some("outgoing-media-settlement")
     );
+    assert_eq!(
+        receipt.get("sessionKey").and_then(serde_json::Value::as_str),
+        Some("agent:agent-media-settlement:main")
+    );
+    assert_eq!(
+        owner
+            .append_transcript_entries_and_release_media(
+                &[serde_json::json!({
+                    "id": "send-1",
+                    "kind": "send-message",
+                    "content": "owned media"
+                })],
+                "agent:agent-media-settlement:main",
+                "revision-1",
+                "send-media:tool-1",
+            )
+            .expect("identical media settlement replay"),
+        0
+    );
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);

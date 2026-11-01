@@ -26,7 +26,11 @@ fence exists, transcript insertion and fence release are performed by one
 session-owner SQLite transaction; a stale or rebound fence rolls back the
 transcript insertion. The admission record also retains the exact materialized
 absolute paths while the fence is pending, as recovery input owned by this
-session/media boundary.
+session/media boundary. After a committed settlement receipt exists, an
+identical owner replay is idempotent and returns the committed outcome; a
+receipt that conflicts with the incoming transcript or with a still-pending
+fence fails closed. The receipt also retains the canonical session key so a
+replay cannot be accepted across a rebound session.
 
 ## Non-goals
 
@@ -166,7 +170,7 @@ claimed.
 | --- | --- | --- |
 | MAC-01 | passed (source wiring) | Existing attachment, SendMessage, and session owners are used; no parallel custody store exists. |
 | MAC-02 | passed (source wiring) | `OutgoingMediaCustody` tracks only paths materialized by the current SendMessage operation. |
-| MAC-03 | passed (source wiring) | The session owner performs transcript append and media-fence release together; local custody commits only afterward. |
+| MAC-03 | passed (source wiring) | The session owner performs transcript append and media-fence release together; local custody commits only afterward, and an identical committed receipt replays idempotently. |
 | MAC-04 | passed (source wiring) | Pre-commit failures invoke rollback and preserve the original error; cleanup errors are logged. |
 | MAC-05 | passed (scope disclosure) | Rewrite, placement/database identity, detached-result settlement, and full crash-recovery replay remain explicitly open. |
 | MAC-06 | passed (source wiring) | Session key and lifecycle revision are captured and rechecked before settlement. |

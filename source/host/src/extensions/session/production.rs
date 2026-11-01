@@ -1491,6 +1491,8 @@ impl ProductionSessionWorkers {
         {
             let valid = receipt.get("kind").and_then(serde_json::Value::as_str)
                 == Some("outgoing-media-settlement")
+                && receipt.get("sessionKey").and_then(serde_json::Value::as_str)
+                    == Some(record.session_key.as_str())
                 && receipt.get("mediaWorkId").and_then(serde_json::Value::as_str)
                     == Some(work_id)
                 && receipt
