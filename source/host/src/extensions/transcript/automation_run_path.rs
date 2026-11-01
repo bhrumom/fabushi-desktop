@@ -455,6 +455,11 @@ impl AutomationRunPath {
 
         let execution_started = Instant::now();
         let execution = execute(&prompt);
+        // The cron-session retention anchor is the terminal boundary, not the
+        // scheduled/fired timestamp used by automation history. Keeping these
+        // clocks separate prevents a delayed run from becoming immediately
+        // eligible for a future retention sweep.
+        let cron_finished_at_ms = Utc::now().timestamp_millis() as f64;
         let quiesced_for_upgrade = matches!(
             execution.as_ref(),
             Ok(AutomationExecutionResult::Interrupted {
@@ -479,7 +484,7 @@ impl AutomationRunPath {
                     args.trigger,
                     run_id.as_deref(),
                     "ok",
-                    args.fired_at_ms,
+                    cron_finished_at_ms,
                     None,
                     fences,
                 )?;
@@ -510,7 +515,7 @@ impl AutomationRunPath {
                     args.trigger,
                     run_id.as_deref(),
                     "interrupted",
-                    args.fired_at_ms,
+                    cron_finished_at_ms,
                     Some(&detail),
                     fences,
                 )?;
@@ -532,7 +537,7 @@ impl AutomationRunPath {
                     args.trigger,
                     run_id.as_deref(),
                     "error",
-                    args.fired_at_ms,
+                    cron_finished_at_ms,
                     Some(&detail),
                     None,
                 )?;

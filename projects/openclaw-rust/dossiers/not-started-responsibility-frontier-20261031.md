@@ -179,6 +179,23 @@ decision that selects one), followed by a bounded read-only wiring change. No
 archive, deletion, transcript cleanup, or ledger/global-status promotion is
 authorized by this recheck.
 
+### 2026-11-01 cron terminal-retention timestamp correction
+
+The live run path was re-read for the row's retention anchor. Before this
+correction, `AutomationRunPath::fire_automation_inner` passed the scheduled /
+fired timestamp to `finish_cron_session_run`, causing the durable
+`cron_session_runs.updated_at_ms` value to describe admission time rather than
+the terminal boundary. The path now captures the UTC completion timestamp
+immediately after execution and uses it only for the cron-session settlement;
+the existing automation-history `finish_run` calls retain their prior fired-time
+semantics. This keeps a delayed terminal run from appearing older than its
+actual completion time to a future retention projection.
+
+This is a narrow D01 durable-state correctness correction. It does not add a
+sweep caller, archive or deletion consumer, transcript cleanup, verification,
+or acceptance evidence; the responsibility remains
+`not-started/not-wired/not-run/pending`.
+
 ## 2026-10-31 plugin-owner boundary recheck
 
 The read-only source search was repeated against the current Fabushi checkout.
