@@ -414,5 +414,6 @@ fn marker_shell(
         delivery_operation_id: None,
         address_token: None,
         failure_reason: None,
+        session_key: None,
     }
 }

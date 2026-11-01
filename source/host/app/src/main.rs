@@ -1060,6 +1060,7 @@ impl SendMessageSink for ProductionSendMessageSink {
         if let Some(address_token) = channel_delivery {
             let host_tx = self.host_tx.clone();
             let agent_id = self.agent_id.clone();
+            let session_key = self.session_key.clone();
             let mut outbound_message = message.clone();
             if let Some(object) = outbound_message.as_object_mut() {
                 object.insert(
@@ -1076,6 +1077,7 @@ impl SendMessageSink for ProductionSendMessageSink {
                         serde_json::json!({
                             "agentId": agent_id,
                             "addressToken": address_token,
+                            "sessionKey": session_key,
                             "message": outbound_message,
                         }),
                     ) {
@@ -2251,6 +2253,7 @@ impl UnifiedGatewayApi {
             marker.agent_id.clone(),
             address_token,
             marker.delivery_operation_id.clone(),
+            marker.session_key.clone(),
             reason,
         );
         Ok(())
@@ -6730,6 +6733,7 @@ fn queue_channel_delivery_failure(
     agent_id: String,
     address_token: String,
     delivery_operation_id: Option<String>,
+    session_key: Option<String>,
     reason: String,
 ) {
     if let Some(operation_id) = delivery_operation_id.as_deref() {
@@ -6746,6 +6750,7 @@ fn queue_channel_delivery_failure(
                 delivery_operation_id: Some(operation_id.to_string()),
                 address_token: Some(address_token.clone()),
                 failure_reason: Some(reason.clone()),
+                session_key: session_key.clone(),
             });
             if !written {
                 eprintln!(
@@ -6765,6 +6770,7 @@ fn queue_channel_delivery_failure(
             serde_json::json!({
                 "addressToken": address_token,
                 "deliveryOperationId": delivery_operation_id,
+                "sessionKey": session_key,
                 "reason": reason,
             }),
         );
@@ -10682,6 +10688,7 @@ fn start_routed_provider_task(
                             delivery_operation_id: None,
                             address_token: None,
                             failure_reason: None,
+                            session_key: None,
                         });
                         if !written {
                             eprintln!(
@@ -11797,6 +11804,12 @@ impl GatewayApi for UnifiedGatewayApi {
                 .ok_or_else(|| GatewayCommandError::BadRequest(
                     "deliverToChannel requires message".into(),
                 ))?;
+            let delivery_session_key = args
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
             let Some(outbound) = build_channel_outbound_message(message) else {
                 return Ok(serde_json::json!({"queued": false}));
             };
@@ -11807,11 +11820,33 @@ impl GatewayApi for UnifiedGatewayApi {
             let worker_agent_id = agent_id.clone();
             let worker_address = address_token.clone();
             let delivery_operation_id = outbound.operation_id().map(ToOwned::to_owned);
+            let worker_session_key = delivery_session_key.clone();
             if let Err(error) = thread::Builder::new()
                 .name(format!("mahayana-channel-delivery-{agent_id}"))
                 .spawn(move || {
-                    if let Err(error) =
-                        delivery.deliver(&worker_agent_id, &worker_address, &outbound)
+                    let admission_result = match worker_session_key.as_deref() {
+                        Some(session_key) => match deps
+                            .session_workers
+                            .read_session_work_admission(&worker_agent_id)
+                        {
+                            Ok(Some(record)) if record.session_key == session_key => deps
+                                .session_workers
+                                .assert_session_work_admission(
+                                    &worker_agent_id,
+                                    Some(session_key),
+                                ),
+                            Ok(Some(_)) => Err(
+                                "channel delivery session identity changed before dispatch".into(),
+                            ),
+                            Ok(None) => {
+                                Err("channel delivery session admission unavailable".into())
+                            }
+                            Err(error) => Err(error),
+                        },
+                        None => Ok(()),
+                    };
+                    if let Err(error) = admission_result
+                        .and_then(|_| delivery.deliver(&worker_agent_id, &worker_address, &outbound))
                     {
                         let reason =
                             humanize_channel_delivery_failure(&worker_address, &error);
@@ -11829,6 +11864,7 @@ impl GatewayApi for UnifiedGatewayApi {
                             worker_agent_id,
                             worker_address,
                             delivery_operation_id,
+                            worker_session_key,
                             reason,
                         );
                     }
@@ -15258,6 +15294,7 @@ fn main() {
                     delivery_operation_id: None,
                     address_token: None,
                     failure_reason: None,
+                    session_key: None,
                 });
                 if !written {
                     eprintln!(
@@ -15374,6 +15411,7 @@ fn main() {
                     delivery_operation_id: None,
                     address_token: None,
                     failure_reason: None,
+                    session_key: None,
                 });
                 if !written {
                     eprintln!(

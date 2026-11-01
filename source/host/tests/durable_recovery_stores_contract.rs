@@ -34,6 +34,7 @@ fn pending(agent_id: &str, kind: PendingWakeKind, work_id: &str, at: f64) -> Dur
         delivery_operation_id: None,
         address_token: None,
         failure_reason: None,
+        session_key: None,
     }
 }
 

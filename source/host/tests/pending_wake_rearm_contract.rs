@@ -68,6 +68,7 @@ fn marker(agent:&str, kind:PendingWakeKind, work:&str, marked:f64) -> DurablePen
         delivery_operation_id: None,
         address_token: None,
         failure_reason: None,
+        session_key: None,
     }
 }
 

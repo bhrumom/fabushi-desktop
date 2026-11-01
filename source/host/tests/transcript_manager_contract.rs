@@ -597,6 +597,7 @@ fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
         delivery_operation_id: None,
         address_token: None,
         failure_reason: None,
+        session_key: None,
     });
 
     let runtime = Arc::new(ManagerPendingWakeRuntime::default());

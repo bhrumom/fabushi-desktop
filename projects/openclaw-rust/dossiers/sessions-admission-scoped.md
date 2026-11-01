@@ -597,3 +597,15 @@ consumers; its generic transcript/media compatibility behavior remains
 unchanged. Non-group turns are already rejected before composition when the
 selector is not owner-admitted. No alternate permission or review owner was
 introduced, and runtime/exact-head acceptance remains pending.
+
+## 12.18 Channel delivery session provenance fence — 2026-11-01
+
+Session-bound `SendMessage` channel dispatches now carry the producer's
+owner-confirmed `sessionKey` in the Host delivery envelope. The asynchronous
+channel consumer re-reads the existing `ProductionSessionWorkers` admission
+record and rejects a missing, rebound, or archived identity before invoking the
+channel owner. Channel-delivery failure markers persist the same optional key
+through restart/rearm; legacy envelopes without a key retain the existing
+compatibility path. This is a bounded dispatch fence, not full channel
+conversation/receipt correlation; runtime, plugin, and acceptance evidence
+remain pending.

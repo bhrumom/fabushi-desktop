@@ -63,6 +63,8 @@ pub struct DurablePendingWakeMarker {
     pub address_token: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_key: Option<String>,
 }
 
 fn is_false(value: &bool) -> bool {
@@ -136,6 +138,11 @@ pub fn coerce_marker(entry: &Value) -> Option<DurablePendingWakeMarker> {
             .map(ToOwned::to_owned),
         failure_reason: object
             .get("failureReason")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned),
+        session_key: object
+            .get("sessionKey")
             .and_then(Value::as_str)
             .filter(|value| !value.is_empty())
             .map(ToOwned::to_owned),
