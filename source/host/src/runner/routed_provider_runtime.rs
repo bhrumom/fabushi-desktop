@@ -412,6 +412,7 @@ pub fn run_routed_provider_in_runner(
                 | RoutedProvider::Codex
                 | RoutedProvider::Fabushi
                 | RoutedProvider::OpenRouter
+                | RoutedProvider::ClaudeCode
         )
     {
         return Err(ProviderSessionError::Protocol(

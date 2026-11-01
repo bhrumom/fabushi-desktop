@@ -284,7 +284,7 @@ the typed replay contract:
 | Cursor | `cursor_inference_transport.rs` has `CursorCheckpointMessage` and protobuf tool-call/tool-result fields | tool-call/result pairing is representable | attachment-bearing content is not represented in the protobuf; the public `ProviderMessage` conversion still discards checkpoint structure |
 | Codex / Fabushi | `provider_session.rs` maps input through the Responses request owner | typed summary/tool-call/result replay is now native through `CodexDirectOptions.input` | attachment resolution still requires provider-usable URLs; live exact-head/provider acceptance is open |
 | OpenRouter | `provider_session.rs` builds Chat Completions `messages` through the existing OpenRouter owner | typed summary/tool-call/result replay now uses native assistant/tool messages | image attachments require provider-usable URLs; live exact-head/provider acceptance is open |
-| Claude Code | `provider_session.rs` renders `provider_prompt` and passes one CLI string | text-only prompt | typed roles, tool pairing, and attachments cannot be preserved through the current CLI invocation |
+| Claude Code | `provider_session.rs` renders one CLI prompt through the existing Claude owner | summary and plain user/assistant replay can be represented; unsupported tool/attachment rows reject | typed tool pairing and attachments remain unsupported by the current CLI invocation |
 
 This matrix makes the next ownership boundary explicit: the inference owner
 must accept a typed replay input and select a provider-specific serializer;
@@ -319,8 +319,9 @@ system/current-turn merge, attachment resolution, and provider-specific
 serialization are all wired. Cursor now consumes the channel through its
 existing typed checkpoint conversation; the canonical app entrypoint supplies
 the channel only when an active compaction exists. Cursor attachments remain
-fail-closed because its protobuf has no attachment part. Claude remains
-fail-closed. This is a partial production wiring
+fail-closed because its protobuf has no attachment part. Claude now accepts
+only the serializer's summary/plain-text subset and rejects typed tool or
+attachment rows. This is a partial production wiring
 slice, not full replay acceptance.
 
 The existing attachment resolution evidence is app-owned rather than an

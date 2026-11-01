@@ -1546,6 +1546,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
                 | RoutedProvider::Codex
                 | RoutedProvider::Fabushi
                 | RoutedProvider::OpenRouter
+                | RoutedProvider::ClaudeCode
         )
     {
         return Err(ProviderSessionError::Protocol(
@@ -2421,6 +2422,7 @@ fn run_claude_code_provider_text(
     messages: &[ProviderMessage],
     options: &mut RoutedProviderOptions<'_>,
 ) -> Result<String, ProviderSessionError> {
+    let prompt = claude_prompt_for_turn(messages, options.typed_replay)?;
     let executable = resolve_claude_cli_path().ok_or_else(|| {
         ProviderSessionError::Configuration(
             "Claude Code is not installed. Install and sign in to Claude Code, then reopen Fabushi."
@@ -2430,7 +2432,7 @@ fn run_claude_code_provider_text(
     let mut command = Command::new(executable);
     command
         .arg("-p")
-        .arg(provider_prompt(messages))
+        .arg(prompt)
         .arg("--output-format")
         .arg("json")
         .arg("--max-turns")
@@ -2584,6 +2586,32 @@ fn run_claude_code_provider_text(
         (options.on_text_delta)(&text, &text);
     }
     Ok(text)
+}
+
+fn claude_prompt_for_turn(
+    messages: &[ProviderMessage],
+    typed_replay: Option<&[TypedReplayEntry]>,
+) -> Result<String, ProviderSessionError> {
+    let Some(entries) = typed_replay else {
+        return Ok(provider_prompt(messages));
+    };
+    let replay = super::typed_replay_serialization::serialize_claude_replay(entries)
+        .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?;
+    let current_user = messages
+        .iter()
+        .rev()
+        .find(|message| message.role == "user")
+        .ok_or_else(|| {
+            ProviderSessionError::Protocol(
+                "typed compacted replay requires a current user message".into(),
+            )
+        })?;
+    Ok(format!(
+        "{}\n\nContinue this Fabushi conversation.\n\n{}\n\nUSER: {}",
+        assembled_provider_system_prompt(messages),
+        replay,
+        current_user.content
+    ))
 }
 
 #[cfg(test)]
