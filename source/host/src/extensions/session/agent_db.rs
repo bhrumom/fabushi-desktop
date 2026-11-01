@@ -1922,7 +1922,10 @@ impl SandAgentDb {
 
         let confirmed = match transaction {
             Ok(Some(entry)) => {
-                db.execute_batch("COMMIT")?;
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
                 entry
             }
             Ok(None) => {
@@ -2006,7 +2009,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(changed)
                 }
                 Err(error) => {

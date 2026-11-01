@@ -656,6 +656,30 @@ fn test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_f
 }
 
 #[test]
+fn test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let checkpoint_owner = owner_source
+        .split("pub fn commit_checkpoint_root_and_confirm_user_message(")
+        .nth(1)
+        .expect("session checkpoint owner exists")
+        .split("pub fn compare_and_set_latest_root_blob_id(")
+        .next()
+        .expect("session checkpoint owner boundary exists");
+    assert!(checkpoint_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(checkpoint_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+
+    let root_owner = owner_source
+        .split("pub fn compare_and_set_latest_root_blob_id(")
+        .nth(1)
+        .expect("latest root owner exists")
+        .split("pub fn get_latest_root_blob_id(")
+        .next()
+        .expect("latest root owner boundary exists");
+    assert!(root_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(root_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_compaction_owner_rolls_back_when_commit_fails() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
     let compaction_owner = owner_source
