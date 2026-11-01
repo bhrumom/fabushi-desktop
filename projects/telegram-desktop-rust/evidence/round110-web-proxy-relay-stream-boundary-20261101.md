@@ -26,3 +26,8 @@ Canonical/desktop network production mirror remains `241cd8ec792070a8de8af9ec6ca
 The unique responsibility is `TDRP-R9-MTPROTO-WEB-PROXY-RELAY-STREAM-001`: `mapped / pending / validation_status=not-run / accepted=false`. Authored contract vectors live in the platform spec and were not executed.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E execution, packaging, deployment, installation or runtime acceptance was performed.
+
+### Round 110 final source-level compliance
+
+Platform-core final source-level compliance is `0fe86b6d40d1e7ad05b7f4a72ce2c8945cf06a6a` / spec blob `4c8faf410867a0784623b9e00e73d7a9f46bc3cf`, referencing desktop bookkeeping `88cb56ab51df6e00907800871d49cd98294b756a`. AC-4 is now passed for source bookkeeping; R16/AC-6 remain explicitly blocked because the current canonical `telegram-network` call graph still has no real shipping WebProxy carrier entrypoint. The unique responsibility remains `mapped / coverage_disposition=pending / validation_status=not-run / accepted=false`; no production/provider/test blob changed and no executable validation was performed.
+

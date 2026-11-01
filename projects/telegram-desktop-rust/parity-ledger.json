@@ -27982,7 +27982,10 @@
         "canonical-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
         "desktop-network-mirror-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
         "canonical-network-contract-unchanged-blob:71f9732b1c81d7bf782ff1eccb2852b1401cfa6f",
-        "desktop-network-contract-mirror-unchanged-blob:71f9732b1c81d7bf782ff1eccb2852b1401cfa6f"
+        "desktop-network-contract-mirror-unchanged-blob:71f9732b1c81d7bf782ff1eccb2852b1401cfa6f",
+        "platform-core-final-source-compliance-commit:0fe86b6d40d1e7ad05b7f4a72ce2c8945cf06a6a",
+        "platform-core-final-spec-blob:4c8faf410867a0784623b9e00e73d7a9f46bc3cf",
+        "desktop-bookkeeping-commit:88cb56ab51df6e00907800871d49cd98294b756a"
       ],
       "test_evidence": [
         "Authored source-level contract vectors are in docs/specs/telegram-web-proxy-relay-stream-boundary.md@b7de819a9594f74c6aab7f75112c6876f2b21e87; not executed.",
@@ -28112,7 +28115,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop WebProxy frame/transport/socket/webview and connection sources listed in production_evidence. No upstream C++ is copied and no new crypto implementation is introduced.",
-      "notes": "Task round79/source evidence round110. Exact relay frame/window rules are understood and mapped to the existing telegram-network owner. Current shipping reachability is absent, so this row remains mapped/pending rather than falsely implemented. WebView nonce/bootstrap is lifecycle-bound and remains blocked with the carrier. Stage-A executable validation is not run.",
+      "notes": "Task round79/source evidence round110. Exact relay frame/window rules are understood and mapped to the existing telegram-network owner. Current shipping reachability is absent, so this row remains mapped/pending rather than falsely implemented. WebView nonce/bootstrap is lifecycle-bound and remains blocked with the carrier. Stage-A executable validation is not run. Final platform source-level compliance is 0fe86b6d40d1e7ad05b7f4a72ce2c8945cf06a6a / spec blob 4c8faf410867a0784623b9e00e73d7a9f46bc3cf; AC-4 records desktop bookkeeping passed while R16/AC-6 remain blocked on a real shipping WebProxy carrier.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
