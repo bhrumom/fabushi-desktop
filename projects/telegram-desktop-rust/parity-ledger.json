@@ -26529,7 +26529,10 @@
         "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@00eff72062ab8d3285234428bd09be3fccb27993",
         "desktop-contract-mirror-commit:f2405ce2ea29785fbc218840d3e9bf1ff4048576",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@00eff72062ab8d3285234428bd09be3fccb27993"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@00eff72062ab8d3285234428bd09be3fccb27993",
+        "platform-core-final-compliance-commit:5329e70f7456b0a6d3de0071ab6576e45bbeeab2",
+        "platform-core-final-spec-blob:4d7f42773ce37be5c911a64328c4c04684eeab0a",
+        "desktop-round73-bookkeeping-commit:505eeb190d50a90d955be27f432b3a60f7cf5757"
       ],
       "test_evidence": [
         "Canonical and desktop authored-only focused contracts pin the 126-word short boundary, 127-word extended boundary, rejection of noncanonical extended 126-word length, and fragmented extended-header handling; not run."
@@ -26651,7 +26654,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381, mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8 and session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level implementation. Existing TransportFrameCodec/TcpTransport already closed the abridged short/extended encoding, word alignment, partial-input and size-bound rules. This round adds only fixed-U rejection of a noncanonical extended length whose decoded word count is below 127 and authors/mirrors focused contracts without executing them; validation_status=not-run and accepted=false. Connection-start obfuscation, Version1/VersionD, quick ACK lifecycle, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
+      "notes": "Stage A source-level implementation. Existing TransportFrameCodec/TcpTransport already closed the abridged short/extended encoding, word alignment, partial-input and size-bound rules. This round adds only fixed-U rejection of a noncanonical extended length whose decoded word count is below 127 and authors/mirrors focused contracts without executing them; validation_status=not-run and accepted=false. Final source-level compliance is platform-core 5329e70f7456b0a6d3de0071ab6576e45bbeeab2/spec blob 4d7f42773ce37be5c911a64328c4c04684eeab0a; desktop bookkeeping checkpoint before final readback is 505eeb190d50a90d955be27f432b3a60f7cf5757. Connection-start obfuscation, Version1/VersionD, quick ACK lifecycle, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

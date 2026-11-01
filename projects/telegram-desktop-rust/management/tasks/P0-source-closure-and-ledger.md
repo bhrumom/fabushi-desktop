@@ -1521,3 +1521,12 @@ Focused contracts were authored only, not run. Canonical and desktop mirror cont
 The unique ledger adds `TDRP-R9-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001` as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=105, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 Connection-start obfuscation/AES-CTR prefix, Version1/VersionD secret handling, quick-ACK lifecycle, auth-key binding/persistence/expiry/renewal, broader connection scheduling/racing/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 104 final source-level compliance
+
+Platform-core final compliance is `5329e70f7456b0a6d3de0071ab6576e45bbeeab2` / spec blob `4d7f42773ce37be5c911a64328c4c04684eeab0a`, referencing desktop bookkeeping checkpoint `505eeb190d50a90d955be27f432b3a60f7cf5757`. The unique `TDRP-R9-MTPROTO-ABRIDGED-TRANSPORT-FRAME-WIRE-001` responsibility is `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Canonical production `transport.rs` is `7f981b96f2f8a17823ba9c84bf2e2324d408be31`; canonical/desktop telegram-network remains `54f509474391bb5118ba4678ba5c566ab3e74ec8`; canonical/desktop authored contract blob is `00eff72062ab8d3285234428bd09be3fccb27993`. The existing owner now rejects the fixed-U noncanonical `0x7f + LE24` abridged length form when the decoded word count is below 127 while retaining the exact 1..126 short and 127+ extended forms.
+
+Coverage is `responsibilities_total=105, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Connection-start obfuscation/AES-CTR prefix, Version1/VersionD secret handling, quick-ACK lifecycle, auth-key binding/persistence/expiry/renewal, broader connection scheduling/racing/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open. No executable validation was performed.
