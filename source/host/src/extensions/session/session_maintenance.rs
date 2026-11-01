@@ -10,11 +10,12 @@ use crate::storage::store_db::{
 };
 
 use super::agent_db::{
-    append_persisted_transcript_entries, compare_and_set_persisted_latest_root_blob_id,
+    append_persisted_transcript_entries,
     delete_persisted_transcript_entry, has_persisted_legacy_conversation_blobs,
     hidden_entry_repair_version, legacy_blob_retirement_version,
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
     read_persisted_transcript_entries, retire_persisted_legacy_conversation_blobs,
+    SandAgentDb,
     set_hidden_entry_repair_version, set_persisted_agent_name,
     set_stale_root_cleanup_version, stale_root_cleanup_version,
 };
@@ -235,6 +236,7 @@ pub fn recover_conversation_root_if_missing(
     db_path: &Path,
     blob_db_path: &Path,
     busy_timeout_ms: u64,
+    owner: &SandAgentDb,
 ) -> Result<bool, String> {
     let existing = read_persisted_latest_root_blob_id(db_path, busy_timeout_ms)
         .map_err(|error| error.to_string())?;
@@ -304,13 +306,9 @@ pub fn recover_conversation_root_if_missing(
         if !resolves || get_sand_agent_db_write_generation(db_path) != recovery_generation {
             return Ok(false);
         }
-        compare_and_set_persisted_latest_root_blob_id(
-            db_path,
-            busy_timeout_ms,
-            &existing,
-            &root,
-        )
-        .map_err(|error| error.to_string())
+        owner
+            .compare_and_set_latest_root_blob_id(&existing, &root)
+            .map_err(|error| error.to_string())
     })();
 
     match outcome {

@@ -5250,6 +5250,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
         if recovered_root {
             let _ = sync_recovered_profile_name(
