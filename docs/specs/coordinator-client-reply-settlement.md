@@ -45,6 +45,8 @@ outcomes reject explicitly while preserving no indefinitely pending Promise.
   release the endpoint even when its shutdown send fails synchronously.
 - R8: A newly claimed port whose hello send fails must enter the existing
   disconnect/reclaim path rather than escaping from the port-claim callback.
+- R9: A request send failure after pending registration must close the failed
+  endpoint and settle the request through the existing disconnect/reclaim path.
 
 ## 5. Current state
 
@@ -87,6 +89,8 @@ missing/non-string fields, unmatched request ID, disconnect after malformed
 reply, malformed-frame shutdown send failure, and disposal after malformed
 reply, disposal shutdown-send failure, and endpoint close failure. A remote
 side effect remains outcome-unknown and must not be replayed by this client.
+Also cover a synchronous request `postMessage` failure after pending
+registration.
 
 ## 11. Implementation strategy
 
@@ -96,7 +100,9 @@ response validation on successful outcomes and preserve the current handling
 for valid failure objects. Wrap only the malformed-frame shutdown send so its
 failure still reaches the existing disconnect owner. Make explicit disposal's
 local cleanup unconditional after the best-effort shutdown send, and route a
-hello-send exception through the same disconnect owner.
+hello-send exception through the same disconnect owner. Treat a request-send
+exception as transport failure, close that endpoint best-effort, and use the
+same disconnect owner to settle all pending calls.
 
 ## 12. Verification / test strategy
 
@@ -135,7 +141,7 @@ artifacts; no runtime acceptance is claimed here.
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R8 | passed | `coordinator-client.ts` settles malformed replies, contains shutdown/disposal failures, and routes hello-send failure through endpoint close plus existing disconnect/reclaim cleanup. |
+| R1–R9 | passed | `coordinator-client.ts` settles malformed replies and routes malformed-frame, hello, disposal, and request-send failures through bounded endpoint/disconnect cleanup. |
 | AC-1 | passed | Existing renderer client remains the sole pending/Promise owner; no new transport or business owner was added. |
 | AC-2 | passed | Every matching reply branch removes the pending entry only immediately before resolving or rejecting it. |
 | AC-3 | passed | `git diff --check` and source review passed; runtime, focused test, and packaged acceptance remain pending. |

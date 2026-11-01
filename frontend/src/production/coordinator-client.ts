@@ -193,7 +193,15 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
     const requestId = `r-${++nextRequestId}`;
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
-    port.postMessage({ kind: "request", requestId, method, args });
+    const expectedPort = port;
+    try {
+      expectedPort.postMessage({ kind: "request", requestId, method, args });
+    } catch {
+      try { expectedPort.close(); } catch {
+        // Disconnect below still owns local request/claim cleanup.
+      }
+      disconnect(expectedPort, "coordinator request post failed");
+    }
     return await response;
   };
 
