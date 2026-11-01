@@ -62,7 +62,13 @@ pub fn serialize_responses_replay(
                 serialize_responses_message(index, message, &mut output, &mut calls)?;
             }
             TypedReplayEntry::UserAttachment(attachment) => {
-                output.push(responses_attachment(index, &attachment.value)?);
+                // Responses input_image/input_file values are content parts;
+                // keep the standalone transcript row inside a user message
+                // just like attachments carried by a typed message.
+                output.push(json!({
+                    "role": "user",
+                    "content": [responses_attachment(index, &attachment.value)?],
+                }));
             }
         }
     }

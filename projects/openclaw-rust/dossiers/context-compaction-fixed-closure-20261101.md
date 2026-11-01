@@ -316,11 +316,12 @@ Unsupported media/tool shapes, historical local-file materialization, and
 exact-head/provider acceptance remain open. URL qualification is now delegated
 to the existing attachment owner rather than duplicated in inference.
 
-Static review on 2026-11-01 also corrected the standalone `user-attachment`
-Chat Completions projection: the content part is now wrapped in a `role=user`
-message before entering the provider message array. This is a narrow
-serializer-shape correction; typed attachment resolution, exact-head/provider
-verification, and runtime acceptance remain open.
+Static review on 2026-11-01 also corrected standalone `user-attachment`
+projections for both Responses and Chat Completions: each content part is now
+wrapped in a `role=user` message before entering the provider input/message
+array. This is a narrow serializer-shape correction; typed attachment
+resolution, exact-head/provider verification, and runtime acceptance remain
+open.
 
 The optional typed replay channel is now threaded through the existing
 production turn path: `ProductionTurnInputProjection` →
