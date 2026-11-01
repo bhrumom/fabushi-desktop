@@ -91,7 +91,14 @@ pub fn serialize_chat_replay(
                 serialize_chat_message(index, message, &mut output, &mut calls)?;
             }
             TypedReplayEntry::UserAttachment(attachment) => {
-                output.push(chat_attachment(index, &attachment.value)?);
+                // Chat Completions accepts content parts only inside a user
+                // message. A standalone attachment transcript row is still
+                // one user turn, so preserve it as a one-part message rather
+                // than emitting an invalid top-level content object.
+                output.push(json!({
+                    "role": "user",
+                    "content": [chat_attachment(index, &attachment.value)?],
+                }));
             }
         }
     }

@@ -64,6 +64,15 @@ chain.
   must be unique within one replay projection; duplicate or ambiguous call
   identities fail closed before provider serialization.
 
+### 2026-11-01 provider replay correction
+
+The Chat Completions serializer treats a standalone `user-attachment` replay
+row as one user message containing one image content part. It must not append
+the content part itself to the message array, because that omits the required
+`role`/`content` message envelope. This correction stays inside the existing
+inference serializer owner and does not create an attachment authority or
+change the pending integration/acceptance boundary.
+
 ## 5. Current state
 
 The current implementation subject for this project round is
