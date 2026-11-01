@@ -830,3 +830,9 @@ unbound compatibility rows. The same-ID remote refresh branch now uses the
 session-scoped update owner under the same rule. A focused owner contract
 covers the bound settlement; channel correlation, remote delivery, and runtime
 acceptance remain pending.
+
+The Human handoff producer now applies the same rule to its explicit
+`session_key`: new handoff rows use the admitted append owner, and provenance
+enrichment during same-stream replay uses the admitted update owner. The
+agent-only append/update path remains limited to calls that carry no session
+identity.

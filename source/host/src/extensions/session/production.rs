@@ -4259,7 +4259,11 @@ impl ProductionSessionWorkers {
                             expected_session_key.to_string(),
                         );
                         return owner
-                            .update_transcript_entry(&entry_id, &enriched)
+                            .update_transcript_entry_if_session_admitted(
+                                expected_session_key,
+                                &entry_id,
+                                &enriched,
+                            )
                             .map_err(|error| error.to_string())?
                             .ok_or_else(|| {
                                 "Human handoff Agent result disappeared during provenance settlement"
@@ -4287,10 +4291,17 @@ impl ProductionSessionWorkers {
         if let Some(session_key) = session_key {
             entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
         }
-        if !owner
-            .append_transcript_entry(&entry)
-            .map_err(|error| error.to_string())?
-        {
+        let inserted = if let Some(session_key) = session_key {
+            owner
+                .append_transcript_entries_if_session_admitted(session_key, &[entry.clone()])
+                .map_err(|error| error.to_string())?
+                == 1
+        } else {
+            owner
+                .append_transcript_entry(&entry)
+                .map_err(|error| error.to_string())?
+        };
+        if !inserted {
             let replay = owner
                 .get_transcript_entries()
                 .map_err(|error| error.to_string())?
@@ -4321,7 +4332,11 @@ impl ProductionSessionWorkers {
                             expected_session_key.to_string(),
                         );
                         return owner
-                            .update_transcript_entry(&entry_id, &enriched)
+                            .update_transcript_entry_if_session_admitted(
+                                expected_session_key,
+                                &entry_id,
+                                &enriched,
+                            )
                             .map_err(|error| error.to_string())?
                             .ok_or_else(|| {
                                 "Human handoff Agent result disappeared during replay provenance settlement"
