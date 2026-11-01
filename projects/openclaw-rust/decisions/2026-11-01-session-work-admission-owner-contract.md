@@ -135,9 +135,10 @@ key through later supersede/settlement. `resolve_box_request_entry` uses the
 same atomic session-admitted update for entries carrying the key, while older
 entries without provenance remain on the compatibility path.
 
-The accepted-send session gateway applies the same owner-local append whenever
-its request carries `sessionKey` or `sessionId`; legacy sends without a
-session-scoped selector retain the existing agent-only compatibility path.
+The accepted-send session gateway persists its supplied `sessionKey` or
+`sessionId` on staged transcript entries and applies the same owner-local
+append whenever that selector is present; legacy sends without a session-scoped
+selector retain the existing agent-only compatibility path.
 
 The session-admitted transcript update owner also validates the target entry's
 persisted `sessionKey` inside its SQLite transaction. Presence of an entry is

@@ -335,11 +335,17 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
     let record = runtime
         .materialize_new_session(None, "user", None)
         .expect("agent");
+    let session_key = runtime
+        .read_session_work_admission(&record.id)
+        .expect("admission")
+        .expect("admission record")
+        .session_key;
 
     persist_accepted_send_prompt(
         &runtime,
         &json!({
             "agentId": record.id,
+            "sessionKey": session_key,
             "prompt": "",
             "attachmentPaths": ["/tmp/attachment-only.txt"],
             "attachmentNames": ["attachment-only.txt"],
@@ -365,6 +371,14 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
     assert_eq!(entries[0]["file_path"], "/tmp/attachment-only.txt");
     assert_eq!(entries[0]["file_name"], "attachment-only.txt");
     assert_eq!(entries[0]["clientNonce"], "nonce-attachment-only");
+    assert_eq!(
+        entries[0].get("sessionKey").and_then(serde_json::Value::as_str),
+        runtime
+            .read_session_work_admission(&record.id)
+            .expect("admission")
+            .as_ref()
+            .map(|record| record.session_key.as_str())
+    );
     assert!(entries[0]["batchId"].as_str().is_some_and(|value| !value.is_empty()));
 
     // Production nonce admission normally coalesces this before persistence.

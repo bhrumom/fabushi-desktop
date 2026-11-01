@@ -189,7 +189,7 @@ pub fn persist_accepted_send_prompt_context(
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(ToOwned::to_owned);
-        let entry = create_user_attachment_entry(
+        let mut entry = create_user_attachment_entry(
             id.clone(),
             file_path.clone(),
             UserAttachmentOptions {
@@ -203,6 +203,9 @@ pub fn persist_accepted_send_prompt_context(
                 branched: threading.is_fork,
             },
         );
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = Value::String(session_key.to_string());
+        }
         first_echo_id.get_or_insert_with(|| id.clone());
         existing.push(entry.clone());
         staged.push(entry);
@@ -212,7 +215,7 @@ pub fn persist_accepted_send_prompt_context(
     let mut user_message_id = None;
     if append_user_message && !prompt.is_empty() {
         let id = next_entry_id(&existing, TranscriptEntryIdKind::UserMessage);
-        let entry = create_user_message(
+        let mut entry = create_user_message(
             id.clone(),
             prompt,
             UserMessageOptions {
@@ -225,6 +228,9 @@ pub fn persist_accepted_send_prompt_context(
             },
             system_now_ms(),
         );
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = Value::String(session_key.to_string());
+        }
         user_message_id = Some(id.clone());
         first_echo_id.get_or_insert_with(|| id.clone());
         existing.push(entry.clone());

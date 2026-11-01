@@ -209,8 +209,9 @@ use the atomic session-admitted update when it is present. Legacy entries
 without that provenance remain on the compatibility path and retain the
 generic deletion/archive fence.
 
-The session gateway's accepted-send producer now applies the same rule when
-its request carries `sessionKey`/`sessionId`; only legacy non-session-scoped
+The session gateway's accepted-send producer now persists the supplied
+`sessionKey`/`sessionId` on staged transcript entries and applies the same
+owner-local append when that selector is present; only legacy non-session-scoped
 fallback sends retain the agent-only append.
 
 Session-admitted transcript updates must validate the target entry's persisted
