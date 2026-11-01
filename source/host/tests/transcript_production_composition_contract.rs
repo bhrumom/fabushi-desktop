@@ -101,6 +101,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .materialize_new_session(None, "user", None)
         .expect("materialize Agent session");
     let agent_id = record.id;
+    let session_key = format!("agent:{agent_id}:main");
     sessions
         .append_agent_transcript_entries(
             &agent_id,
@@ -120,6 +121,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({"type":"text","content":"answer"}),
             10,
             Some("t0u"),
@@ -132,6 +134,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({
                 "type":"text",
                 "content":"no dangling reply",
@@ -148,6 +151,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({
                 "type":"attachment",
                 "url":"file:///persisted/one.png"
@@ -161,6 +165,7 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
         .append_generated_send_message(
             &sessions,
             &agent_id,
+            &session_key,
             &serde_json::json!({
                 "type":"attachment",
                 "url":"file:///persisted/two.png"

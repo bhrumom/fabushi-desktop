@@ -1375,7 +1375,11 @@ impl ProductionTranscriptRuntime {
             .get("id")
             .and_then(Value::as_str)
             .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
-        sessions.append_agent_transcript_entries(agent_id, std::slice::from_ref(&entry))?;
+        sessions.append_agent_transcript_entries_if_session_admitted(
+            agent_id,
+            session_key,
+            std::slice::from_ref(&entry),
+        )?;
         Ok(entry)
     }
 
@@ -1422,6 +1426,7 @@ impl ProductionTranscriptRuntime {
         &self,
         sessions: &ProductionSessionWorkers,
         agent_id: &str,
+        session_key: &str,
         message: &Value,
         timestamp_ms: u64,
         reply_thread_target: Option<&str>,
@@ -1430,6 +1435,7 @@ impl ProductionTranscriptRuntime {
         self.append_generated_send_message_entry(
             sessions,
             agent_id,
+            session_key,
             message,
             timestamp_ms,
             reply_thread_target,

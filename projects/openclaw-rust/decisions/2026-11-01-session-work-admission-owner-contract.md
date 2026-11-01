@@ -138,6 +138,8 @@ The bounded outgoing-media settlement now carries the producer's canonical
 session key through `ProductionSendMessageSink`, `ProductionTranscriptRuntime`,
 `ProductionSessionWorkers`, and `SandAgentDb`; the final receipt/fence
 transaction rejects a matching-generation request from a rebound session.
+The no-media generated `SendMessage` branch now uses the same session-admitted
+append, so media presence no longer determines whether the write is fenced.
 
 ## Rejected alternatives
 

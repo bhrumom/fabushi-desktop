@@ -220,6 +220,10 @@ is insufficient evidence when the producer already has a session identity;
 settlement must reject a rebound or mismatched session before clearing the
 durable media fence.
 
+The same captured `session_key` must be used for the ordinary generated
+`SendMessage` settlement path when no media fence exists; it must not fall back
+to the agent-only transcript append merely because no media receipt is needed.
+
 The owner now also carries one migration-safe `admitted_media_work_id` and
 archive rejects that field while it is present. This closes the durable
 archive fence for the bounded SendMessage path: the sink's process-local

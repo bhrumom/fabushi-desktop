@@ -995,6 +995,7 @@ impl SendMessageSink for ProductionSendMessageSink {
             None => self.transcript_runtime.append_generated_send_message_entry(
                 self.sessions.as_ref(),
                 &self.agent_id,
+                &self.session_key,
                 &message,
                 timestamp_ms,
                 self.reply_thread_target.as_deref(),
