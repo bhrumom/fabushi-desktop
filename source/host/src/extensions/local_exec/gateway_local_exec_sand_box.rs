@@ -93,6 +93,7 @@ fn authorize_host_local_tool(
 ) -> Result<Option<String>, SandLocalExecError> {
     let sand_scope = scope.agent_id.as_ref().map(|agent_id| SandLocalToolScope {
         agent_id: agent_id.clone(),
+        session_key: None,
         tool_call_id: scope.tool_call_id.clone(),
         action: scope.action.clone(),
         direction_epoch,

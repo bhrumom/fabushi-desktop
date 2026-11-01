@@ -54,6 +54,7 @@ fn extension_identity_and_standing_modes_match_frozen_contract() {
     let extension = start_local_tool_permission_extension(Arc::clone(&settings));
     let scope = SandLocalToolScope {
         agent_id: "agent-a".into(),
+        session_key: None,
         tool_call_id: Some("tool-a".into()),
         action: Some("read-file".into()),
         direction_epoch: None,
@@ -106,6 +107,7 @@ fn ask_resolution_wakes_waiter_and_retains_one_time_approval_until_scope_complet
 
     let scope = SandLocalToolScope {
         agent_id: "agent-a".into(),
+        session_key: None,
         tool_call_id: Some("tool-a".into()),
         action: Some("read-file".into()),
         direction_epoch: None,
@@ -170,6 +172,7 @@ fn denied_action_is_remembered_and_forgotten_agent_is_fenced() {
     controller.bind_live_computer_check(Arc::new(|_| true));
     let scope = SandLocalToolScope {
         agent_id: "agent-r".into(),
+        session_key: None,
         tool_call_id: Some("tool-r".into()),
         action: Some("read-file".into()),
         direction_epoch: Some(0),
@@ -213,6 +216,7 @@ fn preparatory_action_is_fenced_and_scope_retirement_is_observable() {
     controller.bind_live_computer_check(Arc::new(|_| true));
     let scope = SandLocalToolScope {
         agent_id: "agent-p".into(),
+        session_key: None,
         tool_call_id: Some("tool-p".into()),
         action: Some("run-command".into()),
         direction_epoch: None,
@@ -264,6 +268,7 @@ fn standing_grant_with_implicit_epoch_does_not_reenter_state_lock() {
     controller.note_permission_changed();
     let scope = SandLocalToolScope {
         agent_id: "agent-lock".into(),
+        session_key: None,
         tool_call_id: Some("tool".into()),
         action: Some("read-file".into()),
         direction_epoch: None,
@@ -292,6 +297,7 @@ fn joined_waiter_cancellation_only_retires_pending_when_last_waiter_leaves() {
 
     let scope = SandLocalToolScope {
         agent_id: "agent-j".into(),
+        session_key: None,
         tool_call_id: Some("tool-j".into()),
         action: Some("read-file".into()),
         direction_epoch: None,
@@ -349,6 +355,7 @@ fn controller_subscription_reports_created_and_settled_and_can_unsubscribe() {
 
     let scope = SandLocalToolScope {
         agent_id: "agent-s".into(),
+        session_key: None,
         tool_call_id: Some("tool-s".into()),
         action: Some("read-file".into()),
         direction_epoch: None,
@@ -388,6 +395,7 @@ fn approved_long_target_precedes_utf16_size_fence_and_unapproved_target_uses_utf
     );
     let scope = SandLocalToolScope {
         agent_id: "agent-u".into(),
+        session_key: None,
         tool_call_id: Some("tool-u".into()),
         action: Some("read-file".into()),
         direction_epoch: None,

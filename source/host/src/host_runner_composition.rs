@@ -542,9 +542,19 @@ fn persist_local_permission_event(
                 },
                 "timestampMs": now_ms(),
             });
-            sessions
-                .append_agent_transcript_entries(&event.request.agent_id, &[entry])
-                .map(|_| ())
+            if let Some(session_key) = event.request.session_key.as_deref() {
+                sessions
+                    .append_agent_transcript_entries_if_session_admitted(
+                        &event.request.agent_id,
+                        session_key,
+                        &[entry],
+                    )
+                    .map(|_| ())
+            } else {
+                sessions
+                    .append_agent_transcript_entries(&event.request.agent_id, &[entry])
+                    .map(|_| ())
+            }
         }
         SandLocalToolControllerEventKind::Settled => {
             let entry_id = event.request.id.as_str();
@@ -566,9 +576,20 @@ fn persist_local_permission_event(
                     Value::String(permission_status(event.request.status).to_string()),
                 );
             }
-            sessions
-                .update_agent_transcript_entry(&event.request.agent_id, entry_id, &entry)
-                .map(|_| ())
+            if let Some(session_key) = event.request.session_key.as_deref() {
+                sessions
+                    .update_agent_transcript_entry_if_session_admitted(
+                        &event.request.agent_id,
+                        session_key,
+                        entry_id,
+                        &entry,
+                    )
+                    .map(|_| ())
+            } else {
+                sessions
+                    .update_agent_transcript_entry(&event.request.agent_id, entry_id, &entry)
+                    .map(|_| ())
+            }
         }
     }
 }

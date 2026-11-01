@@ -334,6 +334,9 @@ fn shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_wa
     assert!(composition.contains("decode_conversation_turn_structure_fields"));
     assert!(composition.contains("decode_user_message_identity_fields"));
     assert!(composition.contains("find_confirmed_user_turn_watermark(&turns, None)"));
+    assert!(composition.contains("event.request.session_key"));
+    assert!(composition.contains("append_agent_transcript_entries_if_session_admitted"));
+    assert!(composition.contains("update_agent_transcript_entry_if_session_admitted"));
 }
 
 

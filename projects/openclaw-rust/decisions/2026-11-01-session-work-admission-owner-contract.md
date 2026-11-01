@@ -141,6 +141,12 @@ transaction rejects a matching-generation request from a rebound session.
 The no-media generated `SendMessage` branch now uses the same session-admitted
 append, so media presence no longer determines whether the write is fenced.
 
+The turn-local permission path now carries `worker_session_key` through its
+permission scope and event record. Created and settled permission transcript
+rows use session-admitted owner transactions when that key is present; legacy
+unbound permission infrastructure remains on the explicitly compatibility-only
+agent append/update path.
+
 ## Rejected alternatives
 
 - Treating `deleting_agents` or filesystem age as durable work admission.

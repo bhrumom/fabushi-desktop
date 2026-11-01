@@ -10297,6 +10297,7 @@ fn start_routed_provider_task(
                     local_tool_permission: Some(TurnLocalToolPermissionBinding {
                         controller: Arc::clone(&turn_local_tool_permission),
                         agent_id: agent_id.clone(),
+                        session_key: worker_session_key.clone(),
                         direction_epoch: turn_local_tool_direction_epoch,
                     }),
                     box_resources: Some(box_resources),

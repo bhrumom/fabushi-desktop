@@ -2376,6 +2376,82 @@ impl SandAgentDb {
         Ok(updated)
     }
 
+    /// Update one transcript entry only while the captured session remains
+    /// admitted. The admission check and update share one SQLite transaction
+    /// so an archived/rebound session cannot settle a permission card after a
+    /// preflight check has passed.
+    pub fn update_transcript_entry_if_session_admitted(
+        &self,
+        session_key: &str,
+        entry_id: &str,
+        next: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        if session_key.trim().is_empty() || entry_id.trim().is_empty() {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "session-scoped transcript update requires session key and entry identity".into(),
+            ));
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "session work admission record is unavailable".into(),
+                    )
+                })?;
+            let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if admission.session_key != session_key.trim() || admission.archived_at_ms.is_some() {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session is not admitted for transcript update".into(),
+                ));
+            }
+            let present = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .is_some();
+            if !present {
+                return Ok(None);
+            }
+            if db.execute(
+                UPDATE_TRANSCRIPT_ENTRY_SQL,
+                params![next.to_string(), entry_id],
+            )? != 1
+            {
+                return Ok(None);
+            }
+            Ok(Some(next.clone()))
+        })();
+        match result {
+            Ok(updated) => {
+                db.execute_batch("COMMIT")?;
+                drop(guard);
+                if let Some(entry) = updated.as_ref() {
+                    publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+                }
+                Ok(updated)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
     pub fn settle_transcript_entry_identity(
         &self,
         entry_id: &str,

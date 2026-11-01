@@ -189,6 +189,26 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
     assert!(!owner
         .compare_and_set_session_work_admission(None, &first)
         .expect("create-only conflict"));
+    owner
+        .append_transcript_entries(&[serde_json::json!({
+            "id": "permission-1",
+            "kind": "send-message",
+            "message": {"type": "local-tool-permission", "ask": {"status": "pending"}},
+        })])
+        .expect("seed permission entry");
+    let updated = owner
+        .update_transcript_entry_if_session_admitted(
+            &first.session_key,
+            "permission-1",
+            &serde_json::json!({
+                "id": "permission-1",
+                "kind": "send-message",
+                "message": {"type": "local-tool-permission", "ask": {"status": "allowed"}},
+            }),
+        )
+        .expect("session-admitted update")
+        .expect("updated permission entry");
+    assert_eq!(updated["message"]["ask"]["status"], "allowed");
 
     let mut archived = first.clone();
     archived.lifecycle_revision = "revision-2".into();
@@ -201,6 +221,20 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
     assert!(!owner
         .compare_and_set_session_work_admission(Some("revision-1"), &first)
         .expect("stale transition"));
+    let archived_update = owner
+        .update_transcript_entry_if_session_admitted(
+            &first.session_key,
+            "permission-1",
+            &serde_json::json!({
+                "id": "permission-1",
+                "kind": "send-message",
+                "message": {"type": "local-tool-permission", "ask": {"status": "denied"}},
+            }),
+        )
+        .expect_err("archived session update must reject");
+    assert!(archived_update
+        .to_string()
+        .contains("session is not admitted for transcript update"));
     assert_eq!(
         owner
             .read_session_work_admission()

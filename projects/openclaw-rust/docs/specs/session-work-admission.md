@@ -224,6 +224,12 @@ The same captured `session_key` must be used for the ordinary generated
 `SendMessage` settlement path when no media fence exists; it must not fall back
 to the agent-only transcript append merely because no media receipt is needed.
 
+Turn-local permission requests now carry the existing Runner
+`worker_session_key` through the permission scope and event owner. Their
+created card append and settled-card update must use session-admitted owner
+transactions when that identity is present; permission requests from legacy
+unbound infrastructure remain explicitly outside this session-scoped path.
+
 The owner now also carries one migration-safe `admitted_media_work_id` and
 archive rejects that field while it is present. This closes the durable
 archive fence for the bounded SendMessage path: the sink's process-local
