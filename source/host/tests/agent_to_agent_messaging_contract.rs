@@ -137,6 +137,25 @@ fn inbound_turn_claim_is_released_when_append_inserts_nothing() {
 }
 
 #[test]
+fn inbound_turn_completion_precedes_partner_bookkeeping() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let inbound = source
+        .split("pub fn persist_agent_inbound_message(")
+        .nth(1)
+        .expect("inbound owner exists")
+        .split("fn now_ms(")
+        .next()
+        .expect("inbound owner boundary exists");
+    let completion = inbound
+        .find("pending_conversation_turns().complete")
+        .expect("successful append completes the pending turn");
+    let partner = inbound
+        .find("add_agent_conversation_partner")
+        .expect("partner bookkeeping exists");
+    assert!(completion < partner);
+}
+
+#[test]
 fn persisted_never_policy_rejects_before_transcript_or_wake(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

@@ -616,10 +616,10 @@ pub fn persist_agent_inbound_message(
         }
         return Ok(false);
     }
-    let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
-    if let Some(reply) = claimed_turn {
+    if let Some(reply) = claimed_turn.take() {
         let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
     }
+    let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
     let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;
     Ok(true)
 }
