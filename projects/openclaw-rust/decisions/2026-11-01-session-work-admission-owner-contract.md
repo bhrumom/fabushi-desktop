@@ -158,6 +158,14 @@ The no-media generated `SendMessage` branch now uses the same session-admitted
 append and persists the captured session key on the generated entry, so media
 presence no longer determines whether the write is fenced or loses provenance.
 
+Pending-media reopen recovery now canonicalizes each still-present journaled
+target against the agent's canonical attachment/assets roots, rejects symlinked
+or outside-root paths, and gives only the verified target to the existing
+custody rollback. Missing targets are treated as already rolled back; any
+inspection or identity uncertainty retains the media fence and remains
+outcome-unknown. This tightens recovery safety without claiming the separate
+full read-scope capability or descriptor-lifecycle responsibility.
+
 The turn-local permission path now carries `worker_session_key` through its
 permission scope and event record. Created and settled permission transcript
 rows use session-admitted owner transactions when that key is present; legacy

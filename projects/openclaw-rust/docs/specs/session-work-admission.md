@@ -144,7 +144,12 @@ identity, and structured provider-review facts, continuation run identity, plus
 terminal phase. The record
 is changed transactionally with transcript/result publication. Pending media
 must block archive/restore transitions and be cleared only by the same
-session/transcript owner after commit or explicit rollback.
+session/transcript owner after commit or explicit rollback. When reopening a
+pending media fence, the owner must resolve each still-present path against
+canonical media roots, reject symlinked or outside-root targets, and hand only
+the verified target path to the existing custody cleanup. A missing path is
+safe to treat as already rolled back; an identity or canonicalization error
+remains outcome-unknown and keeps the fence.
 
 The same existing owner also stores one migration-safe pending external-memory
 mutation journal. It contains the canonical session identity and lifecycle
@@ -262,6 +267,10 @@ lifecycle owners.
 - active media/subagent work: preserve it during archive/reaper decisions;
 - cancellation/provider failure: leave prior transcript and generation intact;
 - uncertain deletion/transcript result: report outcome-unknown and do not retry.
+- pending media recovery: reject symlinked, canonical-identity-mismatched, or
+  outside-root targets before cleanup; do not convert a lexical prefix match
+  into custody proof. Full descriptor-bound directory identity remains part of
+  the separate media read-scope responsibility.
 - external memory mutation crash window: a durable journal without a committed
   owner clear is rolled back from its captured records; malformed identity,
   non-canonical store, restore failure, or journal CAS mismatch remains

@@ -1525,10 +1525,10 @@ impl ProductionSessionWorkers {
         let mut custody = OutgoingMediaCustody::default();
         for raw_path in record.admitted_media_paths {
             let path = PathBuf::from(raw_path);
-            if !media_roots.iter().any(|root| path.starts_with(root)) {
-                return Err("pending outgoing media path is outside the agent media store".into());
-            }
-            custody.track(path);
+            let Some(verified_path) = Self::verify_pending_media_path(&path, &media_roots)? else {
+                continue;
+            };
+            custody.track(verified_path);
         }
         let cleanup_errors = custody.rollback();
         if !cleanup_errors.is_empty() {
@@ -1541,6 +1541,49 @@ impl ProductionSessionWorkers {
             return Err("could not clear rolled-back outgoing media fence".into());
         }
         Ok(())
+    }
+
+    fn verify_pending_media_path(
+        path: &Path,
+        media_roots: &[PathBuf; 2],
+    ) -> Result<Option<PathBuf>, String> {
+        let metadata = match fs::symlink_metadata(path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => {
+                return Err(format!(
+                    "could not inspect pending outgoing media path {}: {error}",
+                    path.display()
+                ));
+            }
+        };
+        if metadata.file_type().is_symlink() {
+            return Err(format!(
+                "pending outgoing media path is a symlink: {}",
+                path.display()
+            ));
+        }
+        let canonical_path = fs::canonicalize(path).map_err(|error| {
+            format!(
+                "could not canonicalize pending outgoing media path {}: {error}",
+                path.display()
+            )
+        })?;
+        let inside_media_root = media_roots
+            .iter()
+            .filter_map(|root| {
+                fs::canonicalize(root)
+                    .ok()
+                    .map(|canonical_root| canonical_path.starts_with(canonical_root))
+            })
+            .any(|inside| inside);
+        if !inside_media_root {
+            return Err(format!(
+                "pending outgoing media path is outside the agent media store: {}",
+                path.display()
+            ));
+        }
+        Ok(Some(canonical_path))
     }
 
     fn clear_media_fence_from_owner(
