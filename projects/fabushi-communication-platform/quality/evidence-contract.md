@@ -616,3 +616,14 @@ Invocation evidence records the user batch specification, the selected shared-sk
 Scheduler evidence records parent-owned source-lineage timing, single-performer discipline, split worker identity, routing/consolidation lane bounds, and the requirement that publication-owning workers completely read the Claude adapter before the applicable shared skill/reference. Review evidence records the one startup provider decision and proves that provider selection does not change canonical artifacts/verdict/task/publication semantics. Consumer evidence identifies Claude Code command discovery/user `/continue` invocation as the direct host consumer; the OpenAI `$continue` registration and Grok `/continue` command are peer host adapters, not callers.
 
 All Stage-A evidence is source-authored only. Missing dependency read, hidden batch widening, duplicate performer/scheduler, branch-integration queue work, unfinished routing/consolidation at invocation end, host reply treated as publication, or any executable validation in Stage A is non-passing. `validation_status` remains `not-run`; `accepted=false`.
+
+
+### Crash-report process command evidence
+
+For `TDRP-R9-CRASH-REPORT-PROCESS-CLAUDE-COMMAND-ADAPTER-001`, evidence preserves the exact fixed-U command and `crash_triage.py` helper identities. The direct host consumer is Claude Code command discovery/user `/crash-reports-process`; the helper is the direct code dependency. The generic Claude workflow adapter is not part of this command because it is not explicitly loaded.
+
+Evidence records argument selection, complete-triple claim versus reuse, incomplete-report retention, interrupted-claim recovery, default move-only sweep, funnel/group accounting, limit-skipped groups, isolated one-group investigations, independent verification of proposed fixes, exact verdict classification, and the common-path performance fence.
+
+For confirmed fixes, evidence binds current target-branch source, serial per-crash commit identity, durable group recording, and reconciliation after each wave and before the final report. Dry-run is non-mutating. The final build/report belongs to executable Stage-B qualification.
+
+Stage A contains authored source contracts only. `validation_status=not-run` and `accepted=false`.

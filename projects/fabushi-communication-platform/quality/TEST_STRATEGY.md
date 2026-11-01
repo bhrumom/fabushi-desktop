@@ -653,3 +653,14 @@ Batch qualification allows only canonical split replacements and follow-ups rout
 Review-provider qualification proves one startup choice: explicit no-Codex arguments select `native`, otherwise `codex`; provider choice is carried into performer prompts without changing shared artifacts, verdicts, task state, routing, or publication. Negative controls reject host-side task ownership, hidden batch widening, parallel performers, in-flight routing/consolidation at invocation end, host replies as durable publication, and any Stage-A execution.
 
 Stage-A contracts authored but not run: `CONTRACT-TDRP-CONTINUE-CLAUDE-HOST-AUTHORITY-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-BATCH-FREEZE-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-SOURCE-LINEAGE-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-DELEGATION-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-REVIEW-PROVIDER-001`, `CONTRACT-TDRP-CONTINUE-CLAUDE-ROUTING-LANE-001`, `INT-TDRP-CONTINUE-CLAUDE-COMPOSITION-001`, and `FAULT-TDRP-CONTINUE-CLAUDE-DUPLICATE-SCHEDULER-001`.
+
+
+#### Crash-report process command qualification
+
+Fixed-U `.claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5` is qualified as repository maintenance/quality orchestration with direct helper `.claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58`. The generic Claude workflow adapter is a negative dependency: this command does not explicitly load it.
+
+Qualification covers optional version/branch/`--no-claim`/`--limit`/`--dry-run`, complete-triple claim and interrupted-claim recovery, incomplete-report retention, move-not-delete sweep defaults, summary-only parent context, known-group skipping, waves of at most ten, one isolated investigation per selected non-noise group, adversarial verification of every proposed fix, read-only investigation source access, the exact three verdicts, and the common-path performance fence for `fixed`.
+
+Persistence/recovery qualification covers serial application to current target-branch source, one-crash commit identity, record-after-wave, selected-group reconciliation after every wave and before final reporting, version-independent ledger keys, atomic ledger replacement, and dry-run's no-mutation boundary. The final one-time build/report is Stage-B executable evidence only.
+
+Authored and not run: `CONTRACT-TDRP-CRASH-REPORT-CLAUDE-HOST-AUTHORITY-001`, `CONTRACT-TDRP-CRASH-REPORT-INVOCATION-001`, `CONTRACT-TDRP-CRASH-REPORT-CLAIM-RECOVERY-001`, `CONTRACT-TDRP-CRASH-REPORT-DELEGATION-001`, `CONTRACT-TDRP-CRASH-REPORT-VERDICT-ROUTING-001`, `CONTRACT-TDRP-CRASH-REPORT-RECORD-RECONCILE-001`, `CONTRACT-TDRP-CRASH-REPORT-BUILD-REPORT-BOUNDARY-001`, `INT-TDRP-CRASH-REPORT-PROCESS-COMPOSITION-001`, `FAULT-TDRP-CRASH-REPORT-INTERRUPTED-CLAIM-001`, and `FAULT-TDRP-CRASH-REPORT-DROPPED-VERDICT-001`.
