@@ -836,3 +836,7 @@ The Human handoff producer now applies the same rule to its explicit
 enrichment during same-stream replay uses the admitted update owner. The
 agent-only append/update path remains limited to calls that carry no session
 identity.
+
+Human reaction projection now follows the same provenance rule: a target entry
+with `sessionKey` settles through the admitted update owner, while legacy
+unbound entries retain the compatibility update path.

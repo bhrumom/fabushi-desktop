@@ -4435,10 +4435,21 @@ impl ProductionSessionWorkers {
             "reactions".into(),
             serde_json::Value::Array(projected_reactions),
         );
-        owner
-            .update_transcript_entry(entry_id, &next)
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
+        let updated = if let Some(session_key) = next
+            .get("sessionKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            owner
+                .update_transcript_entry_if_session_admitted(session_key, entry_id, &next)
+                .map_err(|error| error.to_string())?
+        } else {
+            owner
+                .update_transcript_entry(entry_id, &next)
+                .map_err(|error| error.to_string())?
+        };
+        updated.ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
     }
 
     pub fn search_human_messages(
