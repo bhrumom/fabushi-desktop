@@ -156,6 +156,28 @@ fn inbound_turn_completion_precedes_partner_bookkeeping() {
 }
 
 #[test]
+fn sender_partner_bookkeeping_cannot_block_wake_delivery() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let sender = source
+        .split("pub fn send_to_agent_with_session_and_reply(")
+        .nth(1)
+        .expect("direct sender owner exists")
+        .split("pub fn persist_agent_inbound_message(")
+        .next()
+        .expect("direct sender owner boundary exists");
+    let partner = sender
+        .find("add_agent_conversation_partner")
+        .expect("sender partner bookkeeping exists");
+    let wake = sender
+        .find("(self.wake_sink)(")
+        .expect("sender wake dispatch exists");
+    assert!(partner < wake);
+    assert!(sender.contains(
+        "let _ = self\n            .sessions\n            .add_agent_conversation_partner(from_agent_id, to_agent_id);"
+    ));
+}
+
+#[test]
 fn persisted_never_policy_rejects_before_transcript_or_wake(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

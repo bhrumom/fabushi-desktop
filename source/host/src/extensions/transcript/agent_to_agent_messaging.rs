@@ -346,7 +346,9 @@ impl ProductionAgentToAgentMessaging {
                 return Err("could not finalize direct-agent conversation correlation".into());
             }
         }
-        let _=self.sessions.add_agent_conversation_partner(from_agent_id,to_agent_id)?;
+        let _ = self
+            .sessions
+            .add_agent_conversation_partner(from_agent_id, to_agent_id);
         let inbound = json!({
             "from": {"id": from_agent_id, "name": sender_name},
             "text": message,
