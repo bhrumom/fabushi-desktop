@@ -1457,6 +1457,7 @@ impl ProductionSessionWorkers {
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
         if let Some(owner) = owners.get(agent_id) {
+            self.validate_owner_session_identity(agent_id, owner)?;
             self.recover_pending_profile_mutation(agent_id, owner)?;
             self.recover_pending_memory_mutation(agent_id, owner)?;
             return Ok(Arc::clone(owner));
@@ -1465,11 +1466,40 @@ impl ProductionSessionWorkers {
             SandAgentDb::open(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
+        self.validate_owner_session_identity(agent_id, &owner)?;
         self.recover_pending_media_custody(agent_id, &owner)?;
         self.recover_pending_profile_mutation(agent_id, &owner)?;
         self.recover_pending_memory_mutation(agent_id, &owner)?;
         owners.insert(agent_id.to_string(), Arc::clone(&owner));
         Ok(owner)
+    }
+
+    fn validate_owner_session_identity(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let metadata_agent_id = owner
+            .get_metadata("agentId")
+            .map_err(|error| error.to_string())?
+            .and_then(|value| value.as_str().map(str::trim).map(ToOwned::to_owned));
+        if record.session_id != agent_id
+            || metadata_agent_id.as_deref() != Some(agent_id)
+            || record.session_id != metadata_agent_id.as_deref().unwrap_or_default()
+            || record.session_key.trim().is_empty()
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed or rebound"
+            ));
+        }
+        Ok(())
     }
 
     /// Reconcile one durable media fence when an agent database is first

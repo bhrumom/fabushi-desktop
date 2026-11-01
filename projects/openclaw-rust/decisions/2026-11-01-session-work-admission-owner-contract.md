@@ -196,6 +196,11 @@ The shared SQLite write predicate now binds an existing admission record's
 missing, or rebound metadata identity fails closed; databases without an
 admission record retain the legacy compatibility path.
 
+`ProductionSessionWorkers::open_agent_db_owner` performs the same identity
+check before either cached-owner recovery or first-open media/profile/memory
+recovery, so recovery cannot run against a rebound admission record and only
+later fail at the read facade.
+
 The owner-local compare-and-set now applies the same invariant to updates:
 advancing a valid lifecycle revision cannot replace the stored `session_key` or
 `session_id`. An attempted identity-rebinding CAS is rejected without changing
