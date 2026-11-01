@@ -48,6 +48,19 @@ entries: 62,214 blobs, 2,243 directories, and 0 gitlinks.
 Root identity stability is not recursive dependency, archive, license, LFS,
 semantic-read, or Actions closure evidence.
 
+## Fabushi applicability probe
+
+The five-file delta is an upstream dependency/normalization refactor for
+embedding-provider usage reporting. A narrow non-test search of the current
+Fabushi host found the existing embedding registration contract in
+`source/host/src/extensions/plugins/capability_catalog.rs`, but no production
+embedding-vector transport, usage-cost owner, or memory embedding consumer
+under `source/host/src`. The existing registry contract therefore remains the
+nearest owner candidate for plugin registration only; it is not evidence that
+the upstream remote embedding transport is implemented or wired in Fabushi.
+This probe is an applicability/disposition lead, not a complete source
+closure or owner audit, and no ledger status is promoted from it.
+
 ## Disposition
 
 This is discovery-only evidence and supersedes the prior live candidate in
