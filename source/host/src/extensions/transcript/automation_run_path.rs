@@ -719,10 +719,14 @@ fn finish_run(
     let Some(run_id) = run_id else {
         return Ok(());
     };
-    store
+    let settled = store
         .finish_run(automation_id, run_id, status, finished_at_ms, detail)
-        .map(|_| ())
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    if settled.is_some() {
+        Ok(())
+    } else {
+        Err("automation history run settlement was not committed".into())
+    }
 }
 
 fn finish_cron_session_run(
