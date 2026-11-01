@@ -630,7 +630,13 @@ pub fn read_image_dimensions_with_root(
         return None;
     }
     let mime = servable_image_mime_from_path(&resolved)?;
-    image_size(&fs::read(resolved).ok()?, mime)
+    let limit = attachment_byte_limit_for_name(&resolved) as usize;
+    let data = crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        &resolved,
+        limit,
+    )
+    .ok()?;
+    image_size(&data, mime)
 }
 
 #[derive(Debug, Clone, Copy)]
