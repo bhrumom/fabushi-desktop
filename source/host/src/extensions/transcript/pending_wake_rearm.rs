@@ -184,7 +184,7 @@ impl PendingWakeRearm {
             if marker.kind == PendingWakeKind::Shell {
                 marker.interrupted_by_recreate = true;
             }
-            if !store.mark_pending(marker.clone()) {
+            if !store.mark_if_absent_or_matches(&marker) {
                 self.report(&marker, "persist_failed", None, age_ms);
             }
             self.report(&marker, "carried", None, age_ms);
@@ -238,9 +238,6 @@ impl PendingWakeRearm {
                 continue;
             }
 
-            if !(marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate) {
-                store.clear_one(&marker.agent_id, marker.kind, &marker.work_id);
-            }
             self.rearm_pending_wake(marker, now, None);
         }
     }
@@ -254,7 +251,7 @@ impl PendingWakeRearm {
         let report = |service: &Self, outcome: &str, reason: Option<&str>| {
             if outcome == "rearm_failed" {
                 if let Some(store) = &service.store {
-                    store.mark_pending(marker.clone());
+                    store.mark_if_absent_or_matches(&marker);
                 }
             }
             let effective_reason = reason.or_else(|| {
@@ -281,8 +278,10 @@ impl PendingWakeRearm {
         if group {
             if marker.kind == PendingWakeKind::Shell && marker.interrupted_by_recreate {
                 if let Some(store) = &self.store {
-                    store.clear_one(&marker.agent_id, marker.kind, &marker.work_id);
+                    store.clear_if_matches(&marker);
                 }
+            } else if let Some(store) = &self.store {
+                store.clear_if_matches(&marker);
             }
             report(self, "rearm_skipped", Some("group_session"));
             return;
@@ -307,12 +306,22 @@ impl PendingWakeRearm {
         };
 
         match result {
-            Ok(()) => report(
-                self,
-                "rearmed",
-                (marker.kind == PendingWakeKind::Subagent)
-                    .then_some("interrupted_completion"),
-            ),
+            Ok(()) => {
+                let clear_after_success = marker.kind != PendingWakeKind::Subagent
+                    && !(marker.kind == PendingWakeKind::Shell
+                        && marker.interrupted_by_recreate);
+                if clear_after_success {
+                    if let Some(store) = &self.store {
+                        store.clear_if_matches(&marker);
+                    }
+                }
+                report(
+                    self,
+                    "rearmed",
+                    (marker.kind == PendingWakeKind::Subagent)
+                        .then_some("interrupted_completion"),
+                );
+            }
             Err(_) => report(self, "rearm_failed", Some("error")),
         }
     }
@@ -325,7 +334,11 @@ impl PendingWakeRearm {
             .runtime
             .cloud_watch_is_armed(&marker.agent_id, &marker.work_id)
         {
-            self.persist_pending_wake(marker.clone());
+            if let Some(store) = &self.store {
+                if !store.mark_if_absent_or_matches(marker) {
+                    return Err("pending cloud wake was replaced during rearm".into());
+                }
+            }
             return Ok(());
         }
 
@@ -348,7 +361,9 @@ impl PendingWakeRearm {
         &self,
         marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
-        self.persist_pending_wake(marker.clone());
+        if let Some(store) = &self.store {
+            store.mark_if_absent_or_matches(marker);
+        }
         self.runtime.revive_lost_subagent(LostSubagentWake {
             parent_agent_id: marker.agent_id.clone(),
             subagent_agent_id: marker.work_id.clone(),

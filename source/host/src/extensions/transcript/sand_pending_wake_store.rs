@@ -257,6 +257,40 @@ impl SandPendingWakeStore {
         }
     }
 
+    pub fn clear_if_matches(&self, marker: &DurablePendingWakeMarker) -> bool {
+        let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let existing = self.read_pending_unlocked();
+        let remaining = existing
+            .iter()
+            .filter(|entry| *entry != marker)
+            .cloned()
+            .collect::<Vec<_>>();
+        if remaining.len() == existing.len() {
+            return false;
+        }
+        if remaining.is_empty() {
+            self.delete_unlocked().is_ok()
+        } else {
+            self.write_unlocked(&remaining).is_ok()
+        }
+    }
+
+    pub fn mark_if_absent_or_matches(&self, marker: &DurablePendingWakeMarker) -> bool {
+        let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let existing = self.read_pending_unlocked();
+        if existing.iter().any(|entry| entry == marker) {
+            return true;
+        }
+        if existing.iter().any(|entry| {
+            marker_key_matches(entry, &marker.agent_id, marker.kind, &marker.work_id)
+        }) {
+            return false;
+        }
+        let mut next = existing;
+        next.push(marker.clone());
+        self.write_unlocked(&next).is_ok()
+    }
+
     pub fn clear_agent(&self, agent_id: &str) {
         let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let existing = self.read_pending_unlocked();

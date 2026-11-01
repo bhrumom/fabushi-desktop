@@ -178,6 +178,24 @@ fn upgrade_resume_marker_rejects_incomplete_automation_identity() {
 }
 
 #[test]
+fn pending_wake_store_does_not_clear_or_overwrite_a_newer_marker() {
+    let root = temp_root("pending-cas");
+    let store = SandPendingWakeStore::new(&root);
+    let old = pending("agent-a", PendingWakeKind::Shell, "work", 1.0);
+    let newer = DurablePendingWakeMarker {
+        marked_at_ms: 2.0,
+        title: Some("newer".into()),
+        ..old.clone()
+    };
+    assert!(store.mark_pending(newer.clone()));
+    assert!(!store.clear_if_matches(&old));
+    assert_eq!(store.list_pending(), vec![newer.clone()]);
+    assert!(!store.mark_if_absent_or_matches(&old));
+    assert_eq!(store.list_pending(), vec![newer]);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent() {
     let root = temp_root("runtime");
     let runtime = ProductionTranscriptRuntime::new(Some(&root));

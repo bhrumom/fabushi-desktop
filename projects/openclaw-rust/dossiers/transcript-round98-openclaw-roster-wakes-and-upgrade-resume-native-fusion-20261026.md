@@ -72,3 +72,9 @@ Malformed marker identity is also fail-closed: an empty automation identity or
 an automation run id without its automation id remains pending and is never
 reinterpreted as a direct-main resume. This preserves the existing marker for
 later repair/recovery rather than dispatching under a different session scope.
+
+The durable pending-wake rearm path received the same race correction. It no
+longer clears by key before attempting recovery or rewrites a newer same-key
+marker when rearm fails. Successful watch/notice ownership clears only the
+exact observed marker; subagent and interrupted-shell markers retain their
+existing follow-up semantics. This remains source/contract evidence only.

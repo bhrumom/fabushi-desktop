@@ -199,6 +199,10 @@ lifecycle owners.
   never remove a newer marker written for the same agent during recovery.
   A marker with an incomplete automation identity must fail closed and remain
   pending; it must not be reinterpreted as a direct-main resume.
+- pending-wake rearm must apply the same exact-marker rule: a rearm attempt
+  may clear the observed wake only after successful ownership, while a failed
+  attempt must preserve it and must not overwrite a newer marker with the same
+  `(agent, kind, work)` key.
 - provider-review continuation dispatch failure: restore the review to
   `pending`; Runner cancellation/failure/unknown: retain terminal facts in a
   non-actionable phase and clear the matching terminal work marker; Runner
