@@ -2504,9 +2504,25 @@ impl ProductionSessionWorkers {
             if !removed {
                 return Ok(false);
             }
-            let cleared = owner
-                .clear_memory_prompt_snapshot()
-                .map_err(|error| error.to_string())?;
+            let cleared = match owner.clear_memory_prompt_snapshot() {
+                Ok(cleared) => cleared,
+                Err(error) => {
+                    let error = error.to_string();
+                    let Some(previous) = previous else {
+                        return Err(format!(
+                            "memory was removed but snapshot clear failed and no record was available for rollback: {error}"
+                        ));
+                    };
+                    return match Self::restore_memory_records(&store, &[previous]) {
+                        Ok(()) => Err(format!(
+                            "memory snapshot clear failed; removed memory was restored: {error}"
+                        )),
+                        Err(restore_error) => Err(format!(
+                            "memory snapshot clear failed: {error}; memory rollback failed: {restore_error}"
+                        )),
+                    };
+                }
+            };
             if cleared || prior_snapshot.is_none() {
                 return Ok(true);
             }
@@ -2543,9 +2559,20 @@ impl ProductionSessionWorkers {
                     None => error.to_string(),
                 });
             }
-            let cleared = owner
-                .clear_memory_prompt_snapshot()
-                .map_err(|error| error.to_string())?;
+            let cleared = match owner.clear_memory_prompt_snapshot() {
+                Ok(cleared) => cleared,
+                Err(error) => {
+                    let error = error.to_string();
+                    return match Self::restore_memory_records(&store, &previous) {
+                        Ok(()) => Err(format!(
+                            "memory snapshot clear failed; memory was restored: {error}"
+                        )),
+                        Err(restore_error) => Err(format!(
+                            "memory snapshot clear failed: {error}; memory rollback failed: {restore_error}"
+                        )),
+                    };
+                }
+            };
             if cleared || prior_snapshot.is_none() {
                 return Ok(());
             }
