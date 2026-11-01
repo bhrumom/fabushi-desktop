@@ -186,6 +186,7 @@ impl PendingWakeRearm {
             }
             if !store.mark_if_absent_or_matches(&marker) {
                 self.report(&marker, "persist_failed", None, age_ms);
+                continue;
             }
             self.report(&marker, "carried", None, age_ms);
             restored = restored.saturating_add(1);

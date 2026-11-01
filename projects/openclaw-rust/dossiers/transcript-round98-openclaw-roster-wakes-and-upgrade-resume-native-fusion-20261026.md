@@ -78,6 +78,9 @@ longer clears by key before attempting recovery or rewrites a newer same-key
 marker when rearm fails. Successful watch/notice ownership clears only the
 exact observed marker; subagent and interrupted-shell markers retain their
 existing follow-up semantics. This remains source/contract evidence only.
+If carried-marker persistence loses an absent-or-matching race, recovery now
+stops before invoking the old marker's watch or notice side effect; the newer
+durable marker remains the only recovery subject.
 
 The separate `CompletionRevivals` settlement callbacks were rechecked and are
 not promoted to this exact-marker correction: their port receives only the
