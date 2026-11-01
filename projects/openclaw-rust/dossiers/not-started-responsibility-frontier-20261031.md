@@ -266,18 +266,20 @@ outcome-unknown results. A marker-clearing CAS is not sufficient evidence.
 
 ### 2026-11-01 context-compaction production recheck
 
-The current checkout was re-read for the next open responsibility. The
-production Runner builds a real `ProductionTurnSummarizationPrompt` in
+An earlier read of this frontier recorded only the production
+`ProductionTurnSummarizationPrompt` surface and no compaction caller. That
+historical observation must not be reused after the later implementation
+slice. The current checkout's production Runner now builds a real
+`ProductionTurnSummarizationPrompt` in
 `source/host/app/src/main.rs` and binds it through
-`ProductionTurnAgentBuildBindings`; this is an inference surface available to
-one turn, not a compaction producer. The only durable compaction owner remains
+`ProductionTurnAgentBuildBindings`; the routed-provider completion boundary
+also estimates provider input usage, prepares a cut point, invokes the
+summarizer, and calls the owner commit. The only durable compaction owner remains
 `SandAgentDb::commit_compaction` plus
 `SandAgentDb::get_compacted_transcript_entries`, exposed by
-`ProductionSessionWorkers`. No production caller was found that estimates the
-active context, selects a fixed cut point, invokes the summarizer, commits a
-`CompactionCommit`, or reconstructs the next Runner turn from the replay
+`ProductionSessionWorkers`; the next routed turn reads the typed replay
 projection. `compaction_epoch` and `ContextWindowTracker` remain prompt/state
-signals and do not establish this chain.
+signals and do not independently establish this chain.
 
 This confirms the existing context-compaction spec/ADR boundary at the same
 frozen H: the owner contract and a bounded non-test producer → transactional
