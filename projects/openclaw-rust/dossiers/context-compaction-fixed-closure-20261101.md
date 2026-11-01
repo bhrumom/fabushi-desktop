@@ -72,6 +72,14 @@ root (`openclaw`). This proves fixed-tree manifest presence only; importer
 dependency edges and package archive/integrity provenance remain to be joined
 before closure can be accepted.
 
+The corrected lockfile instrument now emits these classifications directly:
+in the workspace fragment, all `15` unmatched named roots are fixed-tree
+workspace manifests and the only `2` non-workspace unmatched roots are the
+bounded recognizer's `+`/`:` candidates; the pnpm package-manager fragment
+also carries the same workspace roots plus the whitespace candidate. This
+separates valid workspace links from registry/archive resolution work without
+turning either category into approval.
+
 ## Disposition
 
 This probe is stronger exact-subject discovery evidence for `CC-01`, but it

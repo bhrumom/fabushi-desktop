@@ -121,11 +121,22 @@ def package_roots(frontier_path: Path) -> list[str]:
     return sorted(roots)
 
 
+def workspace_manifest_roots(frontier_path: Path) -> set[str]:
+    document = json.loads(frontier_path.read_text(encoding="utf-8"))
+    return {
+        row["package"]
+        for row in document.get("workspace_package_frontier", [])
+        if row.get("status") == "manifest-found"
+        and isinstance(row.get("package"), str)
+    }
+
+
 def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dict[str, Any]:
     blob, content = git_blob(repo, commit, lock_path)
     fragments = [parse_fragment(fragment) for fragment in split_fragments(content)]
     separators = document_separator_count(content)
     roots = package_roots(frontier_path)
+    workspace_roots = workspace_manifest_roots(frontier_path)
     for fragment in fragments:
         keys = fragment.pop("package_keys")
         matches = []
@@ -154,6 +165,15 @@ def qualify(repo: Path, commit: str, frontier_path: Path, lock_path: str) -> dic
         fragment["matched_root_count"] = len(matches)
         fragment["unmatched_roots"] = sorted(
             set(roots) - {row["root"] for row in matches}
+        )
+        fragment["unmatched_workspace_roots"] = sorted(
+            set(fragment["unmatched_roots"]) & workspace_roots
+        )
+        fragment["unmatched_nonworkspace_roots"] = sorted(
+            set(fragment["unmatched_roots"]) - workspace_roots
+        )
+        fragment["matched_workspace_roots"] = sorted(
+            {row["root"] for row in matches} & workspace_roots
         )
         fragment.pop("package_integrities")
     return {
