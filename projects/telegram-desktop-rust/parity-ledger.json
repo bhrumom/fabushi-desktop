@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "e4fe918b8e8ba5589d1ab3d2cdae888087933719",
+  "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 123,
+    "responsibilities_total": 124,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -31823,7 +31823,6 @@
       "implementation_status": "implemented",
       "coverage_disposition": "implemented",
       "blockers": [
-        "Fixed-U protocolForFiles QAbstractSocket send/receive buffer sizing remains open as a separate file-transfer socket tuning responsibility.",
         "Stage B executable build/unit/contract/integration/packaged validation has not run."
       ],
       "production_entrypoints": [
@@ -31851,7 +31850,8 @@
         "runtime-fencing-blob:3a3da0eb4bf004569a3989e05e55c8b86a199c41",
         "platform-core-final-compliance-commit:1138e34377d441a97d72b23279dacdb0bc310d2e",
         "platform-core-final-spec-blob:449cfa61c2b3b20c5fd42838a627a8e5330f8bb4",
-        "desktop-final-spec-blob:449cfa61c2b3b20c5fd42838a627a8e5330f8bb4"
+        "desktop-final-spec-blob:449cfa61c2b3b20c5fd42838a627a8e5330f8bb4",
+        "adjacent-responsibility:TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001"
       ],
       "test_evidence": [
         "native/telegram-network/src/lib.rs::network_attempt_control_contract_tests::successful_connect_handoff_releases_attempt_stream_without_cancelling_control authored, not run",
@@ -31984,7 +31984,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_tcp_socket.cpp plus adjacent AbstractSocket/TcpConnection/SessionPrivate lifecycle. No upstream C++ implementation is copied; implementation is source-neutral Rust in existing owners.",
-      "notes": "Round104/source evidence round135. Source review isolated connect-attempt ownership handoff as the next exact responsibility after selectable proxy carriers. Controlled successful establishment now releases the connect-only NetworkAttemptControl from the adopted transport; request-scoped invoke_raw_controlled may reattach/clear the owned request control. Bounded flush recursion/bypass was corrected in the same socket lifecycle owner. RuntimeClient projection-change fencing is unchanged. protocolForFiles socket-buffer tuning remains open. Contracts are authored but not run; validation_status=not-run; accepted=false. Final platform source-level spec compliance is 1138e34377d441a97d72b23279dacdb0bc310d2e / spec blob 449cfa61c2b3b20c5fd42838a627a8e5330f8bb4; all R1-R7 and AC-1..AC-7 are source-review passed while Stage-B executable validation remains not-run.",
+      "notes": "Round104/source evidence round135. Source review isolated connect-attempt ownership handoff as the next exact responsibility after selectable proxy carriers. Controlled successful establishment now releases the connect-only NetworkAttemptControl from the adopted transport; request-scoped invoke_raw_controlled may reattach/clear the owned request control. Bounded flush recursion/bypass was corrected in the same socket lifecycle owner. RuntimeClient projection-change fencing is unchanged. The formerly-open protocolForFiles socket-buffer adjacency is now isolated and implemented by TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001; this lifecycle row remains independently not-run/unaccepted. Contracts are authored but not run; validation_status=not-run; accepted=false. Final platform source-level spec compliance is 1138e34377d441a97d72b23279dacdb0bc310d2e / spec blob 449cfa61c2b3b20c5fd42838a627a8e5330f8bb4; all R1-R7 and AC-1..AC-7 are source-review passed while Stage-B executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -31995,6 +31995,296 @@
         "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp",
+      "source_blob_sha": "b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.file-transfer-socket-buffer",
+      "responsibility_id": "TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001",
+      "source_symbols": [
+        "kFilesSendBufferSize",
+        "kFilesReceiveBufferSize",
+        "TcpSocket::TcpSocket(protocolForFiles)",
+        "TlsSocket::TlsSocket(protocolForFiles)",
+        "SessionPrivate::getData / protocolForFiles",
+        "isMediaClusterDcId",
+        "isDownloadDcId",
+        "isUploadDcId",
+        "DcPurpose::{Main,Media,Cdn}",
+        "NativeSocketBufferProfile",
+        "socket_buffer_profile_for_purpose",
+        "apply_native_socket_buffer_profile",
+        "connect_directory_with_projection",
+        "TcpTransport::connect_obfuscated_with_attempt",
+        "TcpTransport::connect_forward_proxy_obfuscated_with_attempt"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER"
+      ],
+      "dependency_ids": [
+        "Existing telegram-network TcpTransport",
+        "Existing telegram-protocol DcPurpose",
+        "Existing telegram-media transfer owner",
+        "Existing selectable proxy carrier composition"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round136-file-transfer-socket-buffer-tuning-20261101.md",
+      "behavior_contract": "Fixed-U requests 2 MiB native socket send and receive buffers only when SessionPrivate's protocolForFiles predicate is true: MediaCluster shifted sessions or CDN. The adjacent upload predicate is intentionally commented out, so generic upload/file-thread membership is not sufficient. Fabushi derives the same native socket profile from the existing DcPurpose boundary: Media and Cdn request both 2 MiB options; Main retains the OS default. The profile is applied to the actual native direct/SOCKS5/HTTP/MTProto-proxy TCP socket immediately after connect and before proxy negotiation, TLS camouflage, connection-start or framed I/O. Socket-option failure remains typed NetworkError::Io and never falls back to an untuned/direct carrier.",
+      "state_machine": "existing transfer/session request -> DcPurpose(Main|Media|Cdn) -> telegram-network connect_directory_with_projection -> purpose-derived NativeSocketBufferProfile(Default|Files) -> native TCP connect -> Files: request SO_SNDBUF=2MiB then SO_RCVBUF=2MiB / Default: no buffer mutation -> existing proxy/TLS/obfuscation/framing/session path -> success or typed fail-closed error",
+      "side_effects": [
+        "Adds exact fixed-U 2 MiB send/receive native socket-buffer requests in the existing telegram-network owner.",
+        "Media and CDN directory purposes select the file profile; Main remains default.",
+        "Direct, SOCKS5/HTTP forward-proxy and MTProto-proxy native TCP sockets receive the same purpose-derived profile before protocol I/O.",
+        "No telegram-media scheduling/chunk/retry/persistence behavior changes.",
+        "Adds explicit no-dependency platform setsockopt adapters and authored-only source contracts."
+      ],
+      "failure_cases": [
+        "Main/auth/config socket is incorrectly tuned as a file socket.",
+        "All upload/file-thread sessions are tuned despite fixed-U's commented-out isUploadDcId predicate.",
+        "Only one of send/receive buffer sizes is requested.",
+        "Proxy carrier tunes a different socket or applies tuning after negotiation/protocol bytes.",
+        "Socket option failure is ignored and the transport continues untuned.",
+        "Enabled proxy tuning/negotiation failure silently falls back to direct transport.",
+        "WebProxy relay/browser stream is falsely claimed as a native TcpStream socket-buffer path."
+      ],
+      "ui_disposition": "No UI change. This is native carrier tuning inside the existing telegram-network owner.",
+      "non_ui_responsibilities": [
+        "Purpose-to-native-socket-buffer profile mapping",
+        "Exact 2 MiB send/receive socket option requests",
+        "Direct and native proxy carrier propagation",
+        "Typed fail-closed OS socket-option errors"
+      ],
+      "platform_delta": "Existing-owner-first delta only in canonical telegram-network. A private platform adapter requests the OS socket options; telegram-media, telegram-runtime, ProductSettingsOwner and protocol owners remain unique and unchanged.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-media/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/dc.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-media/src/lib.rs"
+      ],
+      "existing_owner": "Canonical telegram-network native TcpTransport/carrier composition; DcPurpose supplied by existing telegram-protocol; telegram-media remains transfer policy/state owner",
+      "rejected_existing_owners": [
+        "telegram-media owns scheduling/progress/retry/integrity and delegates actual I/O; giving it OS socket handles would split carrier ownership.",
+        "telegram-protocol owns typed DC purpose/identity and has no socket handle.",
+        "RuntimeClient owns sessions/requests, not native socket options.",
+        "A new file/network/provider owner would duplicate the existing carrier authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-file-transfer-socket-buffer-tuning.md",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "docs/specs/telegram-file-transfer-socket-buffer-tuning.md"
+      ],
+      "fabushi_target_symbols": [
+        "FILES_SEND_BUFFER_BYTES",
+        "FILES_RECEIVE_BUFFER_BYTES",
+        "NativeSocketBufferProfile",
+        "socket_buffer_profile_for_purpose",
+        "apply_native_socket_buffer_profile",
+        "native_socket_options",
+        "connect_directory_with_projection",
+        "TcpTransport::connect_obfuscated_with_attempt",
+        "TcpTransport::connect_forward_proxy_obfuscated_with_attempt"
+      ],
+      "target_language": "Rust in the existing canonical telegram-network owner; no retained C++ or new file/network owner.",
+      "language_rationale": "Native socket/carrier behavior is already owned by shared Rust telegram-network. A thin private OS adapter is the minimum platform-specific layer required because std::net::TcpStream does not expose send/receive buffer setters.",
+      "command_event_contracts": [
+        "DcPurpose::Main -> NativeSocketBufferProfile::Default -> no socket-buffer mutation",
+        "DcPurpose::Media|Cdn -> NativeSocketBufferProfile::Files -> request send=2MiB + receive=2MiB before carrier handshake",
+        "native setsockopt failure -> io::Error -> NetworkError::Io -> connection attempt failure",
+        "enabled proxy path -> tune actual proxy TCP socket -> negotiate proxy -> existing Telegram endpoint secret/transport; no direct fallback"
+      ],
+      "state_owner": "No new durable state. The profile is a transient value derived from existing DcPurpose at the telegram-network connection boundary.",
+      "lifecycle_owner": "Existing telegram-network owns native socket creation, tuning, negotiation and transport lifetime; RuntimeClient remains session/request owner.",
+      "persistence_and_restart": "No new persistence or migration. The profile is re-derived from DcPurpose for each new native connection after reconnect/restart.",
+      "concurrency_and_cancellation": "No new concurrency owner. Tuning happens synchronously after TcpStream connect and before existing NetworkAttemptControl registration/handshake I/O; existing cancellation/session fencing remains authoritative.",
+      "security_boundary": "The adapter receives only a live socket handle and integer byte counts. It does not expose handles, proxy credentials or route state. Enabled proxy failures remain fail-closed.",
+      "network_service_dependencies": [
+        "Existing telegram-network direct/SOCKS5/HTTP/MTProto native carriers",
+        "Existing telegram-protocol DcPurpose/DcDirectory",
+        "Existing RuntimeClient session composition"
+      ],
+      "service_owner": "Existing embedded telegram-network/runtime only; no new service.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "implemented",
+      "blockers": [
+        "Stage B executable compile/unit/contract/integration/packaged validation has not run.",
+        "Broader fixed-U semantic/source migration closure remains open."
+      ],
+      "production_entrypoints": [
+        "telegram-media/runtime request -> existing DcPurpose selection -> connect_directory_with_projection",
+        "connect_directory_with_projection -> direct/SOCKS5/HTTP/MTProto native carrier -> apply_native_socket_buffer_profile",
+        "existing TelegramClientLease/RuntimeClient -> shared telegram-network"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_abstract_socket.h@4283a353dd00db4b12044ef5a1d46cfbde7f659b",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087",
+        "fixed-U:Telegram/SourceFiles/mtproto/facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256",
+        "fixed-U:Telegram/SourceFiles/storage/file_upload.cpp@a19470a24b6a62b58c63d8cc21d831641d970260",
+        "fixed-U:Telegram/SourceFiles/storage/download_manager_mtproto.cpp@d0007eb17fb0bcfbdffd89b86d8efdb900fcd363",
+        "platform-core-spec-checkpoint:c284ba77b7a18477cf8900e6766787986a4c5aee",
+        "platform-core-implementation-commit:0ac50a1545c95681213b329e0589683cb11404a7",
+        "platform-core-network-blob:6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6",
+        "platform-core-spec-blob:6fca16349ff56f3493854a4a6a78f37ee932a339",
+        "desktop-production-mirror-commit:23d73b32e301408f9c8aed151cb1f9e442516e13",
+        "desktop-network-blob:6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6",
+        "desktop-spec-blob:6fca16349ff56f3493854a4a6a78f37ee932a339"
+      ],
+      "test_evidence": [
+        "native/telegram-network/src/lib.rs::file_transfer_socket_buffer_contract_tests::fixed_u_file_socket_buffer_requests_are_two_mebibytes_each authored, not run",
+        "native/telegram-network/src/lib.rs::file_transfer_socket_buffer_contract_tests::only_media_and_cdn_directory_purposes_select_file_socket_buffers authored, not run",
+        "desktop provider mirror contains the byte-identical authored contracts; not run"
+      ],
+      "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical existing TelegramClientLease/RuntimeClient + telegram-media transfer policy + shared telegram-network native carrier composition",
+      "composition_slot": "Native file/media/CDN TCP socket setup",
+      "capability_component": "Purpose-derived fixed-U file-transfer socket-buffer tuning",
+      "variation_axes": [
+        "Main vs Media vs Cdn",
+        "direct vs SOCKS5 vs HTTP vs MTProto proxy vs Web relay",
+        "send-option success/failure vs receive-option success/failure",
+        "download/media-cluster/CDN vs upload-shift adjacency"
+      ],
+      "shared_owner_contracts": [
+        "Existing DcPurpose/DcDirectory",
+        "Existing telegram-media transfer queue/state",
+        "Existing telegram-network TcpTransport and selectable proxy carriers",
+        "Existing RuntimeClient SessionOwner"
+      ],
+      "duplicate_root_check": "No second file transfer, media, network, socket, runtime, session, settings, provider, sidecar or subprocess owner was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages; unchanged",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Native transfer carrier setup",
+      "detail_section": "Not applicable",
+      "capability_surface": "Non-UI",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Every reconnect/restart derives the native socket profile from the current DcPurpose; no independent buffer-profile state can become stale.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-FILE-SOCKET-BUFFER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-FILE-BUFFER-EXACT-2MIB-001",
+        "INV-TDRP-MTPROTO-FILE-BUFFER-PURPOSE-PREDICATE-001",
+        "INV-TDRP-MTPROTO-FILE-BUFFER-BEFORE-HANDSHAKE-001",
+        "INV-TDRP-MTPROTO-FILE-BUFFER-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-FILE-BUFFER-CONSTANTS-001",
+        "UNIT-TDRP-MTPROTO-FILE-BUFFER-PURPOSE-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-FILE-BUFFER-VALUES-001",
+        "CONTRACT-TDRP-MTPROTO-FILE-BUFFER-PURPOSE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-FILE-BUFFER-CARRIERS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMPORAL-TDRP-MTPROTO-FILE-BUFFER-RECONNECT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MTPROTO-FILE-BUFFER-SETSOCKOPT-001",
+        "FAULT-TDRP-MTPROTO-FILE-BUFFER-PROXY-NO-FALLBACK-001"
+      ],
+      "performance_case_ids": [
+        "PERF-TDRP-MTPROTO-FILE-BUFFER-REQUEST-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-FILE-BUFFER-NO-HANDLE-LEAK-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-UPLOAD-PREDICATE-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "loopback-native-file-socket-buffer-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B candidate matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U mtproto_abstract_socket.h / mtproto_tcp_socket.cpp / mtproto_tls_socket.cpp plus SessionPrivate/DC-shift consumers. No upstream C++ implementation is copied; the implementation is source-neutral Rust in the existing carrier owner.",
+      "notes": "Task round105/source evidence round136. Fixed-U exact responsibility is 2 MiB send+receive socket-option requests when protocolForFiles is true. Consumer review proves the predicate is MediaCluster or CDN, with upload-shift explicitly commented out; therefore the Fabushi owner derives Files only from DcPurpose::Media/Cdn. Canonical platform-core implementation is 0ac50a1545c95681213b329e0589683cb11404a7 and desktop production mirror is 23d73b32e301408f9c8aed151cb1f9e442516e13, both network blob 6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6. Contracts are authored but not run; validation_status=not-run; accepted=false. Global unknown/unread counters are intentionally unchanged because this round isolates another responsibility from already-reviewed adjacent source families rather than claiming whole-file source-entry closure.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-FILE-TRANSFER-SOCKET-BUFFER-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/details/mtproto_abstract_socket.h@4283a353dd00db4b12044ef5a1d46cfbde7f659b",
+        "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+        "Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp@e7562e3ca1a1da03f5d368085d5e61d887ab3f16",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087",
+        "Telegram/SourceFiles/mtproto/facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256",
+        "Telegram/SourceFiles/storage/file_upload.cpp@a19470a24b6a62b58c63d8cc21d831641d970260",
+        "Telegram/SourceFiles/storage/download_manager_mtproto.cpp@d0007eb17fb0bcfbdffd89b86d8efdb900fcd363"
       ]
     }
   ],
