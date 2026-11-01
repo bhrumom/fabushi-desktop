@@ -2023,6 +2023,123 @@ impl SandAgentDb {
         }
     }
 
+    /// Atomically publish one session-scoped spend-guard card together with
+    /// its owner-local state and activity projection. The deletion/archive
+    /// fence is checked in the same SQLite transaction as every mutation.
+    pub fn append_spend_guard_card_if_session_admitted(
+        &self,
+        session_key: &str,
+        entry: &serde_json::Value,
+        state: &SpendGuardState,
+        activity_at: f64,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        let Some(entry_id) = entry.get("id").and_then(serde_json::Value::as_str) else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "spend-guard card requires an entry identity".into(),
+            ));
+        };
+        if session_key.is_empty()
+            || entry.get("kind").and_then(serde_json::Value::as_str).is_none()
+            || entry
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                != Some(session_key)
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "spend-guard card requires matching session provenance".into(),
+            ));
+        }
+        let spend_guard_raw = serialize_spend_guard_state(state);
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_mut() else {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "agent database is closed".into(),
+            ));
+        };
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<(bool, bool), AgentDbProjectionError> {
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .ok_or_else(|| {
+                    AgentDbProjectionError::WorkAdmissionInvalid(
+                        "session work admission record is unavailable".into(),
+                    )
+                })?;
+            let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if admission.session_key != session_key
+                || admission.archived_at_ms.is_some()
+                || admission.deletion_pending
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "session is not admitted for spend-guard card".into(),
+                ));
+            }
+            let inserted = db.execute(
+                INSERT_TRANSCRIPT_ENTRY_SQL,
+                params![entry_id, entry.to_string()],
+            )? > 0;
+            let spend_changed = if let Some(raw) = spend_guard_raw.as_deref() {
+                db.execute(SET_KV_SQL, params![KV_SPEND_GUARD, raw])? > 0
+            } else {
+                db.execute(DELETE_KV_SQL, params![KV_SPEND_GUARD])? > 0
+            };
+            let legacy_changed =
+                db.execute(DELETE_KV_SQL, params![KV_SPEND_GUARD_LEGACY])? > 0;
+            let current = parse_unread_state(
+                read_kv(db, KV_UNREAD)?.as_deref(),
+            );
+            let activity_changed = current.last_activity_at < activity_at;
+            if activity_changed {
+                let raw = serde_json::json!({
+                    "lastActivityAt": activity_at,
+                    "lastViewedAt": current.last_viewed_at,
+                    "isManuallyUnread": current.is_manually_unread,
+                    "unreadCount": current.unread_count + 1.0,
+                })
+                .to_string();
+                db.execute(SET_KV_SQL, params![KV_UNREAD, raw])?;
+            }
+            Ok((inserted, spend_changed || legacy_changed || activity_changed))
+        })();
+        match result {
+            Ok((inserted, metadata_changed)) => {
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
+                if inserted || metadata_changed {
+                    bump_db_write_generation(&self.db_path);
+                }
+                if inserted {
+                    publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+                }
+                if metadata_changed {
+                    notify_agent_db_listeners(
+                        &self.db_path,
+                        AgentDbListenerChannel::Metadata(KV_SPEND_GUARD.into()),
+                    );
+                    notify_agent_db_listeners(
+                        &self.db_path,
+                        AgentDbListenerChannel::Metadata(KV_UNREAD.into()),
+                    );
+                }
+                Ok(inserted)
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
     /// Atomically append transcript entries and clear one captured outgoing
     /// media fence. A stale or rebound fence rolls back the transcript write.
     pub fn append_transcript_entries_and_release_media(

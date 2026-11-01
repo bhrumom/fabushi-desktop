@@ -687,3 +687,9 @@ background-result receipt, and outgoing-media settlement owners now reject
 durable `deletion_pending` inside their SQLite transactions. These paths cannot
 commit after deletion custody wins the durable race; this is a write-edge
 correction, not completion of the detached-result/media lifecycle.
+
+The automation spend-guard producer now uses one existing session owner
+transaction for a session-bound widget card, its spend-guard KV state, and the
+activity projection. The legacy no-admission compatibility branch remains
+explicitly separate; this closes one atomic producer edge without promoting
+the broader automation or session-work-admission responsibilities.

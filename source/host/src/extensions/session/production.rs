@@ -2489,6 +2489,25 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
     }
 
+    pub fn append_agent_spend_guard_card_if_session_admitted(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        entry: &serde_json::Value,
+        state: &SpendGuardState,
+        activity_at: f64,
+    ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
+        self.open_agent_db_owner(agent_id)?
+            .append_spend_guard_card_if_session_admitted(
+                session_key,
+                entry,
+                state,
+                activity_at,
+            )
+            .map_err(|error| error.to_string())
+    }
+
     pub fn append_agent_transcript_entries_and_release_media(
         &self,
         agent_id: &str,

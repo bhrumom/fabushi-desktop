@@ -103,6 +103,12 @@ background-result receipt, and outgoing-media settlement transactions must
 also reject the durable `deletion_pending` fence inside their SQLite
 transaction; a production precheck alone is not sufficient for a delete race.
 
+The automation spend-guard producer uses the same owner boundary for a
+session-bound widget card: card insertion, spend-guard KV state, and activity
+metadata commit together, or none commit. Legacy databases without a session
+admission record retain their existing compatibility path and remain subject
+to the facade admission checks.
+
 ## Failure and edge cases
 
 - missing or malformed session identity: reject before durable admission;

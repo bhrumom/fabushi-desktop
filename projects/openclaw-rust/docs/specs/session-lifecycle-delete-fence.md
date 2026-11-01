@@ -214,6 +214,11 @@ background-result receipt, and outgoing-media settlement owners also recheck
 production facade. This closes the durable-fence race at those write edges
 without changing the broader lifecycle status.
 
+The session-bound automation spend-guard card path now commits its transcript
+card, owner-local spend-guard state, and activity projection in one existing
+session database transaction. Legacy records without an admission row retain
+the compatibility path and are not treated as equivalent atomic evidence.
+
 ## Release, migration, rollback, and observability
 
 The migration must be backward-compatible for existing agent DBs and preserve

@@ -99,18 +99,14 @@ impl AutomationSpendGuardRuntime {
                 })
             }
             SpendGuardDecision::Nudge => {
-                let card = self.issue_guard_card(
+                let card = self.issue_guard_card_with_state(
                     agent_id,
                     &build_spend_guard_nudge_widget(),
-                    now_ms,
-                )?;
-                self.sessions.set_agent_automation_spend_guard_state(
-                    agent_id,
                     &SpendGuardState {
                         nudged_at_ms: Some(now_ms),
-                        card_entry_ids: vec![card.clone()],
                         ..SpendGuardState::default()
                     },
+                    now_ms,
                 )?;
                 Ok(SpendGuardApplyResult {
                     paused: firing_is_off(store, firing_automation_id),
@@ -152,28 +148,38 @@ impl AutomationSpendGuardRuntime {
                 paused.extend(newly_paused);
                 let paused_automation_ids = paused.into_iter().collect::<Vec<_>>();
                 let already_open = !current.paused_automation_ids.is_empty();
-                let issued = if already_open {
-                    None
+                let mut card_entry_ids = current.card_entry_ids;
+                let (issued, built_card) = if already_open {
+                    (None, None)
                 } else {
-                    Some(self.issue_guard_card(
+                    let built = self.build_guard_card(
                         agent_id,
                         &build_spend_guard_paused_widget(),
                         now_ms,
-                    )?)
+                    )?;
+                    card_entry_ids.push(built.0.clone());
+                    (Some(built.0.clone()), Some(built))
                 };
-                let mut card_entry_ids = current.card_entry_ids;
-                if let Some(card) = issued.as_ref() {
-                    card_entry_ids.push(card.clone());
+                let next_state = SpendGuardState {
+                    nudged_at_ms: current.nudged_at_ms,
+                    card_entry_ids,
+                    paused_automation_ids: paused_automation_ids.clone(),
+                    ..SpendGuardState::default()
+                };
+                if let Some((card_id, entry)) = built_card {
+                    self.commit_guard_card(
+                        agent_id,
+                        card_id,
+                        entry,
+                        &next_state,
+                        now_ms,
+                    )?;
+                } else {
+                    self.sessions.set_agent_automation_spend_guard_state(
+                        agent_id,
+                        &next_state,
+                    )?;
                 }
-                self.sessions.set_agent_automation_spend_guard_state(
-                    agent_id,
-                    &SpendGuardState {
-                        nudged_at_ms: current.nudged_at_ms,
-                        card_entry_ids,
-                        paused_automation_ids: paused_automation_ids.clone(),
-                        ..SpendGuardState::default()
-                    },
-                )?;
                 Ok(SpendGuardApplyResult {
                     paused: true,
                     reminder: None,
@@ -239,36 +245,63 @@ impl AutomationSpendGuardRuntime {
         widget: SpendGuardWidget,
         now_ms: f64,
     ) -> Result<Option<String>, String> {
-        let mut current = self
+        let current = self
             .sessions
             .get_agent_automation_spend_guard_state(agent_id)?;
         if !current.card_entry_ids.is_empty() {
             return Ok(None);
         }
-        let card = self.issue_guard_card(agent_id, &widget, now_ms)?;
-        current.card_entry_ids = vec![card.clone()];
-        self.sessions
-            .set_agent_automation_spend_guard_state(agent_id, &current)?;
+        let (card, entry) = self.build_guard_card(agent_id, &widget, now_ms)?;
+        let mut next = current;
+        next.card_entry_ids = vec![card.clone()];
+        self.commit_guard_card(agent_id, card.clone(), entry, &next, now_ms)?;
         Ok(Some(card))
     }
 
-    fn issue_guard_card(
+    fn issue_guard_card_with_state(
+        &self,
+        agent_id: &str,
+        widget: &SpendGuardWidget,
+        state: &SpendGuardState,
+        now_ms: f64,
+    ) -> Result<String, String> {
+        let (id, entry) = self.build_guard_card(agent_id, widget, now_ms)?;
+        let mut next = state.clone();
+        if !next.card_entry_ids.iter().any(|card| card == &id) {
+            next.card_entry_ids.push(id.clone());
+        }
+        self.commit_guard_card(agent_id, id.clone(), entry, &next, now_ms)?;
+        Ok(id)
+    }
+
+    fn build_guard_card(
         &self,
         agent_id: &str,
         widget: &SpendGuardWidget,
         now_ms: f64,
-    ) -> Result<String, String> {
+    ) -> Result<(String, Value), String> {
         let entries = self.sessions.read_agent_transcript_entries(agent_id)?;
         let id = next_entry_id(&entries, TranscriptEntryIdKind::SendMessage);
-        let mut entry = json!({
+        let entry = json!({
             "kind": "send-message",
-            "id": id,
+            "id": id.clone(),
             "message": {
                 "type": "widget",
                 "widget": widget_value(widget),
             },
             "timestampMs": now_ms,
         });
+        Ok((id, entry))
+    }
+
+    fn commit_guard_card(
+        &self,
+        agent_id: &str,
+        _id: String,
+        mut entry: Value,
+        state: &SpendGuardState,
+        now_ms: f64,
+    ) -> Result<(), String> {
         if let Some(session_key) = self
             .sessions
             .read_session_work_admission(agent_id)?
@@ -276,16 +309,20 @@ impl AutomationSpendGuardRuntime {
             .filter(|value| !value.trim().is_empty())
         {
             entry["sessionKey"] = Value::String(session_key.clone());
-            self.sessions.append_agent_transcript_entries_if_session_admitted(
+            self.sessions.append_agent_spend_guard_card_if_session_admitted(
                 agent_id,
                 &session_key,
-                &[entry],
+                &entry,
+                state,
+                now_ms,
             )?;
         } else {
             self.sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+            let _ = self.sessions.mark_agent_activity(agent_id, now_ms)?;
+            self.sessions
+                .set_agent_automation_spend_guard_state(agent_id, state)?;
         }
-        let _ = self.sessions.mark_agent_activity(agent_id, now_ms)?;
-        Ok(id)
+        Ok(())
     }
 
     fn is_host_issued_card(

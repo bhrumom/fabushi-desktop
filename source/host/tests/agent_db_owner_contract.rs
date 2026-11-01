@@ -13,7 +13,7 @@ use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
-    AwaitingUserResponse, SandProfile,
+    AwaitingUserResponse, SandProfile, SpendGuardState,
 };
 use mahayana_host_runtime::storage::store_db::live_db_handle_count;
 
@@ -929,6 +929,84 @@ fn stale_background_result_cas_rolls_back_receipt_insert() {
     trigger
         .execute_batch("DROP TRIGGER stale_work_admission_after_receipt")
         .expect("remove stale-race trigger");
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn spend_guard_card_owner_transaction_rejects_durable_deletion_fence() {
+    let root = temp_root("spend-guard-deletion-fence");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+    let entry = serde_json::json!({
+        "id": "spend-card",
+        "kind": "send-message",
+        "sessionKey": admission.session_key.clone(),
+        "message": {"type": "widget"},
+    });
+    let state = SpendGuardState {
+        nudged_at_ms: Some(42.0),
+        card_entry_ids: vec!["spend-card".into()],
+        ..SpendGuardState::default()
+    };
+    assert!(owner
+        .append_spend_guard_card_if_session_admitted(
+            &admission.session_key,
+            &entry,
+            &state,
+            42.0,
+        )
+        .expect("spend card commit"));
+    assert_eq!(owner.get_automation_spend_guard_state().expect("state"), state);
+    assert_eq!(owner.get_transcript_entries().expect("entries").len(), 1);
+
+    let mut fenced = admission.clone();
+    fenced.deletion_pending = true;
+    assert!(owner
+        .compare_and_set_session_work_admission(Some(&admission.lifecycle_revision), &fenced)
+        .expect("publish deletion fence"));
+    let error = owner
+        .append_spend_guard_card_if_session_admitted(
+            &admission.session_key,
+            &serde_json::json!({
+                "id": "spend-card-after-delete",
+                "kind": "send-message",
+                "sessionKey": admission.session_key.clone(),
+                "message": {"type": "widget"},
+            }),
+            &SpendGuardState::default(),
+            43.0,
+        )
+        .expect_err("durable deletion fence must reject spend card transaction");
+    assert!(error.to_string().contains("session is not admitted"));
+    assert!(owner
+        .get_transcript_entries()
+        .expect("entries remain readable")
+        .iter()
+        .all(|entry| entry.get("id").and_then(serde_json::Value::as_str)
+            != Some("spend-card-after-delete")));
     owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
