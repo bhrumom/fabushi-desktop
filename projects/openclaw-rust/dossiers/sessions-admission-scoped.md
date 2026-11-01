@@ -567,3 +567,13 @@ existing single `ProductionSessionWorkers`/`SandAgentDb` owner and makes the
 current absence of an automation per-run session catalog explicit. It does not
 create that catalog, reaper, or heartbeat lifecycle; cron run-session closure,
 runtime verification, and acceptance remain pending.
+
+## 12.15 Routed Runner admission boundary tightening — 2026-11-01
+
+`runner.startRoutedProvider` now rejects a requested session selector when it
+does not exactly match the existing owner admission record. The sole
+compatibility exception is an explicitly marked `group-member` turn, whose
+unbound path is retained for the generic transcript owner. Non-group Runner
+paths therefore cannot pass an unconfirmed key into auto-review, local-tool
+permission, or session-bound sinks. This does not add a session catalog or
+upgrade runtime/exact-head acceptance; those remain pending.

@@ -7493,6 +7493,13 @@ fn start_routed_provider_task(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned);
+    if worker_session_admitted_key.is_none()
+        && !(is_group_member_turn && request_source.as_deref() == Some("group-member"))
+    {
+        return Err(GatewayCommandError::Internal(format!(
+            "runner.startRoutedProvider requires an owner-admitted session identity for {agent_id}"
+        )));
+    }
     let generated_parent_agent_id = args
         .get("parentAgentId")
         .and_then(serde_json::Value::as_str)
