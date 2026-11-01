@@ -89,6 +89,13 @@ policy owner and is explicitly out of scope. Wiring remains pending until a
 canonical model catalog/operator-authority producer and an authenticated
 session-action caller are available in existing owners.
 
+The policy owner additionally requires an exact canonical-catalog match for
+every non-default selection. A request that passes visibility and operator
+allowlists but names a `(provider, model)` absent from the catalog must return
+the existing `UnknownProvider` rejection and leave the session entry
+unchanged. This is an owner-local safety invariant, not production ingress or
+wiring evidence.
+
 ## 2026-10-31 current-source correction
 
 The consumer portion of the preceding audit is superseded by the current

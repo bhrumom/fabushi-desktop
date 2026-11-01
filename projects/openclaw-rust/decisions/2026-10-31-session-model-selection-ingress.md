@@ -65,7 +65,10 @@ runner.startRoutedProvider -> ProductionInferenceExtension`.
 
 The producer must preserve session identity, visibility and operator policy,
 placement/runtime compatibility, generation conflict handling, reset-to-default
-semantics and the negative invariant that agent defaults are not mutated.
+semantics and the negative invariant that agent defaults are not mutated. The
+policy owner must also reject every non-default `(provider, model)` pair that
+has no exact match in the canonical catalog; an operator/request body cannot
+manufacture a catalog entry by supplying policy fields alone.
 
 ## Rejected alternatives
 

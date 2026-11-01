@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 pub const MODEL_SELECTION_LOCKED_MESSAGE: &str = "Model selection is locked for this session.";
 pub const SESSION_PLACEMENT_CHANGED_MESSAGE: &str = "Session placement changed; retry model selection.";
 pub const SESSION_CONFLICT_MESSAGE: &str = "Model change was not applied because the session changed. Retry.";
+pub const MODEL_NOT_IN_CATALOG_MESSAGE: &str =
+    "Model selection is not present in the canonical model catalog.";
 
 /// Unit for callback bounds in channel presentation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -359,6 +361,12 @@ pub fn apply_session_model_selection(
         e.provider.eq_ignore_ascii_case(selected_provider)
             && e.id.eq_ignore_ascii_case(selected_model)
     });
+    if !reset_to_default && catalog_match.is_none() {
+        return ApplySessionModelSelectionResult::Rejected {
+            reason: ModelPickerRejectReason::UnknownProvider,
+            message: MODEL_NOT_IN_CATALOG_MESSAGE.to_string(),
+        };
+    }
     let context_tokens = resolve_model_context_tokens(catalog_match);
 
     // 7. Check if selection changed

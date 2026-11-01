@@ -225,6 +225,53 @@ fn test_ocrm_model_picker_o03_operator_and_visibility_policy() {
 }
 
 #[test]
+fn test_ocrm_model_picker_rejects_non_default_model_absent_from_catalog() {
+    let mut entry = SessionModelEntryState {
+        session_id: "sess-catalog".to_string(),
+        updated_at: 17,
+        ..Default::default()
+    };
+    let before = entry.clone();
+    let request = SessionModelSelectionRequest {
+        provider: "unregistered-provider".to_string(),
+        model: "unregistered-model".to_string(),
+        is_default: false,
+        reset_to_default: false,
+        alias: None,
+        profile_override: None,
+        runtime: SessionModelSelectionRuntime::Unchanged,
+    };
+    let result = apply_session_model_selection(
+        &mut entry,
+        ApplySessionModelSelectionParams {
+            agent_id: "agent-main",
+            session_key: "agent-main:main",
+            default_provider: "openai",
+            default_model: "gpt-4o",
+            current_provider: "openai",
+            current_model: "gpt-4o",
+            model_catalog: &[],
+            visibility_policy: None,
+            operator_authority: None,
+            placement_context: None,
+            candidate_execution_mode: None,
+            initial_generation: None,
+            current_generation: None,
+            request,
+        },
+        99,
+    );
+    assert_eq!(
+        result,
+        ApplySessionModelSelectionResult::Rejected {
+            reason: ModelPickerRejectReason::UnknownProvider,
+            message: MODEL_NOT_IN_CATALOG_MESSAGE.to_string(),
+        }
+    );
+    assert_eq!(entry, before);
+}
+
+#[test]
 fn test_ocrm_model_picker_o04_placement_fences_and_successful_mutation() {
     let mut entry = SessionModelEntryState {
         session_id: "sess-placement".to_string(),
