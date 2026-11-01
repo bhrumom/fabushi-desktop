@@ -4020,6 +4020,7 @@ impl UnifiedGatewayApi {
         let route = resolve_gateway_session_route(args, raw_key)?;
         reject_agent_wide_session_route(&route, "sessions.get")?;
         let agent_id = route.agent_id.as_str();
+        let canonical_key = format!("agent:{agent_id}:main");
         let session_kind = session_kind_label(route.kind);
 
         let summary = self
@@ -4088,7 +4089,7 @@ impl UnifiedGatewayApi {
                 .map(|value| value.lifecycle_revision.clone()),
         });
         if let Some(session_id) = summary.as_ref().map(|value| value.id.as_str())
-            && let Some(review) = self.provider_review_projection(agent_id, raw_key, session_id)?
+            && let Some(review) = self.provider_review_projection(agent_id, &canonical_key, session_id)?
         {
             response["providerReview"] = review;
         }
@@ -4424,7 +4425,7 @@ impl UnifiedGatewayApi {
             ))?;
         let route = resolve_gateway_session_route(args, session_key)?;
         let canonical_key = format!("agent:{}:main", route.agent_id);
-        if session_key != canonical_key {
+        if !session_key.eq_ignore_ascii_case(&canonical_key) {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.providerReview.continue only supports canonical main sessions".into(),
             ));

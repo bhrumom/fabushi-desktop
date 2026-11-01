@@ -569,6 +569,24 @@ fn test_ocrm_session_o01_session_key_routing() {
     assert!(sessions_patch.contains(
         "transition_session_work_archive(\n                &route.agent_id,\n                &expected_key,"
     ));
+    let sessions_get = shipping_source
+        .split("fn call_openclaw_sessions_get(")
+        .nth(1)
+        .expect("shipping sessions.get owner exists")
+        .split("fn call_openclaw_sessions_create(")
+        .next()
+        .expect("shipping sessions.get function boundary exists");
+    assert!(sessions_get.contains(
+        "provider_review_projection(agent_id, &canonical_key, session_id)"
+    ));
+    let provider_review_continue = shipping_source
+        .split("fn call_openclaw_sessions_provider_review_continue(")
+        .nth(1)
+        .expect("shipping provider-review continuation owner exists")
+        .split("fn call_openclaw_chat_send(")
+        .next()
+        .expect("shipping provider-review continuation function boundary exists");
+    assert!(provider_review_continue.contains("session_key.eq_ignore_ascii_case(&canonical_key)"));
 }
 
 // ---------------------------------------------------------------------------

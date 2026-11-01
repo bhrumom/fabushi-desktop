@@ -138,6 +138,9 @@ The archive producer now passes the normalized canonical main-session key from
 the public route resolver into the owner transition. This preserves SWA-14's
 case-insensitive structural selector acceptance without passing an
 un-normalized request key into the case-sensitive owner contract.
+The same normalized key is now used by `sessions.get` provider-review
+projection and by provider-review continuation admission, so case variation
+cannot hide an owner-bound review or be mistaken for a different session.
 The authenticated provider-review continuation producer also binds its
 expected session ID to the canonical route agent before issuing or claiming
 the existing owner capability; a mismatch is rejected as a lifecycle change.
