@@ -134,10 +134,14 @@ background-result receipt, and outgoing-media settlement transactions must
 also reject the durable `deletion_pending` fence inside their SQLite
 transaction; a production precheck alone is not sufficient for a delete race.
 
-The shared direct `SandAgentDb` metadata/KV write predicate must also fail
-closed when an existing admission record has an empty session key, session ID,
-or lifecycle revision. Legacy databases without an admission record retain
-their compatibility path; malformed durable admission state is not admitted.
+The shared direct `SandAgentDb` metadata/KV predicate and the dedicated
+session-scoped transcript, media, result, spend-guard, compaction, and
+persisted-update transactions must fail closed when an existing admission
+record has an empty session key, session ID, or lifecycle revision. Legacy
+databases without an admission record retain their compatibility path;
+malformed durable admission state is not admitted.
+Receipt replay paths perform the same current-record check before returning an
+idempotent result; a stale receipt cannot bypass the live session generation.
 
 The automation spend-guard producer uses the same owner boundary for a
 session-bound widget card: card insertion, spend-guard KV state, and activity

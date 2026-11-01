@@ -993,6 +993,21 @@ impl SandAgentDb {
         };
         db.execute_batch("BEGIN IMMEDIATE")?;
         let result = (|| -> Result<SessionWorkResultCommitOutcome, AgentDbProjectionError> {
+            let raw_admission = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(raw_admission) = raw_admission else {
+                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
+            };
+            let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != session_key
+                || admission.lifecycle_revision != expected_lifecycle_revision
+            {
+                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
+            }
             let receipt_id = format!("background-result:{idempotency_key}");
             if let Some(raw) = db
                 .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![receipt_id], |row| {
@@ -1020,16 +1035,9 @@ impl SandAgentDb {
                 return Ok(SessionWorkResultCommitOutcome::ConflictingResult);
             }
 
-            let raw_admission = db
-                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
-                    row.get::<_, String>(0)
-                })
-                .optional()?;
-            let Some(raw_admission) = raw_admission else {
-                return Ok(SessionWorkResultCommitOutcome::RejectedStale);
-            };
-            let mut admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.session_key != session_key
+            let mut admission = admission;
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != session_key
                 || admission.lifecycle_revision != expected_lifecycle_revision
                 || admission.archived_at_ms.is_some()
                 || admission.deletion_pending
@@ -2236,7 +2244,8 @@ impl SandAgentDb {
                     )
                 })?;
             let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.session_key != session_key
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != session_key
                 || admission.archived_at_ms.is_some()
                 || admission.deletion_pending
             {
@@ -2338,7 +2347,8 @@ impl SandAgentDb {
                     )
                 })?;
             let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.session_key != session_key
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != session_key
                 || admission.archived_at_ms.is_some()
                 || admission.deletion_pending
             {
@@ -2445,6 +2455,11 @@ impl SandAgentDb {
                     )
                 })?;
             let mut admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+            if !session_admission_identity_is_well_formed(&admission) {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "outgoing media settlement admission identity is malformed".into(),
+                ));
+            }
             let receipt_id = format!("outgoing-media-settlement:{}", media_work_id.trim());
             if let Some(raw_receipt) = db
                 .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![&receipt_id], |row| {
@@ -2538,7 +2553,8 @@ impl SandAgentDb {
                 }
                 return Ok(Vec::new());
             }
-            if admission.session_key != expected_session_key.trim()
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != expected_session_key.trim()
                 || admission.lifecycle_revision != expected_lifecycle_revision.trim()
                 || admission.admitted_media_work_id.as_deref() != Some(media_work_id.trim())
                 || admission.archived_at_ms.is_some()
@@ -2717,7 +2733,10 @@ impl SandAgentDb {
                 .optional()?
             {
                 let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-                if admission.deletion_pending || admission.archived_at_ms.is_some() {
+                if !session_admission_identity_is_well_formed(&admission)
+                    || admission.deletion_pending
+                    || admission.archived_at_ms.is_some()
+                {
                     return Ok(CompactionCommitOutcome::RejectedStale);
                 }
             }
@@ -2956,7 +2975,8 @@ impl SandAgentDb {
                     )
                 })?;
             let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-            if admission.session_key != session_key.trim()
+            if !session_admission_identity_is_well_formed(&admission)
+                || admission.session_key != session_key.trim()
                 || admission.archived_at_ms.is_some()
                 || admission.deletion_pending
             {
@@ -4639,7 +4659,8 @@ pub fn update_persisted_transcript_entry_if_session_admitted(
             )
         })?;
     let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
-    if admission.session_key != session_key
+    if !session_admission_identity_is_well_formed(&admission)
+        || admission.session_key != session_key
         || admission.archived_at_ms.is_some()
         || admission.deletion_pending
     {
@@ -4990,11 +5011,17 @@ fn session_work_write_is_admitted(
     let Ok(admission) = serde_json::from_str::<SessionWorkAdmissionRecord>(&raw) else {
         return Ok(false);
     };
-    Ok(!admission.session_key.trim().is_empty()
-        && !admission.session_id.trim().is_empty()
-        && !admission.lifecycle_revision.trim().is_empty()
+    Ok(session_admission_identity_is_well_formed(&admission)
         && !admission.deletion_pending
         && admission.archived_at_ms.is_none())
+}
+
+fn session_admission_identity_is_well_formed(
+    admission: &SessionWorkAdmissionRecord,
+) -> bool {
+    !admission.session_key.trim().is_empty()
+        && !admission.session_id.trim().is_empty()
+        && !admission.lifecycle_revision.trim().is_empty()
 }
 
 fn encode_hex(bytes: &[u8]) -> String {

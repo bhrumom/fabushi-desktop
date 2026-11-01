@@ -420,6 +420,13 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
     assert!(owner_source.contains("!admission.session_key.trim().is_empty()"));
     assert!(owner_source.contains("!admission.session_id.trim().is_empty()"));
     assert!(owner_source.contains("!admission.lifecycle_revision.trim().is_empty()"));
+    assert_eq!(
+        owner_source
+            .matches("session_admission_identity_is_well_formed(&admission)")
+            .count(),
+        10,
+        "all session-owned transaction edges must validate admission identity"
+    );
 }
 
 #[test]
