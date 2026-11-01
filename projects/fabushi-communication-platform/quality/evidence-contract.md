@@ -837,3 +837,20 @@ Consumer evidence identifies GitHub Issue Forms as the direct host consumer and 
 Recovery evidence distinguishes schema-blocked missing fields from quality/scope/privacy failures that can still satisfy `required: true`. Vague/duplicate/out-of-scope requests, incorrect enhancement routing, sensitive supporting material, or invented acceptance promises remain non-passing until corrected through existing owners and freshly qualified on the exact frozen candidate.
 
 Stage A records the fourteen contract/integration/fault/security cases from TEST_STRATEGY as authored only. No Issue Form submission, issue creation/label mutation, screenshot acquisition/upload, build, lint, validator, test, CI, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository issue-template routing configuration evidence
+
+For `TDRP-R9-REPOSITORY-ISSUE-TEMPLATE-CONFIG-001`, source evidence binds fixed-U `.github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce`, recursive-tree index 109 zero-based, mode 100644, 753 Git bytes / 727 Unicode code points, 14 LF newlines, zero CR characters, trailing newline and 15 split lines.
+
+Configuration evidence records `blank_issues_enabled: false` and exactly four ordered contact links. Route 1 names Mobile apps, UI/UX Design, or Missing Features and points to `https://bugs.telegram.org`; route 2 names typo/translation error and points to `https://translations.telegram.org`; route 3 names banned account / cannot log in and points to `https://telegram.org/support`; route 4 names general questions and points to `https://t.me/TelegramDesktopTalk`. The source `about` copy explicitly discourages opening a Telegram Desktop issue for those categories.
+
+Scope evidence treats those destinations as Telegram-specific upstream process provenance only. The source does not authorize Fabushi to adopt Telegram bug, translation, account-support or group-chat infrastructure, and it does not establish target product scope, acceptance, priority, SLA or service ownership. The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` directory, so no target contact-link UX is claimed implemented.
+
+Privacy/security evidence is negative but material: the configuration provides no private security-report route, redaction warning, consent/acknowledgement, secret detector or protected attachment path. Account/login and public-chat routing therefore cannot be generalized to secrets, credentials, private messages, customer data or vulnerability reports. Static source URLs contain no source-declared issue-body/input payload; nevertheless navigation leaves GitHub for external trust domains, so future target links require independent privacy/security qualification.
+
+Consumer evidence identifies GitHub Issues issue-template chooser/configuration as the direct host consumer and would-be reporters plus maintainers/triagers as human consumers. Existing-owner-first remains root repository issue/reporting/development-process authority + shared privacy/security + quality/test-evidence governance. No ProductShell, Conversation, Agent/Coordinator/Host/Runner, platform-core service, localization runtime, account runtime or second issue tracker/support subsystem consumes this YAML as Fabushi shipping behavior.
+
+Recovery evidence treats blank-issue bypass, wrong/reordered contact links, stale or mismatched external routes, Telegram authority escalation and sensitive external disclosure as non-passing. Recovery remains through existing repository process and approved protected security/privacy channels; later Stage-B qualification must bind the exact frozen candidate rather than inherit source behavior as target acceptance.
+
+Stage A records the fourteen contract/integration/fault/security cases from TEST_STRATEGY as authored only. No issue chooser submission, issue creation, contact-link navigation, external support/account action, build, lint, validator, test, CI, packaging, deployment, runtime evidence or acceptance is performed. `validation_status=not-run`; `accepted=false`.

@@ -914,3 +914,26 @@ Authored, not run in Stage A:
 - `SEC-TDRP-FEATURE-REQUEST-NO-ACCEPTANCE-ESCALATION-001` — form submission/label routing cannot mint product approval, prioritization, scope, roadmap or implementation authority.
 
 The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` tree. Existing-owner-first therefore records the upstream form behavior in current repository issue/reporting/process and shared security/quality owners rather than copying Telegram branding or creating a second backlog. Stage A status is `validation_status=not-run`, `accepted=false`; no issue submission/creation/label mutation, screenshot acquisition/upload, build, test, validator, CI, package, deploy or runtime acceptance is executed by this qualification.
+
+
+### Repository issue-template routing configuration qualification
+
+`TDRP-R9-REPOSITORY-ISSUE-TEMPLATE-CONFIG-001` is qualified through authored-only Stage-A contracts and later frozen-candidate Stage-B repository-process evidence. Source identity is fixed-U `.github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce`, recursive-tree index 109 zero-based, mode 100644, 753 Git bytes / 727 Unicode code points, 14 LF newline characters, zero CR characters, trailing newline and 15 split lines.
+
+Authored, not run in Stage A:
+- `CONTRACT-TDRP-ISSUE-CONFIG-HOST-AUTHORITY-001` — GitHub Issues issue-template chooser/configuration is the direct host consumer; reporters and maintainers/triagers are human consumers; no product runtime or second issue tracker is created.
+- `CONTRACT-TDRP-ISSUE-CONFIG-BLANK-ISSUES-DISABLED-001` — source behavior sets `blank_issues_enabled: false`; later qualification must not infer a blank upstream issue route.
+- `CONTRACT-TDRP-ISSUE-CONFIG-CONTACT-LINKS-ORDER-001` — exactly four source-declared contact links remain ordered and bound to their exact names/URLs/about copy.
+- `CONTRACT-TDRP-ISSUE-CONFIG-DESKTOP-SCOPE-ROUTING-001` — mobile apps, UI/UX Design or missing-feature/non-Desktop-only matters route upstream to `bugs.telegram.org`; this is provenance, not Fabushi scope authority.
+- `CONTRACT-TDRP-ISSUE-CONFIG-TRANSLATION-ROUTING-001` — translation/typo reports route upstream to `translations.telegram.org`; no Fabushi localization owner is replaced.
+- `CONTRACT-TDRP-ISSUE-CONFIG-ACCOUNT-SUPPORT-ROUTING-001` — banned/login support routes upstream to `telegram.org/support`; no Fabushi account/session/security authority is delegated to Telegram.
+- `CONTRACT-TDRP-ISSUE-CONFIG-QUESTION-ROUTING-001` — general questions route upstream to `t.me/TelegramDesktopTalk`; no public chat becomes a Fabushi support or privacy channel.
+- `CONTRACT-TDRP-ISSUE-CONFIG-EXTERNAL-ROUTE-PROVENANCE-001` — external URLs and their prose are source routing metadata only and cannot mint target approval, SLA, product scope or support ownership.
+- `INT-TDRP-ISSUE-CONFIG-PROCESS-COMPOSITION-001` — repository issue/reporting/process + privacy/security + shared quality/evidence owners compose without Telegram-specific support/runtime duplication.
+- `FAULT-TDRP-ISSUE-CONFIG-BLANK-ISSUE-BYPASS-001` — a blank upstream issue path contrary to `blank_issues_enabled: false` is non-passing.
+- `FAULT-TDRP-ISSUE-CONFIG-WRONG-ROUTE-001` — missing/reordered/mismatched names, URLs or category routing are non-passing until corrected.
+- `FAULT-TDRP-ISSUE-CONFIG-SENSITIVE-EXTERNAL-DISCLOSURE-001` — secrets, account identifiers, private content or vulnerability details must not be normalized into public/unapproved external destinations.
+- `SEC-TDRP-ISSUE-CONFIG-EXTERNAL-LINK-TRUST-BOUNDARY-001` — following a contact link crosses to an external trust domain; no reporter-controlled repository payload transfer or credential disclosure is authorized by this YAML.
+- `SEC-TDRP-ISSUE-CONFIG-NO-TELEGRAM-AUTHORITY-ESCALATION-001` — Telegram support/translation/community routes cannot become Fabushi product, account, privacy or security authority merely through source provenance.
+
+The current Fabushi checkpoint has no `.github/ISSUE_TEMPLATE` tree. Existing-owner-first therefore records exact upstream routing behavior in current repository issue/reporting/process and shared security/quality owners rather than copying Telegram contact links or creating a second support system. Stage A status is `validation_status=not-run`, `accepted=false`; no issue chooser interaction, contact-link navigation, issue/support mutation, build, test, validator, CI, package, deploy or runtime acceptance is executed by this qualification.
