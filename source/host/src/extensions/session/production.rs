@@ -1019,11 +1019,7 @@ impl ProductionSessionWorkers {
         let mut reclaimed = Vec::new();
         for agent_id in candidates {
             let result = self.with_agent_filesystem_mutation(&agent_id, || {
-                let db_path = self.session_db_path(&agent_id)?;
-                let blob_path = conversation_blobs_path(&db_path);
-                let _ = self.close_agent_store_owner(&agent_id, false);
-                let _ = self.close_agent_db_owner(&agent_id, false);
-                futures::executor::block_on(self.pool.close_store(&blob_path));
+                self.retire_agent_owners_locked(&agent_id, false)?;
                 match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
                     Ok(()) => Ok(true),
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
@@ -1814,13 +1810,23 @@ impl ProductionSessionWorkers {
         flush: bool,
     ) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            let db_path = self.session_db_path(agent_id)?;
-            let blob_path = conversation_blobs_path(&db_path);
-            let store_closed = self.close_agent_store_owner(agent_id, flush);
-            let db_closed = self.close_agent_db_owner(agent_id, flush);
-            self.pool.close_store_blocking(&blob_path);
-            Ok(store_closed || db_closed)
+            self.retire_agent_owners_locked(agent_id, flush)
         })
+    }
+
+    /// Close the exact per-agent owners while the caller already holds the
+    /// filesystem/deletion boundary.
+    pub(crate) fn retire_agent_owners_locked(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> Result<bool, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let blob_path = conversation_blobs_path(&db_path);
+        let store_closed = self.close_agent_store_owner(agent_id, flush);
+        let db_closed = self.close_agent_db_owner(agent_id, flush);
+        self.pool.close_store_blocking(&blob_path);
+        Ok(store_closed || db_closed)
     }
 
     pub fn open_agent_store_owner(

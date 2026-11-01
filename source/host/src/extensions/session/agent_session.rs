@@ -33,7 +33,6 @@ use super::session_conversation_state::{
     ConversationOutlineItem, PendingConversationTurnRegistry, TranscriptThread,
 };
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
-use super::conversation_blobs_path::conversation_blobs_path;
 use super::production::{PreparedAgentBlobStore, ProductionSessionWorkers};
 use super::session_materialization::MaterializedAgentRecord;
 use super::session_paths::ACTIVE_AGENT_FILENAME;
@@ -490,10 +489,7 @@ impl SandAgentSessionStore {
         self.production.begin_agent_delete(agent_id)?;
         let result = self.production.with_agent_filesystem_mutation(agent_id, || {
             let db_path = self.production.session_db_path(agent_id)?;
-            let blob_path = conversation_blobs_path(&db_path);
-            let _ = self.production.close_agent_store_owner(agent_id, false);
-            let _ = self.production.close_agent_db_owner(agent_id, false);
-            futures::executor::block_on(self.production.worker_pool().close_store(&blob_path));
+            self.production.retire_agent_owners_locked(agent_id, false)?;
             delete_sand_agent_db_write_generation(&db_path);
             match fs::remove_dir_all(self.get_agent_dir(agent_id)) {
                 Ok(()) => {}
