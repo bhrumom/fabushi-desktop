@@ -2593,6 +2593,49 @@ impl ProductionSessionWorkers {
         })
     }
 
+    pub fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session settlement requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session settlement requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.finish_cron_session_run_with_fences(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                outcome,
+                finished_at_ms,
+                detail,
+                active_controller,
+                pending_outgoing_media,
+                unsettled_subagent,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
     pub fn publish_cron_session_run_fences(
         &self,
         agent_id: &str,

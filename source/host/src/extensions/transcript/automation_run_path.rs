@@ -254,6 +254,30 @@ pub trait AutomationRunStore {
     ) -> Result<(), String> {
         Ok(())
     }
+
+    /// Settle a terminal row with a complete fence snapshot. The production
+    /// adapter overrides this with one SandAgentDb transaction; compatibility
+    /// stores retain the no-op behavior.
+    fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        self.publish_cron_session_fences(agent_id, automation_id, run_id, fences)?;
+        self.finish_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+        )
+    }
 }
 
 impl AutomationRunStore for FileAutomationStore {
@@ -712,12 +736,15 @@ fn finish_cron_session_run(
         return Ok(());
     };
     if let Some(fences) = fences {
-        store.publish_cron_session_fences(
+        return store.finish_cron_session_run_with_fences(
             agent_id,
             automation_id,
             run_id,
+            outcome,
+            finished_at_ms,
+            detail,
             fences,
-        )?;
+        );
     }
     store.finish_cron_session_run(
         agent_id,

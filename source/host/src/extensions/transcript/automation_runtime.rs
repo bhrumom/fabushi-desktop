@@ -453,6 +453,37 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
             Err("cron session fence publication was stale or not committed".into())
         }
     }
+
+    fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron session settlement agent identity mismatch".into());
+        }
+        let changed = self.session.finish_cron_session_run_with_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+            fences.active_controller,
+            fences.pending_outgoing_media,
+            fences.unsettled_subagent,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session fenced settlement was stale or not committed".into())
+        }
+    }
 }
 
 impl AutomationRuntime {

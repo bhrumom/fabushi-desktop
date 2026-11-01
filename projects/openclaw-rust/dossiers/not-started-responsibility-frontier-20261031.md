@@ -225,6 +225,20 @@ same error; no automation work is invoked without a durable owner projection.
 This is a narrow D01 producer failure-ordering correction. It does not add a
 reaper caller, archive/delete operation, or verification/acceptance evidence.
 
+### 2026-11-01 cron fenced terminal settlement atomicity
+
+The D04 owner path previously published the typed controller/media/subagent
+snapshot and changed the row to `terminal` in separate SQLite transactions.
+The existing `SandAgentDb` owner now exposes a combined terminal-settlement
+operation; the production session adapter uses it whenever a complete fence
+snapshot is available. Compatibility stores retain their no-op fallback, while
+an owner transaction failure remains non-authoritative and fail-closed.
+
+This removes the durable intermediate state in which a row could be observed
+with `fence_state_known=true` but still `running`. It does not archive
+transcripts, delete rows, add a scheduler caller, or promote verification or
+acceptance.
+
 ## 2026-10-31 plugin-owner boundary recheck
 
 The read-only source search was repeated against the current Fabushi checkout.

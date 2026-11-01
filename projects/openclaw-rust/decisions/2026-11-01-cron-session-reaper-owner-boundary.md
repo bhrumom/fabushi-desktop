@@ -43,6 +43,9 @@ it must leave the row unknown. This does not authorize cleanup.
 Known provider-failure terminal outcomes use the same typed snapshot carrier;
 failure classification remains an error outcome and does not become success or
 cleanup authorization merely because its preservation fences are known.
+When the snapshot is complete, the existing `SandAgentDb` owner commits the
+fences and terminal row transition in one transaction; a split or failed
+settlement remains non-authoritative for cleanup.
 `AutomationRuntime` may expose the corresponding throttled, read-only
 candidate request as the D03 bridge; maintenance/scheduler ownership remains
 outside this slice.

@@ -359,6 +359,31 @@ impl SandAgentSessionStore {
         )
     }
 
+    pub fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        self.production.finish_cron_session_run_with_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+            active_controller,
+            pending_outgoing_media,
+            unsettled_subagent,
+        )
+    }
+
     pub fn publish_cron_session_run_fences(
         &self,
         agent_id: &str,

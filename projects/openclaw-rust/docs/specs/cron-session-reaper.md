@@ -113,6 +113,13 @@ failure can retain its row-specific fence snapshot; an unknown or mismatched
 read still keeps the row unknown. Snapshot publication is not transcript
 archival or deletion authorization.
 
+When a complete typed snapshot is available, fence publication and terminal
+state settlement must commit in one existing `SandAgentDb` transaction. This
+prevents a future projection from observing a durable `fence_state_known` row
+whose terminal outcome has not yet been committed. If the combined owner
+transaction cannot commit, the run remains non-cleanup-authoritative and the
+failure is explicit.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all
