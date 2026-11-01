@@ -336,6 +336,8 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
         .expect("provider-review continuation function boundary exists");
     assert!(continuation.contains("context.authenticated"));
     assert!(continuation.contains("canonical main sessions"));
+    assert!(continuation.contains("expected_session_id != route.agent_id.as_str()"));
+    assert!(continuation.contains("SESSION_LIFECYCLE_CHANGED"));
     assert!(continuation.contains("issue_provider_review_acknowledgment"));
     assert!(continuation.contains("claim_provider_review_acknowledgment"));
     assert!(continuation.contains("capture_session_work_admission"));

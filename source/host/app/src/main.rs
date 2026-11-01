@@ -4346,6 +4346,11 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest(
                 "sessions.providerReview.continue requires sessionId".into(),
             ))?;
+        if expected_session_id != route.agent_id.as_str() {
+            return Err(GatewayCommandError::BadRequest(
+                "SESSION_LIFECYCLE_CHANGED".into(),
+            ));
+        }
         let review_id = args
             .get("reviewId")
             .and_then(serde_json::Value::as_str)
