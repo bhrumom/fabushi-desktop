@@ -48,6 +48,7 @@ pub fn should_compact(
 ) -> bool {
     settings.enabled
         && context_window > 0
+        && settings.reserve_tokens > 0
         && context_tokens > context_window.saturating_sub(settings.reserve_tokens)
 }
 
@@ -195,7 +196,7 @@ pub fn prepare_compaction_plan(
             .find(|entry| entry.get("kind").and_then(Value::as_str) == Some("compaction"))
             .and_then(|entry| entry.get("details").cloned()),
         tokens_before,
-        summary_token_budget: settings.reserve_tokens.saturating_mul(4) / 5,
+        summary_token_budget: (settings.reserve_tokens.saturating_mul(4) / 5).max(1),
         latest_user_request,
         is_split_turn,
     })
@@ -966,6 +967,29 @@ mod tests {
     fn invalid_window_does_not_trigger_compaction() {
         let settings = CompactionSettings { enabled: true, reserve_tokens: 10, keep_recent_tokens: 1 };
         assert!(!should_compact(100, 0, settings));
+    }
+
+    #[test]
+    fn zero_reserve_does_not_trigger_compaction() {
+        let settings = CompactionSettings { enabled: true, reserve_tokens: 0, keep_recent_tokens: 1 };
+        assert!(!should_compact(101, 100, settings));
+    }
+
+    #[test]
+    fn positive_reserve_always_has_a_nonzero_summary_budget() {
+        let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            json!({"id":"new", "kind":"message", "role":"user", "content":"new"}),
+        ];
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            None,
+        )
+        .expect("positive reserve should produce a plan");
+        assert_eq!(plan.summary_token_budget, 1);
     }
 
     #[test]
