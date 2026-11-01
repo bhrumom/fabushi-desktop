@@ -213,6 +213,18 @@ This closes only the failure-outcome producer-to-fence publication edge. It
 does not make failure a successful run, add cleanup authorization, or change
 the pending verification/acceptance/ledger disposition.
 
+### 2026-11-01 cron registration-rejection settlement correction
+
+The producer ordering recheck found that `FileAutomationStore::begin_run`
+precedes the owner-backed `begin_cron_session_run` call. A rejected owner
+registration therefore could return before execution while leaving the
+compatibility history row in `running`. The path now settles that already-open
+history row as `error` with the original registration detail and returns the
+same error; no automation work is invoked without a durable owner projection.
+
+This is a narrow D01 producer failure-ordering correction. It does not add a
+reaper caller, archive/delete operation, or verification/acceptance evidence.
+
 ## 2026-10-31 plugin-owner boundary recheck
 
 The read-only source search was repeated against the current Fabushi checkout.

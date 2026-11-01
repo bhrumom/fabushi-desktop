@@ -68,6 +68,12 @@ the per-run row's `updated_at_ms`. The scheduled/fired timestamp remains an
 automation-history fact and must not be reused as the retention anchor for a
 run that completed later.
 
+If the owner rejects registration after the compatibility automation history
+run has been opened, the producer must settle that history run as `error` and
+return the original registration error before invoking the automation. A
+failed owner admission must not leave a permanently `running` history record
+or execute work without a durable session projection.
+
 The next approved slice is the pure D02 policy seam: retention parsing and a
 per-owner five-minute throttle primitive. It has no scheduler caller and does
 not decide whether a row is deletable; D03 trigger wiring and D04--D05 cleanup
