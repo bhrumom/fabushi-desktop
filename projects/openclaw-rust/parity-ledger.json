@@ -15529,7 +15529,9 @@
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },
     {
-      "adr_refs": [],
+      "adr_refs": [
+        "projects/openclaw-rust/decisions/2026-11-01-session-turn-correlation-wiring.md"
+      ],
       "behavior": "Conversation turn correlation and pending turn registry, tracking turn settlement, outbound message identity, and cross-process turn correlation.",
       "blocker_ids": [
         "BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001"
@@ -15541,8 +15543,11 @@
         "mahayana_host_runtime::extensions::session"
       ],
       "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -15563,10 +15568,10 @@
       ],
       "id": "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
       "integration": {
-        "consumer": "No shipping inbound reply/transcript consumer is wired; the registry is exercised only by source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "consumer": "Admitted direct 1:1 inbound persistence in source/host/src/extensions/transcript/agent_to_agent_messaging.rs claims and completes the existing process-local registry around recipient transcript append; broader channel/cross-process consumers remain pending",
         "entrypoint": "source/host/src/extensions/session/session_conversation_state.rs",
         "owner": "source/host/src/extensions/session/session_conversation_state.rs",
-        "producer": "No shipping session-turn producer is wired; ProductionSessionWorkers retains the process-lifetime registry only"
+        "producer": "ProductionAgentToAgentMessaging::send_to_agent_with_session_and_reply registers admitted direct 1:1 turns, binds the emitted outbound transcript ID, and emits replyContext through the Coordinator wake route; broader session/channel producers remain pending"
       },
       "invariants": [
         "Pending turns must be settled exactly once; duplicate settlements are ignored"
