@@ -80,6 +80,36 @@ also carries the same workspace roots plus the whitespace candidate. This
 separates valid workspace links from registry/archive resolution work without
 turning either category into approval.
 
+For the compaction behavior roots, the first workspace dependency chain is
+explicit in exact manifest blobs:
+
+- `packages/agent-core/package.json`
+  (`d6a0a193eaa5ca83cf26eb1b3cc85a425c23d42a`) links workspace `ai`,
+  `llm-core`, and `normalization-core`, plus registry `typebox@1.4.3`.
+- `packages/ai/package.json`
+  (`2ee99c5de54591d5dcad3b7b29cde9fc07549718`) declares the registry AI,
+  telemetry, `openai@7.43.0`, `typebox`, and Zod family, with optional tracing
+  peers.
+- `packages/llm-core/package.json`
+  (`d7b6312ebf2eaf900b6d3216048afe439d58247d`) links
+  `normalization-core` and `typebox`.
+- `packages/normalization-core/package.json`
+  (`13606635cecef520cc2a8ebc4e10d7769559f59f`) declares
+  `libphonenumber-js@1.13.15` and `typebox@1.4.3`.
+
+The root manifest and exact lockfile blobs are respectively
+`6989c0618742d3c2b93cc336cbe1d9c3c4f0a657` and
+`83b4975eb96942ec007a2eb9847ccfe98d380bda`. This establishes a bounded
+workspace→registry frontier for the compaction closure; it does not yet prove
+archive bytes, peer resolution, generated artifacts, or license/SBOM closure.
+
+The bounded lock observation has a matching registry key/integrity for
+`typebox@1.4.3`, `@anthropic-ai/sdk@0.137.0`, `openai@7.43.0`, and
+`zod@4.6.7`; it also records alternate peer-compatible `openai` and `zod`
+versions in the same lock. Manifest-only dependencies such as
+`libphonenumber-js`, `partial-json`, and `proxy-from-env` still require the
+recursive importer/package join before they can be counted as closed.
+
 ## Disposition
 
 This probe is stronger exact-subject discovery evidence for `CC-01`, but it
