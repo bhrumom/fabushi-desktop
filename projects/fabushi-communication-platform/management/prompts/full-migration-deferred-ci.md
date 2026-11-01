@@ -42,11 +42,37 @@
 
 逐文件完整理解责任，不用文件数量、grep、目录名或生成摘要代替语义阅读。来源 blob 与依赖不变时复用已有审读；只补读变更和受影响调用链。最终范围不缩水，但执行不做无意义重复。
 
+## 3A. Stage A 默认加速算法（强制）
+
+不要把 source entry 的“最小追踪单位”误用成“最小执行/提交单位”。除非责任确实独立、存在阻塞/风险/并发边界，否则禁止继续采用“一文件一轮、一文件两次提交、一文件一份最终报告”的流水线。
+
+对当前唯一 ledger 的剩余 queue，按以下顺序执行：
+
+1. **先做 exact-blob reuse triage，再决定是否全文重读。** 以 `repository + fixed U + path + blob SHA` 查现有 inventory/dossiers/ledger/evidence，并核对直接依赖 identity、调用合同和行为合同。分类为：
+   - `reuse-ready`：exact blob、关键依赖和合同未变化；复用既有完整阅读，只重新核对 current Revision、current owner、production implementation、shipping wiring、tests/oracles。
+   - `delta-read`：source blob 可复用，但依赖、规范字段、owner 或调用链有变化；只补读变化及受影响范围。
+   - `full-read`：没有可信完整阅读、blob/关键依赖变化或旧结论不足；完整重新语义阅读。
+   历史“曾 inventory/曾打开”不能自动算 closure；反过来，已证实的同一 exact blob 也不得无意义从头重读。分类写回现有 ledger/evidence，不建立第二套进度数据库。
+
+2. **从 fixed-U 有序 queue 取候选窗口，再按 owner/合同成批。** repository/process/docs/schema/resource/重复模板等低耦合来源，默认组合约 20–100 个相关 entries；核心产品、协议、状态机、mixed UI、服务代码按完整调用链和 state/lifecycle owner 定界，不按数字硬凑。允许多个 source entries 汇聚一个 responsibility，也允许 mixed source 拆给多个 owner。
+
+3. **reader 与 integrator 分离。** 有 worker 时，reader 只处理互不重叠的 source range/owner slice，交付 source identities、reuse 分类、responsibilities、dependencies、behavior/state/failure/security contracts、owner candidates、tests/oracles、blockers；共享 schema、公共 composition、唯一 ledger、P0、source-closure、共享 evidence 只能由单一 integrator 修改。无 worker 时也先收集整个 batch 的分析结果，再集中实现和闭合，不退回一文件一事务。
+
+4. **按 owner 一次实现并接线。** 对同一 canonical owner 的相关来源统一升级 production code/interface/data/UI/service wiring，并同步编写一组覆盖共享状态机和差异轴的 tests/oracles。不得为了 source 文件数量制造重复模块、重复 owner 或重复测试 harness。
+
+5. **按 batch 保存。** coherent batch 默认一次 spec/production/test authoring commit，再一次 ledger/P0/source-closure/evidence closure commit。每次写入前立即重读 live ref，使用 `force=false + expected_sha` CAS；并发前移就重新读并融合，不能覆盖。唯一 ledger 仍逐 entry 保存 identity/status/traceability，batch evidence 可汇总共同合同。
+
+6. **缓存不变 authority。** 首次建立当前 revision 上下文后记录 root/nested instructions、FMEP/FBCP/TDRP/SOT、architecture/owner/quality contracts 的 blob SHA；只有 SHA 变化、目录命中新 nested instructions 或当前 owner 受影响时才重读对应 authority。live HEAD、受影响 source blob、ledger rows 和目标 owner 在每次写入前仍必须实时读取。
+
+7. **用正确口径报告进度。** 每批报告 `reuse-ready / delta-read / full-read` 数量、closed source entries、implemented responsibilities、blockers、unknown/unread/omitted delta。当前 `unread` 表示本 revision 尚未正式闭合，不等同“历史上从未阅读”；不得用 raw source-entry closure 百分比冒充总体产品实现百分比。
+
+加速不能降低完整性：exact-blob reuse 必须有可信旧 dossier/identity；batching 不能跳过 direct consumers、state/lifecycle、failure/recovery、security/privacy、target owner、shipping wiring 和 tests/oracles。纯 repository/process/docs/legal/resource provenance 可准确记录无 production delta；任何承载产品职责的 source 必须实际进入 canonical Fabushi production owner 和 shipping chain。
+
 ## 4. 按 owner 成批并行实现
 
 先统一身份、会话、消息/entry、资源、权限、命令/事件、错误、取消、版本和存储合同，再按依赖图推进。
 
-以现有 Fabushi owner 为批次，而不是一个源文件一个新模块。优先扩展 Conversation/Transcript/Composer、Participant/Profile、Shared Room、Search、Resource、Permissions、Coordinator/Host/Runner、Plugins/MCP、Computer、Automations、Tasks、Settings、platform/network/storage。
+以现有 Fabushi owner 为批次，而不是一个源文件一个新模块；source entry 只作为逐项覆盖/追踪单位，不作为默认提交或报告单位。优先扩展 Conversation/Transcript/Composer、Participant/Profile、Shared Room、Search、Resource、Permissions、Coordinator/Host/Runner、Plugins/MCP、Computer、Automations、Tasks、Settings、platform/network/storage。
 
 无合适 owner 时才记录 rejected-owner analysis 并以最小 ADR 增加 source-neutral owner。不得复制 TelegramRuntime、TelegramProvider、CommunicationCore 或第二套身份/消息/搜索/设置真相。
 

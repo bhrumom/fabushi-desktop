@@ -2,8 +2,8 @@
 
 Status: active / normative execution addendum  
 Spec ID: FMEP-001  
-Revision: 1  
-Updated: 2026-10-31  
+Revision: 2  
+Updated: 2026-11-01  
 Applies to: FBCP-001 / TDRP-001 full migration  
 Product requirements: FBCP-001 Revision 8 / TDRP-001 Revision 10 and later applicable revisions  
 Implementation/acceptance status: not asserted by this document
@@ -47,6 +47,22 @@ Implementation/acceptance status: not asserted by this document
 **FMEP-FAST-06 — 文档最小充分。** 单一清单、单一责任账本、单一 RTM，差异记录与批次摘要代替重复复制全文。新增能力必须有足够行为/边界/去向说明，但不能陷入只补 dossier 而不改生产代码的循环。
 
 **FMEP-FAST-07 — 阻塞分流。** 记录访问/账号/签名/服务阻塞及解除条件，立刻推进无依赖任务；需要用户支持时先查 Gmail 已发通知与回复，再向 1315518325@qq.com 发一封必要通知，未解决不重复发送。不得为了绕过阻塞删功能或宣称闭合。
+
+**FMEP-FAST-08 — exact-blob 复用分流优先于全文重读。** 对剩余 source queue，读取正文前先以 `repository + fixed commit + path + exact blob SHA` 检查现有 inventory/dossier/ledger/evidence，并核对直接依赖 identity 与行为合同是否变化。每项必须归入三类之一：`reuse-ready`（exact blob、相关依赖与合同均未变化，复用已有完整语义阅读，只做当前 Revision/owner/implementation/wiring 重新绑定）；`delta-read`（source blob 可复用但当前规范字段、依赖、owner 或调用链有变化，只补读变化和受影响范围）；`full-read`（没有可信完整阅读、blob/关键依赖变化或旧结论不足，完整重新语义阅读）。不得把历史“曾打开/曾 inventory”误当成当前 closure，也不得把可复用的 exact blob 无意义从头重读。分流结果写入现有 ledger/evidence，不建立第二套永久进度真相。
+
+**FMEP-FAST-09 — source entry 是最小追踪单位，不是最小执行/提交单位。** 每个 source entry 仍须有精确 identity、责任、处置与最终状态；但 Stage-A 默认执行单位是高内聚 owner-oriented batch。禁止因为账本逐 entry 追踪，就机械采用“一 source entry -> 一完整执行轮 -> 一 spec commit -> 一 closure commit -> 一用户报告”。只有责任真正独立、存在阻塞边界、并发冲突或风险要求隔离时才单 entry 成批。一个责任可以覆盖多个 source entries，一个 mixed source 也可拆给多个 owner。
+
+**FMEP-FAST-10 — 批次按语义和 owner 定界，数量只是上限提示。** repository/process/docs/schema/resource/重复模板等低耦合来源，优先从 fixed-U 有序队列取连续候选窗口并按共同 owner/合同组成约 20–100 entries 的批次；若共同语义更强可更大，若风险/依赖边界更窄则更小。核心产品、协议、状态机、mixed UI 和跨服务代码不按数量硬凑，必须以完整调用链、共享状态生命周期和可独立接线的 owner slice 定界。不得为了批量化跳过 source identity、直接 consumers、failure/recovery、security/privacy 或 shipping wiring。
+
+**FMEP-FAST-11 — reader lane 与 integrator lane 分离。** 有 worker 时，reader/worker 可并行处理互不重叠的 source ranges 或 owner slices，输出 exact source identities、复用分类、responsibilities、依赖、行为/状态/失败合同、owner candidates、tests/oracles 和 blockers；除明确分配的独占 owner path 外，不得同时修改共享 schema、公共 composition、唯一 ledger、P0、source-closure 或共享 evidence authority。单一 integrator 负责 owner-level consolidation、共享生产接线、公共文件和唯一账本写入。无 worker 时也按相同两阶段思路串行工作：先收集一个 batch 的分析/复用结果，再集中实现和闭合，不退化成一文件一事务。
+
+**FMEP-FAST-12 — authority context 按 blob SHA 缓存。** 首次建立当前 revision 的 root/nested instructions、FMEP/FBCP/TDRP/SOT、architecture/owner maps、quality/evidence contracts 后，记录其 exact blob SHA。后续批次只在 authority blob 变化、修改目录命中新的 nested instructions、或当前 owner/contract 受影响时重读对应文档；不得每轮递归重读全部历史 authority。live ref、受影响 blob、当前 ledger rows 和目标 owner 仍须在写入前实时回读。
+
+**FMEP-FAST-13 — batch-level spec-first 与 batch-level closure。** 一个 coherent batch 默认先形成一次 owner-level spec/production/test authoring commit，再形成一次唯一 ledger/P0/source-closure/evidence closure commit；两次保存都在立即写入前读取 live ref，并使用非强制 `expected_sha` CAS。每个 source entry 仍在唯一 ledger 中逐项记录 identity/status/test traceability；batch evidence 汇总共享合同并保留逐 entry 清单。发生并发前移时重新读取并精确融合整个受影响 batch，禁止 force 覆盖。若某批只包含无需生产代码的 repository/process provenance，也仍按同一批次原则闭合，不为每个文件制造独立提交。
+
+**FMEP-FAST-14 — 进度报告区分“历史已读”和“当前闭合”。** `unknown/unread` 是当前 fixed-U/current-revision closure 状态，不能直接解释为“从未阅读过”。阶段 A 报告至少区分：本批 `reuse-ready` 数、`delta-read` 数、`full-read` 数、source entries closed、responsibilities implemented、blockers，以及唯一 ledger 的 unknown/unread/omitted delta。不得仅用 source-entry 百分比代表总体产品实现百分比。
+
+**FMEP-FAST-15 — 加速不得变成浅读或只做账本。** exact-blob 复用只复用已证实且仍有效的语义结论；owner batching 的目标是减少事务开销和重复修改，不是跳过产品实现。只要 source 承载 production responsibility，批次必须实际升级对应 Fabushi owner、接口/数据/UI/服务和 shipping chain，并同步编写测试/oracle；只有纯 repository/process/docs/legal/resource provenance 才可在没有 shipping production delta 的情况下以准确 disposition 闭合。
 
 ## 5. 云端保存与零 CI 不能互相冲突
 
@@ -113,7 +129,7 @@ UI 同时验功能、截图、布局、焦点/键盘、IME、RTL、中文/英文
 
 required tests 未运行、blocked、flaky、缺来源/服务/签名、缺独立评审均不算通过。阶段 A 可以持续前进，但不能发布；阶段 B 失败也不能发布。最终 `source completeness + production implementation + full applicable quality evidence + independent ACCEPT` 才能宣称完整迁移完成。
 
-每轮仅报告 exact base/working head、固定 U、已完成责任及接线路径、待实现/阻塞、保存位置和下一批。阶段 A 不要求 CI 链接、不重复解释没有 CI；统一标 not-run。不编造进度百分比、测试结果、并行 worker 或后台持续运行。
+每轮按 batch 报告 exact base/working head、固定 U、reuse-ready/delta-read/full-read 分类数量、已闭合 source entries、已完成责任及接线路径、待实现/阻塞、唯一 ledger 的 unknown/unread/omitted delta、保存位置和下一批。阶段 A 不要求 CI 链接、不重复解释没有 CI；统一标 not-run。source-entry closure 百分比不得冒充总体产品实现百分比；不编造测试结果、并行 worker 或后台持续运行。
 
 ## 12. 配套提示词与官方触发说明
 

@@ -5,7 +5,7 @@ Project ID: TDRP-001
 Revision: 10
 Date: 2026-10-31
 Parent: FBCP-001 Revision 8
-Execution addendum: FMEP-001 Revision 1 (2026-10-31)
+Execution addendum: FMEP-001 Revision 2 (2026-11-01)
 
 ## Role
 
@@ -16,7 +16,7 @@ Execution addendum: FMEP-001 Revision 1 (2026-10-31)
 ## Must read
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 1；执行时机、批次协作、保存与集中验收的权威补充
+- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 2；执行时机、exact-blob 复用分流、owner-oriented batching、保存与集中验收的权威补充
 - `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md` Revision 8 with execution addendum
 - `docs/specs/fabushi-bot-communication-platform.md` Revision 8
 - `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 10
@@ -29,6 +29,8 @@ Execution addendum: FMEP-001 Revision 1 (2026-10-31)
 ## Execution timing
 
 阶段 A 全量实现与融合期间不进行任何迁移 CI，也不跑本机验证。只做源码理解、责任映射、生产实现/接线、测试/oracle/fixture/workflow 编写、人工审查和安全保存。按目标 owner 成批工作、共享接口先定型、可分离路径并行、公共文件由唯一集成人合入，避免一文件一轮 CI 或反复重读同一内容。
+
+阶段 A 默认采用 FMEP-001 Revision 2 的吞吐算法：在全文重读前先按 exact blob + 关键依赖 + 合同做 `reuse-ready / delta-read / full-read` 分流；source entry 保持最小覆盖追踪单位，但 owner-oriented batch 才是默认实现、提交、closure 和报告单位。低耦合 repository/process/docs/schema/resource 来源从 fixed-U 有序 queue 形成相关候选窗口后成批处理；核心产品/协议/状态机/mixed UI 按完整调用链和唯一 state/lifecycle owner 定界。共享 ledger/P0/source-closure/evidence 只由单一 integrator 写入。
 
 全范围实现与接线完成后冻结 H，阶段 B 才统一执行 GitHub Actions 验证/修复；最终独立接受属于阶段 C。“统一”不限制失败修复次数，禁止无理由重复执行同一失败手段。任何阶段都不能将 `not-run` 伪装成 pass。
 
@@ -48,6 +50,8 @@ FMEP-001 优先解释旧任务/P0/ledger 对测试时机的表述：`implemented
 - build / packaging / updater / tests / tooling / docs / licenses。
 
 不因上游浮动 HEAD 自动重开已经固定的迁移范围。阶段 B 再由 GitHub Actions 对冻结 U 的完整性与身份作正式验证。只有 lock/inventory/ledger/dossiers 同一 exact U、一致且 unknown=0、unread=0、omitted=0 并满足正式门槛，才能将 baseline_ready 设 true。旧 verified 状态不得继承。
+
+`unknown/unread` 是当前 fixed-U/current-revision 的正式 closure 状态，不应解释为“历史从未读过”。历史 dossier 只有在 exact source blob、关键依赖、行为合同仍一致时才可复用；复用后仍必须重新绑定 current owner、implementation/wiring 和 authored tests，才可推进当前 ledger 状态。该复用核验写入现有账本/证据，不创建新的并行进度真相。
 
 ## Mandatory chain
 
