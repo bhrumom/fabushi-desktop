@@ -1360,7 +1360,7 @@ impl ProductionTranscriptRuntime {
         is_fork: bool,
     ) -> Result<Value, String> {
         let entries = sessions.read_agent_transcript_entries(agent_id)?;
-        let entry = self
+        let mut entry = self
             .lock_state()
             .pipeline
             .prepare_generated_send_message_entry(
@@ -1375,6 +1375,7 @@ impl ProductionTranscriptRuntime {
             .get("id")
             .and_then(Value::as_str)
             .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+        entry["sessionKey"] = Value::String(session_key.trim().to_string());
         sessions.append_agent_transcript_entries_if_session_admitted(
             agent_id,
             session_key,

@@ -178,6 +178,24 @@ fn generated_send_message_uses_shipping_session_and_frozen_pipeline_threading() 
     assert_eq!(attachment_one, "t0s2");
     assert_eq!(attachment_two, "t0s3");
 
+    let generated_entries = sessions
+        .read_agent_transcript_entries(&agent_id)
+        .expect("generated transcript");
+    assert!(generated_entries
+        .iter()
+        .filter(|entry| {
+            entry
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|id| id.starts_with("t0s"))
+        })
+        .all(|entry| {
+            entry
+                .get("sessionKey")
+                .and_then(serde_json::Value::as_str)
+                == Some(session_key.as_str())
+        }));
+
     let entries = sessions
         .read_agent_transcript_entries(&agent_id)
         .expect("read persisted transcript");

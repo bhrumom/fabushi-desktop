@@ -237,8 +237,9 @@ settlement must reject a rebound or mismatched session before clearing the
 durable media fence.
 
 The same captured `session_key` must be used for the ordinary generated
-`SendMessage` settlement path when no media fence exists; it must not fall back
-to the agent-only transcript append merely because no media receipt is needed.
+`SendMessage` settlement path when no media fence exists, and the generated
+entry must retain that key as provenance; it must not fall back to the
+agent-only transcript append merely because no media receipt is needed.
 
 Turn-local permission requests now carry the existing Runner
 `worker_session_key` through the permission scope and event owner. Their

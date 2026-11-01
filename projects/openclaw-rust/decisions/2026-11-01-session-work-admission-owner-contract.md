@@ -151,7 +151,8 @@ session key through `ProductionSendMessageSink`, `ProductionTranscriptRuntime`,
 `ProductionSessionWorkers`, and `SandAgentDb`; the final receipt/fence
 transaction rejects a matching-generation request from a rebound session.
 The no-media generated `SendMessage` branch now uses the same session-admitted
-append, so media presence no longer determines whether the write is fenced.
+append and persists the captured session key on the generated entry, so media
+presence no longer determines whether the write is fenced or loses provenance.
 
 The turn-local permission path now carries `worker_session_key` through its
 permission scope and event record. Created and settled permission transcript
