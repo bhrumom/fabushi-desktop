@@ -2450,3 +2450,22 @@ Exactly one independent source entry closes: `unknown 16154 -> 16153`, `unread 1
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation, runtime evidence campaign or acceptance was performed.
 
+
+
+## Round 125 / source-entry closure — OpenAI perform-task host adapter (2026-11-01)
+
+From desktop checkpoint parent `208dba1916b0ff233e7cadce2d033ce4a9472101`, the live migration branch was reread unchanged before closure publication. Desktop main remains `9993ca8e107f7e019a8201e5ab74fa54e82159f2`; platform-core remains exact `e92b51e23b39dae5719f033fa1f7a20d6579dc8c`. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; recursive source tree remains complete (`truncated=false`, 7,194 entries). Before closure the unique ledger was `source_entries_total=16202 / unknown=16153 / unread=16126 / omitted=0 / responsibilities_total=135 / unmapped_responsibilities=0`.
+
+The exact `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a` source was read completely: 229 bytes / 4 logical lines, fixed-U recursive-tree index 69 (1-based including tree entries). It contains only `interface.display_name = "Perform AI Task"`, `interface.short_description = "Implement or resume one Telegram AI task"`, and a `default_prompt` that delegates to `$perform-task` to implement, adaptively review/test, and publish one named ai-tdesktop task.
+
+Direct fixed-U consumers/boundaries were re-read in `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`, Claude `perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e`, Grok `perform-task.md@313e94a3202c39aa10944b832b45ee80a762f509`, `continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5c`, `code-health/SKILL.md@101e69bc18d8f37c73d3b077f04d266bd939360f`, and root `AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32`. They confirm that host adapters invoke exactly one canonical performer while queue selection, split routing, discovery/consolidation, task/review/evidence state and final publication remain owned elsewhere.
+
+Existing-owner-first extends `TDRP-R9-REPOSITORY-PERFORM-TASK-AUTHORITY-001` under Fabushi repository development process authority + repository quality/test-evidence governance. No new responsibility, owner, ADR, shipping Product Tasks/Automations runtime, Agent/Coordinator/Host/Runner owner or platform-core production delta is introduced.
+
+Spec-first CAS commit `208dba1916b0ff233e7cadce2d033ce4a9472101` extends root `AGENTS.md`, `projects/fabushi-communication-platform/quality/TEST_STRATEGY.md`, `quality/evidence-contract.md`, and adds `projects/telegram-desktop-rust/dossiers/perform-task-openai-host-adapter-complete-read.md`.
+
+Authored but not run: `CONTRACT-TDRP-PERFORM-TASK-OPENAI-HOST-METADATA-001` and `INT-TDRP-PERFORM-TASK-OPENAI-HOST-INVOCATION-001`.
+
+Exactly one independent source entry closes: `unknown 16153 -> 16152`, `unread 16126 -> 16125`, `omitted=0`; responsibilities remain 135 and unmapped remains 0. The next fixed-U independent blob in tree order is `.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation, runtime evidence campaign or acceptance was performed.

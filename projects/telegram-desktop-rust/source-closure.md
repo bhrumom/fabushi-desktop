@@ -2632,3 +2632,16 @@ Exactly one independent source entry closes: `unknown 16154 -> 16153`, `unread 1
 
 Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, dependency resolution, unit/contract/integration/E2E, visual/a11y, package, deployment, installation, runtime evidence campaign or acceptance was performed.
 
+
+
+## Round 125 / source-entry closure — OpenAI perform-task host adapter (2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a` was completely read at recursive-tree index 69 (229 bytes / 4 logical lines). The source is declarative OpenAI discovery/invocation metadata: display name, one-task short description, and a default prompt delegating to `$perform-task` for one named ai-tdesktop task.
+
+Fixed-U shared skill, Claude/Grok wrappers, continue scheduler, code-health consumer and root invocation guidance confirm that this adapter owns no canonical task identity, Start/Retry/Resume state, source-lineage, phase state, review/evidence state, queue routing, split/consolidation, validation, acceptance or final publication. Existing-owner-first therefore attaches it to existing `TDRP-R9-REPOSITORY-PERFORM-TASK-AUTHORITY-001`; no new responsibility, ADR, shipping runtime or platform-core delta.
+
+Spec-first desktop commit `208dba1916b0ff233e7cadce2d033ce4a9472101` adds explicit OpenAI host-adapter governance/qualification/evidence and `projects/telegram-desktop-rust/dossiers/perform-task-openai-host-adapter-complete-read.md`. Authored but not run: `CONTRACT-TDRP-PERFORM-TASK-OPENAI-HOST-METADATA-001` and `INT-TDRP-PERFORM-TASK-OPENAI-HOST-INVOCATION-001`.
+
+Coverage after closure is `source_entries_total=16202 / unknown=16152 / unread=16125 / omitted=0 / responsibilities_total=135 / unmapped_responsibilities=0`. Next independent fixed-U blob is `.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
+
+No Actions/check/status/workflow query or trigger and no executable validation was performed.
