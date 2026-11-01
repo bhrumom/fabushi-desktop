@@ -26,13 +26,15 @@ Platform sequence:
 - spec-first authorization: a3a427f06fd4462a9d533a743a33564acadca0c6
 - carrier implementation: dc2541aa769fb8fd3f9699683ba802a6a7afddbe
 - dependency provenance: cbe7e60632397e705725db7b30c41ce4bef80eb7
-- final source-compliance spec: 2cc022c6602e69204bcff53bc985c01bfa993983
+- initial source-compliance spec: 2cc022c6602e69204bcff53bc985c01bfa993983
+- target-lock disambiguation correction: 3b9368d2f3856d320557945226d8c8b039e2aed8
+- final source-compliance spec: 5dd792399fe3c17d1256c80e0eb9fb2c1c2aa94f
 
 Key blobs:
 - direct_https.rs 0c7444d23fdee0aa135f12fd55a50ec3fe42c690
 - telegram-network lib.rs bace7702a74f1c3b848ac12add69d8cd74748342
 - Cargo.toml 51bd7e2a4ac50b76c3bad11e9aef7ac633f6cfef
-- Cargo.lock efa2e4e217aa17bbb72de8494c5b2740d14e6a94
+- Cargo.lock d0d7968508c43b433f27cf0e8f2fc7aea33a4953
 - THIRD_PARTY_NOTICES.md 2e84b5a0ad5d80be35939ee488e4c56b07f9125c
 - lifecycle spec 6ad164db526366fae4d7a6084f1c013b39f8cf18
 
@@ -40,7 +42,7 @@ The carrier opens direct TcpStream origin connections to port 443, validates Web
 
 DirectHttpsRace preserves the 800 ms spacing and distinct settlement policies. DomainResolver-style acceptance fences future starts and releases outstanding handles without explicit abort. SpecialConfig-style acceptance only finalizes that request, leaving the remaining schedule live while the owner remains alive. Explicit cancel and owner Drop use NetworkAttemptControl cancellation.
 
-The exact rustls 0.23.41 / webpki-roots 0.26.11 dependency closure was copied as source metadata from the repository's already-pinned native/global-dharma/Cargo.lock. No dependency resolver or lock generator was executed.
+The exact rustls 0.23.41 / webpki-roots 0.26.11 dependency closure was copied as source metadata from the repository's already-pinned native/global-dharma/Cargo.lock. Because the target lock already contained getrandom 0.2.17 and 0.3.4, ring 0.17.14's source-lock unqualified getrandom dependency was source-corrected to explicit getrandom 0.2.17 at 3b9368d2f3856d320557945226d8c8b039e2aed8; a pure-text audit then found no remaining ambiguous newly-added dependency references. No dependency resolver or lock generator was executed.
 
 Desktop mirror commit 623936831ac1831022a35b22471a58bd96036104 reproduces direct_https.rs, lib.rs and THIRD_PARTY_NOTICES.md byte-identically.
 

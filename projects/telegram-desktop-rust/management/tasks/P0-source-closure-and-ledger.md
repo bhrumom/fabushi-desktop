@@ -1981,7 +1981,7 @@ Stage A remained execution-free: no GitHub Actions/status/check query or trigger
 ## Round 125 / task round 94 — direct HTTPS/Web-PKI carrier lifecycle
 
 - Fixed U remains f985723b552b30fe1c17d377d57f44e61a15a8c4.
-- Existing-owner-first direct carrier implemented in platform-core native/telegram-network; final platform source-compliance head 2cc022c6602e69204bcff53bc985c01bfa993983.
+- Existing-owner-first direct carrier implemented in platform-core native/telegram-network; final platform source-compliance head 5dd792399fe3c17d1256c80e0eb9fb2c1c2aa94f.
 - Desktop carrier mirror commit 623936831ac1831022a35b22471a58bd96036104; direct_https.rs and lib.rs blobs are byte-identical to platform.
 - Exact fixed-U NoProxy, 800 ms stagger, DomainResolver winner fencing, SpecialConfig continued stagger, and ServiceWebRequest explicit-abort-vs-ordinary-finalization semantics are recorded in round125 evidence.
 - TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001 remains mapped/pending, validation_status=not-run, accepted=false. Carrier lifecycle is implemented; automatic acquisition-to-RuntimeClient composition and Stage-B executable evidence remain pending.

@@ -30201,7 +30201,7 @@
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "Task round 94/source evidence round125 implements the previously blocked first-party direct NoProxy HTTPS/Web-PKI carrier lifecycle inside the existing native/telegram-network owner. The carrier uses direct TcpStream origin connections plus rustls/Web-PKI roots, consumes already-normalized request descriptors, preserves the exact 800 ms stagger constant, exposes status/headers/full bounded body, distinguishes ordinary reply finalization from explicit cancellation, preserves DomainResolver winner fencing without inventing explicit abort, and preserves SpecialConfigRequest continued scheduling after an accepted reply. Exact rustls/webpki dependency records were source-transcribed from an already-pinned repository lock without running dependency resolution or lock generation. The existing downstream RuntimeClient path for resolved endpoint -> temporary 1000+d session -> bare help.getConfig -> dc_options-only replacement remains unchanged and canonical. Aggregate responsibility remains mapped/pending because this slice intentionally does not add a new acquisition-to-RuntimeClient orchestrator and Stage B executable evidence is absent.",
+      "platform_delta": "Task round 94/source evidence round125 implements the previously blocked first-party direct NoProxy HTTPS/Web-PKI carrier lifecycle inside the existing native/telegram-network owner. The carrier uses direct TcpStream origin connections plus rustls/Web-PKI roots, consumes already-normalized request descriptors, preserves the exact 800 ms stagger constant, exposes status/headers/full bounded body, distinguishes ordinary reply finalization from explicit cancellation, preserves DomainResolver winner fencing without inventing explicit abort, and preserves SpecialConfigRequest continued scheduling after an accepted reply. Exact rustls/webpki dependency records were source-transcribed from an already-pinned repository lock without running dependency resolution or lock generation; target-lock name ambiguity for ring's getrandom dependency was then corrected source-only to explicit getrandom 0.2.17 and re-audited with no remaining ambiguous newly-added dependency references. The existing downstream RuntimeClient path for resolved endpoint -> temporary 1000+d session -> bare help.getConfig -> dc_options-only replacement remains unchanged and canonical. Aggregate responsibility remains mapped/pending because this slice intentionally does not add a new acquisition-to-RuntimeClient orchestrator and Stage B executable evidence is absent.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
@@ -30405,7 +30405,11 @@
         "platform-core-round94-final-spec-blob:6ad164db526366fae4d7a6084f1c013b39f8cf18",
         "desktop-round94-direct-carrier-mirror-commit:623936831ac1831022a35b22471a58bd96036104",
         "desktop-round94-direct-carrier-blob:0c7444d23fdee0aa135f12fd55a50ec3fe42c690",
-        "desktop-round94-network-lib-blob:bace7702a74f1c3b848ac12add69d8cd74748342"
+        "desktop-round94-network-lib-blob:bace7702a74f1c3b848ac12add69d8cd74748342",
+        "platform-core-round94-lock-disambiguation-commit:3b9368d2f3856d320557945226d8c8b039e2aed8",
+        "platform-core-round94-corrected-network-lock-blob:d0d7968508c43b433f27cf0e8f2fc7aea33a4953",
+        "platform-core-round94-final-source-compliance-commit:5dd792399fe3c17d1256c80e0eb9fb2c1c2aa94f",
+        "platform-core-round94-final-carrier-spec-blob:3063810087c49061cbe689341c9926d93de526d0"
       ],
       "test_evidence": [
         "Carrier/lifecycle contracts are fixed in docs/specs/telegram-doh-special-config-http-carrier-lifecycle-boundary.md; no fake executable contract was added against a nonexistent shipping HTTP carrier.",

@@ -2157,9 +2157,9 @@ Target implementation identities:
 - platform-core direct_https.rs blob 0c7444d23fdee0aa135f12fd55a50ec3fe42c690
 - platform-core telegram-network lib.rs blob bace7702a74f1c3b848ac12add69d8cd74748342
 - platform-core Cargo.toml blob 51bd7e2a4ac50b76c3bad11e9aef7ac633f6cfef
-- platform-core manually source-transcribed Cargo.lock blob efa2e4e217aa17bbb72de8494c5b2740d14e6a94
+- platform-core manually source-transcribed Cargo.lock blob d0d7968508c43b433f27cf0e8f2fc7aea33a4953
 - platform-core THIRD_PARTY_NOTICES blob 2e84b5a0ad5d80be35939ee488e4c56b07f9125c
-- platform-core final carrier spec blob 6ad164db526366fae4d7a6084f1c013b39f8cf18
+- platform-core final carrier spec blob 3063810087c49061cbe689341c9926d93de526d0
 - desktop direct_https.rs blob 0c7444d23fdee0aa135f12fd55a50ec3fe42c690
 - desktop telegram-network lib.rs blob bace7702a74f1c3b848ac12add69d8cd74748342
 - desktop THIRD_PARTY_NOTICES blob 2e84b5a0ad5d80be35939ee488e4c56b07f9125c
@@ -2168,3 +2168,5 @@ Dependency provenance: rustls/Web-PKI package identities were transcribed from a
 
 Closure disposition: direct first-party carrier lifecycle is implemented and mirrored. Aggregate special-config carrier/application remains pending/not-run/not-accepted until automatic acquisition-to-existing-runtime composition and Stage-B executable evidence are closed.
 
+
+Lock metadata correction identity: platform-core commit 3b9368d2f3856d320557945226d8c8b039e2aed8; final platform carrier/spec head 5dd792399fe3c17d1256c80e0eb9fb2c1c2aa94f; final spec blob 3063810087c49061cbe689341c9926d93de526d0.
