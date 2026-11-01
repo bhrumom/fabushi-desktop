@@ -142,7 +142,7 @@ def manifest_dependency_frontier(
         "peerDependencies",
         "devDependencies",
     )
-    manifests: dict[tuple[str, str], str] = {}
+    manifests: set[tuple[str, str]] = set()
     for frontier in document.get("workspace_package_frontier", []):
         path = frontier.get("manifest_path")
         package = frontier.get("package")
@@ -150,7 +150,7 @@ def manifest_dependency_frontier(
             continue
         if not isinstance(package, str):
             continue
-        manifests.setdefault((path, package), package)
+        manifests.add((path, package))
     for path, package in sorted(manifests):
         blob, content = git_blob(repo, commit, path)
         parsed = json.loads(content)

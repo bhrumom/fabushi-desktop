@@ -94,7 +94,8 @@ python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
 The machine-readable result digest is
 `1d346c95182fd44c0ec60881b6a521e9a192171faf42ab85a9325bb9f7f461c0`.
 After de-duplicating repeated frontier rows by exact manifest path/package,
-it contains `13` manifest identities and `176` declared dependency edges:
+the probe scanned `15` exact manifest identities; `13` of them declare at
+least one dependency row. The output contains `176` declared dependency edges:
 `17` workspace-specifier edges and `159` registry-or-path edges. This is a
 declaration frontier only; it does not establish recursive importer/package
 joins, peer resolution, archive bytes, generated artifacts, or license/SBOM
