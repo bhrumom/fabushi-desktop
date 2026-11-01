@@ -651,6 +651,25 @@ provenance 均不得复用。lock live candidate 已更新，固定 implementati
 subject、ledger 修订及全部 authority/completion flags 不变。详见
 `dossiers/upstream-current-candidate-probe-4b6907d8-20261031.md`。
 
+The pointer has since been revalidated at
+`94e33774c5fba3da3d3e521f47a2179d11113405` / tree
+`7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`, observed at
+`2026-11-01T01:34:09Z`; see the newer probe dossier below. It remains
+discovery-only and does not authorize reuse of the older inventory or closure.
+
+2026-11-01T01:34:09Z 的最新只读远端复核发现 OpenClaw `main` 再推进到
+`94e33774c5fba3da3d3e521f47a2179d11113405` / tree
+`7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`。GitHub recursive-tree API 返回
+`truncated=false`，共 64,457 entries（62,214 blobs、2,243 directories、0
+gitlinks）；commit message 为 `refactor(embeddings): decouple usage decoding
+from memory transport (#189865)`。`package.json` blob 更新为
+`864764f48ec4f1a7946b880b10a14d96de4b6d78`，其余已记录 root dependency/
+license/notice identities 未变。该 exact subject 仍为 discovery-only；前一
+candidate 的 inventory、依赖闭包、LFS/integrity、语义阅读和 Actions
+provenance 均不得复用，固定 implementation subject、ledger 修订及全部
+authority/completion flags 不变。详见
+`dossiers/upstream-current-candidate-probe-94e33774-20261101.md`。
+
 2026-11-01T01:18:36Z 的只读远端复核发现 OpenClaw `main` 再推进到
 `02b28c9d0b5ae329b07a1e758c9cfca8f1798bca` / tree
 `76940ff14f9d37a1729a6b0a2d8e466026d4a554`。GitHub recursive-tree API 返回

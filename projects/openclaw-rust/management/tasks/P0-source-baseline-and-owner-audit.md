@@ -470,11 +470,22 @@ completion flag changes. The probe is recorded at
 
 The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
 At the latest read-only reconciliation it is OpenClaw
-`4b6907d8bdb74ecf3b0206ca75610673ad42690f` / tree
-`3f34cd0b962913a0f92a6027c5b2e2038dfc3373`, observed at
-`2026-10-31T13:09:57Z`, with 64,106 untruncated recursive-tree entries
-(61,865 blobs, 2,241 directories, 0 gitlinks). This remains discovery-only;
+`94e33774c5fba3da3d3e521f47a2179d11113405` / tree
+`7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`, observed at
+`2026-11-01T01:34:09Z`, with 64,457 untruncated recursive-tree entries
+(62,214 blobs, 2,243 directories, 0 gitlinks). This remains discovery-only;
 the fixed implementation subject, inventory, dependency closure, Actions
 provenance, and all completion flags remain unchanged. The changed source
-scope covers local UI skills filtering with NFC normalization; see
-`dossiers/upstream-current-candidate-probe-4b6907d8-20261031.md`.
+scope covers embedding usage decoupling; see
+`dossiers/upstream-current-candidate-probe-94e33774-20261101.md`.
+
+2026-11-01T01:34:09Z drift amendment: read-only `git ls-remote` and GitHub
+commit/tree API resolved the current OpenClaw `main` to
+`94e33774c5fba3da3d3e521f47a2179d11113405` / tree
+`7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`; the recursive tree is untruncated
+with 64,457 entries (62,214 blobs, 2,243 directories, 0 gitlinks). The commit
+is signature-verified and its five-file delta is confined to embedding and
+usage-cost responsibilities. The current root `package.json` identity is
+`864764f48ec4f1a7946b880b10a14d96de4b6d78`. This is discovery-only evidence;
+dependency closure, LFS/integrity, semantic reads and Actions provenance remain
+bound to their exact subjects, and all P0/global flags remain false.
