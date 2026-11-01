@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 102,
+    "responsibilities_total": 103,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25873,6 +25873,265 @@
         "Telegram/SourceFiles/mtproto/connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f",
         "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp@13c57454f14b814b5923ea253048fb881ad8cf03"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/connection_abstract.cpp",
+      "source_blob_sha": "3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.encrypted-envelope-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001",
+      "source_symbols": [
+        "AbstractConnection::prepareSecurePacket",
+        "SessionPrivate::sendSecureRequest",
+        "SessionPrivate::handleReceived",
+        "EncryptedEnvelope::to_bytes/from_bytes",
+        "encrypt_message/decrypt_message"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-ENCRYPTED-ENVELOPE-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::EncryptedEnvelope",
+        "telegram-protocol::encrypt_message/decrypt_message",
+        "telegram-network::EstablishedSession"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round102-mtproto-encrypted-envelope-wire-20261101.md",
+      "behavior_contract": "The existing source-neutral EncryptedEnvelope is the exact MTProto encrypted outer wire owner: LE64 auth_key_id at bytes 0..8, the 16-byte msg_key at 8..24, followed immediately by AES-block-aligned encrypted_data. Fixed-U shipping sendSecureRequest/prepareSecurePacket emits this six-word external prefix before ciphertext; handleReceived reads the same prefix, rejects wrong auth_key_id, authenticates msg_key against decrypted plaintext and fails closed before body dispatch on structural/cryptographic failure.",
+      "state_machine": "Existing EstablishedSession builds PlainMessage -> encrypt_message -> EncryptedEnvelope::to_bytes -> existing transport payload; receive payload -> EncryptedEnvelope::from_bytes -> decrypt_message -> existing message-id/session/service-body owners. No connection scheduler, request history, binding/persistence or decompression state is added.",
+      "side_effects": [
+        "No production code delta: retains existing canonical crypto owner and shipping network call chain",
+        "Authors focused exact-offset/fail-closed contracts without executing them",
+        "Mirrors the authored contract into the existing desktop provider test path; desktop network shipping caller stays byte-identical"
+      ],
+      "failure_cases": [
+        "auth_key_id is not little-endian at bytes 0..8",
+        "msg_key is shifted, truncated or transformed instead of occupying bytes 8..24 verbatim",
+        "ciphertext starts anywhere other than byte 24",
+        "short or non-AES-block-aligned encrypted payload is accepted structurally",
+        "wrong auth_key_id, empty ciphertext or message-key authentication failure reaches body dispatch",
+        "wire slice is expanded into auth-key persistence, connection scheduling, arbitrary request history, gzip or complete difference decoding"
+      ],
+      "ui_disposition": "No UI change. This is MTProto encrypted outer framing in the existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "Exact 8-byte auth_key_id + 16-byte msg_key + ciphertext external layout",
+        "Little-endian auth_key_id encoding",
+        "AES-block-aligned encrypted payload structural validation",
+        "Fail-closed active-key/message-key authentication before body dispatch",
+        "Separation from session lifecycle, retries, request history, gzip and difference application"
+      ],
+      "platform_delta": "No production delta. Existing canonical telegram-protocol EncryptedEnvelope/encrypt_message/decrypt_message plus the existing EstablishedSession shipping caller already exactly carry the fixed-U encrypted external envelope.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/crypto.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol EncryptedEnvelope/MTProto 2 crypto plus existing telegram-network EstablishedSession shipping caller",
+      "rejected_existing_owners": [
+        "new encrypted-envelope owner: rejected because EncryptedEnvelope already owns the exact external wire shape",
+        "new transport/runtime owner: rejected because the current EstablishedSession already ships the envelope",
+        "desktop duplicate crypto.rs: rejected because the sparse desktop provider overlay has no tracked crypto.rs and canonical crypto remains in fabushi-platform-core"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/crypto.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "EncryptedEnvelope::to_bytes",
+        "EncryptedEnvelope::from_bytes",
+        "encrypt_message",
+        "decrypt_message",
+        "EstablishedSession::send_encrypted_message"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing source-neutral Rust protocol/network owners already carry the shipping auth-key handshake; the exact wire responsibility belongs there rather than in a new source-specific runtime.",
+      "command_event_contracts": [
+        "auth_key_id + msg_key + ciphertext -> exact 24-byte external prefix followed by ciphertext",
+        "short or non-block-aligned external envelope -> fail closed",
+        "wrong active auth key / empty ciphertext / invalid authenticated msg_key -> fail closed before body dispatch",
+        "valid decrypted internal message -> existing session/message/service owners"
+      ],
+      "state_owner": "Existing EstablishedSession owns current session state; EncryptedEnvelope is a pure protocol framing value.",
+      "lifecycle_owner": "Existing telegram-network EstablishedSession and telegram-protocol crypto owners. Connection selection/retry and auth-key persistence remain outside this slice.",
+      "persistence_and_restart": "No persistence or restart behavior is introduced or changed.",
+      "concurrency_and_cancellation": "Pure synchronous encode/decode/crypto in the existing request/receive path; no scheduler, history registry or background task is introduced.",
+      "security_boundary": "External encrypted framing is authenticated against the active AuthKey. Structural decoding requires the 24-byte header plus block alignment; decrypt_message rejects active-key mismatch, empty/non-aligned ciphertext and message-key authentication failure before returning plaintext.",
+      "network_service_dependencies": [
+        "Existing transport send_payload/receive_payload only; no new network service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "no-production-delta",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Auth-key binding/persistence/expiry/renewal and restore remain outside this isolated wire slice.",
+        "Broader connection scheduling/racing/send retry, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U SessionPrivate::sendSecureRequest -> AbstractConnection::prepareSecurePacket -> LE64 auth_key_id + 16-byte msg_key + AES-IGE ciphertext",
+        "fixed-U SessionPrivate::handleReceived -> six-word external header -> auth-key check -> AES-IGE decrypt -> msg_key authentication",
+        "canonical EstablishedSession::send_encrypted_message -> encrypt_message -> EncryptedEnvelope::to_bytes -> transport.send_payload",
+        "canonical receive path -> EncryptedEnvelope::from_bytes -> decrypt_message -> existing service dispatch",
+        "desktop tracked telegram-network provider remains byte-identical at 54f509474391bb5118ba4678ba5c566ab3e74ec8"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "fixed-U:Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8",
+        "platform-core-spec-commit:bb84071c99141f457748825cb51ed6679ebd4c56",
+        "platform-core-spec-blob:78964da9df4b91a32d077d6f608d93dc81686bb9",
+        "platform-core-production-path:native/telegram-protocol/src/crypto.rs@7882db6b9f3f5e9643fb963526ccc21dd0862d73",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "platform-core-contract-commit:89af115ada9770a1e21e920c9e30a5f5587833c1",
+        "platform-core-contract-path:native/telegram-protocol/tests/protocol_contract.rs@b82069d5b7f42919e087efe053549ebddbe6e278",
+        "desktop-contract-mirror-commit:e940ec506ea2909dc0f550d533c04f3af7b70d40",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@b82069d5b7f42919e087efe053549ebddbe6e278"
+      ],
+      "test_evidence": [
+        "Canonical and desktop authored-only contracts pin exact byte offsets/endianness, structural round-trip, malformed-short/non-block-aligned rejection and cryptographic rejection of empty ciphertext; not run."
+      ],
+      "target_commit": "e940ec506ea2909dc0f550d533c04f3af7b70d40",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto encrypted external envelope wire",
+      "capability_component": "Exact fixed-U auth_key_id/msg_key/ciphertext external framing",
+      "variation_axes": [
+        "minimum header vs encrypted payload",
+        "aligned vs misaligned ciphertext",
+        "matching vs mismatched active auth key",
+        "valid vs invalid authenticated message key"
+      ],
+      "shared_owner_contracts": [
+        "Existing AuthKey",
+        "Existing EncryptedEnvelope",
+        "Existing PlainMessage",
+        "Existing EstablishedSession",
+        "Existing MessageIdGuard/SessionSequence"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, transport, crypto owner, auth-key store, request-history store, decompression runtime, difference runtime, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Desktop sparse provider overlay has no tracked telegram-protocol/src/crypto.rs; canonical crypto remains in fabushi-platform-core while desktop tracks the shipping network consumer and authored contracts."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "The same EstablishedSession and canonical crypto owner continue to carry encrypted messages; this round records the exact external envelope as an independent responsibility with no production mutation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-ENCRYPTED-EXTERNAL-LAYOUT-001",
+        "INV-TDRP-MTPROTO-ENCRYPTED-AUTH-KEY-ID-001",
+        "INV-TDRP-MTPROTO-ENCRYPTED-MSG-KEY-AUTH-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-ENCRYPTED-ENVELOPE-LAYOUT-001",
+        "UNIT-TDRP-MTPROTO-ENCRYPTED-ENVELOPE-REJECT-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-ENCRYPTED-AUTH-KEY-ID-001",
+        "SEC-TDRP-MTPROTO-ENCRYPTED-MSG-KEY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-ENCRYPTED-ENVELOPE-SHIPPING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-encrypted-external-envelope-pattern"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a, session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Existing source-neutral Rust implementation is retained; no upstream C++ implementation is copied.",
+      "notes": "Stage A source-level no-production-delta closure. Existing EncryptedEnvelope/encrypt_message/decrypt_message and EstablishedSession shipping path already exactly implement the fixed-U encrypted external envelope; focused contracts were authored/mirrored but not executed. validation_status=not-run and accepted=false. Binding/persistence, broader connection scheduling, arbitrary request history, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-ENCRYPTED-ENVELOPE-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8"
       ]
     }
   ],
