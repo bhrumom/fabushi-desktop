@@ -1769,7 +1769,10 @@ impl ProductionSessionWorkers {
         let db_path = self.session_db_path(agent_id)?;
         if db_path.is_file() {
             if let Some(record) = self.read_session_work_admission(agent_id)? {
-                if record.session_id != agent_id {
+                if record.session_id != agent_id
+                    || record.session_key.trim().is_empty()
+                    || record.lifecycle_revision.trim().is_empty()
+                {
                     return Err(format!(
                         "agent {agent_id} session admission identity is malformed"
                     ));

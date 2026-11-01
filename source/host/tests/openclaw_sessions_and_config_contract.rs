@@ -410,6 +410,8 @@ fn test_provider_review_owner_exposes_single_claim_host_capability() {
 fn test_session_admission_rejects_rebound_owner_identity() {
     let owner_source = include_str!("../src/extensions/session/production.rs");
     assert!(owner_source.contains("record.session_id != agent_id"));
+    assert!(owner_source.contains("record.session_key.trim().is_empty()"));
+    assert!(owner_source.contains("record.lifecycle_revision.trim().is_empty()"));
     assert!(owner_source.contains("session admission identity is malformed"));
 }
 

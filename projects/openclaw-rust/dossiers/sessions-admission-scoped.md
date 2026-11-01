@@ -791,7 +791,8 @@ runtime or acceptance status.
 
 The shared `ProductionSessionWorkers::assert_agent_work_admission` gate now
 rejects an existing admission record whose durable `session_id` is not the
-agent identity used to open that owner. This fail-closed check protects the
+agent identity used to open that owner, or whose session key/generation is
+empty. This fail-closed check protects the
 remaining session-owned producer/consumer edges, including provider-review
 settlement, without inventing a replacement session key. Static evidence is
 recorded; runtime and acceptance remain pending.
