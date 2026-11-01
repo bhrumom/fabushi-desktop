@@ -26800,7 +26800,10 @@
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54f509474391bb5118ba4678ba5c566ab3e74ec8",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@cd53d0b1b546aaceaf5ad46aaf6957dab5b32bf9",
         "platform-core-implementation-record-commit:440da6a1b0f24907e77f1c1a94761adb9d17ae1d",
-        "platform-core-implementation-record-spec-blob:b6ea2c2df755fe632d624e6621e5b89379a47b0e"
+        "platform-core-implementation-record-spec-blob:b6ea2c2df755fe632d624e6621e5b89379a47b0e",
+        "platform-core-final-compliance-commit:21c433fb6b1a37b91fa0757b018868c21aa511dc",
+        "platform-core-final-spec-blob:430fb4257e87965e465474a30c60230e9c8e6618",
+        "desktop-round74-bookkeeping-commit:44da95b4b754433990a48b23cbc323bc8ca44030"
       ],
       "test_evidence": [
         "Canonical and desktop authored-only contracts cover explicit padding 0/15, word alignment, fragmented header/body, 0..3 declared-length rejection, fixed-U upper packet boundary, default random padding domain, VersionD quick-ACK rejection and generic Intermediate quick-ACK preservation; not run."
@@ -26926,7 +26929,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381 and adjacent mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level implementation. Existing TransportFrameCodec/TcpTransport remain the only owners. This round makes PaddedIntermediate match fixed-U VersionD framing for random 0..15 padding, unpadded word alignment, receive floor/strict ceiling and quick-ACK separation, and authors/mirrors focused contracts without executing them. validation_status=not-run and accepted=false. Connection-start AES-CTR prefix/secret handling, quick-ACK lifecycle, broader connection scheduling, auth-key binding/persistence, arbitrary request history, gzip and complete difference decoding remain open.",
+      "notes": "Stage A source-level implementation. Existing TransportFrameCodec/TcpTransport remain the only owners. This round makes PaddedIntermediate match fixed-U VersionD framing for random 0..15 padding, unpadded word alignment, receive floor/strict ceiling and quick-ACK separation, and authors/mirrors focused contracts without executing them; validation_status=not-run and accepted=false. Final source-level compliance is platform-core 21c433fb6b1a37b91fa0757b018868c21aa511dc/spec blob 430fb4257e87965e465474a30c60230e9c8e6618; desktop bookkeeping checkpoint before final readback is 44da95b4b754433990a48b23cbc323bc8ca44030. Connection-start AES-CTR prefix/secret handling, quick-ACK lifecycle, broader connection scheduling, auth-key binding/persistence, arbitrary request history, gzip and complete difference decoding remain open.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

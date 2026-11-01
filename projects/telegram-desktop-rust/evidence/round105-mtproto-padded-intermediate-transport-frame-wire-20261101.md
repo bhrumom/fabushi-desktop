@@ -18,3 +18,12 @@ Production disposition is an existing-owner rewrite only: PaddedIntermediate def
 Unique ledger row: `TDRP-R9-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001`, implemented / rewritten / validation not-run / accepted false. Coverage after this row: responsibilities_total 106; unknown 16172; unread 16145; omitted 0; unmapped_responsibilities 0.
 
 Focused contracts are authored only and were not run. No CI/status/check query or executable validation was performed.
+
+
+### Round 105 final source-level compliance
+
+Platform-core final compliance is `21c433fb6b1a37b91fa0757b018868c21aa511dc` / spec blob `430fb4257e87965e465474a30c60230e9c8e6618`, referencing desktop bookkeeping checkpoint `44da95b4b754433990a48b23cbc323bc8ca44030`. The unique `TDRP-R9-MTPROTO-PADDED-INTERMEDIATE-TRANSPORT-FRAME-WIRE-001` responsibility is `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Canonical production `transport.rs` is `5d6abd61f130b25baae10a6269eebd20fd025b3a`; canonical/desktop telegram-network remains `54f509474391bb5118ba4678ba5c566ab3e74ec8`; canonical/desktop authored contract blob is `cd53d0b1b546aaceaf5ad46aaf6957dab5b32bf9`. The existing owner now matches fixed-U VersionD frame-body semantics for random 0..15 outbound padding, unpadded word alignment, exact receive floor/strict packet ceiling, fragmented input, and separation from generic Intermediate quick-ACK forms.
+
+Coverage is `responsibilities_total=106, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Connection-start obfuscation/AES-CTR prefix, Version1/VersionD secret handling, protocol/DC id obfuscation, quick-ACK lifecycle, auth-key binding/persistence/expiry/renewal, broader connection scheduling/racing/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open. No executable validation was performed.
