@@ -16,6 +16,7 @@ use crate::extensions::attachments::image_ops::{
     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
 };
 use crate::extensions::attachments::media_file_context::ImageOptimizationLimitError;
+use crate::extensions::attachments::media_reference::read_outbound_media_file_bounded;
 use crate::extensions::attachments::media_store::extract_original_filename;
 use crate::extensions::attachments::media_store_shared::format_media_size;
 
@@ -357,14 +358,18 @@ pub fn load_web_media(
         }
     }
 
-    let buffer = fs::read(&file_path).map_err(|e| {
-        WebMediaError::LocalAccess {
-            code: "not-found".to_string(),
-            message: format!("Failed to read media file {}: {e}", file_path.display()),
+    let cap = options.max_bytes.unwrap_or(MAX_IMAGE_BYTES);
+    let buffer = read_outbound_media_file_bounded(&file_path, cap).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::InvalidData {
+            WebMediaError::TooLarge(format_media_size(cap as u64))
+        } else {
+            WebMediaError::LocalAccess {
+                code: "not-found".to_string(),
+                message: format!("Failed to read media file {}: {e}", file_path.display()),
+            }
         }
     })?;
 
-    let cap = options.max_bytes.unwrap_or(MAX_IMAGE_BYTES);
     let probe = read_image_probe_from_header(&buffer);
     let content_type = probe.as_ref().map(|p| format!("image/{}", p.format));
 

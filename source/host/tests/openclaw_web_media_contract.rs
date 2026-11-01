@@ -19,6 +19,8 @@ use mahayana_host_runtime::extensions::attachments::web_media::{
     WebMediaOptions,
 };
 
+const WEB_MEDIA_SOURCE: &str = include_str!("../src/extensions/attachments/web_media.rs");
+
 struct TempTestDir {
     path: PathBuf,
 }
@@ -223,6 +225,12 @@ fn test_ocrm_web_media_local_loading_and_roots_boundary() {
         }
         other => panic!("Expected path-not-allowed LocalAccess, got: {other:?}"),
     }
+}
+
+#[test]
+fn web_media_local_reads_are_bounded_before_buffer_acceptance() {
+    assert!(WEB_MEDIA_SOURCE.contains("read_outbound_media_file_bounded("));
+    assert!(!WEB_MEDIA_SOURCE.contains("let buffer = fs::read(&file_path)"));
 }
 
 #[test]
