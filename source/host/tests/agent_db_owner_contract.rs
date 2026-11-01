@@ -388,6 +388,9 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
     assert!(!owner
         .clear_pending_episode_turns()
         .expect("fenced episode clear"));
+    assert!(!owner
+        .clear_transient_state()
+        .expect("fenced transient clear"));
     assert_eq!(owner.get_request_ids().expect("request history").len(), 1);
     assert_eq!(owner.get_pending_episode_turns().expect("episode history").len(), 1);
 

@@ -1889,6 +1889,9 @@ impl SandAgentDb {
         self.run_write("clearTransientState", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
                 let mut changed = false;
                 for key in [
                     KV_UNREAD,
