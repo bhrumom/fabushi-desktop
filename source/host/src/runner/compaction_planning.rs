@@ -348,6 +348,101 @@ pub fn fit_compaction_summary(summary: &str, summary_token_budget: u64) -> Resul
     ))
 }
 
+/// Render the durable file-operation details into the summary body as bounded
+/// model-visible metadata. Structured details remain persisted separately.
+pub fn format_compaction_details_suffix(details: Option<&Value>) -> String {
+    let Some(details) = details.and_then(Value::as_object) else {
+        return String::new();
+    };
+    let read = bounded_detail_list(details.get("readFiles"));
+    let modified = bounded_detail_list(details.get("modifiedFiles"));
+    let mut sections = Vec::new();
+    if !read.is_empty() {
+        sections.push(format!("<read-files>\n{}\n</read-files>", read.join("\n")));
+    }
+    if !modified.is_empty() {
+        sections.push(format!(
+            "<modified-files>\n{}\n</modified-files>",
+            modified.join("\n")
+        ));
+    }
+    if let Some(request) = details
+        .get("latestUnresolvedUserRequest")
+        .and_then(Value::as_str)
+        .filter(|request| !request.trim().is_empty())
+    {
+        sections.push(format!(
+            "## Latest unresolved user request\n{}",
+            serde_json::to_string(request).unwrap_or_else(|_| "\"(unavailable)\"".into())
+        ));
+    }
+    if details
+        .get("qualityDegraded")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
+        sections.push("[Summary quality degraded: older context was retained without a successful model summary.]".into());
+    }
+    if sections.is_empty() {
+        String::new()
+    } else {
+        format!("\n\n{}", sections.join("\n\n"))
+    }
+}
+
+/// Fit a summary while preserving the model-visible details suffix at the
+/// end, matching the fixed source's required-prefix fitting behavior.
+pub fn fit_compaction_summary_with_suffix(
+    summary: &str,
+    summary_token_budget: u64,
+    suffix: &str,
+) -> Result<String, String> {
+    let normalized = normalize_summary_text(summary)?;
+    let token_bound = usize::try_from(summary_token_budget)
+        .unwrap_or(usize::MAX)
+        .saturating_mul(CHARS_PER_TOKEN_ESTIMATE as usize);
+    let max_chars = MAX_COMPACTION_SUMMARY_CHARS.min(token_bound.max(1));
+    let suffix_chars = suffix.chars().count();
+    if suffix_chars >= max_chars {
+        return Err("compaction details suffix leaves no room for summary text".into());
+    }
+    let available = max_chars - suffix_chars;
+    if normalized.chars().count() <= available {
+        return Ok(format!("{normalized}{suffix}"));
+    }
+    const MARKER: &str = "\n\n[Compaction summary truncated to fit budget]";
+    if available <= MARKER.chars().count() {
+        return Err("compaction summary cannot fit beside required details".into());
+    }
+    let prefix_chars = available - MARKER.chars().count();
+    Ok(format!(
+        "{}{}{}",
+        normalized.chars().take(prefix_chars).collect::<String>(),
+        MARKER,
+        suffix
+    ))
+}
+
+fn bounded_detail_list(value: Option<&Value>) -> Vec<String> {
+    const MAX_LIST_CHARS: usize = 900;
+    let Some(values) = value.and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    let mut output = Vec::new();
+    let mut used = 0usize;
+    for path in values.iter().filter_map(Value::as_str) {
+        let cost = path.chars().count() + 1;
+        if used + cost > MAX_LIST_CHARS {
+            let remaining = values.len().saturating_sub(output.len());
+            output.push(format!("...and {remaining} more"));
+            break;
+        }
+        output.push(path.to_string());
+        used += cost;
+    }
+    output
+}
+
 /// Fixed-source no-summary fallback. It deliberately names the dropped span
 /// and carries forward the previous summary/request instead of inventing facts.
 pub fn compaction_without_summary(plan: &CompactionPlan) -> String {
@@ -805,6 +900,26 @@ mod tests {
             build_compaction_details_with_quality(&plan, true),
             Some(json!({"readFiles":[],"modifiedFiles":[],"qualityDegraded":true}))
         );
+    }
+
+    #[test]
+    fn details_suffix_remains_visible_when_summary_is_fitted() {
+        let details = json!({
+            "readFiles":["src/read.rs"],
+            "modifiedFiles":["src/write.rs"],
+            "latestUnresolvedUserRequest":"continue",
+            "qualityDegraded":true
+        });
+        let suffix = format_compaction_details_suffix(Some(&details));
+        let fitted = fit_compaction_summary_with_suffix(
+            &"x".repeat(20_000),
+            10,
+            &suffix,
+        )
+        .expect("fitted summary");
+        assert!(fitted.ends_with(&suffix));
+        assert!(fitted.contains("<read-files>"));
+        assert!(fitted.contains("quality degraded"));
     }
 
     #[test]

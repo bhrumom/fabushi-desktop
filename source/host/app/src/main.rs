@@ -395,7 +395,8 @@ use mahayana_host_runtime::runner::turn_agent_composition::{
 };
 use mahayana_host_runtime::runner::compaction_planning::{
     CompactionSettings, build_compaction_details_with_quality, build_compaction_summary_prompt,
-    build_turn_prefix_summary_prompt, compaction_without_summary, fit_compaction_summary,
+    build_turn_prefix_summary_prompt, compaction_without_summary,
+    fit_compaction_summary_with_suffix, format_compaction_details_suffix,
     prepare_compaction_plan,
 };
 use mahayana_host_runtime::runner::turn_observation::{
@@ -10735,9 +10736,17 @@ fn start_routed_provider_task(
                                                         Some((summary, false))
                                                     };
                                                     if let Some((summary, mut quality_degraded)) = summary {
-                                                        let summary = match fit_compaction_summary(
+                                                        let details =
+                                                            build_compaction_details_with_quality(
+                                                                &plan,
+                                                                quality_degraded,
+                                                            );
+                                                        let suffix =
+                                                            format_compaction_details_suffix(details.as_ref());
+                                                        let summary = match fit_compaction_summary_with_suffix(
                                                             &summary,
                                                             plan.summary_token_budget,
+                                                            &suffix,
                                                         ) {
                                                             Ok(summary) => summary,
                                                             Err(error) => {
@@ -10746,13 +10755,23 @@ fn start_routed_provider_task(
                                                                     "mahayana-host compaction_summary_invalid agent={} run={} error={error}",
                                                                     agent_id, worker_stream_id
                                                                 );
-                                                                fit_compaction_summary(
-                                                                    &compaction_without_summary(&plan),
+                                                                let fallback =
+                                                                    compaction_without_summary(&plan);
+                                                                let fallback_details =
+                                                                    build_compaction_details_with_quality(
+                                                                        &plan,
+                                                                        true,
+                                                                    );
+                                                                let fallback_suffix =
+                                                                    format_compaction_details_suffix(
+                                                                        fallback_details.as_ref(),
+                                                                    );
+                                                                fit_compaction_summary_with_suffix(
+                                                                    &fallback,
                                                                     plan.summary_token_budget,
+                                                                    &fallback_suffix,
                                                                 )
-                                                                .unwrap_or_else(|_| {
-                                                                    compaction_without_summary(&plan)
-                                                                })
+                                                                .unwrap_or(fallback)
                                                             }
                                                         };
                                                         commit_compaction(summary, quality_degraded);
@@ -10774,10 +10793,20 @@ fn start_routed_provider_task(
                                                     );
                                                     if !should_cancel() {
                                                         let fallback = compaction_without_summary(&plan);
+                                                        let fallback_details =
+                                                            build_compaction_details_with_quality(
+                                                                &plan,
+                                                                true,
+                                                            );
+                                                        let fallback_suffix =
+                                                            format_compaction_details_suffix(
+                                                                fallback_details.as_ref(),
+                                                            );
                                                         commit_compaction(
-                                                            fit_compaction_summary(
+                                                            fit_compaction_summary_with_suffix(
                                                                 &fallback,
                                                                 plan.summary_token_budget,
+                                                                &fallback_suffix,
                                                             )
                                                             .unwrap_or(fallback),
                                                             true,

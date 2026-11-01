@@ -163,7 +163,9 @@ authority gates open.
   the second prefix summarizer call, and a deterministic bounded transcript
   sampler (recent tail/user asks/head plus canonical fill) are now wired. A
   no-summary or fitting safeguard sets `qualityDegraded` in the durable
-  details when it commits a fallback.
+  details when it commits a fallback; bounded file-operation/request details
+  are also appended to the persisted summary suffix so typed replay consumers
+  can see them.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status is `implementation=partially-wired`, `wiring=partially-wired`,
