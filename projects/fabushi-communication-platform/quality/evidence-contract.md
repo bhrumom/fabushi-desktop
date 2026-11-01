@@ -1210,3 +1210,28 @@ Consumers: GitHub schedule and `issue_comment.created` callers; lee-dohm/no-resp
 Existing-owner evidence binds root repository issue/reporting/development-process governance, repository privacy/security governance, Test Strategy/Test Evidence Contract and FMEP-001. No copied Telegram workflow, support subsystem, second issue tracker, product Tasks/Automations owner, runtime/provider/sidecar or platform-core delta is introduced.
 
 Stage A records 18 contract, 1 integration, 12 fault/recovery and 8 security/privacy/provenance cases as authored only. No workflow trigger, issue/label/comment/state mutation, Action execution, token probe, executable validation, build/test/package/deploy/install, Actions/check/status query or platform-core mutation is performed. `validation_status=not-run`; `accepted=false`.
+
+
+### Repository Linux Snap build/artifact workflow evidence contract
+
+Evidence for `TDRP-R9-REPOSITORY-SNAP-WORKFLOW-001` binds fixed U `f985723b552b30fe1c17d377d57f44e61a15a8c4`, recursive tree `91f2b083ab2877c0a17d07868eabec362a5cfca6` (`truncated=false`, 7,194 entries), and exact `.github/workflows/snap.yml@82f85ae9066a2773512afecb0bcf80875116a8c8`, index 130 zero-based, mode 100644, 2,633 ASCII bytes/code points, 92 LF, zero CR and trailing newline.
+
+Trigger/runner evidence records push canary exclusions, exact push/pull_request path filters and workflow exception, absence of other trigger classes, conditional `depot-ubuntu-latest-16`/`ubuntu-latest` selection and immutable actual runner image. Permission evidence records no explicit `permissions`, environment, concurrency, timeout or retry; effective token policy must be captured without token values.
+
+Checkout evidence records observed `actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1`, `action.yml@5b0524f730db83f9513c18ab31a6c086c7239076`, Node24 bundle `06ae5d221b3dc83259d396ec60027972181e51b9`, MIT, plus actual candidate resolution, full-history checkout, recursive submodule identities and credential cleanup. The major tag remains mutable.
+
+Host-toolchain evidence records FORWARD policy before/after, exact Snapcraft package revision/channel/source actually installed by unversioned `snap install --classic snapcraft`, user/group state, LXD version/config/storage and readiness. Store/tool acquisition is not store publication.
+
+Disk-preparation evidence binds exact `samueldr/more-space-action@97048bd0df83fb05b5257887bdbaffc848887673`, `action.yml@da03cfe57dd8f666f4b51c4397f076eb7354866c`, `get-more-space.sh@6a1ab22d291581113140a970d026c444a265389e`, LGPL-2.1 metadata, supplied inputs and every actually executed privileged mutation. LVM/drive/swap/filesystem state is non-product infrastructure and partial failure is non-passing.
+
+Build-input evidence records exact `snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a` without closing that independent ledger source entry. Candidate evidence binds core24 revision, strict confinement, app plugs/slot, CMake/Ninja and Rust 1.96.1 identities, build/stage package versions, patches, actual resolved commits for every external source including tag/branch references, generated version and resulting Snap metadata. Upstream API compile values and any sensitive-looking configuration are excluded from durable evidence unless strictly required and safely redacted.
+
+Cache evidence records that the workflow declares no GitHub cache action/key. Any Snapcraft, Snap Store, LXD, package-manager or runner-image cache that affects bytes must be captured as environment provenance rather than credited as a source-defined reproducibility contract.
+
+Artifact evidence records exact `telegram-desktop_*.snap` expansion, number of matches, staged bytes, package digest/metadata and GitHub artifact identity. Upload evidence records observed `actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9`, `action.yml@7cb4d1e81db55320b41217e1a78a1a46e3d2baef`, Node24 bundle `7b3f92ae681d6eeca5f5e5e4cf892ad0dfb254ea`, MIT, one-day retention, actual artifact ID and digest. Major-tag drift requires requalification.
+
+Publication/credential evidence must positively show the source has no Snap Store upload/release/login step and no store credential/secret input. GitHub artifact upload, `grade: stable`, or public Snapcraft acquisition cannot be interpreted as Store publication. Any future Fabushi store promotion must remain under the canonical package/release owner with separate credential/signing/promotion evidence.
+
+Direct-consumer evidence binds GitHub push/pull_request admission, checkout/submodules, runner/firewall/LXD, more-space, Snapcraft/manifest dependency graph, artifact service and maintainers/manual consumers. No reusable-workflow caller exists because the source exposes no `workflow_call`.
+
+Stage A records 34 contract, 1 integration, 20 fault/recovery and 18 security/provenance cases as authored only. No workflow/Action/Snap/Snapcraft/LXD/iptables/disk/cache/build/package/artifact/store/sign/deploy/install/runtime operation or Actions/check/status/workflow-run query is performed. `validation_status=not-run`; `accepted=false`.
