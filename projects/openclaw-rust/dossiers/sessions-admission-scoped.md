@@ -463,3 +463,17 @@ missing channel conversation identity, rewrite legacy Human rows that lack
 provenance, bind outbound pending Human sends or identity settlement, or prove
 channel delivery/receipt behavior. Full channel-to-session correlation,
 verification, and acceptance remain pending.
+
+## 12.7 Background producer selector correction — 2026-11-01
+
+Upgrade-resume (without an automation id), kickstart, and
+`runner.startRoutedProvider` now resolve a missing session selector from the
+existing owner admission record. They fail closed when no non-empty canonical
+record is available. Upgrade-resume entries with an automation id retain the
+producer-derived canonical `agent:<id>:cron:<automationId>` selector and still
+pass the existing owner admission check.
+
+This removes four remaining agent-only main-key guesses from background and
+Runner producer paths. Acknowledgement redrive and newly materialized child
+session/public direct-main projection paths remain separately governed and are
+not promoted by this slice.

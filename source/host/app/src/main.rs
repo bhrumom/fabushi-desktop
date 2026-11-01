@@ -3398,13 +3398,20 @@ impl UnifiedGatewayApi {
                     )
                 }
                 _ => {
-                    let session_key = marker
-                        .automation_id
-                        .as_deref()
-                        .map(|automation_id| {
-                            format!("agent:{}:cron:{automation_id}", marker.agent_id)
-                        })
-                        .unwrap_or_else(|| format!("agent:{}:main", marker.agent_id));
+                    let session_key = if let Some(automation_id) = marker.automation_id.as_deref() {
+                        format!("agent:{}:cron:{automation_id}", marker.agent_id)
+                    } else {
+                        self.session_workers
+                            .read_session_work_admission(&marker.agent_id)?
+                            .map(|record| record.session_key)
+                            .filter(|value| !value.trim().is_empty())
+                            .ok_or_else(|| {
+                                format!(
+                                    "upgrade resume requires an existing admitted session identity for {}",
+                                    marker.agent_id
+                                )
+                            })?
+                    };
                     let mut args = serde_json::json!({
                         "agentId": marker.agent_id,
                         "sessionKey": session_key,
@@ -5383,11 +5390,20 @@ fn start_local_upgrade_resume_turn(
         _ => "handoff-resume".to_string(),
     };
     let prompt = build_upgrade_resume_prompt(&resumed_source);
-    let session_key = marker
-        .automation_id
-        .as_deref()
-        .map(|automation_id| format!("agent:{}:cron:{automation_id}", marker.agent_id))
-        .unwrap_or_else(|| format!("agent:{}:main", marker.agent_id));
+    let session_key = if let Some(automation_id) = marker.automation_id.as_deref() {
+        format!("agent:{}:cron:{automation_id}", marker.agent_id)
+    } else {
+        deps.session_workers
+            .read_session_work_admission(&marker.agent_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty())
+            .ok_or_else(|| {
+                format!(
+                    "upgrade resume requires an existing admitted session identity for {}",
+                    marker.agent_id
+                )
+            })?
+    };
     let stream_id = format!("upgrade-resume-{}", uuid::Uuid::new_v4());
     let client_nonce = format!(
         "upgrade-resume:{}:{}",
@@ -5704,9 +5720,24 @@ fn run_local_kickstart_turn(
 ) -> Result<KickstartTurnOutcome, KickstartRunError> {
     let stream_id = format!("kickstart-{}", uuid::Uuid::new_v4());
     let client_nonce = format!("kickstart:{}:{}", agent_id, uuid::Uuid::new_v4());
+    let session_key = deps
+        .session_workers
+        .read_session_work_admission(agent_id)
+        .map_err(|error| KickstartRunError {
+            request_id: Some(stream_id.clone()),
+            message: error,
+        })?
+        .map(|record| record.session_key)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| KickstartRunError {
+            request_id: Some(stream_id.clone()),
+            message: format!(
+                "kickstart requires an existing admitted session identity for {agent_id}"
+            ),
+        })?;
     let admission_args = serde_json::json!({
         "agentId": agent_id,
-        "sessionKey": format!("agent:{agent_id}:main"),
+        "sessionKey": session_key.clone(),
         "prompt": prompt,
         "clientNonce": client_nonce,
         "streamId": stream_id,
@@ -5737,7 +5768,7 @@ fn run_local_kickstart_turn(
     let runner_args = serde_json::json!({
         "provider": provider.as_str(),
         "agentId": agent_id,
-        "sessionKey": format!("agent:{agent_id}:main"),
+        "sessionKey": session_key,
         "streamId": stream_id,
         "requestSource": source,
         "hidden": true,
@@ -7295,13 +7326,23 @@ fn start_routed_provider_task(
             "runner.startRoutedProvider requires agentId".into()
         ))?
         .to_string();
-    let worker_session_key = args
+    let requested_worker_session_key = args
         .get("sessionKey")
         .and_then(serde_json::Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty())
-        .map(ToOwned::to_owned)
-        .unwrap_or_else(|| format!("agent:{agent_id}:main"));
+        .map(ToOwned::to_owned);
+    let worker_session_key = match requested_worker_session_key {
+        Some(session_key) => session_key,
+        None => session_workers
+            .read_session_work_admission(&agent_id)
+            .map_err(GatewayCommandError::Internal)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty())
+            .ok_or_else(|| GatewayCommandError::Internal(
+                format!("runner.startRoutedProvider requires an existing admitted session identity for {agent_id}"),
+            ))?,
+    };
     let worker_session_admitted_key = session_workers
         .read_session_work_admission(&agent_id)
         .map_err(GatewayCommandError::Internal)?
