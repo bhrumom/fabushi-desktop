@@ -82,6 +82,23 @@ fn main() {
     };
     let stdout = Arc::new(Mutex::new(io::stdout()));
 
+    // Restored Web selection may prepare a fresh one-shot browser adoption URL
+    // before the long-lived feature event source exists. Forward it exactly once
+    // through the existing unsolicited Host event transport.
+    match host.take_startup_native_shell_event() {
+        Ok(Some(event)) => {
+            if let Err(error) = write_runtime_event(&stdout, event) {
+                eprintln!("failed to publish restored native-shell event: {error}");
+                std::process::exit(1);
+            }
+        }
+        Ok(None) => {}
+        Err(error) => {
+            eprintln!("failed to read restored native-shell event: {error}");
+            std::process::exit(1);
+        }
+    }
+
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.
     // Test mode has a non-blocking deterministic backend, so a small sleep keeps

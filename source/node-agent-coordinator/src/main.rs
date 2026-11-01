@@ -130,6 +130,7 @@ struct CoordinatorState {
     webauthn_runtime: Mutex<Option<ProductionWebAuthnRuntime>>,
     renderer_port: Mutex<RendererPortServer>,
     main_data_port: Mutex<RendererPortServer>,
+    pending_native_shell_event: Mutex<Option<Value>>,
     stdout_lock: Mutex<()>,
     spawn_lock: Mutex<()>,
     host_generation: AtomicU64,
@@ -166,6 +167,45 @@ impl CoordinatorState {
             .and_then(|server| server.post_event(family.to_string(), payload));
         if let Some(ServerAction::Post(frame)) = action {
             let _ = self.write_frame(CarrierChannel::Data, &frame);
+        }
+    }
+
+    fn post_main_event(&self, family: &str, payload: Value) -> bool {
+        let action = self
+            .main_data_port
+            .lock()
+            .ok()
+            .and_then(|server| server.post_event(family.to_string(), payload));
+        match action {
+            Some(ServerAction::Post(frame)) => {
+                self.write_frame(CarrierChannel::MainData, &frame).is_ok()
+            }
+            _ => false,
+        }
+    }
+
+    fn queue_native_shell_event(&self, payload: Value) {
+        if self.post_main_event("native-shell", payload.clone()) {
+            return;
+        }
+        if let Ok(mut pending) = self.pending_native_shell_event.lock() {
+            *pending = Some(payload);
+        }
+    }
+
+    fn flush_native_shell_event(&self) {
+        let pending = self
+            .pending_native_shell_event
+            .lock()
+            .ok()
+            .and_then(|mut pending| pending.take());
+        let Some(payload) = pending else {
+            return;
+        };
+        if !self.post_main_event("native-shell", payload.clone()) {
+            if let Ok(mut pending) = self.pending_native_shell_event.lock() {
+                *pending = Some(payload);
+            }
         }
     }
 
@@ -1089,6 +1129,11 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
         ),
         _ => ("runtime".into(), "runtime".into(), value),
     };
+    if channel == "native-shell" {
+        state.queue_native_shell_event(payload);
+        return;
+    }
+
     let now_ms = coordinator_now_ms();
     if let Ok(mut gateway) = state.gateway_client.lock() {
         let _ = gateway.accept_event(now_ms, channel.clone(), payload.clone());
@@ -1508,11 +1553,14 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                 };
 
                 if let Some(event) = value.get("event").filter(|event| event.is_object()) {
-                    if !output_state.gateway_events_live.load(Ordering::SeqCst) {
-                        // Host stdout is the fallback for the same projected
-                        // gateway event envelope used by SSE. Decode its channel
-                        // here as well so transcript/agent events retain their
-                        // real family instead of being mislabeled as runtime.
+                    let native_shell = event
+                        .get("channel")
+                        .and_then(Value::as_str)
+                        .is_some_and(|channel| channel == "native-shell");
+                    if native_shell || !output_state.gateway_events_live.load(Ordering::SeqCst) {
+                        // Host stdout is the fallback for gateway-projected events.
+                        // Native-shell adoption is Host-local and never duplicated by SSE,
+                        // so it must always cross this lane even after SSE is live.
                         dispatch_gateway_event(&output_state, event.clone());
                     }
                     continue;
@@ -2693,7 +2741,7 @@ fn execute_actions(
     for action in actions {
         match action {
             ServerAction::Post(frame) => {
-                let serving_ready = channel == CarrierChannel::Data
+                let renderer_serving_ready = channel == CarrierChannel::Data
                     && matches!(
                         &frame,
                         CoordinatorFrame::Lifecycle {
@@ -2701,12 +2749,23 @@ fn execute_actions(
                             ..
                         }
                     );
-                let _ = state.write_frame(channel, &frame);
-                if serving_ready {
+                let main_serving_ready = channel == CarrierChannel::MainData
+                    && matches!(
+                        &frame,
+                        CoordinatorFrame::Lifecycle {
+                            phase: LifecyclePhase::Ready,
+                            ..
+                        }
+                    );
+                let posted = state.write_frame(channel, &frame).is_ok();
+                if renderer_serving_ready {
                     ensure_webauthn_runtime_started(state);
                     if !state.tool_replay_done.swap(true, Ordering::SeqCst) {
                         replay_tool_events(state);
                     }
+                }
+                if posted && main_serving_ready {
+                    state.flush_native_shell_event();
                 }
             }
             ServerAction::Dispatch {
@@ -2873,6 +2932,7 @@ fn main() {
         webauthn_runtime: Mutex::new(None),
         renderer_port: Mutex::new(RendererPortServer::default()),
         main_data_port: Mutex::new(RendererPortServer::default()),
+        pending_native_shell_event: Mutex::new(None),
         stdout_lock: Mutex::new(()),
         spawn_lock: Mutex::new(()),
         host_generation: AtomicU64::new(0),

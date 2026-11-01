@@ -89,6 +89,15 @@ export function parseWebProxyBootstrapUrl(value: unknown): string | null {
     return null;
   }
 }
+export async function openWebProxyBootstrapUrlInSystemBrowser(
+  shell: UnknownRecord,
+  value: unknown,
+): Promise<boolean> {
+  const bootstrap = parseWebProxyBootstrapUrl(value);
+  if (bootstrap == null) return false;
+  await Promise.resolve(invoke(shell, "openInSystemBrowser", bootstrap));
+  return true;
+}
 function detectTimeZone(): string | null { const value = Intl.DateTimeFormat().resolvedOptions().timeZone; return value.length > 0 ? value : null; }
 const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -147,10 +156,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
       const result = await deps.mutateProductNetworkProxy(req(raw).mutation as UnknownRecord);
       const publication = req(result.publication);
       const carrier = req(publication.carrier);
-      const bootstrap = parseWebProxyBootstrapUrl(carrier.webProxyBootstrapUrl);
-      if (bootstrap != null) {
-        await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", bootstrap));
-      }
+      await openWebProxyBootstrapUrlInSystemBrowser(deps.shell, carrier.webProxyBootstrapUrl);
       return result;
     },
     setThemePreference: (raw) => { const controller = themeController(deps); const preference = req(raw).preference; return isSandThemePreference(preference) ? invoke(controller, "setPreference", preference) : invoke(controller, "getState"); },

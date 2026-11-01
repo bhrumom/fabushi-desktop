@@ -172,6 +172,10 @@ impl UnifiedAppHost {
         self.app.mini_app_store_port()
     }
 
+    pub fn take_startup_native_shell_event(&self) -> Result<Option<Value>, AppHostError> {
+        self.app.take_startup_native_shell_event()
+    }
+
     pub fn new(app_data_dir: impl Into<PathBuf>) -> Result<Self, AppHostError> {
         let app_data_dir = app_data_dir.into();
         let app = AppHost::new(app_data_dir.clone())?;

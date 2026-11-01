@@ -571,6 +571,8 @@ pub struct AppHost {
     settings: ProductSettingsOwner,
     // Declared after `feature` so the non-owning provider is dropped before the client lease.
     telegram_client: Option<TelegramClientLease>,
+    // One-shot desktop-shell handoff prepared only when a restored Web carrier needs browser adoption.
+    startup_native_shell_event: Mutex<Option<Value>>,
 }
 
 /// Send-safe event lane for desktop PUSH delivery. It intentionally owns only
@@ -676,6 +678,20 @@ pub fn is_platform_request_json(input: &str) -> bool {
 }
 
 
+fn startup_native_shell_event_for_carrier(carrier: &Value) -> Option<Value> {
+    let bootstrap = carrier
+        .get("webProxyBootstrapUrl")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())?;
+    Some(json!({
+        "channel": "native-shell",
+        "payload": {
+            "type": "web-proxy-bootstrap",
+            "webProxyBootstrapUrl": bootstrap,
+        }
+    }))
+}
+
 fn publish_product_network_proxy(
     client: &TelegramClientLease,
     proxy: &ProductProxySettings,
@@ -738,15 +754,17 @@ impl AppHost {
         let feature_root = feature_host_root(&app_data_dir);
         let settings = ProductSettingsOwner::open(feature_root.join("product-settings.json"))?;
         let telegram_client = open_platform_telegram_client(&app_data_dir, feature_mode)?;
+        let mut startup_native_shell_event = None;
         if let Some(client) = telegram_client.as_ref() {
             let restored = settings.snapshot()?;
-            client
+            let carrier = client
                 .apply_network_proxy(&restored.network.proxy.carrier_projection())
                 .map_err(|error| {
                     AppHostError::Operation(format!(
                         "restore product network proxy carrier projection: {error}"
                     ))
                 })?;
+            startup_native_shell_event = startup_native_shell_event_for_carrier(&carrier);
         }
         let telegram_handoff = telegram_client
             .as_ref()
@@ -792,7 +810,18 @@ impl AppHost {
             feature,
             settings,
             telegram_client,
+            startup_native_shell_event: Mutex::new(startup_native_shell_event),
         })
+    }
+
+    /// Take the one-shot native-shell event prepared during restored carrier projection.
+    /// The desktop child protocol forwards this through the existing unsolicited-event lane;
+    /// no generic shell capability is exposed to AppHost or the renderer.
+    pub fn take_startup_native_shell_event(&self) -> Result<Option<Value>, AppHostError> {
+        self.startup_native_shell_event
+            .lock()
+            .map(|mut event| event.take())
+            .map_err(|_| AppHostError::Operation("startup native-shell event lock is unavailable".into()))
     }
 
     /// Receive the next feature event directly from the long-lived Rust runtime.
@@ -2199,6 +2228,23 @@ mod telegram_composition_contract_tests {
             user: String::new(),
             password: String::new(),
         }
+    }
+
+    #[test]
+    fn restored_web_proxy_bootstrap_projects_only_the_one_shot_native_shell_event() {
+        let event = startup_native_shell_event_for_carrier(&json!({
+            "webProxyBootstrapUrl": "http://127.0.0.1:49152/#opaque-capability",
+            "secret": "must-not-cross-shell-boundary",
+        }))
+        .expect("restored Web carrier requires desktop adoption");
+        assert_eq!(event["channel"], "native-shell");
+        assert_eq!(event["payload"]["type"], "web-proxy-bootstrap");
+        assert_eq!(
+            event["payload"]["webProxyBootstrapUrl"],
+            "http://127.0.0.1:49152/#opaque-capability"
+        );
+        assert!(event["payload"].get("secret").is_none());
+        assert!(startup_native_shell_event_for_carrier(&json!({})).is_none());
     }
 
     #[test]

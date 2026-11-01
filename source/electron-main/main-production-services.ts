@@ -1,3 +1,4 @@
+import { openWebProxyBootstrapUrlInSystemBrowser } from "./main-edge.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ApplicationMenuElectronPort, ApplicationMenuItem } from "./application-menu.js";
@@ -513,7 +514,21 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     bindings.reportFailure("cursor-auth", "protocol-registration", new Error(`Unable to register ${authCallbackRegistration.protocolScheme}:${authCallbackRegistration.redirectTarget}.`));
   }
   const windowStatePersistence = createWindowStatePersistence({ app: bindings.native.app, screen: bindings.native.screen, env, captureWarning: (message) => bindings.reportFailure("window-state", "persistence", new Error(message)) });
-  const coordinatorLegs = createCoordinatorMainLegs({ onProblem: (problem) => bindings.reportFailure("coordinator", "main-legs", new Error(problem)), reportFailure: (leg, error) => bindings.reportFailure("coordinator", leg, error) });
+  const coordinatorLegs = createCoordinatorMainLegs({
+    onProblem: (problem) => bindings.reportFailure("coordinator", "main-legs", new Error(problem)),
+    reportFailure: (leg, error) => bindings.reportFailure("coordinator", leg, error),
+    onEvent: (family, payload) => {
+      if (family !== "native-shell" || payload == null || typeof payload !== "object" || Array.isArray(payload)) return;
+      const event = payload as Record<string, unknown>;
+      if (event.type !== "web-proxy-bootstrap") return;
+      void openWebProxyBootstrapUrlInSystemBrowser(
+        { openInSystemBrowser: (url: string) => bindings.native.shell.openExternal(url) },
+        event.webProxyBootstrapUrl,
+      ).then((opened) => {
+        if (!opened) bindings.reportFailure("network-proxy", "restart-web-bootstrap", new Error("Restored Web proxy bootstrap event failed strict loopback validation."));
+      }).catch((error) => bindings.reportFailure("network-proxy", "restart-web-bootstrap", error));
+    },
+  });
   const connectorEgress = createEgressConnectionObserver<BoxConnectionInfo>();
   const devGatewayOfflineControl = createDevGatewayOfflineControl(async (induced) => {
     const result: unknown = await coordinatorLegs.legs.setDevGatewayOffline!({ induced });
