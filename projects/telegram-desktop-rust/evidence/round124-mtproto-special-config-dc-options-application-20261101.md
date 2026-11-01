@@ -14,14 +14,14 @@
 
 ## Existing-owner-first implementation
 
-Platform final source-compliance commit: `885a0059e1989ba404007d73ff8104779ffc7db9`.
-Final spec blob: `916c0e3506874cad4ccfa1401d24786b44e38126`.
+Platform final source-compliance commit: `afc4379871a397bf4180fb74dd1f7729fbb86341`.
+Final spec blob: `4109c09f3f92932ac79aa1f6d15d1825a6788359`.
 
 - telegram-protocol api blob `e032f4dbba09c0a4d912566b4e1c51311b677002`: `build_help_get_config` and independent `parse_config_dc_options_prefix`.
 - telegram-protocol dc blob `f9aecd0370b43317f81b437ee308fb88d141a302`: metadata-preserving, first-wins dc/IP/port-normalized, IP+port-difference `replace_endpoints`.
-- telegram-runtime blob `4d9a187904423c58015566c6e4482750a13a5d77`: `apply_resolved_special_config_endpoint` uses existing SessionOwner, exact 6000 ms owned attempt, transient logical 1000+d route, bare request and dc-options-only canonical application.
-- protocol contract blob `e0add7e002050d089edc6ed4e0847f865764c482`; additional focused runtime contracts are embedded in the runtime source. Authored only, not executed.
-- Desktop mirror commit `7e2a555d24613767a4424540685d115475c0433c`; mirrored protocol/runtime blobs are byte-identical to platform.
+- telegram-runtime blob `b502e32e821433a14cc47861e17c10e106fd5af8`: `apply_resolved_special_config_endpoint` uses existing SessionOwner, exact 6000 ms owned attempt, transient logical 1000+d route, bare request and dc-options-only canonical application.
+- protocol contract blob `91a74d91214a06fcef5fcb265204f4deec82c30a`; additional focused runtime contracts are embedded in the runtime source. Authored only, not executed.
+- Desktop mirror commit `820418b875f227755f6060a5d531dc1596e5c0a6`; mirrored protocol/runtime blobs are byte-identical to platform.
 
 No second RuntimeClient/provider/account/directory/persistence namespace, public special-config JSON command, HTTP dependency, HTTP dispatch, proxy behavior, manifest/lock update, or storage schema was added.
 
