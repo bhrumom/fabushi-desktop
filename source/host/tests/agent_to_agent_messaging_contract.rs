@@ -180,6 +180,14 @@ fn inbound_consumer_rechecks_target_receive_policy_before_persistence(){
 }
 
 #[test]
+fn inbound_policy_recheck_is_target_admission_scoped() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    assert!(source.contains("if let Some(target_admission) = target_admission.as_ref()"));
+    assert!(source.contains(".map(|admission| admission.session_key.clone())"));
+    assert!(source.contains(".unwrap_or_default()"));
+}
+
+#[test]
 fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
     let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
     let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");

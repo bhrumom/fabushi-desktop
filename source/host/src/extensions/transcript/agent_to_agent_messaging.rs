@@ -448,14 +448,17 @@ pub fn persist_agent_inbound_message(
     }
     let source_admission = sessions.read_session_work_admission(from_id)?;
     let target_admission = sessions.read_session_work_admission(agent_id)?;
-    if let (Some(source_admission), Some(target_admission)) =
-        (source_admission.as_ref(), target_admission.as_ref())
-    {
+    if let Some(target_admission) = target_admission.as_ref() {
         let source_endpoint = CommunicationEndpoint {
             agent_id: from_id.to_string(),
-            session_key: source_admission.session_key.clone(),
+            session_key: source_admission
+                .as_ref()
+                .map(|admission| admission.session_key.clone())
+                .unwrap_or_default(),
             store_path: sessions.session_db_path(from_id)?.to_string_lossy().into_owned(),
-            session_id: Some(source_admission.session_id.clone()),
+            session_id: source_admission
+                .as_ref()
+                .map(|admission| admission.session_id.clone()),
             communication: sessions.read_session_communication_policy(from_id)?,
         };
         let target_endpoint = CommunicationEndpoint {
