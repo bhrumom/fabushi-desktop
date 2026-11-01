@@ -184,6 +184,105 @@ def parse_patched_dependencies(content: str) -> dict[str, str]:
     return result
 
 
+def parse_snapshot_dependencies(
+    content: str,
+) -> dict[str, list[tuple[str, str, str]]]:
+    """Read bounded dependency maps from pnpm snapshot records."""
+    result: dict[str, list[tuple[str, str, str]]] = {}
+    in_section = False
+    snapshot: str | None = None
+    dependency_section: str | None = None
+    snapshot_pattern = re.compile(
+        r"^  (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(?:$|#|.+$)"
+    )
+    section_pattern = re.compile(r"^    ([A-Za-z][A-Za-z0-9_-]*):\s*$")
+    dependency_pattern = re.compile(
+        r"^      (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(.+?)\s*$"
+    )
+    for line in content.splitlines():
+        top = TOP_LEVEL_RE.match(line)
+        if top:
+            in_section = top.group(1) == "snapshots"
+            snapshot = None
+            dependency_section = None
+            continue
+        if not in_section:
+            continue
+        snapshot_match = snapshot_pattern.match(line)
+        if snapshot_match:
+            snapshot = unquote_key(snapshot_match)
+            result.setdefault(snapshot, [])
+            dependency_section = None
+            continue
+        if snapshot is None:
+            continue
+        section_match = section_pattern.match(line)
+        if section_match:
+            dependency_section = section_match.group(1)
+            continue
+        if dependency_section not in {"dependencies", "optionalDependencies"}:
+            continue
+        dependency_match = dependency_pattern.match(line)
+        if dependency_match:
+            dependency = unquote_key(dependency_match)
+            specifier = dependency_match.group(4).strip().strip("'\"")
+            result[snapshot].append((dependency, specifier, dependency_section))
+    return result
+
+
+def summarize_snapshot_graph(
+    lock_content: str, rows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    snapshot_dependencies: dict[str, list[tuple[str, str, str]]] = {}
+    for fragment in split_fragments(lock_content):
+        snapshot_dependencies.update(parse_snapshot_dependencies(fragment))
+    roots = sorted(
+        {
+            row["lock_snapshot_key"]
+            for row in rows
+            if row.get("lock_snapshot_status") == "observed"
+        }
+    )
+    reachable: set[str] = set()
+    pending = list(roots)
+    missing: set[tuple[str, str, str, str]] = set()
+    while pending:
+        current = pending.pop()
+        if current in reachable:
+            continue
+        if current not in snapshot_dependencies:
+            missing.add(("<root>", current, "", "snapshot-key-missing"))
+            continue
+        reachable.add(current)
+        for dependency, specifier, section in snapshot_dependencies[current]:
+            if specifier.startswith("link:") or specifier.startswith("workspace:"):
+                continue
+            resolved_specifier = specifier.removeprefix("npm:")
+            if resolved_specifier.startswith("@") and "@" in resolved_specifier[1:]:
+                child = resolved_specifier
+            else:
+                child = f"{dependency}@{resolved_specifier}"
+            if child not in snapshot_dependencies:
+                missing.add((current, dependency, specifier, section))
+            else:
+                pending.append(child)
+    return {
+        "root_count": len(roots),
+        "reachable_snapshot_count": len(reachable),
+        "missing_edge_count": len(missing),
+        "missing_edges": [
+            {
+                "from_snapshot": source,
+                "dependency": dependency,
+                "specifier": specifier,
+                "kind": kind,
+            }
+            for source, dependency, specifier, kind in sorted(missing)
+        ][:100],
+        "status": "closed" if not missing else "incomplete-bounded-join",
+    }
+
+
 def package_roots(frontier_path: Path) -> list[str]:
     document = json.loads(frontier_path.read_text(encoding="utf-8"))
     roots = set()
@@ -485,6 +584,9 @@ def qualify(
         )
         result["manifest_provenance_frontier"] = manifest_provenance_frontier(
             repo, commit, frontier_path
+        )
+        result["snapshot_graph_summary"] = summarize_snapshot_graph(
+            content, result["manifest_dependency_frontier"]
         )
     return result
 

@@ -49,8 +49,9 @@ The companion bounded lockfile probe read the exact `pnpm-lock.yaml` blob
 observed two YAML document fragments separated by valid `---` markers (the
 earlier probe's `duplicate_top_level_lockfile_headers` label was a parser
 classification defect, now corrected in
-`scripts/qualify_fixed_lockfile.py`). The larger fragment contains `200`
-importers, `1749` package keys, and `1142` snapshots; of `81` candidate package
+`scripts/qualify_fixed_lockfile.py`). With inline snapshot keys recognized, the
+larger fragment contains `206` importers, `1749` package keys, and `1750`
+snapshots; of `81` candidate package
 roots derived from the closure frontier, `64` matched and `17` did not. This
 parser intentionally reports raw lockfile observations and does not resolve
 aliases, peer suffixes, package archives, integrity/license provenance, or the
@@ -101,7 +102,7 @@ python3 projects/openclaw-rust/scripts/qualify_fixed_lockfile.py \
 ```
 
 The machine-readable result digest is
-`9e93c56b7f0d0b10e452930e200d2e84d8844de7867c1986f3e73c6289e34336`.
+`9f42e47a9b3bb6e3bbc11437dfa40f8ca68bcd2e3bcd692cb5177b7df9a7547b`.
 After de-duplicating repeated frontier rows by exact manifest path/package,
 the probe scanned `15` exact manifest identities; `13` of them declare at
 least one dependency row. The output contains `176` declared dependency edges:
@@ -118,6 +119,11 @@ selection, archive bytes, generated artifacts, or license/SBOM provenance.
 The resolved registry importer keys also have `155/155` observed snapshot
 keys in the lockfile; the four peer declarations remain unselected rather
 than being treated as resolved snapshots.
+The bounded recursive walk from the `136` deduplicated resolved snapshot roots
+reached `1134` snapshots with `0` missing dependency edges after recognizing
+the exact scoped `npm:` alias form. Its `closed` status applies only to this
+selected manifest-root graph; it does not claim that all `1750` lockfile
+snapshots are reachable from these roots or that peer candidates are selected.
 The selected `155` registry package keys and all `4` peer candidate sets have
 an integrity observation in the lockfile; this remains lock metadata, not
 independently verified archive bytes or license provenance.
