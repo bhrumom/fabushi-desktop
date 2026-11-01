@@ -3727,11 +3727,24 @@ impl SandAgentDb {
             {
                 let mut statement = db.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
                 for entry in entries {
-                    let Some(id) = entry.get("id").and_then(serde_json::Value::as_str) else {
-                        continue;
-                    };
-                    if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
-                        continue;
+                    let id = entry
+                        .get("id")
+                        .and_then(serde_json::Value::as_str)
+                        .filter(|id| !id.trim().is_empty())
+                        .ok_or_else(|| {
+                            AgentDbProjectionError::WorkAdmissionInvalid(
+                                "media settlement requires transcript entry identities".into(),
+                            )
+                        })?;
+                    if entry
+                        .get("kind")
+                        .and_then(serde_json::Value::as_str)
+                        .filter(|kind| !kind.trim().is_empty())
+                        .is_none()
+                    {
+                        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                            "media settlement requires transcript entry kinds".into(),
+                        ));
                     }
                     if entry
                         .get("sessionKey")
@@ -3747,6 +3760,11 @@ impl SandAgentDb {
                         inserted.push(entry.clone());
                     }
                 }
+            }
+            if inserted.len() != entries.len() {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "media settlement did not persist every transcript entry".into(),
+                ));
             }
             let receipt = media_settlement_receipt_entry(
                 &receipt_id,

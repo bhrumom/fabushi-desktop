@@ -1330,6 +1330,33 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         .to_string()
         .contains("media settlement generation or identity is stale"));
 
+    let malformed_entry = owner
+        .append_transcript_entries_and_release_media(
+            &[serde_json::json!({
+                "content": "must not settle without an id or kind"
+            })],
+            "agent:agent-media-settlement:main",
+            "revision-1",
+            "send-media:tool-1",
+        )
+        .expect_err("malformed media transcript must retain custody");
+    assert!(malformed_entry
+        .to_string()
+        .contains("requires transcript entry identities"));
+    assert_eq!(
+        owner
+            .read_session_work_admission()
+            .expect("read admission after malformed settlement")
+            .expect("admission after malformed settlement")
+            .admitted_media_work_id
+            .as_deref(),
+        Some("send-media:tool-1")
+    );
+    assert!(owner
+        .get_transcript_entry_by_id("outgoing-media-settlement:send-media:tool-1")
+        .expect("read malformed settlement receipt")
+        .is_none());
+
     assert_eq!(
         owner
             .append_transcript_entries_and_release_media(
