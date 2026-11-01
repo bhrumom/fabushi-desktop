@@ -434,9 +434,10 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         owner_source
             .matches("session_admission_identity_is_well_formed(&admission)")
             .count(),
-        10,
+        8,
         "all session-owned transaction edges must validate admission identity"
     );
+    assert!(owner_source.contains("if !session_work_write_is_admitted(db)?"));
 }
 
 #[test]
