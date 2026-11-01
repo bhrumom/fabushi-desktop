@@ -156,6 +156,10 @@ fn box_staging_matches_frozen_filters_and_upload_failure_semantics() {
 
 #[test]
 fn attachment_dimension_and_box_staging_reads_are_bounded() {
+    assert!(ATTACHMENTS_SERVICE_SOURCE.contains(
+        "read_outbound_media_file_bounded(\n        source_path"
+    ));
+    assert!(!ATTACHMENTS_SERVICE_SOURCE.contains("let bytes = fs::read(source_path)?"));
     assert!(ATTACHMENTS_SERVICE_SOURCE.contains("read_outbound_media_file_bounded(\n        &resolved"));
     assert!(!ATTACHMENTS_SERVICE_SOURCE.contains("image_size(&fs::read(resolved).ok()?, mime)"));
     assert!(BOX_STAGING_SOURCE.contains("read_outbound_media_file_bounded("));

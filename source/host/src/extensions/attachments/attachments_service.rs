@@ -269,7 +269,17 @@ pub fn ingest_attachment(
     if info.len() > byte_limit {
         return Err(SandAttachmentError::TooLarge(byte_limit));
     }
-    let bytes = fs::read(source_path)?;
+    let bytes = crate::extensions::attachments::media_reference::read_outbound_media_file_bounded(
+        source_path,
+        usize::try_from(byte_limit).unwrap_or(usize::MAX),
+    )
+    .map_err(|error| {
+        if error.kind() == std::io::ErrorKind::InvalidData {
+            SandAttachmentError::TooLarge(byte_limit)
+        } else {
+            SandAttachmentError::Io(error.to_string())
+        }
+    })?;
     let filename = source_path
         .file_name()
         .and_then(|value| value.to_str())
