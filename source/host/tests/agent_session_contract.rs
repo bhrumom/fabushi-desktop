@@ -145,6 +145,10 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_awaiting_user_response_for_tab(&record.id, &awaiting.tab_id, None, None)
         .expect_err("deletion-pending tab awaiting state must be rejected");
     assert!(awaiting_tab_error.contains("new session work is not admitted"));
+    let introduction_error = production
+        .set_agent_introduction_pending(&record.id, false)
+        .expect_err("deletion-pending introduction state must be rejected");
+    assert!(introduction_error.contains("new session work is not admitted"));
     let activity_error = production
         .mark_agent_activity(&record.id, 42.0)
         .expect_err("deletion-pending activity must be rejected");
@@ -158,6 +162,9 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
     assert!(production
         .set_agent_awaiting_user_response_for_tab(&record.id, &awaiting.tab_id, None, None)
         .expect("tab awaiting state is admitted after deletion fence clears"));
+    production
+        .set_agent_introduction_pending(&record.id, false)
+        .expect("introduction state is admitted after deletion fence clears");
     production
         .append_agent_transcript_entries(
             &record.id,

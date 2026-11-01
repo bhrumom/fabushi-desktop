@@ -203,10 +203,10 @@ exact-head Actions/package/runtime evidence is absent. Ledger verification and
 acceptance states must remain pending until those checks are available.
 
 The owner-local deletion window also fences the existing awaiting-user-response
-metadata setters, including the tab-scoped compare-and-set path. This is a
-bounded negative admission contract for deletion custody; it does not make
-cleanup-time state disposal or the broader session-work-admission lifecycle
-complete.
+metadata setters, including the tab-scoped compare-and-set path, and the
+introduction lifecycle metadata setter. This is a bounded negative admission
+contract for deletion custody; it does not make cleanup-time state disposal or
+the broader session-work-admission lifecycle complete.
 
 ## Release, migration, rollback, and observability
 

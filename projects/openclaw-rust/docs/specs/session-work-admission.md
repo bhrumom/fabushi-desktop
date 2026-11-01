@@ -143,7 +143,8 @@ evidence exist.
 `ProductionSessionWorkers::assert_agent_work_admission` now fences the
 existing transcript append/update/delete, compaction, and conversation-clear
 wrappers, activity metadata writes, and awaiting-user-response metadata writes
-while `begin_agent_delete` owns the deletion window. `SandAgentDb`
+plus introduction lifecycle metadata while `begin_agent_delete` owns the
+deletion window. `SandAgentDb`
 also now owns a migration-safe `sessionWorkAdmission` KV record with
 compare-and-set lifecycle generation transitions, exposed through
 `ProductionSessionWorkers`. New sessions initialize a direct-main record, and

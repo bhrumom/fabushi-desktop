@@ -674,3 +674,10 @@ auto-review producers therefore cannot create or clear awaiting state after the
 session owner has entered deletion custody. The existing owner remains responsible
 for cleanup-time state disposal; this is a bounded negative admission slice, not
 full session-work-admission acceptance.
+
+The deletion fence also covers the owner-local introduction lifecycle metadata
+setter used by kickstart, accepted-send cleanup, and upgrade-resume handling.
+Those producers cannot clear or rewrite introduction state after deletion
+custody begins, while the existing owner still controls cleanup and recovery.
+This remains a bounded negative admission slice, not full session-work-admission
+acceptance.

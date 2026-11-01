@@ -2301,6 +2301,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         pending: bool,
     ) -> Result<bool, String> {
+        self.assert_agent_work_admission(agent_id)?;
         self.open_agent_db_owner(agent_id)?
             .set_introduction_pending(pending)
             .map_err(|error| error.to_string())
