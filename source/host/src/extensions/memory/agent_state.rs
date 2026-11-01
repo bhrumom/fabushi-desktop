@@ -505,6 +505,9 @@ impl SandAgentState {
             if !result.ok {
                 return result;
             }
+            if let Some(callback) = &self.on_avatar_changed {
+                callback();
+            }
             return StateWriteResult::success(format!(
                 "Updated your picture ({filename}). Source {source_label} can be deleted if you no longer need it."
             ));
@@ -526,6 +529,9 @@ impl SandAgentState {
             let result = mutator(None);
             if !result.ok {
                 return result;
+            }
+            if let Some(callback) = &self.on_avatar_changed {
+                callback();
             }
             return StateWriteResult::success("Cleared your picture - back to the default.");
         }
