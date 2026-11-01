@@ -16,7 +16,7 @@ verification remains pending in the parity ledger.
 | `OCRM-RESP-AGENT-ACP-POLICY-001` | No production ACP dispatch-policy producer or consumer; current production runtime owns a separate Host turn lease/watchdog path. | Requires an exact ACP admission/settlement owner and a production caller; contract fixtures are insufficient. |
 | `OCRM-RESP-AGENT-CONTEXT-COMPACTION-001` | Fixed facade delegates to agent-core compaction semantics. Current Fabushi source now has a non-test routed-provider completion producer, guarded SandAgentDb commit, and typed replay consumer; exact fixed-source semantics, live provider proof, and Actions verification remain open. Persisted compaction epochs still belong to prompt/memory snapshots. | Do not add a second owner. Keep the row `not-started/not-wired/not-run/pending` until the partial producer→state→next-turn chain is reconciled with the fixed source, unsupported provider/attachment cases are accepted, and frozen verification is available. |
 | `OCRM-RESP-AGENT-MODEL-PRICING-001` | Fabushi has remote model-catalog price projection and `TurnUsage` aggregation, plus transport rate-limit/retry helpers, but no production cost calculator/consumer or provider-candidate admission path. | Requires a selected pricing authority/schema and an existing inference/agent owner that admits ordered fallback candidates and settles usage/cost; do not promote catalog projection or transport retry into a second runtime owner. |
-| `OCRM-RESP-CRON-SESSION-REAPER-001` | `AutomationRunPath` creates/finishes FileAutomationStore run history and reports a run id, but no per-run session row, lifecycle revision fence, transcript archive cleanup consumer, or media/subagent preservation query is present. | Requires CRON-REAPER-D01..D05 to select the per-run session representation and existing lifecycle/archive owner; do not treat automation history, generic session deletion, or media-store TTL cleanup as a reaper. |
+| `OCRM-RESP-CRON-SESSION-REAPER-001` | The bounded D01--D03 slice now registers and settles `cron_session_runs` through the existing session owner; no retention sweep, transcript archive cleanup consumer, guarded deletion, or media/subagent preservation query is present. | Requires the remaining CRON-REAPER-D04..D05 lifecycle and verification; do not treat the registration row, automation history, generic session deletion, or media-store TTL cleanup as a complete reaper. |
 | `OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001` | `session_profile_files.rs` serves agent profile/avatar data; no auth-profile preservation/removal producer or lifecycle consumer is identified. | Requires a real session cleanup/auth owner and credential-preserving contract; profile files cannot be repurposed as auth storage. |
 | `OCRM-RESP-SESSION-WORK-ADMISSION-001` | `ProductionSessionWorkers -> SandAgentDb` now owns bounded archive/restore admission, local background-result receipt handling, newly opened media recovery, and typed provider-review continuation admission; native continuation identity still fails closed and the full detached lifecycle remains absent. | Requires the remaining full lifecycle producers/consumers and production acceptance; owner-local state fields and bounded slices do not close the responsibility. |
 | `OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001` | `bundle_manifest.rs` defines parsing helpers, but no production bundle/archive producer or installer/discovery consumer calls them; Host extension registration currently publishes capability metadata only. | Requires a real plugin bundle ingress, archive custody, install transaction, and activation consumer. Blocker: `BL-PLUGINS-MANIFEST-WIRING-001`. |
@@ -96,6 +96,24 @@ the scheduled sweep producer and fence, the active media/subagent custody source
 unknown deletion/cleanup outcomes. D01..D05 are not implemented or verified, so this
 ADR does not upgrade the ledger or global flags; only after approval can a bounded Rust
 slice be implemented and verified against the required negative cases.
+
+### 2026-11-01 bounded cron registration slice
+
+The architecture decision and cron specification now approve a bounded D01--D03
+registration slice. `AutomationRunPath` calls the production
+`AdmittedAutomationRunStore` before executing scheduled/event-triggered work;
+that adapter delegates through `SandAgentSessionStore` and
+`ProductionSessionWorkers` to the existing `SandAgentDb` owner, which persists
+the per-run `cron_session_runs` row with the automation/run identity and
+current lifecycle revision. Completion, interruption, and execution error
+settle the same row through the guarded identity/revision update. Manual runs
+retain the compatibility file-store no-op.
+
+This is direct producer → owner → durable row evidence for registration only.
+No retention parser, sweep trigger, transcript archive, active media/subagent
+preservation query, guarded deletion, focused verification, or acceptance was
+added; the ledger remains `not-started/not-wired/not-run/pending` until the
+remaining D04--D05 lifecycle is implemented and verified.
 
 ## 2026-10-31 plugin-owner boundary recheck
 

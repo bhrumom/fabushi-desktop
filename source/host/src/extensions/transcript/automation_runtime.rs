@@ -375,6 +375,56 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
                     .finish_run(automation_id, run_id, status, finished_at_ms, detail)
             })
     }
+
+    fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron session registration agent identity mismatch".into());
+        }
+        let changed = self.session.begin_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            started_at_ms,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session run registration was not committed".into())
+        }
+    }
+
+    fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron session settlement agent identity mismatch".into());
+        }
+        let changed = self.session.finish_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session run settlement was stale or not committed".into())
+        }
+    }
 }
 
 impl AutomationRuntime {

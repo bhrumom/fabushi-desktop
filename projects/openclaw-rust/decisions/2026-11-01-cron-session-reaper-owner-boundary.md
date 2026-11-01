@@ -1,6 +1,6 @@
 # Cron session reaper owner boundary
 
-Status: proposed; architecture gate not yet approved
+Status: approved for bounded registration slice; cleanup architecture gate remains open
 Date: 2026-11-01
 Project: OCRM-001
 Responsibility: OCRM-RESP-CRON-SESSION-REAPER-001
@@ -16,12 +16,13 @@ canonical `agent:{agent_id}:main` work-admission record. Its archive transition
 rejects non-main session keys and its deletion API removes the whole agent
 directory.
 
-Therefore no cron reaper implementation is approved by this decision. The
+Therefore no cron reaper cleanup implementation is approved by this decision.
+The bounded registration slice is approved. The
 minimum viable target is an extension of the existing `SandAgentDb` /
 `ProductionSessionWorkers` ownership path, not a second session database,
 automation store, transcript owner, or filesystem-age cleanup job. The work
-remains architecture-blocked until the migration and archive contract below
-are approved and then implemented with focused oracles.
+outside that slice remains architecture-blocked until the migration and
+archive contract below are approved and then implemented with focused oracles.
 
 ## Source evidence and exact subjects
 

@@ -329,6 +329,36 @@ impl SandAgentSessionStore {
         read_session_model_entry(&db, agent_id)
     }
 
+    pub fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<bool, String> {
+        self.production
+            .begin_cron_session_run(agent_id, automation_id, run_id, started_at_ms)
+    }
+
+    pub fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<bool, String> {
+        self.production.finish_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+        )
+    }
+
     pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
         self.production.pending_conversation_turns()
     }

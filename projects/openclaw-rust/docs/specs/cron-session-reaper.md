@@ -1,6 +1,6 @@
 # Cron session reaper
 
-Status: architecture/specification required before implementation
+Status: implementation in progress; bounded registration slice approved
 Project: OCRM-001
 Responsibility: OCRM-RESP-CRON-SESSION-REAPER-001
 
@@ -18,6 +18,13 @@ per-run cron session rows. `source/host/src/extensions/transcript/mod.rs` also
 does not contain the previously recorded `TranscriptCleanup` owner. The old
 ledger target and O05 oracle therefore do not establish an implementation
 path.
+
+The first implementation slice is now approved for D01--D03 only: scheduled
+and event-triggered runs register and settle a durable per-run session row in
+the existing agent database through `ProductionSessionWorkers`. This makes the
+producer-to-owner-to-state edge explicit without claiming reaper deletion,
+transcript archival, media/subagent preservation, or acceptance. D04--D05
+remain an architecture and verification gate for the later cleanup slice.
 
 ## Goal
 
@@ -49,6 +56,11 @@ selected and approved.
 - CRON-REAPER-D05: define guarded deletion fields and the changed/failed
   outcomes without retrying unknown deletion outcomes.
 
+The bounded registration slice implements only the durable identity and
+terminal-state portions of D01 and the producer/owner handoff in D03. It does
+not select a cleanup trigger, perform retention parsing, archive transcript
+artifacts, or delete rows.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all
@@ -60,6 +72,9 @@ selected and approved.
   recorded; no old O05 auto-review test is reused as reaper evidence.
 - Exact-head Actions, runtime, package, provider, and device evidence remain
   required before the responsibility is considered accepted.
+- The bounded registration slice is complete only when the run path calls the
+  owner before execution and settles the same guarded row after execution;
+  verification remains pending during the development freeze.
 
 ## References
 

@@ -156,6 +156,24 @@ pub struct SessionWorkAdmissionRecord {
     pub provider_review: Option<SessionProviderReview>,
 }
 
+/// Durable identity/state projection for one scheduled or event-triggered
+/// automation run. Cleanup and transcript archival are deliberately not
+/// implemented by this slice; the row is the owner-local handoff required by
+/// the later cron reaper.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CronSessionRunRecord {
+    pub session_key: String,
+    pub automation_id: String,
+    pub run_id: String,
+    pub session_id: String,
+    pub lifecycle_revision: String,
+    pub updated_at_ms: f64,
+    pub base_session: bool,
+    pub state: String,
+    pub terminal_outcome: Option<String>,
+    pub terminal_detail: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PendingMemoryMutation {
     pub mutation_id: String,
@@ -1446,6 +1464,127 @@ impl SandAgentDb {
                     "lifecycle revision migration did not publish a value".to_string(),
                 )
             })
+    }
+
+    /// Register one background automation run in the existing session owner.
+    /// The identity and lifecycle revision are immutable for the row; a
+    /// duplicate registration can only refresh an already-running row.
+    pub fn begin_cron_session_run(
+        &self,
+        session_key: &str,
+        automation_id: &str,
+        run_id: &str,
+        session_id: &str,
+        lifecycle_revision: &str,
+        started_at_ms: f64,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        let automation_id = automation_id.trim();
+        let run_id = run_id.trim();
+        let session_id = session_id.trim();
+        let lifecycle_revision = lifecycle_revision.trim();
+        if session_key.is_empty()
+            || automation_id.is_empty()
+            || run_id.is_empty()
+            || session_id.is_empty()
+            || lifecycle_revision.is_empty()
+            || !started_at_ms.is_finite()
+        {
+            return Ok(false);
+        }
+        self.run_write("beginCronSessionRun", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(
+                    "INSERT INTO cron_session_runs (session_key, automation_id, run_id, session_id, lifecycle_revision, updated_at_ms, base_session, state)\
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 'running')\
+                     ON CONFLICT(session_key) DO UPDATE SET updated_at_ms = excluded.updated_at_ms\
+                     WHERE cron_session_runs.automation_id = excluded.automation_id\
+                       AND cron_session_runs.run_id = excluded.run_id\
+                       AND cron_session_runs.session_id = excluded.session_id\
+                       AND cron_session_runs.lifecycle_revision = excluded.lifecycle_revision\
+                       AND cron_session_runs.state = 'running'",
+                    params![
+                        session_key,
+                        automation_id,
+                        run_id,
+                        session_id,
+                        lifecycle_revision,
+                        started_at_ms
+                    ],
+                )? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
+    }
+
+    /// Settle a registered background automation run only when its durable
+    /// identity and lifecycle revision still match. Cleanup/archive remains a
+    /// separate later reaper operation.
+    pub fn finish_cron_session_run(
+        &self,
+        session_key: &str,
+        session_id: &str,
+        lifecycle_revision: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let session_key = session_key.trim();
+        let session_id = session_id.trim();
+        let lifecycle_revision = lifecycle_revision.trim();
+        let outcome = outcome.trim();
+        if session_key.is_empty()
+            || session_id.is_empty()
+            || lifecycle_revision.is_empty()
+            || outcome.is_empty()
+            || !finished_at_ms.is_finite()
+        {
+            return Ok(false);
+        }
+        self.run_write("finishCronSessionRun", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(
+                    "UPDATE cron_session_runs\
+                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, terminal_detail = ?3\
+                     WHERE session_key = ?4 AND session_id = ?5 AND lifecycle_revision = ?6 AND state = 'running'",
+                    params![
+                        finished_at_ms,
+                        outcome,
+                        detail,
+                        session_key,
+                        session_id,
+                        lifecycle_revision
+                    ],
+                )? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
     }
 
     /// Atomically advances the durable Agent root and marks the addressed

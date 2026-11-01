@@ -27,6 +27,25 @@ CREATE INDEX IF NOT EXISTS idx_transcript_window
 CREATE INDEX IF NOT EXISTS idx_transcript_branched
   ON transcript_entries(seq, entry)
   WHERE COALESCE(json_extract(entry, '$.branched'), 0) = 1;
+CREATE TABLE IF NOT EXISTS cron_session_runs (
+  session_key TEXT PRIMARY KEY,
+  automation_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  lifecycle_revision TEXT NOT NULL,
+  updated_at_ms REAL NOT NULL,
+  base_session INTEGER NOT NULL DEFAULT 0,
+  state TEXT NOT NULL,
+  terminal_outcome TEXT,
+  terminal_detail TEXT,
+  active_controller INTEGER NOT NULL DEFAULT 0,
+  pending_outgoing_media INTEGER NOT NULL DEFAULT 0,
+  unsettled_subagent INTEGER NOT NULL DEFAULT 0
+) STRICT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cron_session_runs_automation_run
+  ON cron_session_runs(automation_id, run_id);
+CREATE INDEX IF NOT EXISTS idx_cron_session_runs_expiry
+  ON cron_session_runs(updated_at_ms, base_session, state);
 "#;
 
 pub const MAIN_TRANSCRIPT_MESSAGE_FILTER_SQL: &str = r#"

@@ -121,6 +121,31 @@ pub trait AutomationRunStore {
         finished_at_ms: f64,
         detail: Option<&str>,
     ) -> Result<Option<AutomationRecord>, String>;
+
+    /// Register a background run in the existing session owner. The file
+    /// automation store intentionally keeps the compatibility no-op; the
+    /// production adapter supplies the durable owner edge.
+    fn begin_cron_session_run(
+        &self,
+        _agent_id: &str,
+        _automation_id: &str,
+        _run_id: &str,
+        _started_at_ms: f64,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn finish_cron_session_run(
+        &self,
+        _agent_id: &str,
+        _automation_id: &str,
+        _run_id: &str,
+        _outcome: &str,
+        _finished_at_ms: f64,
+        _detail: Option<&str>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 impl AutomationRunStore for FileAutomationStore {
@@ -297,6 +322,17 @@ impl AutomationRunPath {
             .map_err(|error| error.to_string())?;
         let run_id = run.as_ref().map(|run| run.id.clone());
 
+        if args.trigger.is_background() {
+            if let Some(run_id) = run_id.as_deref() {
+                store.begin_cron_session_run(
+                    &args.agent_id,
+                    &args.automation.id,
+                    run_id,
+                    args.fired_at_ms,
+                )?;
+            }
+        }
+
         let time_zone = store.resolved_user_time_zone();
         let mut prompt = build_automation_wake_prompt_with_time_zone(
             &current,
@@ -328,6 +364,16 @@ impl AutomationRunPath {
         let result = match execution {
             Ok(AutomationExecutionResult::Completed) => {
                 finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "ok",
+                    args.fired_at_ms,
+                    None,
+                )?;
                 self.clear_automation_failure_state(&args.agent_id, &args.automation.id);
                 Ok(Some(FireAutomationOutcome::Ok))
             }
@@ -343,12 +389,32 @@ impl AutomationRunPath {
                     args.fired_at_ms,
                     Some(&detail),
                 )?;
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "interrupted",
+                    args.fired_at_ms,
+                    Some(&detail),
+                )?;
                 Ok(Some(FireAutomationOutcome::Interrupted))
             }
             Err(detail) => {
                 finish_run(
                     store,
                     &args.automation.id,
+                    run_id.as_deref(),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&detail),
+                )?;
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
                     run_id.as_deref(),
                     "error",
                     args.fired_at_ms,
@@ -448,6 +514,32 @@ fn finish_run(
         .finish_run(automation_id, run_id, status, finished_at_ms, detail)
         .map(|_| ())
         .map_err(|error| error.to_string())
+}
+
+fn finish_cron_session_run(
+    store: &dyn AutomationRunStore,
+    agent_id: &str,
+    automation_id: &str,
+    trigger: AutomationRunTrigger,
+    run_id: Option<&str>,
+    outcome: &str,
+    finished_at_ms: f64,
+    detail: Option<&str>,
+) -> Result<(), String> {
+    if !trigger.is_background() {
+        return Ok(());
+    }
+    let Some(run_id) = run_id else {
+        return Ok(());
+    };
+    store.finish_cron_session_run(
+        agent_id,
+        automation_id,
+        run_id,
+        outcome,
+        finished_at_ms,
+        detail,
+    )
 }
 
 pub fn clamp_wake_events(events: &[Value]) -> Vec<Value> {

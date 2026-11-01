@@ -2514,6 +2514,84 @@ impl ProductionSessionWorkers {
         })
     }
 
+    /// Register one background automation run as a durable per-run session
+    /// projection. The row remains owned by the agent DB; cleanup and archive
+    /// are intentionally separate reaper responsibilities.
+    pub fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session run requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session run requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.begin_cron_session_run(
+                &session_key,
+                automation_id,
+                run_id,
+                &session_key,
+                &admission.lifecycle_revision,
+                started_at_ms,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Settle the same per-run projection only against the current session
+    /// identity and lifecycle revision. A changed lifecycle returns false and
+    /// remains visible for the later reconciliation/reaper slice.
+    pub fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session settlement requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session run requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.finish_cron_session_run(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                outcome,
+                finished_at_ms,
+                detail,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
     pub(crate) fn read_session_work_admission_locked(
         &self,
         agent_id: &str,
