@@ -43,3 +43,10 @@ No contract was executed.
 Proxy/Web/TLS camouflage and TLS ClientHello/TlsBlock, media-cluster negative protocol DC ids, temporary-DC normalization, quick-ACK lifecycle/correlation, connection racing/retry/reconnect, auth-key binding/persistence/expiry/renewal, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final source-level compliance readback
+
+Platform-core final source-level compliance commit is `5b7ed34df4c8063fe3db9627552bc673dda9c92f`, spec blob `65dc6e1d9e611ad5428fc7c9c85551ac6d868081`. The source-reviewed protocol contract correction is `ecf143c6edec0c859e2c19a0f94aa1c9dca215ae`; the corrected desktop mirror is `6f950d056170a232d22ee08c6975cb051592594f`, with byte-identical contract blob `307c973117a96fa901662d021ac79f5ec76b28cf`.
+
+The responsibility remains implemented only, not verified or accepted. Coverage remains responsibilities_total 107, unknown 16172, unread 16145, omitted 0, unmapped_responsibilities 0. No executable validation or GitHub Actions/status/check query was performed.

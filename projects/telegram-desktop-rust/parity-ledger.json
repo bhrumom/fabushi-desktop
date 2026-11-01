@@ -27097,13 +27097,20 @@
         "desktop-provider-sync-commit:76e467b5a1b3aecceffc4cdb6d34dc12461f12d3",
         "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54245116969f53ee53ccc3f979bbd9fb7382cc97",
         "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@d5727367035cef2adbba0a6a6a2f6b95e2716450",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@4de139a0f98c2d2b784145aa1995a67458af9c97"
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@4de139a0f98c2d2b784145aa1995a67458af9c97",
+        "platform-core-contract-correction-commit:ecf143c6edec0c859e2c19a0f94aa1c9dca215ae",
+        "platform-core-protocol-contract-path:native/telegram-protocol/tests/protocol_contract.rs@307c973117a96fa901662d021ac79f5ec76b28cf",
+        "desktop-corrected-contract-mirror-commit:6f950d056170a232d22ee08c6975cb051592594f",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@307c973117a96fa901662d021ac79f5ec76b28cf",
+        "platform-core-final-compliance-commit:5b7ed34df4c8063fe3db9627552bc673dda9c92f",
+        "platform-core-final-spec-blob:65dc6e1d9e611ad5428fc7c9c85551ac6d868081",
+        "desktop-round75-bookkeeping-commit:3b59512feb6794c235f03a3e83006abb94f11bdb"
       ],
       "test_evidence": [
-        "Authored-only canonical/desktop protocol contracts cover secret-shape selection, all reserved nonce forms, plain56/cipher8 prefix partition, DC-id-sensitive encrypted tail, Version0/Version1 divergence, split-call CTR continuity, send/receive direction separation, and DD/EE secret16 equivalence; not run.",
-        "Authored-only canonical network contract covers one prefix, continued outbound CTR over abridged framing, and reverse-direction receive CTR through TcpTransport::connect_obfuscated; not run."
+        "Canonical and desktop authored-only protocol contracts at blob 307c973117a96fa901662d021ac79f5ec76b28cf cover exact secret shapes, all fixed-U direct nonce reserved forms, plain56/cipher8 prefix partition, same-nonce/same-DC Version0-vs-Version1 derivation divergence, split-call CTR continuity, direction separation, and DD/EE secret16 equivalence; not run.",
+        "Canonical authored-only network contract at blob 1a94aaa3f79e8108e04bc5418657fd4e641d0a4a covers one prefix, continued outbound CTR over the existing abridged frame codec, and reverse-direction receive CTR through TcpTransport::connect_obfuscated; not run."
       ],
-      "target_commit": "76e467b5a1b3aecceffc4cdb6d34dc12461f12d3",
+      "target_commit": "6f950d056170a232d22ee08c6975cb051592594f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -27239,7 +27246,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381 plus connection_tcp.h@ce09deab2f722ca22d371c851a7c43d939a9034b, mtproto_auth_key.h@31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c, mtproto_auth_key.cpp@cb4a4e5c3b94ed33d126068792536a08800615f2, mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10, mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a and session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A source-level implementation. Existing telegram-protocol transport and telegram-network TcpTransport remain the only owners. This round closes direct-TCP 64-byte connection-start nonce filtering, Version0/Version1/VersionD secret selection and SHA-256 key derivation, protocol/DC-id tail obfuscation, stateful send/receive AES-CTR and shipping Main/test DC carrier integration. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Proxy/TLS camouflage, media-cluster/temporary DC id semantics, quick-ACK lifecycle, broader scheduling/racing/retry, auth-key binding/persistence, arbitrary request history, gzip and complete difference decoding remain open.",
+      "notes": "Stage A source-level implementation. Existing telegram-protocol transport and telegram-network TcpTransport remain the only owners. This round closes direct-TCP 64-byte connection-start nonce filtering, Version0/Version1/VersionD secret selection and SHA-256 key derivation, protocol/DC-id tail obfuscation, stateful send/receive AES-CTR and shipping Main/test DC carrier integration. Canonical production is platform-core 0f93e212d5151c598f19a67b0a65ad19774dc1c3; contract assertions were source-reviewed and tightened at ecf143c6edec0c859e2c19a0f94aa1c9dca215ae, mirrored to desktop at 6f950d056170a232d22ee08c6975cb051592594f; final platform source-level compliance is 5b7ed34df4c8063fe3db9627552bc673dda9c92f/spec blob 65dc6e1d9e611ad5428fc7c9c85551ac6d868081. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Proxy/TLS camouflage, media-cluster/temporary DC id semantics, quick-ACK lifecycle, broader scheduling/racing/retry, auth-key binding/persistence, arbitrary request history, gzip and complete difference decoding remain open.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

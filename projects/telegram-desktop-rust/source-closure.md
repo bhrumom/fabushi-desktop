@@ -1732,3 +1732,14 @@ Desktop provider synchronization is `76e467b5a1b3aecceffc4cdb6d34dc12461f12d3`: 
 The unique ledger records this responsibility as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=107, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Unknown/unread do not decrease because the same fixed-U connection family still contains explicitly open proxy/TLS camouflage, media/temporary DC semantics, quick-ACK lifecycle and broader connection scheduling/retry responsibilities.
 
 Contracts are authored only and were not executed. No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E test, package, deployment, installation or runtime acceptance was performed. Auth-key binding/persistence/expiry/renewal, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
+
+
+### Round 106 final source-level compliance
+
+Platform-core final compliance is `5b7ed34df4c8063fe3db9627552bc673dda9c92f` / spec blob `65dc6e1d9e611ad5428fc7c9c85551ac6d868081`, referencing desktop bookkeeping checkpoint `3b59512feb6794c235f03a3e83006abb94f11bdb`. The superseding source-reviewed protocol contract is platform `ecf143c6edec0c859e2c19a0f94aa1c9dca215ae` and desktop mirror `6f950d056170a232d22ee08c6975cb051592594f`, byte-identical at `307c973117a96fa901662d021ac79f5ec76b28cf`; canonical network contract remains `1a94aaa3f79e8108e04bc5418657fd4e641d0a4a`.
+
+Canonical production remains `transport.rs@74189488dc3ec1015edc59989f7aced8ad65f5c3`, protocol export `lib.rs@d5727367035cef2adbba0a6a6a2f6b95e2716450`, and shipping `telegram-network/src/lib.rs@54245116969f53ee53ccc3f979bbd9fb7382cc97`. Desktop provider mirrors the network/protocol export blobs exactly. The unique `TDRP-R9-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001` responsibility remains `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`.
+
+Coverage is `responsibilities_total=107, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Proxy/Web/TLS camouflage, media-cluster negative/temporary protocol DC-id semantics, quick-ACK lifecycle, broader connection scheduling/racing/reconnect/send retry, auth-key binding/persistence/expiry/renewal, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
+
+No executable validation or GitHub Actions/status/check query was performed.
