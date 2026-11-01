@@ -585,7 +585,20 @@ fn persist_local_permission_event(
                     Value::String(permission_status(event.request.status).to_string()),
                 );
             }
-            if let Some(session_key) = event.request.session_key.as_deref() {
+            let session_key = event
+                .request
+                .session_key
+                .as_deref()
+                .map(ToOwned::to_owned)
+                .or_else(|| {
+                    entry
+                        .get("sessionKey")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                        .map(ToOwned::to_owned)
+                });
+            if let Some(session_key) = session_key.as_deref() {
                 sessions
                     .update_agent_transcript_entry_if_session_admitted(
                         &event.request.agent_id,

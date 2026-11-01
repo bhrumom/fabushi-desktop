@@ -496,10 +496,23 @@ impl AutoReviewService {
                     },
                     "timestampMs": now_ms(),
                 });
-                if let Some(session_key) = approval.session_key.as_deref() {
+                let session_key = match approval.session_key.as_deref() {
+                    Some(session_key) => Some(session_key.to_string()),
+                    None => match self.sessions.read_session_work_admission(&approval.agent_id) {
+                        Ok(admission) => admission.map(|record| record.session_key),
+                        Err(error) => {
+                            eprintln!(
+                                "auto-review admission read failed agent={} error={error}",
+                                approval.agent_id
+                            );
+                            return;
+                        }
+                    },
+                };
+                if let Some(session_key) = session_key.as_deref() {
                     entry["sessionKey"] = Value::String(session_key.to_string());
                 }
-                let result = if let Some(session_key) = approval.session_key.as_deref() {
+                let result = if let Some(session_key) = session_key.as_deref() {
                     self.sessions
                         .append_agent_transcript_entries_if_session_admitted(
                             &approval.agent_id,
@@ -546,7 +559,14 @@ impl AutoReviewService {
                         ),
                     );
                 }
-                let result = if let Some(session_key) = approval.session_key.as_deref() {
+                let session_key = entry
+                    .get("sessionKey")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+                    .or_else(|| approval.session_key.clone());
+                let result = if let Some(session_key) = session_key.as_deref() {
                     self.sessions.update_agent_transcript_entry_if_session_admitted(
                         &approval.agent_id,
                         session_key,
