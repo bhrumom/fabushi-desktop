@@ -159,9 +159,9 @@ authority gates open.
   production acceptance. The real producer now supplies provider input-token
   usage, source transcript projection, summary validation/fallback, and the
   guarded `ProductionSessionWorkers` commit call. Exact upstream usage
-  semantics, bounded sampled summary-input parity, and frozen verification
-  remain open; split-turn prefix planning and the second prefix summarizer call
-  are now wired.
+  semantics and frozen verification remain open; split-turn prefix planning,
+  the second prefix summarizer call, and a deterministic bounded transcript
+  sampler (recent tail/user asks/head plus canonical fill) are now wired.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status is `implementation=partially-wired`, `wiring=partially-wired`,
@@ -304,7 +304,7 @@ redacted content, test run identities, and exact-head Actions artifacts.
 | CC-01 | pending | Current dossier closes only bounded relative/source and selected lock graph observations; recursive source/package/archive/license closure and Actions authority remain open. |
 | CC-02 | passed (owner contract) | `ProductionSessionWorkers`/`SandAgentDb` is the canonical owner and implements the transactional compaction/replay contract defined in `decisions/2026-11-01-context-compaction-owner-contract.md`; the production caller uses that owner. |
 | CC-03 | partially wired | The non-test routed-provider completion boundary uses provider input-token usage, canonical transcript rows, the planning owner, and the existing summarizer/commit owner; exact fixed-source usage semantics and frozen verification remain open. |
-| CC-04 | partially wired | Threshold/cut-point, summary bound, latest-request bound, no-summary fallback, fixed file-operation details extraction/merge, and split-turn prefix summarization are wired; bounded sampled summary-input parity remains open. |
+| CC-04 | partially wired | Threshold/cut-point, summary bound, latest-request bound, no-summary fallback, fixed file-operation details extraction/merge, split-turn prefix summarization, and bounded transcript sampling are wired; exact upstream sampling/omission parity remains open. |
 | CC-05 | partially wired | Cancellation after summarization, provider failure, stale lifecycle, and duplicate commit preserve the prior transcript through the guarded owner; focused oracles remain unrun. |
 | CC-06 | partially wired | A non-test caller can commit and the next turn reads the typed owner projection; newly constructed live-turn evidence is still pending. |
 | CC-07 | blocked | Strict owner-local replay projection and pure Responses/Chat Completions/Cursor/Claude serializers now exist with fail-closed pairing/media checks. They are not wired to a live Runner/provider attempt; Claude typed rows remain explicitly unsupported and the attachment owner contract remains unresolved, while `ProviderMessage` remains role/text-only for ordinary turns. |

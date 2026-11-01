@@ -12,6 +12,8 @@ const CHARS_PER_TOKEN_ESTIMATE: u64 = 4;
 const IMAGE_BLOCK_TOKENS: u64 = 2_000;
 pub const MAX_COMPACTION_SUMMARY_CHARS: usize = 16_000;
 pub const MAX_LATEST_USER_REQUEST_CHARS: usize = 800;
+pub const MAX_SUMMARY_INPUT_CHARS: usize = 160_000;
+const MAX_SAMPLED_ENTRY_CHARS: usize = 6_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CompactionSettings {
@@ -192,8 +194,7 @@ pub fn prepare_compaction_plan(
 /// inference owner. The prompt is deliberately a projection of the plan;
 /// this module does not decide transport, persistence, or provider format.
 pub fn build_compaction_summary_prompt(plan: &CompactionPlan) -> Result<String, String> {
-    let transcript = serde_json::to_string(&plan.entries_to_summarize)
-        .map_err(|error| format!("could not encode compaction transcript: {error}"))?;
+    let transcript = serialize_entries_with_budget(&plan.entries_to_summarize)?;
     let previous = plan.previous_summary.as_deref().unwrap_or("(none)");
     let latest_request = plan.latest_user_request.as_deref().unwrap_or("(none)");
     Ok(format!(
@@ -204,11 +205,117 @@ pub fn build_compaction_summary_prompt(plan: &CompactionPlan) -> Result<String, 
 
 /// Prompt for the prefix of a turn whose recent suffix remains verbatim.
 pub fn build_turn_prefix_summary_prompt(plan: &CompactionPlan) -> Result<String, String> {
-    let transcript = serde_json::to_string(&plan.turn_prefix_entries)
-        .map_err(|error| format!("could not encode split-turn prefix: {error}"))?;
+    let transcript = serialize_entries_with_budget(&plan.turn_prefix_entries)?;
     Ok(format!(
         "This is the PREFIX of a turn that was too large to keep. The SUFFIX (recent work) is retained verbatim. Summarize only the prefix so the next agent can understand the retained suffix. Use exactly these sections:\n\n## Original Request\n[What did the user ask for?]\n\n## Early Progress\n- [Key decisions and work done in the prefix]\n\n## Context for Suffix\n- [Information needed to understand the kept suffix]\n\nBe concise and preserve exact paths, identifiers, and errors.\n\nPrefix transcript rows (JSON):\n{transcript}"
     ))
+}
+
+fn serialize_entries_with_budget(entries: &[Value]) -> Result<String, String> {
+    let rendered = entries
+        .iter()
+        .map(|entry| {
+            serde_json::to_string(entry)
+                .map(|text| truncate_entry_for_summary(&text))
+                .map_err(|error| format!("could not encode compaction transcript row: {error}"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let full_chars = rendered.iter().map(|text| text.chars().count() + 1).sum::<usize>();
+    if full_chars <= MAX_SUMMARY_INPUT_CHARS {
+        return Ok(rendered.join("\n"));
+    }
+
+    // Match the fixed source's intent: preserve the recent tail, user asks,
+    // and a bounded head before filling remaining room in canonical order.
+    let mut selected = BTreeSet::new();
+    let mut selected_chars = 0usize;
+    select_summary_indices(
+        (0..entries.len()).rev(),
+        &rendered,
+        MAX_SUMMARY_INPUT_CHARS / 2,
+        &mut selected,
+        &mut selected_chars,
+    );
+    select_summary_indices(
+        entries
+            .iter()
+            .enumerate()
+            .filter(|(_, entry)| entry_role(entry) == Some("user"))
+            .map(|(index, _)| index),
+        &rendered,
+        MAX_SUMMARY_INPUT_CHARS * 3 / 4,
+        &mut selected,
+        &mut selected_chars,
+    );
+    select_summary_indices(
+        0..entries.len(),
+        &rendered,
+        MAX_SUMMARY_INPUT_CHARS * 17 / 20,
+        &mut selected,
+        &mut selected_chars,
+    );
+    select_summary_indices(
+        0..entries.len(),
+        &rendered,
+        MAX_SUMMARY_INPUT_CHARS,
+        &mut selected,
+        &mut selected_chars,
+    );
+
+    let mut output = String::new();
+    let mut previous = None;
+    for index in selected {
+        if let Some(previous_index) = previous
+            && index > previous_index + 1
+        {
+            append_summary_text(
+                &mut output,
+                &format!("<omitted {} transcript row(s)>\n", index - previous_index - 1),
+            );
+        }
+        append_summary_text(&mut output, &rendered[index]);
+        append_summary_text(&mut output, "\n");
+        previous = Some(index);
+    }
+    Ok(output.trim_end().to_string())
+}
+
+fn truncate_entry_for_summary(text: &str) -> String {
+    if text.chars().count() <= MAX_SAMPLED_ENTRY_CHARS {
+        return text.to_string();
+    }
+    let marker = "... [entry truncated]";
+    let head = MAX_SAMPLED_ENTRY_CHARS.saturating_sub(marker.chars().count());
+    format!("{}{}", text.chars().take(head).collect::<String>(), marker)
+}
+
+fn select_summary_indices<I>(
+    indices: I,
+    rendered: &[String],
+    budget: usize,
+    selected: &mut BTreeSet<usize>,
+    selected_chars: &mut usize,
+) where
+    I: IntoIterator<Item = usize>,
+{
+    for index in indices {
+        if selected.contains(&index) {
+            continue;
+        }
+        let cost = rendered[index].chars().count() + 1;
+        if *selected_chars + cost > budget {
+            continue;
+        }
+        selected.insert(index);
+        *selected_chars += cost;
+    }
+}
+
+fn append_summary_text(output: &mut String, text: &str) {
+    let remaining = MAX_SUMMARY_INPUT_CHARS.saturating_sub(output.chars().count());
+    if remaining > 0 {
+        output.extend(text.chars().take(remaining));
+    }
 }
 
 /// Fit model output to the provider-independent persisted-summary bound.
@@ -664,5 +771,33 @@ mod tests {
         assert!(fallback.contains("without a summary"));
         assert!(fallback.contains("finish this"));
         assert!(fallback.contains("prior decisions"));
+    }
+
+    #[test]
+    fn summary_prompt_bounds_large_transcript_and_keeps_recent_user_context() {
+        let entries = (0..40)
+            .map(|index| {
+                json!({
+                    "kind":"message",
+                    "role": if index % 2 == 0 { "user" } else { "assistant" },
+                    "content": format!("row-{index}-{}", "x".repeat(6_000))
+                })
+            })
+            .collect::<Vec<_>>();
+        let plan = CompactionPlan {
+            first_kept_entry_id: "keep".into(),
+            entries_to_summarize: entries,
+            turn_prefix_entries: Vec::new(),
+            previous_summary: None,
+            previous_details: None,
+            tokens_before: 1,
+            summary_token_budget: 100,
+            latest_user_request: Some("latest request".into()),
+            is_split_turn: false,
+        };
+        let prompt = build_compaction_summary_prompt(&plan).expect("prompt");
+        assert!(prompt.contains("latest request"));
+        assert!(prompt.contains("omitted") || prompt.contains("entry truncated"));
+        assert!(prompt.len() < MAX_SUMMARY_INPUT_CHARS + 2_000);
     }
 }

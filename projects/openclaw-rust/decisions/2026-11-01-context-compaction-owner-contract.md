@@ -69,8 +69,9 @@ reads the owner projection through typed provider serializers. This remains
 partial implementation evidence: exact upstream file-operation detail
 merging is now wired for the fixed `readFiles`/`modifiedFiles` contract, and
 split-turn prefix planning plus its second summarization call are wired.
-Bounded sampled summary-input parity, live-turn proof, and frozen verification
-are still open.
+The producer also bounds large summary inputs with deterministic tail/user/head
+sampling and canonical fill. Exact upstream omission/weight parity, live-turn
+proof, and frozen verification are still open.
 
 ## Required implementation sequence
 
