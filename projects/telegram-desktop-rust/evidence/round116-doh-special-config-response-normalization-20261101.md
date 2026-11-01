@@ -59,3 +59,16 @@ The durable spec was amended first at platform commit `fd34ce2eff1cbc5e626aee71d
 The same `TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001` row remains `implemented / rewritten / validation_status=not-run / accepted=false`; no second responsibility or owner was created. The carrier row remains pending only for actual requests/racing, global HTTP time mutation, temporary-DC lifecycle and dc-options application.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 116 final HTTP-Date-inclusive source compliance
+
+Platform-core final source-level compliance is `58afebfe62e1c81d4f03d084fbafc4dc19f2a4c7` / spec blob `929cfccd65ec2b009a183ccb052c16817a8ca2a1`. It records R1-R12 plus AC-1 through AC-8 as passed at source/implementation/bookkeeping review level after adding pure `ParseHttpDate` equivalence.
+
+Final canonical and desktop response module/lib/authored-contract blobs are byte-identical at `8d2d70ec883ea8969be68b280e994e2bb35baf71`, `8ab2cd39719dbeb3725c1a52c8632b6f97cfdf0f`, and `7e2536f7b4bcd13f895ef12993aea2ecebb74ef1`. `TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001` remains `implemented / rewritten / validation_status=not-run / accepted=false`.
+
+`TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001` remains `mapped / pending / validation_status=not-run / accepted=false`: only actual direct request construction/racing, global HTTP-derived time mutation after the pure Date parse, temporary-DC help.getConfig scheduling/cancel/timeout/kill, and dc-options application remain blocked on a shipping existing network/runtime lifecycle.
+
+Coverage remains `source_entries_total=16202, responsibilities_total=119, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
