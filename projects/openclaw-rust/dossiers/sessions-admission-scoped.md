@@ -776,3 +776,10 @@ identity fence before exposing a review: admission `session_id`, admission
 `session_key`, requested route identity, and stored review `session_id` must
 all agree. This is consumer-side static evidence only; it does not upgrade
 runtime or acceptance status.
+
+The shared `ProductionSessionWorkers::assert_agent_work_admission` gate now
+rejects an existing admission record whose durable `session_id` is not the
+agent identity used to open that owner. This fail-closed check protects the
+remaining session-owned producer/consumer edges, including provider-review
+settlement, without inventing a replacement session key. Static evidence is
+recorded; runtime and acceptance remain pending.

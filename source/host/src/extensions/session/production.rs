@@ -1767,14 +1767,19 @@ impl ProductionSessionWorkers {
             ));
         }
         let db_path = self.session_db_path(agent_id)?;
-        if db_path.is_file()
-            && self
-                .read_session_work_admission(agent_id)?
-                .is_some_and(|record| record.deletion_pending)
-        {
-            return Err(format!(
-                "agent {agent_id} durable deletion cleanup is pending; new session work is not admitted"
-            ));
+        if db_path.is_file() {
+            if let Some(record) = self.read_session_work_admission(agent_id)? {
+                if record.session_id != agent_id {
+                    return Err(format!(
+                        "agent {agent_id} session admission identity is malformed"
+                    ));
+                }
+                if record.deletion_pending {
+                    return Err(format!(
+                        "agent {agent_id} durable deletion cleanup is pending; new session work is not admitted"
+                    ));
+                }
+            }
         }
         Ok(())
     }
