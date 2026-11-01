@@ -2712,7 +2712,13 @@ impl ProductionSessionWorkers {
                 !row.base_session
                     && !row.automation_id.trim().is_empty()
                     && !row.run_id.trim().is_empty()
-                    && row.session_key.starts_with(&expected_session_key_prefix)
+                    && row.session_key
+                        == format!(
+                            "{}{}:{}",
+                            expected_session_key_prefix,
+                            row.automation_id,
+                            row.run_id
+                        )
                     && row.session_id == row.session_key
                     && !row.lifecycle_revision.trim().is_empty()
                     && row.state == "terminal"

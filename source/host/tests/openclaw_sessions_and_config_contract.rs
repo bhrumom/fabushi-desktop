@@ -502,9 +502,21 @@ fn test_cron_candidate_projection_rejects_malformed_identity_rows() {
         .next()
         .expect("cron candidate projection boundary exists");
     assert!(projection.contains("expected_session_key_prefix"));
-    assert!(projection.contains("row.session_key.starts_with(&expected_session_key_prefix)"));
+    assert!(projection.contains("row.session_key"));
+    assert!(projection.contains("row.automation_id"));
+    assert!(projection.contains("row.run_id"));
     assert!(projection.contains("row.session_id == row.session_key"));
     assert!(projection.contains("!row.lifecycle_revision.trim().is_empty()"));
+}
+
+#[test]
+fn test_cron_schema_migrates_fence_marker_for_existing_rows() {
+    let recovery_source = include_str!("../src/extensions/session/agent_db_recovery.rs");
+    assert!(recovery_source.contains("pragma_table_info('cron_session_runs')"));
+    assert!(recovery_source.contains("name = 'fence_state_known'"));
+    assert!(recovery_source.contains(
+        "ALTER TABLE cron_session_runs ADD COLUMN fence_state_known INTEGER NOT NULL DEFAULT 0"
+    ));
 }
 
 // ---------------------------------------------------------------------------
