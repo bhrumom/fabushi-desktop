@@ -154,6 +154,11 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
     let entries = sessions
         .read_agent_transcript_entries(&room.id)
         .expect("room transcript");
+    let room_session_key = sessions
+        .read_session_work_admission(&room.id)
+        .expect("room admission")
+        .expect("room admission record")
+        .session_key;
     let authored = entries
         .iter()
         .filter(|entry| entry.get("kind").and_then(serde_json::Value::as_str) == Some("send-message"))
@@ -164,6 +169,8 @@ fn local_group_fanout_reads_room_history_executes_members_and_durably_posts_auth
             .and_then(|author| author.get("id"))
             .and_then(serde_json::Value::as_str)
             .is_some()
+            && entry.get("sessionKey").and_then(serde_json::Value::as_str)
+                == Some(room_session_key.as_str())
     }));
 
     sessions.shutdown();

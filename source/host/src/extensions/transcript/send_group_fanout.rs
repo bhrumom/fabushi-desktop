@@ -64,7 +64,7 @@ impl LocalGroupFanoutDeps {
     fn append_member_message(&self, member: &GroupMember, content: &str) -> Result<(), String> {
         let entries = self.sessions.read_agent_transcript_entries(&self.room_id)?;
         let id = next_entry_id(&entries, TranscriptEntryIdKind::SendMessage);
-        let entry = json!({
+        let mut entry = json!({
             "kind": "send-message",
             "id": id,
             "message": {
@@ -77,8 +77,22 @@ impl LocalGroupFanoutDeps {
                 "name": member.name,
             },
         });
-        self.sessions
-            .append_agent_transcript_entries(&self.room_id, &[entry.clone()])?;
+        if let Some(session_key) = self
+            .sessions
+            .read_session_work_admission(&self.room_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty())
+        {
+            entry["sessionKey"] = Value::String(session_key.clone());
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                &self.room_id,
+                &session_key,
+                &[entry.clone()],
+            )?;
+        } else {
+            self.sessions
+                .append_agent_transcript_entries(&self.room_id, &[entry.clone()])?;
+        }
         let _ = self.sessions.mark_agent_activity(&self.room_id, now_ms());
         if let Some(shared_room_id) = self.config.shared_room_id.as_deref() {
             self.runtime

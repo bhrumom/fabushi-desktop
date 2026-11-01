@@ -195,10 +195,11 @@ remain on the compatibility path. Shared-room restamps now use the same
 session-admitted owner when the persisted entry carries `sessionKey`; legacy
 entries remain on the compatibility path. New box-request entries retain
 `sessionKey` and settle through the session-admitted owner when that provenance
-is present. SharedRooms now applies the same producer rule to new room-owned
-entries from local fanout, activity notices, guest ingress, and mirror
-ingress: it reads the target room agent's existing owner record, persists its
-exact key, and uses the admitted append when available. Auto-review
+is present. SharedRooms and the local group fanout now apply the same producer
+rule to new room-owned entries from local fanout, activity notices, guest
+ingress, and mirror ingress: they read the target room agent's existing owner
+record, persist its exact key, and use the admitted append when available.
+Auto-review
 creation and settlement already use the event-owned session key when bound;
 unbound legacy controller events remain compatibility-only. The generic delete
 and conversation-clear wrappers have no production caller in the Host source.
