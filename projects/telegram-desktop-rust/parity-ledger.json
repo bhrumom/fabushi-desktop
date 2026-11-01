@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 106,
+    "responsibilities_total": 107,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -26937,6 +26937,321 @@
       "source_paths": [
         "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
         "Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/connection_tcp.cpp",
+      "source_blob_sha": "d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.obfuscated-connection-start-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001",
+      "source_symbols": [
+        "TcpConnection::Protocol::Create",
+        "TcpConnection::Protocol::Version0::prepareKey",
+        "TcpConnection::Protocol::Version1::prepareKey",
+        "TcpConnection::Protocol::VersionD::id",
+        "TcpConnection::prepareConnectionStartPrefix",
+        "TcpSocket::isGoodStartNonce",
+        "aesCtrEncrypt",
+        "DcOptions::ValidateSecret",
+        "SessionPrivate::getProtocolDcId",
+        "ObfuscatedTransportSecret::parse",
+        "ObfuscatedConnectionStart::random/from_nonce/encrypt_outbound/decrypt_inbound",
+        "TcpTransport::connect_obfuscated/send_payload/receive_payload",
+        "connect_directory"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::TransportFrameCodec",
+        "telegram-protocol::ObfuscatedConnectionStart",
+        "telegram-network::TcpTransport",
+        "DcEndpoint.secret",
+        "AES-256 block primitive",
+        "SHA-256",
+        "OS secure randomness"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round106-mtproto-obfuscated-connection-start-wire-20261101.md",
+      "behavior_contract": "Fixed-U direct MTProto TCP connection start uses a 64-byte random nonce that rejects reserved HTTP/transport/TLS-looking prefixes, derives independent send/receive AES-256-CTR key+IV material from nonce[8..56] with receive bytes reversed, applies Version1/VersionD SHA-256(source||secret16) key derivation, writes the transport protocol id and signed protocol DC id into bytes 56..62 before encrypting the full 64-byte nonce, transmits nonce[0..56] plaintext plus encrypted nonce[56..64], and retains the send CTR advanced by 64 bytes for framed traffic. Empty/16-byte secrets select abridged Version0/Version1; DD17 and EE>=21 secrets select padded-intermediate VersionD using only bytes 1..17 as secret16.",
+      "state_machine": "Existing connect_directory -> existing endpoint candidate/secret -> ObfuscatedConnectionStart::random(secret, protocol_dc_id) -> one 64-byte connection-start prefix -> existing TransportFrameCodec mode selected from secret -> outbound frame encrypted through retained send CTR / inbound socket bytes decrypted through independent receive CTR -> existing plaintext/encrypted-envelope owners. Raw TcpTransport::from_stream remains available for focused fixtures. This slice does not own racing/retry, proxy/TLS camouflage, quick-ACK lifecycle, auth-key persistence, arbitrary request history, gzip, or difference application.",
+      "side_effects": [
+        "Shipping direct Main-DC connect path now emits fixed-U 64-byte obfuscated connection-start prefix instead of the standalone frame-mode initial header",
+        "Shipping frame mode is selected from the exact fixed-U protocol-secret shape",
+        "Outbound frame bytes use the send CTR stream after the full 64-byte nonce transform",
+        "Inbound socket bytes are decrypted with the independently derived reversed receive key/IV before frame parsing",
+        "Desktop provider network/lib and authored protocol contracts are synchronized to canonical platform-core blobs",
+        "Focused protocol and local TCP contracts are authored without execution"
+      ],
+      "failure_cases": [
+        "protocol secret has an unsupported length/tag combination",
+        "direct-TCP random nonce matches a fixed-U reserved prefix or has a zero second LE32 word",
+        "OS secure randomness is unavailable",
+        "main/test protocol DC id cannot be represented as signed 16-bit",
+        "connection-start state is incorrectly reset between prefix and first outbound frame",
+        "receive direction incorrectly reuses the outbound key/IV ordering",
+        "VersionD EE suffix bytes incorrectly participate in SHA-256 key derivation",
+        "shipping direct connection emits a second abridged/padded standalone initial header after the obfuscated prefix"
+      ],
+      "ui_disposition": "No UI change. This is the direct MTProto TCP connection-start wire and byte-stream transform in existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "exact Version0/Version1/VersionD secret classification",
+        "Version1/VersionD SHA-256 transport key derivation",
+        "direct-TCP reserved nonce filtering",
+        "64-byte prefix partition and protocol/DC-id placement",
+        "stateful AES-256-CTR send/receive streams",
+        "existing frame-mode selection from secret shape",
+        "shipping Main/test direct-TCP integration"
+      ],
+      "platform_delta": "Minimal existing-owner production delta: extend the canonical telegram-protocol transport owner with source-neutral obfuscated connection-start/CTR state and thread it through the existing telegram-network TcpTransport shipping Main-DC connection path. No second transport runtime, scheduler, account, request-history, or crypto implementation owner is introduced.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/tests/tcp_transport.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol transport wire owner plus existing telegram-network TcpTransport shipping carrier",
+      "rejected_existing_owners": [
+        "new Telegram obfuscation runtime/provider: rejected because connection-start bytes are an adjacent transport-wire responsibility of the existing telegram-protocol owner",
+        "telegram-network-owned key derivation/CTR implementation: rejected because sockets carry bytes while reusable wire/crypto state belongs in telegram-protocol",
+        "auth-key/session owner: rejected because this secret and CTR stream are transport obfuscation, independent of MTProto auth-key binding/persistence"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/tests/tcp_transport.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "ObfuscatedTransportSecret::parse/mode/protocol_id/derive_key",
+        "is_good_direct_start_nonce",
+        "AesCtrState::new/apply",
+        "ObfuscatedConnectionStart::random/from_nonce/prefix/mode/encrypt_outbound/decrypt_inbound",
+        "TcpTransport::connect_obfuscated/send_payload/receive_payload",
+        "connect_directory",
+        "protocol_dc_id"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Connection-start wire state is non-UI protocol logic. The existing Rust telegram-protocol owner already carries transport framing and mature AES/SHA dependencies, so this exact responsibility belongs there without preserving the C++ owner.",
+      "command_event_contracts": [
+        "accepted secret + good 64-byte nonce + protocol DC id -> derive send/reversed-receive key+IV -> insert protocol/DC tail -> advance send CTR across full nonce -> emit plain56+cipher8 prefix",
+        "first outbound payload -> existing selected frame codec -> continue the already-advanced send CTR stream -> socket",
+        "inbound socket bytes -> untouched receive CTR stream from offset zero -> existing frame decoder",
+        "unsupported secret/nonce/DC-id representation -> fail closed before payload handoff"
+      ],
+      "state_owner": "ObfuscatedConnectionStart owns only ephemeral per-connection prefix/send-CTR/receive-CTR wire state; TransportFrameCodec remains frame state owner.",
+      "lifecycle_owner": "Existing telegram-network TcpTransport owns the socket lifetime and carries one ObfuscatedConnectionStart for that connection. Endpoint racing/retry/reconnect remain outside this isolated slice.",
+      "persistence_and_restart": "No persistence. A new direct TCP connection generates fresh random connection-start state; MTProto auth-key persistence is unchanged and outside this responsibility.",
+      "concurrency_and_cancellation": "Per-TcpTransport synchronous byte-stream state. The CTR state is mutated only in the existing send/receive path; no scheduler, retry, or cancellation owner is introduced.",
+      "security_boundary": "Secret shapes, reserved nonce forms, protocol DC-id representation, and cryptographic direction/key derivation fail closed before framed payloads are accepted. AES-256 and SHA-256 use existing mature RustCrypto dependencies; OS randomness remains getrandom.",
+      "network_service_dependencies": [
+        "Existing direct TcpStream I/O, canonical DcDirectory/DcEndpoint secret, OS secure randomness; no new service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Proxy/Web/TLS camouflage including TLS ClientHello/TlsBlock remains outside this direct-TCP slice.",
+        "Media-cluster negative protocol DC-id derivation, temporary-DC normalization, connection racing/retry/reconnect and quick-ACK lifecycle remain open.",
+        "Auth-key binding/persistence/expiry/renewal, arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U TcpConnection::prepareConnectionStartPrefix -> 64-byte nonce/key/IV/protocol/DC prefix and retained CTR state",
+        "fixed-U TcpConnection::sendData/socketRead -> continued send CTR / receive CTR around frame bytes",
+        "canonical telegram-network::connect_directory -> TcpTransport::connect_obfuscated",
+        "canonical telegram-network::TcpTransport::send_payload/receive_payload -> existing frame codec + ObfuscatedConnectionStart",
+        "desktop tracked telegram-network provider synchronized to canonical blob 54245116969f53ee53ccc3f979bbd9fb7382cc97"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.h@ce09deab2f722ca22d371c851a7c43d939a9034b",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_auth_key.h@31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_auth_key.cpp@cb4a4e5c3b94ed33d126068792536a08800615f2",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "platform-core-spec-commit:17d0c7e803d710f98cfcc2d7dcd64829819d5241",
+        "platform-core-spec-blob:15d097dfaac262a8cdbcdaaa2b0fc1c3e8946f35",
+        "platform-core-production-commit:0f93e212d5151c598f19a67b0a65ad19774dc1c3",
+        "platform-core-transport-path:native/telegram-protocol/src/transport.rs@74189488dc3ec1015edc59989f7aced8ad65f5c3",
+        "platform-core-protocol-lib-path:native/telegram-protocol/src/lib.rs@d5727367035cef2adbba0a6a6a2f6b95e2716450",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@54245116969f53ee53ccc3f979bbd9fb7382cc97",
+        "platform-core-contract-commit:8b04666c4e1d0c8c986432bcf272a6679f96566d",
+        "platform-core-protocol-contract-path:native/telegram-protocol/tests/protocol_contract.rs@4de139a0f98c2d2b784145aa1995a67458af9c97",
+        "platform-core-network-contract-path:native/telegram-network/tests/tcp_transport.rs@1a94aaa3f79e8108e04bc5418657fd4e641d0a4a",
+        "desktop-provider-sync-commit:76e467b5a1b3aecceffc4cdb6d34dc12461f12d3",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@54245116969f53ee53ccc3f979bbd9fb7382cc97",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@d5727367035cef2adbba0a6a6a2f6b95e2716450",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@4de139a0f98c2d2b784145aa1995a67458af9c97"
+      ],
+      "test_evidence": [
+        "Authored-only canonical/desktop protocol contracts cover secret-shape selection, all reserved nonce forms, plain56/cipher8 prefix partition, DC-id-sensitive encrypted tail, Version0/Version1 divergence, split-call CTR continuity, send/receive direction separation, and DD/EE secret16 equivalence; not run.",
+        "Authored-only canonical network contract covers one prefix, continued outbound CTR over abridged framing, and reverse-direction receive CTR through TcpTransport::connect_obfuscated; not run."
+      ],
+      "target_commit": "76e467b5a1b3aecceffc4cdb6d34dc12461f12d3",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto direct-TCP obfuscated connection-start wire",
+      "capability_component": "Exact fixed-U 64-byte connection-start prefix, secret derivation and AES-CTR streams",
+      "variation_axes": [
+        "empty Version0 secret",
+        "16-byte Version1 secret",
+        "DD17 VersionD secret",
+        "EE>=21 VersionD secret",
+        "reserved vs accepted nonce",
+        "production vs test protocol DC id",
+        "outbound vs inbound CTR direction",
+        "single-call vs fragmented byte-stream transform"
+      ],
+      "shared_owner_contracts": [
+        "Existing telegram-protocol TransportFrameCodec",
+        "Existing telegram-network TcpTransport",
+        "Existing DcDirectory/DcEndpoint secret routing",
+        "Existing RustCrypto AES/SHA-256 and getrandom dependencies",
+        "Existing Cargo path-dependency composition"
+      ],
+      "duplicate_root_check": "No second account, Telegram runtime/provider, socket scheduler, frame codec, crypto library, auth-key store, request history, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "No UI surface; existing embedded Telegram network path only",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Connection-start state is ephemeral to one TcpTransport and preserves CTR byte offsets across fragmented sends/reads; product Conversation/Message state is unchanged.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-OBFUSCATED-PREFIX-PARTITION-001",
+        "INV-TDRP-MTPROTO-OBFUSCATED-SECRET-DERIVATION-001",
+        "INV-TDRP-MTPROTO-OBFUSCATED-CTR-CONTINUITY-001",
+        "INV-TDRP-MTPROTO-OBFUSCATED-DIRECTION-SEPARATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-OBFUSCATED-SECRET-SHAPES-001",
+        "UNIT-TDRP-MTPROTO-OBFUSCATED-NONCE-RESERVED-001",
+        "UNIT-TDRP-MTPROTO-OBFUSCATED-CTR-STATE-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-MTPROTO-OBFUSCATED-FRAGMENT-CONTINUITY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MTPROTO-OBFUSCATED-TCP-CARRIER-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MTPROTO-OBFUSCATED-PREFIX-ONCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-OBFUSCATED-SECRET-FAIL-CLOSED-001",
+        "SEC-TDRP-MTPROTO-OBFUSCATED-RESERVED-NONCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-OBFUSCATED-DOUBLE-HEADER-001",
+        "REG-TDRP-MTPROTO-OBFUSCATED-CTR-RESET-001",
+        "REG-TDRP-MTPROTO-OBFUSCATED-EE-SUFFIX-KEY-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-obfuscated-version0-fixed-nonce",
+        "mtproto-obfuscated-version1-fixed-nonce",
+        "mtproto-obfuscated-versiond-dd-ee-fixed-nonce",
+        "mtproto-obfuscated-local-tcp-carrier"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381 plus connection_tcp.h@ce09deab2f722ca22d371c851a7c43d939a9034b, mtproto_auth_key.h@31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c, mtproto_auth_key.cpp@cb4a4e5c3b94ed33d126068792536a08800615f2, mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10, mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a and session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level implementation. Existing telegram-protocol transport and telegram-network TcpTransport remain the only owners. This round closes direct-TCP 64-byte connection-start nonce filtering, Version0/Version1/VersionD secret selection and SHA-256 key derivation, protocol/DC-id tail obfuscation, stateful send/receive AES-CTR and shipping Main/test DC carrier integration. Focused contracts were authored/mirrored but not executed; validation_status=not-run and accepted=false. Proxy/TLS camouflage, media-cluster/temporary DC id semantics, quick-ACK lifecycle, broader scheduling/racing/retry, auth-key binding/persistence, arbitrary request history, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-OBFUSCATED-CONNECTION-START-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "Telegram/SourceFiles/mtproto/connection_tcp.h@ce09deab2f722ca22d371c851a7c43d939a9034b",
+        "Telegram/SourceFiles/mtproto/mtproto_auth_key.h@31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c",
+        "Telegram/SourceFiles/mtproto/mtproto_auth_key.cpp@cb4a4e5c3b94ed33d126068792536a08800615f2",
+        "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+        "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
       ]
     }
   ],
