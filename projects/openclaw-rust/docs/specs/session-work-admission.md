@@ -260,10 +260,11 @@ transaction only when the owner-local admission record confirms that key. If
 the producer carries a selector that has no matching owner record (for
 example, the current group-member compatibility runner), it remains on the
 generic agent-only path until that session record is established. The
-recipient-side wake envelope does not expose a
-canonical target session identity at this boundary, so its later inbound
-materialization remains on the generic agent-only compatibility path; it is
-still subject to the owner-local deletion and archive fences. The producer
+recipient-side wake envelope does not expose a canonical target session
+identity; its later inbound materialization resolves the target's existing
+owner record locally and uses the admitted append when available, otherwise it
+retains the generic compatibility path. It is still subject to the owner-local
+deletion and archive fences. The producer
 must not synthesize a target `agent:{id}:main` selector merely from a target
 agent id.
 
@@ -316,7 +317,10 @@ the session-admitted append when the record exists; a missing record retains
 the compatibility path. The generic delete and conversation-clear wrappers
 currently have no production caller in the Host source. Automation spend-guard
 cards now use the same owner record and session-admitted append when available;
-unbound legacy card producers remain compatibility-only.
+unbound legacy card producers remain compatibility-only. Recipient-side agent
+inbound materialization likewise reads the target agent's existing owner
+record, persists its exact `sessionKey`, and uses the admitted append when
+available; legacy targets without a record retain compatibility behavior.
 
 The box-request path is now split by durable provenance: new Runner-created
 entries retain their canonical `sessionKey`, and

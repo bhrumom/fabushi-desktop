@@ -45,6 +45,15 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     assert!(persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("persist inbound"));
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript after admission");
     assert_eq!(b.len(),1);assert_eq!(b[0]["fromAgent"]["id"],alpha.id);assert_eq!(b[0]["images"][0]["url"],"https://example.com/chart.png");
+    let beta_session_key = sessions
+        .read_session_work_admission(&beta.id)
+        .expect("beta admission")
+        .expect("beta admission record")
+        .session_key;
+    assert_eq!(
+        b[0].get("sessionKey").and_then(serde_json::Value::as_str),
+        Some(beta_session_key.as_str())
+    );
     assert_eq!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners after admission"),vec![alpha.id.clone()]);
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }

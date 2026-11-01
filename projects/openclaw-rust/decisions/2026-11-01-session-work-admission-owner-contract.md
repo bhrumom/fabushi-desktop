@@ -202,6 +202,10 @@ record, persist its exact key, and use the admitted append when available.
 Automation spend-guard card creation now follows the same owner rule, so its
 interactive cards persist the existing session key and are rejected when the
 owner is archived; unbound legacy producers remain compatibility-only.
+Recipient-side agent inbound materialization now follows the same rule when
+the target agent already has an owner record: it persists that exact session
+key and uses the session-admitted append, while targets without a record stay
+on the compatibility path.
 Auto-review
 creation and settlement already use the event-owned session key when bound;
 unbound legacy controller events remain compatibility-only. The generic delete
@@ -220,10 +224,12 @@ already-owned `worker_session_key` through `ProductionAgentManagementSink` and
 the owner-local admission record confirms that key. A group-member worker
 whose group selector has no matching owner record remains on the generic
 archive-fenced compatibility path until that record exists. The
-recipient wake/inbound path remains compatibility-only because it does not
-carry a canonical target session selector; no `agent:{id}:main` key is derived
-there. The generic owner fence still rejects deletion-pending and archived
-recipient writes.
+the recipient wake envelope still carries no canonical target session
+selector, so inbound materialization resolves the target's existing owner
+record locally rather than deriving an `agent:{id}:main` key. Targets with a
+record use the session-admitted append; targets without one remain on the
+generic compatibility path. The generic owner fence still rejects
+deletion-pending and archived recipient writes.
 
 ## Rejected alternatives
 

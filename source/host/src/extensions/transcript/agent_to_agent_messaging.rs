@@ -339,7 +339,20 @@ pub fn persist_agent_inbound_message(
         entry["images"] = images.clone();
     }
     let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
-    sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+    if let Some(session_key) = sessions
+        .read_session_work_admission(agent_id)?
+        .map(|record| record.session_key)
+        .filter(|value| !value.trim().is_empty())
+    {
+        entry["sessionKey"] = Value::String(session_key.clone());
+        sessions.append_agent_transcript_entries_if_session_admitted(
+            agent_id,
+            &session_key,
+            &[entry],
+        )?;
+    } else {
+        sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+    }
     let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;
     Ok(true)
 }
