@@ -746,6 +746,12 @@ fn test_transcript_owners_roll_back_when_commit_fails() {
 }
 
 #[test]
+fn test_agent_db_has_no_direct_commit_error_propagation() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    assert!(!owner_source.contains("db.execute_batch(\"COMMIT\")?;"));
+}
+
+#[test]
 fn test_compaction_owner_rolls_back_when_commit_fails() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
     let compaction_owner = owner_source
