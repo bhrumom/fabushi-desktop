@@ -558,10 +558,10 @@ pub fn persist_agent_inbound_message(
         }
         return Err(error);
     }
-    let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;
     if let Some(reply) = claimed_turn {
         let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
     }
+    let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;
     Ok(true)
 }
 

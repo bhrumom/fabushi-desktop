@@ -99,7 +99,8 @@ reply context.
 The inbound transcript owner must claim the pending turn using the canonical
 source/target agent identities, the original sender session ID, and the
 `replyToId` carried by the inbound envelope. A successful append completes the
-claimed turn; append failure releases it for retry. Missing, expired, duplicate,
+claimed turn; append success settles it before unrelated activity bookkeeping,
+while append failure releases it for retry. Missing, expired, duplicate,
 session-mismatched, group/shared-room, or compatibility-path correlations are
 rejected without inventing a turn. The correlation registry remains process
 local until a durable cross-process owner is specified.
