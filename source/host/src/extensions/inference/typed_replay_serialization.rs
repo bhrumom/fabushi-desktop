@@ -29,6 +29,12 @@ pub enum TypedReplaySerializationError {
     UnpairedToolResult { tool_call_id: String },
     #[error("tool result {tool_call_id} is duplicated in the replay projection")]
     DuplicateToolResult { tool_call_id: String },
+    #[error("tool result {tool_call_id} names {actual_tool_name}, expected {expected_tool_name}")]
+    ToolResultNameMismatch {
+        tool_call_id: String,
+        actual_tool_name: String,
+        expected_tool_name: String,
+    },
     #[error("tool call {tool_call_id} has no replayed result")]
     UnsettledToolCall { tool_call_id: String },
     #[error("tool call identity {tool_call_id} is duplicated in the replay projection")]
@@ -421,7 +427,7 @@ fn responses_tool_call(call: &ReplayToolCall) -> Value {
 
 #[derive(Debug, Default)]
 struct ToolReplayState {
-    pending: std::collections::BTreeSet<String>,
+    pending: std::collections::BTreeMap<String, String>,
     consumed: std::collections::BTreeSet<String>,
 }
 
@@ -430,12 +436,12 @@ impl ToolReplayState {
         &mut self,
         call: &ReplayToolCall,
     ) -> Result<(), TypedReplaySerializationError> {
-        if self.pending.contains(&call.id) || self.consumed.contains(&call.id) {
+        if self.pending.contains_key(&call.id) || self.consumed.contains(&call.id) {
             return Err(TypedReplaySerializationError::DuplicateToolCall {
                 tool_call_id: call.id.clone(),
             });
         }
-        self.pending.insert(call.id.clone());
+        self.pending.insert(call.id.clone(), call.name.clone());
         Ok(())
     }
 
@@ -448,9 +454,18 @@ impl ToolReplayState {
                 tool_call_id: result.tool_call_id.clone(),
             });
         }
-        if !self.pending.remove(&result.tool_call_id) {
+        let Some(expected_tool_name) = self.pending.remove(&result.tool_call_id) else {
             return Err(TypedReplaySerializationError::UnpairedToolResult {
                 tool_call_id: result.tool_call_id.clone(),
+            });
+        };
+        if expected_tool_name != result.tool_name {
+            self.pending
+                .insert(result.tool_call_id.clone(), expected_tool_name.clone());
+            return Err(TypedReplaySerializationError::ToolResultNameMismatch {
+                tool_call_id: result.tool_call_id.clone(),
+                actual_tool_name: result.tool_name.clone(),
+                expected_tool_name,
             });
         }
         self.consumed.insert(result.tool_call_id.clone());
@@ -461,7 +476,9 @@ impl ToolReplayState {
         self.pending
             .into_iter()
             .next()
-            .map(|tool_call_id| TypedReplaySerializationError::UnsettledToolCall { tool_call_id })
+            .map(|(tool_call_id, _)| {
+                TypedReplaySerializationError::UnsettledToolCall { tool_call_id }
+            })
             .map_or(Ok(()), Err)
     }
 }
@@ -744,6 +761,51 @@ mod tests {
                 error,
                 TypedReplaySerializationError::UnsettledToolCall {
                     tool_call_id: "missing-result".into(),
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn tool_result_name_mismatch_is_rejected_by_all_typed_serializers() {
+        let entries = vec![
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Assistant,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![ReplayToolCall {
+                    id: "named-call".into(),
+                    name: "read".into(),
+                    arguments: json!({"path": "a"}),
+                }],
+                tool_result: None,
+            }),
+            TypedReplayEntry::Message(ReplayMessage {
+                id: None,
+                role: ReplayRole::Tool,
+                content: vec![],
+                attachments: vec![],
+                tool_calls: vec![],
+                tool_result: Some(ReplayToolResult {
+                    tool_call_id: "named-call".into(),
+                    tool_name: "write".into(),
+                    result: json!({"ok": true}),
+                    is_error: false,
+                }),
+            }),
+        ];
+        for error in [
+            serialize_responses_replay(&entries).expect_err("Responses must reject name mismatch"),
+            serialize_chat_replay(&entries).expect_err("Chat must reject name mismatch"),
+            serialize_cursor_replay(&entries).expect_err("Cursor must reject name mismatch"),
+        ] {
+            assert_eq!(
+                error,
+                TypedReplaySerializationError::ToolResultNameMismatch {
+                    tool_call_id: "named-call".into(),
+                    actual_tool_name: "write".into(),
+                    expected_tool_name: "read".into(),
                 }
             );
         }
