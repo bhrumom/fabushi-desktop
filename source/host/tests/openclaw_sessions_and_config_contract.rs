@@ -413,6 +413,7 @@ fn test_session_admission_rejects_rebound_owner_identity() {
     assert!(owner_source.contains("record.session_key.trim().is_empty()"));
     assert!(owner_source.contains("record.lifecycle_revision.trim().is_empty()"));
     assert!(owner_source.contains("session admission identity is malformed"));
+    assert!(owner_source.contains("pub fn read_session_work_admission("));
 }
 
 #[test]

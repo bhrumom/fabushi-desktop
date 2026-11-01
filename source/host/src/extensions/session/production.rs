@@ -2047,9 +2047,22 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let record = self
+            .open_agent_db_owner(agent_id)?
             .read_session_work_admission()
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        let Some(record) = record else {
+            return Ok(None);
+        };
+        if record.session_id != agent_id
+            || record.session_key.trim().is_empty()
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        Ok(Some(record))
     }
 
     pub fn read_session_communication_policy(

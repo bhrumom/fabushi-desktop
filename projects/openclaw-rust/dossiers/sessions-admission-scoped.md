@@ -796,3 +796,7 @@ empty. This fail-closed check protects the
 remaining session-owned producer/consumer edges, including provider-review
 settlement, without inventing a replacement session key. Static evidence is
 recorded; runtime and acceptance remain pending.
+
+The corresponding `read_session_work_admission(agent_id)` facade now applies
+the same canonical identity validation before returning a record, so direct
+producer reads cannot become an identity source from malformed durable state.

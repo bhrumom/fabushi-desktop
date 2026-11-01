@@ -28,6 +28,8 @@ durable state → consumer chain.
   an owner-local admission record whose durable `session_id` is not the
   canonical agent identity, non-empty session key, and non-empty lifecycle
   revision before admitting any session-owned operation.
+  The production owner read facade applies the same validation before exposing
+  an admission record to a producer or consumer.
 - `SWA-02`: Pending agent deletion rejects new writes and retains any owned
   terminal writes until the existing deletion owner publishes a safe replay or
   failure outcome. The owner-local admission record carries a migration-safe
