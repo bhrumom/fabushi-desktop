@@ -1,18 +1,18 @@
 # Media store lifecycle cleanup
 
-Status: implementation in progress; verification not run  
+Status: implementation wired; verification not run
 Project: OCRM-001  
 Responsibility: `OCRM-RESP-MEDIA-STORE-LIFECYCLE-001`  
 Owner boundary: existing Attachments extension → `media_store` owner
 
 ## Context and goal
 
-The Rust media store already implements the upstream retention rules, but its
-cleanup is only reachable through a manual Gateway `cleanOldMedia` call. A
-production Host therefore does not periodically prune expired outbound staging
-files, expired playback transcodes, or old unprotected media. The lifecycle
-owner must be reached by one bounded worker in the existing Attachments
-extension.
+The Rust media store implements the upstream retention rules, and the existing
+Attachments extension now reaches that owner through one bounded periodic
+worker. Manual Gateway `cleanOldMedia` dispatch remains available as an explicit
+operator path; it is not the only producer. The worker must remain inside the
+existing Attachments owner and must not become a second storage or scheduler
+authority.
 
 ## Non-goals
 
@@ -56,9 +56,9 @@ existing media-store containment checks.
 | Concern | Current | Target |
 | --- | --- | --- |
 | Manual cleanup | Gateway-only `cleanOldMedia` | Manual call remains plus worker producer |
-| Periodic producer | None | One Attachments-owned stoppable worker |
-| Playback/outbound cleanup | Helpers exist, no daemon consumer | Invoked in every worker pass |
-| Shutdown | No lifecycle handle | Stop and join before Box/Attachments teardown |
+| Periodic producer | `HostAttachmentsExtension::start_lifecycle_worker` starts `MediaStoreLifecycleWorker` | One Attachments-owned stoppable worker |
+| Playback/outbound cleanup | `run_media_store_lifecycle_pass` invokes all three helpers | Invoked in every worker pass |
+| Shutdown | `HostAttachmentsExtension::stop_lifecycle_worker` stops and joins the worker | Stop and join before Box/Attachments teardown |
 
 ## Architecture and failure handling
 
@@ -88,12 +88,40 @@ Attachments extension from being reported as started.
 
 ## Implementation strategy
 
-1. Add the stoppable worker beside the existing media-store owner.
-2. Start and stop it through `HostAttachmentsExtension` only.
+1. Keep the stoppable worker beside the existing media-store owner.
+2. Keep start and stop exclusively on `HostAttachmentsExtension`.
 3. Keep the manual Gateway dispatch unchanged.
-4. Update the scoped dossier and parity row to record the new source wiring;
+4. Preserve source-level wiring evidence in the scoped dossier and parity row;
    retain verification and acceptance as pending until their required evidence
    exists.
+
+## Current implementation evidence — 2026-11-01
+
+The source-level producer/owner/consumer chain is present:
+
+`start_production_host_box_extensions` → `start_attachments_extension` →
+`HostAttachmentsExtension::start_lifecycle_worker` →
+`MediaStoreLifecycleWorker::start` → `run_media_store_lifecycle_pass` →
+`media_store::{clean_old_media, prune_playback_transcode_cache,
+prune_outbound_media}`.
+
+`ProductionHostBoxExtensions::stop` calls
+`HostAttachmentsExtension::stop_lifecycle_worker`; the worker unparks and joins
+its owned thread before the Box extension is disposed. This proves source-level
+wiring only. No local OCRM verification, packaged/runtime acceptance, or
+production/device acceptance is claimed here.
+
+## Spec compliance record
+
+| Requirement | Status | Evidence / reason |
+| --- | --- | --- |
+| MSL-01 | passed (source wiring) | `HostAttachmentsExtension` owns the only worker; it delegates to existing `media_store` functions. |
+| MSL-02 | passed (source wiring) | `MediaStoreLifecycleWorker` performs a bounded pass, parks for the fixed interval, and has an explicit stop/join path. |
+| MSL-03 | passed (source wiring) | Each pass invokes `clean_old_media`, `prune_playback_transcode_cache`, and `prune_outbound_media`; failures are reported per operation. |
+| MSL-04 | pending verification | Existing path and retention invariants remain owned by `media_store`; exact-head Actions and runtime evidence have not passed. |
+| Definition of Done: static chain | passed | Producer, owner, consumer, and shutdown paths are identified above. |
+| Definition of Done: focused oracles | pending | No current exact-head verification receipt is available. |
+| Definition of Done: packaged/runtime acceptance | pending | No packaged/runtime or device acceptance evidence is available. |
 
 ## References
 
