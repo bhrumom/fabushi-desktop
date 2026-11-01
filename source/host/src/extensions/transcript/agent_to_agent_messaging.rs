@@ -206,12 +206,23 @@ impl ProductionAgentToAgentMessaging {
         if let Some(analytics) = self.analytics.as_ref() {
             analytics(from_agent_id, to_agent_id, false, priority);
         }
-        let sender_session_key = match from_session_key {
-            Some(session_key) => Some(session_key.to_string()),
+        let sender_session_key = match from_session_key
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            Some(session_key) => {
+                self.sessions
+                    .assert_session_work_admission(from_agent_id, Some(session_key))?;
+                self.sessions
+                    .read_session_work_admission(from_agent_id)?
+                    .filter(|record| record.session_key == session_key)
+                    .map(|record| record.session_key)
+            }
             None => self
                 .sessions
                 .read_session_work_admission(from_agent_id)?
-                .map(|record| record.session_key),
+                .map(|record| record.session_key)
+                .filter(|value| !value.trim().is_empty()),
         };
         if let Some(session_key) = sender_session_key.as_deref() {
             self.sessions

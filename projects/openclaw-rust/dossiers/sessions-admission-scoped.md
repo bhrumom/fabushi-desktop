@@ -179,19 +179,6 @@ remain pending.
 follow-up under the same session owner and does not claim full channel receipt
 correlation or runtime acceptance.
 
-The registry is now retained by the existing `ProductionSessionWorkers` owner
-and exposed through `SandAgentSessionStore`, so separately constructed session
-facades share one process-lifetime pending-turn state instead of creating
-parallel registries. This is owner-lifetime integration only; no inbound
-channel dispatcher, outbound provider, or transcript publication path has been
-invented, so production wiring remains pending.
-
-The missing producer/consumer boundary is now explicit in the ledger as
-`BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001` for O02 and
-`BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001` for O03. These blockers
-describe absent production paths; they do not convert the existing contract
-oracles into runtime acceptance.
-
 ## 8. Poll-intent oracle mapping correction (2026-10-29)
 
 The locked source reference attached to
@@ -622,3 +609,25 @@ cleared as stale and cannot wake a successor session; legacy failures without a
 key remain on the existing compatibility path. This keeps restart/rearm
 follow-up under the same session owner and does not claim full channel receipt
 correlation or runtime acceptance.
+
+## 12.20 SendToAgent compatibility admission correction — 2026-11-01
+
+The agent-management producer now uses a sender `sessionKey` only when the
+existing owner admission record exactly confirms it. A selector supplied by an
+unbound legacy producer no longer forces an admitted transcript append and
+instead remains on the existing generic agent-owned path; an owner mismatch
+still fails closed. Recipient wake/materialization ownership is unchanged and
+full communication-policy wiring remains pending.
+
+The registry is now retained by the existing `ProductionSessionWorkers` owner
+and exposed through `SandAgentSessionStore`, so separately constructed session
+facades share one process-lifetime pending-turn state instead of creating
+parallel registries. This is owner-lifetime integration only; no inbound
+channel dispatcher, outbound provider, or transcript publication path has been
+invented, so production wiring remains pending.
+
+The missing producer/consumer boundary is now explicit in the ledger as
+`BL-SESSION-COMMUNICATION-PRODUCTION-WIRING-001` for O02 and
+`BL-SESSION-CONVERSATION-TURN-PRODUCTION-WIRING-001` for O03. These blockers
+describe absent production paths; they do not convert the existing contract
+oracles into runtime acceptance.
