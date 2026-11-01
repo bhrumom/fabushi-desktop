@@ -338,6 +338,27 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
     assert!(continuation.contains("RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD"));
     assert!(continuation.contains("providerReviewLifecycleRevision"));
     assert!(continuation.contains("release_provider_review_continuation"));
+    let send_failure = continuation
+        .split("if let Err(error) = self")
+        .nth(1)
+        .expect("provider-review send failure branch exists")
+        .split("match self.call_with_context")
+        .next()
+        .expect("provider-review send failure branch boundary exists");
+    assert!(
+        send_failure.find("release_provider_review_continuation")
+            < send_failure.find("release_session_work_admission"),
+        "provider review must release before its admitted-work marker"
+    );
+    let runner_failure = continuation
+        .split("Ok(result) => Ok(result),")
+        .nth(1)
+        .expect("provider-review Runner failure branch exists");
+    assert!(
+        runner_failure.find("release_provider_review_continuation")
+            < runner_failure.find("release_session_work_admission"),
+        "provider review must release before its admitted-work marker"
+    );
     assert!(!continuation.contains("serde_json::from_value::<ProviderReviewAcknowledgment"));
 }
 

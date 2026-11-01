@@ -4427,12 +4427,12 @@ impl UnifiedGatewayApi {
                 .map_err(map_session_send_error)
             })
         {
-            let _ = self.session_workers.release_session_work_admission(
+            let _ = self.session_workers.release_provider_review_continuation(
                 &route.agent_id,
                 &admitted_revision,
                 next_run_id,
             );
-            let _ = self.session_workers.release_provider_review_continuation(
+            let _ = self.session_workers.release_session_work_admission(
                 &route.agent_id,
                 &admitted_revision,
                 next_run_id,
@@ -4446,12 +4446,12 @@ impl UnifiedGatewayApi {
         ) {
             Ok(result) => Ok(result),
             Err(error) => {
-                let _ = self.session_workers.release_session_work_admission(
+                let _ = self.session_workers.release_provider_review_continuation(
                     &route.agent_id,
                     &admitted_revision,
                     next_run_id,
                 );
-                let _ = self.session_workers.release_provider_review_continuation(
+                let _ = self.session_workers.release_session_work_admission(
                     &route.agent_id,
                     &admitted_revision,
                     next_run_id,
