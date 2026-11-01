@@ -395,7 +395,8 @@ use mahayana_host_runtime::runner::turn_agent_composition::{
 };
 use mahayana_host_runtime::runner::compaction_planning::{
     CompactionSettings, build_compaction_details, build_compaction_summary_prompt,
-    compaction_without_summary, fit_compaction_summary, prepare_compaction_plan,
+    build_turn_prefix_summary_prompt, compaction_without_summary, fit_compaction_summary,
+    prepare_compaction_plan,
 };
 use mahayana_host_runtime::runner::turn_observation::{
     ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
@@ -10708,26 +10709,54 @@ fn start_routed_provider_task(
                                                 &should_cancel,
                                             ) {
                                                 Ok(summary) if !should_cancel() => {
-                                                    let summary = match fit_compaction_summary(
-                                                        &summary,
-                                                        plan.summary_token_budget,
-                                                    ) {
-                                                        Ok(summary) => summary,
-                                                        Err(error) => {
-                                                            eprintln!(
-                                                                "mahayana-host compaction_summary_invalid agent={} run={} error={error}",
-                                                                agent_id, worker_stream_id
-                                                            );
-                                                            fit_compaction_summary(
-                                                                &compaction_without_summary(&plan),
-                                                                plan.summary_token_budget,
-                                                            )
-                                                            .unwrap_or_else(|_| {
-                                                                compaction_without_summary(&plan)
-                                                            })
+                                                    let summary = if plan.is_split_turn
+                                                        && !plan.turn_prefix_entries.is_empty()
+                                                    {
+                                                        match build_turn_prefix_summary_prompt(&plan) {
+                                                            Ok(prefix_prompt) => match runner
+                                                                .run_summarization_prompt(
+                                                                    "You are the Fabushi split-turn prefix summarizer. Return only the concise prefix context.",
+                                                                    &prefix_prompt,
+                                                                    &should_cancel,
+                                                                ) {
+                                                                    Ok(prefix) if !should_cancel() => Some(format!(
+                                                                        "{summary}\n\n---\n\n**Turn Context (split turn):**\n\n{prefix}"
+                                                                    )),
+                                                                    Ok(_) => None,
+                                                                    Err(_) => Some(compaction_without_summary(&plan)),
+                                                                },
+                                                            Err(_) => Some(compaction_without_summary(&plan)),
                                                         }
+                                                    } else {
+                                                        Some(summary)
                                                     };
-                                                    commit_compaction(summary);
+                                                    if let Some(summary) = summary {
+                                                        let summary = match fit_compaction_summary(
+                                                            &summary,
+                                                            plan.summary_token_budget,
+                                                        ) {
+                                                            Ok(summary) => summary,
+                                                            Err(error) => {
+                                                                eprintln!(
+                                                                    "mahayana-host compaction_summary_invalid agent={} run={} error={error}",
+                                                                    agent_id, worker_stream_id
+                                                                );
+                                                                fit_compaction_summary(
+                                                                    &compaction_without_summary(&plan),
+                                                                    plan.summary_token_budget,
+                                                                )
+                                                                .unwrap_or_else(|_| {
+                                                                    compaction_without_summary(&plan)
+                                                                })
+                                                            }
+                                                        };
+                                                        commit_compaction(summary);
+                                                    } else {
+                                                        eprintln!(
+                                                            "mahayana-host compaction_cancelled_during_split_prefix agent={} run={}",
+                                                            agent_id, worker_stream_id
+                                                        );
+                                                    }
                                                 }
                                                 Ok(_) => eprintln!(
                                                     "mahayana-host compaction_cancelled_after_summary agent={} run={}",

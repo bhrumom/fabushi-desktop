@@ -24,6 +24,7 @@ pub struct CompactionSettings {
 pub struct CompactionPlan {
     pub first_kept_entry_id: String,
     pub entries_to_summarize: Vec<Value>,
+    pub turn_prefix_entries: Vec<Value>,
     pub previous_summary: Option<String>,
     pub previous_details: Option<Value>,
     pub tokens_before: u64,
@@ -143,12 +144,26 @@ pub fn prepare_compaction_plan(
         .find(|entry| entry.get("kind").and_then(Value::as_str) == Some("compaction"))
         .and_then(|entry| entry.get("summary").and_then(Value::as_str))
         .map(ToOwned::to_owned);
-    let entries_to_summarize = entries[..cut]
+    let is_split_turn = entry_role(&entries[cut]) == Some("assistant");
+    let turn_prefix_start = if is_split_turn {
+        entries[..cut]
+            .iter()
+            .rposition(|entry| entry_role(entry) == Some("user"))
+            .unwrap_or(cut)
+    } else {
+        cut
+    };
+    let turn_prefix_entries = entries[turn_prefix_start..cut]
         .iter()
         .filter(|entry| entry.get("kind").and_then(Value::as_str) != Some("compaction"))
         .cloned()
         .collect();
-    let latest_user_request = entries[cut..]
+    let entries_to_summarize = entries[..turn_prefix_start]
+        .iter()
+        .filter(|entry| entry.get("kind").and_then(Value::as_str) != Some("compaction"))
+        .cloned()
+        .collect();
+    let latest_user_request = entries[..cut]
         .iter()
         .rev()
         .find(|entry| entry_role(entry) == Some("user"))
@@ -159,6 +174,7 @@ pub fn prepare_compaction_plan(
     Some(CompactionPlan {
         first_kept_entry_id,
         entries_to_summarize,
+        turn_prefix_entries,
         previous_summary,
         previous_details: entries[..cut]
             .iter()
@@ -168,7 +184,7 @@ pub fn prepare_compaction_plan(
         tokens_before,
         summary_token_budget: settings.reserve_tokens.saturating_mul(4) / 5,
         latest_user_request,
-        is_split_turn: entry_role(&entries[cut]) == Some("assistant"),
+        is_split_turn,
     })
 }
 
@@ -183,6 +199,15 @@ pub fn build_compaction_summary_prompt(plan: &CompactionPlan) -> Result<String, 
     Ok(format!(
         "Create a concise, durable conversation summary for the next agent turn. Preserve user intent, decisions, constraints, unresolved work, tool outcomes, and important identifiers. Do not invent facts. The summary must stand alone and fit within {budget} tokens.\n\nPrevious compaction summary (already captured; correct it only when the transcript provides newer facts):\n{previous}\n\nLatest retained user request (must remain actionable even when this is a split turn):\n{latest_request}\n\nTranscript rows to summarize (JSON, in canonical order):\n{transcript}",
         budget = plan.summary_token_budget,
+    ))
+}
+
+/// Prompt for the prefix of a turn whose recent suffix remains verbatim.
+pub fn build_turn_prefix_summary_prompt(plan: &CompactionPlan) -> Result<String, String> {
+    let transcript = serde_json::to_string(&plan.turn_prefix_entries)
+        .map_err(|error| format!("could not encode split-turn prefix: {error}"))?;
+    Ok(format!(
+        "This is the PREFIX of a turn that was too large to keep. The SUFFIX (recent work) is retained verbatim. Summarize only the prefix so the next agent can understand the retained suffix. Use exactly these sections:\n\n## Original Request\n[What did the user ask for?]\n\n## Early Progress\n- [Key decisions and work done in the prefix]\n\n## Context for Suffix\n- [Information needed to understand the kept suffix]\n\nBe concise and preserve exact paths, identifiers, and errors.\n\nPrefix transcript rows (JSON):\n{transcript}"
     ))
 }
 
@@ -215,7 +240,7 @@ pub fn fit_compaction_summary(summary: &str, summary_token_budget: u64) -> Resul
 pub fn compaction_without_summary(plan: &CompactionPlan) -> String {
     let mut fallback = format!(
         "[{} earlier message(s) were removed without a summary because summarization failed. The messages after this summary are retained verbatim; ask the user if older details matter.]",
-        plan.entries_to_summarize.len()
+        plan.entries_to_summarize.len() + plan.turn_prefix_entries.len()
     );
     if let Some(request) = plan.latest_user_request.as_deref().filter(|value| !value.is_empty()) {
         fallback.push_str("\n\n## Original request of the current turn\n");
@@ -253,7 +278,11 @@ pub fn build_compaction_details(plan: &CompactionPlan) -> Option<Value> {
             .map(ToOwned::to_owned);
     }
 
-    for entry in &plan.entries_to_summarize {
+    for entry in plan
+        .entries_to_summarize
+        .iter()
+        .chain(plan.turn_prefix_entries.iter())
+    {
         let Some(object) = entry.as_object() else {
             continue;
         };
@@ -539,6 +568,28 @@ mod tests {
     }
 
     #[test]
+    fn split_turn_separates_prefix_from_older_history() {
+        let entries = vec![
+            json!({"id":"old", "kind":"message", "role":"user", "content":"old"}),
+            json!({"id":"old-a", "kind":"message", "role":"assistant", "content":"done"}),
+            json!({"id":"current", "kind":"message", "role":"user", "content":"current request"}),
+            json!({"id":"current-a", "kind":"message", "role":"assistant", "content":"partial"}),
+            json!({"id":"kept", "kind":"message", "role":"user", "content":"follow up"}),
+        ];
+        let plan = prepare_compaction_plan(
+            &entries,
+            100,
+            100,
+            CompactionSettings { enabled: true, reserve_tokens: 1, keep_recent_tokens: 1 },
+            None,
+        ).expect("plan");
+        assert!(plan.is_split_turn);
+        assert_eq!(plan.turn_prefix_entries.len(), 2);
+        assert_eq!(plan.turn_prefix_entries[0]["id"], "current");
+        assert_eq!(plan.entries_to_summarize.len(), 2);
+    }
+
+    #[test]
     fn prior_compaction_is_summary_context_not_new_history() {
         let entries = vec![
             json!({"id":"c0", "kind":"compaction", "summary":"prior", "tokensBefore":10}),
@@ -578,6 +629,7 @@ mod tests {
                     "result":{"details":{"summary":{"modified":["src/lib.rs"],"added":["src/a.rs"]}}}
                 }),
             ],
+            turn_prefix_entries: Vec::new(),
             previous_summary: Some("prior".into()),
             previous_details: Some(json!({"readFiles":["src/old.rs"],"modifiedFiles":["src/kept.rs"]})),
             tokens_before: 10,
@@ -600,6 +652,7 @@ mod tests {
         let plan = CompactionPlan {
             first_kept_entry_id: "keep".into(),
             entries_to_summarize: vec![json!({"kind":"message","role":"user","content":"old"})],
+            turn_prefix_entries: Vec::new(),
             previous_summary: Some("prior decisions".into()),
             previous_details: None,
             tokens_before: 10,
