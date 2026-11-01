@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 107,
+    "responsibilities_total": 108,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27259,6 +27259,281 @@
         "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp@b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
         "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a",
         "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "source_blob_sha": "13cbc76ec723386027b5b4dcac79999b791c4614",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.protocol-dc-id-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-PROTOCOL-DC-ID-WIRE-001",
+      "source_symbols": [
+        "SessionPrivate::getProtocolDcId",
+        "BareDcId",
+        "isTemporaryDcId",
+        "getRealIdFromTemporaryDcId",
+        "DcType::MediaCluster",
+        "kTestModeDcIdShift"
+      ],
+      "capability_ids": [
+        "CAP-EMBEDDED-MTPROTO-TRANSPORT-WIRE"
+      ],
+      "dependency_ids": [
+        "EmbeddedTelegramProtocol",
+        "DcDirectory",
+        "TcpTransport",
+        "ObfuscatedConnectionStart"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round107-mtproto-protocol-dc-id-wire-20261101.md",
+      "behavior_contract": "Derive the signed 16-bit MTProto protocol DC id independently of scheduling: reduce shifted ids to their bare directory identity, normalize fixed-U temporary ids >=1000 to their real wire id, add the test-mode shift 10000, and negate only an explicit MediaCluster wire role; preserve the bare directory id separately for endpoint lookup and fail closed on invalid/unrepresentable inputs.",
+      "state_machine": "shifted/source-neutral dc id + test flag + explicit wire role -> bare directory id -> temporary wire normalization -> optional test shift -> optional media sign -> signed i16 protocol wire id; invalid input -> typed failure with no mutation",
+      "side_effects": [
+        "Adds pure protocol DC identity derivation to the existing telegram-protocol DC owner",
+        "Existing telegram-network connect_directory delegates the wire rule while retaining endpoint/socket ownership",
+        "Synchronizes canonical dc/lib/network/protocol contract blobs into the existing desktop provider mirror",
+        "Authors focused protocol and network contracts without executing them"
+      ],
+      "failure_cases": [
+        "Temporary 1002 is used directly on the wire instead of normalizing to 2",
+        "Shifted media id is used as a directory lookup id instead of its bare id",
+        "MediaCluster sign is applied to CDN or ordinary regular connections",
+        "Test-mode shift is applied before temporary normalization or after sign handling",
+        "Out-of-domain ids are silently narrowed to i16",
+        "Wire-id derivation mutates scheduling, auth-key, persistence or request-history state"
+      ],
+      "ui_disposition": "No UI change. This is exact MTProto transport identity inside the existing embedded protocol/network owners.",
+      "non_ui_responsibilities": [
+        "Fixed-U shifted-to-bare DC identity",
+        "Temporary DC wire normalization",
+        "Test-mode protocol DC shift",
+        "MediaCluster negative signed wire identity",
+        "Directory-id versus wire-id separation"
+      ],
+      "platform_delta": "Source-neutral Rust pure derivation extends the existing telegram-protocol DC owner; the existing telegram-network carrier consumes it without a new scheduler/runtime/provider.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/dc.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+      ],
+      "existing_owner": "Canonical shared telegram-protocol DC identity owner with existing telegram-network TcpTransport as socket carrier",
+      "rejected_existing_owners": [
+        "telegram-network alone: sockets/endpoint attempts must not become the source of truth for MTProto wire identity",
+        "Session/auth-key runtime: broader TemporaryMediaCluster key selection and binding lifecycle are excluded",
+        "new Telegram DC runtime/provider: prohibited parallel source-specific architecture"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/dc.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/tests/protocol_contract.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/tests/tcp_transport.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
+      ],
+      "fabushi_target_symbols": [
+        "derive_protocol_dc_identity",
+        "ProtocolDcIdentity",
+        "ProtocolDcRole",
+        "connect_directory"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Pure MTProto wire identity and the existing native socket carrier are already canonical Rust responsibilities; no Telegram C++ core, FFI, sidecar, subprocess, or Web wrapper is retained.",
+      "command_event_contracts": [
+        "regular dc 2 -> directory 2 / wire 2; test -> 10002",
+        "temporary dc 1002 -> directory 1002 / wire 2; test -> 10002",
+        "media shifted dc 160002 -> directory 2 / wire -2; test -> -10002",
+        "temporary media shifted dc 161002 -> directory 1002 / wire -2; test -> -10002",
+        "invalid zero-bare or unrepresentable wire id -> typed error with no state mutation"
+      ],
+      "state_owner": "No mutable state. telegram-protocol owns the pure DC wire identity transform; DcDirectory remains the endpoint data owner.",
+      "lifecycle_owner": "Existing telegram-network/session/auth-key owners remain authoritative for connection and key lifecycles; this slice introduces none.",
+      "persistence_and_restart": "No persistence. Protocol DC identity is deterministically re-derived from connection inputs after restart.",
+      "concurrency_and_cancellation": "Pure synchronous derivation. Existing network connection cancellation/retry policy is unchanged and outside this slice.",
+      "security_boundary": "Fail-closed conversion prevents silent narrowing or accidental cross-DC wire identity; the helper does not grant endpoint, key, session or request authority.",
+      "network_service_dependencies": [
+        "Existing embedded Telegram MTProto direct-TCP transport and canonical DcDirectory only"
+      ],
+      "service_owner": "Existing Fabushi embedded Telegram protocol/network stack",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "TemporaryMediaCluster auth-key selection/binding/persistence/expiry/renewal remains outside this wire-only responsibility.",
+        "Proxy/Web/TLS camouflage, quick-ACK lifecycle and broader connection racing/retry/reconnect remain open.",
+        "Arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "telegram-network::connect_directory -> telegram-protocol::derive_protocol_dc_identity -> DcDirectory::candidates(directory_dc_id) -> TcpTransport::connect_obfuscated(wire_id)",
+        "desktop tracked telegram-protocol/network provider mirrors canonical source-level production path"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "fixed-U:Telegram/SourceFiles/mtproto/facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256",
+        "fixed-U:Telegram/SourceFiles/mtproto/core_types.h@9d025d8ae265e3fe2eef3f32fc609e79a0c4de7f",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtp_instance.h@eeb56d29cc8316bd6600c26b6f8edf3a912601eb",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_dc_options.h@4e0b979c4a84661f3365196ab8702dc8cb60fd03",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+        "platform-core-spec-commit:9d0f25b21b46ef74f4589dec1d3459117d4bdbd6",
+        "platform-core-spec-blob:725069760d50242874de30ddc5a2045895c23103",
+        "platform-core-production-commit:e9cfc7fbd06002c6510d3bf45df9710e55ff1d57",
+        "platform-core-dc-path:native/telegram-protocol/src/dc.rs@a9582e4ece93590c322febbff391ba3ff7635575",
+        "platform-core-protocol-lib-path:native/telegram-protocol/src/lib.rs@daf27c48a422ed6ed663ca0021ff138436d99c0b",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@3034acab752ca37531033bb8a1d106003b20265d",
+        "platform-core-contract-commit:ceacfa08800950103c6118b6c579ef582b1e1458",
+        "platform-core-protocol-contract-path:native/telegram-protocol/tests/protocol_contract.rs@adc51856cebcdb6e539828e3d4abb9952fc32c29",
+        "platform-core-network-contract-path:native/telegram-network/tests/tcp_transport.rs@4adbcabf66dc0ca35861f46e40e9a8ca77fb73c5",
+        "desktop-provider-sync-commit:385e5a261da3620733053503027c9a28c71cc221",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs@a9582e4ece93590c322febbff391ba3ff7635575",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@daf27c48a422ed6ed663ca0021ff138436d99c0b",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@3034acab752ca37531033bb8a1d106003b20265d",
+        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs@adc51856cebcdb6e539828e3d4abb9952fc32c29"
+      ],
+      "test_evidence": [
+        "Canonical and desktop protocol contracts author regular/test, temporary normalization, media negative, shifted media, shifted temporary-media and invalid-domain cases; not run.",
+        "Canonical network contracts author separate bare-directory lookup versus signed-wire-id carrier cases for media and temporary ids; not run."
+      ],
+      "target_commit": "385e5a261da3620733053503027c9a28c71cc221",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing embedded Telegram protocol/network production composition",
+      "composition_slot": "MTProto direct-TCP protocol DC identity",
+      "capability_component": "Exact protocol DC-id wire derivation",
+      "variation_axes": [
+        "regular vs MediaCluster wire role",
+        "production vs test mode",
+        "ordinary vs temporary bare id",
+        "unshifted vs shifted source-neutral id"
+      ],
+      "shared_owner_contracts": [
+        "Existing DcDirectory",
+        "Existing TcpTransport",
+        "Existing ObfuscatedConnectionStart",
+        "Existing account-bound Telegram runtime"
+      ],
+      "duplicate_root_check": "No second account, DC directory, protocol runtime, network runtime, scheduler, auth-key owner, session registry, request history, message store, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Pure derivation is deterministic and owns no mutable lifecycle state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-PROTOCOL-DC-ID-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-PROTOCOL-DC-ID-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-PROTOCOL-DC-BARE-001",
+        "INV-TDRP-MTPROTO-PROTOCOL-DC-TEMP-NORMALIZE-001",
+        "INV-TDRP-MTPROTO-PROTOCOL-DC-TEST-SHIFT-001",
+        "INV-TDRP-MTPROTO-PROTOCOL-DC-MEDIA-SIGN-001",
+        "INV-TDRP-MTPROTO-PROTOCOL-DC-NO-SCHEDULER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-PROTOCOL-DC-ID-DERIVE-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-PROTOCOL-DC-ID-WIRE-001",
+        "CONTRACT-TDRP-MTPROTO-PROTOCOL-DC-ID-CARRIER-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-PROTOCOL-DC-ID-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-PROTOCOL-DC-MEDIA-TEMP-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-protocol-dc-id-fixed-u-table"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 plus facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256, core_types.h@9d025d8ae265e3fe2eef3f32fc609e79a0c4de7f, mtp_instance.h@eeb56d29cc8316bd6600c26b6f8edf3a912601eb, connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f and mtproto_dc_options.*. Implementation is source-neutral Rust and copies no upstream C++ implementation.",
+      "notes": "Stage A source-level implementation only. This row closes the pure fixed-U protocol DC-id identity responsibility: shifted-to-bare directory identity, temporary wire normalization, test shift and explicit MediaCluster negative sign. Existing telegram-network consumes the result but broader TDesktop currentDcType/auth-key selection, binding/persistence and connection scheduling remain outside this slice. Contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-PROTOCOL-DC-ID-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "Telegram/SourceFiles/mtproto/facade.h@39e2f732c7df32af37ebf8222e887aec7e11b256",
+        "Telegram/SourceFiles/mtproto/core_types.h@9d025d8ae265e3fe2eef3f32fc609e79a0c4de7f",
+        "Telegram/SourceFiles/mtproto/mtp_instance.h@eeb56d29cc8316bd6600c26b6f8edf3a912601eb",
+        "Telegram/SourceFiles/mtproto/connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f",
+        "Telegram/SourceFiles/mtproto/mtproto_dc_options.h@4e0b979c4a84661f3365196ab8702dc8cb60fd03",
+        "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a"
       ]
     }
   ],
