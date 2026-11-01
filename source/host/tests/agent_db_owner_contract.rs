@@ -463,6 +463,9 @@ fn owner_rejects_checkpoint_confirmation_when_deletion_fence_is_present() {
         )
         .expect("fenced checkpoint outcome")
         .is_none());
+    assert!(!owner
+        .compare_and_set_latest_root_blob_id(&[0xaa], &[0xcc])
+        .expect("fenced root CAS"));
     assert_eq!(
         owner
             .get_metadata("latestRootBlobId")

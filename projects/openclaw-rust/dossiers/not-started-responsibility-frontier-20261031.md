@@ -251,9 +251,9 @@ episode-memory record/clear writes, including the Runner's direct episode
 cleanup path, plus the bulk transient-state clear. A focused owner contract
 preserves both histories and metadata CAS state when the durable deletion
 fence is active; checkpoint confirmation is fenced at the same SQLite edge,
-while its pre-materialized blob remains an explicit external cleanup gap. This
-remains a bounded metadata correction; it does not change the row's
-not-started/not-wired/not-run/pending disposition.
+as is standalone latest-root CAS, while its pre-materialized blob remains an
+explicit external cleanup gap. This remains a bounded metadata correction; it
+does not change the row's not-started/not-wired/not-run/pending disposition.
 
 ### 2026-11-01 background-result consumer recheck
 
