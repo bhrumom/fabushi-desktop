@@ -88,12 +88,125 @@ pub struct HostResponse {
     pub error: Option<String>,
 }
 
+const PRODUCT_SETTINGS_VERSION: u32 = 1;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProductNetworkSettings {
+    proxy_enabled: bool,
+}
+
+impl Default for ProductNetworkSettings {
+    fn default() -> Self {
+        Self {
+            proxy_enabled: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProductSettingsState {
+    version: u32,
+    network: ProductNetworkSettings,
+}
+
+impl Default for ProductSettingsState {
+    fn default() -> Self {
+        Self {
+            version: PRODUCT_SETTINGS_VERSION,
+            network: ProductNetworkSettings::default(),
+        }
+    }
+}
+
+/// Canonical, source-neutral product Settings owner for the desktop application.
+///
+/// This intentionally does not reuse feature.persistence/ui_state and does not
+/// write product preferences into Telegram provider-private storage.
+struct ProductSettingsOwner {
+    path: PathBuf,
+    state: Mutex<ProductSettingsState>,
+}
+
+impl ProductSettingsOwner {
+    fn open(path: PathBuf) -> Result<Self, AppHostError> {
+        let state = if path.exists() {
+            let encoded = std::fs::read_to_string(&path).map_err(|error| {
+                AppHostError::Operation(format!("read product Settings: {error}"))
+            })?;
+            let state: ProductSettingsState = serde_json::from_str(&encoded).map_err(|error| {
+                AppHostError::Operation(format!("decode product Settings: {error}"))
+            })?;
+            if state.version != PRODUCT_SETTINGS_VERSION {
+                return Err(AppHostError::Operation(format!(
+                    "unsupported product Settings version {}",
+                    state.version
+                )));
+            }
+            state
+        } else {
+            ProductSettingsState::default()
+        };
+        Ok(Self {
+            path,
+            state: Mutex::new(state),
+        })
+    }
+
+    fn snapshot(&self) -> Result<ProductSettingsState, AppHostError> {
+        self.state
+            .lock()
+            .map(|state| state.clone())
+            .map_err(|_| AppHostError::Operation("product Settings lock is unavailable".into()))
+    }
+
+    fn set_network_proxy_enabled(
+        &self,
+        proxy_enabled: bool,
+    ) -> Result<ProductSettingsState, AppHostError> {
+        let mut current = self
+            .state
+            .lock()
+            .map_err(|_| AppHostError::Operation("product Settings lock is unavailable".into()))?;
+        if current.network.proxy_enabled == proxy_enabled {
+            return Ok(current.clone());
+        }
+
+        let mut next = current.clone();
+        next.network.proxy_enabled = proxy_enabled;
+        self.persist(&next)?;
+        *current = next.clone();
+        Ok(next)
+    }
+
+    fn persist(&self, state: &ProductSettingsState) -> Result<(), AppHostError> {
+        if let Some(parent) = self.path.parent() {
+            std::fs::create_dir_all(parent).map_err(|error| {
+                AppHostError::Operation(format!("create product Settings directory: {error}"))
+            })?;
+        }
+        let encoded = serde_json::to_vec_pretty(state)
+            .map_err(|error| AppHostError::Operation(format!("encode product Settings: {error}")))?;
+        let temporary = self.path.with_extension("json.tmp");
+        std::fs::write(&temporary, encoded).map_err(|error| {
+            AppHostError::Operation(format!("write product Settings temporary file: {error}"))
+        })?;
+        std::fs::rename(&temporary, &self.path).map_err(|error| {
+            AppHostError::Operation(format!("commit product Settings: {error}"))
+        })?;
+        Ok(())
+    }
+}
+
+
 pub struct AppHost {
     app_data_dir: PathBuf,
     feature_mode: AppHostFeatureMode,
     product: MahayanaProductClient,
     js: Mutex<DeepSeekJsHost>,
     feature: Arc<FeatureHostController>,
+    settings: ProductSettingsOwner,
     // Declared after `feature` so the non-owning provider is dropped before the client lease.
     telegram_client: Option<TelegramClientLease>,
 }
@@ -233,6 +346,7 @@ impl AppHost {
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         let feature_root = feature_host_root(&app_data_dir);
+        let settings = ProductSettingsOwner::open(feature_root.join("product-settings.json"))?;
         let telegram_client = open_platform_telegram_client(&app_data_dir, feature_mode)?;
         let telegram_handoff = telegram_client
             .as_ref()
@@ -276,6 +390,7 @@ impl AppHost {
                     .map_err(|error| AppHostError::Operation(error.to_string()))?,
             ),
             feature,
+            settings,
             telegram_client,
         })
     }
@@ -328,6 +443,9 @@ impl AppHost {
     fn handle(&self, method: &str, params: Value) -> Result<Value, AppHostError> {
         match method {
             "host.platform" => Ok(json!({"platform": host_platform()})),
+            "settings.snapshot" => serde_json::to_value(self.settings.snapshot()?)
+                .map_err(|error| AppHostError::Operation(error.to_string())),
+            "settings.setNetworkProxyEnabled" => self.settings_set_network_proxy_enabled(params),
             method if method.starts_with("feature.") => self.handle_feature(method, params),
             "platform.request" => self
                 .product
@@ -345,6 +463,44 @@ impl AppHost {
                 "unknown method {other}"
             ))),
         }
+    }
+
+
+    fn settings_set_network_proxy_enabled(&self, params: Value) -> Result<Value, AppHostError> {
+        let proxy_enabled = params
+            .get("proxyEnabled")
+            .and_then(Value::as_bool)
+            .ok_or_else(|| {
+                AppHostError::InvalidRequest(
+                    "settings.setNetworkProxyEnabled requires boolean proxyEnabled".into(),
+                )
+            })?;
+
+        // Persistence is authoritative and occurs before downstream publication.
+        // The command deliberately republishes even for a same-value retry.
+        let state = self.settings.set_network_proxy_enabled(proxy_enabled)?;
+        let publication = if let Some(client) = self.telegram_client.as_ref() {
+            let report = client
+                .refresh_special_config(state.network.proxy_enabled)
+                .map_err(|error| {
+                    AppHostError::Operation(format!(
+                        "publish product proxy setting to Telegram runtime: {error}"
+                    ))
+                })?;
+            json!({
+                "available": true,
+                "report": report,
+            })
+        } else {
+            json!({
+                "available": false,
+                "reason": "telegramClientUnavailable",
+            })
+        };
+        Ok(json!({
+            "settings": state,
+            "publication": publication,
+        }))
     }
 
     fn handle_feature(&self, method: &str, params: Value) -> Result<Value, AppHostError> {
@@ -1600,6 +1756,51 @@ pub fn dispatch_json(host: &AppHost, input: &str) -> String {
 #[cfg(test)]
 mod telegram_composition_contract_tests {
     use super::*;
+
+
+    fn product_settings_test_path(label: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "fabushi-product-settings-{label}-{}-{nonce}.json",
+            std::process::id()
+        ))
+    }
+
+    #[test]
+    fn product_settings_owner_persists_source_neutral_proxy_projection() {
+        let path = product_settings_test_path("persist");
+        let owner = ProductSettingsOwner::open(path.clone()).expect("open default Settings");
+        assert!(!owner.snapshot().expect("default snapshot").network.proxy_enabled);
+        owner
+            .set_network_proxy_enabled(true)
+            .expect("persist proxy enabled");
+        drop(owner);
+
+        let restored = ProductSettingsOwner::open(path.clone()).expect("restore Settings");
+        assert!(restored.snapshot().expect("restored snapshot").network.proxy_enabled);
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn product_settings_owner_fails_closed_on_malformed_persistence() {
+        let path = product_settings_test_path("malformed");
+        std::fs::write(&path, b"{not-json").expect("write malformed contract fixture");
+        assert!(ProductSettingsOwner::open(path.clone()).is_err());
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn product_settings_host_contract_is_source_neutral() {
+        let methods = [
+            "settings.snapshot",
+            "settings.setNetworkProxyEnabled",
+        ];
+        assert!(methods.iter().all(|method| !method.contains("telegram")));
+        assert!(methods.iter().all(|method| !method.contains("Telegram")));
+    }
 
     #[test]
     fn telegram_renderer_auth_contract_has_no_application_credential_parameters() {

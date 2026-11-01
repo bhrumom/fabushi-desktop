@@ -323,6 +323,18 @@ impl TelegramClientLease {
         self.decorate_authorization(json!({}))
     }
 
+
+    fn special_config_refresh_request(proxy_enabled: bool) -> Value {
+        json!({
+            "@type": "telegram.refreshSpecialConfig",
+            "proxyEnabled": proxy_enabled,
+        })
+    }
+
+    pub fn refresh_special_config(&self, proxy_enabled: bool) -> Result<Value, ConversationError> {
+        self.execute(Self::special_config_refresh_request(proxy_enabled))
+    }
+
     fn execute_authorization(&self, request: Value) -> Result<Value, ConversationError> {
         if let Some(projection) = self.authorization_backoff_projection()? {
             return Ok(projection);
@@ -804,6 +816,25 @@ mod tests {
     use fabushi_telegram_core::UserId;
     use std::sync::Arc;
     use std::sync::Mutex;
+
+
+    #[test]
+    fn special_config_refresh_request_carries_authoritative_proxy_projection() {
+        assert_eq!(
+            TelegramClientLease::special_config_refresh_request(true),
+            json!({
+                "@type": "telegram.refreshSpecialConfig",
+                "proxyEnabled": true,
+            })
+        );
+        assert_eq!(
+            TelegramClientLease::special_config_refresh_request(false),
+            json!({
+                "@type": "telegram.refreshSpecialConfig",
+                "proxyEnabled": false,
+            })
+        );
+    }
 
     #[derive(Default)]
     struct EventCollector(Mutex<Vec<RuntimeEvent>>);
