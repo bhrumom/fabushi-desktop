@@ -16,7 +16,8 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
     AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, SandAgentDb,
-    ProviderReviewContinuationOutcome, SessionProviderReview, SessionWorkAdmissionRecord,
+    PendingMemoryMutation, ProviderReviewContinuationOutcome, SessionProviderReview,
+    SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
     add_persisted_conversation_partner,
     append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
@@ -68,8 +69,9 @@ use super::session_store_factories::{
     workflow_store_for_db_path_with_time_zone_resolver,
 };
 use crate::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryRecord, MemoryService, SynthesisApplyResult,
+    FileMemoryStore, MemoryKind, MemoryRecoveryRecord, MemoryService, SynthesisApplyResult,
 };
+use crate::extensions::memory::agent_state::{MemoryTier, StateWriteResult, MEMORY_NOTE_PREFIX};
 use crate::extensions::memory::project_membership::AgentProjectMembership;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
@@ -1450,6 +1452,7 @@ impl ProductionSessionWorkers {
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
         if let Some(owner) = owners.get(agent_id) {
+            self.recover_pending_memory_mutation(agent_id, owner)?;
             return Ok(Arc::clone(owner));
         }
         let owner = Arc::new(
@@ -1457,6 +1460,7 @@ impl ProductionSessionWorkers {
                 .map_err(|error| error.to_string())?,
         );
         self.recover_pending_media_custody(agent_id, &owner)?;
+        self.recover_pending_memory_mutation(agent_id, &owner)?;
         owners.insert(agent_id.to_string(), Arc::clone(&owner));
         Ok(owner)
     }
@@ -1556,6 +1560,40 @@ impl ProductionSessionWorkers {
                 &record,
             )
             .map_err(|error| error.to_string())
+    }
+
+    fn recover_pending_memory_mutation(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(mutation) = owner
+            .read_pending_memory_mutation()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "pending memory mutation has no session admission".to_string())?;
+        if mutation.mutation_id.trim().is_empty()
+            || mutation.session_key != admission.session_key
+            || mutation.session_id != admission.session_id
+            || mutation.lifecycle_revision != admission.lifecycle_revision
+            || !matches!(mutation.operation.as_str(), "remove" | "clear")
+        {
+            return Err("pending memory mutation journal is malformed or rebound".into());
+        }
+        let store = self.memory_service.store_for_agent(agent_id);
+        Self::restore_memory_records(&store, &mutation.records)?;
+        if !owner
+            .clear_pending_memory_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("pending memory mutation journal could not be cleared".into());
+        }
+        Ok(())
     }
 
     pub fn close_agent_db_owner(
@@ -2561,14 +2599,92 @@ impl ProductionSessionWorkers {
 
     fn restore_memory_records(
         store: &FileMemoryStore,
-        records: &[MemoryRecord],
+        records: &[MemoryRecoveryRecord],
     ) -> Result<(), String> {
-        for record in records {
-            store
-                .add_memory(&record.content, record.created_at, record.kind)
-                .map_err(|error| error.to_string())?;
+        store
+            .restore_records_exact(records)
+            .map_err(|error| error.to_string())
+    }
+
+    fn prepare_memory_mutation(
+        owner: &SandAgentDb,
+        operation: &str,
+        records: Vec<MemoryRecord>,
+        prior_snapshot: Option<MemoryPromptSnapshot>,
+    ) -> Result<PendingMemoryMutation, String> {
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "memory mutation requires a session admission".to_string())?;
+        let mutation = PendingMemoryMutation {
+            mutation_id: format!("memory-{operation}:{}", Uuid::new_v4()),
+            operation: operation.to_string(),
+            session_key: admission.session_key,
+            session_id: admission.session_id,
+            lifecycle_revision: admission.lifecycle_revision,
+            records,
+            prior_snapshot,
+        };
+        if !owner
+            .prepare_pending_memory_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("memory mutation could not establish its durable journal".into());
+        }
+        Ok(mutation)
+    }
+
+    fn rollback_memory_mutation(
+        owner: &SandAgentDb,
+        store: &FileMemoryStore,
+        mutation: &PendingMemoryMutation,
+    ) -> Result<(), String> {
+        Self::restore_memory_records(store, &mutation.records)?;
+        if !owner
+            .clear_pending_memory_mutation(mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("memory mutation journal could not be cleared after rollback".into());
         }
         Ok(())
+    }
+
+    pub fn write_agent_memory(
+        &self,
+        agent_id: &str,
+        content: &str,
+        tier: MemoryTier,
+    ) -> StateWriteResult {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission(agent_id)?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let payload = match tier {
+                MemoryTier::Note => format!("{MEMORY_NOTE_PREFIX}{}", content.trim()),
+                MemoryTier::Profile | MemoryTier::Log => content.trim().to_string(),
+            };
+            let kind = match tier {
+                MemoryTier::Profile => MemoryKind::Profile,
+                MemoryTier::Note | MemoryTier::Log => MemoryKind::Log,
+            };
+            store
+                .add_memory(&payload, chrono::Utc::now().timestamp_millis(), kind)
+                .map_err(|error| error.to_string())
+        });
+        match result {
+            Ok(Some(record)) => StateWriteResult::success(format!(
+                "Remembered in agent memory ({}): {}",
+                match tier {
+                    MemoryTier::Profile => "profile",
+                    MemoryTier::Note => "note",
+                    MemoryTier::Log => "log",
+                },
+                record.content
+            )),
+            Ok(None) => StateWriteResult::failure(
+                "nothing was saved to agent memory - the fact was empty or already recorded.",
+            ),
+            Err(error) => StateWriteResult::failure(format!("could not update agent memory: {error}")),
+        }
     }
 
     pub fn remove_agent_memory(&self, agent_id: &str, memory_id: &str) -> Result<bool, String> {
@@ -2583,46 +2699,38 @@ impl ProductionSessionWorkers {
                 .list_memories(usize::MAX)
                 .into_iter()
                 .find(|record| record.id == memory_id);
-            let removed = store
-                .remove_memory(memory_id)
-                .map_err(|error| error.to_string())?;
-            if !removed {
+            let Some(previous) = previous else {
                 return Ok(false);
-            }
-            let cleared = match owner.clear_memory_prompt_snapshot() {
-                Ok(cleared) => cleared,
+            };
+            let mutation = Self::prepare_memory_mutation(
+                &owner,
+                "remove",
+                store.snapshot_for_recovery(&[previous.clone()]),
+                prior_snapshot,
+            )?;
+            let removed = match store.remove_memory(memory_id) {
+                Ok(removed) => removed,
                 Err(error) => {
-                    let error = error.to_string();
-                    let Some(previous) = previous else {
-                        return Err(format!(
-                            "memory was removed but snapshot clear failed and no record was available for rollback: {error}"
-                        ));
-                    };
-                    return match Self::restore_memory_records(&store, &[previous]) {
-                        Ok(()) => Err(format!(
-                            "memory snapshot clear failed; removed memory was restored: {error}"
-                        )),
-                        Err(restore_error) => Err(format!(
-                            "memory snapshot clear failed: {error}; memory rollback failed: {restore_error}"
-                        )),
-                    };
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory remove failed: {error}; {rollback}"))?;
+                    return Err(error.to_string());
                 }
             };
-            if cleared || prior_snapshot.is_none() {
-                return Ok(true);
+            if !removed {
+                Self::rollback_memory_mutation(&owner, &store, &mutation)?;
+                return Ok(false);
             }
-            let Some(previous) = previous else {
-                return Err(
-                    "memory snapshot clear was rejected and removed memory cannot be restored"
-                        .into(),
-                );
-            };
-            Self::restore_memory_records(&store, &[previous]).map_err(|restore_error| {
-                format!(
-                    "memory snapshot clear was rejected; memory rollback failed: {restore_error}"
-                )
-            })?;
-            Err("memory snapshot clear was rejected by the session owner".into())
+            match owner.commit_pending_memory_mutation(&mutation) {
+                Ok(true) => Ok(true),
+                Ok(false) => {
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory settlement was rejected; {rollback}"))?;
+                    Err("memory settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "memory settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
         })
     }
 
@@ -2634,39 +2742,29 @@ impl ProductionSessionWorkers {
                 .get_memory_prompt_snapshot()
                 .map_err(|error| error.to_string())?;
             let store = self.memory_service.store_for_agent(agent_id);
-            let previous = store.list_memories(usize::MAX);
+            let previous = store.snapshot_for_recovery(&store.list_memories(usize::MAX));
+            let mutation = Self::prepare_memory_mutation(
+                &owner,
+                "clear",
+                previous,
+                prior_snapshot,
+            )?;
             if let Err(error) = store.clear_memories() {
-                let restore_error = Self::restore_memory_records(&store, &previous).err();
-                return Err(match restore_error {
-                    Some(restore_error) => {
-                        format!("memory clear failed: {error}; rollback failed: {restore_error}")
-                    }
-                    None => error.to_string(),
-                });
+                Self::rollback_memory_mutation(&owner, &store, &mutation)
+                    .map_err(|rollback| format!("memory clear failed: {error}; {rollback}"))?;
+                return Err(error.to_string());
             }
-            let cleared = match owner.clear_memory_prompt_snapshot() {
-                Ok(cleared) => cleared,
-                Err(error) => {
-                    let error = error.to_string();
-                    return match Self::restore_memory_records(&store, &previous) {
-                        Ok(()) => Err(format!(
-                            "memory snapshot clear failed; memory was restored: {error}"
-                        )),
-                        Err(restore_error) => Err(format!(
-                            "memory snapshot clear failed: {error}; memory rollback failed: {restore_error}"
-                        )),
-                    };
+            match owner.commit_pending_memory_mutation(&mutation) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory settlement was rejected; {rollback}"))?;
+                    Err("memory settlement was rejected by the session owner".into())
                 }
-            };
-            if cleared || prior_snapshot.is_none() {
-                return Ok(());
+                Err(error) => Err(format!(
+                    "memory settlement outcome unknown; journal retained for recovery: {error}"
+                )),
             }
-            if let Err(restore_error) = Self::restore_memory_records(&store, &previous) {
-                return Err(format!(
-                    "memory snapshot clear was rejected; memory rollback failed: {restore_error}"
-                ));
-            }
-            Err("memory snapshot clear was rejected by the session owner".into())
         })
     }
 

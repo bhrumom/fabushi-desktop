@@ -13,6 +13,7 @@ use crate::storage::store_db::{
     bump_db_write_generation, live_db_handle_count, register_live_db_handle,
     release_live_db_handle,
 };
+use crate::extensions::memory::memory_service::MemoryRecoveryRecord;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
@@ -70,6 +71,7 @@ const KV_REQUEST_IDS: &str = "requestIds";
 const KV_LATEST_REQUEST_ID: &str = "latestRequestId";
 const KV_EPISODE: &str = "episodePending";
 const KV_MEMORY_SNAPSHOT: &str = "memoryPromptSnapshot";
+const KV_PENDING_MEMORY_MUTATION: &str = "pendingExternalMemoryMutation";
 const KV_SPEND_GUARD: &str = "automationSpendGuardState";
 const KV_SPEND_GUARD_LEGACY: &str = "automationSpendGuardNudgedAt";
 const KV_HIDDEN_REPAIR: &str = "hiddenEntryRepairVersion";
@@ -151,6 +153,17 @@ pub struct SessionWorkAdmissionRecord {
     pub provider_review_continuation_run_id: Option<String>,
     #[serde(default)]
     pub provider_review: Option<SessionProviderReview>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PendingMemoryMutation {
+    pub mutation_id: String,
+    pub operation: String,
+    pub session_key: String,
+    pub session_id: String,
+    pub lifecycle_revision: String,
+    pub records: Vec<MemoryRecoveryRecord>,
+    pub prior_snapshot: Option<MemoryPromptSnapshot>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -628,6 +641,38 @@ impl SandAgentDb {
         if !matches {
             return Ok(false);
         }
+        if let Some(raw_pending) = db
+            .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?
+        {
+            let current_record = current
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<SessionWorkAdmissionRecord>(raw).ok());
+            if current_record
+                .as_ref()
+                .is_some_and(|record| record.lifecycle_revision != next.lifecycle_revision)
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "pending memory mutation blocks lifecycle revision transition".into(),
+                ));
+            }
+            if serde_json::from_str::<PendingMemoryMutation>(&raw_pending)
+                .ok()
+                .is_none_or(|mutation| {
+                    mutation.mutation_id.trim().is_empty()
+                        || mutation.operation != "remove" && mutation.operation != "clear"
+                        || mutation.session_key != next.session_key
+                        || mutation.session_id != next.session_id
+                        || mutation.lifecycle_revision != next.lifecycle_revision
+                })
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "pending memory mutation journal is malformed or rebound".into(),
+                ));
+            }
+        }
         let changed = match current {
             Some(previous) => db.execute(
                 COMPARE_AND_SET_KV_SQL,
@@ -879,6 +924,17 @@ impl SandAgentDb {
                     "session work admission record is unavailable".into(),
                 ))?;
             let mut record: SessionWorkAdmissionRecord = serde_json::from_str(&raw)?;
+            if db
+                .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .is_some()
+            {
+                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                    "pending memory mutation blocks archive/restore transition".into(),
+                ));
+            }
             if record.session_key != expected_session_key
                 || record.session_id != expected_session_id
             {
@@ -2006,6 +2062,187 @@ impl SandAgentDb {
 
     pub fn clear_memory_prompt_snapshot(&self) -> Result<bool, AgentDbProjectionError> {
         self.delete_kv(KV_MEMORY_SNAPSHOT)
+    }
+
+    pub fn read_pending_memory_mutation(
+        &self,
+    ) -> Result<Option<PendingMemoryMutation>, AgentDbProjectionError> {
+        self.read_kv(KV_PENDING_MEMORY_MUTATION)?
+            .map(|raw| serde_json::from_str(&raw).map_err(AgentDbProjectionError::from))
+            .transpose()
+    }
+
+    pub fn prepare_pending_memory_mutation(
+        &self,
+        mutation: &PendingMemoryMutation,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if mutation.mutation_id.trim().is_empty()
+            || mutation.session_key.trim().is_empty()
+            || mutation.session_id.trim().is_empty()
+            || mutation.lifecycle_revision.trim().is_empty()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "pending memory mutation identity is incomplete".into(),
+            ));
+        }
+        let encoded = serde_json::to_string(mutation)?;
+        self.run_write("preparePendingMemoryMutation", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let raw_admission = db
+                    .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?;
+                let Some(raw_admission) = raw_admission else {
+                    return Ok(false);
+                };
+                let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)
+                    .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
+                if admission.session_key != mutation.session_key
+                    || admission.session_id != mutation.session_id
+                    || admission.lifecycle_revision != mutation.lifecycle_revision
+                {
+                    return Ok(false);
+                }
+                if db
+                    .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?
+                    .is_some()
+                {
+                    return Ok(false);
+                }
+                Ok(db
+                    .execute(SET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION, &encoded])?
+                    > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
+    }
+
+    pub fn commit_pending_memory_mutation(
+        &self,
+        mutation: &PendingMemoryMutation,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if mutation.mutation_id.trim().is_empty()
+            || mutation.session_key.trim().is_empty()
+            || mutation.session_id.trim().is_empty()
+            || mutation.lifecycle_revision.trim().is_empty()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "pending memory mutation identity is incomplete".into(),
+            ));
+        }
+        let expected = serde_json::to_string(mutation)?;
+        self.run_write("commitPendingMemoryMutation", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let raw_admission = db
+                    .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?;
+                let Some(raw_admission) = raw_admission else {
+                    return Ok(false);
+                };
+                let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)
+                    .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
+                if admission.session_key != mutation.session_key
+                    || admission.session_id != mutation.session_id
+                    || admission.lifecycle_revision != mutation.lifecycle_revision
+                {
+                    return Ok(false);
+                }
+                let Some(raw_pending) = db
+                    .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?
+                else {
+                    return Ok(false);
+                };
+                if raw_pending != expected {
+                    return Ok(false);
+                }
+                let changed_snapshot = db.execute(DELETE_KV_SQL, params![KV_MEMORY_SNAPSHOT])? > 0;
+                let changed_journal =
+                    db.execute(DELETE_KV_SQL, params![KV_PENDING_MEMORY_MUTATION])? > 0;
+                Ok(changed_snapshot || changed_journal)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
+    }
+
+    pub fn clear_pending_memory_mutation(
+        &self,
+        mutation: &PendingMemoryMutation,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if mutation.mutation_id.trim().is_empty()
+            || mutation.session_key.trim().is_empty()
+            || mutation.session_id.trim().is_empty()
+            || mutation.lifecycle_revision.trim().is_empty()
+        {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "pending memory mutation identity is incomplete".into(),
+            ));
+        }
+        let expected = serde_json::to_string(mutation)?;
+        self.run_write("clearPendingMemoryMutation", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                let Some(raw_pending) = db
+                    .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
+                        row.get::<_, String>(0)
+                    })
+                    .optional()?
+                else {
+                    return Ok(false);
+                };
+                if raw_pending != expected {
+                    return Ok(false);
+                }
+                Ok(db.execute(DELETE_KV_SQL, params![KV_PENDING_MEMORY_MUTATION])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
     }
 
     pub fn get_agent_profile_prompt_snapshot(

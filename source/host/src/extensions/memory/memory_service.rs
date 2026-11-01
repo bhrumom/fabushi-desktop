@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, Weak};
 use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
+use serde::{Deserialize, Serialize};
 
 use super::project_membership::AgentProjectMembership;
 use crate::watched_directory::{ChangeListener, WatchedDirectory};
@@ -34,7 +35,7 @@ const PROFILE_HEADER: &str =
 const LOG_HEADER: &str =
     "# Memory log\n\n<!-- Dated facts, one per line as \"- (YYYY-MM-DD) <fact>\". -->\n\n";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MemoryKind {
     Profile,
     Log,
@@ -47,7 +48,7 @@ pub struct MemoryFact {
     pub kind: MemoryKind,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MemoryRecord {
     pub id: String,
     pub content: String,
@@ -55,11 +56,21 @@ pub struct MemoryRecord {
     pub kind: MemoryKind,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MemoryOrigin {
     Explicit,
     Synthesis,
     Legacy,
+}
+
+/// Exact recovery input for a cross-store memory mutation. The record is the
+/// durable fact while origin/tombstone preserve synthesis metadata that is
+/// otherwise changed by the ordinary explicit-memory APIs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemoryRecoveryRecord {
+    pub record: MemoryRecord,
+    pub origin: MemoryOrigin,
+    pub tombstoned: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -243,6 +254,38 @@ impl FileMemoryStore {
             .take(limit)
             .map(|fact| fact.record)
             .collect()
+    }
+
+    pub fn snapshot_for_recovery(&self, records: &[MemoryRecord]) -> Vec<MemoryRecoveryRecord> {
+        records
+            .iter()
+            .cloned()
+            .map(|record| MemoryRecoveryRecord {
+                origin: self.memory_origin(&record.content),
+                tombstoned: self.is_tombstoned(&record.content),
+                record,
+            })
+            .collect()
+    }
+
+    pub fn restore_records_exact(&self, records: &[MemoryRecoveryRecord]) -> io::Result<()> {
+        for recovery in records {
+            let _ = self.add_memory(
+                &recovery.record.content,
+                recovery.record.created_at,
+                recovery.record.kind,
+            )?;
+            if self.synthesis_metadata_enabled() {
+                self.clear_origins(&recovery.record.content)?;
+                self.mark_origin(&recovery.record.content, recovery.origin)?;
+                if recovery.tombstoned {
+                    self.mark_tombstone(&recovery.record.content)?;
+                } else {
+                    self.clear_tombstone(&recovery.record.content)?;
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn count_memories(&self) -> usize {

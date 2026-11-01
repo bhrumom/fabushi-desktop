@@ -8786,7 +8786,7 @@ fn start_routed_provider_task(
     };
     let turn_state_surfaces = host_runner_composition
         .compose_turn_state_surfaces(
-            &session_workers,
+            Arc::clone(&session_workers),
             &agent_id,
             is_group_member_turn,
             multitask_enabled,

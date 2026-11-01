@@ -74,6 +74,20 @@ durable state → consumer chain.
   until that owner gate is bound, hold the per-agent filesystem/deletion lock,
   recheck admission, reject a store path that is not the canonical memory
   store for the agent, and retain the existing fingerprint/CAS stale result.
+- `SWA-11`: External per-agent memory mutation must survive a Host crash
+  between the file-store mutation and the owner-local SQLite mutation. The
+  existing `SandAgentDb` owner must durably record the exact session identity,
+  lifecycle revision, mutation kind, and captured memory records plus their
+  origin/tombstone metadata before the external store changes. The owner
+  transaction that clears the memory
+  snapshot must delete that journal atomically. On the next owner open, a
+  journal that is still present must be treated as an incomplete/unknown
+  mutation: restore only the captured records and metadata through the
+  canonical memory store, clear the matching journal with an owner CAS, and
+  leave the session
+  fenced when any identity, path, restore, or CAS check is uncertain. No
+  second journal, memory database, or best-effort timestamp inference is
+  allowed.
 
 ## Current and target state
 
@@ -107,6 +121,19 @@ terminal phase. The record
 is changed transactionally with transcript/result publication. Pending media
 must block archive/restore transitions and be cleared only by the same
 session/transcript owner after commit or explicit rollback.
+
+The same existing owner also stores one migration-safe pending external-memory
+mutation journal. It contains the canonical session identity and lifecycle
+revision, one mutation identity/kind, and the exact pre-mutation memory records
+plus origin/tombstone metadata needed for rollback. The journal is written
+before the external file-store mutation; a successful owner-local snapshot
+clear removes the journal in the same SQLite transaction. A journal found
+during owner open is not evidence of success: the owner restores the captured
+records and metadata through the canonical memory owner and clears only the
+matching journal, otherwise it retains the journal and fails closed. Archive,
+restore, deletion-fence, and other lifecycle-revision transitions reject a
+pending journal at the owner edge; the production owner may first complete the
+same-generation recovery.
 
 The current background-revival producer was rechecked on 2026-11-01. It
 constructs a canonical main-session key, a per-run `clientNonce`, and a
@@ -192,6 +219,10 @@ lifecycle owners.
 - active media/subagent work: preserve it during archive/reaper decisions;
 - cancellation/provider failure: leave prior transcript and generation intact;
 - uncertain deletion/transcript result: report outcome-unknown and do not retry.
+- external memory mutation crash window: a durable journal without a committed
+  owner clear is rolled back from its captured records; malformed identity,
+  non-canonical store, restore failure, or journal CAS mismatch remains
+  outcome-unknown and keeps the owner fence.
 - upgrade-resume marker recovery: do not clear the pending set before dispatch;
   clear only the exact marker after a successful accepted resume or an explicit
   terminal-lost disposition (for example, a deleted agent or non-resumable
@@ -217,16 +248,20 @@ lifecycle owners.
 4. Add a durable owner-local pending-media identity around existing
    `OutgoingMediaCustody`; materialization, transcript acceptance, rollback,
    and archive checks must use the same session generation.
-5. Connect the authenticated Host Gateway archive/restore producer to the
+5. Add the migration-safe external-memory mutation journal to the existing
+   `SandAgentDb` owner, bind remove/clear producers to its prepare/commit/
+   abort operations, and run exact-store rollback during owner open.
+6. Connect the authenticated Host Gateway archive/restore producer to the
    owner-local transition and then connect the existing provider-review
    terminal owner.
-6. Add direct negative contracts, then perform exact-head verification.
+7. Add direct negative contracts, then perform exact-head verification.
 
 ## Verification and acceptance
 
 Focused contracts must prove disabled/archived/deletion-pending admission,
 stale generation, duplicate and conflicting result, lifecycle change during
-restore, active media/subagent preservation, and terminal review ownership.
+restore, active media/subagent preservation, terminal review ownership, and
+crash recovery of a journaled external memory mutation.
 Static presence is insufficient. The parity row remains
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`,
 `acceptance=pending` until all production edges and required exact-head
@@ -329,7 +364,19 @@ The memory gateway's remove and clear producers now route through the same
 owner boundary. They capture the external records and memory snapshot before
 mutation, clear the external store, and clear the owner-local snapshot. A
 deletion-fence rejection restores captured records before returning failure;
-the path does not claim crash-atomicity across files and SQLite.
+the existing `SandAgentDb` owner now also records a migration-safe pending
+mutation journal before the external change and clears the snapshot plus
+journal in one owner transaction. Owner reopen restores any still-journaled
+records and metadata through the canonical `MemoryService` store and
+exact-clears the journal; malformed or uncertain recovery remains fail-closed.
+The focused
+crash-recovery contract and exact-head verification remain pending.
+
+The active Runner `update_state` agent-memory forget producer now delegates its
+agent-scope removal through the same `ProductionSessionWorkers` owner and
+journal; user/project memory scopes retain their existing separate stores.
+This prevents the Runner's state surface from creating an agent-memory delete
+path that bypasses session admission.
 
 The production synthesis target is routed through a late-bound owner gate. A
 target without a bound `ProductionSessionWorkers` gate returns a

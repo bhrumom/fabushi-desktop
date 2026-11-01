@@ -4,7 +4,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
-    CompactionCommit, CompactionCommitOutcome, ProviderReviewContinuationOutcome, SandAgentDb,
+    CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    ProviderReviewContinuationOutcome, SandAgentDb,
     SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
 };
@@ -14,6 +15,9 @@ use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
 };
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
     AwaitingUserResponse, SandProfile, SpendGuardState,
+};
+use mahayana_host_runtime::extensions::memory::memory_service::{
+    MemoryKind, MemoryRecoveryRecord, MemoryRecord,
 };
 use mahayana_host_runtime::storage::store_db::live_db_handle_count;
 
@@ -977,6 +981,125 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         )
         .expect_err("pending media must block archive");
     assert!(media_error.to_string().contains("pending outgoing media"));
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn pending_memory_journal_blocks_archive_revision_transition() {
+    let root = temp_root("pending-memory-archive");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
+    let record = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &record)
+        .expect("create admission"));
+    let mutation = PendingMemoryMutation {
+        mutation_id: "memory-remove:test".into(),
+        operation: "remove".into(),
+        session_key: record.session_key.clone(),
+        session_id: record.session_id.clone(),
+        lifecycle_revision: record.lifecycle_revision.clone(),
+        records: vec![MemoryRecoveryRecord {
+            record: MemoryRecord {
+                id: "memory-id".into(),
+                content: "fact".into(),
+                created_at: 1,
+                kind: MemoryKind::Profile,
+            },
+            origin: mahayana_host_runtime::extensions::memory::memory_service::MemoryOrigin::Explicit,
+            tombstoned: false,
+        }],
+        prior_snapshot: None,
+    };
+    assert!(owner
+        .prepare_pending_memory_mutation(&mutation)
+        .expect("prepare journal"));
+    let error = owner
+        .transition_session_work_archive(
+            &record.session_key,
+            &record.session_id,
+            Some(&record.lifecycle_revision),
+            true,
+            Some("operator"),
+            Some("test"),
+            1.0,
+        )
+        .expect_err("archive must not bypass pending memory journal");
+    assert!(error.to_string().contains("pending memory mutation"));
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn memory_journal_commit_clears_snapshot_and_journal_together() {
+    let root = temp_root("pending-memory-commit");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+    owner
+        .set_memory_prompt_snapshot(&serde_json::json!({"old": true}))
+        .expect("set snapshot");
+    let mutation = PendingMemoryMutation {
+        mutation_id: "memory-clear:test".into(),
+        operation: "clear".into(),
+        session_key: admission.session_key.clone(),
+        session_id: admission.session_id.clone(),
+        lifecycle_revision: admission.lifecycle_revision.clone(),
+        records: Vec::new(),
+        prior_snapshot: None,
+    };
+    assert!(owner
+        .prepare_pending_memory_mutation(&mutation)
+        .expect("prepare journal"));
+    assert!(owner
+        .commit_pending_memory_mutation(&mutation)
+        .expect("commit journal"));
+    assert!(owner
+        .read_pending_memory_mutation()
+        .expect("read journal")
+        .is_none());
+    assert!(owner
+        .get_memory_prompt_snapshot()
+        .expect("read snapshot")
+        .is_none());
     owner.close(false);
     let _ = fs::remove_dir_all(root);
 }

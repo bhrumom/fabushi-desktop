@@ -102,6 +102,8 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "SandAgentState::new(sand_root, agent_id.to_string())",
         "avatar_box_file_reader: Option<AvatarBoxFileReader>",
         "state = state.with_box_file_reader(reader)",
+        "state = state.with_agent_memory_remover(Arc::new(move |memory_id|",
+        "memory_sessions.remove_agent_memory(&memory_agent_id, memory_id)",
         "sessions.open_agent_db_owner(agent_id)?",
     ] {
         assert!(
@@ -111,7 +113,7 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
     }
     assert!(
         SHIPPING_HOST.contains(".compose_turn_state_surfaces(")
-            && SHIPPING_HOST.contains("&session_workers,")
+            && SHIPPING_HOST.contains("Arc::clone(&session_workers),")
             && SHIPPING_HOST.contains("&agent_id,")
             && SHIPPING_HOST.contains("is_group_member_turn,")
             && SHIPPING_HOST.contains("multitask_enabled,")

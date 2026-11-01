@@ -6,7 +6,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    FileMemoryStore, MemoryKind, MemoryOrigin, MemoryService, MemorySynthesisBridge,
+    FileMemoryStore, MemoryKind, MemoryOrigin, MemoryRecoveryRecord, MemoryService,
+    MemorySynthesisBridge,
     SynthesisApplyResult,
     agent_memory_has_content, get_agent_memory_dir, get_project_memory_shard_dir,
     get_user_memory_shard_dir, memory_id_for, normalize_memory_content, parse_facts,
@@ -110,6 +111,30 @@ fn file_memory_store_round_trips_recall_dedupe_remove_and_clear() {
     assert!(!store.has_memories());
     assert_eq!(store.recall(20).profile, Vec::new());
     assert_eq!(store.recall(20).recent, Vec::new());
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn exact_memory_recovery_preserves_synthesis_metadata() {
+    let root = temp_root("exact-recovery");
+    let agent = root.join("agent");
+    let store = FileMemoryStore::with_synthesis_metadata(get_agent_memory_dir(&agent), true);
+    let record = store
+        .add_memory("A durable preference", 1_000, MemoryKind::Profile)
+        .expect("add memory")
+        .expect("new memory");
+    let captured = store.snapshot_for_recovery(std::slice::from_ref(&record));
+    assert_eq!(captured[0].origin, MemoryOrigin::Explicit);
+
+    store.remove_memory(&record.id).expect("remove memory");
+    store.restore_records_exact(&captured).expect("restore memory");
+
+    let restored = store.prepare_synthesis();
+    assert_eq!(restored.memories.len(), 1);
+    assert_eq!(restored.memories[0].origin, MemoryOrigin::Explicit);
+    assert_eq!(restored.memories[0].content, record.content);
+    assert!(!captured[0].tombstoned);
 
     let _ = fs::remove_dir_all(root);
 }

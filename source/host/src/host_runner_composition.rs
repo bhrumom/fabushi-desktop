@@ -11,7 +11,9 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolControllerSubscription, SandLocalToolPermissionController,
     SandLocalToolRequestStatus,
 };
-use crate::extensions::memory::agent_state::{AvatarBoxFileReader, SandAgentState};
+use crate::extensions::memory::agent_state::{
+    AvatarBoxFileReader, SandAgentState, StateWriteResult,
+};
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::TurnUsage;
 use crate::runner::background_work::{RunnerBackgroundShellWatches, RunnerCloudAgentWatches};
@@ -109,7 +111,7 @@ impl HostRunnerComposition {
     /// Resolve turn-scoped state surfaces through the canonical Host composition owner.
     pub fn compose_turn_state_surfaces(
         &self,
-        sessions: &ProductionSessionWorkers,
+        sessions: Arc<ProductionSessionWorkers>,
         agent_id: &str,
         group_member_turn: bool,
         multitask_enabled: bool,
@@ -131,6 +133,24 @@ impl HostRunnerComposition {
         if let Some(reader) = avatar_box_file_reader {
             state = state.with_box_file_reader(reader);
         }
+        let memory_sessions = Arc::clone(&sessions);
+        let memory_agent_id = agent_id.to_string();
+        let write_memory_sessions = Arc::clone(&sessions);
+        let write_memory_agent_id = agent_id.to_string();
+        state = state.with_agent_memory_writer(Arc::new(move |content, tier| {
+            write_memory_sessions.write_agent_memory(&write_memory_agent_id, content, tier)
+        }));
+        state = state.with_agent_memory_remover(Arc::new(move |memory_id| {
+            match memory_sessions.remove_agent_memory(&memory_agent_id, memory_id) {
+                Ok(true) => StateWriteResult::success("Forgot the fact from agent memory."),
+                Ok(false) => StateWriteResult::failure(
+                    "no fact with exactly that text is recorded in agent memory.",
+                ),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update agent memory: {error}"
+                )),
+            }
+        }));
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
             Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)

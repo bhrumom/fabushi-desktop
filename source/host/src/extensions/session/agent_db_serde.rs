@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const REQUEST_SOURCES: &[&str] = &[
@@ -88,7 +88,7 @@ pub struct RequestRecord {
     pub source: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MemoryPromptSnapshot {
     pub render: String,
     pub compaction_epoch: f64,

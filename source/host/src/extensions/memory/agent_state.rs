@@ -21,7 +21,8 @@ use crate::workflows::workflow_library::{WorkflowSpec, get_global_workflows_dir}
 use crate::workflows::workflow_store::FileWorkflowStore;
 use super::memory_service::{
     FileMemoryStore, MemoryKind, get_agent_memory_dir, get_project_dir,
-    get_project_memory_shard_dir, get_user_memory_shard_dir, normalize_memory_content,
+    get_project_memory_shard_dir, get_user_memory_shard_dir, memory_id_for,
+    normalize_memory_content,
     project_dir_exists,
 };
 use super::project_membership::AgentProjectMembership;
@@ -32,6 +33,10 @@ pub type AgentStateClock = Arc<dyn Fn() -> i64 + Send + Sync + 'static>;
 pub type AvatarChanged = Arc<dyn Fn() + Send + Sync + 'static>;
 pub type AvatarBoxFileReader =
     Arc<dyn Fn(&Path) -> Result<Vec<u8>, String> + Send + Sync + 'static>;
+pub type AgentMemoryRemover =
+    Arc<dyn Fn(&str) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentMemoryWriter =
+    Arc<dyn Fn(&str, MemoryTier) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -58,6 +63,8 @@ pub struct SandAgentState {
     now: AgentStateClock,
     on_avatar_changed: Option<AvatarChanged>,
     read_box_file: Option<AvatarBoxFileReader>,
+    write_agent_memory: Option<AgentMemoryWriter>,
+    remove_agent_memory: Option<AgentMemoryRemover>,
 }
 
 impl SandAgentState {
@@ -77,15 +84,30 @@ impl SandAgentState {
             now: Arc::new(system_now_ms),
             on_avatar_changed: None,
             read_box_file: None,
+            write_agent_memory: None,
+            remove_agent_memory: None,
         })
     }
 
     pub fn with_clock(mut self, clock: AgentStateClock) -> Self { self.now = clock; self }
     pub fn with_avatar_changed(mut self, callback: AvatarChanged) -> Self { self.on_avatar_changed = Some(callback); self }
     pub fn with_box_file_reader(mut self, reader: AvatarBoxFileReader) -> Self { self.read_box_file = Some(reader); self }
+    pub fn with_agent_memory_remover(mut self, remover: AgentMemoryRemover) -> Self {
+        self.remove_agent_memory = Some(remover);
+        self
+    }
+    pub fn with_agent_memory_writer(mut self, writer: AgentMemoryWriter) -> Self {
+        self.write_agent_memory = Some(writer);
+        self
+    }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
 
     pub fn write_memory(&self, content: &str, tier: MemoryTier, scope: MemoryScope, project: Option<&str>) -> StateWriteResult {
+        if scope == MemoryScope::Agent {
+            if let Some(write_agent_memory) = self.write_agent_memory.as_ref() {
+                return write_agent_memory(content, tier);
+            }
+        }
         let (store, label) = match self.memory_store(scope, project) { Ok(value) => value, Err(result) => return result };
         let payload = match tier {
             MemoryTier::Note => format!("{MEMORY_NOTE_PREFIX}{}", content.trim()),
@@ -100,6 +122,15 @@ impl SandAgentState {
     }
 
     pub fn remove_memory(&self, content: &str, scope: MemoryScope, project: Option<&str>) -> StateWriteResult {
+        if scope == MemoryScope::Agent {
+            let normalized = normalize_memory_content(content);
+            if normalized.is_empty() {
+                return StateWriteResult::failure("no fact with exactly that text is recorded in agent memory.");
+            }
+            if let Some(remove_agent_memory) = self.remove_agent_memory.as_ref() {
+                return remove_agent_memory(&memory_id_for(&normalized));
+            }
+        }
         let (store, label) = match self.memory_store(scope, project) { Ok(value) => value, Err(result) => return result };
         match store.remove_memory_by_content(content) {
             Ok(true) => StateWriteResult::success(format!("Forgot from {label}: {}", normalize_memory_content(content))),
