@@ -5077,6 +5077,15 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.prepare_existing_agent_locked(agent_id)
+        })
+    }
+
+    fn prepare_existing_agent_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<PreparedAgentBlobStore>, String> {
         let Some(materialized) = open_existing_session(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -5086,7 +5095,7 @@ impl ProductionSessionWorkers {
         else {
             return Ok(None);
         };
-        let db_owner = self.open_agent_db_owner(agent_id)?;
+        let db_owner = self.open_agent_db_owner_locked(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
