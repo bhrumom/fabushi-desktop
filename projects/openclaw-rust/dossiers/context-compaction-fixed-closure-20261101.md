@@ -323,6 +323,11 @@ array. This is a narrow serializer-shape correction; typed attachment
 resolution, exact-head/provider verification, and runtime acceptance remain
 open.
 
+The same review moved duplicate/unpaired tool-call validation into the
+transcript typed-replay projection before provider serialization. The
+provider serializers retain their existing pairing checks as defense in depth;
+this does not change the pending live-provider or acceptance boundary.
+
 The optional typed replay channel is now threaded through the existing
 production turn path: `ProductionTurnInputProjection` →
 `GeneratedAgentTurnContext` → `TurnAgentComposition` → `RoutedProviderRun` →

@@ -74,6 +74,11 @@ These corrections stay inside the existing inference serializer owner and do
 not create an attachment authority or change the pending
 integration/acceptance boundary.
 
+The transcript owner also validates tool-call identity uniqueness, result
+pairing, tool-name equality, and settlement before exposing a typed replay to
+provider owners. Provider serializers retain the same checks as a second
+defense for directly constructed typed input.
+
 ## 5. Current state
 
 The current implementation subject for this project round is

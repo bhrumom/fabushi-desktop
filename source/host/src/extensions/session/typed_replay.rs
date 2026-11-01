@@ -4,6 +4,8 @@
 //! rows until the inference owner supplies a provider-specific serialization;
 //! it never degrades an unsupported row to text.
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use serde_json::Value;
 use thiserror::Error;
 
@@ -74,6 +76,20 @@ pub enum TypedReplayError {
     Malformed { index: usize, detail: String },
     #[error("transcript replay entry {index} has a tool-call row without a typed pairing identity")]
     UnpairedToolCall { index: usize },
+    #[error("tool call identity {tool_call_id} is duplicated in the replay projection")]
+    DuplicateToolCall { tool_call_id: String },
+    #[error("tool result {tool_call_id} has no matching replayed tool call")]
+    UnpairedToolResult { tool_call_id: String },
+    #[error("tool result {tool_call_id} is duplicated in the replay projection")]
+    DuplicateToolResult { tool_call_id: String },
+    #[error("tool result {tool_call_id} names {actual_tool_name}, expected {expected_tool_name}")]
+    ToolResultNameMismatch {
+        tool_call_id: String,
+        actual_tool_name: String,
+        expected_tool_name: String,
+    },
+    #[error("tool call {tool_call_id} has no replayed result")]
+    UnsettledToolCall { tool_call_id: String },
 }
 
 /// Convert the canonical compacted replay rows into a lossless, provider-neutral
@@ -82,11 +98,57 @@ pub enum TypedReplayError {
 pub fn project_typed_replay_entries(
     entries: &[Value],
 ) -> Result<Vec<TypedReplayEntry>, TypedReplayError> {
-    entries
+    let projected = entries
         .iter()
         .enumerate()
         .map(|(index, entry)| project_entry(index, entry))
-        .collect()
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_tool_pairing(&projected)?;
+    Ok(projected)
+}
+
+fn validate_tool_pairing(entries: &[TypedReplayEntry]) -> Result<(), TypedReplayError> {
+    let mut pending = BTreeMap::<String, String>::new();
+    let mut consumed = BTreeSet::<String>::new();
+    for entry in entries {
+        let TypedReplayEntry::Message(message) = entry else {
+            continue;
+        };
+        for call in &message.tool_calls {
+            if pending.contains_key(&call.id) || consumed.contains(&call.id) {
+                return Err(TypedReplayError::DuplicateToolCall {
+                    tool_call_id: call.id.clone(),
+                });
+            }
+            pending.insert(call.id.clone(), call.name.clone());
+        }
+        let Some(result) = message.tool_result.as_ref() else {
+            continue;
+        };
+        if consumed.contains(&result.tool_call_id) {
+            return Err(TypedReplayError::DuplicateToolResult {
+                tool_call_id: result.tool_call_id.clone(),
+            });
+        }
+        let Some(expected_tool_name) = pending.remove(&result.tool_call_id) else {
+            return Err(TypedReplayError::UnpairedToolResult {
+                tool_call_id: result.tool_call_id.clone(),
+            });
+        };
+        if expected_tool_name != result.tool_name {
+            pending.insert(result.tool_call_id.clone(), expected_tool_name.clone());
+            return Err(TypedReplayError::ToolResultNameMismatch {
+                tool_call_id: result.tool_call_id.clone(),
+                actual_tool_name: result.tool_name.clone(),
+                expected_tool_name,
+            });
+        }
+        consumed.insert(result.tool_call_id.clone());
+    }
+    if let Some((tool_call_id, _)) = pending.into_iter().next() {
+        return Err(TypedReplayError::UnsettledToolCall { tool_call_id });
+    }
+    Ok(())
 }
 
 fn project_entry(index: usize, entry: &Value) -> Result<TypedReplayEntry, TypedReplayError> {
