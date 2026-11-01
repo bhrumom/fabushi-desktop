@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "fe17d4bcdea22d1df8e474961aa12b5f04b291db",
+  "target_commit": "80c480076cfc3b34cc9ed96428cabc5f04fdb592",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 111,
+    "responsibilities_total": 112,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28381,6 +28381,261 @@
       "reviewer": null,
       "license_and_provenance": "Fixed-U behavioral provenance is mtproto_proxy_data.cpp/header plus consuming web_proxy_webview.cpp, web_proxy_transport.cpp and connection_box.cpp. No upstream C++ copied. HMAC reuses hmac 0.12.1 + sha2 0.10.",
       "notes": "Task round80/source evidence round111. Pure bridge capability/path/link-secret config/wire is independently implemented in existing telegram-protocol without a carrier scheduler. Relay carrier/window/bootstrap remains mapped/pending. Contracts authored only; executable validation not run. Final platform source-compliance is 129d232fc891074ec11cd67a4235b78521bcee7c / spec blob 87405d6f79801a891d1837ebdd3a3606a38a6b09; R1-R14 and AC-1..AC-7 are source-review passed while executable validation remains not-run.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp",
+      "source_blob_sha": "f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+      "source_kind": "source",
+      "module_id": "tdesktop.mtproto.web-proxy.canonical-address-settings",
+      "responsibility_id": "TDRP-R9-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001",
+      "source_symbols": [
+        "NormalizeWebProxyHost",
+        "StripWebProxyScheme",
+        "NormalizeWebProxyBasePath",
+        "ValidWebProxyBasePath",
+        "ProxyData::webAddress",
+        "ProxyData::setWebAddress",
+        "ProxyData::status",
+        "ProxyDataToQueryPath",
+        "ProxyDataToLocalLink",
+        "ProxyDataToPublicLink",
+        "ProxyDataFromFields",
+        "ProxyDataFromLocalUrl",
+        "ProxyDataFromClipboard",
+        "AddProxyFromClipboard"
+      ],
+      "capability_ids": [
+        "CAP-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS"
+      ],
+      "dependency_ids": [
+        "canonical telegram-protocol WebProxy config/wire owner",
+        "future unified Fabushi settings/application proxy owner",
+        "reviewed exact Unicode/IDNA-to-ASCII normalization primitive"
+      ],
+      "source_analysis_path": "docs/specs/telegram-web-proxy-canonical-address-settings-boundary.md",
+      "behavior_contract": "Fixed-U user/config boundary trims WebProxy address input, strips only HTTPS, canonicalizes Unicode host input through QUrl::toAce, lowercases and enforces DNS/IP rejection, stores host[/base-path], shares webproxy links with URL-encoded server and path-aware secret, and imports server|legacy-host with fixed port 443 plus path-aware secret decode. Exact Unicode/IDNA and settings-list lifecycle are distinct from already-closed bridge wire and blocked carrier lifecycle.",
+      "state_machine": "raw user/import address -> trim/HTTPS-only strip -> Unicode/IDNA host normalization -> DNS/IP policy -> base-path normalization -> canonical host[/path] -> link encode/decode -> unified settings list/persistence/selection; no carrier state.",
+      "side_effects": [
+        "Host/address/link canonicalization is conceptually deterministic and side-effect free.",
+        "Settings insertion/selection/persistence, clipboard, public-link domain and UI feedback belong to the unified settings/application owner, which is absent from the current checkpoint."
+      ],
+      "failure_cases": [
+        "Unicode host normalization differs from fixed-U QUrl::toAce semantics",
+        "host delimiter, trailing-dot, DNS label/length, numeric terminal label or IP-literal rejection",
+        "http:// or explicit port/userinfo/query/fragment in address input",
+        "invalid or ambiguous base path",
+        "path-bearing import with unmarked secret",
+        "missing canonical unified settings owner",
+        "dependency resolution/lock regeneration prohibited in Stage A"
+      ],
+      "ui_disposition": "Settings/UI lifecycle is adjacent and required for shipping import/share/persistence, but no new UI/settings subsystem is introduced in this round.",
+      "non_ui_responsibilities": [
+        "exact Unicode/IDNA host normalization boundary",
+        "HTTPS-only address parsing and canonical host[/base-path] representation",
+        "WebProxy import/share query field semantics",
+        "typed handoff to unified settings owner"
+      ],
+      "platform_delta": "No production delta. Existing telegram-protocol already validates canonical lowercase ASCII hosts/base paths and owns bridge/link-secret wire. Exact Unicode/IDNA input normalization plus settings import/share lifecycle remains mapped/pending because the live checkpoint has no unified proxy/settings production owner and no reviewed IDNA/URL dependency.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol",
+        "Fabushi unified settings/application owner (required but absent in current checkpoint)",
+        "bhrumom/fabushi-platform-core:native/telegram-network"
+      ],
+      "existing_owner": "Split target: canonical telegram-protocol for deterministic already-canonical config/wire; unified Fabushi settings/application owner for user-input/import/share/persistence/selection once present.",
+      "rejected_existing_owners": [
+        "telegram-network: owns sockets/scheduling, not Unicode/address/settings lifecycle.",
+        "mahayana-telegram conversation provider: conversation adapter, not global settings owner.",
+        "standalone Telegram/WebProxy settings subsystem: duplicates unified settings ownership.",
+        "protocol-local handwritten IDNA/punycode: no fixed-U equivalence proof and unnecessary security/compatibility risk."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:docs/specs/telegram-web-proxy-canonical-address-settings-boundary.md",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/web_proxy.rs (existing canonical boundary; unchanged)",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/parity-ledger.json",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/management/tasks/P0-source-closure-and-ledger.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/source-closure.md",
+        "bhrumom/fabushi-desktop:projects/telegram-desktop-rust/evidence/round112-web-proxy-canonical-address-settings-boundary-20261101.md"
+      ],
+      "fabushi_target_symbols": [
+        "future normalize_web_proxy_user_address",
+        "existing validate_canonical_web_proxy_host",
+        "existing normalize_web_proxy_base_path",
+        "existing encode_web_proxy_link_secret",
+        "existing decode_web_proxy_link_secret",
+        "future unified settings proxy import/share command/event"
+      ],
+      "target_language": "Rust + existing React/TypeScript settings surface when the unified owner is available",
+      "language_rationale": "Source-neutral normalization belongs in shared Rust only with an exact reviewed IDNA primitive; user settings projection belongs in the existing unified settings/UI architecture rather than a second Telegram UI.",
+      "command_event_contracts": [
+        "future typed settings import/share boundary; not fabricated while the canonical settings owner is absent"
+      ],
+      "state_owner": "Future unified Fabushi settings/application owner for persisted proxy config; no new state owner in this round.",
+      "lifecycle_owner": "Future unified settings/application owner for import/share/persistence/selection; carrier lifecycle remains telegram-network and separate.",
+      "persistence_and_restart": "No persistence change in this round. Eventual canonical WebProxy config must use unified settings persistence rather than a Telegram-specific store.",
+      "concurrency_and_cancellation": "No scheduler/concurrency delta; pure normalization is synchronous. Clipboard/UI commands follow the existing settings lifecycle once mapped.",
+      "security_boundary": "Do not hand-roll IDNA/punycode or fabricate Cargo lock metadata. Proxy secrets remain in the existing link-secret codec and must not be logged.",
+      "network_service_dependencies": [
+        "None for canonicalization/import/share semantics; future carrier is separate."
+      ],
+      "service_owner": "No network service. Unified settings/application owner is required for shipping lifecycle.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "pending",
+      "blockers": [
+        "Current live platform/desktop checkpoint trees contain no unified Fabushi proxy/settings production owner that can ship WebProxy user-input/import/share/persistence/selection without creating a second settings subsystem.",
+        "native/telegram-protocol Cargo.toml@a62d99f23d370cd75590c7b3186307c1689554ed and Cargo.lock@97ad9046ce8926764258c978664cd8cd92fce503 contain no reviewed IDNA/URL dependency; exact fixed-U QUrl::toAce equivalence is therefore not currently implementable without a dependency decision.",
+        "Stage A forbids executing dependency resolution/generation, so Cargo lock data must not be fabricated by hand.",
+        "Stage B executable validation has not run."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.h@d8deebac2359936f72901ba0eec0cbfdfb186e90",
+        "fixed-U:Telegram/SourceFiles/boxes/connection_box.cpp@e9fa8a1d8f727042e4cadd632182eee5259f80c2",
+        "platform-core-initial-spec-commit:a9fe9aa38c67102fda5b568140183857e776e58a",
+        "platform-core-initial-spec-blob:27d16a8bedf20c51860889602f67cedb305a205b",
+        "canonical-web-proxy-existing-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
+        "canonical-protocol-cargo-blob:a62d99f23d370cd75590c7b3186307c1689554ed",
+        "canonical-protocol-lock-blob:97ad9046ce8926764258c978664cd8cd92fce503",
+        "canonical-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "desktop-web-proxy-unchanged-blob:4c91f6e4e6b8d37d84afd40aae6af9fbbe7d80d4",
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+      ],
+      "test_evidence": [
+        "Authored source contract vectors are recorded in docs/specs/telegram-web-proxy-canonical-address-settings-boundary.md@27d16a8bedf20c51860889602f67cedb305a205b; no executable contract was run.",
+        "No fake executable contract against a nonexistent settings/IDNA production API was added."
+      ],
+      "target_commit": "a9fe9aa38c67102fda5b568140183857e776e58a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical shared telegram-protocol plus future unified settings/application owner",
+      "composition_slot": "WebProxy canonical address normalization and settings import/share boundary",
+      "capability_component": "Unicode/IDNA canonical WebProxy address plus settings link codec lifecycle",
+      "variation_axes": [
+        "ASCII/Unicode/ACE host",
+        "root/path",
+        "server/legacy-host import",
+        "root/path-aware link secret"
+      ],
+      "shared_owner_contracts": [
+        "existing telegram-protocol canonical host/base-path/link-secret primitives",
+        "future unified settings/application proxy contract",
+        "separate telegram-network carrier ownership"
+      ],
+      "duplicate_root_check": "No second settings store/provider/runtime/carrier and no approximate IDNA implementation introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "platform live tree at 129d232fc891074ec11cd67a4235b78521bcee7c contained no unified proxy/settings production owner for Telegram WebProxy lifecycle.",
+        "desktop live tree at 80c480076cfc3b34cc9ed96428cabc5f04fdb592 contained only mirrored Telegram providers plus migration bookkeeping for this area."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing Settings surface once canonical settings owner is identified/implemented",
+      "primary_navigation_target": "Existing Settings",
+      "collection_surface": "Existing unified Settings proxy/network section; no new Telegram-specific collection",
+      "creation_flow": "Existing Settings add/import flow, not a new app",
+      "object_action_scope": "Proxy configuration",
+      "detail_section": "Network/proxy settings",
+      "capability_surface": "Existing unified Settings",
+      "route_contract": "No new top-level route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI implementation in this blocked round.",
+      "accessibility_contract": "No UI implementation in this blocked round.",
+      "keyboard_contract": "Clipboard/import keyboard behavior remains in existing settings UI owner.",
+      "state_continuity_contract": "Canonical proxy config must persist through unified settings owner; no parallel Telegram settings persistence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing Settings pattern",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WEB-PROXY-IDNA-EQUIVALENCE-001",
+        "INV-TDRP-WEB-PROXY-HTTPS-ONLY-ADDRESS-001",
+        "INV-TDRP-WEB-PROXY-SHARE-IMPORT-ROUNDTRIP-001",
+        "INV-TDRP-WEB-PROXY-UNIFIED-SETTINGS-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-WEB-PROXY-HOST-VECTORS-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WEB-PROXY-CANONICAL-ADDRESS-SETTINGS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WEB-PROXY-SETTINGS-IMPORT-SHARE-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-WEB-PROXY-SETTINGS-001"
+      ],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [
+        "UI-TDRP-WEB-PROXY-SETTINGS-001"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WEB-PROXY-INVALID-ADDRESS-LINK-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WEB-PROXY-IDNA-SECRET-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-ARCHITECTURE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "fixed-u-web-proxy-canonical-address-link-vectors"
+      ],
+      "test_environment_ids": [
+        "Stage B GitHub Actions candidate environment"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral provenance is fixed-U mtproto_proxy_data.cpp/header plus connection_box.cpp. No upstream C++ copied. No new IDNA dependency or handwritten punycode introduced.",
+      "notes": "Task round81/source evidence round112. Exact Unicode/IDNA host/address plus settings import/share boundary is understood but not independently shippable in current Fabushi architecture: canonical protocol has only ASCII canonical validation and there is no live unified proxy/settings production owner or reviewed IDNA dependency. Recorded as mapped/pending with no production delta. Existing bridge wire remains implemented; relay carrier remains mapped/pending. Stage-A executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
