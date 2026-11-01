@@ -99,6 +99,11 @@ const close = (code = 0): void => {
   process.exitCode = code;
 };
 
+const failCarrier = (edge: string, error: unknown): void => {
+  console.error(`[mahayana-coordinator-carrier] ${edge} failed`, error);
+  close(1);
+};
+
 utilityParentPort.once("message", (event) => {
   const bootstrap = event.data as { readonly bootstrap?: unknown } | null;
   const transferred = event.ports ?? [];
@@ -125,7 +130,13 @@ utilityParentPort.once("message", (event) => {
 
   transferred.forEach((port, index) => {
     const channel = CHANNELS[index]!;
-    port.on("message", (message) => writeEnvelope(child!, channel, message.data));
+    port.on("message", (message) => {
+      try {
+        writeEnvelope(child!, channel, message.data);
+      } catch (error) {
+        failCarrier(`${channel} stdin forwarding`, error);
+      }
+    });
     port.on("close", () => {
       if (transferred.every((candidate) => candidate === port || closed)) close(0);
     });
@@ -148,9 +159,16 @@ utilityParentPort.once("message", (event) => {
     }
     const index = CHANNELS.indexOf(parsed.channel);
     const port = ports[index];
-    if (port != null) port.postMessage(parsed.frame);
+    if (port != null) {
+      try {
+        port.postMessage(parsed.frame);
+      } catch (error) {
+        failCarrier(`${parsed.channel} stdout forwarding`, error);
+      }
+    }
   });
 
+  child.stdin.on("error", (error) => failCarrier("Coordinator stdin", error));
   child.stderr.on("data", (chunk) => {
     process.stderr.write(chunk);
   });
