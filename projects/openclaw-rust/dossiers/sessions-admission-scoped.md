@@ -877,3 +877,21 @@ canonical forms such as `AGENT:Agent-123:MAIN` while continuing to reject
 opaque legacy selectors from the canonical-main mutation path. The change is
 limited to identity normalization; lifecycle revision, admission, archive,
 and communication-policy guards remain unchanged.
+
+## 11.6 Automation run-store admission boundary — 2026-11-01
+
+The production `AutomationRuntime` previously held only its local mutation
+mutex while `AutomationRunPath` directly mutated the per-agent
+`FileAutomationStore` for notices, run start, run completion, and spend-guard
+state. The existing `SandAgentSessionStore` now exposes a narrow wrapper over
+`ProductionSessionWorkers::with_agent_admitted_filesystem_mutation`, and the
+automation runtime uses it around definition CRUD, spend-guard answer/update,
+manual and background run-store writes, including the synchronous provider
+execution interval. `AutomationRunPath` remains the run behavior owner and
+`ProductionSessionWorkers` remains the session/deletion admission owner; no
+second automation or session state owner was introduced.
+
+This is static producer-to-owner evidence for the automation FileStore write
+edge. It does not create per-run session rows or close the cron-session reaper,
+detached-result lifecycle, exact-head verification, runtime acceptance, or any
+global completion flag.
