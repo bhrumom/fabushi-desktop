@@ -67,6 +67,28 @@ export interface MainEdgeDeps {
 function invariant(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 function invoke(target: UnknownRecord, method: string, ...args: unknown[]): unknown { const fn = target[method]; invariant(typeof fn === "function", `Missing main-edge dependency method ${method}.`); return Reflect.apply(fn, target, args); }
 function req(value: unknown): UnknownRecord { return typeof value === "object" && value != null && !Array.isArray(value) ? value as UnknownRecord : {}; }
+export function parseWebProxyBootstrapUrl(value: unknown): string | null {
+  if (typeof value !== "string" || value.length === 0) return null;
+  try {
+    const url = new URL(value);
+    const port = Number(url.port);
+    if (
+      url.protocol !== "http:"
+      || url.hostname !== "127.0.0.1"
+      || url.username !== ""
+      || url.password !== ""
+      || url.pathname !== "/"
+      || url.search !== ""
+      || url.hash.length <= 1
+      || !Number.isInteger(port)
+      || port < 1
+      || port > 65535
+    ) return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 function detectTimeZone(): string | null { const value = Intl.DateTimeFormat().resolvedOptions().timeZone; return value.length > 0 ? value : null; }
 const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -121,7 +143,16 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
 
     getThemeState: () => invoke(themeController(deps), "getState"),
     getNetworkProxySettings: async () => deps.readProductSettingsSnapshot(),
-    mutateNetworkProxySettings: async (raw) => deps.mutateProductNetworkProxy(req(raw).mutation as UnknownRecord),
+    mutateNetworkProxySettings: async (raw) => {
+      const result = await deps.mutateProductNetworkProxy(req(raw).mutation as UnknownRecord);
+      const publication = req(result.publication);
+      const carrier = req(publication.carrier);
+      const bootstrap = parseWebProxyBootstrapUrl(carrier.webProxyBootstrapUrl);
+      if (bootstrap != null) {
+        await Promise.resolve(invoke(deps.shell, "openInSystemBrowser", bootstrap));
+      }
+      return result;
+    },
     setThemePreference: (raw) => { const controller = themeController(deps); const preference = req(raw).preference; return isSandThemePreference(preference) ? invoke(controller, "setPreference", preference) : invoke(controller, "getState"); },
     getAgentDefaultModel: async () => { const settings = await deps.readHostSettingsFromBox(); invoke(deps.agentPrefsStore, "setAgentDefaultModel", settings.agentDefaultModel); return settings.agentDefaultModel ?? null; },
     setAgentDefaultModel: async (raw) => { const model = parseAgentModel(req(raw).model, false); if (model == null) return invoke(deps.agentPrefsStore, "getAgentDefaultModel") ?? null; const result = await deps.syncHostSettingsToBox({ agentDefaultModel: model }); if (result == null) throw new SandHostSettingsUnreachableError("Couldn't reach the computer to save the default model."); invoke(deps.agentPrefsStore, "setAgentDefaultModel", result.agentDefaultModel); return result.agentDefaultModel ?? null; },

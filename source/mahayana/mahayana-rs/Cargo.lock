@@ -5705,7 +5705,11 @@ version = "0.1.0"
 dependencies = [
  "fabushi-telegram-protocol",
  "getrandom 0.2.17",
+ "rustls",
+ "serde_json",
+ "sha1 0.10.7",
  "thiserror 1.0.69",
+ "webpki-roots 0.26.11",
  "zeroize",
 ]
 
