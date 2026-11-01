@@ -183,10 +183,13 @@ continuation from leaving a stale active-work fence after Runner ownership has
 ended.
 
 The remaining agent-only transcript mutation producers were rechecked against
-the live source. Widget-response updates, shared-room restamps, box-request
-settlement, and auto-review settlement carry only `agent_id`; the generic
-delete and conversation-clear wrappers have no production caller in the Host
-source. They therefore remain pending rather than receiving a guessed
+the live source. Widget-response updates and shared-room restamps still carry
+only `agent_id`, while new box-request entries retain `sessionKey` and settle
+through the session-admitted owner when that provenance is present. Auto-review
+creation and settlement already use the event-owned session key when bound;
+unbound legacy controller events remain compatibility-only. The generic delete
+and conversation-clear wrappers have no production caller in the Host source.
+The still-unbound paths remain pending rather than receiving a guessed
 `agent:{agent_id}:main` selector. A future change must first make the owning
 producer capture and propagate its canonical session identity, then add the
 corresponding atomic owner contract and negative stale/archive oracle.

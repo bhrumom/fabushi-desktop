@@ -296,23 +296,29 @@ all checked inside the SQLite transaction before archive state changes.
 ## Agent-only transcript mutation boundary — 2026-11-01
 
 The remaining transcript mutation producers were rechecked against the live
-Rust source. `WidgetResponses` (`widget_responses.rs`), shared-room restamp
-(`shared_rooms.rs`), box-request settlement (`box_request_entries.rs`), and
-auto-review settlement (`auto_review_service.rs`) call the generic
-agent-scoped update boundary and carry only `agent_id`; their event/request
-models do not expose a canonical `session_key`. The generic delete and
-conversation-clear wrappers currently have no production caller in the Host
-source.
+Rust source. `WidgetResponses` (`widget_responses.rs`) and shared-room
+restamp paths (`shared_rooms.rs`) still call the generic agent-scoped update
+boundary and do not yet carry a canonical `session_key`. The generic delete
+and conversation-clear wrappers currently have no production caller in the
+Host source.
 
-These paths remain explicitly pending for `SWA-01`/`SWA-06`. The implementation
-must not synthesize `agent:{agent_id}:main`, infer a session from an unrelated
-room or approval identity, or route them through the session-admitted update
-transaction until their owning producer captures and propagates the real
-canonical session identity. The existing agent-only compatibility boundary is
-retained for these non-session-scoped producers, but it is not an archive
-bypass: generic transcript and compaction wrappers reject writes when the
-owner-local admission record is archived. This is incomplete evidence, not
-acceptance.
+The box-request path is now split by durable provenance: new Runner-created
+entries retain their canonical `sessionKey`, and
+`resolve_box_request_entry` uses the atomic session-admitted update for those
+entries; older entries without provenance retain the compatibility path. The
+Auto-review service similarly uses its event-owned session key for bound
+creation and settlement, while unbound legacy controller events remain
+compatibility-only.
+
+The still-unbound paths remain explicitly pending for `SWA-01`/`SWA-06`. The
+implementation must not synthesize `agent:{agent_id}:main`, infer a session
+from an unrelated room or approval identity, or route them through the
+session-admitted update transaction until their owning producer captures and
+propagates the real canonical session identity. The existing agent-only
+compatibility boundary is retained for these non-session-scoped producers, but
+it is not an archive bypass: generic transcript and compaction wrappers reject
+writes when the owner-local admission record is archived. This is incomplete
+evidence, not acceptance.
 
 ## Release and rollback
 
