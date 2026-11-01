@@ -123,6 +123,12 @@ match one pending call, a second result is rejected as
 contracts were not executed and live provider/runtime acceptance remains
 pending.
 
+A follow-up pairing guard at commit `0fbd29be7edd6f46ad6d52e26f1254b29b6fc7b6`,
+tree `6c43ab21acf6aa15c5a5619411c7fa62893474b6`, also retains the expected
+tool name with each pending call and rejects a result whose name differs from
+that call. The mismatch path restores the pending state and remains retry-safe;
+this source change likewise has no local executable verification receipt.
+
 Replay attachment ownership is now narrowed to the existing attachment owner:
 it may expose a read-only provider-usable HTTP(S) URL projection for a durable
 attachment identity. The inference serializer owns the provider-specific part
