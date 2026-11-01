@@ -294,6 +294,7 @@ def summarize_snapshot_graph(
     reachable, missing = walk(roots)
     peer_reachable, peer_missing = walk(peer_snapshot_roots)
     peer_missing.update(("<root>", root, "", "snapshot-key-missing") for root in peer_root_missing)
+    full_reachable, full_missing = walk(sorted(snapshot_dependencies))
     return {
         "root_count": len(roots),
         "total_snapshot_count": len(snapshot_dependencies),
@@ -315,6 +316,18 @@ def summarize_snapshot_graph(
             }
             for source, dependency, specifier, kind in sorted(peer_missing)
         ][:100],
+        "full_graph_reachable_snapshot_count": len(full_reachable),
+        "full_graph_missing_edge_count": len(full_missing),
+        "full_graph_missing_edges": [
+            {
+                "from_snapshot": source,
+                "dependency": dependency,
+                "specifier": specifier,
+                "kind": kind,
+            }
+            for source, dependency, specifier, kind in sorted(full_missing)
+        ][:100],
+        "full_graph_status": "closed" if not full_missing else "incomplete-bounded-join",
         "missing_edge_count": len(missing),
         "missing_edges": [
             {
