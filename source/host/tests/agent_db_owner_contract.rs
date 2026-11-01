@@ -789,6 +789,8 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
             42.0,
         )
         .expect("archive transition");
+    let archived_revision = archived.lifecycle_revision.clone();
+    assert_ne!(archived_revision, "revision-1");
     assert_eq!(archived.archived_at_ms, Some(42.0));
     assert_eq!(archived.archive_reason.as_deref(), Some("manual review"));
     let identity_error = owner
@@ -808,7 +810,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
             .transition_session_work_archive(
                 "agent:agent-work:main",
                 "session-1",
-                Some("revision-1"),
+                Some(&archived_revision),
                 true,
                 Some("other-operator"),
                 Some("different reason"),
@@ -822,25 +824,39 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         .transition_session_work_archive(
             "agent:agent-work:main",
             "session-1",
-            Some("revision-1"),
+            Some(&archived_revision),
             false,
             None,
             None,
             44.0,
         )
         .expect("restore transition");
+    let restored_revision = restored.lifecycle_revision.clone();
+    assert_ne!(restored_revision, archived_revision);
     assert!(restored.archived_at_ms.is_none());
+    let stale_after_restore = owner
+        .transition_session_work_archive(
+            "agent:agent-work:main",
+            "session-1",
+            Some("revision-1"),
+            true,
+            Some("stale-worker"),
+            None,
+            44.5,
+        )
+        .expect_err("pre-archive worker must not resume after restore");
+    assert!(stale_after_restore.to_string().contains("lifecycle changed"));
 
     let mut active = restored;
     active.admitted_work_id = Some("work-1".into());
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-1"), &active)
+        .compare_and_set_session_work_admission(Some(&restored_revision), &active)
         .expect("admit active work"));
     let error = owner
         .transition_session_work_archive(
             "agent:agent-work:main",
             "session-1",
-            Some("revision-1"),
+            Some(&restored_revision),
             true,
             Some("gateway-operator"),
             None,
@@ -852,7 +868,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     active.admitted_work_id = None;
     active.admitted_media_work_id = Some("send-media:tool-1".into());
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-1"), &active)
+        .compare_and_set_session_work_admission(Some(&restored_revision), &active)
         .expect("admit pending media"));
     let media_error = owner
         .transition_session_work_archive(

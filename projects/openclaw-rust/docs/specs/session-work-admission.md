@@ -37,6 +37,8 @@ durable state → consumer chain.
   admitted session generation and preserve transcript/media idempotency.
 - `SWA-04`: Archived sessions reject new work; restore requires the existing
   authenticated session/placement authority and rechecks identity at commit.
+  Every actual archive/restore transition rotates the lifecycle revision so a
+  worker admitted before the transition cannot resume after restore.
   The first production producer is the authenticated Host Gateway
   `sessions.patch` route for the canonical `agent:{id}:main` session; it must
   carry expected session identity and lifecycle revision and fail closed when

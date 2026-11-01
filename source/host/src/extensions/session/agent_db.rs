@@ -865,6 +865,7 @@ impl SandAgentDb {
                 record.archived_by = None;
                 record.archive_reason = None;
             }
+            record.lifecycle_revision = Uuid::new_v4().to_string();
             let encoded = serde_json::to_string(&record)?;
             if db.execute(
                 COMPARE_AND_SET_KV_SQL,
