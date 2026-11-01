@@ -65,6 +65,33 @@ Inference consumer edge is present. The missing authenticated mutation producer
 keeps `BL-MODEL-PICKER-EXEC-WIRING-001` at `wiring=not-wired`,
 `verification=not-run`, and `acceptance=pending`.
 
+## 2026-11-01 current-writer exact-head refresh
+
+The preceding source identity is superseded for this writer by commit
+`295947e2342847c51c7a1848f4a80c138765fe52`, tree
+`62a7ad5c0eb58e3310c356d5270b3b0cab5c4117`. A fresh repository search on that
+exact subject finds the persistence facade at
+`source/host/src/extensions/session/agent_session.rs:310-329`, the policy
+owner at `source/host/src/extensions/inference/model_picker_service.rs:288`,
+and contract-only calls in `source/host/tests/openclaw_model_picker_contract.rs`
+and `source/host/tests/agent_session_contract.rs`; it finds no production
+caller in `source/host/app` or `source/host/src`.
+
+The consumer remains directly evidenced by
+`source/host/app/src/main.rs:7675-7742`, which reads the persisted selection,
+and `:8637-8653`, which projects its model override and thinking level into
+the routed provider session options. The authenticated `sessions.patch`
+surface still handles communication-policy and archive fields only
+(`source/host/app/src/main.rs:4225-4365`), while the model-picker presentation
+validator remains validation/fallback rendering without an action executor
+(`source/host/src/extensions/interactive/payload_service.rs:271-277`).
+
+This refresh changes provenance only. It does not create a producer, accept
+catalog or operator policy from request JSON, add a thin model-selection route,
+or promote status: `BL-MODEL-PICKER-EXEC-WIRING-001` and
+`BL-SESSION-MODEL-MUTATION-WIRING-001` remain
+`wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
 ## 2026-11-01 current-branch evidence refresh
 
 The preceding exact-head audit was superseded by the current chat branch at
