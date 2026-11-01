@@ -29036,7 +29036,10 @@
         "fixed-U:Telegram/SourceFiles/core/external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371",
         "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26",
         "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
-        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7"
+        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7",
+        "platform-core-final-source-compliance-commit:de2460e31dfa5d47df0a1993580ef11a1cfa1378",
+        "platform-core-final-spec-blob:438b64863eab0cc6fc746954cff8513de2fdd247",
+        "desktop-initial-bookkeeping-commit:a23452a00e9c4d395f3f97bf74ec27fd82747fb2"
       ],
       "test_evidence": [
         "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
@@ -29148,7 +29151,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/core/external_control.cpp@43327bc03c528b65b41ce72add5e7cca584ea371 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round83/source evidence round114. External proxy list/add/remove/use/next/toggle/undo semantics are fully source-read and carrier-independent but cannot ship without the canonical Settings owner. Recorded mapped/pending, no production delta, validation_status=not-run, accepted=false.",
+      "notes": "Task round83/source evidence round114. External proxy list/add/remove/use/next/toggle/undo semantics are fully source-read and carrier-independent but cannot ship without the canonical Settings owner. Recorded mapped/pending, no production delta, validation_status=not-run, accepted=false. Final platform source-level compliance is de2460e31dfa5d47df0a1993580ef11a1cfa1378 / spec blob 438b64863eab0cc6fc746954cff8513de2fdd247. R1-R8 are source-review passed; R9 remains blocked on the missing canonical Settings/shipping consumer boundary; R10 executable validation remains not-run. AC-1 through AC-8 are bookkeeping/source-review satisfied without production delta.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -29246,7 +29249,10 @@
         "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
         "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26",
         "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
-        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7"
+        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7",
+        "platform-core-final-source-compliance-commit:de2460e31dfa5d47df0a1993580ef11a1cfa1378",
+        "platform-core-final-spec-blob:438b64863eab0cc6fc746954cff8513de2fdd247",
+        "desktop-initial-bookkeeping-commit:a23452a00e9c4d395f3f97bf74ec27fd82747fb2"
       ],
       "test_evidence": [
         "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
@@ -29357,7 +29363,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/calls/calls_call.cpp@a67723f5827e56be3f36033f3ad59bc37d0acf7b plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round83/source evidence round114. useProxyForCalls is durable compatibility state, but its fixed-U non-UI call consumer is unreachable because supportsCalls()==false. No SOCKS5 call behavior is added. mapped/pending no-production-delta; validation not run.",
+      "notes": "Task round83/source evidence round114. useProxyForCalls is durable compatibility state, but its fixed-U non-UI call consumer is unreachable because supportsCalls()==false. No SOCKS5 call behavior is added. mapped/pending no-production-delta; validation not run. Final platform source-level compliance is de2460e31dfa5d47df0a1993580ef11a1cfa1378 / spec blob 438b64863eab0cc6fc746954cff8513de2fdd247. R1-R8 are source-review passed; R9 remains blocked on the missing canonical Settings/shipping consumer boundary; R10 executable validation remains not-run. AC-1 through AC-8 are bookkeeping/source-review satisfied without production delta.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -29473,7 +29479,10 @@
         "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
         "desktop-runtime-unchanged-blob:10031c5261bb0810ad2df2fca3de2e2fe4f65301",
         "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
-        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7"
+        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7",
+        "platform-core-final-source-compliance-commit:de2460e31dfa5d47df0a1993580ef11a1cfa1378",
+        "platform-core-final-spec-blob:438b64863eab0cc6fc746954cff8513de2fdd247",
+        "desktop-initial-bookkeeping-commit:a23452a00e9c4d395f3f97bf74ec27fd82747fb2"
       ],
       "test_evidence": [
         "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
@@ -29585,7 +29594,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round83/source evidence round114. MTProto proxy-enabled/config-loader and transient DNS cache/promotion semantics are understood, but current Fabushi has neither canonical Settings projection nor shipping selectable proxy/config-loader consumer. mapped/pending no-production-delta; validation not run.",
+      "notes": "Task round83/source evidence round114. MTProto proxy-enabled/config-loader and transient DNS cache/promotion semantics are understood, but current Fabushi has neither canonical Settings projection nor shipping selectable proxy/config-loader consumer. mapped/pending no-production-delta; validation not run. Final platform source-level compliance is de2460e31dfa5d47df0a1993580ef11a1cfa1378 / spec blob 438b64863eab0cc6fc746954cff8513de2fdd247. R1-R8 are source-review passed; R9 remains blocked on the missing canonical Settings/shipping consumer boundary; R10 executable validation remains not-run. AC-1 through AC-8 are bookkeeping/source-review satisfied without production delta.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

@@ -1741,3 +1741,14 @@ Current Fabushi still has no canonical product Settings/application owner. Deskt
 Spec-first platform commit is `2e155bb7be49b9e745f94cdc8b40fd831e052af7` / initial spec blob `b4220a6ac80b210cc8a969925ea0b180405486d7`. Coverage becomes `source_entries_total=16202, responsibilities_total=116, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; focused semantic review does not decrement global unknown/unread.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 114 final source-level compliance
+
+Platform-core final source-level compliance is `de2460e31dfa5d47df0a1993580ef11a1cfa1378` / spec blob `438b64863eab0cc6fc746954cff8513de2fdd247`. It references desktop initial bookkeeping commit `a23452a00e9c4d395f3f97bf74ec27fd82747fb2` and the synchronized ledger/P0/source-closure/evidence identities.
+
+The three exact proxy non-UI consumer rows remain `mapped / pending / validation_status=not-run / accepted=false`. External mutation is blocked on the missing canonical Fabushi Settings/application owner; the fixed-U call consumer intentionally has no runtime proxy effect because `ProxyData::supportsCalls()` is unconditionally false; MTProto enabled/config-loader and transient DNS projections are blocked on the missing canonical Settings event source plus a real shipping selected-proxy/config-acquisition consumer. No production blob changed.
+
+R1-R8 and AC-1 through AC-8 are satisfied at source/bookkeeping review level. R9 production implementation remains explicitly blocked for the reasons above, and R10 executable validation remains intentionally not-run.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

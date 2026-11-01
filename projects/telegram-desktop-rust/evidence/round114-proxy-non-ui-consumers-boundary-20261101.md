@@ -57,3 +57,13 @@ Authored contracts are in the platform spec and ledger metadata only. No executa
 ## Stage-A execution statement
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Final platform source-compliance readback
+
+- platform-core final commit: `de2460e31dfa5d47df0a1993580ef11a1cfa1378`
+- final spec blob: `438b64863eab0cc6fc746954cff8513de2fdd247`
+- desktop initial bookkeeping commit: `a23452a00e9c4d395f3f97bf74ec27fd82747fb2`
+- initial ledger/P0/source-closure/evidence blobs: `ca7fb45076804a0905d48ad1e3605e922310f33a` / `85825d4c00857ad76abc36998e087c99afacd98f` / `c3a83028db52a1ffe25206b72512699000f2e57c` / `a7e318f8aa33e81fb953fb3d143cd4db43ef9588`
+
+The final platform spec records R1-R8 source-review passed, R9 production implementation blocked, R10 executable validation not-run, and AC-1 through AC-8 source/bookkeeping satisfied. All three new responsibilities remain mapped/pending with no production delta.
