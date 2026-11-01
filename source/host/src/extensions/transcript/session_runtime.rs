@@ -233,13 +233,7 @@ impl SessionRuntime {
             return Ok(false);
         }
 
-        let db_path = sessions.session_db_path(agent_id)?;
-        let blob_path = crate::extensions::session::conversation_blobs_path::conversation_blobs_path(
-            &db_path,
-        );
-        let _ = sessions.close_agent_store_owner(agent_id, true);
-        let _ = sessions.close_agent_db_owner(agent_id, true);
-        sessions.worker_pool().close_store_blocking(&blob_path);
+        let _ = sessions.retire_agent_owners(agent_id, true)?;
         Ok(true)
     }
 

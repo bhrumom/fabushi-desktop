@@ -521,6 +521,12 @@ does not export a general `SandAgentDb` accessor. The checkpoint owner remains
 the only production consumer of the composed database handle; metadata and
 blob operations continue through the existing typed AgentStore methods.
 
+Inactive transcript-session retirement now closes the AgentStore owner, DB
+owner, and exact conversation-blob worker under the same per-agent
+filesystem/deletion serialization boundary used by deletion. This prevents a
+retirement close from interleaving with directory cleanup; it does not add a
+second lifecycle owner or change the live-session registry semantics.
+
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
 replacement/removal recheck the durable admission record while holding that
