@@ -5142,6 +5142,7 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Vec<AgentSummary>, String> {
         let is_deleting = |agent_id: &str| self.is_agent_being_deleted(agent_id);
+        let open_agent_owner = |agent_id: &str| self.open_agent_db_owner_locked(agent_id);
         let with_agent_mutation: &dyn for<'a> Fn(
             &'a str,
             Box<dyn FnOnce() -> Result<Option<AgentSummary>, String> + 'a>,
@@ -5154,6 +5155,7 @@ impl ProductionSessionWorkers {
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            &open_agent_owner,
             with_agent_mutation,
         )
     }
@@ -5174,6 +5176,12 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
         let is_deleting = |candidate: &str| self.is_agent_being_deleted(candidate);
+        let owner = self
+            .session_db_path(agent_id)
+            .ok()
+            .filter(|path| path.is_file())
+            .map(|_| self.open_agent_db_owner_locked(agent_id))
+            .transpose()?;
         summarize_agent_by_id(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -5181,6 +5189,7 @@ impl ProductionSessionWorkers {
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            owner.as_deref(),
         )
     }
 

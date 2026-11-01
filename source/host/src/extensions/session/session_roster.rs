@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 
 use crate::agents::agent_profile::get_sand_profile_path;
@@ -14,6 +14,7 @@ use crate::storage::store_db::{
 use crate::workflows::workflow_store::agent_has_workflows;
 
 use super::agent_db::reseed_minimal_persisted_agent_db_if_missing;
+use super::agent_db::SandAgentDb;
 use super::session_diagnostics::{SessionDiagnostic, report_session_diagnostic};
 use super::session_mutations::recover_agent_with_missing_db;
 use super::session_paths::get_agent_db_path;
@@ -36,6 +37,7 @@ pub struct RosterExtrasCache {
 impl RosterExtrasCache {
     pub fn load(
         &self,
+        owner: &SandAgentDb,
         db_path: &Path,
         busy_timeout_ms: u64,
         dir_name: &str,
@@ -59,6 +61,7 @@ impl RosterExtrasCache {
         }
 
         let extras = load_agent_db_extras(
+            owner,
             db_path,
             busy_timeout_ms,
             dir_name,
@@ -150,6 +153,7 @@ pub fn list_agents(
     active_agent_id: Option<&str>,
     is_agent_being_deleted: &dyn Fn(&str) -> bool,
     extras_cache: &RosterExtrasCache,
+    open_agent_owner: &dyn Fn(&str) -> Result<Arc<SandAgentDb>, String>,
     with_agent_mutation: &dyn for<'a> Fn(
         &'a str,
         Box<dyn FnOnce() -> Result<Option<AgentSummary>, String> + 'a>,
@@ -211,7 +215,9 @@ pub fn list_agents(
             }
 
             let primary = (|| -> Result<Option<AgentSummary>, String> {
+                let owner = open_agent_owner(&dir_name)?;
                 let extras = extras_cache.load(
+                    owner.as_ref(),
                     &db_path,
                     busy_timeout_ms,
                     &dir_name,
@@ -283,6 +289,7 @@ pub fn summarize_agent_by_id(
     active_agent_id: Option<&str>,
     is_agent_being_deleted: &dyn Fn(&str) -> bool,
     extras_cache: &RosterExtrasCache,
+    owner: Option<&SandAgentDb>,
 ) -> Result<Option<AgentSummary>, String> {
     if is_reserved_session_namespace(agent_id) || is_agent_being_deleted(agent_id) {
         return Ok(None);
@@ -306,6 +313,7 @@ pub fn summarize_agent_by_id(
         );
     }
     let extras = extras_cache.load(
+        owner.ok_or_else(|| "agent db owner is required for an existing session".to_string())?,
         &db_path,
         busy_timeout_ms,
         agent_id,

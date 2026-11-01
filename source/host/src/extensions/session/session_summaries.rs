@@ -20,7 +20,7 @@ use crate::groups::remote_room_store::{
 };
 
 use super::agent_db::{
-    AgentMetadataProjection, mark_persisted_activity, read_persisted_agent_metadata_projection,
+    AgentMetadataProjection, SandAgentDb, read_persisted_agent_metadata_projection,
     read_persisted_agent_origin, read_persisted_agent_purpose,
     read_persisted_agent_serde_snapshot, read_persisted_conversation_partner_ids,
     read_persisted_transcript_entries,
@@ -96,6 +96,7 @@ pub fn file_mtime_ms(path: &Path) -> Option<f64> {
 }
 
 pub fn load_agent_db_extras(
+    owner: &SandAgentDb,
     db_path: &Path,
     busy_timeout_ms: u64,
     dir_name: &str,
@@ -125,7 +126,8 @@ pub fn load_agent_db_extras(
         metadata.created_at,
         mtime_ms,
     ) {
-        let _ = mark_persisted_activity(db_path, busy_timeout_ms, seed)
+        let _ = owner
+            .mark_activity(seed)
             .map_err(|error| error.to_string())?;
         state = read_persisted_agent_serde_snapshot(db_path, busy_timeout_ms)
             .map_err(|error| error.to_string())?;
