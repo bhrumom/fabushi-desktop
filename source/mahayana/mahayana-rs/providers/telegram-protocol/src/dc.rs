@@ -288,6 +288,63 @@ impl DcDirectory {
         &self.endpoints
     }
 
+    pub fn replace_endpoints(&mut self, endpoints: Vec<DcEndpoint>) -> Result<Vec<i32>, DcError> {
+        if endpoints.is_empty() {
+            return Err(DcError::EmptyDirectory);
+        }
+        let mut normalized = Vec::with_capacity(endpoints.len());
+        for endpoint in endpoints {
+            if normalized.iter().any(|candidate: &DcEndpoint| {
+                candidate.dc_id == endpoint.dc_id
+                    && candidate.ip_address == endpoint.ip_address
+                    && candidate.port == endpoint.port
+            }) {
+                continue;
+            }
+            normalized.push(endpoint);
+        }
+        let mut endpoints = normalized;
+        endpoints.sort_by_key(|endpoint| {
+            (
+                endpoint.dc_id,
+                endpoint.cdn,
+                endpoint.media_only,
+                endpoint.ip_address.is_ipv6(),
+                endpoint.port,
+            )
+        });
+
+        let mut ids = BTreeSet::new();
+        for endpoint in self.endpoints.iter().chain(endpoints.iter()) {
+            ids.insert(endpoint.dc_id);
+        }
+        let changed: Vec<i32> = ids
+            .into_iter()
+            .filter(|dc_id| {
+                let current: Vec<_> = self
+                    .endpoints
+                    .iter()
+                    .filter(|endpoint| endpoint.dc_id == *dc_id)
+                    .collect();
+                let next: Vec<_> = endpoints
+                    .iter()
+                    .filter(|endpoint| endpoint.dc_id == *dc_id)
+                    .collect();
+                current.len() != next.len()
+                    || current.iter().any(|endpoint| {
+                        !next.iter().any(|candidate| {
+                            candidate.ip_address == endpoint.ip_address
+                                && candidate.port == endpoint.port
+                        })
+                    })
+            })
+            .collect();
+        if !changed.is_empty() {
+            self.endpoints = endpoints;
+        }
+        Ok(changed)
+    }
+
     pub fn update(
         &mut self,
         this_dc: i32,

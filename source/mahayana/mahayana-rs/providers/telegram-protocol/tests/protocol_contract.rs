@@ -4800,3 +4800,118 @@ fn http_date_response_parser_preserves_fixed_u_validity_boundary() {
         None
     );
 }
+
+
+#[test]
+fn bare_help_get_config_is_exact_constructor_only() {
+    assert_eq!(
+        fabushi_telegram_protocol::build_help_get_config(),
+        vec![0x6b, 0x18, 0xf9, 0xc4]
+    );
+}
+
+#[test]
+fn dc_options_only_replacement_preserves_metadata_and_publishes_exact_dc_changes() {
+    use fabushi_telegram_protocol::{DcDirectory, DcEndpoint};
+    use std::net::{IpAddr, Ipv4Addr};
+
+    let endpoint = |dc_id, last_octet| {
+        DcEndpoint::new(
+            dc_id,
+            IpAddr::V4(Ipv4Addr::new(149, 154, 167, last_octet)),
+            443,
+            false,
+            false,
+            false,
+            false,
+            false,
+            None,
+        )
+        .unwrap()
+    };
+    let mut directory =
+        DcDirectory::new(2, false, vec![endpoint(2, 50), endpoint(3, 51)]).unwrap();
+
+    assert!(directory
+        .replace_endpoints(vec![endpoint(2, 50), endpoint(3, 51)])
+        .unwrap()
+        .is_empty());
+    assert_eq!(directory.this_dc(), 2);
+    assert!(!directory.test_mode());
+
+    assert_eq!(
+        directory
+            .replace_endpoints(vec![endpoint(2, 52), endpoint(4, 53)])
+            .unwrap(),
+        vec![2, 3, 4]
+    );
+    assert_eq!(directory.this_dc(), 2);
+    assert!(!directory.test_mode());
+    assert!(directory.endpoints().iter().any(|endpoint| endpoint.dc_id == 4));
+    assert!(!directory.endpoints().iter().any(|endpoint| endpoint.dc_id == 3));
+
+    let before = directory.endpoints().to_vec();
+    let secret_only = before
+        .iter()
+        .cloned()
+        .map(|mut endpoint| {
+            if endpoint.dc_id == 2 {
+                endpoint.secret = Some(vec![0x11; 16]);
+            }
+            endpoint
+        })
+        .collect();
+    assert!(directory.replace_endpoints(secret_only).unwrap().is_empty());
+    assert_eq!(directory.endpoints(), before.as_slice());
+
+    let duplicate = vec![
+        before[0].clone(),
+        {
+            let mut endpoint = before[0].clone();
+            endpoint.secret = Some(vec![0x22; 16]);
+            endpoint
+        },
+        before[1].clone(),
+    ];
+    assert!(directory.replace_endpoints(duplicate).unwrap().is_empty());
+    assert_eq!(directory.endpoints(), before.as_slice());
+}
+
+
+#[test]
+fn special_config_dc_options_parser_does_not_require_response_this_dc() {
+    use fabushi_telegram_protocol::{
+        parse_config_dc_options_prefix, TlWriter, CONFIG_CONSTRUCTOR, DC_OPTION_CONSTRUCTOR,
+    };
+
+    let mut writer = TlWriter::new();
+    writer.write_u32(CONFIG_CONSTRUCTOR);
+    writer.write_i32(0);
+    writer.write_i32(1);
+    writer.write_i32(2);
+    writer.write_bool(false);
+    writer.write_i32(2);
+    writer.write_vector_length(1).unwrap();
+    writer.write_u32(DC_OPTION_CONSTRUCTOR);
+    writer.write_i32(0);
+    writer.write_i32(4);
+    writer.write_string("149.154.167.91").unwrap();
+    writer.write_i32(443);
+
+    let parsed = parse_config_dc_options_prefix(&writer.into_bytes()).unwrap();
+    assert_eq!(parsed.endpoints.len(), 1);
+    assert_eq!(parsed.endpoints[0].dc_id, 4);
+
+    let mut empty = TlWriter::new();
+    empty.write_u32(CONFIG_CONSTRUCTOR);
+    empty.write_i32(0);
+    empty.write_i32(1);
+    empty.write_i32(2);
+    empty.write_bool(false);
+    empty.write_i32(2);
+    empty.write_vector_length(0).unwrap();
+    assert!(parse_config_dc_options_prefix(&empty.into_bytes())
+        .unwrap()
+        .endpoints
+        .is_empty());
+}

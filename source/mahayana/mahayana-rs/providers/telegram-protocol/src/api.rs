@@ -97,6 +97,11 @@ pub struct ConfigDcDirectory {
     pub directory: DcDirectory,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigDcOptions {
+    pub endpoints: Vec<DcEndpoint>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SentCode {
@@ -374,6 +379,12 @@ pub enum ApiRequestError {
     TrailingBytes(usize),
     #[error("Telegram password SRP failed: {0}")]
     Srp(#[from] SrpError),
+}
+
+pub fn build_help_get_config() -> Vec<u8> {
+    let mut writer = TlWriter::new();
+    writer.write_u32(HELP_GET_CONFIG_CONSTRUCTOR);
+    writer.into_bytes()
 }
 
 pub fn build_init_connection_get_config(
@@ -1065,6 +1076,63 @@ pub fn parse_future_salts(input: &[u8]) -> Result<FutureSalts, ApiRequestError> 
         now,
         salts,
     })
+}
+
+pub fn parse_config_dc_options_prefix(
+    input: &[u8],
+) -> Result<ConfigDcOptions, ApiRequestError> {
+    let mut reader = TlReader::new(input);
+    let constructor = reader.read_u32()?;
+    if constructor != CONFIG_CONSTRUCTOR {
+        return Err(ApiRequestError::Tl(TlError::UnexpectedConstructor {
+            expected: CONFIG_CONSTRUCTOR,
+            actual: constructor,
+        }));
+    }
+    let _flags = reader.read_i32()?;
+    let _date = reader.read_i32()?;
+    let _expires = reader.read_i32()?;
+    let _test_mode = reader.read_bool()?;
+    let _this_dc = reader.read_i32()?;
+    let count = reader.read_vector_length()?;
+    let mut endpoints = Vec::with_capacity(count);
+    for _ in 0..count {
+        let constructor = reader.read_u32()?;
+        if constructor != DC_OPTION_CONSTRUCTOR {
+            return Err(ApiRequestError::Tl(TlError::UnexpectedConstructor {
+                expected: DC_OPTION_CONSTRUCTOR,
+                actual: constructor,
+            }));
+        }
+        let option_flags = reader.read_i32()?;
+        let dc_id = reader.read_i32()?;
+        let address = reader.read_string()?.to_string();
+        let ip_address: IpAddr = address
+            .parse()
+            .map_err(|_| ApiRequestError::InvalidIpAddress(address))?;
+        let raw_port = reader.read_i32()?;
+        let port = u16::try_from(raw_port)
+            .ok()
+            .filter(|value| *value != 0)
+            .ok_or(ApiRequestError::InvalidPort(raw_port))?;
+        let secret = if option_flags & (1 << 10) != 0 {
+            Some(reader.read_bytes()?.to_vec())
+        } else {
+            None
+        };
+        endpoints.push(DcEndpoint::new(
+            dc_id,
+            ip_address,
+            port,
+            option_flags & 2 != 0,
+            option_flags & 4 != 0,
+            option_flags & 8 != 0,
+            option_flags & 16 != 0,
+            option_flags & 32 != 0,
+            secret,
+        )?);
+    }
+    Ok(ConfigDcOptions { endpoints })
 }
 
 /// Parses the stable prefix of Telegram `Config` through `dc_options`.
