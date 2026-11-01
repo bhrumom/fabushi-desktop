@@ -103,10 +103,6 @@ impl ProductionAgentStore {
         }
     }
 
-    pub fn db(&self) -> Arc<SandAgentDb> {
-        Arc::clone(&self.db)
-    }
-
     pub fn subscribe_to_metadata(
         &self,
         key: ProductionAgentMetadataKey,

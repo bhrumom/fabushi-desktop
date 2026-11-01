@@ -516,6 +516,11 @@ the existing owner filesystem serialization and preserve the current purpose
 and unread schemas; they are an ownership-surface reduction only and do not
 change transcript or lifecycle behavior.
 
+`ProductionAgentStore` likewise keeps its existing typed metadata bridge but
+does not export a general `SandAgentDb` accessor. The checkpoint owner remains
+the only production consumer of the composed database handle; metadata and
+blob operations continue through the existing typed AgentStore methods.
+
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
 replacement/removal recheck the durable admission record while holding that
