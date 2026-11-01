@@ -128,6 +128,14 @@ unpopulated fence columns into an accidental all-clear.
 Existing agent databases are migrated explicitly when the schema opens; a
 missing marker is added as false and migration errors are not swallowed.
 
+The current Host recheck does not identify a safe fence producer for this
+row. `run_local_automation_turn` owns a provider stream and receives the
+existing generated-subagent cleanup slot, but `AutomationRunPath` receives
+only `Completed`/`Interrupted`/`Error` and does not return a row-specific
+media/subagent snapshot keyed by the generated run id. Global runner or
+agent-level state therefore cannot be projected into one cron row; the
+marker remains false until an explicit producer/contract is added.
+
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent
 preservation query, guarded deletion, focused verification, or acceptance was
