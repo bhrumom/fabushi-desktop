@@ -735,112 +735,132 @@ impl SandAgentDb {
         let Some(db) = guard.as_mut() else {
             return Ok(false);
         };
-        let current = db
-            .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()?;
-        let matches = match (expected_lifecycle_revision, current.as_deref()) {
-            (None, None) => true,
-            (Some(expected), Some(raw)) => serde_json::from_str::<SessionWorkAdmissionRecord>(raw)
-                .ok()
-                .is_some_and(|record| {
-                    record.lifecycle_revision == expected
-                        && record.session_key == next.session_key
-                        && record.session_id == next.session_id
-                        && expected_current_deletion_pending
-                            .map_or(true, |expected| record.deletion_pending == expected)
-                }),
-            _ => false,
-        };
-        if !matches {
-            return Ok(false);
-        }
-        if let Some(raw_pending) = db
-            .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()?
-        {
-            let current_record = current
-                .as_deref()
-                .and_then(|raw| serde_json::from_str::<SessionWorkAdmissionRecord>(raw).ok());
-            if current_record
-                .as_ref()
-                .is_some_and(|record| record.lifecycle_revision != next.lifecycle_revision)
-            {
-                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                    "pending memory mutation blocks lifecycle revision transition".into(),
-                ));
-            }
-            if serde_json::from_str::<PendingMemoryMutation>(&raw_pending)
-                .ok()
-                .is_none_or(|mutation| {
-                    mutation.mutation_id.trim().is_empty()
-                        || mutation.operation != "remove" && mutation.operation != "clear"
-                        || mutation.session_key != next.session_key
-                        || mutation.session_id != next.session_id
-                        || mutation.lifecycle_revision != next.lifecycle_revision
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<bool, AgentDbProjectionError> {
+            let current = db
+                .query_row(GET_KV_SQL, params![KV_SESSION_WORK_ADMISSION], |row| {
+                    row.get::<_, String>(0)
                 })
-            {
-                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                    "pending memory mutation journal is malformed or rebound".into(),
-                ));
+                .optional()?;
+            let matches = match (expected_lifecycle_revision, current.as_deref()) {
+                (None, None) => true,
+                (Some(expected), Some(raw)) => {
+                    serde_json::from_str::<SessionWorkAdmissionRecord>(raw)
+                        .ok()
+                        .is_some_and(|record| {
+                            record.lifecycle_revision == expected
+                                && record.session_key == next.session_key
+                                && record.session_id == next.session_id
+                                && expected_current_deletion_pending
+                                    .map_or(true, |expected| {
+                                        record.deletion_pending == expected
+                                    })
+                        })
+                }
+                _ => false,
+            };
+            if !matches {
+                return Ok(false);
             }
-        }
-        if let Some(raw_pending) = db
-            .query_row(GET_KV_SQL, params![KV_PENDING_PROFILE_MUTATION], |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()?
-        {
-            let current_record = current
-                .as_deref()
-                .and_then(|raw| serde_json::from_str::<SessionWorkAdmissionRecord>(raw).ok());
-            if current_record
-                .as_ref()
-                .is_some_and(|record| record.lifecycle_revision != next.lifecycle_revision)
-            {
-                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                    "pending profile mutation blocks lifecycle revision transition".into(),
-                ));
-            }
-            if serde_json::from_str::<PendingProfileMutation>(&raw_pending)
-                .ok()
-                .is_none_or(|mutation| {
-                    mutation.mutation_id.trim().is_empty()
-                        || !matches!(
-                            mutation.operation.as_str(),
-                            "profile-update" | "avatar-replace" | "avatar-remove"
-                        )
-                        || mutation.session_key != next.session_key
-                        || mutation.session_id != next.session_id
-                        || mutation.lifecycle_revision != next.lifecycle_revision
+            if let Some(raw_pending) = db
+                .query_row(GET_KV_SQL, params![KV_PENDING_MEMORY_MUTATION], |row| {
+                    row.get::<_, String>(0)
                 })
+                .optional()?
             {
-                return Err(AgentDbProjectionError::WorkAdmissionInvalid(
-                    "pending profile mutation journal is malformed or rebound".into(),
-                ));
+                let current_record = current.as_deref().and_then(|raw| {
+                    serde_json::from_str::<SessionWorkAdmissionRecord>(raw).ok()
+                });
+                if current_record
+                    .as_ref()
+                    .is_some_and(|record| record.lifecycle_revision != next.lifecycle_revision)
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "pending memory mutation blocks lifecycle revision transition".into(),
+                    ));
+                }
+                if serde_json::from_str::<PendingMemoryMutation>(&raw_pending)
+                    .ok()
+                    .is_none_or(|mutation| {
+                        mutation.mutation_id.trim().is_empty()
+                            || mutation.operation != "remove" && mutation.operation != "clear"
+                            || mutation.session_key != next.session_key
+                            || mutation.session_id != next.session_id
+                            || mutation.lifecycle_revision != next.lifecycle_revision
+                    })
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "pending memory mutation journal is malformed or rebound".into(),
+                    ));
+                }
             }
-        }
-        let changed = match current {
-            Some(previous) => db.execute(
-                COMPARE_AND_SET_KV_SQL,
-                params![encoded, KV_SESSION_WORK_ADMISSION, previous],
-            )?,
-            None => db.execute(
-                SET_KV_SQL,
-                params![KV_SESSION_WORK_ADMISSION, encoded],
-            )?,
+            if let Some(raw_pending) = db
+                .query_row(GET_KV_SQL, params![KV_PENDING_PROFILE_MUTATION], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+            {
+                let current_record = current.as_deref().and_then(|raw| {
+                    serde_json::from_str::<SessionWorkAdmissionRecord>(raw).ok()
+                });
+                if current_record
+                    .as_ref()
+                    .is_some_and(|record| record.lifecycle_revision != next.lifecycle_revision)
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "pending profile mutation blocks lifecycle revision transition".into(),
+                    ));
+                }
+                if serde_json::from_str::<PendingProfileMutation>(&raw_pending)
+                    .ok()
+                    .is_none_or(|mutation| {
+                        mutation.mutation_id.trim().is_empty()
+                            || !matches!(
+                                mutation.operation.as_str(),
+                                "profile-update" | "avatar-replace" | "avatar-remove"
+                            )
+                            || mutation.session_key != next.session_key
+                            || mutation.session_id != next.session_id
+                            || mutation.lifecycle_revision != next.lifecycle_revision
+                    })
+                {
+                    return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                        "pending profile mutation journal is malformed or rebound".into(),
+                    ));
+                }
+            }
+            let changed = match current {
+                Some(previous) => db.execute(
+                    COMPARE_AND_SET_KV_SQL,
+                    params![encoded, KV_SESSION_WORK_ADMISSION, previous],
+                )?,
+                None => db.execute(SET_KV_SQL, params![KV_SESSION_WORK_ADMISSION, encoded])?,
+            };
+            Ok(changed == 1)
+        })();
+        let changed = match result {
+            Ok(changed) => {
+                match db.execute_batch("COMMIT") {
+                    Ok(()) => changed,
+                    Err(error) => {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error.into());
+                    }
+                }
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                return Err(error);
+            }
         };
         drop(guard);
-        if changed == 1 {
+        if changed {
             notify_agent_db_listeners(
                 &self.db_path,
                 AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
             );
         }
-        Ok(changed == 1)
+        Ok(changed)
     }
 
     pub fn read_session_provider_review(

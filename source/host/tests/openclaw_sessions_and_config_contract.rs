@@ -449,6 +449,20 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         .expect("metadata initializer boundary exists");
     assert!(initializer.contains("BEGIN IMMEDIATE"));
     assert!(initializer.contains("if !session_work_write_is_admitted(db)?"));
+    let admission_cas = owner_source
+        .split("fn compare_and_set_session_work_admission_with_deletion_transition(")
+        .nth(1)
+        .expect("session admission CAS owner exists")
+        .split("pub fn read_session_provider_review(")
+        .next()
+        .expect("session admission CAS owner boundary exists");
+    assert!(admission_cas.contains("BEGIN IMMEDIATE"));
+    assert!(admission_cas.contains("COMMIT"));
+    assert!(admission_cas.contains("ROLLBACK"));
+    assert!(
+        admission_cas.find("BEGIN IMMEDIATE")
+            < admission_cas.find("let current = db")
+    );
 }
 
 #[test]
