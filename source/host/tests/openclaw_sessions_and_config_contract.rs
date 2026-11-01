@@ -559,6 +559,16 @@ fn test_ocrm_session_o01_session_key_routing() {
         .next()
         .expect("shipping chat.send function boundary exists");
     assert!(chat_send.contains("reject_agent_wide_session_route(&route, \"chat.send\")"));
+    let sessions_patch = shipping_source
+        .split("fn call_openclaw_sessions_patch(")
+        .nth(1)
+        .expect("shipping sessions.patch owner exists")
+        .split("fn call_openclaw_sessions_provider_review_continue(")
+        .next()
+        .expect("shipping sessions.patch function boundary exists");
+    assert!(sessions_patch.contains(
+        "transition_session_work_archive(\n                &route.agent_id,\n                &expected_key,"
+    ));
 }
 
 // ---------------------------------------------------------------------------

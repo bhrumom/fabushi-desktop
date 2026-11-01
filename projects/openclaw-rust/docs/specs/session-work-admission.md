@@ -134,6 +134,10 @@ bounded production path, limited to canonical main sessions and fail-closed
 while admitted work, active generated-subagent work, or an active foreground
 Runner stream is active. Media custody still has no equivalent session-owned
 active-work authority and remains an open requirement.
+The archive producer now passes the normalized canonical main-session key from
+the public route resolver into the owner transition. This preserves SWA-14's
+case-insensitive structural selector acceptance without passing an
+un-normalized request key into the case-sensitive owner contract.
 The authenticated provider-review continuation producer also binds its
 expected session ID to the canonical route agent before issuing or claiming
 the existing owner capability; a mismatch is rejected as a lifecycle change.

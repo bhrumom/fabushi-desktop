@@ -4373,7 +4373,7 @@ impl UnifiedGatewayApi {
             .session_workers
             .transition_session_work_archive(
                 &route.agent_id,
-                raw_key,
+                &expected_key,
                 expected_session_id,
                 Some(expected_revision),
                 archived,
