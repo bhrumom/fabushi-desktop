@@ -6885,6 +6885,8 @@ fn run_channel_failure_revival_worker(
                 let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
                 tray.title = "Delivery-failure follow-up failed".into();
                 deps.trays.push_error(tray);
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                break;
             }
         }
     }

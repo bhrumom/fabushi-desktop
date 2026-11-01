@@ -462,3 +462,7 @@ recovery no longer falls back to key-only deletion, so a newer same-key marker
 cannot be removed by an older channel-failure pass. This is static source and
 contract evidence only; provider, device, packaged, runtime, OCRM-AC01--AC24,
 and global completion acceptance remain pending.
+
+Provider revival errors now also requeue the exact in-memory failure batch before
+ending the worker pass, while retaining its durable marker. This preserves the
+next retry's context without spinning an unbounded immediate retry loop.

@@ -205,6 +205,7 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
         "!execution.aborted\n                    && !execution.quiesced_for_upgrade\n                    && execution.sent_message_count > 0"
     ));
     assert!(SHIPPING_HOST.contains("requeue_channel_failures(&wakes, &agent_id, failures)"));
+    assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\".into();\n                deps.trays.push_error(tray);\n                requeue_channel_failures(&wakes, &agent_id, failures);\n                break;"));
     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));
