@@ -1530,10 +1530,11 @@ impl ProductionSessionWorkers {
             .get_metadata("agentId")
             .map_err(|error| error.to_string())?
             .and_then(|value| value.as_str().map(str::trim).map(ToOwned::to_owned));
+        let expected_session_key = format!("agent:{agent_id}:main");
         if record.session_id != agent_id
             || metadata_agent_id.as_deref() != Some(agent_id)
             || record.session_id != metadata_agent_id.as_deref().unwrap_or_default()
-            || record.session_key.trim().is_empty()
+            || record.session_key != expected_session_key
             || record.lifecycle_revision.trim().is_empty()
         {
             return Err(format!(
@@ -2095,8 +2096,9 @@ impl ProductionSessionWorkers {
         else {
             return Ok(());
         };
+        let expected_session_key = format!("agent:{agent_id}:main");
         if record.session_id != agent_id
-            || record.session_key.trim().is_empty()
+            || record.session_key != expected_session_key
             || record.lifecycle_revision.trim().is_empty()
         {
             return Err(format!(
@@ -2407,8 +2409,9 @@ impl ProductionSessionWorkers {
         let Some(record) = record else {
             return Ok(None);
         };
+        let expected_session_key = format!("agent:{agent_id}:main");
         if record.session_id != agent_id
-            || record.session_key.trim().is_empty()
+            || record.session_key != expected_session_key
             || record.lifecycle_revision.trim().is_empty()
         {
             return Err(format!(
