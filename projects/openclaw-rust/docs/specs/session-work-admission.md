@@ -509,6 +509,13 @@ raw agent DB for episode recording; reads and mutations route through the
 Session owner, with read serialization and admitted write fencing preserved.
 The existing episode KV format and memory extraction behavior are unchanged.
 
+The transcript lifecycle producers likewise consume typed purpose and unread
+projections from `ProductionSessionWorkers` rather than opening a general
+`SandAgentDb` handle in the transcript layer. The projection methods retain
+the existing owner filesystem serialization and preserve the current purpose
+and unread schemas; they are an ownership-surface reduction only and do not
+change transcript or lifecycle behavior.
+
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar
 replacement/removal recheck the durable admission record while holding that

@@ -342,10 +342,7 @@ impl SessionRuntime {
         let Some(active_agent_id) = store.read_active_agent_id() else {
             return Ok(false);
         };
-        let owner = sessions.open_agent_db_owner(&active_agent_id)?;
-        let unread = owner
-            .get_unread_state()
-            .map_err(|error| error.to_string())?;
+        let unread = sessions.read_agent_unread_state(&active_agent_id)?;
         if unread.is_manually_unread || unread.last_activity_at <= unread.last_viewed_at {
             return Ok(false);
         }

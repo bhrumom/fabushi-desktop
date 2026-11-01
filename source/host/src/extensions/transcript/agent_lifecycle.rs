@@ -123,10 +123,7 @@ pub fn run_created_agent_kickstart(
         return Ok(true);
     }
 
-    let purpose = sessions
-        .open_agent_db_owner(agent_id)?
-        .get_agent_purpose()
-        .map_err(|error| error.to_string())?;
+    let purpose = sessions.read_agent_purpose(agent_id)?;
     let prompt = kickstart_prompt_for_purpose(purpose.as_deref());
     let first = match runtime.run_hidden(agent_id, prompt, "kickstart") {
         Ok(outcome) => outcome,
@@ -170,10 +167,7 @@ pub fn request_disk_saver_audit(
     runtime: &dyn CreatedAgentKickstartRuntimePort,
     agent_id: &str,
 ) -> Result<bool, String> {
-    let purpose = sessions
-        .open_agent_db_owner(agent_id)?
-        .get_agent_purpose()
-        .map_err(|error| error.to_string())?;
+    let purpose = sessions.read_agent_purpose(agent_id)?;
     if purpose.as_deref() != Some("disk-saver") || runtime.is_disallowed_session(agent_id) {
         return Ok(false);
     }

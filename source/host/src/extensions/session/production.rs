@@ -22,6 +22,7 @@ use super::agent_db::{
     SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
 };
+use super::agent_db_serde::UnreadState;
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
@@ -2375,6 +2376,26 @@ impl ProductionSessionWorkers {
         self.with_agent_admitted_filesystem_mutation(agent_id, || {
             self.open_agent_db_owner_locked(agent_id)?
                 .write_kv(key, value)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Read the purpose projection through the Session owner without exposing
+    /// the general agent database handle to transcript lifecycle producers.
+    pub fn read_agent_purpose(&self, agent_id: &str) -> Result<Option<String>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_agent_purpose()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Read the unread projection through the Session owner without exposing
+    /// the general agent database handle to transcript lifecycle producers.
+    pub fn read_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_unread_state()
                 .map_err(|error| error.to_string())
         })
     }
