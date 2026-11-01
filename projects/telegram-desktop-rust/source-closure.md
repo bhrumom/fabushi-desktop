@@ -2547,3 +2547,18 @@ Existing-owner-first reuses `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001`. Spec-f
 Exactly one independent source entry closes: `unknown 16159 -> 16158`, `unread 16132 -> 16131`, `omitted=0`; responsibilities remain 134 and unmapped remains 0. Next independent fixed-U blob: `.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde`.
 
 No Actions/check/status/workflow query or trigger and no executable validation was performed.
+
+
+## Round 120 / source-entry closure — Dependency Watch patched-fork reference (2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. The exact `.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde` source was completely read at recursive-tree index 60 (4,581 bytes / 74 lines). Direct consumer is dependency-watch `SKILL.md`; helper/test code does not own a second fork parser or finding lifecycle.
+
+The source closes the patched/copied-upstream provenance responsibility inside existing `TDRP-R9-REPOSITORY-DEPENDENCY-ADVISORY-001`: consumed fork pin, fork head and original upstream/import revision are distinct; tg_owt/tg_angle M123/M115 labels are approximate mapping clues until exact provenance is verified; flattened copies require verified import mappings instead of commit-count subtraction; candidate security fixes require fixing diff/prerequisites, equivalent-patch or semantic evidence, affected source/backend/build flags/reachability and explicit applicability classification.
+
+Current fixed-U consumption is `tg_owt@07fb35bc33b3e79125a1beab7690e830f183f5d8` in prepare/Docker/Snap and `tg_angle@9fd174a91e6155d1006c5f427366b23006f5d899` in Windows prepare. Current fork import anchors are `tg_owt@5b6a5c00017c115f6a54b90b109354abc1444a01` ("M123+patches") and `tg_angle@3e2cbd93cb60a4f677af68bac4e3849176f688fa` ("M115"). Existing build-time acquisition inventory records tg_owt but omits tg_angle, so the advisory owner must continue to union actual prepare/Qt-selection authority rather than treating that inventory as complete.
+
+Spec-first desktop commit `5c8958895b5596bdab43a0d635e1b69bee125c74` extends the existing Test Strategy/Evidence Contract and adds `projects/telegram-desktop-rust/dossiers/dependency-watch-forks-complete-read.md`. Authored but not run: `CONTRACT-TDRP-DEPENDENCY-FORK-IMPORT-HISTORY-001` and `CONTRACT-TDRP-DEPENDENCY-FORK-FIX-APPLICABILITY-001`.
+
+Coverage after closure is `source_entries_total=16202 / unknown=16157 / unread=16130 / omitted=0 / responsibilities_total=134 / unmapped_responsibilities=0`. Next independent fixed-U blob is `.agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32`. Full fixed-U semantic closure, Stage-B executable validation and final independent acceptance remain open.
+
+No Actions/check/status/workflow query or trigger and no executable validation was performed.
