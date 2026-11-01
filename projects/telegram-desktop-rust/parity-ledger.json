@@ -30250,7 +30250,9 @@
         "platform-core-request-normalization-spec-commit:997c7b12cdc8b22368b6f1a04490ea7b602294bc",
         "platform-core-request-normalization-implementation-commit:9751072e735630accbbb921178c737b609dbb039",
         "desktop-request-normalization-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
-        "request-normalization-module-blob:2958bd4042b546d98a1097a2a19b65eaeea5d04a"
+        "platform-core-request-normalization-source-review-fix-commit:a65278227c78fac5fd5a6ac41c841b4fc509fcb5",
+        "desktop-request-normalization-source-review-fix-commit:712bde77f6f232efafe775ff9390faa47e9595fe",
+        "request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30490,18 +30492,20 @@
         "platform-core-request-normalization-spec-blob:0983f2ae91648e1d8a48b553df6bd98c67dd3553",
         "platform-core-request-normalization-implementation-commit:9751072e735630accbbb921178c737b609dbb039",
         "platform-core-network-lib-request-normalization-blob:3743331b0b1453048a98a21ae4ac2d2b91a2b2a5",
-        "platform-core-request-normalization-module-blob:2958bd4042b546d98a1097a2a19b65eaeea5d04a",
-        "platform-core-request-normalization-contract-blob:c2060dc660dbc88409c7be1fca5796681947100b",
-        "desktop-request-normalization-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
         "desktop-network-lib-request-normalization-blob:3743331b0b1453048a98a21ae4ac2d2b91a2b2a5",
-        "desktop-request-normalization-module-blob:2958bd4042b546d98a1097a2a19b65eaeea5d04a",
-        "desktop-request-normalization-contract-blob:c2060dc660dbc88409c7be1fca5796681947100b"
+        "platform-core-request-normalization-source-review-fix-commit:a65278227c78fac5fd5a6ac41c841b4fc509fcb5",
+        "platform-core-request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9",
+        "platform-core-request-normalization-contract-blob:55d55d5de956cad3d809d64efc97993d270dcd97",
+        "desktop-request-normalization-initial-mirror-commit:688ba8dff5fb415736c8cee9d397d97bb0fe1837",
+        "desktop-request-normalization-source-review-fix-commit:712bde77f6f232efafe775ff9390faa47e9595fe",
+        "desktop-request-normalization-module-blob:2f3ea627054779296102f13c70be17a3655ddcb9",
+        "desktop-request-normalization-contract-blob:55d55d5de956cad3d809d64efc97993d270dcd97"
       ],
       "test_evidence": [
         "Internal request_normalization.rs contracts cover padding rejection/range/alphabet plus Google/Mozilla and Firestore component shapes; not executed.",
         "Public telegram-network request_normalization.rs contracts cover fixed constants, A/AAAA, ANY/TXT and Firestore direct/camouflage shapes; not executed."
       ],
-      "target_commit": "688ba8dff5fb415736c8cee9d397d97bb0fe1837",
+      "target_commit": "712bde77f6f232efafe775ff9390faa47e9595fe",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -30622,7 +30626,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp and special_config_request.cpp. Implementation is source-neutral Rust; no upstream C++ copied.",
-      "notes": "Task round86/source evidence round117. Pure DnsDomains/padding/UA plus Google/Mozilla/Firestore request shaping is implemented in existing telegram-network and mirrored byte-identically. Actual HTTP dispatch/racing/global HTTP time mutation/temporary-DC/dc-options application remains separately mapped/pending. Contracts authored only; validation_status=not-run; accepted=false.",
+      "notes": "Task round86/source evidence round117. Pure DnsDomains/padding/UA plus Google/Mozilla/Firestore request shaping is implemented in existing telegram-network and mirrored byte-identically. Authored-only padding vectors were source-reviewed and corrected before Stage B; no contract was executed. Actual HTTP dispatch/racing/global HTTP time mutation/temporary-DC/dc-options application remains separately mapped/pending. validation_status=not-run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

@@ -22,9 +22,11 @@ The remaining carrier responsibility starts only when a normalized descriptor is
 - Spec blob: `0983f2ae91648e1d8a48b553df6bd98c67dd3553`
 - Platform implementation/authored-contract commit: `9751072e735630accbbb921178c737b609dbb039`
 - Network lib blob: `3743331b0b1453048a98a21ae4ac2d2b91a2b2a5`
-- Request-normalization module blob: `2958bd4042b546d98a1097a2a19b65eaeea5d04a`
-- Authored contract blob: `c2060dc660dbc88409c7be1fca5796681947100b`
-- Desktop byte-identical mirror commit: `688ba8dff5fb415736c8cee9d397d97bb0fe1837`
+- Request-normalization module blob: `2f3ea627054779296102f13c70be17a3655ddcb9`
+- Authored contract blob: `55d55d5de956cad3d809d64efc97993d270dcd97`
+- Desktop initial mirror commit: `688ba8dff5fb415736c8cee9d397d97bb0fe1837`
+- Platform source-review vector correction: `a65278227c78fac5fd5a6ac41c841b4fc509fcb5`
+- Desktop byte-identical correction mirror: `712bde77f6f232efafe775ff9390faa47e9595fe`
 
 No Cargo.toml or Cargo.lock delta was made. No new HTTP/bootstrap runtime, settings owner, DC directory or response parser was introduced.
 
@@ -39,3 +41,12 @@ No Cargo.toml or Cargo.lock delta was made. No new HTTP/bootstrap runtime, setti
 Internal and public contracts were authored for constants, padding rejection/range/alphabet, Google/Mozilla A/AAAA and ANY/TXT shapes, and Firestore direct/camouflage Host behavior. They were not executed.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Source-review contract correction
+
+Before final compliance, manual source review found that one authored-only padding test fed four rejected count bytes before its character bytes while asserting a prefix for a different sequence. No executable test was run. The vector input was corrected so the injected entropy deterministically consumes rejected count bytes `0, 23`, accepts `25 -> count 13`, then maps character bytes `0,25,61,62,63,26` to `az9abA`. Production padding logic was unchanged.
+
+Platform correction commit: `a65278227c78fac5fd5a6ac41c841b4fc509fcb5`. Desktop correction mirror: `712bde77f6f232efafe775ff9390faa47e9595fe`. Final module/contract blobs: `2f3ea627054779296102f13c70be17a3655ddcb9` / `55d55d5de956cad3d809d64efc97993d270dcd97`. Network lib remains `3743331b0b1453048a98a21ae4ac2d2b91a2b2a5`.
+
+Executable validation remains intentionally not-run.
