@@ -1839,3 +1839,12 @@ Desktop source sync is `7ebdbd7cd9ea4edb0b793be4cd7c616e15d80f71` and contract s
 The unique new responsibility is `TDRP-R9-MTPROTO-WEB-PROXY-BRIDGE-CAPABILITY-001`: `implemented / rewritten / validation_status=not-run / accepted=false`. Coverage becomes `source_entries_total=16202, responsibilities_total=111, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`; global unknown/unread are not decremented by this focused semantic closure. `TDRP-R9-MTPROTO-WEB-PROXY-RELAY-STREAM-001` remains `mapped/pending` until a real shipping carrier exists.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+### Round 111 final source-level compliance
+
+Platform-core final source-level compliance is `129d232fc891074ec11cd67a4235b78521bcee7c` / spec blob `87405d6f79801a891d1837ebdd3a3606a38a6b09`. It records R1-R14 and AC-1 through AC-7 as passed by source review, while executable validation remains intentionally `not-run`. Desktop bookkeeping checkpoint `8e81014db9f01831e6a3b91816f8278280b660b6` is referenced by that compliance record.
+
+The unique bridge-capability responsibility remains `implemented / rewritten / validation_status=not-run / accepted=false`. The separate relay carrier/window/WebView bootstrap responsibility remains `mapped/pending`; no telegram-network production blob changed.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.

@@ -28253,7 +28253,10 @@
         "desktop-protocol-lib-blob:42601393105e0ad49b8da97ee8cfd2acc6cf031e",
         "desktop-authored-contract-blob:2f4fed5e9d6f9103d3598ef94089dbede6d226af",
         "canonical-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
-        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1"
+        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
+        "platform-core-final-source-compliance-commit:129d232fc891074ec11cd67a4235b78521bcee7c",
+        "platform-core-final-spec-blob:87405d6f79801a891d1837ebdd3a3606a38a6b09",
+        "desktop-bookkeeping-commit:8e81014db9f01831e6a3b91816f8278280b660b6"
       ],
       "test_evidence": [
         "Authored-only canonical protocol contracts: protocol_contract.rs@2f4fed5e9d6f9103d3598ef94089dbede6d226af; not executed.",
@@ -28377,7 +28380,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Fixed-U behavioral provenance is mtproto_proxy_data.cpp/header plus consuming web_proxy_webview.cpp, web_proxy_transport.cpp and connection_box.cpp. No upstream C++ copied. HMAC reuses hmac 0.12.1 + sha2 0.10.",
-      "notes": "Task round80/source evidence round111. Pure bridge capability/path/link-secret config/wire is independently implemented in existing telegram-protocol without a carrier scheduler. Relay carrier/window/bootstrap remains mapped/pending. Contracts authored only; executable validation not run.",
+      "notes": "Task round80/source evidence round111. Pure bridge capability/path/link-secret config/wire is independently implemented in existing telegram-protocol without a carrier scheduler. Relay carrier/window/bootstrap remains mapped/pending. Contracts authored only; executable validation not run. Final platform source-compliance is 129d232fc891074ec11cd67a4235b78521bcee7c / spec blob 87405d6f79801a891d1837ebdd3a3606a38a6b09; R1-R14 and AC-1..AC-7 are source-review passed while executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false
