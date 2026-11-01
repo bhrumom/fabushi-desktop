@@ -6712,8 +6712,7 @@ fn channel_failure_marker_from_failure(
     let work_id = failure
         .get("deliveryOperationId")
         .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())?;
+        .filter(|value| !value.trim().is_empty())?;
     let marked_at_ms = failure
         .get("markedAtMs")
         .and_then(serde_json::Value::as_f64)
@@ -6721,18 +6720,15 @@ fn channel_failure_marker_from_failure(
     let address_token = failure
         .get("addressToken")
         .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())?;
+        .filter(|value| !value.trim().is_empty())?;
     let failure_reason = failure
         .get("reason")
         .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())?;
+        .filter(|value| !value.trim().is_empty())?;
     let session_key = failure
         .get("sessionKey")
         .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
+        .filter(|value| !value.trim().is_empty())
         .map(ToOwned::to_owned);
     Some(DurablePendingWakeMarker {
         agent_id: agent_id.to_string(),

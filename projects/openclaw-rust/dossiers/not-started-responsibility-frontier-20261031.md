@@ -455,6 +455,8 @@ The production channel-delivery failure producer now retains the exact
 marker and carries it in the in-memory failure payload. Recovery reconstructs
 the complete observed marker (`agentId`, kind, operation, timestamp, address,
 reason, and optional session key) and settles it with `clear_if_matches`.
+The reconstruction validates non-blank text without normalizing the persisted
+field values, preserving the exact marker bytes used by the producer.
 Failures without complete marker provenance are logged and left pending;
 recovery no longer falls back to key-only deletion, so a newer same-key marker
 cannot be removed by an older channel-failure pass. This is static source and
