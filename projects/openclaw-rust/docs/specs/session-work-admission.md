@@ -265,6 +265,11 @@ recovery. This keeps reopen recovery from interleaving with directory deletion
 or another external filesystem mutation without introducing a second lock or
 owner.
 
+The public production admission facades likewise acquire this boundary before
+reading the owner record. Filesystem-backed producers use paired locked
+helpers while composing admission with their external mutation, so the
+non-reentrant lock is never acquired recursively.
+
 The same fence covers owner-local viewed/unread projections, the persisted
 session profile projection, conversation-partner membership, and profile
 snapshot clearing. These are session metadata mutations, not alternate
@@ -273,6 +278,8 @@ lifecycle owners.
 ## Failure and edge cases
 
 - missing or malformed session identity: reject before durable admission;
+- missing agent/session database after directory cleanup: reject before any
+  external store can recreate per-agent state;
 - session generation changed: return stale/retryable result without mutation;
 - deletion pending: reject new work and retain owned terminal writes;
 - archived or restart-tombstone session: reject work until authorized restore;

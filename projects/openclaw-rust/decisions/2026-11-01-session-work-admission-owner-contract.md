@@ -230,6 +230,12 @@ use the same boundary and recheck work admission before writing. Their existing
 secret-file and channel-config owners remain separate stores; no cross-store
 transaction or new channel authority was introduced.
 
+The public production admission facades now use the same boundary, while
+filesystem-backed producers call explicit locked helpers when composing the
+check with their mutation. Admission also fails closed when the canonical
+session database is gone, preventing post-delete writes from recreating an
+agent directory; no recursive mutex acquisition is relied upon.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

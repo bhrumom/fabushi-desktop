@@ -241,6 +241,11 @@ directory also acquire the boundary and recheck deletion admission. The
 connector secret file and channel configuration remain separate stores, so this
 is an in-process deletion-race closure rather than a cross-store transaction.
 
+The shared admission facade now rejects a missing canonical session database
+after directory cleanup. This prevents a late writer from recreating agent
+state after successful deletion; callers already holding the boundary use the
+paired locked admission helper.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain

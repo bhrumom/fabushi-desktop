@@ -220,7 +220,7 @@ impl ProductionSessionWorkers {
                         if store.get_location() != canonical_location {
                             return Ok(SynthesisApplyResult::Invalid);
                         }
-                        owner.assert_agent_work_admission(agent_id)?;
+                        owner.assert_agent_work_admission_locked(agent_id)?;
                         Ok(
                             store
                                 .apply_synthesis(snapshot, changes, now_ms)
@@ -1402,7 +1402,7 @@ impl ProductionSessionWorkers {
         value: &str,
     ) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let stored = self
                 .connector_secret_store()
                 .set_secret(agent_id, platform, field, value)
@@ -1439,7 +1439,7 @@ impl ProductionSessionWorkers {
 
     pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let _ = self
                 .connector_secret_store()
                 .remove_agent_platform(agent_id, platform)
@@ -1970,36 +1970,53 @@ impl ProductionSessionWorkers {
     /// custody of the agent directory. Deletion itself uses its own file and
     /// store owner path and does not call these transcript mutation wrappers.
     pub fn assert_agent_work_admission(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)
+        })
+    }
+
+    /// Admission check for callers that already hold the per-agent
+    /// filesystem/deletion boundary. This must not call the public admission
+    /// facade, because that facade intentionally acquires the same mutex.
+    fn assert_agent_work_admission_locked(&self, agent_id: &str) -> Result<(), String> {
         if self.is_agent_being_deleted(agent_id) {
             return Err(format!(
                 "agent {agent_id} deletion cleanup is pending; new session work is not admitted"
             ));
         }
-        let db_path = self.session_db_path(agent_id)?;
-        if db_path.is_file() {
-            if let Some(record) = self.read_session_work_admission(agent_id)? {
-                if record.session_id != agent_id
-                    || record.session_key.trim().is_empty()
-                    || record.lifecycle_revision.trim().is_empty()
-                {
-                    return Err(format!(
-                        "agent {agent_id} session admission identity is malformed"
-                    ));
-                }
-                if record.deletion_pending {
-                    return Err(format!(
-                        "agent {agent_id} durable deletion cleanup is pending; new session work is not admitted"
-                    ));
-                }
-            }
+        self.existing_session_db_path(agent_id)?;
+        let Some(record) = self
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        if record.session_id != agent_id
+            || record.session_key.trim().is_empty()
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        if record.deletion_pending {
+            return Err(format!(
+                "agent {agent_id} durable deletion cleanup is pending; new session work is not admitted"
+            ));
         }
         Ok(())
     }
 
-    fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
-        self.assert_agent_work_admission(agent_id)?;
+    fn assert_agent_transcript_write_admission_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<(), String> {
+        self.assert_agent_work_admission_locked(agent_id)?;
         if self
-            .read_session_work_admission(agent_id)?
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
             .is_some_and(|record| record.archived_at_ms.is_some())
         {
             return Err(format!(
@@ -2007,6 +2024,12 @@ impl ProductionSessionWorkers {
             ));
         }
         Ok(())
+    }
+
+    fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)
+        })
     }
 
     pub fn ensure_main_session_work_admission(&self, agent_id: &str) -> Result<(), String> {
@@ -2827,7 +2850,7 @@ impl ProductionSessionWorkers {
         tier: MemoryTier,
     ) -> StateWriteResult {
         let result = self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let store = self.memory_service.store_for_agent(agent_id);
             let payload = match tier {
                 MemoryTier::Note => format!("{MEMORY_NOTE_PREFIX}{}", content.trim()),
@@ -2860,7 +2883,7 @@ impl ProductionSessionWorkers {
 
     pub fn remove_agent_memory(&self, agent_id: &str, memory_id: &str) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let owner = self.open_agent_db_owner_locked(agent_id)?;
             let prior_snapshot = owner
                 .get_memory_prompt_snapshot()
@@ -2907,7 +2930,7 @@ impl ProductionSessionWorkers {
 
     pub fn clear_agent_memories(&self, agent_id: &str) -> Result<(), String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let owner = self.open_agent_db_owner_locked(agent_id)?;
             let prior_snapshot = owner
                 .get_memory_prompt_snapshot()
@@ -3110,7 +3133,7 @@ impl ProductionSessionWorkers {
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_transcript_write_admission(agent_id)?;
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
             let store = self.create_agent_blob_store(agent_id)?;
             self.existing_session_db_path(agent_id)?;
             futures::executor::block_on(self.pool.clear_blobs(
@@ -3233,7 +3256,7 @@ impl ProductionSessionWorkers {
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let owner = self.open_agent_db_owner_locked(agent_id)?;
             let before_files = capture_profile_mutation_files(agent_dir, true)?;
             let mutation = Self::prepare_profile_mutation(
@@ -3350,7 +3373,7 @@ impl ProductionSessionWorkers {
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
-            self.assert_agent_work_admission(agent_id)?;
+            self.assert_agent_work_admission_locked(agent_id)?;
             let owner = self.open_agent_db_owner_locked(agent_id)?;
             let before_files = capture_profile_mutation_files(agent_dir, false)?;
             let previous_profile = owner
