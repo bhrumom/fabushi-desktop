@@ -36,7 +36,9 @@ use crate::runner::shell_terminal_watch::{
 };
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
-use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
+use crate::runner::tools::sand_multitask_todo_tool::{
+    MultitaskTodoState, ProductionMultitaskTodoState,
+};
 use crate::runner::tools::sand_state_tool::SandStateWriter;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
 use crate::runner::turn_observation::TurnObservationHandle;
@@ -296,7 +298,10 @@ impl HostRunnerComposition {
         }));
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
-            Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)
+            Some(Arc::new(ProductionMultitaskTodoState::new(
+                Arc::clone(sessions),
+                agent_id,
+            )) as Arc<dyn MultitaskTodoState>)
         } else {
             None
         };

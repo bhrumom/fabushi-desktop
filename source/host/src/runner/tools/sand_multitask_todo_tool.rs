@@ -7,7 +7,7 @@ use serde_json::{Map, Value, json};
 use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
-use crate::extensions::session::agent_db::SandAgentDb;
+use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::sand_multitask::SAND_MULTITASK_TODO_DESCRIPTION;
 
@@ -65,11 +65,25 @@ pub trait MultitaskTodoState: Send + Sync {
     fn store_todos(&self, todos: &[MultitaskTodoItem]) -> Result<(), String>;
 }
 
-impl MultitaskTodoState for SandAgentDb {
+pub struct ProductionMultitaskTodoState {
+    sessions: Arc<ProductionSessionWorkers>,
+    agent_id: String,
+}
+
+impl ProductionMultitaskTodoState {
+    pub fn new(sessions: Arc<ProductionSessionWorkers>, agent_id: impl Into<String>) -> Self {
+        Self {
+            sessions,
+            agent_id: agent_id.into(),
+        }
+    }
+}
+
+impl MultitaskTodoState for ProductionMultitaskTodoState {
     fn load_todos(&self) -> Result<Vec<MultitaskTodoItem>, String> {
         let Some(raw) = self
-            .read_kv(SAND_MULTITASK_TODOS_KV)
-            .map_err(|error| error.to_string())?
+            .sessions
+            .read_agent_kv_projection(&self.agent_id, SAND_MULTITASK_TODOS_KV)?
         else {
             return Ok(Vec::new());
         };
@@ -80,9 +94,11 @@ impl MultitaskTodoState for SandAgentDb {
     fn store_todos(&self, todos: &[MultitaskTodoItem]) -> Result<(), String> {
         let raw = serde_json::to_string(todos)
             .map_err(|error| format!("could not encode durable multitask todos: {error}"))?;
-        let wrote = self
-            .write_kv(SAND_MULTITASK_TODOS_KV, &raw)
-            .map_err(|error| error.to_string())?;
+        let wrote = self.sessions.write_agent_kv_projection(
+            &self.agent_id,
+            SAND_MULTITASK_TODOS_KV,
+            &raw,
+        )?;
         if !wrote {
             return Err("multitask todo write was rejected by session admission".into());
         }

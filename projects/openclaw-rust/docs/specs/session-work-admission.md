@@ -496,6 +496,13 @@ fallback; production Runner avatar mutation no longer bypasses the owner.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.
+The production `TodoWrite` bridge now uses a thin
+`ProductionMultitaskTodoState` adapter backed by `ProductionSessionWorkers`.
+It no longer retains a raw `SandAgentDb` as its turn-scoped state handle:
+reads stay inside the per-agent serialization boundary, and writes use the
+admitted owner wrapper before calling the existing `write_kv` predicate. This
+preserves the existing `multitaskTodos` KV schema and tool contract while
+closing the Host-to-Runner owner bypass; no second todo store is introduced.
 
 Profile and avatar filesystem mutations now run through a per-agent
 `ProductionSessionWorkers` serialization boundary. Profile updates and avatar

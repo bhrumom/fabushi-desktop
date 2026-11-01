@@ -2349,6 +2349,36 @@ impl ProductionSessionWorkers {
         Ok(Some(record))
     }
 
+    /// Read one agent-scoped KV projection while retaining the Session owner
+    /// serialization boundary. Tool adapters must not retain a raw
+    /// `SandAgentDb` handle as their production state owner.
+    pub fn read_agent_kv_projection(
+        &self,
+        agent_id: &str,
+        key: &str,
+    ) -> Result<Option<String>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .read_kv(key)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Write one agent-scoped KV projection through the admitted Session
+    /// owner and its per-agent filesystem/deletion boundary.
+    pub fn write_agent_kv_projection(
+        &self,
+        agent_id: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .write_kv(key, value)
+                .map_err(|error| error.to_string())
+        })
+    }
+
     /// Apply a session-scoped model selection while holding the same
     /// per-agent filesystem/deletion boundary used by every other session
     /// mutation. The policy evaluator remains the model-picker owner; this
