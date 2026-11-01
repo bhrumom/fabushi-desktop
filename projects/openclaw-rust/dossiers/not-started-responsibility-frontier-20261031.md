@@ -252,8 +252,10 @@ cleanup path, plus the bulk transient-state clear. A focused owner contract
 preserves both histories and metadata CAS state when the durable deletion
 fence is active; checkpoint confirmation is fenced at the same SQLite edge,
 as is standalone latest-root CAS, while its pre-materialized blob remains an
-explicit external cleanup gap. This remains a bounded metadata correction; it
-does not change the row's not-started/not-wired/not-run/pending disposition.
+explicit external cleanup gap. Session maintenance now reuses the same
+`SandAgentDb` root-CAS owner rather than a direct SQLite mutation. This remains
+a bounded metadata correction; it does not change the row's
+not-started/not-wired/not-run/pending disposition.
 
 ### 2026-11-01 background-result consumer recheck
 

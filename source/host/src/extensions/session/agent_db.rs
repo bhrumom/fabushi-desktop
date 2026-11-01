@@ -3700,40 +3700,10 @@ pub fn compare_and_set_persisted_latest_root_blob_id(
     expected_root: &[u8],
     next_root: &[u8],
 ) -> Result<bool, AgentDbProjectionError> {
-    let db = open_projection_db(db_path, busy_timeout_ms)?;
-    let Some(raw) = read_kv(&db, "metadata")? else {
-        return Ok(false);
-    };
-    let metadata_bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
-    let metadata_json = String::from_utf8(metadata_bytes)?;
-    let mut metadata: serde_json::Value = serde_json::from_str(&metadata_json)?;
-    let current_root = metadata
-        .get("latestRootBlobId")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or_default();
-    if current_root != encode_hex(expected_root) {
-        return Ok(false);
-    }
-    let Some(object) = metadata.as_object_mut() else {
-        return Ok(false);
-    };
-    object.insert(
-        "latestRootBlobId".into(),
-        serde_json::Value::String(encode_hex(next_root)),
-    );
-    let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
-    let changed = db.execute(
-        COMPARE_AND_SET_KV_SQL,
-        params![next_raw, "metadata", raw],
-    )? == 1;
-    if changed {
-        bump_db_write_generation(db_path);
-        notify_agent_db_listeners(
-            db_path,
-            AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
-        );
-    }
-    Ok(changed)
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.compare_and_set_latest_root_blob_id(expected_root, next_root)
 }
 
 pub fn read_persisted_version(
