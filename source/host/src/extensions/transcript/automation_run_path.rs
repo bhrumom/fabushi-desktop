@@ -18,6 +18,80 @@ use super::sand_automation_failure::{
 
 pub const AUTOMATION_WAKE_CUE: &str = "[routine]";
 pub const MAX_EVENTS_IN_AUTOMATION_WAKE: usize = 25;
+pub const CRON_SESSION_RETENTION_DEFAULT_MS: u64 = 24 * 60 * 60 * 1_000;
+pub const CRON_SESSION_SWEEP_THROTTLE_MS: u64 = 5 * 60 * 1_000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CronSessionRetentionPolicy {
+    Disabled,
+    DurationMs(u64),
+}
+
+/// Resolve the upstream-compatible retention policy without consulting any
+/// filesystem, automation history, or session row. `false` and zero disable
+/// retention; malformed, negative, or non-finite values use the 24-hour
+/// default. Positive JSON numbers are interpreted as milliseconds and are
+/// clamped to the representable `u64` range.
+pub fn parse_cron_session_retention(
+    value: Option<&Value>,
+) -> CronSessionRetentionPolicy {
+    let Some(value) = value else {
+        return CronSessionRetentionPolicy::DurationMs(
+            CRON_SESSION_RETENTION_DEFAULT_MS,
+        );
+    };
+    if value == &Value::Bool(false) {
+        return CronSessionRetentionPolicy::Disabled;
+    }
+    let Some(raw) = value.as_f64() else {
+        return CronSessionRetentionPolicy::DurationMs(
+            CRON_SESSION_RETENTION_DEFAULT_MS,
+        );
+    };
+    if !raw.is_finite() || raw < 0.0 {
+        return CronSessionRetentionPolicy::DurationMs(
+            CRON_SESSION_RETENTION_DEFAULT_MS,
+        );
+    }
+    if raw == 0.0 {
+        return CronSessionRetentionPolicy::Disabled;
+    }
+    if raw >= u64::MAX as f64 {
+        return CronSessionRetentionPolicy::DurationMs(u64::MAX);
+    }
+    CronSessionRetentionPolicy::DurationMs(raw.floor() as u64)
+}
+
+/// Pure owner-scope throttle state for a future reaper trigger. It records a
+/// successful admission only; it does not perform cleanup or authorize row
+/// deletion.
+#[derive(Debug, Default)]
+pub struct CronSessionSweepThrottle {
+    last_run_ms_by_owner: HashMap<String, u64>,
+}
+
+impl CronSessionSweepThrottle {
+    pub fn admit(&mut self, owner_scope: &str, now_ms: u64) -> bool {
+        let owner_scope = owner_scope.trim();
+        if owner_scope.is_empty() {
+            return false;
+        }
+        if let Some(last_run_ms) = self.last_run_ms_by_owner.get(owner_scope) {
+            if now_ms < *last_run_ms
+                || now_ms.saturating_sub(*last_run_ms) < CRON_SESSION_SWEEP_THROTTLE_MS
+            {
+                return false;
+            }
+        }
+        self.last_run_ms_by_owner
+            .insert(owner_scope.to_string(), now_ms);
+        true
+    }
+
+    pub fn forget_owner(&mut self, owner_scope: &str) {
+        self.last_run_ms_by_owner.remove(owner_scope.trim());
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AutomationRunTrigger {

@@ -113,6 +113,11 @@ The same owner now exposes a read-only `list_cron_session_runs` projection,
 including the reserved controller/media/subagent fence columns. It is
 intentionally not a retention or deletion consumer.
 
+The pure D02 policy seam now defines disabled/zero retention, invalid-value
+fallback to 24 hours, finite positive millisecond conversion, and a
+per-owner five-minute throttle primitive. It has no scheduler caller and does
+not decide whether any row is deletable.
+
 This is direct producer → owner → durable row evidence for registration only.
 No retention parser, sweep trigger, transcript archive, active media/subagent
 preservation query, guarded deletion, focused verification, or acceptance was

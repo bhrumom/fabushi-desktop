@@ -25,6 +25,9 @@ outside that slice remains architecture-blocked until the migration and
 archive contract below are approved and then implemented with focused oracles.
 The slice also includes a read-only row projection owned by the same DB
 boundary; it is an input for a later sweep, not a deletion consumer.
+The pure D02 retention parser and per-owner throttle primitive are also
+approved as policy-only code; they must remain uncalled until a D03 scheduler
+owner is selected.
 
 ## Source evidence and exact subjects
 

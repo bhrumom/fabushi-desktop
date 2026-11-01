@@ -63,6 +63,11 @@ artifacts, or delete rows. A read-only owner projection of these rows is part
 of the same D01 slice so a future sweep cannot read `runs.json` as a substitute
 for session state.
 
+The next approved slice is the pure D02 policy seam: retention parsing and a
+per-owner five-minute throttle primitive. It has no scheduler caller and does
+not decide whether a row is deletable; D03 trigger wiring and D04--D05 cleanup
+remain pending.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all
@@ -76,6 +81,9 @@ for session state.
   required before the responsibility is considered accepted.
 - The bounded registration slice is complete only when the run path calls the
   owner before execution and settles the same guarded row after execution;
+  verification remains pending during the development freeze.
+- The D02 policy slice is complete only when disabled, zero, invalid, finite,
+  and throttle outcomes are represented without reading filesystem or run age;
   verification remains pending during the development freeze.
 
 ## References
