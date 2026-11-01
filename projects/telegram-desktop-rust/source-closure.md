@@ -2359,3 +2359,16 @@ Existing-owner-first closes the applicable behavior through the current Fabushi 
 
 This independently closes exactly one fixed-U source entry, so coverage becomes `source_entries_total=16202 / unknown=16171 / unread=16144 / omitted=0`; `responsibilities_total=125`. Stage-B executable validation, broader fixed-U semantic closure, external-source blockers and final acceptance remain open.
 
+
+
+## Round 107 / source-entry closure — repository helper-inventory instrument (2026-11-01)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4` (root tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`, `truncated=false`). From desktop parent `c55a04ad94a43424df161670b639705f7b1dda9b`, the next independent unrepresented fixed-U entry is `.agents/skills/code-health/scripts/harness.py@652a9ee7ed6a690705cad45aeff06568210db6b1`.
+
+The exact script and direct consumers were read. `harness.py` owns source-neutral helper inventory/consumer-evidence mechanics: exact-tree helper/doc discovery; current-path birth/task provenance; API/internal/self-test classification; uniquely attributable symbols; direct callers and transitive internal dependents; workflow/open-task references; conservative archived-patch coverage; product/uncertain/harness/self-test/creation separation; distinct-task de-duplication; documentation/index/source-weight facts; explicit coverage limits; and JSON/Markdown rendering. `report.py` calls `harness.inspect`; `health.py` persists `harness.json/harness.md` and preserves unverified retention state when coverage is unavailable; `harness_test.py` / `health_test.py` are direct executable-contract consumers.
+
+Existing-owner-first maps this to the current Fabushi repository quality/test-evidence owner. Spec-first checkpoint `606f8b0f71335967f574d3ca94d1d4bec7cb0b48` adds helper-inventory qualification/evidence plus the complete-read dossier. No upstream Python scanner, second findings ledger/task queue/product runtime/platform-core owner or new ADR is introduced. The prior `TDRP-R9-CODE-HEALTH-HELPER-RETENTION-LIFECYCLE-001` remains the separate decision-policy owner.
+
+`TDRP-R9-CODE-HEALTH-HARNESS-INVENTORY-INSTRUMENT-001` is `implemented / validation_status=not-run / accepted=false`. Contracts were authored but not executed. Exactly one source entry closes: `unknown 16171 -> 16170`, `unread 16144 -> 16143`, `omitted=0`; `responsibilities_total 125 -> 126`.
+
+Stage A zero-CI discipline remained intact: no GitHub Actions/check/status/workflow query or trigger and no build, typecheck, lint, validator, generator, unit/contract/integration/E2E, visual/a11y, package, deployment, installation or runtime acceptance was performed.
