@@ -1,6 +1,6 @@
 # ADR: Session work-admission owner contract
 
-Status: architecture selected; implementation pending
+Status: bounded owner slices implemented; full responsibility pending
 Date: 2026-11-01
 Scope: Fabushi Desktop Host session, transcript, and Runner admission
 Responsibility: `OCRM-RESP-SESSION-WORK-ADMISSION-001`
@@ -15,19 +15,21 @@ restores an archived generation only after placement and lifecycle rechecks;
 and provider-review modules retain terminal review ownership across a turn.
 
 The current Fabushi tree has `ProductionSessionWorkers` and per-agent SQLite
-transcript ownership, including a lifecycle revision, but it does not have a
-durable session-entry catalog with archived state, a background-result
-generation contract, or a production archive/restore/review ingress. The
-existing `deleting_agents` mutex is an in-memory agent-deletion marker, not a
-replacement for those session-row contracts.
+transcript ownership, including a lifecycle revision. It now also has an
+owner-local `sessionWorkAdmission` record, a generation-bound local background
+result receipt, an authenticated canonical-main archive/restore ingress, a
+durable outgoing-media fence, and provider-review admission/acknowledgment
+state. These are bounded production slices, not a complete session catalog or
+the full upstream detached lifecycle. The existing `deleting_agents` mutex
+remains only the deletion-window fence and is not a replacement for the
+durable session-row contract.
 
-Boundary recheck on 2026-11-01: the existing background-revival producer does
-have the necessary routing facts (`agentId`, canonical main `sessionKey`,
-`clientNonce`, `streamId`) and receives a matching terminal event. Its current
-consumer is still an in-memory wait plus transcript before/after counting and
-telemetry. Because the owner record cannot return a committed terminal receipt
-for duplicate or conflicting idempotency keys, this is evidence for the
-missing durable consumer, not evidence that the responsibility is wired.
+Boundary recheck on 2026-11-01: the existing background-revival producer now
+captures those routing facts, admits work against the current generation,
+rechecks the matching terminal event, and commits an idempotent hidden receipt
+through the same owner. Duplicate and conflicting payloads are explicit. The
+remaining gap is the broader upstream detached-result/session catalog contract,
+full media/result replay, and provider-review terminal consumption.
 
 ## Decision
 
@@ -35,8 +37,8 @@ Keep all work-admission state inside the existing `ProductionSessionWorkers` →
 `SandAgentDb` owner chain. Do not create a second workboard, session database,
 cloud-agent archive shim, or generic “archive” flag on the agent profile.
 
-The minimum durable extension required before this responsibility can be
-implemented is one owner-local session admission record containing:
+The remaining session model must stay in the existing owner-local record rather
+than introduce another authority. Its required fields are:
 
 - canonical `sessionKey` and durable `sessionId`;
 - `lifecycleRevision` with compare-and-set transitions;
@@ -76,30 +78,29 @@ transcript, compaction, and conversation-clear writes while its existing
 agent-deletion owner holds the deletion window. `SandAgentDb` also persists a
 compare-and-set `sessionWorkAdmission` record carrying session identity,
 generation, archive metadata, admitted work, result idempotency, and review
-phase fields. This is still deliberately not the production
-session-generation/archive/review implementation described below: no
-authenticated producer currently populates or consumes all of those fields.
+phase fields. The current producer set populates only bounded slices and
+fails closed for the remaining lifecycle cases; this is not the complete
+session-generation/archive/review implementation.
 
 1. Add the owner-local schema/API and migration-safe transaction to
    `SandAgentDb`/`ProductionSessionWorkers`; preserve existing agent DBs.
-2. Add the existing Runner admission call at the one canonical turn boundary,
-   plus background-result settlement using the captured generation.
-3. Add authenticated archive/restore and provider-review producers only where
-   the existing Gateway/session owner already supplies identity, placement and
-   lifecycle authority.
-4. Add focused negative contracts for archived admission, deletion pending,
+2. Extend the existing Runner admission and background-result settlement only
+   where the captured generation and durable receipt are available.
+3. Complete the detached-result/session catalog lifecycle and provider-review
+   terminal consumer through existing authenticated owners; do not add a new
+   session authority.
+4. Add or retain focused negative contracts for archived admission, deletion pending,
    stale generation, duplicate result, lifecycle change during archive/restore,
    active media/subagent preservation, and terminal review ownership.
 5. Reconcile the parity ledger only after non-test producer, durable state, and
    consumer edges are all present. Verification and acceptance remain pending
    until the frozen exact-head lane can run.
 
-The current Rust producer now captures the active main-session
-`lifecycleRevision` before background routed admission and rechecks it at the
-matching `Completed` terminal event. This is a generation-observation guard,
-not the required durable result receipt: it still cannot replay an original
-committed outcome for a duplicate idempotency key and does not close archive,
-restore, or provider-review ownership.
+The current Rust producer captures the active main-session
+`lifecycleRevision` before background routed admission, rechecks it at the
+matching `Completed` terminal event, and commits the bounded owner-local
+receipt. It still does not close the complete detached-result/session catalog,
+media replay, or provider-review terminal lifecycle.
 
 The owner now contains a further bounded slice: the local background-revival
 terminal path commits a hidden `background-result-receipt` transcript entry
@@ -109,11 +110,11 @@ responsibility remains open because this slice is not yet the complete
 upstream detached-result contract and does not provide authenticated
 archive/restore, media replay ownership, or provider-review terminal wiring.
 
-The next implementation must bind the captured lifecycle revision and
-idempotency key to a durable terminal receipt at the existing session/transcript
-owner. Clearing the admitted-work marker without retaining the original result
-is insufficient because it cannot distinguish duplicate, conflicting-payload,
-stale-generation, and outcome-unknown settlement.
+The next implementation must extend the same owner-local receipt and session
+record to the remaining detached-result and terminal-review cases. Clearing an
+admitted-work marker without retaining the original result remains forbidden
+because it cannot distinguish duplicate, conflicting-payload, stale-generation,
+and outcome-unknown settlement.
 
 ## Rejected alternatives
 
