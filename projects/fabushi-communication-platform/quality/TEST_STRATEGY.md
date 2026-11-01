@@ -1421,3 +1421,63 @@ Stage-B oracles are `ORA-TDRP-LINUX-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-LINUX-
 Frozen-candidate qualification must cover event/path/ref admission, actual runner identity, external Action resolved commits, effective token scope without secret capture, recursive submodules, bootstrap bytes/versions, exact Poetry/generator/template/build-script inputs, all material container acquisitions, cache scopes/keys/restores, Buildx/BuildKit identity, build flags/output identity, both Telegram and Updater staging, artifact immutable identity when available, one-day retention, and negative cases proving the Debug artifact is not release/package/install evidence.
 
 No source/target workflow execution, build, cache mutation, artifact upload/download, test, package, signing, deployment, installation or runtime acceptance is executed in Stage A.
+
+
+### Repository scheduled thread-lock workflow qualification
+
+`TDRP-R9-REPOSITORY-LOCK-WORKFLOW-001` qualifies fixed-U `.github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67` as repository issue/PR/discussion maintenance provenance. Existing target owners are root issue/PR/reporting/development-process governance, repository security/privacy governance, and shared quality/evidence. No target Telegram locking workflow, second tracker, product automation, runtime owner or platform-core service is introduced.
+
+Authored contract cases, not run:
+- `CONTRACT-TDRP-LOCK-WORKFLOW-SCHEDULE-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-RUNNER-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-PERMISSIONS-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-ACTION-LINEAGE-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-TOKEN-INPUT-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-CONFIG-DEFAULTS-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-ISSUE-INACTIVE-45-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-PR-INACTIVE-45-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-DISCUSSION-DEFAULT-365-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-ELIGIBILITY-QUERY-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-SEARCH-BOUND-ORDER-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-LOCK-REASON-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-NO-COMMENT-LABEL-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-PROCESS-ORDER-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-OUTPUTS-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-RETRY-SEMANTICS-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-CONSUMERS-001`
+- `CONTRACT-TDRP-LOCK-WORKFLOW-NO-TARGET-COPY-001`
+
+Integration, not run:
+- `INT-TDRP-LOCK-WORKFLOW-REPOSITORY-THREAD-GOVERNANCE-001`
+
+Fault/recovery cases, not run:
+- `FAULT-TDRP-LOCK-WORKFLOW-SCHEDULE-DELAY-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-RUNNER-UNAVAILABLE-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-ACTION-TAG-DRIFT-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-PERMISSION-DENIED-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-SEARCH-FAILURE-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-RATE-LIMIT-EXHAUSTED-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-ISSUE-LOCK-PARTIAL-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-PR-FAIL-AFTER-ISSUE-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-DISCUSSION-FAIL-AFTER-ISSUE-PR-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-BACKLOG-OVER-50-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-UPDATED-LOCKED-RACE-001`
+- `FAULT-TDRP-LOCK-WORKFLOW-CLOCK-BOUNDARY-001`
+
+Security/privacy cases, not run:
+- `SEC-TDRP-LOCK-WORKFLOW-IMPLICIT-TOKEN-SCOPE-001`
+- `SEC-TDRP-LOCK-WORKFLOW-THIRD-PARTY-TOKEN-001`
+- `SEC-TDRP-LOCK-WORKFLOW-MUTABLE-ACTION-TAG-001`
+- `SEC-TDRP-LOCK-WORKFLOW-MUTABLE-RUNNER-001`
+- `SEC-TDRP-LOCK-WORKFLOW-ACTION-BUNDLE-PROVENANCE-001`
+- `SEC-TDRP-LOCK-WORKFLOW-UNDECLARED-DISCUSSION-SCOPE-001`
+- `SEC-TDRP-LOCK-WORKFLOW-LEAST-PRIVILEGE-001`
+- `SEC-TDRP-LOCK-WORKFLOW-THREAD-ID-OUTPUT-001`
+- `SEC-TDRP-LOCK-WORKFLOW-SECRET-NONCAPTURE-001`
+- `SEC-TDRP-LOCK-WORKFLOW-NO-STAGE-A-EXECUTION-001`
+
+Stage-B oracles are `ORA-TDRP-LOCK-WORKFLOW-EXACT-SOURCE-001`, `ORA-TDRP-LOCK-WORKFLOW-SCHEDULE-PERMISSIONS-001`, `ORA-TDRP-LOCK-WORKFLOW-ACTION-LINEAGE-001`, `ORA-TDRP-LOCK-WORKFLOW-ELIGIBILITY-POLICY-001`, `ORA-TDRP-LOCK-WORKFLOW-MUTATION-SETTLEMENT-001`, and `ORA-TDRP-LOCK-WORKFLOW-FAILURE-RECOVERY-001`. Invariants are `INV-TDRP-LOCK-WORKFLOW-NO-IMPLICIT-PERMISSION-TRUST-001`, `INV-TDRP-LOCK-WORKFLOW-NO-MUTABLE-TAG-TRUST-001`, `INV-TDRP-LOCK-WORKFLOW-NO-HIDDEN-DISCUSSION-SCOPE-001`, `INV-TDRP-LOCK-WORKFLOW-NO-PARTIAL-SETTLEMENT-SUCCESS-001`, `INV-TDRP-LOCK-WORKFLOW-NO-TELEGRAM-REPOSITORY-AUTHORITY-001`, and `INV-TDRP-LOCK-WORKFLOW-NO-STAGE-A-EXECUTION-001`.
+
+Frozen-candidate qualification must prove exact scheduled workflow revision, actual runner identity, effective token permissions without token capture, resolved Action commit/bundle/dependency identity, config defaults, issue/PR 45-day and discussion 365-day thresholds, exact closed/unlocked/updated eligibility, 50-result cap/no-pagination behavior, default resolved reason for issue/PR, process order, outputs, request retries/rate-limit behavior, partial settlement, backlog convergence across later runs, concurrent update/lock races, and negative cases proving upstream maintenance automation is not Fabushi product/runtime acceptance.
+
+No source/target workflow execution, third-party Action execution, repository lock mutation, build, validator, test, package, release, deployment, installation or runtime acceptance is executed in Stage A.
