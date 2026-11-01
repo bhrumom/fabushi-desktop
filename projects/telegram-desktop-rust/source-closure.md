@@ -2255,3 +2255,10 @@ The surface covers mode, selected/list, IPv6, call-proxy preference, IP-warning 
 ### Round 99 exact production identity
 
 Production integration commit: `a9cece6754710ab4f91dd9089e3d4eee9ffb4e57` (tree `b56bde12522d062968ce328d6550b11866c659a5`). It is a two-parent composition of the round-99 settings work/checkpoint history and current shipping main `9993ca8e107f7e019a8201e5ab74fa54e82159f2`, restoring the complete shipping tree while preserving all checkpoint blobs. Key round-99 blobs: main method table `1836225532cf428fb1f0201d09a61542694b51b8`, coordinator MainData table `da1c1f13b6ab5d8147242bf9856a53c81dcf8b8a`, MainEdge `944be083ba17a24813323bec0b86ac333527e2c0`, Main RPC adapter `d91e41255f7c4f8750269ec2555eca1074bf0973`, preload `ed4e49ae6f6ef4ae4af3086ddf30716f22d95b51`, SettingsDesktopSurface `f5450c500e7b5429f030a561b9c8804700a28deb`, General Settings panels `1cb5508daf79ea12458124b09ee497c4c08fd618`, network-proxy UI `cacc51a80b52af034354a170dc42645144cd6717`. Validation remains not-run.
+
+
+## Stage-A selected proxy MTProto carrier consumer (task round 100 / source evidence round 131, 2026-11-01)
+
+Fixed U remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Canonical ProductSettingsOwner v2 retains durable selected/list/mode/credential ownership. Platform-core moved through spec-first `828fbc38ced6a78bdcc5f1cf4f224dc598a918fa`, implementation `2a4e9542f8b102eeaac8cc28f123e1a62648235d`, and source-compliance `f3075538f761ca0bf8a008c33ae7e3f25a1c66a3`. Desktop production `5d816f224c21019f75725b56b6f8c759871f5295` mirrors protocol/resolver/network/runtime and publishes restored/post-persistence carrier state through the existing TelegramClientLease.
+
+MTProto selected proxy/custom-resolution consumption is implemented in existing owners: obfuscated/TLS proxy carrier, direct NoProxy normalized DoH, transient TTL/order/good-IP promotion, and route-change session/request fencing with reusable auth material preserved. Enabled SOCKS5/HTTP/Web selections fail closed. `TDRP-R9-PROXY-MTPROTO-CONSUMER-001` advances to implemented/not-run/accepted=false. No executable validation was performed.

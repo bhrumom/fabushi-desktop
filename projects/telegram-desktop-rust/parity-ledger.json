@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "target_commit": "b6f491d2364684111ebfc8ddbdae67ca3adaff6b",
+  "target_commit": "5d816f224c21019f75725b56b6f8c759871f5295",
   "coverage": {
     "source_entries_total": 16202,
     "unknown": 16172,
@@ -29488,19 +29488,25 @@
         "telegram-network/runtime",
         "fixed-U proxy value semantics"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round129-typed-product-proxy-settings-migration-20261101.md",
-      "behavior_contract": "MTProto consumes canonical proxy-enabled state for special-config suppression without owning durable proxy settings; Enabled suppresses special-config acquisition before any HTTP/temporary-session work, while System/Disabled do not assert that gate. Transient resolved-IP ordering/writeback remains separately pending on a canonical Settings owner and selectable proxy path.",
-      "state_machine": "canonical Settings proxy mode -> typed proxyEnabled projection -> existing telegram.refreshSpecialConfig/RuntimeClient gate; Enabled suppresses special-config work; durable Settings publication plus remaining selected-proxy/DNS projections remain pending",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round131-selected-proxy-mtproto-carrier-consumer-20261101.md",
+      "behavior_contract": "MTProto consumes canonical ProductSettingsOwner mode/selected/IPv6 only as a post-persistence transient carrier projection. Enabled suppresses special-config acquisition and requires a selected endpoint; an enabled MTProto endpoint connects through the existing native obfuscated/TLS transport using the selected host/port/secret while retaining the protocol DC id. MTProto hostnames use the existing direct no-proxy DoH normalization/race with source-bounded TTL; resolved IP order/expiry and successful-IP promotion remain transient. Enabled SOCKS5/HTTP/Web endpoints fail closed until their separate carriers are implemented and never fall back to direct Telegram transport.",
+      "state_machine": "ProductSettingsOwner restore/mutation -> persist authoritative network.proxy -> TelegramClientLease carrier projection + existing proxyEnabled special-config projection -> RuntimeClient invalidates live sessions/owned requests on projection change while preserving reusable auth material -> telegram-network opens direct or MTProto-proxy route -> transient DomainResolver cache -> successful IP promotion; no runtime durable proxy state",
       "side_effects": [
-        "Special-config suppression consumer is implemented in the existing RuntimeClient command path without adding durable proxy state.",
-        "Durable proxy mode/list/selection remains owned by the still-missing canonical Fabushi Settings/application owner."
+        "Post-persistence mode/selected/IPv6 publication updates the existing RuntimeClient transient projection and invalidates live sessions/owned network requests when changed.",
+        "MTProto selected proxy connects through existing telegram-network obfuscated/TLS carrier using the proxy address and selected secret without changing protocol DC identity.",
+        "MTProto hostname resolution uses direct no-proxy normalized DoH attempts with 800ms stagger, TTL-bound transient cache and successful-IP promotion.",
+        "Existing mode-derived proxyEnabled continues to suppress special-config acquisition.",
+        "SOCKS5/HTTP/Web enabled selections fail closed at this carrier boundary rather than leaking a direct Telegram connection."
       ],
       "failure_cases": [
         "Consumer becomes a second durable proxy settings owner",
-        "Dead production API is added without a shipping call path",
-        "Fixed-U behavior is broadened beyond the source facts"
+        "Enabled proxy with missing selection silently falls back to direct transport",
+        "Unsupported enabled proxy kind silently falls back to direct transport",
+        "Proxy secret appears in logs/status/error projections",
+        "Resolved IP/expiry observations become durable ProductSettings fields",
+        "Projection change leaves an old live session/request using the previous route"
       ],
-      "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
+      "ui_disposition": "No new UI root. The existing unified SettingsDesktopSurface edits canonical ProductSettingsOwner v2; this responsibility consumes only its transient carrier projection.",
       "non_ui_responsibilities": [
         "Instance::Private::_proxySettings",
         "connectionTypeChanges -> ConfigLoader::setProxyEnabled",
@@ -29510,13 +29516,14 @@
         "ConfigLoader::refreshSpecialLoader",
         "ConfigLoader::sendSpecialRequest"
       ],
-      "platform_delta": "Task round98 upgrades the already-wired authoritative publisher from a persisted boolean to a typed ProductProxyMode projection: proxyEnabled is derived exactly as mode == Enabled from ProductSettingsOwner v2. RuntimeClient remains non-persisting. Full selected/list state is now available canonically but is deliberately not connected to carrier/custom-resolution consumers until those shipping boundaries are ready.",
+      "platform_delta": "Task round100 implements the selected-proxy/custom-resolution slice in the existing source-neutral telegram-network/RuntimeClient owners. NetworkProxyProjection is transient; ProductSettingsOwner v2 remains the only durable source. MTProto proxies use the existing native obfuscated/TLS connection start, direct no-proxy DoH resolution and transient good-IP promotion. Unsupported enabled SOCKS5/HTTP/Web selections fail closed. Desktop AppHost publishes restored state at startup and mode/selected/IPv6 changes after persistence through the existing TelegramClientLease.",
       "existing_owner_candidates": [
-        "future canonical Fabushi Settings/application owner",
+        "canonical Fabushi ProductSettingsOwner v2",
         "bhrumom/fabushi-platform-core:native/telegram-network",
-        "existing canonical call/runtime owner when shipping"
+        "existing RuntimeClient/SessionOwner",
+        "existing process-lifetime TelegramClientLease"
       ],
-      "existing_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "existing_owner": "ProductSettingsOwner v2 for durable state; existing RuntimeClient/SessionOwner plus telegram-network for transient carrier/resolution lifecycle",
       "rejected_existing_owners": [
         "mahayana-app-host feature.persistence/ui_state: not canonical product Settings truth",
         "telegram-storage: provider-private auth/transport persistence",
@@ -29527,97 +29534,106 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "bhrumom/fabushi-platform-core:docs/specs/telegram-proxy-non-ui-consumers-boundary.md",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/web_proxy.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/domain_resolver.rs",
         "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
-        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "bhrumom/fabushi-platform-core:native/telegram-runtime/src/runtime.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-protocol/src/web_proxy.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/domain_resolver.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
-        "bhrumom/fabushi-platform-core:docs/specs/telegram-special-config-acquisition-application-composition.md",
-        "bhrumom/fabushi-desktop:docs/specs/telegram-special-config-acquisition-application-composition.md",
-        "bhrumom/fabushi-platform-core:docs/specs/fabushi-product-settings-owner.md",
-        "bhrumom/fabushi-desktop:docs/specs/fabushi-product-settings-owner.md",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
         "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
       ],
       "fabushi_target_symbols": [
-        "future selected-proxy runtime projection",
-        "future transient resolved-IP cache under existing telegram-network owner",
-        "telegram.refreshSpecialConfig",
-        "refresh_special_config",
-        "refresh_special_config_command",
-        "SpecialConfigRefreshReport::suppressed_by_proxy",
-        "ProductSettingsOwner",
-        "settings.setNetworkProxyEnabled",
-        "TelegramClientLease::refresh_special_config"
+        "NetworkProxyProjection",
+        "NetworkProxyEndpoint",
+        "NetworkProxyKind",
+        "ProxyResolutionCache",
+        "establish_auth_key_with_proxy",
+        "resume_auth_key_with_proxy",
+        "telegram.applyNetworkProxy",
+        "SessionOwner::invalidate_network_transport",
+        "ProductProxySettings::carrier_projection",
+        "TelegramClientLease::apply_network_proxy",
+        "publish_product_network_proxy",
+        "telegram.refreshSpecialConfig"
       ],
-      "target_language": "Rust at the existing RuntimeClient consumer boundary for suppression; durable proxy Settings publication remains pending in the canonical source-neutral product Settings owner.",
+      "target_language": "Rust in the existing source-neutral product Settings adapter, RuntimeClient/SessionOwner and telegram-network owners; no retained C++ or second runtime/store.",
       "language_rationale": "The exact consumer must live in the existing source-neutral domain owner; no retained C++ or Telegram-specific parallel runtime is introduced.",
       "command_event_contracts": [
-        "initial config loader receives isEnabled",
-        "connection type event updates active loader flag",
-        "enabled suppresses special config",
-        "resolved IP cache transient/not serialized",
-        "enabled selected resolution refreshes sessions",
-        "good-IP promotion refreshes global proxy only on actual enabled promotion"
+        "ProductSettingsOwner persistence precedes every carrier publication",
+        "startup restore publishes current mode/selected/IPv6 before normal Telegram host use",
+        "mode/selected/IPv6 mutation -> transient telegram.applyNetworkProxy projection",
+        "mode mutation -> existing authoritative telegram.refreshSpecialConfig proxyEnabled projection",
+        "projection change cancels live owned requests/drops live sessions while reusable auth material remains",
+        "Enabled+missing selected -> fail closed",
+        "Enabled+MTProto selected -> proxy host/port/secret carrier route",
+        "Enabled+SOCKS5/HTTP/Web -> fail closed pending separate carriers",
+        "hostname MTProto proxy -> direct no-proxy DoH -> transient TTL cache -> successful IP promotion"
       ],
-      "state_owner": "Canonical ProductSettingsOwner v2 owns durable mode/list/selected/rotation state; RuntimeClient consumes only derived proxyEnabled today and future selected-proxy consumers must remain projections.",
-      "lifecycle_owner": "Existing RuntimeClient owns only the suppression consumer and special-config lifecycle; durable Settings remains outside it.",
-      "persistence_and_restart": "ProductSettingsOwner v2 restores/migrates durable product proxy state. RuntimeClient and telegram-network persist no duplicate proxy preference state.",
-      "concurrency_and_cancellation": "Enabled proxy projection suppresses before DirectHttpsRace or temporary request ownership exists. Remaining selected-proxy/custom-resolution lifecycle is pending canonical Settings publication and a shipping selectable proxy path.",
-      "security_boundary": "Proxy secrets must not be logged or copied into UI/provider-local persistence. External commands must be authorized before forwarding typed mutations.",
+      "state_owner": "Canonical ProductSettingsOwner v2 remains the only durable mode/list/selected/rotation/credential owner. RuntimeClient and telegram-network own transient projection, live sockets, resolver observations and session lifecycle only.",
+      "lifecycle_owner": "Existing RuntimeClient SessionOwner owns session/request invalidation and reusable auth material; existing telegram-network owns socket/resolver lifecycle; ProductSettingsOwner owns persistence.",
+      "persistence_and_restart": "ProductSettingsOwner v2 restores durable state. AppHost publishes its restored carrier projection to the process-lifetime TelegramClientLease during construction before normal host use. RuntimeClient does not serialize the proxy projection or resolver cache; persisted transport/auth-key state remains separate.",
+      "concurrency_and_cancellation": "Applying a changed carrier projection synchronously cancels all owned request controls and drops live sessions before replacing the transient projection. SessionOwner auth_materials and persisted transport auth-key metadata remain reusable. Resolver races own/cancel their direct HTTPS attempts through existing DirectHttpsRace.",
+      "security_boundary": "Proxy credentials are passed only in the transient in-process carrier projection required to open the selected proxy. NetworkProxyEndpoint/Projection deliberately do not derive Debug; runtime status/result/error surfaces expose only enabled/type/custom-resolution booleans and never password/secret. DoH resolver uses NoProxy direct HTTPS.",
       "network_service_dependencies": [
-        "Existing RuntimeClient special-config composition; canonical Settings publisher still missing for authoritative proxy state."
+        "Existing first-party telegram-network socket transport and direct HTTPS resolver; no new service or provider runtime."
       ],
-      "service_owner": "Existing telegram-network/runtime owner for transient proxy observations once a shipping selectable proxy/config-acquisition path exists; Settings remains durable owner",
+      "service_owner": "Existing telegram-network/RuntimeClient only; no new service.",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
-      "coverage_disposition": "pending",
+      "implementation_status": "implemented",
+      "coverage_disposition": "implemented",
       "blockers": [
-        "Transient selected-proxy/custom-resolution consumers remain without a completed shipping selectable-proxy carrier path.",
-        "Stage B executable validation has not run."
+        "Stage B executable validation has not run.",
+        "SOCKS5/HTTP/Web proxy carriers remain separate open responsibilities; their enabled selections intentionally fail closed in this slice."
       ],
       "production_entrypoints": [
-        "telegram.refreshSpecialConfig",
-        "fabushi_telegram_runtime::refresh_special_config",
         "settings.mutateNetworkProxy",
         "settings.setNetworkProxyEnabled",
-        "TelegramClientLease::refresh_special_config"
+        "AppHost startup ProductSettingsOwner restore",
+        "TelegramClientLease::apply_network_proxy",
+        "telegram.applyNetworkProxy",
+        "telegram.refreshSpecialConfig",
+        "open_logical_session",
+        "establish_auth_key_with_proxy",
+        "resume_auth_key_with_proxy"
       ],
       "production_evidence": [
-        "fixed-U:Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087",
-        "fixed-U:Telegram/SourceFiles/mtproto/config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194",
-        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
-        "desktop-network-unchanged-blob:241cd8ec792070a8de8af9ec6ca5b317e34376d1",
-        "desktop-runtime-unchanged-blob:10031c5261bb0810ad2df2fca3de2e2fe4f65301",
-        "platform-core-initial-spec-commit:2e155bb7be49b9e745f94cdc8b40fd831e052af7",
-        "platform-core-initial-spec-blob:b4220a6ac80b210cc8a969925ea0b180405486d7",
-        "platform-core-final-source-compliance-commit:de2460e31dfa5d47df0a1993580ef11a1cfa1378",
-        "platform-core-final-spec-blob:438b64863eab0cc6fc746954cff8513de2fdd247",
-        "desktop-initial-bookkeeping-commit:a23452a00e9c4d395f3f97bf74ec27fd82747fb2",
-        "fixed-U:Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26",
-        "platform-core-round96-spec-first-commit:cb9b53d2574c012fe90e03df81b8b1336859ee2b",
-        "platform-core-round96-implementation-commit:1c315c155eb0ba0c49871c08547bb7e67977aa87",
-        "platform-core-round96-final-source-compliance-commit:ef4edd0df2a9b74e3ac2cc3e088493e08ef75432",
-        "platform-core-round96-runtime-blob:871ebe40ecbd284828b0c16ab64547eefeb3c3a3",
-        "desktop-round96-production-mirror-commit:c7fa1f1b373d34d07eedc1aa4b407bd032b0070d",
-        "desktop-round96-runtime-blob:871ebe40ecbd284828b0c16ab64547eefeb3c3a3",
         "fixed-U:Telegram/SourceFiles/core/application.cpp@7172206f5c1e540e19c90798e9a9e5721276cc53",
-        "fixed-U:Telegram/SourceFiles/boxes/connection_box.cpp@e9fa8a1d8f727042e4cadd632182eee5259f80c2",
-        "platform-core-round97-spec-first-commit:206fa124fec1512bba4fca7f19602a1b691732b2",
-        "platform-core-round97-final-source-compliance-commit:8064784fcbc22b54d5aeb47f186e9e89f7fbaef2",
-        "desktop-round97-production-commit:b1b5dd027497c39a355e9e64e64de0b6c190fd66",
-        "desktop-round97-app-host-blob:5b74723e12884ea218e1f9de634b88d4357b2099",
-        "desktop-round97-telegram-adapter-blob:e4410652fe500144d93ff227b10d149d2c0fc2c7",
-        "platform-core-round98-spec-first-commit:c90e9150914f741b2ec3fbf81011da4005688d61",
-        "desktop-round98-production-commit:b6f491d2364684111ebfc8ddbdae67ca3adaff6b",
-        "desktop-round98-app-host-blob:3078e50bbfa0583383b3449818a79ba8465b064a"
+        "fixed-U:Telegram/SourceFiles/main/main_account.cpp@2721c7ac12effe454d398610d26d638fadaa1f68",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087",
+        "fixed-U:Telegram/SourceFiles/mtproto/session.cpp@40d7048c3057c7c5523b786048670524c8bebe4c",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_resolving.cpp@d319e632655bbfe28956c8ced981a5cdf0299d1d",
+        "fixed-U:Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+        "fixed-U:Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp@f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+        "platform-core-round100-spec-commit:828fbc38ced6a78bdcc5f1cf4f224dc598a918fa",
+        "platform-core-round100-implementation-commit:2a4e9542f8b102eeaac8cc28f123e1a62648235d",
+        "platform-core-round100-final-source-compliance-commit:f3075538f761ca0bf8a008c33ae7e3f25a1c66a3",
+        "platform-core-round100-spec-blob:6a80b94b2147a41a6815b5700c2856db4ed5e79d",
+        "platform-core-round100-protocol-blob:98e65d426242f9ff1ca0a3a2213dae1e41eca824",
+        "platform-core-round100-resolver-blob:ef6b36c26257ee375df0a690e63dae814656e545",
+        "platform-core-round100-network-blob:cf1247b3ec2486ce5e05f5a08ceb30b1e460e1db",
+        "platform-core-round100-runtime-blob:b605b13c110b545d0c703b7fae1cc27d3d10afab",
+        "desktop-round100-production-commit:5d816f224c21019f75725b56b6f8c759871f5295",
+        "desktop-round100-telegram-adapter-blob:8df8e7286f161452336727d7e5750e45b67c413f",
+        "desktop-round100-app-host-blob:aa10fcfde5f47fc4b56223ff466cd9f128300b33",
+        "desktop-round100-provider-protocol-blob:98e65d426242f9ff1ca0a3a2213dae1e41eca824",
+        "desktop-round100-provider-resolver-blob:ef6b36c26257ee375df0a690e63dae814656e545",
+        "desktop-round100-provider-network-blob:cf1247b3ec2486ce5e05f5a08ceb30b1e460e1db",
+        "desktop-round100-provider-runtime-blob:b605b13c110b545d0c703b7fae1cc27d3d10afab"
       ],
       "test_evidence": [
-        "Authored source-level contract vectors are recorded in platform-core docs/specs/telegram-proxy-non-ui-consumers-boundary.md@b4220a6ac80b210cc8a969925ea0b180405486d7; not executed.",
-        "No fake executable contract was added against a nonexistent canonical owner/shipping consumer.",
-        "Round127 RuntimeClient suppression contracts are authored but not executed; end-to-end Settings publication remains unavailable and is not fabricated.",
-        "Round128 publisher/lease contracts are authored but not executed; RuntimeClient suppression contracts from round127 also remain not-run."
+        "Round100 platform/desktop source contracts were authored next to protocol/network/runtime/AppHost/TelegramClientLease production owners and were not executed.",
+        "Network contracts cover Enabled+missing selection and unsupported SOCKS5/HTTP/Web fail-closed behavior.",
+        "Resolver contracts cover normalized direct no-proxy request shape and transient successful-IP promotion.",
+        "Runtime contracts cover transient secret-free carrier result projection and session invalidation on carrier change.",
+        "AppHost/lease contracts cover source-neutral carrier DTO derivation, mode/selected/IPv6 publication surface and exact request shape."
       ],
-      "target_commit": "b6f491d2364684111ebfc8ddbdae67ca3adaff6b",
+      "target_commit": "5d816f224c21019f75725b56b6f8c759871f5295",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -29637,9 +29653,7 @@
       ],
       "duplicate_root_check": "No second Settings, proxy, call, network, account, conversation, UI root, sidecar or subprocess is introduced.",
       "novel_capability": false,
-      "owner_absence_evidence": [
-        "Desktop tracked tree contains no shipping call/proxy consumer; telegram-network/runtime contain no proxy/config-loader/custom-resolution symbols at the reviewed blobs."
-      ],
+      "owner_absence_evidence": [],
       "minimal_owner_adr": null,
       "ui_entry_class": "Not applicable",
       "primary_navigation_target": "Existing Settings/Messages surfaces; unchanged",
@@ -29687,22 +29701,37 @@
       ],
       "invariant_ids": [
         "INV-TDRP-PROXY-MTPROTO-TRANSIENT-DNS-001",
-        "INV-TDRP-PROXY-MTPROTO-SETTINGS-NONOWNER-001"
+        "INV-TDRP-PROXY-MTPROTO-SETTINGS-NONOWNER-001",
+        "INV-TDRP-PROXY-MTPROTO-FAIL-CLOSED-001",
+        "INV-TDRP-PROXY-MTPROTO-SESSION-FENCE-001",
+        "INV-TDRP-PROXY-MTPROTO-SECRET-NO-OUTPUT-001"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "UNIT-TDRP-PROXY-MTPROTO-SECRET-DECODE-001",
+        "UNIT-TDRP-PROXY-MTPROTO-RESOLVER-PROMOTE-001"
+      ],
       "property_state_case_ids": [],
       "contract_case_ids": [
-        "CONTRACT-TDRP-PROXY-NON-UI-CONSUMERS-001"
+        "CONTRACT-TDRP-PROXY-NON-UI-CONSUMERS-001",
+        "CONTRACT-TDRP-PROXY-MTPROTO-CARRIER-001"
       ],
-      "integration_case_ids": [],
+      "integration_case_ids": [
+        "INT-TDRP-PROXY-MTPROTO-PUBLICATION-001"
+      ],
       "functional_e2e_case_ids": [],
-      "temporal_case_ids": [],
+      "temporal_case_ids": [
+        "TEMPORAL-TDRP-PROXY-MTPROTO-ROUTE-CHANGE-001"
+      ],
       "ui_functional_case_ids": [],
       "visual_case_ids": [],
       "accessibility_case_ids": [],
-      "fault_recovery_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PROXY-MTPROTO-UNSUPPORTED-FAIL-CLOSED-001"
+      ],
       "performance_case_ids": [],
-      "security_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PROXY-MTPROTO-SECRET-NO-OUTPUT-001"
+      ],
       "soak_case_ids": [],
       "exploratory_charter_ids": [],
       "regression_ids": [],
@@ -29723,7 +29752,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round98/source evidence round129. Canonical typed proxy state is now implemented in ProductSettingsOwner v2 and the existing special-config consumer receives only mode-derived proxyEnabled. Selected-proxy/custom-resolution carrier consumption remains intentionally unwired; validation_status=not-run; accepted=false.",
+      "notes": "Task round100/source evidence round131. Canonical ProductSettingsOwner v2 now publishes restored and post-persistence mode/selected/IPv6 carrier state through the existing process-lifetime TelegramClientLease into the existing RuntimeClient/telegram-network owners. MTProto selected-proxy plus custom-resolution consumption is implemented; resolver cache/order/expiry remain transient; projection changes fence live sessions/requests while preserving reusable auth material. Enabled SOCKS5/HTTP/Web fail closed and remain separate carrier responsibilities. Contracts are authored but not run; validation_status=not-run; accepted=false.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
