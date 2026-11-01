@@ -29870,6 +29870,8 @@
         "DomainResolver::requestFinished",
         "ConcatenateDnsTxtFields",
         "ParseFireStoreResponse",
+        "ParseHttpDate",
+        "SpecialConfigRequest::handleHeaderUnixtime",
         "SpecialConfigRequest::requestFinished(Type::Mozilla/Google/FireStore)"
       ],
       "capability_ids": [
@@ -29880,7 +29882,7 @@
         "future telegram-network special-config/domain-resolution carrier scheduler"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round116-doh-special-config-response-normalization-20261101.md",
-      "behavior_contract": "Fixed-U Google/Mozilla DoH responses share a JSON Answer parser that skips malformed entries, optionally filters source-rounded numeric DNS type, preserves accepted data order and defaults missing/non-number TTL to zero. Domain-resolution normalization computes a 10s minimum / 300s maximum effective TTL. Special-config DoH keeps TXT type 16, reproduces QMultiMap ordering by descending QString UTF-16 length with later equal-length insertion first, concatenates and projects QString::toLatin1 bytes. Firestore projects fields.data.stringValue with the same Latin-1 replacement semantics. Structural failures normalize to empty output.",
+      "behavior_contract": "Fixed-U Google/Mozilla DoH responses share a JSON Answer parser that skips malformed entries, optionally filters source-rounded numeric DNS type, preserves accepted data order and defaults missing/non-number TTL to zero. Domain-resolution normalization computes a 10s minimum / 300s maximum effective TTL. Special-config DoH keeps TXT type 16, reproduces QMultiMap ordering by descending QString UTF-16 length with later equal-length insertion first, concatenates and projects QString::toLatin1 bytes. Firestore projects fields.data.stringValue with the same Latin-1 replacement semantics. Structural failures normalize to empty output. Fixed-U ParseHttpDate separately recognizes the source www, dd Mmm yyyy hh:mm:ss GMT shape, validates civil date/time/months and returns UTC time; only the subsequent global unixtime update remains a side effect.",
       "state_machine": "carrier response bytes -> pure JSON/field validation -> typed DNS entries or compact special-config bytes -> caller-owned cache/payload decoder; no I/O, timer, proxy, clock, cache mutation or DC/session state",
       "side_effects": [
         "No runtime side effects; pure deterministic response transformation only.",
@@ -29895,16 +29897,20 @@
         "missing/non-number TTL defaults to zero",
         "malformed/missing/wrong-type Firestore fields.data.stringValue",
         "TXT equal-length ordering diverges from QMultiMap insertion semantics",
-        "Unicode-to-Latin1 projection diverges from QString UTF-16 replacement behavior"
+        "Unicode-to-Latin1 projection diverges from QString UTF-16 replacement behavior",
+        "malformed HTTP Date shape",
+        "unsupported month abbreviation",
+        "invalid civil date or time in HTTP Date"
       ],
       "ui_disposition": "No UI responsibility.",
       "non_ui_responsibilities": [
         "DoH Answer JSON parsing/filtering",
         "DNS data/TTL normalization",
         "special-config TXT ordering/concatenation/Latin-1 projection",
-        "Firestore nested response extraction/Latin-1 projection"
+        "Firestore nested response extraction/Latin-1 projection",
+        "HTTP Date text parsing to validated UTC Unix seconds without global clock mutation"
       ],
-      "platform_delta": "Implemented as a pure source-neutral codec in existing telegram-protocol and mirrored byte-identically to desktop. No network scheduler, manifest, dependency or lock delta.",
+      "platform_delta": "Implemented as a pure source-neutral codec in existing telegram-protocol and mirrored byte-identically to desktop, including HTTP Date parsing. No network scheduler, manifest, dependency or lock delta.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "bhrumom/fabushi-platform-core:native/telegram-protocol"
@@ -29932,7 +29938,8 @@
         "parse_dns_response",
         "normalize_dns_response",
         "SpecialConfigResponseKind",
-        "normalize_special_config_response"
+        "normalize_special_config_response",
+        "parse_http_date_unix_seconds"
       ],
       "target_language": "Rust",
       "language_rationale": "The responsibility is deterministic source-neutral response decoding and normalization; Rust reuses the existing protocol JSON dependency and avoids retaining Qt/C++ or adding a parallel carrier.",
@@ -29972,13 +29979,23 @@
         "desktop-authored-contract-blob:259f457eeaacce0ed09f1acf1f0fd821a0269733",
         "platform-core-final-source-compliance-commit:2585e75e6586480378f07d9daab39889e4111339",
         "platform-core-final-spec-blob:63f2b715e733cc1fe851b151fdf83355e3f2582b",
-        "desktop-initial-bookkeeping-commit:4f91cd629df720e79743885807c5da7db97042c8"
+        "desktop-initial-bookkeeping-commit:4f91cd629df720e79743885807c5da7db97042c8",
+        "platform-core-http-date-spec-amendment-commit:fd34ce2eff1cbc5e626aee71dd4f63415e09ff90",
+        "platform-core-http-date-implementation-commit:1d5d02d02abea178c9f91c37e41d24bee3171eca",
+        "platform-core-response-normalization-http-date-blob:8d2d70ec883ea8969be68b280e994e2bb35baf71",
+        "platform-core-lib-http-date-blob:8ab2cd39719dbeb3725c1a52c8632b6f97cfdf0f",
+        "platform-core-authored-contract-http-date-blob:7e2536f7b4bcd13f895ef12993aea2ecebb74ef1",
+        "desktop-http-date-source-contract-sync-commit:bcb34c647362932be0c98e7d7caef918991bf11f",
+        "desktop-response-normalization-http-date-blob:8d2d70ec883ea8969be68b280e994e2bb35baf71",
+        "desktop-lib-http-date-blob:8ab2cd39719dbeb3725c1a52c8632b6f97cfdf0f",
+        "desktop-authored-contract-http-date-blob:7e2536f7b4bcd13f895ef12993aea2ecebb74ef1"
       ],
       "test_evidence": [
         "Internal response_normalization.rs contracts cover DoH structural/filter/order/TTL behavior, TXT QMultiMap ordering/Latin-1 projection, and Firestore extraction; not executed.",
-        "Public protocol_contract.rs contracts cover pure DNS normalization and compact special-config response adapters; not executed."
+        "Public protocol_contract.rs contracts cover pure DNS normalization and compact special-config response adapters; not executed.",
+        "Internal/public authored-only HTTP Date contracts cover valid timestamp, unanchored source match, leap-day validity, invalid month/date/time/year; not executed."
       ],
-      "target_commit": "4070ca2be5db0d22bd54c27857ccf84748ce8763",
+      "target_commit": "bcb34c647362932be0c98e7d7caef918991bf11f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -30052,13 +30069,15 @@
         "INV-TDRP-DNS-TTL-BOUND-001",
         "INV-TDRP-SPECIAL-CONFIG-TXT-ORDER-001",
         "INV-TDRP-SPECIAL-CONFIG-FIRESTORE-001",
-        "INV-TDRP-RESPONSE-NO-SCHEDULER-001"
+        "INV-TDRP-RESPONSE-NO-SCHEDULER-001",
+        "INV-TDRP-HTTP-DATE-PARSE-NO-CLOCK-MUTATION-001"
       ],
       "unit_case_ids": [
         "UNIT-TDRP-DNS-RESPONSE-PARSE-001",
         "UNIT-TDRP-DNS-TTL-NORMALIZE-001",
         "UNIT-TDRP-SPECIAL-CONFIG-TXT-ADAPTER-001",
-        "UNIT-TDRP-SPECIAL-CONFIG-FIRESTORE-ADAPTER-001"
+        "UNIT-TDRP-SPECIAL-CONFIG-FIRESTORE-ADAPTER-001",
+        "UNIT-TDRP-HTTP-DATE-PARSE-001"
       ],
       "property_state_case_ids": [],
       "contract_case_ids": [
@@ -30080,7 +30099,8 @@
       "soak_case_ids": [],
       "exploratory_charter_ids": [],
       "regression_ids": [
-        "REG-TDRP-DNS-TXT-EQUAL-LENGTH-ORDER-001"
+        "REG-TDRP-DNS-TXT-EQUAL-LENGTH-ORDER-001",
+        "REG-TDRP-HTTP-DATE-INVALID-CIVIL-001"
       ],
       "release_gate_ids": [
         "G-TRACEABILITY",
@@ -30101,7 +30121,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U mtproto_domain_resolver.cpp/header plus special_config_request.cpp. Implementation is source-neutral Rust; no upstream C++ copied.",
-      "notes": "Task round85/source evidence round116. Pure Google/Mozilla DoH and Firestore response parsing/normalization is implemented in the existing telegram-protocol codec boundary and mirrored byte-identically. Actual carrier scheduling/HTTP Date mutation/temporary-DC/dc-options application remains separately mapped/pending. Contracts authored only; validation_status=not-run; accepted=false. Final platform source-level compliance is 2585e75e6586480378f07d9daab39889e4111339 / spec blob 63f2b715e733cc1fe851b151fdf83355e3f2582b.",
+      "notes": "Task round85/source evidence round116. Pure Google/Mozilla DoH, Firestore, DNS TTL/TXT and HTTP Date response parsing/normalization is implemented in the existing telegram-protocol codec boundary and mirrored byte-identically. Actual carrier scheduling/global HTTP Date mutation/temporary-DC/dc-options application remains separately mapped/pending. Contracts authored only; validation_status=not-run; accepted=false. R12 HTTP Date parsing was added after final source reread.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,
@@ -30138,7 +30158,7 @@
         "DcOptions"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round115-special-config-payload-boundary-20261101.md",
-      "behavior_contract": "Issue fixed-U direct no-proxy Google/Mozilla DoH and Firestore carrier requests, apply staggered racing/cancellation, update source HTTP-derived time, then use normalized compact payload output to drive temporary-DC help.getConfig and runtime dc_options replacement without creating a second settings/network/DC owner. Pure response parsing/normalization is separately implemented in TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001.",
+      "behavior_contract": "Issue fixed-U direct no-proxy Google/Mozilla DoH and Firestore carrier requests, apply staggered racing/cancellation, use pure normalized body/header outputs, mutate the global HTTP-derived time only after a valid parsed Date header, then drive temporary-DC help.getConfig and runtime dc_options replacement without creating a second settings/network/DC owner. Pure body/Date parsing is separately implemented in TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001.",
       "state_machine": "eligible config refresh -> staggered direct web attempts -> first successful compact payload -> selected endpoint -> transient temporary DC option -> temporary help.getConfig request -> dc_options replacement -> terminate/kill temporary session; timeout/error -> retry/terminate",
       "side_effects": [
         "No production delta in this round; carrier/scheduler/application behavior is recorded as an explicit blocker."
@@ -30152,12 +30172,12 @@
       "ui_disposition": "No new UI root. Existing unified Settings remains the future projection/edit surface.",
       "non_ui_responsibilities": [
         "Direct no-proxy DoH/Firestore request construction and staggered acquisition racing",
-        "HTTP Date global-time update",
+        "Global HTTP-derived time mutation after pure Date parsing",
         "Temporary DC endpoint insertion and session lifecycle",
         "help.getConfig request/cancel/timeout",
         "dc_options replacement/change notification"
       ],
-      "platform_delta": "No carrier/application production delta. Pure DoH/Firestore response parsing/normalization is now separately implemented in telegram-protocol; current telegram-network/runtime still has no shipping special-config acquisition/temporary-DC scheduler/application chain.",
+      "platform_delta": "No carrier/application production delta. Pure DoH/Firestore/DNS/HTTP-Date parsing and normalization is separately implemented in telegram-protocol; current telegram-network/runtime still has no shipping special-config acquisition/temporary-DC scheduler/application chain.",
       "existing_owner_candidates": [
         "bhrumom/fabushi-platform-core:native/telegram-network",
         "existing telegram-runtime/session owner",
@@ -30218,7 +30238,9 @@
         "platform-core-response-normalization-commit:3d27d1aa1272bb15d39c1e2031872a1f2266c62e",
         "desktop-response-normalization-sync-commit:4070ca2be5db0d22bd54c27857ccf84748ce8763",
         "platform-core-final-response-normalization-compliance-commit:2585e75e6586480378f07d9daab39889e4111339",
-        "platform-core-final-response-normalization-spec-blob:63f2b715e733cc1fe851b151fdf83355e3f2582b"
+        "platform-core-final-response-normalization-spec-blob:63f2b715e733cc1fe851b151fdf83355e3f2582b",
+        "platform-core-http-date-response-parser-commit:1d5d02d02abea178c9f91c37e41d24bee3171eca",
+        "desktop-http-date-response-parser-sync-commit:bcb34c647362932be0c98e7d7caef918991bf11f"
       ],
       "test_evidence": [
         "Carrier/application contracts are documented in the durable spec; no fake executable test was added against a nonexistent shipping scheduler."
@@ -30339,7 +30361,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087 plus adjacent proxy/settings/network source listed in round114 evidence. No upstream C++ copied.",
-      "notes": "Task round85/source evidence round116. Carrier/application remains mapped/pending with no production delta after extracting pure response parsing/normalization into TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001. Remaining HTTP acquisition/racing, HTTP Date mutation, temporary-DC help.getConfig and DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Final response-normalization source compliance is platform-core 2585e75e6586480378f07d9daab39889e4111339 / spec blob 63f2b715e733cc1fe851b151fdf83355e3f2582b. Stage-A executable validation remains not-run.",
+      "notes": "Task round85/source evidence round116. Carrier/application remains mapped/pending with no production delta after extracting pure body and HTTP Date parsing/normalization into TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001. Remaining HTTP acquisition/racing, global time mutation, temporary-DC help.getConfig and DcOptions application depend on a shipping network/runtime scheduler absent at the reviewed checkpoints. Stage-A executable validation remains not-run.",
       "test_execution_evidence": [],
       "validation_status": "not-run",
       "accepted": false,

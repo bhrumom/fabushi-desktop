@@ -48,3 +48,14 @@ Platform-core final source-level compliance is `2585e75e6586480378f07d9daab39889
 Coverage remains `source_entries_total=16202, responsibilities_total=119, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+#### Round 116 HTTP Date parser refinement
+
+Final fixed-U reread of `special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88` identified one additional pure response responsibility inside `handleHeaderUnixtime`: `ParseHttpDate` itself is deterministic parsing, while `base::unixtime::http_update` is the side effect that must remain in the pending carrier/runtime lifecycle.
+
+The durable spec was amended first at platform commit `fd34ce2eff1cbc5e626aee71dd4f63415e09ff90` / spec blob `0b813e499c4dcb7566a5a0f17a228ec824489ca9`. Platform implementation commit `1d5d02d02abea178c9f91c37e41d24bee3171eca` adds `parse_http_date_unix_seconds` without a regex/time dependency: it reproduces the source weekday/date/month/year/time/GMT shape, source month set, civil-date/time validity and unanchored match behavior, then returns UTC Unix seconds without mutating a clock. New platform blobs are response module `8d2d70ec883ea8969be68b280e994e2bb35baf71`, lib `8ab2cd39719dbeb3725c1a52c8632b6f97cfdf0f`, authored contract `7e2536f7b4bcd13f895ef12993aea2ecebb74ef1`. Desktop mirror commit `bcb34c647362932be0c98e7d7caef918991bf11f` has the same three blob identities.
+
+The same `TDRP-R9-MTPROTO-RESPONSE-NORMALIZATION-001` row remains `implemented / rewritten / validation_status=not-run / accepted=false`; no second responsibility or owner was created. The carrier row remains pending only for actual requests/racing, global HTTP time mutation, temporary-DC lifecycle and dc-options application.
+
+No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
