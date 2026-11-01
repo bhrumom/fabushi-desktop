@@ -296,11 +296,13 @@ all checked inside the SQLite transaction before archive state changes.
 ## Agent-only transcript mutation boundary — 2026-11-01
 
 The remaining transcript mutation producers were rechecked against the live
-Rust source. `WidgetResponses` (`widget_responses.rs`) and shared-room
-restamp paths (`shared_rooms.rs`) still call the generic agent-scoped update
-boundary and do not yet carry a canonical `session_key`. The generic delete
-and conversation-clear wrappers currently have no production caller in the
-Host source.
+Rust source. `WidgetResponses` now preserves and consumes `sessionKey`
+provenance for interactive updates to bound cards; cards without provenance
+remain on its generic agent-scoped compatibility path. Its stale-card sweep
+still uses a separate direct DB helper and remains pending for the same atomic
+session check. Shared-room restamp paths (`shared_rooms.rs`) still do not carry
+a canonical `session_key`. The generic delete and conversation-clear wrappers
+currently have no production caller in the Host source.
 
 The box-request path is now split by durable provenance: new Runner-created
 entries retain their canonical `sessionKey`, and

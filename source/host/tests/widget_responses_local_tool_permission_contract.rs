@@ -86,6 +86,59 @@ fn stale_permission_card_is_retired_durably_and_second_resolution_is_idempotent(
 }
 
 #[test]
+fn session_bound_widget_interaction_rejects_archived_owner_without_partial_update() {
+    let root = temp_root("session-bound-archive");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let record = workers
+        .materialize_new_session(None, "user", None)
+        .expect("session");
+    let current = workers
+        .read_session_work_admission(&record.id)
+        .expect("admission")
+        .expect("main admission");
+    workers
+        .append_agent_transcript_entries(
+            &record.id,
+            &[serde_json::json!({
+                "id": "bound-widget",
+                "kind": "send-message",
+                "sessionKey": current.session_key.clone(),
+                "message": {
+                    "type": "widget",
+                    "widget": {"prompt": "Confirm", "options": []}
+                }
+            })],
+        )
+        .expect("widget");
+    workers
+        .transition_session_work_archive(
+            &record.id,
+            &current.session_key,
+            &current.session_id,
+            Some(&current.lifecycle_revision),
+            true,
+            Some("human-1"),
+            Some("review"),
+            100.0,
+        )
+        .expect("archive");
+    let widgets = WidgetResponses::new(Arc::clone(&workers));
+    let error = widgets
+        .dismiss_widget("bound-widget", &record.id)
+        .expect_err("archived session must reject bound widget update");
+    assert!(error.contains("session is not admitted"));
+    let entry = workers
+        .read_agent_transcript_entries(&record.id)
+        .expect("transcript")
+        .into_iter()
+        .find(|entry| entry["id"] == "bound-widget")
+        .expect("bound widget");
+    assert!(entry.get("widgetDismissed").is_none());
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn boot_sweep_expires_only_cards_pending_before_cutoff_across_agents() {
     let root = temp_root("sweep");
     let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));

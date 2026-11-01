@@ -183,7 +183,9 @@ continuation from leaving a stale active-work fence after Runner ownership has
 ended.
 
 The remaining agent-only transcript mutation producers were rechecked against
-the live source. Widget-response updates and shared-room restamps still carry
+the live source. Interactive WidgetResponses updates now consume a persisted
+`sessionKey` when a card has one, while stale-card sweep remains a direct DB
+helper pending the same atomic session check. Shared-room restamps still carry
 only `agent_id`, while new box-request entries retain `sessionKey` and settle
 through the session-admitted owner when that provenance is present. Auto-review
 creation and settlement already use the event-owned session key when bound;

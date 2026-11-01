@@ -487,7 +487,7 @@ impl AutoReviewService {
 
         match event {
             SandAutoReviewEvent::Created(_) => {
-                let entry = json!({
+                let mut entry = json!({
                     "id": approval.id,
                     "kind": "send-message",
                     "message": {
@@ -496,6 +496,9 @@ impl AutoReviewService {
                     },
                     "timestampMs": now_ms(),
                 });
+                if let Some(session_key) = approval.session_key.as_deref() {
+                    entry["sessionKey"] = Value::String(session_key.to_string());
+                }
                 let result = if let Some(session_key) = approval.session_key.as_deref() {
                     self.sessions
                         .append_agent_transcript_entries_if_session_admitted(

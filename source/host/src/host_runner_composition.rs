@@ -533,7 +533,7 @@ fn persist_local_permission_event(
             if let Some(description) = event.request.description.as_deref() {
                 ask["description"] = Value::String(description.to_string());
             }
-            let entry = json!({
+            let mut entry = json!({
                 "id": event.request.id,
                 "kind": "send-message",
                 "message": {
@@ -542,6 +542,9 @@ fn persist_local_permission_event(
                 },
                 "timestampMs": now_ms(),
             });
+            if let Some(session_key) = event.request.session_key.as_deref() {
+                entry["sessionKey"] = Value::String(session_key.to_string());
+            }
             if let Some(session_key) = event.request.session_key.as_deref() {
                 sessions
                     .append_agent_transcript_entries_if_session_admitted(

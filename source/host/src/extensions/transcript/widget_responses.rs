@@ -142,9 +142,27 @@ impl WidgetResponses {
         entry_id: &str,
         next: Value,
     ) -> Result<Option<Value>, String> {
-        let updated = self
-            .workers
-            .update_agent_transcript_entry(agent_id, entry_id, &next)?;
+        let session_key = self
+            .find_entry(agent_id, entry_id)?
+            .and_then(|entry| {
+                entry
+                    .get("sessionKey")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+            });
+        let updated = if let Some(session_key) = session_key {
+            self.workers.update_agent_transcript_entry_if_session_admitted(
+                agent_id,
+                &session_key,
+                entry_id,
+                &next,
+            )?
+        } else {
+            self.workers
+                .update_agent_transcript_entry(agent_id, entry_id, &next)?
+        };
         if let Some(updated) = updated.as_ref() {
             self.emit_updated(agent_id, updated);
         }
