@@ -1633,7 +1633,11 @@ impl ProductionSessionWorkers {
             let expected_revision = record.lifecycle_revision.clone();
             record.deletion_pending = true;
             if owner
-                .compare_and_set_session_work_admission(Some(&expected_revision), &record)
+                .transition_session_deletion_pending(
+                    Some(&expected_revision),
+                    false,
+                    &record,
+                )
                 .map_err(|error| error.to_string())?
             {
                 Ok(())
@@ -1677,7 +1681,7 @@ impl ProductionSessionWorkers {
         let expected_revision = record.lifecycle_revision.clone();
         record.deletion_pending = false;
         if owner
-            .compare_and_set_session_work_admission(Some(&expected_revision), &record)
+            .clear_session_deletion_pending(&expected_revision, &record)
             .map_err(|error| error.to_string())?
         {
             Ok(())
@@ -2113,6 +2117,7 @@ impl ProductionSessionWorkers {
         if record.lifecycle_revision != state.lifecycle_revision
             || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
             || record.provider_review_phase.as_deref() != Some("pending")
+            || record.deletion_pending
             || review.id != state.review_id
             || review.provider != provider.trim()
             || review.model != model.trim()

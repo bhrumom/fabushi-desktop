@@ -467,6 +467,55 @@ impl SandAgentDb {
         expected_lifecycle_revision: Option<&str>,
         next: &SessionWorkAdmissionRecord,
     ) -> Result<bool, AgentDbProjectionError> {
+        self.compare_and_set_session_work_admission_with_deletion_transition(
+            expected_lifecycle_revision,
+            next,
+            Some(next.deletion_pending),
+        )
+    }
+
+    /// Clear deletion custody only when the durable record still carries the
+    /// deletion fence observed by the deletion owner. Ordinary admission CAS
+    /// operations preserve the current fence and cannot clear it implicitly.
+    pub fn clear_session_deletion_pending(
+        &self,
+        expected_lifecycle_revision: &str,
+        next: &SessionWorkAdmissionRecord,
+    ) -> Result<bool, AgentDbProjectionError> {
+        self.transition_session_deletion_pending(
+            Some(expected_lifecycle_revision),
+            true,
+            next,
+        )
+    }
+
+    /// Transition deletion custody only when the durable record still carries
+    /// the expected prior fence value. This is the sole owner operation that
+    /// may change `deletion_pending` across a CAS.
+    pub fn transition_session_deletion_pending(
+        &self,
+        expected_lifecycle_revision: Option<&str>,
+        expected_current_deletion_pending: bool,
+        next: &SessionWorkAdmissionRecord,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if next.deletion_pending == expected_current_deletion_pending {
+            return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                "deletion custody transition must change deletion_pending".into(),
+            ));
+        }
+        self.compare_and_set_session_work_admission_with_deletion_transition(
+            expected_lifecycle_revision,
+            next,
+            Some(expected_current_deletion_pending),
+        )
+    }
+
+    fn compare_and_set_session_work_admission_with_deletion_transition(
+        &self,
+        expected_lifecycle_revision: Option<&str>,
+        next: &SessionWorkAdmissionRecord,
+        expected_current_deletion_pending: Option<bool>,
+    ) -> Result<bool, AgentDbProjectionError> {
         if next.session_key.trim().is_empty()
             || next.session_id.trim().is_empty()
             || next.lifecycle_revision.trim().is_empty()
@@ -497,6 +546,8 @@ impl SandAgentDb {
                     record.lifecycle_revision == expected
                         && record.session_key == next.session_key
                         && record.session_id == next.session_id
+                        && expected_current_deletion_pending
+                            .map_or(true, |expected| record.deletion_pending == expected)
                 }),
             _ => false,
         };

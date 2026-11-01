@@ -235,6 +235,12 @@ must not be recorded as closing the deletion race. Closure requires a
 session-owner serialization or an explicit, verified rollback/unknown-outcome
 contract for the complete mutation.
 
+The owner-local admission CAS preserves `deletion_pending` as a compare
+predicate for ordinary mutations. Clearing deletion custody is a separate
+owner operation that succeeds only when the expected lifecycle revision and
+the currently stored deletion fence both still match; ordinary work or review
+CAS operations cannot implicitly clear a fence that appeared after their read.
+
 ## Release, migration, rollback, and observability
 
 The migration must be backward-compatible for existing agent DBs and preserve

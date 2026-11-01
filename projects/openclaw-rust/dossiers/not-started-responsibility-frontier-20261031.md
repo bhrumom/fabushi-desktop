@@ -317,6 +317,18 @@ cover refusal recording plus release and settlement rejection while fenced.
 This remains a bounded write-edge correction and does not change the
 responsibility's `not-started/not-wired/not-run/pending` status.
 
+### 2026-11-01 admission-CAS deletion preservation correction
+
+The live owner recheck found a broader race beneath the individual review
+guards: the generic `compare_and_set_session_work_admission` method re-read
+the current record only by lifecycle revision/session identity, so a mutation
+could overwrite a newly published `deletion_pending` fence without advancing
+that revision. The generic CAS now requires the deletion flag to remain equal
+to the current value. Deletion cleanup uses a dedicated clear operation that
+requires the observed current flag to be true before transitioning it to false.
+This closes the owner-local fence-preservation edge while leaving the complete
+session work-admission responsibility pending.
+
 ## Evidence boundary
 
 These are implementation gaps, not acceptance approvals. No row is promoted by the

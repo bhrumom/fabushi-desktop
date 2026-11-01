@@ -315,13 +315,18 @@ fn session_work_admission_deletion_fence_migrates_and_persists() {
     let mut fenced = migrated.clone();
     fenced.deletion_pending = true;
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-1"), &fenced)
+        .transition_session_deletion_pending(Some("revision-1"), false, &fenced)
         .expect("publish deletion fence"));
     assert!(owner
         .read_session_work_admission()
         .expect("read deletion fence")
         .expect("fenced admission exists")
         .deletion_pending);
+    let mut ordinary_clear = fenced.clone();
+    ordinary_clear.deletion_pending = false;
+    assert!(!owner
+        .compare_and_set_session_work_admission(Some("revision-1"), &ordinary_clear)
+        .expect("ordinary CAS cannot clear deletion fence"));
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);
@@ -371,13 +376,13 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
     let mut deletion_fenced = admission.clone();
     deletion_fenced.deletion_pending = true;
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-1"), &deletion_fenced)
+        .transition_session_deletion_pending(Some("revision-1"), false, &deletion_fenced)
         .expect("publish deletion fence"));
     assert!(owner
         .record_session_provider_review("revision-1", &review)
         .is_err());
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-1"), &admission)
+        .clear_session_deletion_pending("revision-1", &admission)
         .expect("clear deletion fence"));
     assert_eq!(owner
         .record_session_provider_review("revision-1", &review)
@@ -464,7 +469,11 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
     let mut deletion_fenced = admission.clone();
     deletion_fenced.deletion_pending = true;
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-settle"), &deletion_fenced)
+        .transition_session_deletion_pending(
+            Some("revision-settle"),
+            false,
+            &deletion_fenced,
+        )
         .expect("publish deletion fence"));
     assert!(!owner
         .release_provider_review_continuation("revision-settle", "continuation-run")
@@ -477,7 +486,7 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
         )
         .expect("fenced settlement is explicit"));
     assert!(owner
-        .compare_and_set_session_work_admission(Some("revision-settle"), &admission)
+        .clear_session_deletion_pending("revision-settle", &admission)
         .expect("clear deletion fence"));
     assert!(!owner
         .settle_provider_review_continuation(
@@ -1014,7 +1023,11 @@ fn spend_guard_card_owner_transaction_rejects_durable_deletion_fence() {
     let mut fenced = admission.clone();
     fenced.deletion_pending = true;
     assert!(owner
-        .compare_and_set_session_work_admission(Some(&admission.lifecycle_revision), &fenced)
+        .transition_session_deletion_pending(
+            Some(&admission.lifecycle_revision),
+            false,
+            &fenced,
+        )
         .expect("publish deletion fence"));
     let error = owner
         .append_spend_guard_card_if_session_admitted(

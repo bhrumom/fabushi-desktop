@@ -222,6 +222,12 @@ CAS semantics remain unchanged. This is a bounded deletion write-edge
 correction, not completion of native continuation identity or the full
 detached lifecycle.
 
+The owner-local admission CAS now preserves the current `deletion_pending`
+value as part of its compare predicate. Ordinary work/review/media mutations
+cannot clear a fence that appeared after their read; only the deletion owner's
+dedicated clear operation may transition `true` to `false`, and it requires
+the fence to still be present at the CAS edge.
+
 The receipt transaction also rolls back the inserted receipt when its
 post-insert lifecycle compare-and-set loses a race. This preserves the
 `RejectedStale` outcome without leaving an orphan receipt that could make a
