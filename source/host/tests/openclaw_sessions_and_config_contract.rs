@@ -680,6 +680,42 @@ fn test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails() {
 }
 
 #[test]
+fn test_session_metadata_owners_roll_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let owners = [
+        (
+            "pub fn write_kv(",
+            "pub fn write_session_kv_if_generation(",
+        ),
+        (
+            "pub fn write_session_kv_if_generation(",
+            "pub fn delete_kv(",
+        ),
+        ("pub fn delete_kv(", "pub fn read_session_work_admission("),
+        (
+            "pub fn reset_session_work_admission_for_clone(",
+            "pub fn compare_and_set_session_work_admission(",
+        ),
+        (
+            "pub fn initialize_metadata_if_missing(",
+            "pub fn set_metadata(",
+        ),
+        ("pub fn set_metadata(", "pub fn ensure_lifecycle_revision("),
+    ];
+    for (start, end) in owners {
+        let owner = owner_source
+            .split(start)
+            .nth(1)
+            .expect("session metadata owner exists")
+            .split(end)
+            .next()
+            .expect("session metadata owner boundary exists");
+        assert!(owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+        assert!(owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+    }
+}
+
+#[test]
 fn test_compaction_owner_rolls_back_when_commit_fails() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
     let compaction_owner = owner_source

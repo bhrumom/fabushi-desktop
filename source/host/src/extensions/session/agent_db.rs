@@ -502,7 +502,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(changed)
                 }
                 Err(error) => {
@@ -553,7 +556,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(result) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(result)
                 }
                 Err(error) => {
@@ -582,7 +588,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(changed)
                 }
                 Err(error) => {
@@ -643,7 +652,10 @@ impl SandAgentDb {
             );
             match result {
                 Ok(changes) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(changes > 0)
                 }
                 Err(error) => {
@@ -1401,7 +1413,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(changed)
                 }
                 Err(error) => {
@@ -1475,7 +1490,10 @@ impl SandAgentDb {
             })();
             match result {
                 Ok(changed) => {
-                    db.execute_batch("COMMIT")?;
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
                     Ok(changed)
                 }
                 Err(error) => {
