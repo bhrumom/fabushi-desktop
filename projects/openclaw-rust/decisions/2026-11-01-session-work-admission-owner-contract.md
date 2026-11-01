@@ -191,9 +191,11 @@ ended.
 The remaining agent-only transcript mutation producers were rechecked against
 the live source. Interactive WidgetResponses updates and stale-card sweeps now
 consume a persisted `sessionKey` when a card has one; cards without provenance
-remain on the compatibility path. Shared-room restamps still carry only
-`agent_id`, while new box-request entries retain `sessionKey` and settle
-through the session-admitted owner when that provenance is present. Auto-review
+remain on the compatibility path. Shared-room restamps now use the same
+session-admitted owner when the persisted entry carries `sessionKey`; legacy
+entries remain on the compatibility path. New box-request entries retain
+`sessionKey` and settle through the session-admitted owner when that provenance
+is present. Auto-review
 creation and settlement already use the event-owned session key when bound;
 unbound legacy controller events remain compatibility-only. The generic delete
 and conversation-clear wrappers have no production caller in the Host source.

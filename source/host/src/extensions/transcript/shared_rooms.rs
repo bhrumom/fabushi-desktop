@@ -376,10 +376,24 @@ impl SharedRooms {
             return Ok(false);
         };
         object.insert("timestampMs".into(), json!(timestamp_ms));
-        Ok(self
-            .sessions
-            .update_agent_transcript_entry(&agent_id, entry_id, &entry)?
-            .is_some())
+        let updated = entry
+            .get("sessionKey")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|session_key| {
+                self.sessions.update_agent_transcript_entry_if_session_admitted(
+                    &agent_id,
+                    session_key,
+                    entry_id,
+                    &entry,
+                )
+            })
+            .unwrap_or_else(|| {
+                self.sessions
+                    .update_agent_transcript_entry(&agent_id, entry_id, &entry)
+            })?;
+        Ok(updated.is_some())
     }
 
     pub fn post_shared_room_guest_message(
