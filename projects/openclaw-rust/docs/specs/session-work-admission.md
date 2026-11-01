@@ -103,8 +103,9 @@ durable state → consumer chain.
 - `SWA-13`: Until a durable per-key session catalog and transcript/Runner
   ownership contract exists, public Gateway operations that consume an
   agent-wide owner must reject `cron`, `group`, `spawn-child`, and `unknown`
-  routes before reading or cancelling that owner. A session-kind label must
-  not make an agent-wide transcript or stream registry appear to be a
+  routes before reading, cancelling, or dispatching through that owner. A
+  session-kind label must not make an agent-wide transcript, stream registry,
+  or send owner appear to be a
   per-session target. Internal producers retain their existing authenticated
   admission path and are not converted into public routing authorities.
 

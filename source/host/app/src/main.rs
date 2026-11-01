@@ -4646,6 +4646,7 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest("chat.send requires sessionKey".into()))?;
 
         let route = resolve_gateway_session_route(&args, session_key)?;
+        reject_agent_wide_session_route(&route, "chat.send")?;
         let session_kind = session_kind_label(route.kind);
 
         let message = args.get("message")

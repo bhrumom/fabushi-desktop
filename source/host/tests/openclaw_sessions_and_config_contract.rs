@@ -549,6 +549,14 @@ fn test_ocrm_session_o01_session_key_routing() {
         .next()
         .expect("shipping chat.abort function boundary exists");
     assert!(chat_abort.contains("reject_agent_wide_session_route(&route, \"chat.abort\")"));
+    let chat_send = shipping_source
+        .split("fn call_openclaw_chat_send(")
+        .nth(1)
+        .expect("shipping chat.send owner exists")
+        .split("fn call_openclaw_chat_abort(")
+        .next()
+        .expect("shipping chat.send function boundary exists");
+    assert!(chat_send.contains("reject_agent_wide_session_route(&route, \"chat.send\")"));
 }
 
 // ---------------------------------------------------------------------------
