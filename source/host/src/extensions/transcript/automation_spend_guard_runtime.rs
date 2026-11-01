@@ -260,7 +260,7 @@ impl AutomationSpendGuardRuntime {
     ) -> Result<String, String> {
         let entries = self.sessions.read_agent_transcript_entries(agent_id)?;
         let id = next_entry_id(&entries, TranscriptEntryIdKind::SendMessage);
-        let entry = json!({
+        let mut entry = json!({
             "kind": "send-message",
             "id": id,
             "message": {
@@ -269,8 +269,21 @@ impl AutomationSpendGuardRuntime {
             },
             "timestampMs": now_ms,
         });
-        self.sessions
-            .append_agent_transcript_entries(agent_id, &[entry])?;
+        if let Some(session_key) = self
+            .sessions
+            .read_session_work_admission(agent_id)?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty())
+        {
+            entry["sessionKey"] = Value::String(session_key.clone());
+            self.sessions.append_agent_transcript_entries_if_session_admitted(
+                agent_id,
+                &session_key,
+                &[entry],
+            )?;
+        } else {
+            self.sessions.append_agent_transcript_entries(agent_id, &[entry])?;
+        }
         let _ = self.sessions.mark_agent_activity(agent_id, now_ms)?;
         Ok(id)
     }

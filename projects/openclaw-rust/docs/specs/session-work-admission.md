@@ -314,7 +314,9 @@ activity notices, guest ingress, and mirror ingress now read the target
 room-agent's owner admission record, persist that exact `sessionKey`, and use
 the session-admitted append when the record exists; a missing record retains
 the compatibility path. The generic delete and conversation-clear wrappers
-currently have no production caller in the Host source.
+currently have no production caller in the Host source. Automation spend-guard
+cards now use the same owner record and session-admitted append when available;
+unbound legacy card producers remain compatibility-only.
 
 The box-request path is now split by durable provenance: new Runner-created
 entries retain their canonical `sessionKey`, and

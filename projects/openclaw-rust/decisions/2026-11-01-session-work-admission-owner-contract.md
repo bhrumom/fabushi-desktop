@@ -199,6 +199,9 @@ is present. SharedRooms and the local group fanout now apply the same producer
 rule to new room-owned entries from local fanout, activity notices, guest
 ingress, and mirror ingress: they read the target room agent's existing owner
 record, persist its exact key, and use the admitted append when available.
+Automation spend-guard card creation now follows the same owner rule, so its
+interactive cards persist the existing session key and are rejected when the
+owner is archived; unbound legacy producers remain compatibility-only.
 Auto-review
 creation and settlement already use the event-owned session key when bound;
 unbound legacy controller events remain compatibility-only. The generic delete
