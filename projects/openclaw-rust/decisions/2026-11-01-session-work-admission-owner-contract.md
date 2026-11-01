@@ -147,6 +147,15 @@ rows use session-admitted owner transactions when that key is present; legacy
 unbound permission infrastructure remains on the explicitly compatibility-only
 agent append/update path.
 
+The remaining agent-only transcript mutation producers were rechecked against
+the live source. Widget-response updates, shared-room restamps, box-request
+settlement, and auto-review settlement carry only `agent_id`; the generic
+delete and conversation-clear wrappers have no production caller in the Host
+source. They therefore remain pending rather than receiving a guessed
+`agent:{agent_id}:main` selector. A future change must first make the owning
+producer capture and propagate its canonical session identity, then add the
+corresponding atomic owner contract and negative stale/archive oracle.
+
 ## Rejected alternatives
 
 - Treating `deleting_agents` or filesystem age as durable work admission.

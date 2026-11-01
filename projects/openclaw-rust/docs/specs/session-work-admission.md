@@ -242,6 +242,25 @@ result/media replay and the placement/database identity chain remain open. A
 global in-memory registry or a second media lifecycle owner remains
 unauthorized by this spec.
 
+## Agent-only transcript mutation boundary — 2026-11-01
+
+The remaining transcript mutation producers were rechecked against the live
+Rust source. `WidgetResponses` (`widget_responses.rs`), shared-room restamp
+(`shared_rooms.rs`), box-request settlement (`box_request_entries.rs`), and
+auto-review settlement (`auto_review_service.rs`) call the generic
+agent-scoped update boundary and carry only `agent_id`; their event/request
+models do not expose a canonical `session_key`. The generic delete and
+conversation-clear wrappers currently have no production caller in the Host
+source.
+
+These paths remain explicitly pending for `SWA-01`/`SWA-06`. The implementation
+must not synthesize `agent:{agent_id}:main`, infer a session from an unrelated
+room or approval identity, or route them through the session-admitted update
+transaction until their owning producer captures and propagates the real
+canonical session identity. The existing agent-only compatibility boundary is
+retained for these non-session-scoped producers; this is incomplete evidence,
+not acceptance.
+
 ## Release and rollback
 
 The schema must be backward-compatible with existing agent DBs and written
