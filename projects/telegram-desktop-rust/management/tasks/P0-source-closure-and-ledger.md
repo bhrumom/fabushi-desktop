@@ -2045,3 +2045,12 @@ Historical raw TDesktop `Core::Settings` byte import is not guessed in this roun
 Contracts for defaults, v1->v2 migration, typed persistence/reopen, list/preferred mutation invariants, timeout/promotion behavior, malformed fail-closed and source-neutral methods were authored in the AppHost source but not run. `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` advances to implemented / validation_status=not-run / accepted=false for the canonical state/persistence responsibility; unified Settings UI projection and Stage-B executable evidence remain open. `TDRP-R9-PROXY-MTPROTO-CONSUMER-001` remains mapped/pending because selected-proxy/custom-resolution carrier consumers are intentionally unwired.
 
 Coverage remains `source_entries_total=16202, responsibilities_total=122, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Stage A remained execution-free: no GitHub Actions/status/check query or trigger, build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, unit/contract/integration/E2E execution, package, deployment, installation or runtime acceptance was performed.
+
+
+## Round 99 — unified Settings network-proxy projection/edit surface (source evidence round 130, 2026-11-01)
+
+Shipping main `9993ca8e107f7e019a8201e5ab74fa54e82159f2` was re-read for ProductShell/Settings/IPC ownership before implementation. ProductionRenderer routes the primary Settings entry to the existing SettingsDesktopSurface; GeneralSettingsPanel uses existing SettingsGroup and Sand primitives. Renderer/Main IPC is constrained by the shared MAIN_METHOD_TABLE and app-window top-frame trust.
+
+The same ProductSettingsOwner v2 is projected into that unified Settings surface through `getNetworkProxySettings`/`mutateNetworkProxySettings`, with MainData forwarding only `settings.snapshot`/`settings.mutateNetworkProxy`. The UI edits mode, selected/list, tryIpv6, useProxyForCalls, checkIpWarningShown and rotation preferences/timeouts. No Telegram-specific store/UI/runtime was introduced; selected proxy state is not connected to a network carrier.
+
+UI/IPC/contracts were authored but not executed. Stage A remains `validation_status=not-run / accepted=false`. `TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` is implemented for canonical state/persistence plus unified UI projection; Stage-B executable evidence remains outstanding. `TDRP-R9-PROXY-MTPROTO-CONSUMER-001` remains mapped/pending for selected-proxy/custom-resolution carrier consumption.
