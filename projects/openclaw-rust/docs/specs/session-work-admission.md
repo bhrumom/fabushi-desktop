@@ -460,6 +460,13 @@ reaper.
 The production Runner state surface now injects automation/workflow mutation
 callbacks that delegate to those same existing Session owner methods; its
 standalone fallback remains compatibility-only.
+The Runner project `join` and `leave` commands now use the same callback
+boundary for the agent-local `projects.json` membership file. The callback
+delegates through `SandAgentSessionStore` to the existing admitted filesystem
+owner; direct `SandAgentState` construction retains its non-production local
+fallback. Project-directory creation remains a separate shared project-store
+mutation and is not claimed as an atomic transaction with membership or as a
+cron/session catalog.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.

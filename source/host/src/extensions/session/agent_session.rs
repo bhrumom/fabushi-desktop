@@ -808,6 +808,26 @@ impl SandAgentSessionStore {
         Ok(surface_automations(&self.automation_store_for(agent_id)?))
     }
 
+    pub fn join_agent_project(&self, agent_id: &str, slug: &str) -> Result<bool, String> {
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.production
+                .memory_service()
+                .project_membership_for_agent(agent_id)
+                .join(slug)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn leave_agent_project(&self, agent_id: &str, slug: &str) -> Result<bool, String> {
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.production
+                .memory_service()
+                .project_membership_for_agent(agent_id)
+                .leave(slug)
+                .map_err(|error| error.to_string())
+        })
+    }
+
     pub fn set_agent_automation_enabled(
         &self,
         agent_id: &str,

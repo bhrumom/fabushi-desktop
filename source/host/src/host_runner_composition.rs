@@ -12,9 +12,10 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolRequestStatus,
 };
 use crate::extensions::memory::agent_state::{
-    AgentAutomationMutation, AgentWorkflowMutation, AvatarBoxFileReader, SandAgentState,
-    StateWriteResult,
+    AgentAutomationMutation, AgentProjectMembershipMutation, AgentWorkflowMutation,
+    AvatarBoxFileReader, SandAgentState, StateWriteResult,
 };
+use crate::extensions::session::agent_session::SandAgentSessionStore;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::TurnUsage;
 use crate::runner::background_work::{RunnerBackgroundShellWatches, RunnerCloudAgentWatches};
@@ -192,17 +193,18 @@ impl HostRunnerComposition {
         let automation_sessions = Arc::clone(&sessions);
         let automation_agent_id = agent_id.to_string();
         state = state.with_agent_automation_mutator(Arc::new(move |mutation| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&automation_sessions));
             let result = match mutation {
-                AgentAutomationMutation::Create(spec) => automation_sessions
+                AgentAutomationMutation::Create(spec) => session_store
                     .create_agent_automation(&automation_agent_id, &spec)
                     .map(|_| "Saved routine."),
-                AgentAutomationMutation::Update { id, spec } => automation_sessions
+                AgentAutomationMutation::Update { id, spec } => session_store
                     .update_agent_automation(&automation_agent_id, &id, &spec)
                     .map(|_| "Updated routine."),
-                AgentAutomationMutation::SetEnabled { id, enabled } => automation_sessions
+                AgentAutomationMutation::SetEnabled { id, enabled } => session_store
                     .set_agent_automation_enabled(&automation_agent_id, &id, enabled)
                     .map(|_| if enabled { "Resumed routine." } else { "Paused routine." }),
-                AgentAutomationMutation::Remove { id } => automation_sessions
+                AgentAutomationMutation::Remove { id } => session_store
                     .remove_agent_automation(&automation_agent_id, &id)
                     .map(|_| "Deleted routine."),
             };
@@ -216,19 +218,20 @@ impl HostRunnerComposition {
         let workflow_sessions = Arc::clone(&sessions);
         let workflow_agent_id = agent_id.to_string();
         state = state.with_agent_workflow_mutator(Arc::new(move |mutation| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&workflow_sessions));
             let result = match mutation {
                 AgentWorkflowMutation::Upsert { id, spec } => {
                     if let Some(id) = id {
-                        workflow_sessions
+                        session_store
                             .update_agent_workflow(&workflow_agent_id, &id, &spec)
                             .map(|_| "Updated workflow.")
                     } else {
-                        workflow_sessions
+                        session_store
                             .create_agent_workflow(&workflow_agent_id, &spec)
                             .map(|_| "Saved workflow.")
                     }
                 }
-                AgentWorkflowMutation::Remove { id } => workflow_sessions
+                AgentWorkflowMutation::Remove { id } => session_store
                     .remove_agent_workflow(&workflow_agent_id, &id)
                     .map(|_| "Deleted workflow."),
             };
@@ -236,6 +239,26 @@ impl HostRunnerComposition {
                 Ok(message) => StateWriteResult::success(message),
                 Err(error) => StateWriteResult::failure(format!(
                     "could not update workflow: {error}"
+                )),
+            }
+        }));
+        let project_sessions = Arc::clone(&sessions);
+        let project_agent_id = agent_id.to_string();
+        state = state.with_agent_project_membership_mutator(Arc::new(move |mutation| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&project_sessions));
+            let result = match mutation {
+                AgentProjectMembershipMutation::Join { slug } => {
+                    session_store.join_agent_project(&project_agent_id, &slug)
+                }
+                AgentProjectMembershipMutation::Leave { slug } => {
+                    session_store.leave_agent_project(&project_agent_id, &slug)
+                }
+            };
+            match result {
+                Ok(true) => StateWriteResult::success("Updated project membership."),
+                Ok(false) => StateWriteResult::failure("project membership was not changed."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update project membership: {error}"
                 )),
             }
         }));

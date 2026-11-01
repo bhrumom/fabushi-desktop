@@ -47,6 +47,8 @@ pub type AgentAutomationMutator =
     Arc<dyn Fn(AgentAutomationMutation) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentWorkflowMutator =
     Arc<dyn Fn(AgentWorkflowMutation) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentProjectMembershipMutator =
+    Arc<dyn Fn(AgentProjectMembershipMutation) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -76,6 +78,12 @@ pub enum AgentWorkflowMutation {
     Remove { id: String },
 }
 
+#[derive(Debug, Clone)]
+pub enum AgentProjectMembershipMutation {
+    Join { slug: String },
+    Leave { slug: String },
+}
+
 pub struct SandAgentState {
     agent_id: String,
     agent_dir: PathBuf,
@@ -94,6 +102,7 @@ pub struct SandAgentState {
     disconnect_agent_channel: Option<AgentChannelDisconnector>,
     mutate_agent_automation: Option<AgentAutomationMutator>,
     mutate_agent_workflow: Option<AgentWorkflowMutator>,
+    mutate_agent_project_membership: Option<AgentProjectMembershipMutator>,
 }
 
 impl SandAgentState {
@@ -120,6 +129,7 @@ impl SandAgentState {
             disconnect_agent_channel: None,
             mutate_agent_automation: None,
             mutate_agent_workflow: None,
+            mutate_agent_project_membership: None,
         })
     }
 
@@ -155,6 +165,13 @@ impl SandAgentState {
     }
     pub fn with_agent_workflow_mutator(mut self, mutator: AgentWorkflowMutator) -> Self {
         self.mutate_agent_workflow = Some(mutator);
+        self
+    }
+    pub fn with_agent_project_membership_mutator(
+        mut self,
+        mutator: AgentProjectMembershipMutator,
+    ) -> Self {
+        self.mutate_agent_project_membership = Some(mutator);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -395,10 +412,15 @@ impl SandAgentState {
             let body = format!("---\nname: {}\ndescription: {}\n---\n", name.trim(), description.unwrap_or_default().trim());
             if let Err(error) = fs::write(path.join("project.md"), body) { return StateWriteResult::failure(format!("could not create project \"{id}\": {error}")); }
         }
-        match self.membership.join(id) {
-            Ok(true) => StateWriteResult::success(if existed { format!("Joined existing project \"{id}\".") } else { format!("Created and joined project \"{}\" (folder {id}).", name.trim()) }),
-            Ok(false) => StateWriteResult::failure(format!("could not join project \"{id}\".")),
-            Err(error) => StateWriteResult::failure(format!("could not join project \"{id}\": {error}")),
+        let joined = self.join_project(id);
+        if joined.ok {
+            StateWriteResult::success(if existed {
+                format!("Joined existing project \"{id}\".")
+            } else {
+                format!("Created and joined project \"{}\" (folder {id}).", name.trim())
+            })
+        } else {
+            joined
         }
     }
 
@@ -406,6 +428,11 @@ impl SandAgentState {
         let id = slug.trim();
         if !is_safe_folder_id(id) { return StateWriteResult::failure(format!("\"{id}\" is not a valid project slug.")); }
         if !project_dir_exists(&self.sand_root, id) { return StateWriteResult::failure(format!("no project \"{id}\" exists.")); }
+        if let Some(mutator) = self.mutate_agent_project_membership.as_ref() {
+            return mutator(AgentProjectMembershipMutation::Join {
+                slug: id.to_string(),
+            });
+        }
         match self.membership.join(id) {
             Ok(true) => StateWriteResult::success(format!("Joined project \"{id}\".")),
             Ok(false) => StateWriteResult::failure(format!("could not join project \"{id}\".")),
@@ -416,6 +443,11 @@ impl SandAgentState {
     pub fn leave_project(&self, slug: &str) -> StateWriteResult {
         let id = slug.trim();
         if !is_safe_folder_id(id) { return StateWriteResult::failure(format!("\"{id}\" is not a valid project slug.")); }
+        if let Some(mutator) = self.mutate_agent_project_membership.as_ref() {
+            return mutator(AgentProjectMembershipMutation::Leave {
+                slug: id.to_string(),
+            });
+        }
         match self.membership.leave(id) {
             Ok(true) => StateWriteResult::success(format!("Left project \"{id}\".")),
             Ok(false) => StateWriteResult::failure(format!("could not leave project \"{id}\".")),

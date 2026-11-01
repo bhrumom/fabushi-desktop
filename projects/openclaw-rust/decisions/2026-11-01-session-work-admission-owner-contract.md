@@ -312,6 +312,14 @@ The generic compatibility wrappers now also reject writes against an archived
 owner record, so retaining agent-only identity does not bypass the archive
 fence.
 
+Runner project membership now follows the same producer-to-owner path as the
+other agent-local state mutations. `SandAgentState` emits a typed join/leave
+mutation callback in production; the callback uses the existing
+`SandAgentSessionStore` and `ProductionSessionWorkers` admission boundary to
+write the canonical agent-local `projects.json`. The standalone state keeps
+its compatibility fallback. Project-directory creation remains outside this
+membership operation's transaction and does not create a session catalog.
+
 The Runner `SendToAgent` sender-side transcript producer now persists its
 already-owned `worker_session_key` on the outbound entry, carries it through
 `ProductionAgentManagementSink` and `ProductionAgentToAgentMessaging` into the

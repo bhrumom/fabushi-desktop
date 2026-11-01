@@ -264,6 +264,11 @@ The production Runner state surface delegates its automation/workflow mutation
 commands through the same Gateway/Session owner methods. Direct
 `SandAgentState` construction retains a local fallback and is not production
 acceptance evidence.
+Runner project membership mutations now follow the same existing Session owner
+facade and admitted per-agent filesystem boundary. This fences the
+agent-local `projects.json` write during deletion; project-directory creation
+and membership remain separate stores and are not represented as one atomic
+cross-store operation.
 
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
