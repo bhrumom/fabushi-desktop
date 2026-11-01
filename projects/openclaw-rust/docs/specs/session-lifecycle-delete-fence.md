@@ -255,6 +255,11 @@ The production Runner channel-disconnect path also uses the existing channel
 owner callback; direct state construction retains its local fallback and is not
 production acceptance evidence.
 
+Gateway-owned automation and workflow definition mutations now use the same
+admitted per-agent filesystem boundary. This is only deletion-race
+serialization; it does not implement the separate cron session-reaper rows or
+their guarded lifecycle deletion contract.
+
 The session-bound automation spend-guard card path now commits its transcript
 card, owner-local spend-guard state, and activity projection in one existing
 session database transaction. Legacy records without an admission row retain

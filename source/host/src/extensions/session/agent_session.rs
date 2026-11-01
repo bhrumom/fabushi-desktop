@@ -814,11 +814,13 @@ impl SandAgentSessionStore {
         automation_id: &str,
         enabled: bool,
     ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .set_enabled(automation_id, enabled)
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.automation_store_for(agent_id)?;
+            let _ = store
+                .set_enabled(automation_id, enabled)
+                .map_err(|error| error.to_string())?;
+            Ok(surface_automations(&store))
+        })
     }
 
     pub fn create_agent_automation(
@@ -826,11 +828,13 @@ impl SandAgentSessionStore {
         agent_id: &str,
         spec: &AutomationSpec,
     ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .upsert(spec, now_ms())
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.automation_store_for(agent_id)?;
+            let _ = store
+                .upsert(spec, now_ms())
+                .map_err(|error| error.to_string())?;
+            Ok(surface_automations(&store))
+        })
     }
 
     pub fn update_agent_automation(
@@ -839,11 +843,13 @@ impl SandAgentSessionStore {
         automation_id: &str,
         spec: &AutomationSpec,
     ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .update(automation_id, spec)
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.automation_store_for(agent_id)?;
+            let _ = store
+                .update(automation_id, spec)
+                .map_err(|error| error.to_string())?;
+            Ok(surface_automations(&store))
+        })
     }
 
     pub fn remove_agent_automation(
@@ -851,11 +857,13 @@ impl SandAgentSessionStore {
         agent_id: &str,
         automation_id: &str,
     ) -> Result<Vec<AutomationRecord>, String> {
-        let store = self.automation_store_for(agent_id)?;
-        let _ = store
-            .remove(automation_id)
-            .map_err(|error| error.to_string())?;
-        Ok(surface_automations(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.automation_store_for(agent_id)?;
+            let _ = store
+                .remove(automation_id)
+                .map_err(|error| error.to_string())?;
+            Ok(surface_automations(&store))
+        })
     }
 
     pub fn workflow_store_for(&self, agent_id: &str) -> Result<FileWorkflowStore, String> {
@@ -879,9 +887,11 @@ impl SandAgentSessionStore {
         agent_id: &str,
         spec: &WorkflowSpec,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.create(spec)?;
-        Ok(surface_workflows(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let _ = store.create(spec)?;
+            Ok(surface_workflows(&store))
+        })
     }
 
     pub fn update_agent_workflow(
@@ -890,9 +900,11 @@ impl SandAgentSessionStore {
         workflow_id: &str,
         spec: &WorkflowSpec,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.update(workflow_id, spec)?;
-        Ok(surface_workflows(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let _ = store.update(workflow_id, spec)?;
+            Ok(surface_workflows(&store))
+        })
     }
 
     pub fn set_agent_workflow_enabled(
@@ -901,9 +913,11 @@ impl SandAgentSessionStore {
         workflow_id: &str,
         enabled: bool,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.set_enabled_for_agent(workflow_id, enabled)?;
-        Ok(surface_workflows(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let _ = store.set_enabled_for_agent(workflow_id, enabled)?;
+            Ok(surface_workflows(&store))
+        })
     }
 
     pub fn remove_agent_workflow(
@@ -911,9 +925,11 @@ impl SandAgentSessionStore {
         agent_id: &str,
         workflow_id: &str,
     ) -> Result<Vec<WorkflowRecord>, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let _ = store.remove(workflow_id)?;
-        Ok(surface_workflows(&store))
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let _ = store.remove(workflow_id)?;
+            Ok(surface_workflows(&store))
+        })
     }
 
     pub fn import_agent_workflow_markdown(
@@ -922,23 +938,25 @@ impl SandAgentSessionStore {
         markdown: &str,
         fallback_name: Option<&str>,
     ) -> Result<WorkflowImportResponse, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let result = match store.import_markdown(markdown, fallback_name)? {
-            Some((id, name)) => WorkflowImportBatch {
-                imported: vec![WorkflowImportResult { id, name }],
-                skipped: Vec::new(),
-            },
-            None => WorkflowImportBatch {
-                imported: Vec::new(),
-                skipped: vec![WorkflowImportSkipped {
-                    source: "pasted skill".into(),
-                    reason: "empty or invalid".into(),
-                }],
-            },
-        };
-        Ok(WorkflowImportResponse {
-            workflows: surface_workflows(&store),
-            result,
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let result = match store.import_markdown(markdown, fallback_name)? {
+                Some((id, name)) => WorkflowImportBatch {
+                    imported: vec![WorkflowImportResult { id, name }],
+                    skipped: Vec::new(),
+                },
+                None => WorkflowImportBatch {
+                    imported: Vec::new(),
+                    skipped: vec![WorkflowImportSkipped {
+                        source: "pasted skill".into(),
+                        reason: "empty or invalid".into(),
+                    }],
+                },
+            };
+            Ok(WorkflowImportResponse {
+                workflows: surface_workflows(&store),
+                result,
+            })
         })
     }
 
@@ -948,23 +966,25 @@ impl SandAgentSessionStore {
         source: &str,
         fallback_name: Option<&str>,
     ) -> Result<WorkflowImportResponse, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let result = match store.import_live_source(source, fallback_name)? {
-            Some((id, name)) => WorkflowImportBatch {
-                imported: vec![WorkflowImportResult { id, name }],
-                skipped: Vec::new(),
-            },
-            None => WorkflowImportBatch {
-                imported: Vec::new(),
-                skipped: vec![WorkflowImportSkipped {
-                    source: source.to_string(),
-                    reason: "could not link".into(),
-                }],
-            },
-        };
-        Ok(WorkflowImportResponse {
-            workflows: surface_workflows(&store),
-            result,
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let result = match store.import_live_source(source, fallback_name)? {
+                Some((id, name)) => WorkflowImportBatch {
+                    imported: vec![WorkflowImportResult { id, name }],
+                    skipped: Vec::new(),
+                },
+                None => WorkflowImportBatch {
+                    imported: Vec::new(),
+                    skipped: vec![WorkflowImportSkipped {
+                        source: source.to_string(),
+                        reason: "could not link".into(),
+                    }],
+                },
+            };
+            Ok(WorkflowImportResponse {
+                workflows: surface_workflows(&store),
+                result,
+            })
         })
     }
 
@@ -974,11 +994,13 @@ impl SandAgentSessionStore {
         home_dir: &Path,
         cwd: &Path,
     ) -> Result<WorkflowImportResponse, String> {
-        let store = self.workflow_store_for(agent_id)?;
-        let result = store.port_local_skills(home_dir, cwd)?;
-        Ok(WorkflowImportResponse {
-            workflows: surface_workflows(&store),
-            result,
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let store = self.workflow_store_for(agent_id)?;
+            let result = store.port_local_skills(home_dir, cwd)?;
+            Ok(WorkflowImportResponse {
+                workflows: surface_workflows(&store),
+                result,
+            })
         })
     }
 

@@ -245,6 +245,11 @@ The production Runner channel-disconnect command now receives the existing
 channel owner as an injected callback; the standalone state fallback remains
 compatibility-only and does not establish a second channel authority.
 
+Gateway automation/workflow definition mutations now compose their existing
+stores with the admitted per-agent filesystem boundary. This protects the
+agent directory during deletion without creating an automation session catalog,
+reaper, or alternate lifecycle owner.
+
 The spend-guard state setter and the atomic session-bound card/state/activity
 transaction now perform the same predicate check inside their SQLite
 transactions. A facade admission precheck can no longer be the only fence for

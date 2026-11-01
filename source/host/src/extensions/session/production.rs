@@ -1897,6 +1897,23 @@ impl ProductionSessionWorkers {
         operation()
     }
 
+    /// Serialize an external per-agent mutation and perform the durable
+    /// admission check while the same boundary is held. The operation must
+    /// not call the public admission facade recursively.
+    pub fn with_agent_admitted_filesystem_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            operation()
+        })
+    }
+
     pub fn begin_agent_delete(&self, agent_id: &str) -> Result<(), String> {
         self.roster_extras_cache.remove(agent_id);
         if let Ok(mut deleting) = self.deleting_agents.lock() {

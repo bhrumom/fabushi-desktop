@@ -452,6 +452,11 @@ construction and is not production acceptance evidence.
 The Runner `channels.disconnect` command likewise injects the existing channel
 owner instead of deleting the channel directory directly; connector-secret
 removal uses the same admission boundary.
+The existing Gateway automation/workflow producers now use a shared admitted
+filesystem-mutation wrapper around definition, enable/disable, removal, and
+workflow import operations. This protects agent-directory writes during
+deletion without turning automation history into a session catalog or cron
+reaper.
 The shared owner `write_kv` boundary now fences the remaining owner-local KV
 setters at the same SQLite edge; external memory-store clear paths remain
 separately governed.
