@@ -4171,7 +4171,14 @@ impl UnifiedGatewayApi {
                 ))
             })
         }).transpose()?;
-        let archived = args.get("archived").and_then(serde_json::Value::as_bool);
+        let archived = match args.get("archived") {
+            Some(value) => Some(value.as_bool().ok_or_else(|| {
+                GatewayCommandError::BadRequest(
+                    "sessions.patch archived must be a boolean".into(),
+                )
+            })?),
+            None => None,
+        };
         if policy.is_some() && archived.is_some() {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.patch cannot combine communicationPolicy with archived".into(),
