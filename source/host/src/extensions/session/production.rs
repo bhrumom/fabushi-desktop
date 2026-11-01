@@ -2381,6 +2381,11 @@ impl ProductionSessionWorkers {
                 return Ok(lifecycle_revision);
             }
             let lifecycle_revision = record.lifecycle_revision.clone();
+            if media_path.is_none() {
+                return Err(
+                    "media custody requires a materialized path for new media work".into(),
+                );
+            }
             let mut next = record;
             next.admitted_media_work_id = Some(work_id.to_string());
             next.admitted_media_paths = media_path.into_iter().collect();

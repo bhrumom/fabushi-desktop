@@ -426,6 +426,21 @@ fn pending_media_admission_blocks_archive_until_same_generation_release() {
         .create_session(None, "user", None)
         .expect("agent");
     let session_key = format!("agent:{}:main", record.id);
+    let missing_path = production
+        .capture_session_media_admission(
+            &record.id,
+            &session_key,
+            "send-media:missing-path",
+            None,
+        )
+        .expect_err("new media custody requires a durable materialized path");
+    assert!(missing_path.contains("requires a materialized path"));
+    assert!(production
+        .read_session_work_admission(&record.id)
+        .expect("read admission after missing path")
+        .expect("session admission after missing path")
+        .admitted_media_work_id
+        .is_none());
     let media_path = root.join("agents").join("attachments").join("outgoing.bin");
     let revision = production
         .capture_session_media_admission(
