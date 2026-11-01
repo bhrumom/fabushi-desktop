@@ -129,6 +129,11 @@ background-result receipt, and outgoing-media settlement transactions must
 also reject the durable `deletion_pending` fence inside their SQLite
 transaction; a production precheck alone is not sufficient for a delete race.
 
+The shared direct `SandAgentDb` metadata/KV write predicate must also fail
+closed when an existing admission record has an empty session key, session ID,
+or lifecycle revision. Legacy databases without an admission record retain
+their compatibility path; malformed durable admission state is not admitted.
+
 The automation spend-guard producer uses the same owner boundary for a
 session-bound widget card: card insertion, spend-guard KV state, and activity
 metadata commit together, or none commit. Legacy databases without a session

@@ -723,6 +723,11 @@ source identities are rejected. Legacy databases without admission records
 retain the existing compatibility append path; this correction does not claim
 full channel or runtime acceptance.
 
+The direct `SandAgentDb` metadata/KV write predicate now rejects admission
+records missing a non-empty session key, session ID, or lifecycle revision at
+the same SQLite transaction edge. Legacy no-record compatibility remains
+unchanged; malformed durable admission state fails closed.
+
 The automation spend-guard producer now uses one existing session owner
 transaction for a session-bound widget card, its spend-guard KV state, and the
 activity projection. The legacy no-admission compatibility branch remains

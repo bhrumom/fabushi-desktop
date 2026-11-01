@@ -413,6 +413,15 @@ fn test_session_admission_rejects_rebound_owner_identity() {
     assert!(owner_source.contains("session admission identity is malformed"));
 }
 
+#[test]
+fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    assert!(owner_source.contains("fn session_work_write_is_admitted("));
+    assert!(owner_source.contains("!admission.session_key.trim().is_empty()"));
+    assert!(owner_source.contains("!admission.session_id.trim().is_empty()"));
+    assert!(owner_source.contains("!admission.lifecycle_revision.trim().is_empty()"));
+}
+
 // ---------------------------------------------------------------------------
 // OCRM-SESSION-O01: Session Key Parsing, Classification & Harness Namespace
 // ---------------------------------------------------------------------------

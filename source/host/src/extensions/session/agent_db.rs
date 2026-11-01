@@ -4980,7 +4980,7 @@ fn read_kv(
 
 /// Check owner-local metadata writes at the same SQLite transaction edge as
 /// the write. Legacy stores without an admission record retain compatibility;
-/// malformed or archived/deleting records fail closed.
+/// malformed, archived, or deleting records fail closed.
 fn session_work_write_is_admitted(
     db: &rusqlite::Connection,
 ) -> Result<bool, rusqlite::Error> {
@@ -4990,7 +4990,11 @@ fn session_work_write_is_admitted(
     let Ok(admission) = serde_json::from_str::<SessionWorkAdmissionRecord>(&raw) else {
         return Ok(false);
     };
-    Ok(!admission.deletion_pending && admission.archived_at_ms.is_none())
+    Ok(!admission.session_key.trim().is_empty()
+        && !admission.session_id.trim().is_empty()
+        && !admission.lifecycle_revision.trim().is_empty()
+        && !admission.deletion_pending
+        && admission.archived_at_ms.is_none())
 }
 
 fn encode_hex(bytes: &[u8]) -> String {
