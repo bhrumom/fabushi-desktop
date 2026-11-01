@@ -272,6 +272,11 @@ write or legacy-pointer clear fails. This closes the in-process deletion race
 and the bounded mutation-error rollback path; cross-process crash recovery
 remains pending.
 
+The focused deletion-fence contract is recorded in
+`source/host/tests/agent_session_contract.rs::deletion_fence_rejects_new_transcript_work_before_durable_write`;
+it now also covers profile-file and avatar mutation refusal. The contract is
+source evidence only until the frozen verification run executes.
+
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations
 cannot clear a fence that appeared after their read; only the deletion owner's

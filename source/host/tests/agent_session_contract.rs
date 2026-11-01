@@ -182,6 +182,24 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .set_agent_profile_prompt_snapshot(&record.id, &serde_json::json!({"name":"blocked"}))
         .expect_err("deletion-pending profile snapshot must be rejected");
     assert!(profile_snapshot_error.contains("new session work is not admitted"));
+    let profile_error = production
+        .update_agent_profile(
+            &record.id,
+            &AgentProfileUpdate {
+                name: "blocked profile".into(),
+                description: "must not write during deletion".into(),
+                title: None,
+                avatar_shape: None,
+                avatar_color: None,
+            },
+            None,
+        )
+        .expect_err("deletion-pending profile file mutation must be rejected");
+    assert!(profile_error.contains("new session work is not admitted"));
+    let avatar_error = production
+        .set_agent_avatar_bytes(&record.id, Some(b"blocked-avatar"), None)
+        .expect_err("deletion-pending avatar mutation must be rejected");
+    assert!(avatar_error.contains("new session work is not admitted"));
     let viewed_error = production
         .mark_agent_viewed(&record.id, 50.0, false)
         .expect_err("deletion-pending viewed state must be rejected");
