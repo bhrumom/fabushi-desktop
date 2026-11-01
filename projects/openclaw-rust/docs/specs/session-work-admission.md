@@ -237,6 +237,9 @@ owner instead of maintaining a second direct SQLite mutation path.
 Runtime profile-name recovery maintenance now uses the same owner metadata
 path as well; clone/materialization initialization remains a separate
 pre-admission setup path.
+Transcript backfill maintenance now also delegates to the same owner append
+transaction, so recovery cannot append entries while deletion custody is
+active.
 
 The owner-local admission CAS now preserves the current `deletion_pending`
 value as part of its compare predicate. Ordinary work/review/media mutations

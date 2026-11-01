@@ -2070,6 +2070,9 @@ impl SandAgentDb {
         let inserted = self.run_write_value("appendTranscriptEntries", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(Vec::new());
+                }
                 let mut inserted = Vec::new();
                 {
                     let mut statement = db.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
@@ -3804,32 +3807,10 @@ pub fn append_persisted_transcript_entries(
     busy_timeout_ms: u64,
     entries: &[serde_json::Value],
 ) -> Result<usize, AgentDbProjectionError> {
-    if entries.is_empty() {
-        return Ok(0);
-    }
-    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
-    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    let mut inserted = Vec::new();
-    {
-        let mut statement = transaction.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
-        for entry in entries {
-            let Some(id) = entry.get("id").and_then(serde_json::Value::as_str) else {
-                continue;
-            };
-            if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
-                continue;
-            }
-            if statement.execute(params![id, entry.to_string()])? > 0 {
-                inserted.push(entry.clone());
-            }
-        }
-    }
-    transaction.commit()?;
-    if !inserted.is_empty() {
-        bump_db_write_generation(db_path);
-        publish_entries_upserted(db_path, inserted.clone());
-    }
-    Ok(inserted.len())
+    let mut options = SandAgentDbOptions::default();
+    options.recovery.busy_timeout_ms = busy_timeout_ms;
+    let owner = SandAgentDb::open_with_options_and_seed(db_path, options, false)?;
+    owner.append_transcript_entries(entries)
 }
 
 pub fn delete_persisted_transcript_entry(

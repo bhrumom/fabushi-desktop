@@ -399,6 +399,17 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
         .expect("fenced metadata write"));
     assert_eq!(
         owner
+            .append_transcript_entries(&[serde_json::json!({
+                "id": "after-fence",
+                "kind": "message",
+                "role": "assistant",
+                "content": "rejected",
+            })])
+            .expect("fenced transcript append"),
+        0
+    );
+    assert_eq!(
+        owner
             .get_metadata("lastActivityAt")
             .expect("metadata history")
             .and_then(|value| value.as_f64()),

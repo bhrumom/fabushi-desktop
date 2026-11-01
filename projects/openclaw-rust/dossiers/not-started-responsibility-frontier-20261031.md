@@ -260,6 +260,9 @@ not-started/not-wired/not-run/pending disposition.
 Runtime recovered profile-name maintenance also routes through the owner
 metadata path; clone/materialization initialization remains explicitly outside
 the admitted-session deletion window.
+Transcript backfill likewise delegates to the owner append transaction and is
+fenced during deletion custody; hidden-entry repair/delete remains a separate
+cleanup contract.
 
 ### 2026-11-01 background-result consumer recheck
 
