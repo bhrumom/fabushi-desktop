@@ -7,6 +7,10 @@ use mahayana_host_runtime::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::inference::model_picker_service::{
+    ApplySessionModelSelectionParams, ModelCatalogEntry, SessionModelSelectionRequest,
+    SessionModelSelectionRuntime,
+};
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
 use mahayana_host_runtime::automations::automation::AutomationSpec;
@@ -252,6 +256,68 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         )
         .expect("work is admitted after deletion fence clears");
 
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn model_selection_does_not_report_applied_when_owner_rejects_persistence() {
+    let root = temp_root("model-selection-delete-fence");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store
+        .create_session(None, "user", None)
+        .expect("session");
+
+    production
+        .begin_agent_delete(&record.id)
+        .expect("publish deletion fence");
+
+    let catalog = [ModelCatalogEntry {
+        provider: "cursor".into(),
+        id: "model-a".into(),
+        name: None,
+        context_window: None,
+        context_tokens: Some(8192),
+        api: None,
+        base_url: None,
+        reasoning: None,
+    }];
+    let result = store.apply_session_model_selection(
+        &record.id,
+        ApplySessionModelSelectionParams {
+            agent_id: &record.id,
+            session_key: &format!("agent:{}:main", record.id),
+            default_provider: "cursor",
+            default_model: "model-default",
+            current_provider: "cursor",
+            current_model: "model-default",
+            model_catalog: &catalog,
+            visibility_policy: None,
+            operator_authority: None,
+            placement_context: None,
+            candidate_execution_mode: None,
+            initial_generation: None,
+            current_generation: None,
+            request: SessionModelSelectionRequest {
+                provider: "cursor".into(),
+                model: "model-a".into(),
+                is_default: false,
+                reset_to_default: false,
+                alias: None,
+                profile_override: None,
+                runtime: SessionModelSelectionRuntime::Unchanged,
+            },
+        },
+        100,
+    )
+    .expect_err("rejected persistence must not report Applied");
+    assert_eq!(result, "SESSION_MODEL_SELECTION_NOT_COMMITTED");
+
+    production
+        .end_agent_delete(&record.id)
+        .expect("clear deletion fence");
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }

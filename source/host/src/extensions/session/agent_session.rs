@@ -321,7 +321,9 @@ impl SandAgentSessionStore {
         let mut state = read_session_model_entry(&db, agent_id)?;
         let result = apply_model_selection(&mut state, params, current_time_ms);
         if matches!(&result, ApplySessionModelSelectionResult::Applied(_)) {
-            let _ = write_session_model_entry(&db, agent_id, &state)?;
+            if !write_session_model_entry(&db, agent_id, &state)? {
+                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED".into());
+            }
         }
         Ok(result)
     }
