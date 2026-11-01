@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import subprocess
 from pathlib import Path
@@ -110,6 +111,56 @@ def parse_fragment(content: str) -> dict[str, Any]:
     }
 
 
+def parse_importer_dependencies(content: str) -> dict[tuple[str, str, str], dict[str, str]]:
+    """Read only the bounded importer dependency shape used for workspace joins."""
+    result: dict[tuple[str, str, str], dict[str, str]] = {}
+    in_importers = False
+    importer: str | None = None
+    section: str | None = None
+    dependency: str | None = None
+    key_patterns = {
+        2: re.compile(r"^  (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(?:$|#)"),
+        4: re.compile(r"^    (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(?:$|#)"),
+        6: re.compile(r"^      (?=\S)(?:'([^']+)'|\"([^\"]+)\"|([^:]+?)):\s*(?:$|#)"),
+    }
+    for line in content.splitlines():
+        top = TOP_LEVEL_RE.match(line)
+        if top:
+            in_importers = top.group(1) == "importers"
+            importer = None
+            section = None
+            dependency = None
+            continue
+        if not in_importers:
+            continue
+        matched = False
+        for indent, pattern in key_patterns.items():
+            match = pattern.match(line)
+            if not match:
+                continue
+            key = unquote_key(match)
+            if indent == 2:
+                importer = key
+                section = None
+                dependency = None
+            elif indent == 4 and importer is not None:
+                section = key
+                dependency = None
+            elif indent == 6 and importer is not None and section is not None:
+                dependency = key
+                result[(importer, section, dependency)] = {}
+            matched = True
+            break
+        if matched or importer is None or section is None or dependency is None:
+            continue
+        field = re.match(r"^        (specifier|version):\s*(.+?)\s*$", line)
+        if field:
+            result[(importer, section, dependency)][field.group(1)] = (
+                field.group(2).strip().strip("'\"")
+            )
+    return result
+
+
 def package_roots(frontier_path: Path) -> list[str]:
     document = json.loads(frontier_path.read_text(encoding="utf-8"))
     roots = set()
@@ -137,8 +188,10 @@ def manifest_dependency_frontier(
     document = json.loads(frontier_path.read_text(encoding="utf-8"))
     rows: list[dict[str, Any]] = []
     package_observations: dict[str, set[str]] = {}
+    importer_observations: dict[tuple[str, str, str], dict[str, str]] = {}
     for fragment in split_fragments(lock_content):
         parsed_fragment = parse_fragment(fragment)
+        importer_observations.update(parse_importer_dependencies(fragment))
         for key, integrities in parsed_fragment["package_integrities"].items():
             package_observations.setdefault(key, set()).update(integrities)
     sections = (
@@ -156,6 +209,7 @@ def manifest_dependency_frontier(
         if not isinstance(package, str):
             continue
         manifests.add((path, package))
+    manifest_paths = {package: path for path, package in manifests}
     for path, package in sorted(manifests):
         blob, content = git_blob(repo, commit, path)
         parsed = json.loads(content)
@@ -186,7 +240,34 @@ def manifest_dependency_frontier(
                     "lock_package_candidates": candidates,
                 }
                 if edge_kind == "workspace":
-                    row["lock_join_status"] = "workspace-importer-required"
+                    importer_path = (
+                        "." if path == "package.json" else str(Path(path).parent)
+                    )
+                    row["lock_importer_path"] = importer_path
+                    importer_row = importer_observations.get(
+                        (importer_path, section, dependency)
+                    )
+                    dependency_manifest = manifest_paths.get(dependency)
+                    expected_link = None
+                    if dependency_manifest is not None:
+                        target_dir = posixpath.dirname(dependency_manifest)
+                        base_dir = "." if importer_path == "." else importer_path
+                        expected_link = "link:" + posixpath.relpath(
+                            target_dir or ".", base_dir
+                        )
+                    row["lock_expected_link"] = expected_link
+                    if importer_row is None:
+                        row["lock_join_status"] = "workspace-importer-missing"
+                    elif importer_row.get("specifier") != specifier:
+                        row["lock_join_status"] = "workspace-importer-specifier-mismatch"
+                    elif expected_link is None:
+                        row["lock_join_status"] = "workspace-target-manifest-missing"
+                    elif importer_row.get("version") != expected_link:
+                        row["lock_importer_version"] = importer_row.get("version")
+                        row["lock_join_status"] = "workspace-importer-link-mismatch"
+                    else:
+                        row["lock_importer_version"] = importer_row.get("version")
+                        row["lock_join_status"] = "workspace-importer-match"
                 elif not candidates:
                     row["lock_join_status"] = "no-lock-name-candidate"
                 elif specifier in {
