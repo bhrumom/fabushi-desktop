@@ -10696,17 +10696,25 @@ fn start_routed_provider_task(
             let web_executor: Arc<dyn WebToolExecutor> = Arc::new(
                 ProductionWebToolExecutor::new(Arc::clone(&inference), turn_model_id.clone()),
             );
-            let generated_image_dir =
-                mahayana_host_runtime::host_paths::get_sand_root_dir()
-                    .join("agents")
-                    .join(&agent_id)
-                    .join("generated-images");
+            let generated_image_sessions = Arc::clone(&worker_sessions);
+            let generated_image_agent_id = agent_id.clone();
             let persist_generated_image: PersistGeneratedImage = Arc::new(move |bytes, mime_type| {
-                let persisted = persist_image_bytes(&generated_image_dir, bytes, mime_type)
-                    .map_err(|error| error.to_string())?;
-                Ok(Some(PersistedImage {
-                    absolute_path: persisted.absolute_path.to_string_lossy().into_owned(),
-                }))
+                generated_image_sessions.with_agent_admitted_filesystem_mutation(
+                    &generated_image_agent_id,
+                    || {
+                        let db_path = generated_image_sessions
+                            .session_db_path(&generated_image_agent_id)?;
+                        let agent_dir = db_path
+                            .parent()
+                            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+                        let generated_image_dir = agent_dir.join("generated-images");
+                        let persisted = persist_image_bytes(&generated_image_dir, bytes, mime_type)
+                            .map_err(|error| error.to_string())?;
+                        Ok(Some(PersistedImage {
+                            absolute_path: persisted.absolute_path.to_string_lossy().into_owned(),
+                        }))
+                    },
+                )
             });
             let generate_image_auth: Arc<dyn GenerateImageAuth> = auth.clone();
             let generate_image_executor: Arc<dyn GenerateImageToolExecutor> = Arc::new(
