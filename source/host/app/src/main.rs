@@ -5955,7 +5955,16 @@ fn run_local_background_revival_turn_with_context(
         .session_workers
         .read_agent_transcript_entries(agent_id)
         .unwrap_or_default();
-    let session_key = format!("agent:{agent_id}:main");
+    let session_key = deps
+        .session_workers
+        .read_session_work_admission(agent_id)?
+        .map(|record| record.session_key)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| {
+            format!(
+                "background revival requires an existing admitted session identity for {agent_id}"
+            )
+        })?;
     let admitted_lifecycle_revision = deps
         .session_workers
         .capture_session_work_admission(agent_id, &session_key, &stream_id)?;

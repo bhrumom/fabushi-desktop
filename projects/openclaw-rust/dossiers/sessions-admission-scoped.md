@@ -436,6 +436,18 @@ omitted entry provenance, so the owner rejected the append. It does not prove
 that every channel type has a session catalog or that provider delivery,
 thread correlation, reconnect, and runtime acceptance are complete.
 
+## 12.6 Background revival identity correction — 2026-11-01
+
+`run_local_background_revival_turn_with_context` now obtains its session key
+from the existing owner admission record before capturing lifecycle/work
+admission. If no non-empty record is available, the revival fails closed; it
+does not synthesize `agent:<id>:main`. The captured key is then carried into
+the routed send and Runner arguments as before.
+
+This removes an agent-only identity guess at the background producer boundary.
+It does not close the broader detached-result lifecycle, per-kind session
+catalog, or runtime acceptance requirements.
+
 ## 12.4 Owner-bound remote Human transcript append — 2026-11-01
 
 `ProductionSessionWorkers::materialize_remote_human_message` now reads the
