@@ -262,6 +262,27 @@ impl HostRunnerComposition {
                 )),
             }
         }));
+        let project_creator_sessions = Arc::clone(&sessions);
+        let project_creator_agent_id = agent_id.to_string();
+        state = state.with_agent_project_creator(Arc::new(move |slug, name, description| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&project_creator_sessions));
+            match session_store.create_agent_project(
+                &project_creator_agent_id,
+                &slug,
+                &name,
+                description.as_deref(),
+            ) {
+                Ok(true) => StateWriteResult::success(format!(
+                    "Created and joined project \"{name}\" (folder {slug})."
+                )),
+                Ok(false) => StateWriteResult::success(format!(
+                    "Joined existing project \"{slug}\"."
+                )),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not create or join project \"{slug}\": {error}"
+                )),
+            }
+        }));
         let avatar_sessions = Arc::clone(&sessions);
         let avatar_agent_id = agent_id.to_string();
         state = state.with_agent_avatar_mutator(Arc::new(move |bytes| {

@@ -326,6 +326,12 @@ journaled mutation path, preserving one admission/serialization boundary;
 standalone `SandAgentState` retains its local fallback for non-production
 construction.
 
+Runner project creation now delegates the existing shared project-directory
+creation plus agent membership join through the same Session owner admission
+boundary. This removes the prior producer ordering that could create an
+unjoined project before deletion admission failed; it does not introduce a
+project/session catalog or a cross-agent transaction owner.
+
 The Runner `SendToAgent` sender-side transcript producer now persists its
 already-owned `worker_session_key` on the outbound entry, carries it through
 `ProductionAgentManagementSink` and `ProductionAgentToAgentMessaging` into the

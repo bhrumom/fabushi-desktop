@@ -51,6 +51,7 @@ pub type AgentProjectMembershipMutator =
     Arc<dyn Fn(AgentProjectMembershipMutation) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentAvatarMutator =
     Arc<dyn Fn(Option<Vec<u8>>) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentProjectCreator = Arc<dyn Fn(String, String, Option<String>) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -106,6 +107,7 @@ pub struct SandAgentState {
     mutate_agent_workflow: Option<AgentWorkflowMutator>,
     mutate_agent_project_membership: Option<AgentProjectMembershipMutator>,
     mutate_agent_avatar: Option<AgentAvatarMutator>,
+    create_agent_project: Option<AgentProjectCreator>,
 }
 
 impl SandAgentState {
@@ -134,6 +136,7 @@ impl SandAgentState {
             mutate_agent_workflow: None,
             mutate_agent_project_membership: None,
             mutate_agent_avatar: None,
+            create_agent_project: None,
         })
     }
 
@@ -180,6 +183,10 @@ impl SandAgentState {
     }
     pub fn with_agent_avatar_mutator(mut self, mutator: AgentAvatarMutator) -> Self {
         self.mutate_agent_avatar = Some(mutator);
+        self
+    }
+    pub fn with_agent_project_creator(mut self, creator: AgentProjectCreator) -> Self {
+        self.create_agent_project = Some(creator);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -413,6 +420,13 @@ impl SandAgentState {
         let id = slug.trim();
         if !is_safe_folder_id(id) { return StateWriteResult::failure(format!("\"{id}\" is not a valid project slug.")); }
         if name.trim().is_empty() { return StateWriteResult::failure("a project needs a non-empty name."); }
+        if let Some(creator) = self.create_agent_project.as_ref() {
+            return creator(
+                id.to_string(),
+                name.trim().to_string(),
+                description.map(|value| value.trim().to_string()),
+            );
+        }
         let path = get_project_dir(&self.sand_root, id);
         let existed = project_dir_exists(&self.sand_root, id);
         if !existed {

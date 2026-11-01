@@ -467,6 +467,12 @@ owner; direct `SandAgentState` construction retains its non-production local
 fallback. Project-directory creation remains a separate shared project-store
 mutation and is not claimed as an atomic transaction with membership or as a
 cron/session catalog.
+Runner project creation now delegates both the shared project-directory
+creation and the agent membership write through the same existing Session
+facade and admission boundary. This prevents a deletion-fenced Runner from
+creating a new project as a side effect before admission is checked; the
+shared project store still has no separate session catalog or cross-agent
+transaction owner.
 The Runner avatar set/clear commands likewise delegate their validated bytes
 through the existing `SandAgentSessionStore` avatar owner and its profile
 mutation journal. Direct `SandAgentState` construction retains its local file

@@ -10,8 +10,10 @@ use serde_json::{Map, Value};
 
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
+use crate::storage::folder_id::is_safe_folder_id;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
+use crate::extensions::memory::memory_service::{get_project_dir, project_dir_exists};
 use crate::extensions::inference::model_picker_service::{
     apply_session_model_selection as apply_model_selection,
     ApplySessionModelSelectionParams, ApplySessionModelSelectionResult, SessionModelEntryState,
@@ -815,6 +817,44 @@ impl SandAgentSessionStore {
                 .project_membership_for_agent(agent_id)
                 .join(slug)
                 .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn create_agent_project(
+        &self,
+        agent_id: &str,
+        slug: &str,
+        name: &str,
+        description: Option<&str>,
+    ) -> Result<bool, String> {
+        if !is_safe_folder_id(slug) {
+            return Err(format!("\"{slug}\" is not a valid project slug"));
+        }
+        if name.trim().is_empty() {
+            return Err("a project needs a non-empty name".into());
+        }
+        self.production.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let memory = self.production.memory_service();
+            let project_root = memory.sand_root().to_path_buf();
+            let project_dir = get_project_dir(&project_root, slug);
+            let existed = project_dir_exists(&project_root, slug);
+            if !existed {
+                fs::create_dir_all(&project_dir).map_err(|error| error.to_string())?;
+                let body = format!(
+                    "---\nname: {name}\ndescription: {}\n---\n",
+                    description.unwrap_or_default()
+                );
+                fs::write(project_dir.join("project.md"), body)
+                    .map_err(|error| error.to_string())?;
+            }
+            let joined = memory
+                .project_membership_for_agent(agent_id)
+                .join(slug)
+                .map_err(|error| error.to_string())?;
+            if !joined {
+                return Err(format!("could not join project \"{slug}\""));
+            }
+            Ok(!existed)
         })
     }
 

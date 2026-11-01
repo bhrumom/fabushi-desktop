@@ -269,6 +269,10 @@ facade and admitted per-agent filesystem boundary. This fences the
 agent-local `projects.json` write during deletion; project-directory creation
 and membership remain separate stores and are not represented as one atomic
 cross-store operation.
+Runner project creation now performs its existing shared project-directory and
+membership steps inside the same admitted Session facade. A deletion-fenced
+Runner is rejected before either step; the project store remains separate from
+the agent/session database and is not claimed as a cross-agent transaction.
 Runner avatar set/clear mutations now use the same existing Session avatar
 owner, including its per-agent admission boundary and profile mutation journal;
 the standalone state fallback is compatibility-only.
