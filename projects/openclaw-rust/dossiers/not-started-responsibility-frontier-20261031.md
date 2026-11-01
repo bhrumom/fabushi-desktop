@@ -311,3 +311,17 @@ remaining frontier is the missing non-test mutation ingress for
 `SandAgentSessionStore::apply_session_model_selection`; the responsibility
 must remain `not-wired` until an authenticated existing-owner session action
 reaches the model-picker policy and SQLite state owner.
+
+## Provider-review terminal settlement recheck — 2026-11-01
+
+At local commit `f9c59205c`, the bounded provider-review path now carries the
+captured lifecycle revision and continuation run ID from the authenticated
+`sessions.providerReview.continue` Gateway owner into the existing routed
+Runner. `SandAgentDb` persists that run identity in the existing
+`sessionWorkAdmission` record and settles only a matching accepted review:
+success clears the review, Runner cancellation/failure/outcome-unknown retain
+non-actionable terminal evidence, and a pre-Runner dispatch error restores
+`pending`. The Gateway projection exposes `canContinue` only for pending
+reviews. This is a bounded owner-local settlement chain, not full OpenClaw
+equivalence or production acceptance; exact-head Actions and real runtime
+evidence remain pending, and global completion flags are unchanged.
