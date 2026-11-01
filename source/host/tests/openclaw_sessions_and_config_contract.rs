@@ -594,6 +594,20 @@ fn test_background_result_owner_rolls_back_when_commit_fails() {
 }
 
 #[test]
+fn test_session_transcript_append_rolls_back_when_commit_fails() {
+    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let append_owner = owner_source
+        .split("pub fn append_transcript_entries_if_session_admitted(")
+        .nth(1)
+        .expect("session transcript append owner exists")
+        .split("pub fn append_spend_guard_card_if_session_admitted(")
+        .next()
+        .expect("session transcript append owner boundary exists");
+    assert!(append_owner.contains("if let Err(error) = db.execute_batch(\"COMMIT\")"));
+    assert!(append_owner.contains("let _ = db.execute_batch(\"ROLLBACK\")"));
+}
+
+#[test]
 fn test_session_admission_creation_rechecks_create_race_identity() {
     let owner_source = include_str!("../src/extensions/session/production.rs");
     let ensure = owner_source

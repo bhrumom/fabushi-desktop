@@ -3348,7 +3348,10 @@ impl SandAgentDb {
         })();
         match result {
             Ok(inserted) => {
-                db.execute_batch("COMMIT")?;
+                if let Err(error) = db.execute_batch("COMMIT") {
+                    let _ = db.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
                 let count = inserted.len();
                 drop(guard);
                 if !inserted.is_empty() {
