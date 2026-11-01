@@ -1602,3 +1602,20 @@ Canonical production remains `e9cfc7fbd06002c6510d3bf45df9710e55ff1d57`: `telegr
 The unique `TDRP-R9-MTPROTO-PROTOCOL-DC-ID-WIRE-001` responsibility remains `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage remains `responsibilities_total=108, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`.
 
 No executable validation or GitHub Actions/status/check query was performed. Proxy/Web/TLS camouflage, quick-ACK lifecycle, broader currentDcType/auth-key lifecycle, connection scheduling/racing/reconnect/send retry, arbitrary request histories, gzip, complete difference/differenceSlice decoding/application, broader fixed-U source/legal closure, Stage-B executable evidence and independent release ACCEPT remain open.
+
+
+### Round 108 quick-ACK wire boundary
+
+Fixed-U review: `connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381`, `connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a`, and `session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614`. Fixed-U Version0/VersionD shipping framing does not request quick-ACK; `parsePacket/socketPacket` explicitly leaves the newer quick-ACK receive form unsupported. Existing canonical `telegram-protocol` already owns generic history-free token derivation and Abridged/Intermediate marker/token decoding.
+
+Spec-first checkpoint: platform-core `1a09a5674ec16af4228bbf0aed0fb302cb52fba0` / spec blob `6cbc5fdc140759e66c3c14ac853bdf18c8ce4fba`.
+
+Minimal canonical production: platform-core `605b8928de5fb64bf235196093ef804e350994f2`, `native/telegram-network/src/lib.rs@7c442299aedd4aa7444ba53c7ab8212542dfc2d1`. Shipping `send_payload` still uses ordinary `TransportFrameCodec::encode`; `receive_payload` now returns typed `NetworkError::UnexpectedQuickAck(token)` instead of silently discarding an uncorrelated token. No request-history/correlation owner was added.
+
+Authored-only canonical contracts: platform-core `d1cec8b3952a4be1b02c6f1dae1ab008991a0342`, network contract blob `9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240`. They pin a shipping abridged send with the quick-ACK request bit clear and an unsolicited abridged token failing closed. They were not run.
+
+Desktop provider synchronization: `f24b51ec5ba2d959f8c08fe44c6af706f38d7224`; mirrored network production `7c442299aedd4aa7444ba53c7ab8212542dfc2d1` and network contract `9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240` are byte-identical to canonical.
+
+The unique ledger adds `TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001` as `implemented / coverage_disposition=rewritten / validation_status=not-run / accepted=false`. Coverage becomes `responsibilities_total=109, unknown=16172, unread=16145, omitted=0, unmapped_responsibilities=0`. Unknown/unread remain intentionally unchanged because broader connection scheduling/racing/reconnect/send retry, arbitrary request histories, proxy/Web/TLS camouflage, auth-key lifecycle, gzip and complete difference decoding/application remain open.
+
+No build, typecheck, lint, schema validator, generator, unit/contract/integration/E2E execution, GitHub Actions/status/check query, package, deployment, installation or runtime acceptance was performed.

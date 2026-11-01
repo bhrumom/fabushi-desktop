@@ -9,7 +9,7 @@
     "unknown": 16172,
     "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 108,
+    "responsibilities_total": 109,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27537,6 +27537,276 @@
         "Telegram/SourceFiles/mtproto/connection_abstract.h@217b684fa222c42e968dfddeaa62f16a0054017f",
         "Telegram/SourceFiles/mtproto/mtproto_dc_options.h@4e0b979c4a84661f3365196ab8702dc8cb60fd03",
         "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp@d8499fc1df2ed7fdb88da687a04b824d243ff49a"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/mtproto/connection_tcp.cpp",
+      "source_blob_sha": "d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+      "source_kind": "wire",
+      "module_id": "tdesktop.mtproto.quick-ack-wire",
+      "responsibility_id": "TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001",
+      "source_symbols": [
+        "TcpConnection::Protocol::Version0::finalizePacket",
+        "TcpConnection::Protocol::VersionD::finalizePacket",
+        "TcpConnection::parsePacket",
+        "TcpConnection::socketPacket",
+        "SessionPrivate::sendSecureRequest",
+        "quick_ack_token",
+        "TransportFrameCodec::encode_requesting_quick_ack",
+        "TransportFrameCodec::decode_abridged",
+        "TransportFrameCodec::decode_intermediate",
+        "TcpTransport::send_payload",
+        "TcpTransport::receive_payload"
+      ],
+      "capability_ids": [
+        "CAP-TELEGRAM-MTPROTO-QUICK-ACK-WIRE"
+      ],
+      "dependency_ids": [
+        "telegram-protocol::quick_ack_token",
+        "telegram-protocol::TransportFrameCodec",
+        "telegram-network::TcpTransport"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round108-mtproto-quick-ack-wire-20261101.md",
+      "behavior_contract": "Fixed-U does not request or correlate quick-ACKs: Version0/VersionD shipping framing emits ordinary lengths only, and connection_tcp.cpp explicitly says the newer quick-ACK form is not supported. Existing source-neutral telegram-protocol retains generic Abridged/Intermediate quick-ACK marker/token representation without history state. Shipping TcpTransport continues ordinary encode only and now fails closed with UnexpectedQuickAck(token) when a decoded token arrives without a correlation owner, rather than silently discarding it.",
+      "state_machine": "Normal shipping send -> TransportFrameCodec::encode -> wire. Receive -> TransportFrameCodec::decode; normal payload returns to existing session owner, but decoded quick_ack_token -> typed UnexpectedQuickAck and no request/history mutation. No token-to-request correlation state exists in this slice.",
+      "side_effects": [
+        "Preserves existing protocol quick-ACK token derivation and generic marker/token codec",
+        "Adds one typed shipping network error for an unsolicited/uncorrelated quick-ACK token",
+        "Changes TcpTransport::receive_payload from silent token discard to fail-closed return",
+        "Authors canonical network contracts and mirrors canonical network/test blobs into the desktop provider; contracts are not executed"
+      ],
+      "failure_cases": [
+        "shipping send sets an abridged/intermediate quick-ACK request marker despite fixed-U not requesting quick-ACK",
+        "received quick-ACK token is silently discarded",
+        "received token settles or mutates an outstanding request without an explicit correlation owner",
+        "new arbitrary request-history registry is introduced for this wire-only responsibility",
+        "PaddedIntermediate begins accepting quick-ACK despite the already-closed VersionD fail-closed contract"
+      ],
+      "ui_disposition": "No UI change. This is an MTProto transport control-token boundary in existing shared protocol/network owners.",
+      "non_ui_responsibilities": [
+        "Pure quick-ACK token derivation remains in telegram-protocol",
+        "Generic Abridged/Intermediate quick-ACK request marker and response token recognition remain in TransportFrameCodec",
+        "Shipping send path does not request quick-ACK",
+        "Shipping receive fails closed on an uncorrelated token",
+        "Correlation/history remains separate and open"
+      ],
+      "platform_delta": "Minimal production delta in existing telegram-network only: UnexpectedQuickAck(u32) and fail-closed receive disposition. Existing telegram-protocol quick-ACK wire helpers remain unchanged.",
+      "existing_owner_candidates": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/crypto.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/tests/tcp_transport.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs"
+      ],
+      "existing_owner": "Existing canonical telegram-protocol quick-ACK wire primitives plus existing telegram-network TcpTransport shipping boundary",
+      "rejected_existing_owners": [
+        "new quick-ACK runtime/provider: rejected because token/marker wire representation already belongs to telegram-protocol",
+        "new request-history/correlation owner: rejected because fixed-U shipping does not request quick-ACK and arbitrary request history is explicitly outside this slice",
+        "session/application owner: rejected because an uncorrelated transport token must fail before higher-level request mutation"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/crypto.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-protocol/src/transport.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/src/lib.rs",
+        "bhrumom/fabushi-platform-core:native/telegram-network/tests/tcp_transport.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+        "source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs"
+      ],
+      "fabushi_target_symbols": [
+        "quick_ack_token",
+        "TransportFrameCodec::encode_requesting_quick_ack",
+        "TransportFrameCodec::decode_abridged",
+        "TransportFrameCodec::decode_intermediate",
+        "NetworkError::UnexpectedQuickAck",
+        "TcpTransport::send_payload",
+        "TcpTransport::receive_payload"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "The existing source-neutral Rust protocol/network owners already represent transport framing and the shipping socket boundary; no source-specific Telegram owner is needed.",
+      "command_event_contracts": [
+        "ordinary shipping payload -> ordinary frame encoding with quick-ACK request bit clear",
+        "decoded quick-ACK token without correlation owner -> NetworkError::UnexpectedQuickAck(token)",
+        "normal decoded frame -> existing session/message owners unchanged"
+      ],
+      "state_owner": "No quick-ACK correlation state owner is introduced. TransportFrameCodec is pure wire state and TcpTransport owns only the socket/read boundary.",
+      "lifecycle_owner": "Existing telegram-network TcpTransport; arbitrary outstanding-request lifecycle remains outside this slice.",
+      "persistence_and_restart": "No persistence or restart behavior is introduced or changed.",
+      "concurrency_and_cancellation": "No scheduler, callback registry, request history or background task is introduced.",
+      "security_boundary": "Unexpected transport control tokens fail closed before higher-level message/request mutation. The token value is preserved only in the typed error for diagnosis.",
+      "network_service_dependencies": [
+        "Existing TcpTransport socket I/O only; no new service dependency."
+      ],
+      "service_owner": "Canonical embedded Telegram protocol/network runtime.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
+        "Quick-ACK request-to-outstanding-request correlation remains blocked/open because fixed-U shipping does not request quick-ACK and no arbitrary request-history owner is introduced.",
+        "Broader connection scheduling/racing/reconnect/send retry, proxy/Web/TLS camouflage and auth-key binding/persistence remain open.",
+        "Arbitrary request histories, gzip and complete difference/differenceSlice decoding/application remain open/fail-closed.",
+        "Broader fixed-U source/legal/release closure remains open."
+      ],
+      "production_entrypoints": [
+        "fixed-U TcpConnection::Protocol::Version0/VersionD::finalizePacket -> ordinary lengths only; no quick-ACK request marker",
+        "fixed-U TcpConnection::parsePacket/socketPacket -> newer quick-ACK explicitly unsupported",
+        "canonical telegram-protocol quick_ack_token + TransportFrameCodec generic quick-ACK marker/token wire primitives",
+        "canonical telegram-network::TcpTransport::send_payload -> TransportFrameCodec::encode only",
+        "canonical telegram-network::TcpTransport::receive_payload -> decoded quick_ack_token -> NetworkError::UnexpectedQuickAck",
+        "desktop tracked telegram-network provider mirrors canonical production/test blobs"
+      ],
+      "production_evidence": [
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "fixed-U:Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "fixed-U:Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614",
+        "platform-core-spec-commit:1a09a5674ec16af4228bbf0aed0fb302cb52fba0",
+        "platform-core-spec-blob:6cbc5fdc140759e66c3c14ac853bdf18c8ce4fba",
+        "platform-core-protocol-crypto-path:native/telegram-protocol/src/crypto.rs@32d69573acc6ef4ce7bcc80073f5cdd7e2bea7ad",
+        "platform-core-protocol-transport-path:native/telegram-protocol/src/transport.rs@74189488dc3ec1015edc59989f7aced8ad65f5c3",
+        "platform-core-production-commit:605b8928de5fb64bf235196093ef804e350994f2",
+        "platform-core-network-path:native/telegram-network/src/lib.rs@7c442299aedd4aa7444ba53c7ab8212542dfc2d1",
+        "platform-core-contract-commit:d1cec8b3952a4be1b02c6f1dae1ab008991a0342",
+        "platform-core-network-contract-path:native/telegram-network/tests/tcp_transport.rs@9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240",
+        "desktop-provider-sync-commit:f24b51ec5ba2d959f8c08fe44c6af706f38d7224",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@7c442299aedd4aa7444ba53c7ab8212542dfc2d1",
+        "path:source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs@9dfb554bae0dac9ea68ebd6b2fe7cab664cc1240"
+      ],
+      "test_evidence": [
+        "Existing protocol contracts already pin generic Abridged/Intermediate quick-ACK marker/token behavior and a known quick_ack_token vector; not run.",
+        "New canonical/desktop network contracts pin shipping abridged send with the request bit clear and unsolicited token -> UnexpectedQuickAck; not run."
+      ],
+      "target_commit": "f24b51ec5ba2d959f8c08fe44c6af706f38d7224",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared telegram-protocol/network production composition",
+      "composition_slot": "Embedded Telegram MTProto quick-ACK transport control-token boundary",
+      "capability_component": "Fixed-U quick-ACK unsupported-shipping boundary with isolated generic wire primitives",
+      "variation_axes": [
+        "ordinary abridged send vs generic non-shipping quick-ACK request marker",
+        "normal payload vs decoded quick-ACK token",
+        "correlated lifecycle absent vs forbidden synthetic correlation",
+        "Abridged/Intermediate generic codec vs PaddedIntermediate unsupported"
+      ],
+      "shared_owner_contracts": [
+        "Existing TransportFrameCodec",
+        "Existing TcpTransport",
+        "Existing AuthKey/PlainMessage crypto owner"
+      ],
+      "duplicate_root_check": "No second account, runtime, provider, socket transport, request-history registry, ACK store, scheduler, UI root, sidecar, subprocess or Web wrapper was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "Fixed-U shipping does not request quick-ACK and explicitly marks the newer receive form unsupported; no independent fixed-U correlation lifecycle can be migrated without inventing behavior."
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Existing Messages/Conversation navigation",
+      "collection_surface": "Existing ConversationList; no change",
+      "creation_flow": "Existing canonical conversation creation; no change",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "route_contract": "No new route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Existing canonical Search owner; unchanged",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Unchanged.",
+      "search_local_remote_contract": "Not applicable.",
+      "responsive_disposition": "No UI change.",
+      "accessibility_contract": "No UI change.",
+      "keyboard_contract": "No UI change.",
+      "state_continuity_contract": "Existing session/runtime remains unchanged; unexpected uncorrelated transport tokens now fail closed instead of disappearing.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi design system; no visual changes",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset",
+      "avatar_contract": "No change",
+      "content_copy_keys": [],
+      "motion_contract": "No change",
+      "reduced_motion_contract": "No change",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MTPROTO-QUICK-ACK-WIRE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MTPROTO-QUICK-ACK-SHIPPING-DISABLED-001",
+        "INV-TDRP-MTPROTO-QUICK-ACK-UNCORRELATED-FAIL-CLOSED-001",
+        "INV-TDRP-MTPROTO-QUICK-ACK-NO-HISTORY-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-MTPROTO-QUICK-ACK-SEND-MARKER-001",
+        "UNIT-TDRP-MTPROTO-QUICK-ACK-RECEIVE-REJECT-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MTPROTO-QUICK-ACK-WIRE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MTPROTO-QUICK-ACK-UNCORRELATED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-MTPROTO-QUICK-ACK-SHIPPING-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-SECURITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "mtproto-quick-ack-token-81234567"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Stage B matrix (not run)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381, connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a and session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. Source-neutral Rust owners are retained; no upstream C++ implementation is copied.",
+      "notes": "Stage A source-level implementation only. Existing telegram-protocol already owned generic quick-ACK token/marker wire primitives without request-history state. Fixed-U shipping does not request quick-ACK and explicitly leaves the newer receive form unsupported, so this round does not invent correlation. The minimal production delta changes existing TcpTransport receive behavior from silent token discard to typed fail-closed UnexpectedQuickAck(token). Contracts are authored/mirrored but not executed; validation_status=not-run and accepted=false. Broader correlation/history, connection scheduling, auth-key lifecycle, gzip and complete difference decoding remain open.",
+      "test_execution_evidence": [],
+      "validation_status": "not-run",
+      "accepted": false,
+      "id": "TDRP-R9-MTPROTO-QUICK-ACK-WIRE-001",
+      "source_paths": [
+        "Telegram/SourceFiles/mtproto/connection_tcp.cpp@d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
+        "Telegram/SourceFiles/mtproto/connection_abstract.cpp@3baabf3f72c7c7edba3151814681fbf167a5ca0a",
+        "Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614"
       ]
     }
   ],
