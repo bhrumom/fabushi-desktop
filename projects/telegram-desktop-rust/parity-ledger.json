@@ -6,10 +6,10 @@
   "target_commit": "23d73b32e301408f9c8aed151cb1f9e442516e13",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16122,
-    "unread": 16095,
+    "unknown": 16121,
+    "unread": 16094,
     "omitted": 0,
-    "responsibilities_total": 156,
+    "responsibilities_total": 157,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41520,6 +41520,259 @@
       "accepted": false,
       "source_paths": [
         ".github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348"
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".github/ISSUE_TEMPLATE/config.yml",
+      "source_blob_sha": "1b864704be6a3e3aafdb1e02519bec84886942ce",
+      "source_kind": "repository_issue_template_routing_configuration",
+      "module_id": "tdesktop.repository-issue-template-config",
+      "responsibility_id": "TDRP-R9-REPOSITORY-ISSUE-TEMPLATE-CONFIG-001",
+      "source_symbols": [
+        "blank_issues_enabled: false",
+        "Mobile apps, UI/UX Design, or Missing Features",
+        "https://bugs.telegram.org",
+        "I found a typo or translation error",
+        "https://translations.telegram.org",
+        "My account is banned / I can't log in",
+        "https://telegram.org/support",
+        "I just want to ask a question",
+        "https://t.me/TelegramDesktopTalk"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROCESS-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/issue-template-config-complete-read.md",
+      "behavior_contract": "Preserve the fixed-U GitHub issue-template routing configuration as repository-process provenance: blank issues are disabled and four ordered Telegram-specific contact links route non-Desktop/mobile/UI-feature matters, translations, account/login support and general questions to named external destinations. Treat those links as upstream routing only, never as Fabushi support/product/security authority, and keep external navigation and sensitive-report handling under existing repository privacy/security governance.",
+      "state_machine": "exact config.yml blob -> GitHub Issues chooser reads blank_issues_enabled=false and four ordered contact_links -> reporter sees constrained issue/template choices plus upstream external routes -> reporter either uses an approved repository template or follows a source-declared external destination -> maintainers/triagers preserve target process/privacy boundaries -> later Stage-B exact-candidate qualification; blank bypass, wrong route, sensitive disclosure or Telegram-authority escalation remain non-passing",
+      "side_effects": [
+        "Stage-A closure changes only Fabushi repository governance/evidence documentation and the unique migration ledger.",
+        "No Telegram contact-link configuration, support desk, translation service, public group-chat support path or account-recovery runtime is copied into Fabushi.",
+        "The current Fabushi checkpoint has no .github/ISSUE_TEMPLATE tree; this round records source behavior and owner contracts rather than inventing repository UX.",
+        "No platform-core production delta or shipping runtime owner is introduced."
+      ],
+      "failure_cases": [
+        "A blank upstream issue route is treated as available despite blank_issues_enabled:false",
+        "The four contact links are missing, reordered or mapped to the wrong URL/category",
+        "Telegram-specific external routes are treated as Fabushi product/support/privacy/security authority",
+        "The account/login support route is treated as Fabushi account/session authorization or recovery implementation",
+        "The public group-chat route is treated as an approved destination for sensitive support material",
+        "A security vulnerability or sensitive report is sent to an unapproved public/external channel because the source lacks a private security route",
+        "A second issue tracker/support desk/localization/account runtime or platform-core service is introduced",
+        "Stage-A issue chooser interaction/contact-link navigation/build/test/CI is executed",
+        "Stage-A source work is promoted to verified/accepted"
+      ],
+      "ui_disposition": "Not applicable to Fabushi product UI; repository-host GitHub issue-template chooser configuration only.",
+      "non_ui_responsibilities": [
+        "blank-issue chooser policy",
+        "ordered external contact-link routing provenance",
+        "scope/routing distinction between upstream Telegram and Fabushi",
+        "external-link trust boundary",
+        "security/private-report omission handling",
+        "failure/recovery through existing repository process"
+      ],
+      "platform_delta": "No platform-core production delta.",
+      "implementation_language": "Markdown/JSON repository governance and evidence; no shipping runtime implementation and no Stage-A issue/contact-link/build/test execution.",
+      "target_owner": "Existing Fabushi root repository issue/reporting/development-process authority + repository privacy/security governance + shared quality/test-evidence governance",
+      "existing_owner_candidates": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi repository privacy/security governance",
+        "Fabushi repository quality/test-evidence governance",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "rejected_owners": [
+        "Telegram-branded support/help/translation/community runtime",
+        "Fabushi product account/session or localization runtime",
+        "Fabushi product Tasks / Automations / Settings / Permissions",
+        "Agent / Coordinator / Host / Runner product runtime",
+        "platform-core authorization/runtime/service",
+        "second issue tracker/support desk",
+        "second privacy/security or quality/evidence truth"
+      ],
+      "commands_events": [
+        "GitHub Issues issue-template chooser configuration discovery",
+        "blank-issue suppression intent",
+        "ordered contact-link presentation",
+        "external navigation to source-declared Telegram destinations",
+        "maintainer triage/redaction/rerouting through existing target process",
+        "future Stage-B repository-process/privacy qualification"
+      ],
+      "persistence_contract": "This source defines repository issue-template chooser/contact-link configuration only. It creates no product database, account store, localization store, support ticket store, credential store or second evidence system. External services named by the source remain outside Fabushi persistence authority.",
+      "concurrency_contract": "Source qualification binds the exact fixed-U config.yml blob. Target publication binds the live Fabushi checkpoint by expected-SHA CAS; concurrent target movement invalidates a stale write and must be reread rather than force-overwritten.",
+      "cancellation_contract": "The source defines no retry/cancellation protocol. An unsafe or misrouted report remains unsubmitted/redacted/rerouted through existing process; later qualification interrupted before evidence is complete remains non-passing.",
+      "security_boundary": "Contact-link destinations are external trust domains and Telegram-specific provenance. The YAML authorizes no credential, token, private-message, customer-data or vulnerability disclosure, and no Telegram route can acquire Fabushi account/security/privacy authority from this source.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; repository issue-template routing configuration only.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository issue-template routing configuration authority",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository issue-template routing configuration qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository issue-template routing configuration evidence"
+      ],
+      "production_evidence": [
+        "spec-first commit:bd7bbc1b83a5be56008a83d4a00df2c0b702ce4e",
+        "dossier:projects/telegram-desktop-rust/dossiers/issue-template-config-complete-read.md",
+        "upstream-source:.github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce",
+        "fixed-U-tree:91f2b083ab2877c0a17d07868eabec362a5cfca6"
+      ],
+      "test_evidence": [
+        "CONTRACT-TDRP-ISSUE-CONFIG-HOST-AUTHORITY-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-BLANK-ISSUES-DISABLED-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-CONTACT-LINKS-ORDER-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-DESKTOP-SCOPE-ROUTING-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-TRANSLATION-ROUTING-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-ACCOUNT-SUPPORT-ROUTING-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-QUESTION-ROUTING-001 authored, not run",
+        "CONTRACT-TDRP-ISSUE-CONFIG-EXTERNAL-ROUTE-PROVENANCE-001 authored, not run",
+        "INT-TDRP-ISSUE-CONFIG-PROCESS-COMPOSITION-001 authored, not run",
+        "FAULT-TDRP-ISSUE-CONFIG-BLANK-ISSUE-BYPASS-001 authored, not run",
+        "FAULT-TDRP-ISSUE-CONFIG-WRONG-ROUTE-001 authored, not run",
+        "FAULT-TDRP-ISSUE-CONFIG-SENSITIVE-EXTERNAL-DISCLOSURE-001 authored, not run",
+        "SEC-TDRP-ISSUE-CONFIG-EXTERNAL-LINK-TRUST-BOUNDARY-001 authored, not run",
+        "SEC-TDRP-ISSUE-CONFIG-NO-TELEGRAM-AUTHORITY-ESCALATION-001 authored, not run"
+      ],
+      "target_commit": "bd7bbc1b83a5be56008a83d4a00df2c0b702ce4e",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi root repository issue/reporting/development-process authority + privacy/security governance + quality/test-evidence governance",
+      "composition_slot": "Repository issue-template chooser / external contact-link routing / scope / privacy boundary",
+      "capability_component": "Source-neutral repository issue-template routing configuration contract",
+      "variation_axes": [
+        "blank issue disabled vs prohibited bypass",
+        "four ordered routing categories",
+        "upstream Telegram route vs target Fabushi authority",
+        "external public/support destinations vs sensitive/private reports"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root repository development-process/source-provenance instructions",
+        "Fabushi repository privacy/security governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "FMEP-001 Stage-A deferred executable validation"
+      ],
+      "duplicate_root_check": "No Telegram-specific support/help/translation/community subsystem, account runtime, second issue tracker/support desk, platform-core service, product UI or second quality/security truth introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Repository issue-template chooser; no product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "GitHub Issues template chooser/contact-link routing; repository process only",
+      "object_action_scope": "Repository issue intake routing and external-contact provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development/process support",
+      "route_contract": "GitHub hosts the source issue-template chooser configuration. Upstream routes point to bugs.telegram.org, translations.telegram.org, telegram.org/support and t.me/TelegramDesktopTalk; target routing remains existing Fabushi repository-process/privacy authority and must be independently qualified before adoption.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Repository host-owned issue-template chooser semantics; no Fabushi product UI claim.",
+      "keyboard_contract": "Repository host-owned issue-template chooser semantics; no Fabushi product UI claim.",
+      "state_continuity_contract": "Exact source and target checkpoint identities preserve provenance. Changed source config, moved target ref, external-route drift, privacy/security policy drift or changed validation inputs invalidate stale evidence and cannot inherit a pass.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": "Not applicable",
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-ISSUE-TEMPLATE-CONFIG-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ISSUE-CONFIG-EXACT-CONFIG-001",
+        "ORA-TDRP-ISSUE-CONFIG-BLANK-ISSUE-POLICY-001",
+        "ORA-TDRP-ISSUE-CONFIG-ROUTING-SCOPE-001",
+        "ORA-TDRP-ISSUE-CONFIG-PRIVACY-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ISSUE-CONFIG-ONE-ISSUE-PROCESS-OWNER-001",
+        "INV-TDRP-ISSUE-CONFIG-NO-TELEGRAM-AUTHORITY-ESCALATION-001",
+        "INV-TDRP-ISSUE-CONFIG-NO-SENSITIVE-EXTERNAL-DISCLOSURE-001",
+        "INV-TDRP-ISSUE-CONFIG-NO-STAGE-A-EXECUTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ISSUE-CONFIG-HOST-AUTHORITY-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-BLANK-ISSUES-DISABLED-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-CONTACT-LINKS-ORDER-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-DESKTOP-SCOPE-ROUTING-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-TRANSLATION-ROUTING-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-ACCOUNT-SUPPORT-ROUTING-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-QUESTION-ROUTING-001",
+        "CONTRACT-TDRP-ISSUE-CONFIG-EXTERNAL-ROUTE-PROVENANCE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-ISSUE-CONFIG-PROCESS-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-ISSUE-CONFIG-BLANK-ISSUE-BYPASS-001",
+        "FAULT-TDRP-ISSUE-CONFIG-WRONG-ROUTE-001",
+        "FAULT-TDRP-ISSUE-CONFIG-SENSITIVE-EXTERNAL-DISCLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ISSUE-CONFIG-EXTERNAL-LINK-TRUST-BOUNDARY-001",
+        "SEC-TDRP-ISSUE-CONFIG-NO-TELEGRAM-AUTHORITY-ESCALATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Stage-B exact frozen candidate with authorized GitHub repository issue-template/routing/privacy process"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "not-run",
+      "license_and_provenance": "Behavioral repository issue-template routing configuration read from telegramdesktop/tdesktop fixed-U .github/ISSUE_TEMPLATE/config.yml; no Telegram support/translation/account/community authority or sensitive content is copied into Fabushi shipping product.",
+      "reviewer": null,
+      "notes": "Task round156/source evidence round187. Live desktop checkpoint parent 97768957411708264bdc08796b6a8e3ce33076fe; spec-first bd7bbc1b83a5be56008a83d4a00df2c0b702ce4e; desktop main 9993ca8e107f7e019a8201e5ab74fa54e82159f2; platform-core checkpoint e92b51e23b39dae5719f033fa1f7a20d6579dc8c. Fixed-U tree 91f2b083ab2877c0a17d07868eabec362a5cfca6 complete, 7,194 entries; source index 109 zero-based, mode 100644, 753 Git bytes / 727 Unicode code points, 14 LF, zero CR, trailing newline. blank_issues_enabled=false; four ordered Telegram-specific contact links; no private security route/redaction control. One source entry closes: unknown 16122->16121, unread 16095->16094; responsibilities 156->157. Next fixed-U independent blob: .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87.",
+      "validation_status": "not-run",
+      "accepted": false,
+      "source_paths": [
+        ".github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce"
       ]
     }
   ],
