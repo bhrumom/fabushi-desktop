@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
     CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    PendingProfileMutation, ProfileFileSnapshot,
     ProviderReviewContinuationOutcome, SandAgentDb,
     SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
@@ -1099,6 +1100,94 @@ fn memory_journal_commit_clears_snapshot_and_journal_together() {
     assert!(owner
         .get_memory_prompt_snapshot()
         .expect("read snapshot")
+        .is_none());
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_mutation_commit_updates_legacy_pointer_and_clears_journal() {
+    let root = temp_root("pending-profile-commit");
+    let agent_dir = root.join("agent-work");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-work:main".into(),
+        session_id: "session-1".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner
+        .compare_and_set_session_work_admission(None, &admission)
+        .expect("create admission"));
+    let previous_profile = SandProfile {
+        description: "description".into(),
+        avatar_path: Some("avatar.png".into()),
+    };
+    owner
+        .set_sand_profile(&previous_profile)
+        .expect("set previous profile");
+    let mutation = PendingProfileMutation {
+        mutation_id: "avatar-remove:test".into(),
+        operation: "avatar-remove".into(),
+        session_key: admission.session_key.clone(),
+        session_id: admission.session_id.clone(),
+        lifecycle_revision: admission.lifecycle_revision.clone(),
+        before_files: vec![ProfileFileSnapshot {
+            filename: "avatar.png".into(),
+            contents: Some(vec![1, 2, 3]),
+        }],
+        after_files: Vec::new(),
+        previous_profile: previous_profile.clone(),
+        next_profile: Some(SandProfile {
+            description: previous_profile.description.clone(),
+            avatar_path: None,
+        }),
+    };
+    assert!(owner
+        .prepare_pending_profile_mutation(&mutation)
+        .expect("prepare profile journal"));
+    let mut sealed = mutation.clone();
+    sealed.after_files = vec![ProfileFileSnapshot {
+        filename: "avatar.png".into(),
+        contents: None,
+    }];
+    assert!(owner
+        .seal_pending_profile_mutation(&sealed)
+        .expect("seal profile journal"));
+    let archive_error = owner
+        .transition_session_work_archive(
+            &admission.session_key,
+            &admission.session_id,
+            Some(&admission.lifecycle_revision),
+            true,
+            Some("operator"),
+            Some("pending profile mutation"),
+            1.0,
+        )
+        .expect_err("archive must not bypass profile journal");
+    assert!(archive_error.to_string().contains("pending profile mutation"));
+    assert!(owner
+        .commit_pending_profile_mutation(&sealed)
+        .expect("commit profile journal"));
+    assert_eq!(
+        owner.get_sand_profile().expect("read profile").avatar_path,
+        None
+    );
+    assert!(owner
+        .read_pending_profile_mutation()
+        .expect("read profile journal")
         .is_none());
     owner.close(false);
     let _ = fs::remove_dir_all(root);

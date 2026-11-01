@@ -15,8 +15,9 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, SandAgentDb,
-    PendingMemoryMutation, ProviderReviewContinuationOutcome, SessionProviderReview,
+    AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    PendingProfileMutation, ProfileFileSnapshot, SandAgentDb,
+    ProviderReviewContinuationOutcome, SessionProviderReview,
     SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
     add_persisted_conversation_partner,
@@ -97,6 +98,10 @@ use super::session_profile_files::{
     get_agent_profile_text as read_agent_profile_text, write_agent_profile_update,
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
+use super::session_mutations::{
+    capture_profile_mutation_files, profile_mutation_files_match,
+    restore_profile_mutation_files,
+};
 use super::typed_replay::{TypedReplayEntry, project_typed_replay_entries};
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
@@ -1452,6 +1457,7 @@ impl ProductionSessionWorkers {
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
         if let Some(owner) = owners.get(agent_id) {
+            self.recover_pending_profile_mutation(agent_id, owner)?;
             self.recover_pending_memory_mutation(agent_id, owner)?;
             return Ok(Arc::clone(owner));
         }
@@ -1460,6 +1466,7 @@ impl ProductionSessionWorkers {
                 .map_err(|error| error.to_string())?,
         );
         self.recover_pending_media_custody(agent_id, &owner)?;
+        self.recover_pending_profile_mutation(agent_id, &owner)?;
         self.recover_pending_memory_mutation(agent_id, &owner)?;
         owners.insert(agent_id.to_string(), Arc::clone(&owner));
         Ok(owner)
@@ -1592,6 +1599,67 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())?
         {
             return Err("pending memory mutation journal could not be cleared".into());
+        }
+        Ok(())
+    }
+
+    fn recover_pending_profile_mutation(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(mutation) = owner
+            .read_pending_profile_mutation()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "pending profile mutation has no session admission".to_string())?;
+        if mutation.mutation_id.trim().is_empty()
+            || !matches!(
+                mutation.operation.as_str(),
+                "profile-update" | "avatar-replace" | "avatar-remove"
+            )
+            || mutation.session_key != admission.session_key
+            || mutation.session_id != admission.session_id
+            || mutation.lifecycle_revision != admission.lifecycle_revision
+            || mutation.before_files.is_empty()
+            || mutation.after_files.is_empty()
+        {
+            return Err("pending profile mutation journal is malformed or rebound".into());
+        }
+        if owner
+            .get_sand_profile()
+            .map_err(|error| error.to_string())?
+            != mutation.previous_profile
+        {
+            return Err("pending profile mutation owner state is rebound or outcome-unknown".into());
+        }
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        if profile_mutation_files_match(agent_dir, &mutation.before_files) {
+            if !owner
+                .clear_pending_profile_mutation(&mutation)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("could not clear already-before profile mutation journal".into());
+            }
+            return Ok(());
+        }
+        if !profile_mutation_files_match(agent_dir, &mutation.after_files) {
+            return Err("pending profile mutation files do not match before or after state".into());
+        }
+        restore_profile_mutation_files(agent_dir, &mutation.before_files)?;
+        if !owner
+            .clear_pending_profile_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("could not clear rolled-back profile mutation journal".into());
         }
         Ok(())
     }
@@ -2987,10 +3055,66 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Option<SandAgentProfile>, String> {
         let db_path = self.session_db_path(agent_id)?;
+        if db_path.is_file() {
+            let _owner = self.open_agent_db_owner(agent_id)?;
+        }
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         Ok(read_agent_profile_text(agent_dir))
+    }
+
+    fn prepare_profile_mutation(
+        owner: &SandAgentDb,
+        operation: &str,
+        before_files: Vec<ProfileFileSnapshot>,
+        next_profile: Option<SandProfile>,
+    ) -> Result<PendingProfileMutation, String> {
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "profile mutation requires a session admission".to_string())?;
+        let previous_profile = owner
+            .get_sand_profile()
+            .map_err(|error| error.to_string())?;
+        let mutation = PendingProfileMutation {
+            mutation_id: format!("profile-{}:{}", operation, Uuid::new_v4()),
+            operation: operation.to_string(),
+            session_key: admission.session_key,
+            session_id: admission.session_id,
+            lifecycle_revision: admission.lifecycle_revision,
+            before_files,
+            after_files: Vec::new(),
+            previous_profile,
+            next_profile,
+        };
+        if !owner
+            .prepare_pending_profile_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("profile mutation could not establish its durable journal".into());
+        }
+        Ok(mutation)
+    }
+
+    fn rollback_profile_mutation(
+        owner: &SandAgentDb,
+        agent_dir: &Path,
+        mutation: &PendingProfileMutation,
+    ) -> Result<(), String> {
+        if !profile_mutation_files_match(agent_dir, &mutation.before_files) {
+            if !profile_mutation_files_match(agent_dir, &mutation.after_files) {
+                return Err("profile mutation rollback found an unknown file state".into());
+            }
+            restore_profile_mutation_files(agent_dir, &mutation.before_files)?;
+        }
+        if !owner
+            .clear_pending_profile_mutation(mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("profile mutation journal could not be cleared after rollback".into());
+        }
+        Ok(())
     }
 
     pub fn update_agent_profile(
@@ -3005,11 +3129,73 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
-            write_agent_profile_update(agent_dir, update)
-                .map_err(|error| error.to_string())
-                .map(|_| ())
+            let owner = self.open_agent_db_owner(agent_id)?;
+            let before_files = capture_profile_mutation_files(agent_dir, true)?;
+            let mutation = Self::prepare_profile_mutation(
+                &owner,
+                "profile-update",
+                before_files,
+                None,
+            )?;
+            if let Err(error) = write_agent_profile_update(agent_dir, update) {
+                Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                    .map_err(|rollback| format!("profile update failed: {error}; {rollback}"))?;
+                return Err(error.to_string());
+            }
+            let mut sealed = mutation.clone();
+            sealed.after_files = capture_profile_mutation_files(agent_dir, true)?;
+            match owner.seal_pending_profile_mutation(&sealed) {
+                Ok(true) => {}
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                        .map_err(|rollback| format!("profile mutation seal rejected; {rollback}"))?;
+                    return Err("profile mutation seal was rejected by the session owner".into());
+                }
+                Err(error) => {
+                    return Err(format!(
+                        "profile mutation seal outcome unknown; journal retained for recovery: {error}"
+                    ));
+                }
+            }
+            match owner.commit_pending_profile_mutation(&sealed) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &sealed)
+                        .map_err(|rollback| format!("profile settlement was rejected; {rollback}"))?;
+                    Err("profile settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "profile settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
         })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
+    }
+
+    pub fn update_agent_profile_fields(
+        &self,
+        agent_id: &str,
+        name: Option<&str>,
+        description: Option<&str>,
+    ) -> Result<(), String> {
+        let current = self
+            .get_agent_profile_text(agent_id)?
+            .unwrap_or_else(|| SandAgentProfile {
+                name: String::new(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            });
+        let update = AgentProfileUpdate {
+            name: name.unwrap_or(&current.name).to_string(),
+            description: description.unwrap_or(&current.description).to_string(),
+            title: Some(current.title),
+            avatar_shape: Some(current.avatar_shape),
+            avatar_color: Some(current.avatar_color),
+        };
+        self.update_agent_profile(agent_id, &update, None)?;
+        Ok(())
     }
 
     pub fn get_agent_avatar(
@@ -3017,6 +3203,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<AgentAvatarResponse, String> {
         let db_path = self.session_db_path(agent_id)?;
+        if db_path.is_file() {
+            let _owner = self.open_agent_db_owner(agent_id)?;
+        }
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
@@ -3032,6 +3221,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Option<Vec<u8>>, String> {
         let db_path = self.session_db_path(agent_id)?;
+        if db_path.is_file() {
+            let _owner = self.open_agent_db_owner(agent_id)?;
+        }
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
@@ -3049,24 +3241,66 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_work_admission(agent_id)?;
             let owner = self.open_agent_db_owner(agent_id)?;
-            mutate_agent_avatar_bytes(
+            let before_files = capture_profile_mutation_files(agent_dir, false)?;
+            let previous_profile = owner
+                .get_sand_profile()
+                .map_err(|error| error.to_string())?;
+            let next_profile = png_bytes.is_none().then(|| SandProfile {
+                description: previous_profile.description.clone(),
+                avatar_path: None,
+            });
+            let mutation = Self::prepare_profile_mutation(
+                &owner,
+                if png_bytes.is_some() {
+                    "avatar-replace"
+                } else {
+                    "avatar-remove"
+                },
+                before_files,
+                next_profile,
+            )?;
+            if let Err(error) = mutate_agent_avatar_bytes(
                 &db_path,
                 self.busy_timeout_ms,
                 png_bytes,
-                |profile| {
-                    let changed = owner
-                        .set_sand_profile(profile)
-                        .map_err(|error| error.to_string())?;
-                    if changed {
-                        Ok(())
-                    } else {
-                        Err("avatar pointer clear was rejected by the session owner".into())
-                    }
-                },
-            )
+                |_| Ok(()),
+            ) {
+                Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                    .map_err(|rollback| format!("avatar mutation failed: {error}; {rollback}"))?;
+                return Err(error);
+            }
+            let mut sealed = mutation.clone();
+            sealed.after_files = capture_profile_mutation_files(agent_dir, false)?;
+            match owner.seal_pending_profile_mutation(&sealed) {
+                Ok(true) => {}
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                        .map_err(|rollback| format!("avatar mutation seal rejected; {rollback}"))?;
+                    return Err("avatar mutation seal was rejected by the session owner".into());
+                }
+                Err(error) => {
+                    return Err(format!(
+                        "avatar mutation seal outcome unknown; journal retained for recovery: {error}"
+                    ));
+                }
+            }
+            match owner.commit_pending_profile_mutation(&sealed) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &sealed)
+                        .map_err(|rollback| format!("avatar settlement was rejected; {rollback}"))?;
+                    Err("avatar settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "avatar settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
         })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
     }

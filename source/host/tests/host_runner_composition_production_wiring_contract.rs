@@ -104,6 +104,8 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "state = state.with_box_file_reader(reader)",
         "state = state.with_agent_memory_remover(Arc::new(move |memory_id|",
         "memory_sessions.remove_agent_memory(&memory_agent_id, memory_id)",
+        "state = state.with_agent_profile_writer(Arc::new(move |name, description|",
+        "profile_sessions.update_agent_profile_fields(",
         "sessions.open_agent_db_owner(agent_id)?",
     ] {
         assert!(

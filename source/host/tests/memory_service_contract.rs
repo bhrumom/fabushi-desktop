@@ -5,6 +5,10 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_mutations::{
+    capture_profile_mutation_files, profile_mutation_files_match,
+    restore_profile_mutation_files,
+};
 use mahayana_host_runtime::extensions::memory::memory_service::{
     FileMemoryStore, MemoryKind, MemoryOrigin, MemoryRecoveryRecord, MemoryService,
     MemorySynthesisBridge,
@@ -135,6 +139,27 @@ fn exact_memory_recovery_preserves_synthesis_metadata() {
     assert_eq!(restored.memories[0].origin, MemoryOrigin::Explicit);
     assert_eq!(restored.memories[0].content, record.content);
     assert!(!captured[0].tombstoned);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_mutation_file_snapshots_are_exact_and_allowlisted() {
+    let root = temp_root("profile-file-recovery");
+    let agent = root.join("agent");
+    fs::create_dir_all(&agent).expect("agent dir");
+    fs::write(agent.join("profile.json"), b"old-profile\n").expect("profile");
+    fs::write(agent.join("avatar.png"), [1_u8, 2, 3]).expect("avatar");
+    let before = capture_profile_mutation_files(&agent, true).expect("capture before");
+    fs::write(agent.join("profile.json"), b"new-profile\n").expect("new profile");
+    fs::remove_file(agent.join("avatar.png")).expect("remove avatar");
+    let after = capture_profile_mutation_files(&agent, true).expect("capture after");
+    assert!(profile_mutation_files_match(&agent, &after));
+    assert!(!profile_mutation_files_match(&agent, &before));
+    restore_profile_mutation_files(&agent, &before).expect("restore before");
+    assert!(profile_mutation_files_match(&agent, &before));
+    assert_eq!(fs::read(agent.join("profile.json")).expect("restored profile"), b"old-profile\n");
+    assert_eq!(fs::read(agent.join("avatar.png")).expect("restored avatar"), vec![1, 2, 3]);
 
     let _ = fs::remove_dir_all(root);
 }

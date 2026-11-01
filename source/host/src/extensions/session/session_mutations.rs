@@ -2,16 +2,111 @@ use std::fs;
 use std::path::Path;
 
 use crate::agents::agent_avatar::{
-    CANONICAL_AVATAR_FILENAME, invalidate_avatar_data_url_cache,
+    CANONICAL_AVATAR_FILENAME, CONVENTIONAL_AVATAR_EXTENSIONS,
+    invalidate_avatar_data_url_cache,
     list_conventional_avatar_filenames,
 };
 
 use super::agent_db::read_persisted_agent_serde_snapshot;
+use super::agent_db::ProfileFileSnapshot;
 use super::agent_db_serde::SandProfile;
 use super::session_summaries::{
     AgentSummary, DurableFootprint, agent_has_durable_footprint, build_summary,
     file_mtime_ms,
 };
+
+fn allowed_profile_mutation_filename(filename: &str) -> bool {
+    filename == "profile.json"
+        || CONVENTIONAL_AVATAR_EXTENSIONS
+            .iter()
+            .any(|extension| filename == format!("avatar.{extension}"))
+}
+
+pub fn capture_profile_mutation_files(
+    agent_dir: &Path,
+    include_profile: bool,
+) -> Result<Vec<ProfileFileSnapshot>, String> {
+    let mut filenames = if include_profile {
+        vec!["profile.json".to_string()]
+    } else {
+        Vec::new()
+    };
+    filenames.extend(
+        CONVENTIONAL_AVATAR_EXTENSIONS
+            .iter()
+            .map(|extension| format!("avatar.{extension}")),
+    );
+    filenames
+        .into_iter()
+        .map(|filename| {
+            let path = agent_dir.join(&filename);
+            if let Ok(metadata) = fs::symlink_metadata(&path) {
+                if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+                    return Err("profile mutation path is not a regular file".into());
+                }
+            }
+            let contents = match fs::read(&path) {
+                Ok(bytes) => Some(bytes),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+                Err(error) => return Err(error.to_string()),
+            };
+            Ok(ProfileFileSnapshot { filename, contents })
+        })
+        .collect()
+}
+
+pub fn profile_mutation_files_match(
+    agent_dir: &Path,
+    expected: &[ProfileFileSnapshot],
+) -> bool {
+    if expected
+        .iter()
+        .any(|snapshot| !allowed_profile_mutation_filename(&snapshot.filename))
+    {
+        return false;
+    }
+    expected.iter().all(|snapshot| {
+        let path = agent_dir.join(&snapshot.filename);
+        if let Ok(metadata) = fs::symlink_metadata(&path) {
+            if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+                return false;
+            }
+        }
+        let current = match fs::read(path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(_) => return false,
+        };
+        current == snapshot.contents
+    })
+}
+
+pub fn restore_profile_mutation_files(
+    agent_dir: &Path,
+    snapshots: &[ProfileFileSnapshot],
+) -> Result<(), String> {
+    for snapshot in snapshots {
+        if !allowed_profile_mutation_filename(&snapshot.filename) {
+            return Err("profile mutation journal contains a non-allowlisted file".into());
+        }
+        let path = agent_dir.join(&snapshot.filename);
+        if let Ok(metadata) = fs::symlink_metadata(&path) {
+            if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+                return Err("profile mutation restore path is not a regular file".into());
+            }
+        }
+        match snapshot.contents.as_deref() {
+            Some(contents) => fs::write(path, contents).map_err(|error| error.to_string())?,
+            None => match fs::remove_file(path) {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error.to_string()),
+            },
+        }
+    }
+    invalidate_avatar_data_url_cache(agent_dir);
+    Ok(())
+}
 
 pub fn set_agent_avatar_bytes<F>(
     db_path: &Path,

@@ -17,7 +17,7 @@ pub const REQUEST_ID_PROMPT_MAX: usize = 200;
 pub const EPISODE_TURN_TEXT_CAP: usize = 2_000;
 pub const EPISODE_PENDING_MAX: usize = 64;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SandProfile {
     pub description: String,
     pub avatar_path: Option<String>,

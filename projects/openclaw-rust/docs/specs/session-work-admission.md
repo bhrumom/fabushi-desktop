@@ -88,6 +88,18 @@ durable state → consumer chain.
   fenced when any identity, path, restore, or CAS check is uncertain. No
   second journal, memory database, or best-effort timestamp inference is
   allowed.
+- `SWA-12`: Profile and avatar mutations that cross the agent directory and
+  owner-local SQLite must use the existing `SandAgentDb` owner as a durable
+  crash-recovery fence. The journal must capture canonical session identity,
+  mutation kind, the exact allowlisted before file state, and any owner-local
+  profile state changed by the mutation before external files are touched. The
+  producer must seal the exact allowlisted after state before commit. Commit
+  must clear the journal in the same owner transaction as the
+  SQLite profile-pointer update when one is required. Owner reopen must
+  restore the before state only when the current files still match the
+  journaled after state (or are already at before), otherwise retain the fence
+  and fail closed. No path inference, timestamp inference, or second profile
+  authority is allowed.
 
 ## Current and target state
 
@@ -187,9 +199,10 @@ the same owner fence. The memory gateway's paired clear paths now use an
 owner-composed mutation path because they mutate the external memory store
 before clearing the SQLite snapshot. The selected contract is now an
 owner-composed memory mutation path with the
-same per-agent filesystem serialization boundary and bounded record restore on
-snapshot-clear rejection; crash recovery across the external store and SQLite
-remains a separate gap.
+same per-agent filesystem serialization boundary and exact record/metadata
+restore on snapshot-clear rejection; the external memory store now has its
+own durable journal recovery path, while profile/avatar file recovery remains
+the separate atomicity gap addressed by SWA-12.
 
 The file-backed agent profile and avatar mutations remain a separate atomicity
 boundary. Profile updates write `profile.json`; avatar replacement or removal
@@ -200,8 +213,20 @@ these filesystem and SQLite effects one owner transaction, so this slice does
 not claim their deletion-race closure. The selected closure is a per-agent
 session-owner serialization boundary shared by profile/avatar mutation and
 directory deletion; the boundary must be held across the complete mutation,
-with admission rechecked while held. Cross-process crash recovery and any
-external memory-store mutation remain separate atomicity gaps.
+with admission rechecked while held. SWA-12 now extends that same owner
+boundary with a durable before/after journal and owner-reopen recovery; its
+focused recovery contracts and exact-head verification remain pending.
+
+The selected crash-recovery extension uses one additional pending profile
+mutation record in the existing `SandAgentDb`; it is not a second database or
+profile owner. The record is prepared under the same per-agent filesystem
+serialization lock before profile/avatar files change. It carries exact
+allowlisted before/after bytes and the expected owner-local `SandProfile` when
+avatar removal changes the legacy SQLite pointer. A successful owner commit
+updates that pointer and removes the journal in one SQLite transaction. A
+reopen compares every affected file with the recorded before/after states,
+restores only an exact after-state, clears an already-before state, and
+retains the journal/fence for any mismatch.
 
 The same fence covers owner-local viewed/unread projections, the persisted
 session profile projection, conversation-partner membership, and profile
@@ -251,10 +276,13 @@ lifecycle owners.
 5. Add the migration-safe external-memory mutation journal to the existing
    `SandAgentDb` owner, bind remove/clear producers to its prepare/commit/
    abort operations, and run exact-store rollback during owner open.
-6. Connect the authenticated Host Gateway archive/restore producer to the
+6. Add the profile/avatar crash-recovery journal to the same `SandAgentDb`
+   owner, including exact allowlisted file-state recovery and the atomic
+   legacy-avatar-pointer commit.
+7. Connect the authenticated Host Gateway archive/restore producer to the
    owner-local transition and then connect the existing provider-review
    terminal owner.
-7. Add direct negative contracts, then perform exact-head verification.
+8. Add direct negative contracts, then perform exact-head verification.
 
 ## Verification and acceptance
 
@@ -262,6 +290,9 @@ Focused contracts must prove disabled/archived/deletion-pending admission,
 stale generation, duplicate and conflicting result, lifecycle change during
 restore, active media/subagent preservation, terminal review ownership, and
 crash recovery of a journaled external memory mutation.
+Profile/avatar recovery must additionally prove before/after matching,
+legacy-pointer transaction ownership, malformed/rebound rejection, and
+archive/delete exclusion while the journal is retained.
 Static presence is insufficient. The parity row remains
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`,
 `acceptance=pending` until all production edges and required exact-head
@@ -356,9 +387,11 @@ boundary, and the existing directory deletion owner holds it through cleanup.
 The avatar legacy-pointer clear is delegated back to the same `SandAgentDb`
 owner rather than opening a second direct SQLite mutation path. The avatar
 mutation snapshots conventional files and restores them when the new file
-write or legacy-pointer clear fails. This closes the in-process deletion race
-and the bounded mutation-error rollback path; cross-process crash recovery
-remains pending.
+write or legacy-pointer clear fails. The new profile mutation journal also
+holds the exact before/after file state until the owner transaction commits;
+owner reopen restores a still-pending exact after-state and fails closed on
+any mismatch. Focused recovery contracts and exact-head verification remain
+pending.
 
 The memory gateway's remove and clear producers now route through the same
 owner boundary. They capture the external records and memory snapshot before
@@ -372,11 +405,19 @@ exact-clears the journal; malformed or uncertain recovery remains fail-closed.
 The focused
 crash-recovery contract and exact-head verification remain pending.
 
+Profile/avatar mutation remains owner-serialized and now has the selected
+cross-process recovery journal and producer wiring. Its focused recovery
+contract execution and exact-head verification remain pending.
+
 The active Runner `update_state` agent-memory forget producer now delegates its
 agent-scope removal through the same `ProductionSessionWorkers` owner and
 journal; user/project memory scopes retain their existing separate stores.
 This prevents the Runner's state surface from creating an agent-memory delete
 path that bypasses session admission.
+
+The Runner `update_state` profile producer now likewise delegates agent
+profile name/description changes to `ProductionSessionWorkers`; it no longer
+writes `profile.json` directly when the production owner callback is bound.
 
 The production synthesis target is routed through a late-bound owner gate. A
 target without a bound `ProductionSessionWorkers` gate returns a

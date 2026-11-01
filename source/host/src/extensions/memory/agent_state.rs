@@ -37,6 +37,8 @@ pub type AgentMemoryRemover =
     Arc<dyn Fn(&str) -> StateWriteResult + Send + Sync + 'static>;
 pub type AgentMemoryWriter =
     Arc<dyn Fn(&str, MemoryTier) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentProfileWriter =
+    Arc<dyn Fn(Option<String>, Option<String>) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -65,6 +67,7 @@ pub struct SandAgentState {
     read_box_file: Option<AvatarBoxFileReader>,
     write_agent_memory: Option<AgentMemoryWriter>,
     remove_agent_memory: Option<AgentMemoryRemover>,
+    write_agent_profile: Option<AgentProfileWriter>,
 }
 
 impl SandAgentState {
@@ -86,6 +89,7 @@ impl SandAgentState {
             read_box_file: None,
             write_agent_memory: None,
             remove_agent_memory: None,
+            write_agent_profile: None,
         })
     }
 
@@ -98,6 +102,10 @@ impl SandAgentState {
     }
     pub fn with_agent_memory_writer(mut self, writer: AgentMemoryWriter) -> Self {
         self.write_agent_memory = Some(writer);
+        self
+    }
+    pub fn with_agent_profile_writer(mut self, writer: AgentProfileWriter) -> Self {
+        self.write_agent_profile = Some(writer);
         self
     }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
@@ -253,6 +261,12 @@ impl SandAgentState {
     pub fn update_profile(&self, name: Option<&str>, description: Option<&str>) -> StateWriteResult {
         if name.is_none() && description.is_none() { return StateWriteResult::failure("nothing to change - pass at least one of name or description."); }
         if name.is_some_and(|value| value.trim().is_empty()) { return StateWriteResult::failure("a blank name is not allowed."); }
+        if let Some(write_agent_profile) = self.write_agent_profile.as_ref() {
+            return write_agent_profile(
+                name.map(str::to_string),
+                description.map(str::to_string),
+            );
+        }
         let path = get_sand_profile_path(&self.agent_dir);
         let current = read_sand_profile_file(&path).unwrap_or(SandAgentProfile {
             name: String::new(), description: String::new(), title: String::new(),

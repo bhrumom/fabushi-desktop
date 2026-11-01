@@ -151,6 +151,20 @@ impl HostRunnerComposition {
                 )),
             }
         }));
+        let profile_sessions = Arc::clone(&sessions);
+        let profile_agent_id = agent_id.to_string();
+        state = state.with_agent_profile_writer(Arc::new(move |name, description| {
+            match profile_sessions.update_agent_profile_fields(
+                &profile_agent_id,
+                name.as_deref(),
+                description.as_deref(),
+            ) {
+                Ok(()) => StateWriteResult::success("Updated your profile."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update your profile: {error}"
+                )),
+            }
+        }));
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
             Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)
