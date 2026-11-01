@@ -25,8 +25,8 @@ use mahayana_host_runtime::connectors::channel_attachment::{
     resolve_channel_attachment, to_local_channel_attachment_path, url_looks_like_image,
 };
 use mahayana_host_runtime::connectors::channel_delivery::{
-    ChannelDeliveryPort, ChannelDeliveryRouter, ChannelOutboundMessage, HostChannelDelivery,
-    UnregisteredChannelDeliveryPort,
+    ChannelDeliveryPort, ChannelDeliveryRouter, ChannelOutboundMessage, ChannelThreadRouter,
+    HostChannelDelivery, UnregisteredChannelDeliveryPort,
 };
 use mahayana_host_runtime::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
 
@@ -86,24 +86,6 @@ fn test_ocrm_channel_o01_inbound_deduplication() {
 // ---------------------------------------------------------------------------
 // OCRM-CHANNEL-O02: Thread Routing & Conversation Affinity Resolution
 // ---------------------------------------------------------------------------
-#[derive(Default)]
-struct ChannelThreadRouter {
-    thread_to_conversation: HashMap<(String, String), String>, // (channel_id, thread_id) -> conversation_scope_id
-}
-
-impl ChannelThreadRouter {
-    fn resolve_or_create(&mut self, channel_id: &str, thread_id: Option<&str>) -> String {
-        let thread_key = thread_id.unwrap_or("default_root");
-        let key = (channel_id.to_string(), thread_key.to_string());
-        if let Some(scope_id) = self.thread_to_conversation.get(&key) {
-            return scope_id.clone();
-        }
-        let new_scope = format!("conv-{channel_id}-{thread_key}");
-        self.thread_to_conversation.insert(key, new_scope.clone());
-        new_scope
-    }
-}
-
 #[test]
 fn test_ocrm_channel_o02_thread_routing_affinity() {
     let mut router = ChannelThreadRouter::default();
@@ -114,6 +96,13 @@ fn test_ocrm_channel_o02_thread_routing_affinity() {
 
     let scope_root = router.resolve_or_create("discord-support", None);
     assert_ne!(scope_1, scope_root, "root channel messages must resolve to distinct scope");
+
+    let hyphenated_a = router.resolve_or_create("a-b", Some("c"));
+    let hyphenated_b = router.resolve_or_create("a", Some("b-c"));
+    assert_ne!(
+        hyphenated_a, hyphenated_b,
+        "distinct channel/thread pairs must not alias through scope-id formatting"
+    );
 }
 
 // ---------------------------------------------------------------------------

@@ -604,7 +604,15 @@ impl ChannelThreadRouter {
         if let Some(scope_id) = self.thread_to_conversation.get(&key) {
             return scope_id.clone();
         }
-        let new_scope = format!("conv-{channel}-{thread}");
+        // Length-prefix both components so distinct `(channel, thread)` pairs
+        // cannot alias when either provider-owned value contains `-`.
+        let new_scope = format!(
+            "conv-{}:{}{}:{}",
+            channel.len(),
+            channel,
+            thread.len(),
+            thread
+        );
         self.thread_to_conversation.insert(key, new_scope.clone());
         new_scope
     }
