@@ -470,14 +470,18 @@ impl AutomationRunPath {
                 // was attempted. Preserve a terminal history outcome so
                 // a rejected owner cannot strand a permanently running
                 // compatibility record or execute without a row fence.
-                let _ = finish_run(
+                if let Err(settlement_error) = finish_run(
                     store,
                     &args.automation.id,
                     Some(run_id),
                     "error",
                     args.fired_at_ms,
                     Some(&error),
-                );
+                ) {
+                    return Err(format!(
+                        "{error}; failed to settle automation history after cron admission rejection: {settlement_error}"
+                    ));
+                }
                 return Err(error);
             }
         }
