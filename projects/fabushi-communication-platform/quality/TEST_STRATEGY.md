@@ -351,3 +351,16 @@ OpenAI host-adapter qualification treats `.agents/skills/continue/agents/openai.
 
 Additional Stage-A contracts authored, not run: `CONTRACT-TDRP-CONTINUE-OPENAI-HOST-METADATA-001` and `INT-TDRP-CONTINUE-OPENAI-HOST-INVOCATION-001`.
 
+
+### Continue consolidation transaction qualification
+
+The fixed-U consolidation reference is qualified as a source-neutral repository-process transaction, not as a second queue or product runtime. Eligibility must fail closed: only pristine unclaimed `todo` work may be considered; project lineage and frozen-batch membership are hard partitions; approved, claimed, active, blocked/non-mergeable, already-started, or class-isolated work cannot be retired. Reverse dependencies are part of the decision: an active/claimed/non-mergeable unfinished dependent vetoes a source candidate, while eligible `todo` dependents may be rewritten only atomically. Replacement simulation must reject direct/transitive self-dependency and every dependency cycle.
+
+Merge qualification requires a material shared context/implementation/measurement setup and one coherent normal implementation pass. It is not satisfied by same-project membership or by concatenating unrelated tasks. Every source acceptance criterion, prerequisite, dependency, input, fixture/safety fact, and source-specific scope boundary remains traceable. `NO_MERGE` is a successful optimization outcome only when it publishes the durable completion/no-repeat boundary and changes no unrelated queue state.
+
+Retirement/alias qualification preserves source identity. The old task retains its specification and inputs, loses runnable state, gains an exact old-to-new alias, receipt, type/project identity, and retained-content digest; alias resolution must be cycle-safe and end at live canonical work. A late edit that changes the retained digest is non-passing. Replacement work must be pristine unclaimed `todo`, preserve type/project, name the consolidation receipt, and have at least two retired sources per merged target.
+
+Publication qualification requires a last-moment reread, explicit changed-path scope, exact mapping/receipt coverage, no stale live dependency or project link to retired ids, full dependency/alias/split graph validation, and a single compare-and-swap boundary. Pre-commit drift is `RACED`: no tracked mutation and the pending marker remains. Once a consolidation commit exists, semantic/remote publication failure is `BLOCKED`: preserve the commit for generic publish/recovery, revalidate after fetch/rebase, and never force-push. The generic publish path must recognize consolidation commits and invoke the same validator.
+
+Additional Stage-A contracts authored, not run: `CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ELIGIBILITY-001`, `CONTRACT-TDRP-CONTINUE-CONSOLIDATION-MERGE-NO-MERGE-001`, `CONTRACT-TDRP-CONTINUE-CONSOLIDATION-ALIAS-FINGERPRINT-001`, `INT-TDRP-CONTINUE-CONSOLIDATION-PUBLISH-001`, and `FAULT-TDRP-CONTINUE-CONSOLIDATION-RECOVERY-001`.
+
