@@ -69,3 +69,4 @@ selected and approved.
 - `source/host/src/extensions/transcript/automation_run_path.rs`
 - `source/host/src/extensions/transcript/automation_runtime.rs`
 - `source/host/src/extensions/session/production.rs`
+- `projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md`
