@@ -230,23 +230,35 @@ impl ProductionAgentToAgentMessaging {
 
         let source_admission = self.sessions.read_session_work_admission(from_agent_id)?;
         let target_admission = self.sessions.read_session_work_admission(to_agent_id)?;
-        let source_session_key = from_session_key
+        let sender_session_key = match from_session_key
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(ToOwned::to_owned)
-            .or_else(|| {
-                source_admission
-                    .as_ref()
-                    .map(|record| record.session_key.clone())
-            })
-            .unwrap_or_default();
+        {
+            Some(session_key) => {
+                self.sessions
+                    .assert_session_work_admission(from_agent_id, Some(&session_key))?;
+                self.sessions
+                    .read_session_work_admission(from_agent_id)?
+                    .filter(|record| record.session_key == session_key)
+                    .map(|record| record.session_key)
+            }
+            None => source_admission
+                .as_ref()
+                .map(|record| record.session_key.clone())
+                .filter(|value| !value.trim().is_empty()),
+        };
+        if let Some(session_key) = sender_session_key.as_deref() {
+            self.sessions
+                .assert_session_work_admission(from_agent_id, Some(session_key))?;
+        }
         let target_session_key = target_admission
             .as_ref()
             .map(|record| record.session_key.clone())
             .unwrap_or_default();
         let source_endpoint = CommunicationEndpoint {
             agent_id: from_agent_id.to_string(),
-            session_key: source_session_key,
+            session_key: sender_session_key.clone().unwrap_or_default(),
             store_path: self.sessions.session_db_path(from_agent_id)?.to_string_lossy().into_owned(),
             session_id: source_admission.as_ref().map(|record| record.session_id.clone()),
             communication: self.sessions.read_session_communication_policy(from_agent_id)?,
@@ -282,28 +294,6 @@ impl ProductionAgentToAgentMessaging {
 
         if let Some(analytics) = self.analytics.as_ref() {
             analytics(from_agent_id, to_agent_id, false, priority);
-        }
-        let sender_session_key = match from_session_key
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
-            Some(session_key) => {
-                self.sessions
-                    .assert_session_work_admission(from_agent_id, Some(session_key))?;
-                self.sessions
-                    .read_session_work_admission(from_agent_id)?
-                    .filter(|record| record.session_key == session_key)
-                    .map(|record| record.session_key)
-            }
-            None => self
-                .sessions
-                .read_session_work_admission(from_agent_id)?
-                .map(|record| record.session_key)
-                .filter(|value| !value.trim().is_empty()),
-        };
-        if let Some(session_key) = sender_session_key.as_deref() {
-            self.sessions
-                .assert_session_work_admission(from_agent_id, Some(session_key))?;
         }
         let source_entries=self.sessions.read_agent_transcript_entries(from_agent_id)?;
         let outbound_id=next_entry_id(&source_entries,TranscriptEntryIdKind::AssistantMessage);

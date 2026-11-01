@@ -98,6 +98,24 @@ fn direct_delivery_preflights_admitted_target_before_side_effects() {
     let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
     assert!(source.contains("self.sessions.assert_session_work_admission(\n                to_agent_id"));
     assert!(source.contains("Some(&target_admission.session_key)"));
+    let sender_identity = source
+        .split("pub fn send_to_agent_with_session_and_reply(")
+        .nth(1)
+        .expect("direct send owner exists")
+        .split("pub fn persist_agent_inbound_message(")
+        .next()
+        .expect("direct send owner boundary exists");
+    let sender_key = sender_identity
+        .find("let sender_session_key =")
+        .expect("sender admission key is resolved");
+    let source_endpoint = sender_identity
+        .find("let source_endpoint =")
+        .expect("source communication endpoint exists");
+    let planner = sender_identity
+        .find("plan_session_communication(")
+        .expect("communication planner exists");
+    assert!(sender_key < source_endpoint);
+    assert!(source_endpoint < planner);
 }
 
 #[test]
