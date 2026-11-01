@@ -67,7 +67,9 @@ point from canonical transcript rows, invokes the existing summarization
 binding, and calls the guarded owner commit. The next routed turn already
 reads the owner projection through typed provider serializers. This remains
 partial implementation evidence: exact upstream file-operation detail
-merging, live-turn proof, and frozen verification are still open.
+merging is now wired for the fixed `readFiles`/`modifiedFiles` contract,
+while bounded sampled summary-input parity, split-turn prefix summarization,
+live-turn proof, and frozen verification are still open.
 
 ## Required implementation sequence
 

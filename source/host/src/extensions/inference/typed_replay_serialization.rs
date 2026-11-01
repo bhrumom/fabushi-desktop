@@ -1,8 +1,7 @@
 //! Provider-owned serialization for the strict transcript replay model.
 //!
-//! These functions are intentionally pure and are not wired into the live
-//! Runner yet. They make provider capability and attachment failures explicit
-//! before a production replay call is enabled.
+//! These functions remain pure provider-owner adapters. They make provider
+//! capability and attachment failures explicit on the live typed replay path.
 
 use serde_json::{Value, json};
 use thiserror::Error;

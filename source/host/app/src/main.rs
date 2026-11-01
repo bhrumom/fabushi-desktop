@@ -394,8 +394,8 @@ use mahayana_host_runtime::runner::turn_agent_composition::{
     create_turn_subagent_task_review,
 };
 use mahayana_host_runtime::runner::compaction_planning::{
-    CompactionSettings, build_compaction_summary_prompt, prepare_compaction_plan,
-    validate_compaction_summary,
+    CompactionSettings, build_compaction_details, build_compaction_summary_prompt,
+    compaction_without_summary, fit_compaction_summary, prepare_compaction_plan,
 };
 use mahayana_host_runtime::runner::turn_observation::{
     ToolCallTelemetryEvent, TurnObservation, TurnObservationHandle,
@@ -10663,30 +10663,44 @@ fn start_routed_provider_task(
                         settings,
                         None,
                     ) {
-                        let has_unpreserved_file_metadata = plan
-                            .entries_to_summarize
-                            .iter()
-                            .any(|entry| {
-                                let Some(object) = entry.as_object() else {
-                                    return false;
-                                };
-                                object.keys().any(|key| {
-                                    matches!(
-                                        key.as_str(),
-                                        "fileOperations" | "file_operations" | "fileOps"
-                                    )
-                                })
-                            });
-                        if has_unpreserved_file_metadata {
-                            eprintln!(
-                                "mahayana-host compaction_skipped_unpreserved_file_metadata agent={} run={}",
-                                agent_id, worker_stream_id
-                            );
-                        } else {
-                            match worker_sessions.read_session_work_admission(&agent_id) {
+                        match worker_sessions.read_session_work_admission(&agent_id) {
                                 Ok(Some(admission)) => {
                                     match build_compaction_summary_prompt(&plan) {
                                         Ok(summary_prompt) => {
+                                            let commit_compaction = |summary: String| {
+                                                let commit = CompactionCommit {
+                                                    entry_id: format!(
+                                                        "compaction:{}:{}",
+                                                        agent_id, worker_stream_id
+                                                    ),
+                                                    first_kept_entry_id: Some(
+                                                        plan.first_kept_entry_id.clone(),
+                                                    ),
+                                                    summary,
+                                                    tokens_before: plan.tokens_before,
+                                                    details: build_compaction_details(&plan),
+                                                    source_turn_id: worker_stream_id.clone(),
+                                                    expected_lifecycle_revision: admission
+                                                        .lifecycle_revision
+                                                        .clone(),
+                                                };
+                                                match worker_sessions
+                                                    .commit_agent_compaction(&agent_id, &commit)
+                                                {
+                                                    Ok(CompactionCommitOutcome::Committed(_))
+                                                    | Ok(CompactionCommitOutcome::AlreadyCommitted(_)) => {}
+                                                    Ok(CompactionCommitOutcome::RejectedStale) => {
+                                                        eprintln!(
+                                                            "mahayana-host compaction_rejected_stale agent={} run={}",
+                                                            agent_id, worker_stream_id
+                                                        );
+                                                    }
+                                                    Err(error) => eprintln!(
+                                                        "mahayana-host compaction_commit_failed agent={} run={} error={error}",
+                                                        agent_id, worker_stream_id
+                                                    ),
+                                                }
+                                            };
                                             let should_cancel = || worker_cancellation.is_cancelled();
                                             match runner.run_summarization_prompt(
                                                 "You are the Fabushi conversation-compaction summarizer. Return only the durable summary text.",
@@ -10694,48 +10708,47 @@ fn start_routed_provider_task(
                                                 &should_cancel,
                                             ) {
                                                 Ok(summary) if !should_cancel() => {
-                                                    if let Ok(summary) = validate_compaction_summary(&summary) {
-                                                        let commit = CompactionCommit {
-                                                            entry_id: format!(
-                                                                "compaction:{}:{}",
+                                                    let summary = match fit_compaction_summary(
+                                                        &summary,
+                                                        plan.summary_token_budget,
+                                                    ) {
+                                                        Ok(summary) => summary,
+                                                        Err(error) => {
+                                                            eprintln!(
+                                                                "mahayana-host compaction_summary_invalid agent={} run={} error={error}",
                                                                 agent_id, worker_stream_id
-                                                            ),
-                                                            first_kept_entry_id: Some(
-                                                                plan.first_kept_entry_id.clone(),
-                                                            ),
-                                                            summary,
-                                                            tokens_before: plan.tokens_before,
-                                                            details: plan.previous_details.clone(),
-                                                            source_turn_id: worker_stream_id.clone(),
-                                                            expected_lifecycle_revision: admission
-                                                                .lifecycle_revision,
-                                                        };
-                                                        match worker_sessions
-                                                            .commit_agent_compaction(&agent_id, &commit)
-                                                        {
-                                                            Ok(CompactionCommitOutcome::Committed(_))
-                                                            | Ok(CompactionCommitOutcome::AlreadyCommitted(_)) => {}
-                                                            Ok(CompactionCommitOutcome::RejectedStale) => {
-                                                                eprintln!(
-                                                                    "mahayana-host compaction_rejected_stale agent={} run={}",
-                                                                    agent_id, worker_stream_id
-                                                                );
-                                                            }
-                                                            Err(error) => eprintln!(
-                                                                "mahayana-host compaction_commit_failed agent={} run={} error={error}",
-                                                                agent_id, worker_stream_id
-                                                            ),
+                                                            );
+                                                            fit_compaction_summary(
+                                                                &compaction_without_summary(&plan),
+                                                                plan.summary_token_budget,
+                                                            )
+                                                            .unwrap_or_else(|_| {
+                                                                compaction_without_summary(&plan)
+                                                            })
                                                         }
-                                                    }
+                                                    };
+                                                    commit_compaction(summary);
                                                 }
                                                 Ok(_) => eprintln!(
                                                     "mahayana-host compaction_cancelled_after_summary agent={} run={}",
                                                     agent_id, worker_stream_id
                                                 ),
-                                                Err(error) => eprintln!(
-                                                    "mahayana-host compaction_summary_failed agent={} run={} error={error}",
-                                                    agent_id, worker_stream_id
-                                                ),
+                                                Err(error) => {
+                                                    eprintln!(
+                                                        "mahayana-host compaction_summary_failed agent={} run={} error={error}",
+                                                        agent_id, worker_stream_id
+                                                    );
+                                                    if !should_cancel() {
+                                                        let fallback = compaction_without_summary(&plan);
+                                                        commit_compaction(
+                                                            fit_compaction_summary(
+                                                                &fallback,
+                                                                plan.summary_token_budget,
+                                                            )
+                                                            .unwrap_or(fallback),
+                                                        );
+                                                    }
+                                                }
                                             }
                                         }
                                         Err(error) => eprintln!(
@@ -10752,7 +10765,6 @@ fn start_routed_provider_task(
                                     "mahayana-host compaction_admission_read_failed agent={} run={} error={error}",
                                     agent_id, worker_stream_id
                                 ),
-                            }
                         }
                     }
                 }

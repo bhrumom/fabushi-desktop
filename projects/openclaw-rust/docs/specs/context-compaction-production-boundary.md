@@ -113,7 +113,10 @@ authority gates open.
   it through the existing provider owners. The routed-provider completion
   boundary also invokes the pure planning owner, the existing summarization
   binding, and the guarded commit operation when usage and lifecycle admission
-  are available. This is wiring evidence, not verification or acceptance.
+  are available. The producer now also derives the fixed `readFiles`,
+  `modifiedFiles`, bounded unresolved request, and quality-degraded details
+  shape from transcript tool rows, including prior compaction details. This is
+  wiring evidence, not verification or acceptance.
 - An earlier fixed-commit relative-import census recorded 11,895 exact-tree
   files, four unresolved relative edges, and 261 lexical external-module
   candidates with digest
@@ -136,7 +139,7 @@ authority gates open.
 - The routed-provider completion path is now the non-test caller for
   compaction cut-point preparation, summarization, and guarded compaction-entry
   commit. It deliberately skips a commit when file-operation metadata is not
-  yet preserved by the fixed-source details merger.
+  preserved by the fixed-source details merger.
 - `runner.startRoutedProvider` still decodes the ordinary request projection at
   the existing message boundary, while the same production path now reads the
   canonical transcript after a successful turn, uses provider input-token
@@ -156,8 +159,8 @@ authority gates open.
   production acceptance. The real producer now supplies provider input-token
   usage, source transcript projection, summary validation/fallback, and the
   guarded `ProductionSessionWorkers` commit call. Exact upstream usage
-  semantics, file-operation details merging, and frozen verification remain
-  open.
+  semantics, bounded sampled summary-input parity, split-turn prefix
+  summarization, and frozen verification remain open.
 - Prompt/memory code reads persisted compaction epochs for snapshot rendering;
   this is a separate responsibility.
 - Status is `implementation=partially-wired`, `wiring=partially-wired`,
@@ -300,7 +303,7 @@ redacted content, test run identities, and exact-head Actions artifacts.
 | CC-01 | pending | Current dossier closes only bounded relative/source and selected lock graph observations; recursive source/package/archive/license closure and Actions authority remain open. |
 | CC-02 | passed (owner contract) | `ProductionSessionWorkers`/`SandAgentDb` is the canonical owner and implements the transactional compaction/replay contract defined in `decisions/2026-11-01-context-compaction-owner-contract.md`; the production caller uses that owner. |
 | CC-03 | partially wired | The non-test routed-provider completion boundary uses provider input-token usage, canonical transcript rows, the planning owner, and the existing summarizer/commit owner; exact fixed-source usage semantics and frozen verification remain open. |
-| CC-04 | pending | Threshold/cut-point, summary bound, split-turn and latest-request planning are wired; upstream file-operation metadata extraction/merge is intentionally fail-closed and incomplete. |
+| CC-04 | partially wired | Threshold/cut-point, summary bound, latest-request bound, no-summary fallback, and fixed file-operation details extraction/merge are wired; bounded sampled summary-input parity and split-turn prefix summarization remain open. |
 | CC-05 | partially wired | Cancellation after summarization, provider failure, stale lifecycle, and duplicate commit preserve the prior transcript through the guarded owner; focused oracles remain unrun. |
 | CC-06 | partially wired | A non-test caller can commit and the next turn reads the typed owner projection; newly constructed live-turn evidence is still pending. |
 | CC-07 | blocked | Strict owner-local replay projection and pure Responses/Chat Completions/Cursor/Claude serializers now exist with fail-closed pairing/media checks. They are not wired to a live Runner/provider attempt; Claude typed rows remain explicitly unsupported and the attachment owner contract remains unresolved, while `ProviderMessage` remains role/text-only for ordinary turns. |
