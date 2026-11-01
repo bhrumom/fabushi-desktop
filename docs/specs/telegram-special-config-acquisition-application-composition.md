@@ -82,3 +82,41 @@ Authored contracts exist in the network seeding module and RuntimeClient queue m
 
 Stage-A disposition for TDRP-R9-MTPROTO-SPECIAL-CONFIG-CARRIER-APPLICATION-001: implementation_status=implemented, validation_status=not-run, accepted=false. Stage-B executable evidence remains required before verified/accepted.
 
+
+
+## 8. Round 96 proxy-enabled suppression contract
+
+Additional fixed-U anchors:
+- Telegram/SourceFiles/mtproto/config_loader.cpp@5d07404ba07223016c6728b986dcba10628d7194: `refreshSpecialLoader()` resets the special loader when `_proxyEnabled` is true; `sendSpecialRequest()` terminates owned special MTProto work and resets the loader when the same projection is true; `setProxyEnabled()` only updates that projection.
+- Telegram/SourceFiles/mtproto/mtp_instance.cpp@d25fe3b72298fab371854f80186ee8e4777ea087: `Core::SettingsProxy::connectionTypeChanges()` projects `SettingsProxy::isEnabled()` into an existing ConfigLoader, while initial ConfigLoader construction receives the same `isEnabled()` value.
+- Telegram/SourceFiles/core/core_settings_proxy.cpp@18e7ab8ce60865409dbaff267ee192e272622d26: `isEnabled()` means exactly `ProxyData::Settings::Enabled`; System and Disabled do not assert this special-config suppression flag.
+
+Existing-owner-first rule for Fabushi:
+- durable proxy mode/list/selection remains a Settings/application responsibility and MUST NOT be persisted in telegram-runtime or telegram-network;
+- the current checkpoint still has no canonical product Settings/application state owner, as recorded by telegram-proxy-settings-state-persistence.md and telegram-proxy-non-ui-consumers-boundary.md;
+- therefore RuntimeClient accepts only a caller-supplied boolean projection on `telegram.refreshSpecialConfig`; it does not become a proxy settings owner;
+- when `proxyEnabled=true`, the refresh command returns a source-equivalent suppressed report before seeding, normalizing, or dispatching any special-config HTTP attempt, and before creating any temporary special-config MTProto request;
+- when `proxyEnabled=false` (including the source-equivalent System/Disabled cases), the existing acquisition/application composition is unchanged;
+- the lower-level Rust function takes the same projection explicitly so no bypassing public path silently starts acquisition under an enabled proxy;
+- a future canonical Settings owner may publish this boolean into the command boundary, but this round MUST NOT fabricate a second settings store, cache, or durable proxy state.
+
+Authored-only contracts:
+- enabled proxy => suppressed report, zero seeded/finished/decoded/selected/applied endpoints, no changed DC ids, no failures;
+- disabled/System projection => suppression is false and the ordinary acquisition path remains eligible;
+- command parsing requires a boolean `proxyEnabled` field and rejects non-boolean input;
+- RuntimeClient remains settings-stateless with respect to durable proxy mode/list/selection.
+
+Validation remains deliberately not run in Stage A.
+
+
+## 9. Round 96 source-compliance record
+
+Spec-first commit: cb9b53d2574c012fe90e03df81b8b1336859ee2b.
+Production implementation commit: 1c315c155eb0ba0c49871c08547bb7e67977aa87.
+Runtime implementation blob: 871ebe40ecbd284828b0c16ab64547eefeb3c3a3.
+
+The existing `telegram.refreshSpecialConfig` command now requires the source-neutral `proxyEnabled` projection. `true` is handled before phone resolution, request seeding, request normalization, DirectHttpsRace construction, endpoint decode/application, or temporary MTProto request/session creation, and returns `SpecialConfigRefreshReport { suppressed_by_proxy: true, ...zero work... }`. The public Rust `refresh_special_config` function carries the same explicit projection, so callers cannot bypass the command boundary and accidentally start special-config acquisition while the canonical proxy mode is enabled.
+
+No durable proxy mode/list/selection was added to RuntimeClient. The current checkpoint still lacks a canonical product Settings/application persistence owner, so this implementation deliberately stops at the typed Settings-to-runtime projection boundary rather than fabricating a Telegram settings store. The previously mapped `TDRP-R9-PROXY-MTPROTO-CONSUMER-001` therefore remains pending for its upstream Settings publication edge, while its special-config suppression consumer is now implemented in the real RuntimeClient composition.
+
+Three contracts were authored in `native/telegram-runtime/src/runtime.rs` for direct suppression, strict boolean command parsing, and suppressed command response without phone/network work. They were not executed. No build, typecheck, lint, validator, generator, dependency resolution, lock regeneration, test, package, deployment, installation, runtime acceptance, Actions query, status query, or check query was performed.
