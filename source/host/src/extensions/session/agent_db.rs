@@ -551,7 +551,23 @@ impl SandAgentDb {
 
     pub fn delete_kv(&self, key: &str) -> Result<bool, AgentDbProjectionError> {
         self.run_write(&format!("deleteKv:{key}"), |db| {
-            db.execute(DELETE_KV_SQL, params![key]).map(|changes| changes > 0)
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<bool, rusqlite::Error> {
+                if !session_work_write_is_admitted(db)? {
+                    return Ok(false);
+                }
+                Ok(db.execute(DELETE_KV_SQL, params![key])? > 0)
+            })();
+            match result {
+                Ok(changed) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(changed)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
         })
     }
 

@@ -194,6 +194,12 @@ persisted-update transactions must fail closed when an existing admission
 record has an empty session key, session ID, or lifecycle revision. Legacy
 databases without an admission record retain their compatibility path;
 malformed durable admission state is not admitted.
+
+Both owner-local KV writes and deletes use that same transaction-bound
+predicate. A session-owned cleanup operation such as clearing an awaiting,
+memory-snapshot, or profile-snapshot key must not bypass an archived or
+deletion-pending fence merely because it removes a value rather than adding
+one.
 Receipt replay paths perform the same current-record check before returning an
 idempotent result; a stale receipt cannot bypass the live session generation.
 

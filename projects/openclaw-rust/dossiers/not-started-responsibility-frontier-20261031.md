@@ -181,6 +181,14 @@ provider/device production acceptance. The responsibility therefore correctly
 remains `implementation=not-started`, `wiring=not-wired`,
 `verification=not-run`, `acceptance=pending`; no global flag changes.
 
+Static review on 2026-11-01 found and repaired a narrower owner-edge gap in
+the bounded slice: `SandAgentDb::delete_kv` previously bypassed the same
+transaction-bound admission predicate used by `write_kv`, allowing
+session-owned key cleanup to avoid the archived/deletion-pending fence. The
+delete now uses the existing owner predicate and remains compatibility-safe
+for legacy databases without an admission record. This does not close the
+full session work-admission responsibility or change its ledger disposition.
+
 ## 2026-10-31 auth-profile lifecycle boundary recheck
 
 The current checkout was re-read for possible credential/profile owners. The
