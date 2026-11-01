@@ -54,8 +54,8 @@ No GitHub Actions/status/check query or trigger, build, typecheck, lint, schema 
 
 ## Final platform source-compliance readback
 
-- platform-core final commit: `e987637031705b3c3ef4612c1fd9524d9ee6756c`
-- final spec blob: `33c419f1ac5a833e4b41f7f16602c9fc076d12a0`
+- platform-core final commit: `1cff6f7176de9d879576e0630503626636240622`
+- final spec blob: `76411ecf397323d4a3760c4a1c444c672d833105`
 - desktop initial bookkeeping commit: `c6c4dc28262154d2af11c467cd0ae4b731c52916`
 
 The final spec records R13-R14 as blocked, all other applicable source-review requirements and AC-1..AC-8 as passed, and executable validation as not-run. The responsibility remains mapped/pending with no production delta.
