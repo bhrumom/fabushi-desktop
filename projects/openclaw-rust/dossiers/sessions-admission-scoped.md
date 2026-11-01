@@ -866,3 +866,13 @@ main and opaque/legacy direct compatibility paths retain their existing owners;
 trusted internal producers retain their separate authenticated admission path.
 The session-routing and work-admission parity rows therefore remain
 `wiring=not-wired`, `verification=not-run`, and `acceptance=pending`.
+
+## 11.5 Canonical main selector normalization — 2026-11-01
+
+The authenticated `sessions.patch` owner now compares the trimmed public
+selector with the route owner's canonical `agent:<normalized-agent>:main`
+identity using ASCII case-insensitive matching. This accepts equivalent
+canonical forms such as `AGENT:Agent-123:MAIN` while continuing to reject
+opaque legacy selectors from the canonical-main mutation path. The change is
+limited to identity normalization; lifecycle revision, admission, archive,
+and communication-policy guards remain unchanged.

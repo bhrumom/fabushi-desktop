@@ -4272,7 +4272,7 @@ impl UnifiedGatewayApi {
         }
         let route = resolve_gateway_session_route(args, raw_key)?;
         let expected_key = format!("agent:{}:main", route.agent_id);
-        if raw_key != expected_key {
+        if !raw_key.eq_ignore_ascii_case(&expected_key) {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.patch only supports canonical main sessions".into(),
             ));

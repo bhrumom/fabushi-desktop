@@ -316,6 +316,7 @@ fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_sta
     assert!(sessions_patch.contains("SESSION_LIFECYCLE_CHANGED"));
     assert!(sessions_patch.contains("sessions.patch requires expectedLifecycleRevision"));
     assert!(sessions_patch.contains("canonical main sessions"));
+    assert!(sessions_patch.contains("raw_key.eq_ignore_ascii_case(&expected_key)"));
     assert!(sessions_patch.contains("running_subagent_records_for_parent(&route.agent_id)"));
     assert!(sessions_patch.contains("active subagent work"));
     assert!(sessions_patch.contains("active_stream_ids_for_agent(&route.agent_id)"));

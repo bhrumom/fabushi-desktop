@@ -108,6 +108,10 @@ durable state → consumer chain.
   or send owner appear to be a
   per-session target. Internal producers retain their existing authenticated
   admission path and are not converted into public routing authorities.
+- `SWA-14`: Canonical public main-session comparisons must use the normalized
+  structural route identity, accepting ASCII case variation in the `agent:`
+  wrapper, agent identity, and `main` segment. Opaque legacy selectors remain
+  outside the canonical `sessions.patch` mutation path.
 
 ## Current and target state
 
