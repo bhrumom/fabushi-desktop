@@ -1,9 +1,11 @@
 # OpenClaw 全源码 Rust 迁移 — Source of Truth
 
+> 执行修订（2026-11-02）：主 Spec Revision 2 §17 优先于下文旧快照和执行时机。完整来源核算、风险分层审查、产品闭环批次、Actions 及时验证；不要求所有文本逐行深读，也不因全局 P0 未完成阻止已满足相关来源/合同的实施。历史 pending/未初始化数字不得作为当前工作分支事实。
+
 Status: active  
 Project ID: OCRM-001  
-Revision: 1  
-Last updated: 2026-10-22（Asia/Shanghai）  
+Revision: 2  
+Last updated: 2026-11-02（Asia/Shanghai）  
 Target: `bhrumom/fabushi-desktop` current canonical main  
 Implementation/acceptance: **未完成**
 
@@ -55,7 +57,7 @@ Implementation/acceptance: **未完成**
 
 P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evidence 索引；本次不提交伪造的完整台账或空清单来充当 baseline。
 
-各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；全部语义理解和责任映射归 `responsibility_mapping_complete`。P0 G02 structural 可以保留诚实 unread/unclassified，最终 G02 不能。
+各 flag 的适用集合、true 谓词、负责 gate 和失效条件以主 Spec §15.1 为唯一规范。`source_closure_ready` 表示完整取得并枚举来源/依赖，不表示已阅读全文；全部语义理解和责任映射归 `responsibility_mapping_complete`。P0 G02 structural 可以保留诚实 unread/unclassified，最终 G02 要求无未分类/未处置/必需审查缺口，原始 unread 不作统一硬门。
 
 主 Spec §12.3 区分受验 target 与证据载体：仓库保留 source declarations、已知 baseline 和历史 receipt 引用，当前有效状态由同一 subject target 的不可变 Actions receipt 投影。最终 receipt 发布到 artifact/attestation/check，不为回写自身 SHA 再制造一个提交；后续提交是新 target，旧绿色结果不能自动成为当前验收。
 
@@ -78,3 +80,5 @@ P0 在 Actions 建立 lock、inventory、parity ledger、RTM、dossiers 和 evid
 按主 Spec 的 P0→P5 依赖推进，阶段不是范围豁免。全局闭包受阻时，满足主 Spec §11.1 的单元可在自身及传递依赖 authority、完整阅读和合同经审查后进入实现/单元验收；单元通过不改变全项目 flags，缺服务/设备仍阻塞对应验收。每个任务记录 source responsibility、existing owner、具体差异、实现与验收证据；进展以真实生产闭合为中心。阻塞时检查已有支持邮件、记录必要动作和解除条件，继续后续可执行项；恢复时重查事实和 lease。
 
 后续接手者先重读本入口、主 Spec、适用 task 和 current code。交接只保留当前请求、确切 refs、已完成且有证据的变化、未闭合项和下一可执行责任，不复制旧会话堆积状态。
+
+主实现提示词：[`management/prompts/full-fusion-batch.md`](management/prompts/full-fusion-batch.md)。当前规范修订不更新机器记录或工作分支验收状态。

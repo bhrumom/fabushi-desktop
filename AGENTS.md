@@ -377,7 +377,7 @@ For OpenClaw-derived implementation, interoperability, source accounting or acce
 - `projects/openclaw-rust/module-map.md`;
 - the current OCRM task, exact-source lock/inventory/ledger/dossiers, applicable domain specs and actual canonical Fabushi production owners.
 
-OCRM requires the complete pinned source responsibility scope, file-by-file understanding and Rust implementation integrated existing-owner-first into current Fabushi. Preserve all current Bot capabilities and independent Coordinator/Host/Runner/Electron/renderer boundaries. React/Electron remain presentation and thin platform bridges; migrated business state, policy, protocols, scheduling, persistence and execution control belong to Rust. No parallel OpenClaw runtime, Agent loop, session store, scheduler or marketplace may become a second production owner.
+OCRM requires complete pinned source accounting, risk-proportionate review under OCRM-001 §17, and Rust implementation integrated existing-owner-first into current Fabushi. Preserve all current Bot capabilities and independent Coordinator/Host/Runner/Electron/renderer boundaries. React/Electron remain presentation and thin platform bridges; migrated business state, policy, protocols, scheduling, persistence and execution control belong to Rust. No parallel OpenClaw runtime, Agent loop, session store, scheduler or marketplace may become a second production owner.
 
 Optional external-channel, Gateway/SDK and node interoperability is included by OCRM through scoped adapters under existing owners; it does not replace Fabushi native identity, messaging, network or canonical state. FBCP/TDRP requirements and evidence remain independently applicable.
 
@@ -389,3 +389,7 @@ Directory enumeration, source reading, mapped responsibilities, implemented code
 ### Source-review amendment — 2026-11-02
 
 FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.
+
+### OpenClaw batch execution entry
+
+OCRM-001 Revision 2 §17 governs source review and execution: deep review product/mixed/high-risk logic, contract review generated/dependency boundaries, evidenced disposition for non-product sources. Implement coherent owner-based product batches without waiting for unrelated global closure; run focused checks in Actions and retain full final acceptance. Use `projects/openclaw-rust/management/prompts/full-fusion-batch.md`. Reconcile existing working-branch schemas/validators with §17.2 before using new review states; never auto-upgrade coverage or acceptance.
