@@ -5,8 +5,59 @@ use mahayana_host_runtime::gateway_protocol::{
 };
 use serde_json::json;
 use mahayana_host_runtime::host_gateway_api::{
+    FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS, FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS,
     FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS, HostGatewayOwner, host_gateway_owner,
 };
+
+#[test]
+fn native_box_mcp_extensions_are_exact_and_resolve_only_to_mcp() {
+    assert_eq!(
+        FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS,
+        &["loadBoxMcpServers", "listBoxMcpToolsRaw", "executeBoxMcpToolRaw"]
+    );
+    for method in FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS {
+        assert!(!GROK_GATEWAY_COMMANDS.contains(method));
+        assert!(!FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS.contains(method));
+        assert!(!FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS.contains(method));
+        assert!(!FABUSHI_GATEWAY_COMPAT_COMMANDS.contains(method));
+        assert!(!is_openclaw_gateway_command(method));
+        assert!(is_grok_gateway_command(method));
+        assert_eq!(host_gateway_owner(method), Some(HostGatewayOwner::Mcp));
+    }
+
+    // This existing frozen method is not one of the three repaired routes.
+    assert!(GROK_GATEWAY_COMMANDS.contains(&"listBoxMcpServers"));
+    assert_eq!(host_gateway_owner("listBoxMcpServers"), Some(HostGatewayOwner::Mcp));
+    for unknown in [
+        "LoadBoxMcpServers",
+        "loadBoxMcpServers.extra",
+        "listBoxMcpTools",
+        "listBoxMcpToolsRawExtra",
+        "executeBoxMcpTool",
+        "executeBoxMcpToolRawExtra",
+        "mcp.executeBoxMcpToolRaw",
+    ] {
+        assert_eq!(host_gateway_owner(unknown), None, "{unknown}");
+        assert!(!is_grok_gateway_command(unknown), "{unknown}");
+        assert!(!is_openclaw_gateway_command(unknown), "{unknown}");
+    }
+}
+
+#[test]
+fn native_cloud_worker_projections_preserve_exact_routes_outside_frozen_inventory() {
+    assert_eq!(
+        FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS,
+        &["cloudWorkers.status", "cloudWorkers.capabilities", "cloudWorkers.doctor"]
+    );
+    for method in FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS {
+        assert!(!GROK_GATEWAY_COMMANDS.contains(method));
+        assert!(!FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS.contains(method));
+        assert!(!FABUSHI_GATEWAY_COMPAT_COMMANDS.contains(method));
+        assert!(!is_openclaw_gateway_command(method));
+        assert!(is_grok_gateway_command(method));
+        assert_eq!(host_gateway_owner(method), Some(HostGatewayOwner::CloudWorkers));
+    }
+}
 
 #[test]
 fn native_mini_app_extensions_preserve_frozen_inventory_and_mcp_owner() {

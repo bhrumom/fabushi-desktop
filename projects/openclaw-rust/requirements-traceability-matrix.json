@@ -95,7 +95,9 @@
         "source/host/src/extensions/transcript/ack_obligations.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/durable_recovery_stores_contract.rs",
-        "source/host/tests/host_upgrade_production_contract.rs"
+        "source/host/tests/host_upgrade_production_contract.rs",
+        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
+        "source/node-agent-coordinator/tests/production_protocol.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -1551,7 +1553,9 @@
         "source/host/tests/network_enrollment_owner_contract.rs",
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
         "source/host/tests/openclaw_browser_web_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md",
+        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
+        "source/node-agent-coordinator/tests/production_protocol.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",

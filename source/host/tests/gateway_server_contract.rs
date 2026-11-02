@@ -9,7 +9,7 @@ use mahayana_host_runtime::device_pairing_owner::{DevicePairingOwner, DeviceToke
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError,
-    GatewayCommandReport, GatewayEventHub, GatewayHealth, GatewayServerDeps,
+    GatewayCommandReport, GatewayEventHub, GatewayHealth, GatewayServer, GatewayServerDeps,
     start_gateway_server,
 };
 use rcgen::generate_simple_self_signed;
@@ -478,6 +478,477 @@ fn json_body(response: &str) -> Value {
         .split_once("\r\n\r\n")
         .expect("HTTP response body");
     serde_json::from_str(body).expect("JSON body")
+}
+
+struct BoxMcpRouteCase {
+    method: &'static str,
+    args: Value,
+    result: Value,
+}
+
+fn box_mcp_route_cases() -> [BoxMcpRouteCase; 3] {
+    [
+        BoxMcpRouteCase {
+            method: "loadBoxMcpServers",
+            args: json!({
+                "configJson": "{\n  \"stdio-one\": {\"command\": \"fixture-mcp\", \"args\": [\" keep spaces \", \"snowman ☃\"]}\n}\n"
+            }),
+            result: json!({"serverIdentifiers": ["stdio-one", "stdio-two"]}),
+        },
+        BoxMcpRouteCase {
+            method: "listBoxMcpToolsRaw",
+            args: json!({"payloadHex": " \t0a00FF00a5\n"}),
+            result: json!({"payloadHex": "1200aB00FF"}),
+        },
+        BoxMcpRouteCase {
+            method: "executeBoxMcpToolRaw",
+            args: json!({"payloadHex": "120700A5ff001122"}),
+            result: json!({"payloadHex": "0a00bB0010"}),
+        },
+    ]
+}
+
+// These probes exercise the production HTTP router and its GatewayApi port.
+// Opaque payloads and owner replies are controlled here; no Box/stdio process,
+// provider account, or per-tool permission decision is exercised by this fixture.
+#[derive(Default)]
+struct CountingBoxMcpApi {
+    calls: Mutex<Vec<(String, Value)>>,
+    pairing_owner: Option<Arc<DevicePairingOwner>>,
+    device_authorizations: Mutex<Vec<DeviceTokenAuthorization>>,
+    owner_error: Option<fn() -> GatewayCommandError>,
+}
+
+impl CountingBoxMcpApi {
+    fn recorded_calls(&self) -> Vec<(String, Value)> {
+        self.calls.lock().expect("Box MCP calls").clone()
+    }
+
+    fn recorded_device_authorizations(&self) -> Vec<DeviceTokenAuthorization> {
+        self.device_authorizations
+            .lock()
+            .expect("Box MCP device authorizations")
+            .clone()
+    }
+}
+
+impl GatewayApi for CountingBoxMcpApi {
+    fn authenticate_device_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
+        let Some(owner) = self.pairing_owner.as_ref() else {
+            return Ok(None);
+        };
+        let authorization = owner.authenticate_device_token(token)?;
+        if let Some(authorization) = authorization.as_ref() {
+            self.device_authorizations
+                .lock()
+                .expect("record Box MCP device authorization")
+                .push(authorization.clone());
+        }
+        Ok(authorization)
+    }
+
+    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        self.calls
+            .lock()
+            .expect("record Box MCP owner call")
+            .push((method.to_string(), args.clone()));
+        if let Some(error) = self.owner_error {
+            return Err(error());
+        }
+        if method == "getTranscript" {
+            return Ok(args);
+        }
+        box_mcp_route_cases()
+            .into_iter()
+            .find(|case| case.method == method)
+            .map(|case| case.result)
+            .ok_or_else(|| GatewayCommandError::UnknownMethod(method.to_string()))
+    }
+}
+
+fn start_box_mcp_gateway(
+    api: &Arc<CountingBoxMcpApi>,
+    config: GatewayServerConfig,
+) -> GatewayServer {
+    start_gateway_server(GatewayServerDeps {
+        api: api.clone(),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config,
+        started_at: 1,
+    })
+    .expect("Box MCP gateway server")
+}
+
+fn box_mcp_post(
+    port: u16,
+    method: &str,
+    bearer: Option<&str>,
+    extra_headers: &str,
+    body: &str,
+) -> String {
+    let authorization = bearer
+        .map(|token| format!("Authorization: Bearer {token}\r\n"))
+        .unwrap_or_default();
+    request(
+        port,
+        &format!(
+            "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\n{authorization}{extra_headers}Content-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        ),
+    )
+}
+
+fn assert_box_mcp_round_trip(
+    api: &CountingBoxMcpApi,
+    port: u16,
+    bearer: Option<&str>,
+    headers: &str,
+    case: &BoxMcpRouteCase,
+) {
+    let mut expected_calls = api.recorded_calls();
+    let response = box_mcp_post(port, case.method, bearer, headers, &case.args.to_string());
+    assert!(response.starts_with("HTTP/1.1 200 OK"), "{}: {response}", case.method);
+    assert_eq!(json_body(&response), case.result, "{} result", case.method);
+    expected_calls.push((case.method.to_string(), case.args.clone()));
+    assert_eq!(
+        api.recorded_calls(),
+        expected_calls,
+        "{} must reach the owner exactly once with the original arguments",
+        case.method
+    );
+}
+
+fn assert_box_mcp_native_only(response: &str) {
+    assert!(response.starts_with("HTTP/1.1 403 Forbidden"), "{response}");
+    assert!(
+        json_body(response)["error"]
+            .as_str()
+            .expect("native-only error string")
+            .contains("MCP_BOX_NATIVE_ONLY"),
+        "{response}"
+    );
+}
+
+fn issue_box_mcp_device_token(
+    owner: &DevicePairingOwner,
+    role: &str,
+) -> (String, DeviceTokenAuthorization) {
+    let device_id = format!("box-mcp-{role}");
+    let scopes = if role == "operator" {
+        vec!["operator.read", "operator.write"]
+    } else {
+        vec![]
+    };
+    let pending = owner
+        .handle_pair_request(&json!({
+            "deviceId": device_id,
+            "publicKey": format!("box-mcp-public-key-{role}"),
+            "role": role,
+            "roles": [role],
+            "scopes": scopes,
+        }))
+        .expect("Box MCP pair request");
+    let request_id = pending["requestId"].as_str().expect("Box MCP pair request id");
+    owner
+        .handle_pair_approve(&json!({"requestId": request_id}))
+        .expect("Box MCP pair approval");
+    let rotated = owner
+        .handle_pair_rotate_token(&json!({"deviceId": device_id, "role": role}))
+        .expect("Box MCP device token rotation");
+    let token = rotated["token"].as_str().expect("Box MCP device token").to_string();
+    let authorization = owner
+        .authenticate_device_token(&token)
+        .expect("Box MCP issued-token lookup")
+        .expect("Box MCP token must be real pairing authorization");
+    assert_eq!(authorization.device_id, device_id);
+    assert_eq!(authorization.role, role);
+    assert_eq!(
+        authorization.scopes,
+        scopes.iter().map(|scope| scope.to_string()).collect::<Vec<_>>()
+    );
+    (token, authorization)
+}
+
+#[test]
+fn native_box_mcp_http_routes_preserve_arguments_results_and_single_dispatch() {
+    for token in [None, Some("box-native-shared-secret")] {
+        let api = Arc::new(CountingBoxMcpApi::default());
+        let server = start_box_mcp_gateway(&api, config(token));
+        for case in box_mcp_route_cases() {
+            for headers in [
+                "",
+                "x-sand-role: operator\r\n",
+                "x-sand-scope: operator.write\r\n",
+                "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n",
+            ] {
+                assert_box_mcp_round_trip(&api, server.port(), token, headers, &case);
+            }
+        }
+        server.close();
+        assert_eq!(api.recorded_calls().len(), 12, "no extra owner dispatch");
+    }
+}
+
+#[test]
+fn native_box_mcp_configured_secret_cannot_be_replaced_by_headers() {
+    let api = Arc::new(CountingBoxMcpApi::default());
+    let secret = "box-native-shared-secret";
+    let server = start_box_mcp_gateway(&api, config(Some(secret)));
+    for case in box_mcp_route_cases() {
+        for bearer in [None, Some("wrong-box-native-secret")] {
+            for headers in [
+                "",
+                "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n",
+            ] {
+                let before = api.recorded_calls();
+                let response = box_mcp_post(
+                    server.port(), case.method, bearer, headers, &case.args.to_string(),
+                );
+                assert!(response.starts_with("HTTP/1.1 401 Unauthorized"), "{response}");
+                assert_eq!(json_body(&response), json!({"error": "unauthorized"}));
+                assert_eq!(api.recorded_calls(), before, "unauthenticated owner call");
+            }
+        }
+        assert_box_mcp_round_trip(&api, server.port(), Some(secret), "", &case);
+    }
+    server.close();
+    assert_eq!(api.recorded_calls().len(), 3);
+}
+
+#[test]
+fn native_box_mcp_rejects_restricted_unknown_and_empty_role_or_scope_before_owner() {
+    for token in [None, Some("box-native-shared-secret")] {
+        let api = Arc::new(CountingBoxMcpApi::default());
+        let server = start_box_mcp_gateway(&api, config(token));
+        for case in box_mcp_route_cases() {
+            for headers in [
+                "x-sand-role: node\r\n",
+                "x-sand-role: unknown-role\r\n",
+                "x-sand-role: Operator\r\n",
+                "x-sand-role: \r\n",
+                "x-sand-role: operator\r\nx-sand-scope: operator.read\r\n",
+                "x-sand-scope: unknown-scope\r\n",
+                "x-sand-scope: operator.write operator.read\r\n",
+                "x-sand-scope: \r\n",
+            ] {
+                let before = api.recorded_calls();
+                let response = box_mcp_post(
+                    server.port(), case.method, token, headers, &case.args.to_string(),
+                );
+                assert_box_mcp_native_only(&response);
+                assert_eq!(api.recorded_calls(), before, "restricted owner call: {headers:?}");
+            }
+            assert_box_mcp_round_trip(
+                &api, server.port(), token,
+                "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n", &case,
+            );
+        }
+        server.close();
+        assert_eq!(api.recorded_calls().len(), 3);
+    }
+}
+
+#[test]
+fn native_box_mcp_rejects_real_node_and_operator_write_device_tokens_before_owner() {
+    for configured_token in [None, Some("box-native-shared-secret")] {
+        let owner = Arc::new(DevicePairingOwner::in_memory().expect("Box MCP pairing owner"));
+        let tokens = [
+            issue_box_mcp_device_token(&owner, "node"),
+            issue_box_mcp_device_token(&owner, "operator"),
+        ];
+        let api = Arc::new(CountingBoxMcpApi {
+            pairing_owner: Some(owner),
+            ..CountingBoxMcpApi::default()
+        });
+        let server = start_box_mcp_gateway(&api, config(configured_token));
+        for (device_token, authorization) in tokens {
+            // The same issued credential remains usable on an ordinary route.
+            let ordinary_args = json!({"pairedDeviceControl": authorization.device_id});
+            let mut expected_calls = api.recorded_calls();
+            let ordinary = box_mcp_post(
+                server.port(), "getTranscript", Some(&device_token), "", &ordinary_args.to_string(),
+            );
+            assert!(ordinary.starts_with("HTTP/1.1 200 OK"), "{ordinary}");
+            assert_eq!(json_body(&ordinary), ordinary_args);
+            expected_calls.push(("getTranscript".to_string(), ordinary_args));
+            assert_eq!(api.recorded_calls(), expected_calls);
+
+            for case in box_mcp_route_cases() {
+                for headers in [
+                    "",
+                    "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n",
+                ] {
+                    let before = api.recorded_calls();
+                    let mut expected_authorizations = api.recorded_device_authorizations();
+                    let response = box_mcp_post(
+                        server.port(), case.method, Some(&device_token), headers, &case.args.to_string(),
+                    );
+                    assert_box_mcp_native_only(&response);
+                    assert_eq!(api.recorded_calls(), before, "paired-device owner call");
+                    expected_authorizations.push(authorization.clone());
+                    assert_eq!(
+                        api.recorded_device_authorizations(), expected_authorizations,
+                        "denial must consume actual pairing-owner authorization"
+                    );
+                }
+            }
+        }
+        for case in box_mcp_route_cases() {
+            assert_box_mcp_round_trip(&api, server.port(), configured_token, "", &case);
+        }
+        server.close();
+        assert_eq!(api.recorded_calls().len(), 5, "only two ordinary and three native controls");
+    }
+}
+
+#[test]
+fn native_box_mcp_retains_origin_and_unauthenticated_host_checks() {
+    for token in [None, Some("box-native-shared-secret")] {
+        let api = Arc::new(CountingBoxMcpApi::default());
+        let server = start_box_mcp_gateway(&api, config(token));
+        for case in box_mcp_route_cases() {
+            let before = api.recorded_calls();
+            let body = case.args.to_string();
+            let origin = box_mcp_post(
+                server.port(), case.method, token, "Origin: https://untrusted.example\r\n", &body,
+            );
+            assert!(origin.starts_with("HTTP/1.1 403 Forbidden"), "{origin}");
+            assert_eq!(
+                json_body(&origin),
+                json!({"error": "browser-origin gateway requests are not allowed"})
+            );
+            assert_eq!(api.recorded_calls(), before);
+            if token.is_none() {
+                let untrusted_host = request(
+                    server.port(),
+                    &format!(
+                        "POST /api/{} HTTP/1.1\r\nHost: untrusted.example\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        case.method, body.len()
+                    ),
+                );
+                assert!(untrusted_host.starts_with("HTTP/1.1 403 Forbidden"), "{untrusted_host}");
+                assert_eq!(json_body(&untrusted_host), json!({"error": "untrusted gateway host"}));
+                assert_eq!(api.recorded_calls(), before);
+            }
+            assert_box_mcp_round_trip(&api, server.port(), token, "", &case);
+        }
+        server.close();
+        assert_eq!(api.recorded_calls().len(), 3);
+    }
+}
+
+#[test]
+fn native_box_mcp_nonloopback_configuration_requires_authentication() {
+    for token in [None, Some("box-native-shared-secret")] {
+        let api = Arc::new(CountingBoxMcpApi::default());
+        let mut gateway_config = config(token);
+        gateway_config.host = "0.0.0.0".to_string();
+        let server = start_box_mcp_gateway(&api, gateway_config);
+        for case in box_mcp_route_cases() {
+            if token.is_some() {
+                assert_box_mcp_round_trip(&api, server.port(), token, "", &case);
+            } else {
+                // A loopback Host header cannot make a wildcard listener trusted.
+                let response = box_mcp_post(
+                    server.port(), case.method, None,
+                    "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n",
+                    &case.args.to_string(),
+                );
+                assert_box_mcp_native_only(&response);
+                assert!(api.recorded_calls().is_empty(), "unprotected listener reached owner");
+            }
+        }
+        if token.is_none() {
+            let control = box_mcp_post(
+                server.port(), "getTranscript", None, "", r#"{"listenerControl":true}"#,
+            );
+            assert!(control.starts_with("HTTP/1.1 200 OK"), "{control}");
+            assert_eq!(json_body(&control), json!({"listenerControl": true}));
+            assert_eq!(
+                api.recorded_calls(),
+                vec![("getTranscript".to_string(), json!({"listenerControl": true}))]
+            );
+        }
+        server.close();
+        assert_eq!(api.recorded_calls().len(), if token.is_some() { 3 } else { 1 });
+    }
+}
+
+#[test]
+fn native_box_mcp_malformed_json_and_unknown_neighbors_never_reach_owner() {
+    for token in [None, Some("box-native-shared-secret")] {
+        let api = Arc::new(CountingBoxMcpApi::default());
+        let server = start_box_mcp_gateway(&api, config(token));
+        for case in box_mcp_route_cases() {
+            let before = api.recorded_calls();
+            let malformed = box_mcp_post(server.port(), case.method, token, "", "{");
+            assert!(malformed.starts_with("HTTP/1.1 400 Bad Request"), "{malformed}");
+            assert!(
+                json_body(&malformed)["error"].as_str().expect("JSON parse error")
+                    .starts_with("invalid JSON body:"),
+                "{malformed}"
+            );
+            assert_eq!(api.recorded_calls(), before, "malformed JSON reached owner");
+
+            let neighbor = format!("{}Extra", case.method);
+            let unknown = box_mcp_post(server.port(), &neighbor, token, "", &case.args.to_string());
+            assert!(unknown.starts_with("HTTP/1.1 404 Not Found"), "{unknown}");
+            assert_eq!(
+                json_body(&unknown),
+                json!({"error": format!("unknown gateway method: {neighbor}")})
+            );
+            assert_eq!(api.recorded_calls(), before, "unknown neighbor reached owner");
+            assert_box_mcp_round_trip(&api, server.port(), token, "", &case);
+        }
+        server.close();
+        assert_eq!(api.recorded_calls().len(), 3);
+    }
+}
+
+#[test]
+fn native_box_mcp_owner_errors_keep_status_message_and_single_dispatch() {
+    let errors: [(fn() -> GatewayCommandError, &str, &str); 4] = [
+        (
+            || GatewayCommandError::BadRequest("owner invalid payload".into()),
+            "HTTP/1.1 400 Bad Request", "owner invalid payload",
+        ),
+        (
+            || GatewayCommandError::Forbidden("owner permission refusal".into()),
+            "HTTP/1.1 403 Forbidden", "forbidden: owner permission refusal",
+        ),
+        (
+            || GatewayCommandError::Conflict("owner generation changed".into()),
+            "HTTP/1.1 409 Conflict", "owner generation changed",
+        ),
+        (
+            || GatewayCommandError::Internal("owner outcome unknown; do not replay".into()),
+            "HTTP/1.1 500 Internal Server Error", "owner outcome unknown; do not replay",
+        ),
+    ];
+    for token in [None, Some("box-native-shared-secret")] {
+        for (error, status, message) in errors {
+            let api = Arc::new(CountingBoxMcpApi {
+                owner_error: Some(error),
+                ..CountingBoxMcpApi::default()
+            });
+            let server = start_box_mcp_gateway(&api, config(token));
+            let mut expected_calls = Vec::new();
+            for case in box_mcp_route_cases() {
+                let response = box_mcp_post(server.port(), case.method, token, "", &case.args.to_string());
+                assert!(response.starts_with(status), "{}: {response}", case.method);
+                assert_eq!(json_body(&response), json!({"error": message}));
+                expected_calls.push((case.method.to_string(), case.args));
+                assert_eq!(api.recorded_calls(), expected_calls, "owner error must not replay dispatch");
+            }
+            server.close();
+            assert_eq!(api.recorded_calls(), expected_calls);
+        }
+    }
 }
 
 #[test]

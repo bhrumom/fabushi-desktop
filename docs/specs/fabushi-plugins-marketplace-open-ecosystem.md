@@ -318,3 +318,83 @@ catalog-only
 | FPM-AC01 through FPM-AC08 | **blocked** | Exact-head GitHub Actions, app/device/store and independent release evidence not yet performed for this extension. |
 
 **Implementation precedence**: read AGENTS.md → current live SOURCE_OF_TRUTH/spec → current shipping graph → update design/ADR if necessary → code behind existing owners → GitHub Actions → exact-head compliance review → stage/release. FPM-001 enhances Plugins and OMA-001; it **does not** silently extend PR #42 migration completion criteria or downgrade Grok/FBCP gates.
+
+## 18. Native Box MCP route repair — `MCP-BOX-NATIVE-ROUTE-v1`
+
+Implementation base: `233e165d5a8f5ff4e36449132615baeebdc728df`;
+fixed OCRM U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+This is a source-demonstrated implementation wiring defect, not an executed
+failure or a new upstream requirement. The existing Electron main-data legs
+call `loadBoxMcpServers`, `listBoxMcpToolsRaw` and `executeBoxMcpToolRaw`.
+Coordinator forwards their unchanged names to `/api/<method>`. Host App already
+implements all three with its existing MCP/ForeverBox resource owner, but the
+HTTP gateway rejects them before dispatch because its registry omits them.
+`listBoxMcpServers` is already registered and is not part of this omission.
+
+- BX-01: extend the single `host_gateway_api` registry with the exact native
+  group `FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS`, owned by `HostGatewayOwner::Mcp`.
+  Keep the frozen 122 methods, native Mini App five methods, compatibility list
+  and unrelated owners unchanged. Do not introduce a wildcard or a parallel
+  Host allowlist; protocol recognition continues through `host_gateway_owner`.
+  The base registry incorrectly includes the three existing `cloudWorkers.*`
+  read projections in the frozen list, contrary to its retained exact-set
+  contract. Move those same three entries into
+  `FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS` in this registry, keeping their
+  `CloudWorkers` owner and HTTP reachability, and remove their redundant HTTP
+  extension entries. This repairs inventory placement without adding a
+  Cloud Worker operation or changing the original 122-method oracle.
+- BX-02: at the actual Coordinator `execute_actions` dispatch boundary, these
+  three methods require `CarrierChannel::MainData`. Reuse the existing MCP
+  relay module for `box_mcp_carrier_allowed`; Data is refused with
+  `MCP_BOX_NATIVE_ONLY` before a Host request can be scheduled. Control does not
+  acquire a server-dispatch path. Normal commands and Mini App fences retain
+  their existing behavior. The TypeScript method table alone is not a gate.
+- BX-03: keep Host's existing gateway authentication and origin/host checks.
+  A configured shared credential is still required; the current trusted
+  loopback `auth_token=None` configuration remains supported. These native
+  methods reject authenticated paired-device tokens, a supplied role other
+  than `operator`, and a supplied scope other than `operator.write`, with
+  `MCP_BOX_NATIVE_ONLY` and zero owner calls. No role/scope header grants
+  authentication. A non-loopback configuration without authentication must not
+  admit these methods. This is the native control-plane boundary, not proof
+  of a provider account or per-tool grant.
+- BX-04: forward original `configJson`/`payloadHex` and return the existing
+  result/error unchanged through the existing Host method owner. Do not replace
+  generated MCP payloads, create another Box executor, retry an uncertain
+  mutation, or discard an already obtained result. Existing cancellation,
+  request identity, Host-generation and runtime retirement behavior remains.
+  Static routing adds no durable state, migration or recovery queue.
+- BX-05: retain exact-set/owner and unknown-neighbor protocol assertions, plus
+  real HTTP gateway controls with counted owner calls: all three exact methods
+  in both supported authentication configurations, wrong/missing configured
+  bearer, actual paired-device credentials, role/scope restrictions, malformed
+  request, unknown method and original error propagation. A positive sibling
+  must prove that blanket refusal cannot satisfy the negatives.
+  Retain the existing Cloud Worker read-projection owner contract and assert
+  that its exact native set remains reachable outside the frozen inventory.
+- BX-06: use the existing shipping Coordinator binary fixture with real carrier
+  frames and HTTP observation. Data must receive the native-only refusal with
+  no request; MainData must forward each original method and payload once and
+  preserve its response. Keep existing protocol/crash/credential/lifetime
+  assertions. Helper-only or source-string checks do not prove composition.
+- BX-07: reuse the existing Actions workflow: select `gateway_protocol_contract`
+  and `gateway_server_contract` in the affected Host contract command, and
+  `production_protocol` alongside the retained Coordinator targets. Keep direct
+  command evidence bound to the integrated H and preserve previous failures.
+  The existing Coordinator input artifact must also retain the complete
+  selected command log and its byte length/digest, with the actual exit code;
+  a failed or skipped command never becomes a passing receipt. This provides
+  direct evidence when the combined Host job log cannot be retrieved.
+  No local or `htch-runtime` executable validation is permitted.
+
+Root owns the registry, Host ingress, Coordinator composition, shared workflow,
+specification and traceability integration. Test/helper work may be delegated
+only on disjoint paths under this versioned contract. No new runtime owner,
+dependency, wire schema or full-project completion flag is authorized.
+
+Real Box/stdio peer execution, credentials, devices, packages and complete
+FPM/OCRM acceptance remain separate uncompleted gates. In particular, the
+legacy per-tool disabled predicate and account/server provenance still require
+their bounded migration to the existing Rust Settings/MCP owner; this route
+repair cannot stand in for that semantic permission evidence. Rollback removes
+only the explicit route/fence changes and needs no user-data rewrite.

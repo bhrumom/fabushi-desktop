@@ -67,7 +67,8 @@ use mahayana_node_agent_coordinator::runner_tool_relay::{
 };
 use mahayana_node_agent_coordinator::mcp_lifecycle_relay::{
     HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
-    execute_host_mcp_lifecycle_request, host_mcp_lifecycle_resolution_failure,
+    box_mcp_carrier_allowed, execute_host_mcp_lifecycle_request,
+    host_mcp_lifecycle_resolution_failure,
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -2702,6 +2703,16 @@ fn execute_actions(
                         &request_id,
                         ReplyOutcome::Failed {
                             failure: Failure::new("MINIAPP_NATIVE_ONLY", "mini app intent requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
+                if !box_mcp_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("MCP_BOX_NATIVE_ONLY", "Box MCP requires native main-data carrier"),
                         },
                     );
                     continue;

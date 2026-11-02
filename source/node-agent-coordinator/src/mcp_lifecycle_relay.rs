@@ -1,3 +1,4 @@
+use crate::carrier::CarrierChannel;
 use crate::protocol::Failure;
 use serde_json::{Value, json};
 
@@ -18,6 +19,15 @@ pub const MCP_LOGOUT_ACCOUNT_METHOD: &str = "logoutHostMcpAccount";
 pub const MCP_REMOVE_ACCOUNT_METHOD: &str = "removeHostMcpAccount";
 pub const MCP_RENAME_ACCOUNT_METHOD: &str = "renameHostMcpAccount";
 pub const MCP_NOTE_AUTH_COMPLETED_METHOD: &str = "noteHostMcpAuthCompleted";
+
+/// Box configuration and raw MCP payloads enter through the native main bridge.
+/// Other commands retain their existing carrier and owner checks.
+pub fn box_mcp_carrier_allowed(method: &str, channel: CarrierChannel) -> bool {
+    !matches!(
+        method,
+        "loadBoxMcpServers" | "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw"
+    ) || channel == CarrierChannel::MainData
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HostMcpLifecycleRequest {

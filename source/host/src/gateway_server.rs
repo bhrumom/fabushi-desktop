@@ -24,6 +24,7 @@ use crate::gateway_protocol::{
     GATEWAY_PREPARE_UPGRADE_PATH, is_grok_gateway_command, parse_command_args,
     slim_command_result, slim_event,
 };
+use crate::host_gateway_api::FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS;
 
 pub const GATEWAY_API_PREFIX: &str = "/api";
 pub const GATEWAY_EVENTS_PATH: &str = "/events";
@@ -102,9 +103,6 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "runner.startRoutedProvider",
     "runner.cancelRoutedProvider",
     "runner.resolveRoutedToolRequest",
-    "cloudWorkers.status",
-    "cloudWorkers.capabilities",
-    "cloudWorkers.doctor",
 ];
 
 
@@ -1307,6 +1305,21 @@ fn handle_connection(
     }
 
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
+    if FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS.contains(&method)
+        && (device_authorization.is_some()
+            || requested_role.is_some_and(|role| role != "operator")
+            || request
+                .headers
+                .get("x-sand-scope")
+                .is_some_and(|scope| scope != "operator.write")
+            || (deps.config.auth_token.is_none() && !is_loopback_host(&deps.config.host)))
+    {
+        return respond_error(
+            &mut stream,
+            403,
+            "MCP_BOX_NATIVE_ONLY: Box MCP requires the native control-plane gateway",
+        );
+    }
     if let Some(authorization) = device_authorization.as_ref() {
         if requested_role.is_some_and(|role| role != authorization.role) {
             return respond_error(

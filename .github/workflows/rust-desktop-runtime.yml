@@ -155,9 +155,11 @@ jobs:
         run: |
           set -euo pipefail
           coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml)
+          mkdir -p .evidence
           coordinator_status=0
-          "${coordinator_command[@]}" || coordinator_status=$?
+          "${coordinator_command[@]}" > .evidence/coordinator-command.log 2>&1 || coordinator_status=$?
           printf 'command=%s\nexit_code=%s\n' "${coordinator_command[*]}" "$coordinator_status" >> "$GITHUB_OUTPUT"
+          cat .evidence/coordinator-command.log
           exit "$coordinator_status"
       - name: Test independent Grok box exec daemon contract
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
@@ -534,6 +536,8 @@ jobs:
             --test bootstrap_contract \
             --test sand_host_production_wiring_contract \
             --test cloud_workers_extension_contract \
+            --test gateway_protocol_contract \
+            --test gateway_server_contract \
             --test shared_rooms_production_contract \
             --test agent_session_contract \
             --test agent_db_owner_contract \
@@ -610,10 +614,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract)
+          coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract --test production_protocol)
+          mkdir -p .evidence
           coordinator_status=0
-          "${coordinator_command[@]}" || coordinator_status=$?
+          "${coordinator_command[@]}" > .evidence/coordinator-command.log 2>&1 || coordinator_status=$?
           printf 'command=%s\nexit_code=%s\n' "${coordinator_command[*]}" "$coordinator_status" >> "$GITHUB_OUTPUT"
+          cat .evidence/coordinator-command.log
           exit "$coordinator_status"
       - name: Capture exact Coordinator dependency inputs
         id: coordinator_inputs
@@ -653,6 +659,11 @@ jobs:
           command = os.environ[f"COORDINATOR_{mode}_COMMAND"]
           require(command.startswith("cargo test ") and "--manifest-path source/node-agent-coordinator/Cargo.toml" in command
                   and "\n" not in command, "Coordinator command identity is missing or invalid")
+          command_log = Path(".evidence/coordinator-command.log")
+          require(command_log.is_file() and not command_log.is_symlink(),
+                  "Coordinator command log is not a regular file")
+          command_log_bytes = command_log.read_bytes()
+          require(bool(command_log_bytes), "Coordinator command log is empty")
           head = git("rev-parse", "HEAD")
           require(re.fullmatch(r"[0-9a-f]{40}", head) is not None and head == os.environ["FABUSHI_TARGET_SHA"],
                   "Coordinator input capture subject mismatch")
@@ -692,6 +703,9 @@ jobs:
                        "provenance": "committed-input" if committed_lock_blob else "newly-observed-resolution"},
               "command": {"step": f"coordinator_{mode.lower()}", "argv": command.split(),
                           "exit_code": exit_code, "outcome": outcome},
+              "command_log": {"artifact_file": command_log.name,
+                              "sha256": hashlib.sha256(command_log_bytes).hexdigest(),
+                              "byte_length": len(command_log_bytes)},
               "run_id": os.environ["GITHUB_RUN_ID"],
               "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "job": os.environ["GITHUB_JOB"],
@@ -715,6 +729,7 @@ jobs:
           path: |
             .evidence/coordinator-Cargo.lock
             .evidence/coordinator-inputs.json
+            .evidence/coordinator-command.log
           if-no-files-found: error
           retention-days: 90
       - name: Record actual Coordinator JSON feature graph
@@ -818,7 +833,7 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
               "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "original_turn_completion_contract": "ORT-v1",

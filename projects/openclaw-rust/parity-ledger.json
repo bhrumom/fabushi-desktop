@@ -9007,7 +9007,10 @@
         "mahayana_host_runtime::gateway_protocol"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_protocol_contract.rs"
+        "source/host/tests/gateway_protocol_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
+        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md"
       ],
       "existing_owner_candidates": [
         {
@@ -9118,13 +9121,14 @@
       ],
       "id": "OCRM-RESP-GW-DISPATCH-REGISTRY-001",
       "integration": {
-        "consumer": "source/host/src/gateway_server.rs",
+        "consumer": "source/host/src/gateway_server.rs; native Box MCP methods continue through source/host/app/src/main.rs UnifiedGatewayApi to the existing MCP/ForeverBox resource owner",
         "entrypoint": "source/host/src/host_gateway_api.rs::host_gateway_owner",
         "owner": "source/host/src/host_gateway_api.rs",
-        "producer": "source/host/src/gateway_server.rs::handle_connection"
+        "producer": "source/host/src/gateway_server.rs::handle_connection; existing Electron MCP main-data legs reach it through source/node-agent-coordinator/src/main.rs::execute_actions"
       },
       "invariants": [
-        "Method registry maintains single authoritative owner per method; no split ownership"
+        "Method registry maintains single authoritative owner per method; no split ownership",
+        "MCP-BOX-NATIVE-ROUTE-v1 preserves frozen122 and native MiniApp5, retains the exact CloudWorkers3 read projections in a separate native group, and admits the exact Box MCP3 only through native MainData and the existing Host control-plane boundary; paired-device credentials and restricted role/scope do not dispatch. This is not provider account or per-tool permission acceptance."
       ],
       "migration_rollback": "Method mappings can be added or adjusted in openclaw_gateway_owner match table",
       "oracle_ids": [
@@ -9152,7 +9156,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "None; extends method registry without altering frozen Grok 0.18 surface",
+      "risk": "High at native Box MCP ingress: configuration and opaque tool payloads must not become Renderer Data or paired-device execution authority; preserve frozen Grok 0.18 inventory and exact owner routing",
       "selected_owner": "source/host/src/host_gateway_api.rs",
       "source_refs": [
         {
@@ -9251,10 +9255,20 @@
         "symbol": "openclaw_gateway_owner"
       },
       "tests": [
-        "source/host/tests/gateway_protocol_contract.rs::openclaw_gateway_extensions_preserve_frozen_inventory_and_owners"
+        "source/host/tests/gateway_protocol_contract.rs::openclaw_gateway_extensions_preserve_frozen_inventory_and_owners",
+        "source/host/tests/gateway_protocol_contract.rs::native_box_mcp_extensions_are_exact_and_resolve_only_to_mcp",
+        "source/host/tests/gateway_protocol_contract.rs::native_cloud_worker_projections_preserve_exact_routes_outside_frozen_inventory",
+        "source/host/tests/gateway_server_contract.rs::native_box_mcp_http_routes_preserve_arguments_results_and_single_dispatch",
+        "source/host/tests/gateway_server_contract.rs::native_box_mcp_rejects_real_node_and_operator_write_device_tokens_before_owner",
+        "source/host/tests/gateway_server_contract.rs::native_box_mcp_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+        "source/node-agent-coordinator/tests/production_protocol.rs::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash"
       ],
       "typed_contracts": [
-        "openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner>"
+        "openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner>",
+        "MCP-BOX-NATIVE-ROUTE-v1",
+        "FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS",
+        "FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS",
+        "box_mcp_carrier_allowed"
       ],
       "unit_id": "OCRM-UNIT-GW-INGRESS-001"
     },
