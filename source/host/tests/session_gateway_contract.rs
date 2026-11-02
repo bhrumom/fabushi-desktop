@@ -1172,6 +1172,183 @@ fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce() {
+    const UPLOAD_LIMIT: u64 = 25 * 1024 * 1024;
+    const EXPECTED_ERROR: &str =
+        "Fabushi Human attachment exceeds the 25 MiB message upload limit";
+    const NONCE: &str = "bounded-video-upload";
+    const VIDEO_BYTES: &[u8] = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom";
+    let root = temp_root("human-upload-bound-recovery");
+    fs::create_dir_all(&root).expect("upload fixture root");
+    let attachment_path = root.join("bounded-video.mp4");
+    let oversized = fs::File::create(&attachment_path).expect("sparse video fixture");
+    oversized.set_len(UPLOAD_LIMIT + 1).expect("oversized sparse video length");
+    drop(oversized);
+    assert_eq!(fs::metadata(&attachment_path).unwrap().len(), UPLOAD_LIMIT + 1);
+
+    let resource = json!({
+        "resourceId":"bounded-video-resource", "name":"bounded-video.mp4",
+        "contentType":"video/mp4", "size":VIDEO_BYTES.len(),
+        "createdAt":"2026-10-05T01:00:00Z"
+    });
+    let remote = fixture_remote_human_message(
+        92, 1, 2, "bounded video upload", Some(NONCE), json!([resource.clone()]),
+    );
+    let (seen, accepted) = std::sync::mpsc::channel();
+    let (release, resume) = std::sync::mpsc::channel();
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Deferred(
+            Box::new(HumanMessageFixtureReply::Json(
+                201, json!({"success":true,"resource":resource}),
+            )),
+            seen,
+            resume,
+        ),
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"message":remote})),
+        HumanMessageFixtureReply::Bytes(200, VIDEO_BYTES.to_vec()),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let args = json!({
+        "conversationId":id, "senderId":"1", "text":"bounded video upload",
+        "clientNonce":NONCE, "composedAtMs":1000.0,
+        "attachments":[{"path":attachment_path.to_string_lossy(),"name":"bounded-video.mp4"}]
+    });
+    let assert_rejected_send = |runtime: &Arc<ProductionSessionWorkers>| {
+        let error = dispatch_production_session_gateway_call(runtime, "sendHumanMessage", &args)
+            .expect("handled Human send")
+            .expect_err("oversized video must fail at the Native upload boundary");
+        match error {
+            SessionGatewayError::Internal(message) => {
+                assert!(message.contains(EXPECTED_ERROR), "{message}");
+            }
+            other => panic!("unexpected oversized Human send error: {other:?}"),
+        }
+        // The ordinary synchronous send has returned its preflight error.
+        // No first HTTP request may have reached the still-live fixture.
+        assert!(matches!(
+            accepted.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        ), "resource and message dispatch must remain at zero");
+    };
+    let read_pending = |runtime: &Arc<ProductionSessionWorkers>| {
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("SQLite owner");
+        let rows = owner.get_transcript_entries().expect("durable rejected send");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["id"], format!("human-message:{NONCE}"));
+        assert_eq!(rows[0]["authorId"], "1");
+        assert_eq!(rows[0]["clientNonce"], NONCE);
+        assert_eq!(rows[0]["content"], "bounded video upload");
+        assert_eq!(rows[0]["delivery"], "pending");
+        assert_eq!(rows[0]["lastDispatchError"], EXPECTED_ERROR);
+        assert!(rows[0]["lastDispatchFailedAtMs"].is_number());
+        assert_eq!(rows[0]["attachments"], args["attachments"]);
+        assert!(rows[0].get("remoteMessageId").is_none());
+        assert!(rows[0].get("remoteDispatchAttachments").is_none());
+        rows
+    };
+
+    assert_rejected_send(&runtime);
+    let pending = read_pending(&runtime);
+    runtime.shutdown();
+    drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(
+        restarted.read_human_conversation_transcript(&id).expect("pure pending reopen"),
+        pending
+    );
+    assert_rejected_send(&restarted);
+    let retried_pending = read_pending(&restarted);
+    let mut expected_pending = pending;
+    expected_pending[0]["lastDispatchFailedAtMs"] =
+        retried_pending[0]["lastDispatchFailedAtMs"].clone();
+    assert_eq!(retried_pending, expected_pending,
+        "retry may update only the failure clock, never the durable nonce or intent");
+
+    // Retry the same ordinary gateway command after correcting the same input.
+    // Do not invoke sync: an unrelated history refresh must not change this
+    // upload/message/download request-count oracle.
+    fs::write(&attachment_path, VIDEO_BYTES).expect("replace with bounded video bytes");
+    let sending = {
+        let runtime = Arc::clone(&restarted);
+        let args = args.clone();
+        thread::spawn(move || dispatch(&runtime, "sendHumanMessage", args))
+    };
+    accepted.recv_timeout(std::time::Duration::from_secs(15))
+        .expect("corrected input reaches the first upload");
+    release.send(()).expect("release the bounded upload response");
+    let settled = sending.join().expect("same-nonce gateway recovery");
+    assert_eq!(settled["id"], "human-server-message:92");
+    assert_eq!(settled["remoteMessageId"], "92");
+    assert_eq!(settled["clientNonce"], NONCE);
+    assert_eq!(settled["delivery"], "sent");
+    assert_eq!(settled["attachments"][0]["resourceId"], "bounded-video-resource");
+    assert_eq!(settled["attachments"][0]["name"], "bounded-video.mp4");
+    assert_eq!(settled["attachments"][0]["size"], VIDEO_BYTES.len());
+    assert!(settled.get("lastDispatchError").is_none());
+    assert!(settled.get("lastDispatchFailedAtMs").is_none());
+    assert!(settled.get("remoteDispatchAttachments").is_none());
+    let materialized_path = settled["attachments"][0]["path"].as_str()
+        .expect("canonical resource path").to_string();
+    assert!(materialized_path.ends_with(
+        "human-message-resources/bounded-video-resource/bounded-video.mp4"
+    ));
+    assert_eq!(fs::read(&materialized_path).expect("materialized video bytes"), VIDEO_BYTES);
+    assert_eq!(
+        restarted.read_human_conversation_transcript(&id).expect("unique canonical row"),
+        vec![settled.clone()]
+    );
+    assert_eq!(
+        dispatch(&restarted, "sendHumanMessage", args.clone()),
+        settled,
+        "repeating the settled nonce must not upload or send again"
+    );
+    restarted.shutdown();
+    drop(restarted);
+
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(
+        reopened.read_human_conversation_transcript(&id).expect("pure canonical reopen"),
+        vec![settled]
+    );
+    assert_eq!(fs::read(&materialized_path).expect("reopened video bytes"), VIDEO_BYTES);
+    reopened.shutdown();
+    drop(reopened);
+
+    let requests = server.join().expect("bounded upload recovery fixture");
+    assert_eq!(requests.len(), 3,
+        "both oversized attempts and both pure reopens must add no HTTP requests");
+    assert!(requests[0].starts_with("POST /api/social/message-resources "));
+    assert!(requests[1].starts_with("POST /api/social/messages "));
+    assert!(requests[2].starts_with("GET /api/social/message-resources/bounded-video-resource "));
+    assert!(requests.iter().all(|request| request.to_ascii_lowercase()
+        .contains("authorization: bearer fixture-token")));
+    assert!(requests[0].contains("filename=\"bounded-video.mp4\""));
+    let (upload_headers, multipart) = requests[0].split_once("\r\n\r\n")
+        .expect("multipart request");
+    let boundary = upload_headers.lines()
+        .find(|line| line.to_ascii_lowercase().starts_with("content-type:"))
+        .and_then(|line| line.split_once("boundary=").map(|(_, value)| value.trim()))
+        .map(|value| value.trim_matches('"'))
+        .expect("multipart boundary");
+    let (_, file_and_end) = multipart.split_once("\r\n\r\n").expect("file part headers");
+    let closing_boundary = format!("\r\n--{boundary}--");
+    let (uploaded_bytes, end) = file_and_end.split_once(closing_boundary.as_str())
+        .expect("complete file part");
+    assert_eq!(uploaded_bytes.as_bytes(), VIDEO_BYTES,
+        "only the corrected bytes may cross the HTTP boundary");
+    assert!(end.is_empty() || end == "\r\n");
+    let submitted = fixture_request_json(&requests[1]);
+    assert_eq!(submitted["targetUserId"], "2");
+    assert_eq!(submitted["text"], "bounded video upload");
+    assert_eq!(submitted["clientRequestId"], NONCE);
+    assert_eq!(submitted["attachments"], json!([{"resourceId":"bounded-video-resource"}]));
+    let _ = fs::remove_dir_all(root);
+}
+
 fn spawn_ambiguous_human_send_server() -> (String, thread::JoinHandle<Vec<String>>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind ambiguous send fixture");
     let address = listener.local_addr().expect("fixture address");

@@ -378,3 +378,15 @@ Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-mes
 
 
 
+
+### NMR-51: Native Human resource upload service boundary
+
+NMR-51 / NMR-AC-42 extends the existing `FBCP-NMR-001` and `MEDIA-TRANSFER` responsibility; the production path remains Human composer -> `sendHumanMessage` -> `ProductionSessionWorkers` -> `FabushiNativeMessagingClient` -> existing resource/message service and Session/Transcript SQLite. Backend `bhrumom/fabushi-backend@687718ce9e0083aa124d29005bcce4051d357919:fabushi/web/src/handlers/friends.js` (blob `6179f3ce8e223f4e0bd9664885871e134f4488a8`) requires a nonempty resource at most 25 MiB. Native preflight and actual limit+1 reading enforce this service boundary while preserving shared Agent video and download budgets.
+
+- `source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce`: one oversized video is rejected before resource/message HTTP; original pending/error/nonce survives pure DB reopen and runtime restart; corrected bytes recover with the same nonce, exactly one upload/message/download and one canonical row.
+- `source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected`: exact 25 MiB succeeds; empty input and partial-read failure reject.
+- `source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one`: actual consumed bytes stop at limit+1 and oversize rejects.
+
+Authored at freeze; containing-H Actions must execute all 48 Human gateway cases, three focused resource-bound cases and preserved required message gates. Prerequisite H `59f5fa24827812f78336c464995d161f403dedfb`, run `41508537631`, passed all five applicable jobs including Human38, protocol122, TCP9/live and actual AppHost package-copy4; it does not execute this extension. Evidence: `projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json`. Fixed-U review is limited to the recorded media preparation/file-part sections; source completeness, multi-attachment atomicity, full UI/service/platform/package/Bot acceptance and independent ACCEPT stay open.
+
+The current byte-buffer upload and forward snapshot readers share the literal25MiB service bound. Their digest/path/atomic snapshot/complete-target prevalidation rules remain; existing forward exact-limit/oversize tests use service25MiB literals and all twelve journal cases are retained. `native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http` covers the added buffer entrypoint. Existing32MiB download and200MiB Agent video boundaries are unchanged. The pending/same-nonce oracle here is the Host gateway, not a claim that the current UI retry is already correct; fresh-nonce/reply/committed-path/reopen projection remains a separate consumer gap.

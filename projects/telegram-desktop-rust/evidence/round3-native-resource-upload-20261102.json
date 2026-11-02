@@ -1,0 +1,900 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 3,
+  "scope": "NMR-51 / NMR-AC-42 Native Human service-bound upload reads and durable gateway recovery",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "product_base": "59f5fa24827812f78336c464995d161f403dedfb",
+  "integration_parent_observed": "1b0e674b3e39292ae715a3eb50435d83e2cb8577",
+  "live_main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "resumption": {
+    "discarded_stale_unpublished_draft": "Old a8c31a63-based plaintext/ledger edits were not replayed over 52 later migration commits. Existing current receive-envelope semantics and all concurrent work retained.",
+    "earlier_own_published_commit": "fb4df3898ae31b04bc64adde1944067154ae3678",
+    "latest_concurrent_commit": "936115b0aa578c340c74dd6aa7c71c362572bd72 reply settlement integrated; original47 Human, journal12, Transcript18/Chromium16 and lock-only failure diagnostics preserved. Preparation2e436318 includes only reviewed spec and temporary object transport; three files and full SHA remotely read back. Later1b0e674b actual CLI feature/build/process and installer receipt work is retained. Its new workflow additions remain unchanged by the sole47-to48/resource3 insertion; ledger is still exacteddd11c7 before this batch.",
+    "large_blob_transport": "Two multi-megabyte connector create_blob attempts were interrupted without a result; remote expected blob probe was absent. Use a narrow exact-input/output Actions job to create only the reviewed ledger Git object. Root alone creates commit and force=false/expected_sha ref update. The job is transport, not product validation."
+  },
+  "problem": {
+    "native_precondition": "Current3c Native path and byte-buffer upload plus forward snapshot readers permit32MiB; Backend resource owner permits25MiB. Earlier unbounded read was superseded by concurrent immutable-forward work and is not current behavior.",
+    "actual_UI_route": "ProductionRenderer::sendComposerPrompt Human branch commits shared composer attachments and calls sendHumanMessage; shared video allowance is 200MiB, so oversized Native resource uploads are reachable.",
+    "backend": {
+      "repository": "bhrumom/fabushi-backend",
+      "commit": "687718ce9e0083aa124d29005bcce4051d357919",
+      "path": "fabushi/web/src/handlers/friends.js",
+      "blob": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+      "symbol": "handlerUploadMessageResource / MAX_MESSAGE_RESOURCE_BYTES",
+      "limit_bytes": 26214400,
+      "modifications": false,
+      "deployment_acceptance": false
+    },
+    "shared_attachment_owner": {
+      "path": "source/shared/media/attachment-limits.ts",
+      "blob": "b4e6c2036503804d6d8605e203ff95deb898f347",
+      "ordinary_limit_bytes": 26214400,
+      "video_limit_bytes": 209715200
+    },
+    "renderer": {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "blob": "0e4ad13defc5191f9d3f8ac780315042043618b1",
+      "inspected": "Human send 1121 onward; onPhase/onFailure 1222/1248; failed resend 3583 onward",
+      "modifications": false
+    }
+  },
+  "implemented": {
+    "owner": "Existing FabushiNativeMessagingClient through ProductionSessionWorkers and Session/Transcript SQLite",
+    "flow": "One25MiB service upload constant shared by Native path/buffer and forward snapshot validation. Path symlink/nonregular/empty/oversize refusal, opened-file recheck and limit+1 actual read; buffer size refusal before credentials and multipart/HTTP; all existing credential/atomic snapshot/digest/journal/target-prevalidation rules retained.",
+    "no_new_owner_schema_or_store": true,
+    "existing_credential_fences_preserved": true,
+    "shared_Agent_and_download_budgets_preserved": true,
+    "user_or_legacy_data_deleted": false,
+    "existing_overlimit_snapshot_disposition": "No snapshots or journals deleted. Existing25-32MiB incomplete snapshots remain preserved and fail before upload under the real service boundary; already valid remote-resource settlement keeps its existing path."
+  },
+  "source_review": {
+    "complete": false,
+    "risk": "product resource preparation and bounded upload; selected functions read only",
+    "identities": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/storage/storage_media_prepare.cpp",
+        "blob": "11faf2a4e163fd01361c01f4e1ab4f9cd7fcd485",
+        "reviewed_symbols": "PrepareMediaList regular/readable/empty/size preparation boundary, approximately lines360-419",
+        "whole_file_reviewed": false
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/storage/file_upload.cpp",
+        "blob": "a19470a24b6a62b58c63d8cc21d831641d970260",
+        "reviewed_symbols": "Uploader::readDocPart bounded part reads and exact-size/error handling, approximately lines649-689",
+        "whole_file_reviewed": false
+      }
+    ],
+    "disposition": "Reuse current Fabushi resource/session owners and actual service25MiB contract. No Telegram constants, runtime or duplicate upload storage are introduced.",
+    "source_reviews_or_inventory_promoted": false
+  },
+  "authored_tests": {
+    "gateway": "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
+    "gateway_oracle": "Sparse25MiB+1 input twice rejected with zero HTTP; original full pending/error/nonce preserved over SQLite/runtime restart; corrected same path24B dispatched with same nonce; exactly resourcePOST,messagePOST,resourceGET; actual multipart/file bytes exact; repeated nonce and pure reopen retain one canonical row without another request.",
+    "reader_cases": [
+      "exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected",
+      "growth_after_metadata_observation_consumes_at_most_limit_plus_one",
+      "byte_upload_rejects_empty_and_oversize_before_credentials_or_http"
+    ],
+    "reader_oracle": "Literal service25MiB retained byte-for-byte, empty and partial-read failure reject, source beyond limit consumes exactly25MiB+1 then rejects; the actual byte-upload entrypoint rejects empty/oversize before missing credentials or HTTP. Existing forward size oracles use literal service25MiB and all twelve journal cases are preserved.",
+    "preserved_Human_cases": 47,
+    "required_Human_total": 48,
+    "required_reader_total": 3,
+    "execution_at_freeze": "not-run"
+  },
+  "independent_static_review": {
+    "reviewers": [
+      "owner_review",
+      "source_gate"
+    ],
+    "scope": "Current936 API baselines, Native path/buffer and forward snapshot boundary, exact177-line gateway addition, unchanged required workflow gates, canonical append-only ledger and RTM.",
+    "status": "Final independent static review at exact936 API baselines found no blocking finding for Native990eeb5, forwardbbc1b42, gateway6ce046 and workflowe76ff3. Gateway adds only177lines preserving47cases; workflow adds only48+3 and preserves journal12/Transcript18/Chromium16/lock-only diagnostics. Static review is not execution or independent ACCEPT.",
+    "execution_equivalent": false
+  },
+  "changed_blobs": {
+    "source/host/src/extensions/session/native_messaging.rs": "990eeb5a9e4906e2eafbd4bf0bc86f6456b16406",
+    "source/host/src/extensions/session/forward_batch_journal.rs": "bbc1b4209a444caf5995d5a3afa6af1535286a42",
+    "source/host/tests/session_gateway_contract.rs": "6ce04692a3e623c20d698e55d164f6a05511e764",
+    ".github/workflows/native-service-contracts.yml": "473e584ceefa2101396ce1c52386f300b014ada0",
+    "docs/specs/fbcp-native-message-reconciliation.md": "a996ccb22bb3a856256e16172086591e6e624277",
+    "projects/telegram-desktop-rust/parity-ledger.json": "a95d76c46119474e36134456442aebe39f4e9760",
+    "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md": "60498664255292247d9d31d235e896448fac7137"
+  },
+  "prerequisite_execution": {
+    "repository": "bhrumom/fabushi-desktop",
+    "exact_head": "59f5fa24827812f78336c464995d161f403dedfb",
+    "observed_at_utc": "2026-11-02 19:31:44 UTC",
+    "run": {
+      "id": 41508537631,
+      "head_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "event": "push",
+      "path": ".github/workflows/native-service-contracts.yml",
+      "created_at": "2026-11-02T19:17:22Z",
+      "updated_at": "2026-11-02T19:31:07Z",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631"
+    },
+    "required_job_statuses": [
+      {
+        "id": 125494010641,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          }
+        ]
+      },
+      {
+        "id": 125494011030,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Native package resources exclude retained FFI libraries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Explicit approved update source and recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Windows publisher authorization and candidate recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Final macOS update metadata and blockmap behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Reconcile immutable historical installer metadata without changing package bytes",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29
+          }
+        ]
+      },
+      {
+        "id": 125494011040,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 12
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 25
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 26
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27
+          }
+        ]
+      },
+      {
+        "id": 125494011097,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact shipping source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Build actual desktop AppHost entry and inspect its legacy boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Native startup, desktop messaging boundary and account restart",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Retained messaging stores and Agent automation boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Retained Social recovery and desktop HTTP ownership",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Direct Host and C ABI reject legacy handoff before storage",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Native CLI/gateway direct Host and approval boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Verify generic Host has no direct Telegram adapter dependency",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Verify DNS and special-config response normalization",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Verify bare future-salts parser against fixed-U wire",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Verify protocol and TCP compatibility behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15
+          },
+          {
+            "name": "Verify proxy rejection and Native credential boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          },
+          {
+            "name": "Install locked resource-copy implementation",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Copy the actual AppHost into its package resource slot",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          },
+          {
+            "name": "Diagnose locked AppHost dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 20
+          },
+          {
+            "name": "Preserve shipping compile evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 40
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 41
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 42
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 43
+          }
+        ]
+      },
+      {
+        "id": 125494011118,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact Windows publisher source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Actual Windows signature and Unicode publisher contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Preserve native API evidence only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15
+          }
+        ]
+      }
+    ],
+    "non_applicable_job": {
+      "id": 125494013875,
+      "name": "native-auth-and-journal",
+      "status": "completed",
+      "conclusion": "skipped",
+      "reason": "Exact-H workflow excludes push/message_batch from this alternate multi-platform auth route."
+    },
+    "completed_counts": [
+      {
+        "id": 125494011040,
+        "name": "native-message-reconciliation",
+        "conclusion": "success",
+        "cases": {
+          "human": 38,
+          "sharebox": 1,
+          "forward_journal": 3,
+          "agent_nonce": 4,
+          "credential_fencing": 3,
+          "forward_gateway_http": 1
+        },
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "id": 125494010641,
+        "name": "native-message-ui",
+        "conclusion": "success",
+        "cases": {
+          "transcript": 16,
+          "forward_settlement": 5,
+          "forward_dialog_browser": 12
+        },
+        "renderer_build": "success",
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      {
+        "id": 125494011030,
+        "name": "native-message-electron",
+        "conclusion": "success",
+        "cases": {
+          "carrier": 10,
+          "auth_retention": 8,
+          "package_resources": 3,
+          "update_source": 16,
+          "windows_publisher": 28,
+          "macos_metadata": 18
+        },
+        "electron_build": "success",
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      {
+        "id": 125494011118,
+        "name": "windows-update-publisher",
+        "conclusion": "success",
+        "cases": {
+          "native_windows": 11
+        },
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    ],
+    "shipping": {
+      "id": 125494011097,
+      "status": "completed",
+      "conclusion": "success",
+      "app_host_build": "cargo build --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml; success",
+      "tests": {
+        "composition": 12,
+        "native_startup_retention": 7,
+        "featurehost_messaging": 7,
+        "retained_social": 9,
+        "session_owned_platform_http": 6,
+        "direct_host_legacy_handoff": 6,
+        "ffi_legacy_handoff": 7,
+        "cli_native_owner": 3,
+        "gateway_binary": 5,
+        "gateway_library": 11,
+        "response_normalization": 6,
+        "future_salts_bare_parser": 2,
+        "protocol_contract": 122,
+        "tcp_transport": 9,
+        "proxy_boundary": 4,
+        "native_credential_schema": 1,
+        "actual_package_resources": 4
+      },
+      "rust_failed": 0,
+      "rust_ignored": 0,
+      "package_positive_failed": 0,
+      "package_positive_skipped": 0,
+      "live_case": "test live_session_exchanges_encrypted_ping_and_service_rpc ... ok",
+      "package_expected_rejections": {
+        "missing_binary": "observed required-input rejection",
+        "invalid_build_hash": "observed build-step hash validation rejection",
+        "mismatched_build_hash": "observed exact binary hash mismatch rejection; selected negative probe intentionally 1 failed test, matching its oracle"
+      },
+      "package_receipt": {
+        "target_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+        "source_sha256": "5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb",
+        "destination_sha256": "5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb",
+        "size": 160061040,
+        "mode": 493,
+        "excluded_control_count": 11,
+        "manifest": "/Users/runner/work/fabushi-desktop/fabushi-desktop/artifacts/native-message-shipping/actual-package-resource/manifest.json"
+      },
+      "proxy_preference_matrix": {
+        "orders": 16,
+        "removals": 48,
+        "repeated_no_ops": 48,
+        "complete_permutations": 6,
+        "complete_permutation_removals": 18
+      },
+      "diagnostic_lock_generation": "skipped because no failure",
+      "nested_startup_helpers": "Nested child-process single-test summaries are subordinate to the top-level seven-case suite and are not added to its count."
+    },
+    "artifacts": [
+      {
+        "id": 13173116303,
+        "name": "native-message-reconciliation-59f5fa24827812f78336c464995d161f403dedfb",
+        "size_in_bytes": 28844,
+        "digest": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22",
+        "expired": false,
+        "head_sha": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13173112803,
+        "name": "native-message-shipping-compile-59f5fa24827812f78336c464995d161f403dedfb",
+        "size_in_bytes": 81430492,
+        "digest": "sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
+        "expired": false,
+        "head_sha": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13172586742,
+        "name": "native-message-electron-59f5fa24827812f78336c464995d161f403dedfb",
+        "size_in_bytes": 13384,
+        "digest": "sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1",
+        "expired": false,
+        "head_sha": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13172281518,
+        "name": "native-message-ui-59f5fa24827812f78336c464995d161f403dedfb",
+        "size_in_bytes": 110471,
+        "digest": "sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998",
+        "expired": false,
+        "head_sha": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13171043513,
+        "name": "windows-update-publisher-59f5fa24827812f78336c464995d161f403dedfb",
+        "size_in_bytes": 1831,
+        "digest": "sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25",
+        "expired": false,
+        "head_sha": "59f5fa24827812f78336c464995d161f403dedfb"
+      }
+    ],
+    "evidence": {
+      "directory": ".task-evidence/resume-59f5",
+      "complete_decoded_logs": [
+        "job-125494010641.log",
+        "job-125494011030.log",
+        "job-125494011040.log",
+        "job-125494011097.log",
+        "job-125494011118.log"
+      ],
+      "capture_receipts": "message-gate-capture-receipts.json",
+      "source_assessment": "message-gate-review-and-counts.json",
+      "source_scope": "read-only; no production or workflow changes; no rerun/dispatch; no local tests/builds/validators"
+    },
+    "gate_decision": "All applicable current message-batch jobs reached terminal success and required selected tests actually passed at the same exact H. Dependent production batch may proceed.",
+    "remaining_product_acceptance": "Complete signed packages, all applicable platform/service/UI/security/performance/soak/upgrade/Bot and independent final migration ACCEPT are not granted by these focused gates."
+  },
+  "required_containing_commit_actions": [
+    "native-message-reconciliation: Human48 + resource3 + existing sharebox/journal/Agent/credential/HTTP suites",
+    "native-message-shipping-compile: locked AppHost, composition/startup/retained owners/Host/ABI/gateway, normalization6/future_salts2/protocol122/TCP9-live/proxy4/credential1, actual package-copy4 and three rejecting controls; retain current1b0 CLI-only feature graph/actual executable and four process controls",
+    "native-message-ui: existing projection18/settlement5/browser16 and production renderer compile",
+    "native-message-electron and windows-update-publisher: all existing required checks",
+    "TDRP source-review contract and fixed-source-candidate after canonical ledger amendment"
+  ],
+  "execution_policy": {
+    "GitHub_Actions_only": true,
+    "local_executable_validation": false,
+    "rerun_only_failed_or_invalidated_checks": true,
+    "final_acceptance": false
+  },
+  "known_following_product_gap": {
+    "Human_UI_retry": "Current resendFailedSend generates a fresh nonce and drops reply; reopened durable pending with lastDispatchError does not project failed. Already committed attachment paths cannot be blindly recommitted by the staging-only bridge. Scope requires Host-authoritative pending identity and attachment provenance; no one-line freshNonce workaround is claimed.",
+    "next_dependency": "Only after this containing-H required gates actually pass, repair and exercise the existing Human UI retry/committed-attachment/reopen path while preserving Agent resend behavior.",
+    "UI_scope_claim": "This batch authors actual gateway/SQLite recovery checks and statically traces existing failure notice/draft restoration wiring; execution is pending containing-H Actions. It does not prove same-nonce UI retry, visual/a11y or two-account deployed service behavior."
+  },
+  "requirement_audit": {
+    "fixed_source_and_complete_accounting": "U fixed;16381 identities,41 repository+commit instances,40gitlinks; current unknown/unread remain null; acquisition/generated/LFS/legal closure incomplete.",
+    "risk_tier_understanding": "Current product and adjacent error/recovery path read; only named upstream function sections read; no unread promotion.",
+    "existing_owners_and_actual_wiring": "Existing Human gateway->Session->Native resource client->service->canonical transcript. No parallel identity/message/resource owner.",
+    "behavior_batch": "Implemented boundary plus persistence/error/restart/gateway retry tests; UI retry is identified separate dependent incomplete batch.",
+    "preserve_existing_product": "No Agent/Coordinator/Host/Runner/Tools/approval/task/artifact/Plugin/MCP/Computer/Automation owner deletion or user-data removal.",
+    "contracts_and_parallel_work": "Disjoint177-line gateway addition rebased byte-exactly onto93647Human baseline. Native/file-buffer/forward snapshot boundary uses one25MiB contract. Concurrent reply/forward/source/schema/diagnostic/package/CLI work preserved; root owns spec, ledger, RTM and final CAS.",
+    "validation": "Prior59f complete successful gate read; new batch authored only until exact containing-H Actions; no local validation.",
+    "failure_handling": "Original3cc failure and subsequent TCP evidence preserved in history; current59f prerequisite succeeded; pending new-H failures must be causally fixed.",
+    "canonical_evidence": "Existing canonical inventory/ledger/RTM retained; current six source_reviews preserved byte-for-byte, none added/completed by this upload batch; root/source acceptance not promoted.",
+    "final_acceptance": "Full source disposition, all applicable product functions, real services, signed supported packages, UI/visual/a11y, timing/security/performance/soak, upgrade/rollback and full Bot regressions plus independent ACCEPT remain incomplete."
+  },
+  "accepted": false,
+  "current_product_baseline": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+  "transport_publication": {
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "commit": "2e436318f4d06bccb3bee462beee7e96e554aa3f",
+    "parent": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+    "force": false,
+    "expected_sha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+    "remote_ref_and_commit_readback": true,
+    "three_file_contents_equal": true,
+    "transport_run": 41517218355,
+    "product_validation": false,
+    "input_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+    "expected_output_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+    "transport_run_status": "completed",
+    "transport_run_conclusion": "success",
+    "job": 125523724074,
+    "actual_created_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+    "created_blob_API_readback": true,
+    "refs_updated_by_job": false,
+    "artifact": {
+      "id": 13175731916,
+      "digest": "sha256:c9d72b5b612a4b19e6d9001b19787bdb35df40e967725da7e3fbde3c7ae15ba3",
+      "size_in_bytes": 420
+    },
+    "object_receipt": {
+      "bytes": 3543593,
+      "operations_sha256": "83def1c6b3f16177c8a7529f94a92dc3d6135d4479942414cf26f996135f1847",
+      "refs_updated": false,
+      "product_validation": false,
+      "acceptance": false
+    }
+  }
+}

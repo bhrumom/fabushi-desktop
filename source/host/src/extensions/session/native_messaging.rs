@@ -15,6 +15,9 @@ const CI_ISOLATED_FABUSHI_AUTH_BASE_URL: &str = "https://fabushi-ci-isolated-aut
 const ISOLATED_AUTH_ID_DOMAIN: &str = "fabushi-native-auth-id-v1";
 const FABUSHI_API_BASE_URL_ENV: &str = "FABUSHI_API_BASE_URL";
 const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
+// Current Native message-resource service limit, shared with forward snapshots.
+// Shared Agent video and downloaded-resource budgets retain their own limits.
+pub(super) const MAX_HUMAN_RESOURCE_UPLOAD_BYTES: u64 = 25 * 1024 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FabushiNativeIdentity {
@@ -454,21 +457,8 @@ impl FabushiNativeMessagingClient {
         name: &str,
         expected_user_id: Option<&str>,
     ) -> Result<FabushiRemoteHumanAttachment, String> {
-        const MAX_RESOURCE_BYTES: u64 = 32 * 1024 * 1024;
         let name = required_trimmed(name, "attachment name")?;
-        let metadata = fs::symlink_metadata(path)
-            .map_err(|error| format!("Fabushi Human attachment could not be inspected: {error}"))?;
-        if !metadata.file_type().is_file() || metadata.len() > MAX_RESOURCE_BYTES {
-            return Err("Fabushi Human attachment must be a regular file within the 32 MiB backend limit".into());
-        }
-        let file = fs::File::open(path)
-            .map_err(|error| format!("Fabushi Human attachment could not be read from {}: {error}", path.display()))?;
-        if !file.metadata().map_err(|error| error.to_string())?.is_file() {
-            return Err("Fabushi Human attachment must be a regular file".into());
-        }
-        let mut bytes = Vec::new();
-        file.take(MAX_RESOURCE_BYTES + 1).read_to_end(&mut bytes)
-            .map_err(|error| format!("Fabushi Human attachment could not be read: {error}"))?;
+        let bytes = read_human_resource_upload_file(path)?;
         self.upload_direct_message_resource_bytes_bound(bytes, name, expected_user_id)
     }
 
@@ -488,12 +478,7 @@ impl FabushiNativeMessagingClient {
         expected_user_id: Option<&str>,
     ) -> Result<FabushiRemoteHumanAttachment, String> {
         let name = required_trimmed(name, "attachment name")?;
-        if bytes.is_empty() {
-            return Err("Fabushi Human attachment is empty".into());
-        }
-        if bytes.len() > 32 * 1024 * 1024 {
-            return Err("Fabushi Human attachment exceeds the 32 MiB backend limit".into());
-        }
+        validate_human_resource_upload_size(bytes.len() as u64)?;
         let credentials = self.read_bound_credentials()?;
         Self::ensure_bound_user(&credentials, expected_user_id)?;
         let part = reqwest::blocking::multipart::Part::bytes(bytes)
@@ -1275,6 +1260,46 @@ impl FabushiNativeMessagingClient {
     }
 }
 
+fn validate_human_resource_upload_size(length: u64) -> Result<(), String> {
+    if length == 0 {
+        return Err("Fabushi Human attachment is empty".into());
+    }
+    if length > MAX_HUMAN_RESOURCE_UPLOAD_BYTES {
+        return Err("Fabushi Human attachment exceeds the 25 MiB message upload limit".into());
+    }
+    Ok(())
+}
+
+fn validate_human_resource_upload_file(metadata: &fs::Metadata) -> Result<(), String> {
+    if !metadata.is_file() {
+        return Err("Fabushi Human attachment must be a regular file".into());
+    }
+    validate_human_resource_upload_size(metadata.len())
+}
+
+fn read_human_resource_upload_bytes(reader: impl Read) -> Result<Vec<u8>, String> {
+    // Metadata is only an early rejection. The file can grow after it was
+    // observed, so the actual reader must enforce the service budget too.
+    let mut bytes = Vec::new();
+    reader.take(MAX_HUMAN_RESOURCE_UPLOAD_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("Fabushi Human attachment could not be read: {error}"))?;
+    validate_human_resource_upload_size(bytes.len() as u64)?;
+    Ok(bytes)
+}
+
+fn read_human_resource_upload_file(path: &Path) -> Result<Vec<u8>, String> {
+    let read_error = |error: std::io::Error| format!(
+        "Fabushi Human attachment could not be read from {}: {error}", path.display()
+    );
+    // Check the path before opening so directories and other non-file inputs
+    // are rejected without reading. Recheck the actual opened file as well.
+    validate_human_resource_upload_file(&fs::symlink_metadata(path).map_err(&read_error)?)?;
+    let file = fs::File::open(path).map_err(&read_error)?;
+    validate_human_resource_upload_file(&file.metadata().map_err(&read_error)?)?;
+    read_human_resource_upload_bytes(file)
+}
+
 fn validate_base_url(raw: &str) -> Result<Url, String> {
     let normalized = raw.trim().trim_end_matches('/');
     let mut url = Url::parse(&format!("{normalized}/"))
@@ -1404,6 +1429,80 @@ fn classify_identity_http_status(
         // Any received non-success HTTP response is an identity rejection, not
         // a transport outage eligible for the mini-app last-good fallback.
         _ => Err(FabushiIdentityVerificationError::Rejected),
+    }
+}
+
+#[cfg(test)]
+mod native_message_resource_upload_tests {
+    use super::{read_human_resource_upload_bytes, FabushiNativeMessagingClient};
+    // Literal service contract: the oracle must not inherit an incorrect implementation limit.
+    const SERVICE_UPLOAD_LIMIT: u64 = 25 * 1024 * 1024;
+    use std::cell::Cell;
+    use std::io::{self, Read};
+    use std::rc::Rc;
+
+    #[test]
+    fn exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected() {
+        let bytes = read_human_resource_upload_bytes(
+            io::repeat(0x5a).take(SERVICE_UPLOAD_LIMIT)
+        ).expect("exact 25 MiB resource is allowed");
+        assert_eq!(bytes.len() as u64, SERVICE_UPLOAD_LIMIT);
+        assert!(bytes.iter().all(|byte| *byte == 0x5a));
+        assert_eq!(
+            read_human_resource_upload_bytes(io::empty()).unwrap_err(),
+            "Fabushi Human attachment is empty"
+        );
+
+        struct ReadFailure;
+        impl Read for ReadFailure {
+            fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+                Err(io::Error::other("fixture read failure"))
+            }
+        }
+        let partial = io::Cursor::new([1_u8, 2, 3]).chain(ReadFailure);
+        assert!(read_human_resource_upload_bytes(partial)
+            .unwrap_err().contains("fixture read failure"));
+    }
+
+    #[test]
+    fn growth_after_metadata_observation_consumes_at_most_limit_plus_one() {
+        struct Counted<R> {
+            reader: R,
+            consumed: Rc<Cell<u64>>,
+        }
+        impl<R: Read> Read for Counted<R> {
+            fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+                let read = self.reader.read(output)?;
+                self.consumed.set(self.consumed.get() + read as u64);
+                Ok(read)
+            }
+        }
+        // An input that grows beyond an earlier acceptable size must not be
+        // fully consumed merely to discover that it exceeds the upload limit.
+        let consumed = Rc::new(Cell::new(0));
+        let reader = Counted {
+            reader: io::repeat(0x37).take(SERVICE_UPLOAD_LIMIT + 1024),
+            consumed: Rc::clone(&consumed),
+        };
+        assert_eq!(
+            read_human_resource_upload_bytes(reader).unwrap_err(),
+            "Fabushi Human attachment exceeds the 25 MiB message upload limit"
+        );
+        assert_eq!(consumed.get(), SERVICE_UPLOAD_LIMIT + 1);
+    }
+    #[test]
+    fn byte_upload_rejects_empty_and_oversize_before_credentials_or_http() {
+        let credential_path = std::env::temp_dir().join(format!(
+            "fabushi-upload-bound-no-credential-{}-{}", std::process::id(), super::unix_now_ms()
+        ));
+        let client = FabushiNativeMessagingClient::new("http://127.0.0.1:9", credential_path)
+            .expect("valid loopback client");
+        assert_eq!(client.upload_direct_message_resource_bytes_for_user(
+            Vec::new(), "empty", "1"
+        ).unwrap_err(), "Fabushi Human attachment is empty");
+        assert_eq!(client.upload_direct_message_resource_bytes_for_user(
+            vec![0; (SERVICE_UPLOAD_LIMIT + 1) as usize], "oversized", "1"
+        ).unwrap_err(), "Fabushi Human attachment exceeds the 25 MiB message upload limit");
     }
 }
 
