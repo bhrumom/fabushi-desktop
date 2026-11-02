@@ -1,5 +1,8 @@
 use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -16,6 +19,35 @@ use serde_json::json;
 
 const CHILD_CASE_ENV: &str = "FABUSHI_AUTOMATION_CONTRACT_CASE";
 const CHILD_ROOT_ENV: &str = "FABUSHI_AUTOMATION_CONTRACT_ROOT";
+const ARTIFACT_ROOT_ENV: &str = "FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT";
+const ALLOCATION_RECORD: &str = "fixture-allocation.json";
+static ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+fn claim_fixture_root(path: PathBuf) -> io::Result<PathBuf> {
+    // An existing directory belongs to somebody else, even if the clock and
+    // process identity happen to repeat. Never acquire cleanup custody for it.
+    fs::create_dir(&path)?;
+    eprintln!("[automation-fixture] claimed pid={} case={:?} root={}",
+        std::process::id(), std::thread::current().name(), path.display());
+    // Session materialization can roll back its UUID directory before the
+    // failure reaches this harness. Keep a file even if only empty dirs remain;
+    // allocation is deliberately separate from the child's completion receipt.
+    fs::write(path.join(ALLOCATION_RECORD), json!({
+        "kind": "allocation", "processId": std::process::id(),
+        "case": std::thread::current().name(), "root": path.to_string_lossy(),
+    }).to_string())?;
+    Ok(path)
+}
+
+fn reserve_fixture_root(base: &Path, timestamp: u128) -> io::Result<PathBuf> {
+    let sequence = ROOT_SEQUENCE.fetch_update(Ordering::Relaxed, Ordering::Relaxed,
+        |value| value.checked_add(1))
+        .map_err(|_| io::Error::other("automation fixture root sequence exhausted"))?;
+    claim_fixture_root(base.join(format!(
+        "fabushi-automation-run-production-{}-{timestamp}-{sequence}",
+        std::process::id(),
+    )))
+}
 
 fn root() -> std::path::PathBuf {
     let n = SystemTime::now()
@@ -23,17 +55,18 @@ fn root() -> std::path::PathBuf {
         .expect("clock")
         .as_nanos();
     let base = std::env::var_os(CHILD_ROOT_ENV)
+        .or_else(|| std::env::var_os(ARTIFACT_ROOT_ENV))
         .map(std::path::PathBuf::from)
         .unwrap_or_else(std::env::temp_dir);
-    base.join(format!(
-        "fabushi-automation-run-production-{}-{n}",
-        std::process::id()
-    ))
+    reserve_fixture_root(&base, n).unwrap_or_else(|error| {
+        panic!("reserve exclusive automation fixture under {}: {error}", base.display())
+    })
 }
 
 struct OwnedAutomationChild {
     child: Child,
     root: std::path::PathBuf,
+    completed: bool,
 }
 
 impl Drop for OwnedAutomationChild {
@@ -42,12 +75,19 @@ impl Drop for OwnedAutomationChild {
             let _ = self.child.kill();
             let _ = self.child.wait();
         }
-        let _ = fs::remove_dir_all(&self.root);
+        if self.completed {
+            let _ = fs::remove_dir_all(&self.root);
+        } else {
+            eprintln!("[automation-fixture] retained failed child pid={} root={}",
+                self.child.id(), self.root.display());
+        }
     }
 }
 
 fn bounded_automation_case(test_name: &str, run: impl FnOnce()) {
     if std::env::var(CHILD_CASE_ENV).ok().as_deref() == Some(test_name) {
+        eprintln!("[automation-fixture] entered child pid={} case={} root={:?}",
+            std::process::id(), test_name, std::env::var_os(CHILD_ROOT_ENV));
         run();
         let root = std::env::var_os(CHILD_ROOT_ENV).expect("owned child fixture root");
         fs::write(std::path::PathBuf::from(root).join("completed"), test_name)
@@ -59,14 +99,15 @@ fn bounded_automation_case(test_name: &str, run: impl FnOnce()) {
     // A hung thread cannot be safely joined or cleaned up in this test process;
     // the child owns only this exact case and its private filesystem fixtures.
     let child_root = root();
-    fs::create_dir_all(&child_root).expect("private automation fixture root");
     let child = Command::new(std::env::current_exe().expect("test executable"))
         .args(["--exact", test_name, "--nocapture", "--test-threads=1"])
         .env(CHILD_CASE_ENV, test_name)
         .env(CHILD_ROOT_ENV, &child_root)
         .spawn()
         .expect("start bounded real-owner automation case");
-    let mut owned = OwnedAutomationChild { child, root: child_root };
+    eprintln!("[automation-fixture] launched parent_pid={} child_pid={} case={} root={}",
+        std::process::id(), child.id(), test_name, child_root.display());
+    let mut owned = OwnedAutomationChild { child, root: child_root, completed: false };
     let deadline = Instant::now() + Duration::from_secs(45);
     let status = loop {
         if let Some(status) = owned.child.try_wait().expect("observe owned test child") {
@@ -81,6 +122,40 @@ fn bounded_automation_case(test_name: &str, run: impl FnOnce()) {
         test_name,
         "a successful child with no selected case is not evidence",
     );
+    owned.completed = true;
+}
+
+#[test]
+fn fixture_roots_are_exclusive_at_a_fixed_time_and_cleanup_keeps_siblings() {
+    let base = root();
+    let barrier = Arc::new(std::sync::Barrier::new(2));
+    let threads = (0..2).map(|_| {
+        let base = base.clone();
+        let barrier = Arc::clone(&barrier);
+        std::thread::spawn(move || {
+            barrier.wait();
+            reserve_fixture_root(&base, 42).expect("exclusive fixed-time allocation")
+        })
+    }).collect::<Vec<_>>();
+    let paths = threads.into_iter().map(|thread| thread.join().unwrap()).collect::<Vec<_>>();
+    assert_ne!(paths[0], paths[1]);
+    let sentinel = paths[1].join("owned-sentinel");
+    fs::write(&sentinel, b"second owner remains live").unwrap();
+    let allocation = fs::read(paths[1].join(ALLOCATION_RECORD)).unwrap();
+    let recorded: serde_json::Value = serde_json::from_slice(&allocation).unwrap();
+    assert_eq!(recorded["kind"], "allocation");
+    assert_eq!(recorded["processId"], std::process::id());
+    assert!(!paths[1].join("completed").exists(), "allocation is not completion");
+    let error = claim_fixture_root(paths[1].clone()).expect_err("existing root has an owner");
+    assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+    assert_eq!(fs::read(&sentinel).unwrap(), b"second owner remains live");
+    assert_eq!(fs::read(paths[1].join(ALLOCATION_RECORD)).unwrap(), allocation);
+    fs::remove_dir_all(&paths[0]).unwrap();
+    assert!(!paths[0].exists());
+    assert_eq!(fs::read(&sentinel).unwrap(), b"second owner remains live");
+    assert_eq!(fs::read(paths[1].join(ALLOCATION_RECORD)).unwrap(), allocation);
+    fs::write(paths[1].join("after-sibling-cleanup"), b"still writable").unwrap();
+    fs::remove_dir_all(base).unwrap();
 }
 
 #[test]
@@ -263,7 +338,12 @@ impl Drop for ShippingAutomation {
     fn drop(&mut self) {
         self.runtime.dispose();
         self.workers.shutdown();
-        let _ = fs::remove_dir_all(&self.root);
+        if std::thread::panicking() {
+            eprintln!("[automation-fixture] retained unwinding fixture pid={} root={}",
+                std::process::id(), self.root.display());
+        } else {
+            let _ = fs::remove_dir_all(&self.root);
+        }
     }
 }
 
@@ -292,6 +372,8 @@ fn history_failure_then_independent_run(
     expected_cron_outcome: &str,
     known_fences: bool,
 ) {
+    eprintln!("[automation-fixture] history scenario pid={} trigger={trigger:?} fault={fault:?}",
+        std::process::id());
     let fixture = ShippingAutomation::new();
     let runs_path = fixture.store.runs_path(&fixture.automation_id);
     let config_path = fixture.store.config_path(&fixture.automation_id);

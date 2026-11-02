@@ -246,10 +246,14 @@ jobs:
           fi
           exit "$admission_status"
       - name: Test affected Session Transcript and Runner integration recovery
+        id: ocrm_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
+        env:
+          FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT: ${{ runner.temp }}/ocrm-automation-fixtures-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
+          mkdir -p "$FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT"
           recovery_status=0
           cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \
@@ -351,6 +355,14 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
+      - name: Preserve failed owned Automation fixtures
+        if: ${{ failure() && steps.ocrm_recovery.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-automation-fixtures-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ocrm-automation-fixtures-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Test scoped Coordinator control retirement and relay correlation
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash

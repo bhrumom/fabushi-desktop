@@ -485,6 +485,81 @@ source delta in fresh focused review and final exact-H Actions with the whole
 credential target and shared gates. Fixed U and full acceptance remain intact.
 
 
+Integration on `800f166b8e30aa79e55435804dd514f915728332` preserves the incoming
+FC-04-HTTP-02/03 repair and REC-11/12/13 producer contract. The following prior
+fixture decisions add direct mode-transition and failure-observation controls;
+they do not replace the incoming assertions or upgrade historical evidence.
+
+### Credential HTTP fixture I/O — FC-HTTP-FIXTURE-01
+
+Decision **FC-HTTP-FIXTURE-01 — FIX / TEST_FLAW**, before implementation on
+`2c32127539bba5e797eaef89a02096bb2cb24f5d`. Runtime `41440794963`, attempt 1,
+job `125263299411` compiled shipping Host and ran the Settings group. Its new
+credential-context child returned Transport where Authentication was required;
+the parent propagated the same failed case. The original log has no case label
+or retained server-worker outcome, so its exact hidden server error is unknown.
+Do not reinterpret the observed Transport as an Authentication result or claim
+that this run proved the complete new credential contract.
+
+The actual fixture accepts streams from a nonblocking listener, then uses
+`BufRead`/`read_exact`/`write_all` without restoring blocking mode. Apple accept
+inherits file flags; Rust 1.97.1's Apple accept path does not clear this flag.
+An accepted socket can therefore return WouldBlock before a complete request,
+terminate this fixture worker and close the listener. Its destructor discards
+the worker error when a child assertion fails first. This is a source-proven
+fixture defect; the missing original worker error is not retrospectively filled
+in from a later green result.
+
+- HTTP-FIXTURE-01: the common accepted-stream reader explicitly sets blocking
+  mode before retaining its existing five-second read/write deadlines. Keep
+  the listener nonblocking, its owned polling/stop path, the child deadline,
+  real private-file replacement and actual production provider invocation.
+  No production transport, credential validation or error classification changes.
+- HTTP-FIXTURE-02: a deterministic actual TCP control starts with an explicitly
+  nonblocking accepted stream, exercises this same configuration/reader and
+  receives a request in separate header/body parts. Prove the mode transition
+  directly where the platform exposes it and retain complete parsing/body
+  assertions; do not rely on a larger sleep, timeout, transient retry or a
+  platform-specific lucky arrival of all bytes before the first read.
+- HTTP-FIXTURE-03: identify the credential case/control in parent and child
+  evidence. Preserve accepted/parsed/responded counts and the server-worker
+  outcome when a child fails, including worker errors otherwise hidden by
+  unwinding. Do not print authorization, credential documents, request bodies
+  or raw token-bearing server responses. An HTTP fixture failure remains a
+  failure, not a substitute successful receipt.
+- HTTP-FIXTURE-04: retain every current context mismatch, initial refusal,
+  single-401 retry, later-new-transport, watchdog/cancellation, typed error,
+  redaction, model/request-byte and zero-publication assertion. The entire
+  existing credential target plus the direct stream control must pass on the
+  next exact H in Actions. No unmodified failed-subject rerun or assertion
+  relaxation is authorized.
+
+Primary platform contract review is limited to Rust tag `1.97.1`,
+`library/std/src/sys/net/connection/socket/unix.rs` blob
+`936dd4c93233c4a11d65b32404a04f6a497d22f4` (accept, lines 241–270), and Apple
+`bsd/kern/uipc_syscalls.c` blob `8e7e708bfd6d94cd366b4b46d62e94d853187256`
+(accepted file flags/nonblocking state, lines 618–650). Sources are
+[Rust](https://github.com/rust-lang/rust/blob/1.97.1/library/std/src/sys/net/connection/socket/unix.rs)
+and [Apple XNU blob](https://api.github.com/repos/apple-oss-distributions/xnu/git/blobs/8e7e708bfd6d94cd366b4b46d62e94d853187256).
+The XNU source establishes platform behavior, not the exact runner kernel build
+or a syscall trace of this failure. This is a dependency/API contract review,
+not a new fixed-U full-file reading claim. Scope is this spec and the existing
+credential-context test file; retain the existing workflow selection. Freeze
+and independently review the repair before delivery. Per-transport identity
+and broader original-turn/model/permission acceptance limits remain unchanged.
+
+Decision **FC-HTTP-FIXTURE-02 — FIX / TEST_FLAW**, before the additional edit:
+the final selector review identified the same accepted-stream assumption in
+the already-selected `provider_session::fabushi_credential_context_tests` reader
+at this same base. Its two nonblocking listeners feed that separate `cfg(test)`
+reader. Extend the scope only to normalizing that reader before its existing
+timeouts; production transport code and every existing endpoint/context/body
+assertion remain unchanged. The existing real HTTP lib case stays selected.
+This is an adjacent source-proven fixture defect, not a second observed failure
+at H2c, whose Recovery/lib step did not execute. Re-freeze the complete six-file
+scope and independently review the fix delta plus its callers before delivery;
+the earlier five-file snapshot cannot approve the added path.
+
 ### Frozen terminal tool-custody evidence — REC-11/12/13
 
 Contract: `OCRM-RUNNER-TERMINAL-CUSTODY-v1`, specified before code on

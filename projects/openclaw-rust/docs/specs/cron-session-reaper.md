@@ -213,6 +213,79 @@ schedule/event and execution-error/interruption branches through their existing
 owners. Existing valid assertions remain. Source review and these checks do not
 establish real backend delivery, crash recovery or full cron equivalence.
 
+### Automation oracle fixture custody — AUTO-FIXTURE-CUSTODY-v1
+
+Decision `AUTO-FIXTURE-CUSTODY-01 — FIX / TEST_FLAW`, before implementation.
+The failed subject is `007c07f7a84f1dee106ae40734369b6259d8f201`, Runtime
+`41439491960`, job `125258277125`, attempt 1. The actual
+`real_background_history_failures_preserve_terminal_owner_rows_and_allow_a_new_run`
+child failed while creating its Session, before Automation history assertions,
+with `agent store filesystem error: Invalid argument (os error 22)`; the parent
+then reported that same child failure. The error prefix identifies the
+`init_configured_db` parent-directory `create_dir_all` call. Recovery can reenter
+that helper, so this does not establish that no earlier SQLite open was tried.
+It also does not identify the individual kernel operation or why it failed.
+
+Independent fixed-H source assessment found a separate, definite fixture
+ownership defect: parallel parent cases name their root using only the same
+process ID and a wall-clock timestamp, and `create_dir_all` admits an existing
+root. Equal clock values can therefore give two child guards the same cleanup
+root. The log has no explicit PID-to-path mapping, so this failure is **not**
+claimed as a demonstrated collision or an environment-only fault. Preserve
+007c's failed outcome and all its positive results; do not repeat the unchanged
+instrument until it happens to pass. The implementation base is now
+`2c32127539bba5e797eaef89a02096bb2cb24f5d`, preserving its concurrent Session,
+credential-context and Skills fixes. Fixed U is unchanged.
+
+- FIXTURE-01: reserve every fixture leaf with exclusive `create_dir`. Add a
+  checked process-local sequence to the existing process/time identity, so
+  concurrent callers at one fixed clock value receive distinct paths. An
+  already-existing candidate is a refusal, never ownership of that directory;
+  do not remove or alter its sentinel. No project dependency is added.
+- FIXTURE-02: retain the actual bounded child, parallel parent cases, 45-second
+  timeout, exact selected test and non-empty completion receipt. Only that
+  child's guard can stop its process. Remove its root only after successful
+  exit and a matching completion receipt. Failed or timed-out cases retain
+  their owned root; an unwinding real Automation fixture still disposes its
+  runtime and shuts down workers before retaining files. Do not kill by name,
+  share a cleanup root or treat a timeout as approval.
+- FIXTURE-03: print explicit fixture-root, case and OS process identities at
+  allocation/launch and preserve failure artifacts in a dedicated per-run,
+  per-attempt Actions directory. The recovery step alone receives this fixture
+  destination, and failure upload is confined to that destination. No user
+  directories, credentials, environment dump or unrelated `/tmp` tree enter
+  the artifact. Production materialization rollback may remove its failed
+  UUID directory; the retained fixture is therefore not a pre-rollback or
+  syscall trace. Do not add synchronous production diagnostics under the
+  Session mutation locks merely to capture this test failure.
+- FIXTURE-04: use a fixed-time concurrent allocation control, an occupied-root
+  refusal with byte-preserved sentinel, and deletion of one owned sibling
+  while the other remains usable. Keep every existing real DB, history,
+  terminal-row, admission, callback, subsequent-run and no-replay assertion.
+  The existing `automation_run_production_wiring_contract` target remains
+  selected by the existing scoped workflow; do not serialize it or skip its
+  failing case. Required proof is the new controls plus all original cases
+  and the shared gates on the resulting exact H in Actions.
+
+The change is confined to this contract, the existing Automation test fixture
+and its scoped workflow evidence path. No production retry, Session/Automation
+semantics, schema, source lock, ledger flag or final acceptance requirement
+changes. Freeze and independently review the complete scope before delivery.
+Rollback restores the old fixture isolation weakness. A later filesystem
+failure remains non-passing and must be assessed from its new owned-path
+evidence; neither this repair nor a later successful run rewrites the original
+EINVAL cause as proven. Real backend and full recovery acceptance stay open.
+
+Decision `AUTO-FIXTURE-EVIDENCE-02 — FIX / TEST_FLAW`, before the follow-up:
+materialization rollback can leave only empty fixture directories, which a
+file artifact cannot preserve. Each exclusively claimed leaf therefore writes
+a non-sensitive allocation record with its process ID, case and root before
+owner work starts. This is allocation evidence only, never a completion
+receipt. The existing occupied-root and sibling controls also preserve that
+record's bytes and prove allocation creates no `completed` receipt. Failed
+fixtures can then retain useful metadata even when their Session UUID directory
+was removed; the original pre-rollback/syscall evidence limit still applies.
+
 ## Runner cancellation request and terminal publication — 2026-11-02
 
 Contract: `OCRM-RUNNER-CANCEL-TERMINAL-v1`. Exact target base:
