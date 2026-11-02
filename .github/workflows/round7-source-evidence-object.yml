@@ -63,7 +63,7 @@ jobs:
           const inputObject = await get('/git/blobs/' + inputBlob);
           assert.equal(inputObject.encoding, 'base64');
           const inputBytes = Buffer.from(inputObject.content, 'base64');
-          assert.equal(createHash('sha1').update(Buffer.from('blob ' + inputBytes.length + '\\0')).update(inputBytes).digest('hex'), inputBlob);
+          assert.equal(createHash('sha1').update(Buffer.from('blob ' + inputBytes.length)).update(Buffer.from([0])).update(inputBytes).digest('hex'), inputBlob);
           const ledger = JSON.parse(inputBytes.toString('utf8'));
           const before = structuredClone(ledger);
           assert(Array.isArray(ledger.source_reviews));
