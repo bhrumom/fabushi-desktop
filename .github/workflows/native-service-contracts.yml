@@ -192,8 +192,12 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          cargo generate-lockfile --manifest-path source/host/Cargo.toml || true
-          git diff -- source/host/Cargo.lock | head -n 260
+          set -euo pipefail
+          if grep -Eq 'cannot update the lock file|lock file.*needs to be updated' artifacts/native-message/*.log 2>/dev/null; then
+            cargo metadata --format-version 1 --manifest-path source/host/Cargo.toml > /dev/null 2> artifacts/native-message/dependency-resolution.log || true
+            git diff -- source/host/Cargo.lock > artifacts/native-message/dependency-drift.patch
+            sed -n '1,260p' artifacts/native-message/dependency-drift.patch
+          fi
       - name: Preserve exact batch evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -400,12 +404,19 @@ jobs:
             exit 1
           fi
           printf '%s\n' 'Actual AppHost resource-copy evidence only; complete signed application/package acceptance remains open.' > "$FABUSHI_PACKAGE_EVIDENCE_DIR/scope.txt"
-      - name: Diagnose locked AppHost dependency drift (no acceptance)
+      - name: Diagnose locked shipping dependency drift (no acceptance)
         if: failure()
         shell: bash
         run: |
-          cargo generate-lockfile --manifest-path source/host/app/Cargo.toml || true
-          git diff -- source/host/app/Cargo.lock | head -n 260
+          set -euo pipefail
+          for cargo_root in source/host/app source/mahayana/mahayana-rs; do
+            if grep -Eq "cannot update the lock file .*$cargo_root/Cargo[.]lock|lock file .*$cargo_root/Cargo[.]lock.*needs to be updated" artifacts/native-message-shipping/*.log 2>/dev/null; then
+              diagnostic_name=${cargo_root//\//-}
+              cargo metadata --format-version 1 --manifest-path "$cargo_root/Cargo.toml" > /dev/null 2> "artifacts/native-message-shipping/$diagnostic_name-dependency-resolution.log" || true
+            fi
+          done
+          git diff -- source/host/app/Cargo.lock source/mahayana/mahayana-rs/Cargo.lock > artifacts/native-message-shipping/dependency-drift.patch
+          sed -n '1,260p' artifacts/native-message-shipping/dependency-drift.patch
       - name: Preserve shipping compile evidence
         if: always()
         uses: actions/upload-artifact@v4
