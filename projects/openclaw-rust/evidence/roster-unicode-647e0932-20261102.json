@@ -1,0 +1,1196 @@
+{
+  "format_version": 1,
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "RSU-v1",
+  "scope": "Existing Fabushi Session search Unicode match projection; no new upstream semantic review or equivalence credit.",
+  "subject_target": {
+    "subjectCommit": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+    "subjectTree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "verified": true,
+    "remoteReadback": [
+      {
+        "kind": "ref",
+        "sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "matched": true
+      },
+      {
+        "kind": "commit",
+        "sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "parent": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "matched": true
+      },
+      {
+        "kind": "file",
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 215445
+      },
+      {
+        "kind": "file",
+        "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "sha": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 4846
+      },
+      {
+        "kind": "file",
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "sha": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 112441
+      },
+      {
+        "kind": "file",
+        "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "sha": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 6463
+      },
+      {
+        "kind": "file",
+        "path": "source/host/src/extensions/transcript/roster_search.rs",
+        "sha": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 9667
+      },
+      {
+        "kind": "file",
+        "path": "source/host/tests/agent_content_search_contract.rs",
+        "sha": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 6336
+      },
+      {
+        "kind": "file",
+        "path": "source/host/tests/roster_search_contract.rs",
+        "sha": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 17111
+      }
+    ],
+    "runs": [
+      {
+        "id": 41534582934,
+        "name": "Rust desktop runtime",
+        "head_sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "status": "queued",
+        "conclusion": null,
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41534582934"
+      },
+      {
+        "id": 41534582857,
+        "name": "OCRM P0 source authority",
+        "head_sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "status": "in_progress",
+        "conclusion": null,
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41534582857"
+      }
+    ]
+  },
+  "frozen_source": {
+    "contract": "RSU-v1",
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+    "candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "patch_sha256": "49aa32f4eb54bd4b84577ccd3f76f924b3c1bd4c3a817cde12b336c9a40da2b4",
+    "scope": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "before_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+        "after_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+        "bytes": 215445,
+        "sha256": "5eaef67431e4043cd30d5de7edd40e8b09b8b3fb5e20b17f61e84fda7621b2e9"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "before_blob": null,
+        "after_blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+        "bytes": 4851,
+        "sha256": "9a14803cd7f3ecd46c43453e28c5a7395b1c760b2fe8a02d67755b23ca6a69fd"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "before_blob": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+        "after_blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+        "bytes": 112441,
+        "sha256": "f90f77e8dc722f5869a5dddac58c27b1598a447a743e0b6e31e2975f23899020"
+      },
+      {
+        "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "before_blob": "49ef853b73fdea376a13156631ace97004eb482c",
+        "after_blob": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+        "bytes": 6468,
+        "sha256": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d"
+      },
+      {
+        "path": "source/host/src/extensions/transcript/roster_search.rs",
+        "before_blob": "9040ebf8d4738bf7688969339ae4df64d64db85a",
+        "after_blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+        "bytes": 9667,
+        "sha256": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b"
+      },
+      {
+        "path": "source/host/tests/agent_content_search_contract.rs",
+        "before_blob": "37e59b0349fccc1a79176091708781f5ac95cc92",
+        "after_blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+        "bytes": 6426,
+        "sha256": "4d1759e94a2312c8758181fa8a6da5386a5736780eb08d633c59ccbb0424dc0a"
+      },
+      {
+        "path": "source/host/tests/roster_search_contract.rs",
+        "before_blob": "d0b5720c71846ebc3ef42a040bd8375fc1be91ce",
+        "after_blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+        "bytes": 17190,
+        "sha256": "c8a7311884d10022c8d4a254099904c42424931ed41f188356801b37634d05bc"
+      }
+    ],
+    "incoming_preserved": "e01 media Unicode/storage profile and 40dad config input/temporary staging cleanup, including their workflow tests; no other source mutations",
+    "review_execution": {
+      "functional": {
+        "model": "inherited configured model",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "reuse_structure_performance": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      }
+    },
+    "local_executable_validation_performed": false,
+    "runtime_evidence": "pending exact-H GitHub Actions; source review alone grants no verified/equivalence status"
+  },
+  "independent_reviews": [
+    {
+      "schema_version": 1,
+      "contract": "RSU-v1",
+      "round": 1,
+      "review_role": "independent functional, safety and behavior source review",
+      "reviewer_identity": {
+        "task": "/root/rsu_functional_review",
+        "model": "inherited configured model; model override omitted",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none",
+        "provenance": "Parent launch record explicitly reports successful spawn with fork_turns=none and reasoning_effort=xhigh, with model omitted to inherit the configured model. The child has no runtime model/effort introspection surface; these applied settings are recorded from that launch record.",
+        "adapter_fallback": false,
+        "independent_current_round": true,
+        "other_current_round_reports_consulted": false
+      },
+      "subject": {
+        "repository_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+        "repository": "bhrumom/fabushi-desktop",
+        "exact_base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "exact_base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+        "frozen_candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+        "manifest": "/workspace/scratch/403d4d169ac6/rsu-review/r1/manifest.json",
+        "candidate_patch": "/workspace/scratch/403d4d169ac6/rsu-review/r1/candidate.patch",
+        "patch_sha256_from_manifest": "49aa32f4eb54bd4b84577ccd3f76f924b3c1bd4c3a817cde12b336c9a40da2b4",
+        "identity_assessment": "Read-only git diff --raw --abbrev=40 confirms exactly the declared seven paths and all before/after blob identities; git rev-parse confirms the base tree. Frozen upstream.lock.json confirms fixed U. Source was read using git show on the frozen tree, not inferred from the manifest or a mutable working-tree summary.",
+        "candidate_commit_runtime_subject": null
+      },
+      "execution_boundary": {
+        "local_executable_validation_performed": false,
+        "htch_runtime_validation_performed": false,
+        "github_actions_executed_by_reviewer": false,
+        "prohibited_checks_not_run": [
+          "build",
+          "compile",
+          "test",
+          "lint",
+          "validator",
+          "schema",
+          "generator",
+          "benchmark"
+        ],
+        "operations": "Only read-only shell/Git source inspection and writing this owned review JSON.",
+        "production_or_shared_files_modified": false,
+        "evidence_level": "Static source, contract, oracle and workflow review only; no runtime verification or equivalence acceptance."
+      },
+      "governing_context": [
+        "Current AGENTS.md, especially immutable independent review, effort/model inheritance and OCRM Actions-only execution.",
+        "Current projects/openclaw-rust/SOURCE_OF_TRUTH.md, current fixed-U amendment and explicit incomplete acceptance.",
+        "docs/specs/openclaw-rust-equivalence-migration.md §17 OCRM-EXEC-02, including actual consumer closure, source/evidence separation and retained full acceptance.",
+        "Relevant existing-owner entries in projects/openclaw-rust/module-map.md.",
+        "Frozen projects/openclaw-rust/docs/specs/roster-search-unicode-match.md in full."
+      ],
+      "coverage": {
+        "declared_scope_complete": true,
+        "files": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "before_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+            "after_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+            "depth": "Every changed hunk, exact-subject triggers/setup, actual macOS and Linux command/receipt paths, retained adjacent MGS/MRU/Automation/config/storage/artifact gates."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+            "before_blob": null,
+            "after_blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+            "depth": "Complete contract, controls, exclusions and runtime evidence requirements."
+          },
+          {
+            "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "before_blob": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+            "after_blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+            "depth": "All four changed evidence-ref hunks plus relevant row/top-level state. No state promotion is present in the full diff."
+          },
+          {
+            "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+            "before_blob": "49ef853b73fdea376a13156631ace97004eb482c",
+            "after_blob": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+            "depth": "Complete frozen source and exact-base delta."
+          },
+          {
+            "path": "source/host/src/extensions/transcript/roster_search.rs",
+            "before_blob": "9040ebf8d4738bf7688969339ae4df64d64db85a",
+            "after_blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+            "depth": "Complete frozen source and exact-base delta, including indexed/media and linear paths."
+          },
+          {
+            "path": "source/host/tests/agent_content_search_contract.rs",
+            "before_blob": "37e59b0349fccc1a79176091708781f5ac95cc92",
+            "after_blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+            "depth": "Complete frozen tests and exact-base delta; independent Unicode/context expectations and preserved legacy controls."
+          },
+          {
+            "path": "source/host/tests/roster_search_contract.rs",
+            "before_blob": "d0b5720c71846ebc3ef42a040bd8375fc1be91ce",
+            "after_blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+            "depth": "Complete frozen tests and exact-base delta; gateway, actual persisted rows, reopen, index fallback and ready-index controls."
+          }
+        ],
+        "adjacent_chain": [
+          "source/host/src/host_gateway_api.rs:156 — searchAgents remains registered to TranscriptManager.",
+          "source/host/src/extensions/transcript/transcript_manager.rs:668-688 — production services supply the existing RosterContentSearch and dispatch the same Session gateway.",
+          "source/host/src/extensions/session/gateway.rs:318-385 — real dispatch entry, query extraction, default/explicit limit and JSON serialization.",
+          "source/host/src/extensions/session/production.rs:343-435,1283-1310,3930-3941,6058-6080,6337-6368 — real owner construction, read/append, roster discovery and shutdown.",
+          "source/host/src/extensions/session/agent_db.rs:4134-4185,5659-5677,7493-7505 — committed SQLite append, owner reads and ordered row decoding.",
+          "source/host/src/extensions/session/agent_db_schema.rs:18-23,97-98,177-180 — actual table, seq order and insert SQL.",
+          "source/host/src/extensions/session/agent_db_serde.rs:137-188 — fixtures satisfy the actual persisted-entry decoder.",
+          "source/host/src/extensions/content_search/extension.rs:175-220 — existing production readiness and indexed service delegation.",
+          "source/host/Cargo.toml:1-6, dependencies — edition 2024, rusqlite and serde_json are already declared; no new dependency.",
+          "frontend/src/production/command-palette-message-provider.ts:40-77,126-175 — accepted JSON shape, unchanged original snippet, request cancellation/stale response handling.",
+          "frontend/src/production/command-palette-model.ts:45-67,112-145,176-207 — snippet as label/keywords and the actual second filtering consumer.",
+          "frontend/src/production/CommandPalette.tsx:357-381 — snippet rendered as ordinary React text."
+        ]
+      },
+      "findings": [],
+      "finding_counts_for_candidate_delta": {
+        "IMPL_BUG": 0,
+        "TEST_FLAW": 0,
+        "ENV": 0
+      },
+      "decision": {
+        "status": "APPROVE_SOURCE_REVIEW_ONLY",
+        "blocking_findings": 0,
+        "required_changes_to_current_frozen_scope": [],
+        "explanation": "No falsifiable implementation, safety, behavior or oracle defect introduced by this seven-file frozen candidate was found. The patch is suitable to proceed to its exact-H Actions campaign. This is not runtime verification, indexed-backend equivalence, UI acceptance or overall OCRM acceptance.",
+        "global_flags_may_be_promoted": false
+      },
+      "contract_assessment": [
+        {
+          "requirement": "RSU-01",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "agent_content_search.rs:86-88 performs one whole-string to_lowercase() and substring lookup.",
+            "agent_content_search.rs:97-105 maps the normalized start and end to complete original source characters; a match starting or ending inside the i + combining-dot expansion includes all of original İ.",
+            "Whole-string contextual Σ -> ς/σ is retained for lookup. The per-character pass computes only lengths; the contextual sigma alternatives have equal UTF-8 length.",
+            "agent_content_search_contract.rs:81-118 specifies expansion, contraction, partial expansion, across-expansion and contextual/case-ignorable sigma expectations independently."
+          ],
+          "reasoning": "The strict cumulative-end > match_start selects the source character containing the first matched byte; cumulative-end >= match_end selects the source character containing the final matched byte. Both returned offsets come from original char_indices/len_utf8, so later slices cannot bisect a matched UTF-8 character."
+        },
+        {
+          "requirement": "RSU-02",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "agent_content_search.rs:59-75 collapses the same Unicode whitespace categories used by the prior roster split_whitespace implementation.",
+            "agent_content_search.rs:127-150 keeps separate 30/60-character and 30/60-byte windows.",
+            "roster_search.rs:102-104 delegates only to the byte-context entry point.",
+            "agent_content_search_contract.rs:64-77,122-138 and roster_search_contract.rs:116-136 contain independent ASCII, character-window, UTF-8 inward-rounding, whitespace and empty/no-match controls."
+          ],
+          "reasoning": "The typed character branch includes exactly up to thirty preceding and sixty following original characters. The byte branch rounds a leading byte boundary forward and trailing boundary backward; neither can cross the already mapped matched span. Empty/no-match behavior and ellipsis placement remain consistent.",
+          "concrete_expected_outputs": [
+            "90 × İ + Needle -> roster: ellipsis + 15 × İ + Needle; typed: ellipsis + 30 × İ + Needle.",
+            "90 × K + Needle -> roster: ellipsis + 10 × K + Needle; typed: ellipsis + 30 × K + Needle.",
+            "10 × 🙂 + Needlez + 20 × 🙂 -> roster: ellipsis + 7 × 🙂 + Needlez + 14 × 🙂 + ellipsis."
+          ]
+        },
+        {
+          "requirement": "RSU-03",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "roster_search_contract.rs:171-220 persists six concrete fixtures, verifies their real SQLite JSON, invokes the actual Session gateway and reopens the Session owner.",
+            "roster_search_contract.rs:247-264 covers absent index, unready index and ready-but-unavailable index using the same gateway fixture.",
+            "roster_search_contract.rs:361-413 retains ready-index message/media controls and now inserts a real, newer matching fallback row that must not replace the indexed result.",
+            "roster_search.rs:154-197 preserves None-triggered fallback and Some(indexed-results) short-circuit, including available empty results."
+          ],
+          "reasoning": "The unavailable-index fixture returns None; the unready fixture must never receive a message query. Exactly five nonempty/nonzero searches occur across initial search, sigma, partial expansion, missing query and reopen; whitespace and zero limit return before readiness inspection, explaining the count assertions."
+        },
+        {
+          "requirement": "RSU-04",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "roster_search.rs:18-26,106-197,248-287 preserves result fields, hidden-peer filtering, reverse-entry traversal, role/timestamp projection, global sorting/truncation and stale indexed-agent filtering.",
+            "roster_search_contract.rs:196-217 compares the complete expected JSON and exact persisted raw entry strings before/after searching and reopening.",
+            "roster_search_contract.rs:268-298 pins the newest five matches from one agent, hidden-newest exclusion, ordering across two agents and a smaller global limit.",
+            "Existing indexed-message and indexed-media deleted-agent controls remain present."
+          ],
+          "reasoning": "The production change is a synchronous pure string projection. It introduces no persistence, notification, permission or cancellation owner. The test's persisted comparison is transcript row text preservation, not a claim that every database file byte or filesystem metadata is unchanged."
+        },
+        {
+          "requirement": "RSU-05",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "agent_content_search.rs:59-105 performs flattening, whole-string lowercasing, the underlying substring search and one forward source-span mapping pass.",
+            "agent_content_search.rs:127-150 scans only bounded context around the match.",
+            "The roster's former second independent lowercase/slice algorithm and boundary helpers are removed; its public wrapper delegates to the existing content-search owner."
+          ],
+          "reasoning": "No growing prefixes are repeatedly lowercased, no second index/store/task is introduced, and the code remains linear in input plus the underlying substring search. No measured runtime or performance result is claimed."
+        }
+      ],
+      "oracle_and_compile_review": {
+        "independent_expectations": "Expected snippets use fixed counts and literal original characters. They are not produced by another call to the snippet implementation. Full JSON equality detects dropped/renamed/extra fields, wrong role/timestamp/order and lost matched casing.",
+        "actual_storage": "stored_transcript_rows opens the actual agent.db_path with SQLITE_OPEN_READ_ONLY and reads id plus raw entry text ordered by seq. The fixture proves all input entries exist before searching, compares complete raw rows after the reads, drops the original Session owner, constructs a new owner for the same root, repeats the meaningful search and compares rows again.",
+        "decoder_compatibility": "The message/send-message/notice fixtures have the actual fields required by agent_db_serde::is_valid_transcript_entry. The hidden peer row is valid persisted input and is excluded by roster policy rather than silently discarded as a malformed fixture.",
+        "edition_2024": "source/host/Cargo.toml declares edition=2024. The stored_transcript_rows tail-expression temporary chain must be assessed under Rust 2024's shortened tail-expression temporary scope; it does not justify an old-edition E0597 finding. The collected result is an owned Vec<(String,String)> and no row/statement borrow escapes. This is source-level type/lifetime assessment, not a compiler result.",
+        "other_type_checks": "char::len_utf8 is used as a char -> usize iterator mapper; query_map error/row types are constrained by Result collection and the helper return type. serde_json::json! and assert_eq! borrow repeated field expressions as used here. Existing rusqlite/serde_json dependencies and ordinary auto-discovered integration targets suffice by declaration inspection.",
+        "existing_tests_retained": true,
+        "inferred_target_test_counts_not_executed": {
+          "agent_content_search_contract": 7,
+          "roster_search_contract": 8
+        }
+      },
+      "workflow_assessment": {
+        "source_review": "PASS",
+        "execution_result": "PENDING",
+        "changed_execution_surface": "Only the two real existing integration targets are added to the existing macOS recovery command and existing Linux recovery target list. No parallel runner or new store of completion truth is introduced.",
+        "exact_identity": "Both jobs retain checkout/binding to FABUSHI_TARGET_SHA and optional frozen expected_subject rejection. Receipts bind H/tree/U/run/attempt/OS and inputs/log hashes. The fixed lock still names the required U.",
+        "required_named_positives_added": [
+          "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
+          "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
+          "unicode_snippet_keeps_character_windows_and_whitespace_contract",
+          "roster_snippet_preserves_ascii_and_utf8_byte_context_windows",
+          "production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens",
+          "production_gateway_unicode_fallback_with_unready_index_never_queries_it",
+          "production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans",
+          "production_gateway_fallback_preserves_unicode_match_limits_and_recency",
+          "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
+          "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
+          "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window"
+        ],
+        "positive_name_check": "All eleven names are concrete top-level #[test] functions in the two selected targets. Both receipt paths require exactly one complete test-name ... ok line per required name, so zero selected tests, ignored tests, duplicates and absent results cannot satisfy those positive checks.",
+        "macos": "rust-desktop-runtime.yml:683-870 records the actual integration command and exit. The added receipt step reuses that log, requires the single integration-contracts exit record to be zero, verifies current HEAD/tree against the subject and requires all retained MGS plus added RSU positives. The exact-subject recovery artifact upload remains at lines 881-889.",
+        "linux": "rust-desktop-runtime.yml:1778-1927 executes the existing three-case recovery plan. The integration case selects the two additional targets; each case requires successful process/capture, all named positives exactly once, and positive zero-failed summaries. The aggregate remains failed/incomplete until every existing case passes.",
+        "inherited_gates_retained": [
+          "All four existing MGS Memory selector/mutation positives remain in both named-evidence paths.",
+          "MRU typed and actual sharing callback/ordered-publisher commands, required names and exit/capture checks remain unchanged.",
+          "Automation integration/actual App command selection, owned-child evidence and exact-case controls remain unchanged.",
+          "CS05-INPUT-v1 malformed base-hash and intervening durable-default/reopen tests remain required in the actual App selectors/receipts.",
+          "CI-LINUX-STORAGE-01 retains CARGO_PROFILE_DEV_DEBUG=0, CARGO_PROFILE_TEST_DEBUG=0 and CARGO_INCREMENTAL=0 without disabling test assertions.",
+          "The storage observation and always-conditioned early owner artifact upload remain before later Automation/App checks.",
+          "No retained target, required positive, guard or assertion is removed by the complete workflow diff."
+        ],
+        "receipt_contract_names": "The existing receipt paths now explicitly include RSU-v1 in their composite contract labels. No executable consumer requiring the old exact contract string was found in the examined workflow/scripts paths.",
+        "evidence_limits": "A failed/skipped prerequisite may prevent a later normal step from executing; the resulting failed job or absent receipt remains non-passing. This source assessment does not claim that either job actually ran or passed."
+      },
+      "rtm_assessment": {
+        "source_review": "PASS",
+        "change": "Only spec/test evidence_refs are appended to OCRM-R05, OCRM-R24, OCRM-AC13 and OCRM-AC24.",
+        "status_promotions": false,
+        "global_completion_flags_changed": false,
+        "fixed_upstream_changed": false,
+        "interpretation": "These references identify the batch contract and authored tests; they do not create executed evidence, new upstream reading credit or equivalence acceptance."
+      },
+      "pre_existing_adjacent_findings": [
+        {
+          "id": "RSU-FUNCTIONAL-CONTEXT-01",
+          "classification": "IMPL_BUG",
+          "severity": "P2 / medium user-visible search omission",
+          "introduced_by_candidate": false,
+          "current_round_blocking": false,
+          "scope": "Existing frontend consumer behavior; unchanged from exact base.",
+          "title": "Greek final-sigma Host hits can be discarded by the palette's second filter",
+          "evidence_level": "Deterministic source-derived reproduction; not executed.",
+          "evidence": [
+            "frontend/src/production/command-palette-model.ts:49-65 lowercases each source code point separately in normalizePaletteSearch.",
+            "frontend/src/production/command-palette-model.ts:115 uses the original message snippet as both label and keyword.",
+            "frontend/src/production/command-palette-model.ts:131-145 returns null when a query token cannot match any normalized candidate.",
+            "frontend/src/production/command-palette-model.ts:198-207 removes null-scored message entries.",
+            "source/host/src/extensions/transcript/roster_search.rs:160-164 and agent_content_search.rs:86-88 use whole-string lowercase; the candidate preserves this pre-existing roster lookup behavior.",
+            "The exact-base-to-candidate seven-file diff contains no frontend change, establishing that this UI behavior was already present."
+          ],
+          "minimum_reproduction": {
+            "host_input": "A stored message with content ΟΣ and a searchAgents query of ος.",
+            "host_expected_by_current_source": "Whole-string lowercase of ΟΣ is ος, so Host returns a message hit with original snippet ΟΣ.",
+            "pure_consumer_input": "commandPaletteEntries({ agents: [], commands: [], messages: [{ agentId: 'a', entryId: 'e', role: 'user', timestampMs: 1, snippet: 'ΟΣ' }], query: 'ος', tab: 'messages' })",
+            "consumer_actual_by_source": "normalizePaletteSearch('ΟΣ') becomes οσ because Σ is lowercased alone; normalizePaletteSearch('ος') remains ος. The token does not match and the returned message list is empty."
+          },
+          "consequence": "A lower-case Greek final-sigma query can lose a correct Host result at the real UI consumer. The current gateway tests do not establish full UI Unicode equivalence.",
+          "minimum_followup": "Handle in a separately declared consumer-closure change: retain server-authoritative message matches through local ranking/filtering, or make the message filtering semantics compatible with the Host's whole-string lowercase contract. Add the concrete lowercase-query/uppercase-original consumer test and an actual UI path check. Preserve existing participant/command normalization semantics rather than silently broadening all palette search behavior.",
+          "disposition": "NON_BLOCKING for the present frozen RSU delta; explicit follow-up product defect, not a global UI or migration acceptance exemption.",
+          "parent_direction": "Parent explicitly requested this inherited limitation be preserved with evidence/minimal reproduction while retaining the current frozen-scope conclusion; no source or spec was edited."
+        }
+      ],
+      "remaining_required_evidence": [
+        "Materialize the intended candidate commit H and bind its actual tree to this reviewed frozen tree. Any accepted source/fixture/contract fix requires the corresponding focused re-review and invalidated evidence to be rerun.",
+        "Run the already-authored affected compilation and both contract targets only in GitHub Actions; inspect exact-H Linux and macOS receipts/logs for H/tree/U, commands/exits, named positives and hashes.",
+        "Retain and assess the existing MGS, MRU, Automation, CS05 and storage/artifact gates on that actual H instead of relabeling older evidence.",
+        "Keep full HTTP/UI behavior, actual indexed backend equivalence, Windows/platform/package acceptance and complete OCRM gates pending until they have their own applicable evidence.",
+        "Resolve the concrete inherited final-sigma UI consumer defect through the parent-managed follow-up closure; the narrow batch scope does not waive the final product requirement."
+      ],
+      "summary": "The frozen seven-file RSU-v1 delta is statically coherent and has causal, independently specified persisted-gateway controls. No new blocking IMPL_BUG or TEST_FLAW was found and no ENV incident was observed because execution was intentionally not performed. Approve source review only; exact-H runtime evidence remains pending. Separately preserve the concrete pre-existing Greek final-sigma UI filtering defect for follow-up."
+    },
+    {
+      "contract": "RSU-v1",
+      "review_identity": {
+        "reviewer": "/root/rsu_structure_review",
+        "lenses": [
+          "code_reuse",
+          "architecture_and_structure",
+          "simplification",
+          "performance",
+          "complete_frozen_scope"
+        ],
+        "repository": "bhrumom/fabushi-desktop",
+        "repository_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+        "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+        "candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+        "patch_sha256": "49aa32f4eb54bd4b84577ccd3f76f924b3c1bd4c3a817cde12b336c9a40da2b4",
+        "requested_model": "gpt-6.1-sol",
+        "actual_model_basis": "父侧显式 spawn 调用记录：model=gpt-6.1-sol，reasoning_effort=xhigh，fork_turns=none；父侧确认工具接受且没有 fallback。本 worker 没有独立 introspection 接口，因此不声称另行验证模型配置。",
+        "reasoning_effort": "xhigh",
+        "effort_reason": "完整冻结范围跨共享 Unicode 匹配、两种窗口合同、Session/SQLite/索引/UI 消费者与共享 CI 验收链，涉及上下文大小写、UTF-8 边界、实际持久化 oracle 和逐名证据判断。",
+        "blind_independence": "未读取任何其他审查报告或前轮裁决。",
+        "allowed_write": "/workspace/scratch/403d4d169ac6/rsu-review/r1/structure-review.json",
+        "production_edits_performed": false
+      },
+      "review_method": {
+        "source_authority": "产品源码、测试和 workflow 均从 git show d8a195bc4d9006770242630f0f15c155dab81cb4:path 读取；基线从 exact base Git 对象读取；不依赖可变 worktree 内容作产品结论。",
+        "scope_binding": "git diff --name-status / --raw --no-abbrev 显示恰好 7 个变更路径，before/after blobs 与 manifest 逐项相符；candidate.patch 的 sha256sum 与 manifest 一致。",
+        "depth": "已检查全部 7 个变更路径及每个变更 hunk；两份生产实现和两份合同测试完整阅读，workflow/RTM 阅读全部变更及相关执行、证据、保留控制上下文。",
+        "executable_validation": {
+          "performed": false,
+          "prohibited_and_not_run": [
+            "local builds",
+            "htch-runtime builds",
+            "tests",
+            "lint",
+            "benchmarks",
+            "generators",
+            "validators",
+            "schema checks"
+          ],
+          "allowed_operations_used": [
+            "read-only Git object reads and diffs",
+            "read-only text search",
+            "patch checksum",
+            "official Rust source-page reading",
+            "author this review JSON"
+          ],
+          "runtime_status": "pending exact-H GitHub Actions"
+        }
+      },
+      "authorities_read": [
+        "AGENTS.md：根约束、冻结完整 scope、独立只读审查、模型/effort 记录、OCRM 仅 Actions 与 §17 执行规则。",
+        "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md：完整 RSU-01 至 RSU-05、oracle、共享 owner、窗口与 CI 证据合同。",
+        "docs/specs/openclaw-rust-equivalence-migration.md：§17、OCRM-EXEC-02 §17.1–17.5；批次源审查/接线/执行/接受分离，完整终验收不缩减。",
+        "projects/openclaw-rust/SOURCE_OF_TRUTH.md：本轮固定身份、既有 owner、仅 Actions、未完成状态和最新 §17 优先规则。",
+        "projects/openclaw-rust/module-map.md：现有 Session/Transcript、search 和共享合同职责及导航不构成验收的约束。",
+        "projects/openclaw-rust/upstream.lock.json：固定 U/tree 与 source/acceptance flags 仍为 false 的 metadata。"
+      ],
+      "full_scope": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "before_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+          "after_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+          "review": "全部 workflow diff 和受影响 macOS recovery / Linux Host 复用步骤、输入哈希、逐名收据、退出码、精确 H/tree/U、磁盘/profile、早 artifact 及现有 MGS/MRU/Automation/CS05 控制上下文。",
+          "disposition": "合格的增量复用；没有新增 workflow/job 或放宽已有 oracle。"
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+          "before_blob": null,
+          "after_blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+          "review": "完整规格及所有 RSU 需求、owner、成功/负例、恢复、CI 和非目标。",
+          "disposition": "行为边界与实现相符；显式保留 Actions 和全迁移接受待办。"
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "before_blob": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+          "after_blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+          "review": "OCRM-R05、R24、AC13、AC24 四处完整 diff。",
+          "disposition": "仅增加 spec/两份测试的 evidence_refs；没有状态、flag、source-read 或接受程度提升。"
+        },
+        {
+          "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+          "before_blob": "49ef853b73fdea376a13156631ace97004eb482c",
+          "after_blob": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+          "review": "完整 candidate 文件、基线 matcher/window，以及所有调用关系。",
+          "disposition": "既有纯 helper 是唯一 normalization/match-span/snippet owner；字符与字节窗口复用该 owner。"
+        },
+        {
+          "path": "source/host/src/extensions/transcript/roster_search.rs",
+          "before_blob": "9040ebf8d4738bf7688969339ae4df64d64db85a",
+          "after_blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+          "review": "完整 candidate 文件及基线差异；Session/index/JSON/ordering/limit/hidden-peer/media 分支。",
+          "disposition": "仅 snippet 委托和删除重复常量/UTF-8 边界 helper；roster 投影、调度、fallback 与索引消费保留。"
+        },
+        {
+          "path": "source/host/tests/agent_content_search_contract.rs",
+          "before_blob": "37e59b0349fccc1a79176091708781f5ac95cc92",
+          "after_blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+          "review": "完整原有和新增所有 assertions。",
+          "disposition": "新增 oracle 独立指定预期文本；保留原有 limits、entry projection、whitespace、ASCII、role/order/hidden-peer 与 zero/empty 控制。"
+        },
+        {
+          "path": "source/host/tests/roster_search_contract.rs",
+          "before_blob": "d0b5720c71846ebc3ef42a040bd8375fc1be91ce",
+          "after_blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+          "review": "完整原有和新增所有 assertions、实际 Session/SQLite fixture、gateway seam、reopen、索引控制及 counters。",
+          "disposition": "新增用例有真实生产持久化前置和 readback；原有测试及 indexed/media/stale-agent assertions 未移除，ready-index 增加竞争的 linear-only 数据使分支控制更强。"
+        }
+      ],
+      "adjacent_production_evidence": [
+        {
+          "path": "frontend/src/production/ProductionRenderer.tsx:834; frontend/src/production/command-palette-message-provider.ts:46-76,128-155; frontend/src/production/command-palette-model.ts:112-115",
+          "conclusion": "生产 provider 请求 searchAgents，解析原 JSON fields 并保留 snippet；palette 将 snippet 同时用作 label 与匹配关键词，因此修正原始匹配 span 对实际消费者有因果意义。"
+        },
+        {
+          "path": "source/host/src/host_gateway_api.rs:156; source/host/src/extensions/transcript/transcript_manager.rs:668-687; source/host/src/extensions/session/gateway.rs:341-370",
+          "conclusion": "searchAgents 已注册到 TranscriptManager；manager 传实际 content_search 服务与 Session 到既有 gateway；gateway 使用原 limit/default 与序列化合同进入 roster search，没有新增 dispatch owner。"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs:343-440,1283-1292,3930-3940,6058-6078,6337-6364; source/host/src/extensions/session/agent_db.rs:4134-4170,5659-5672,7493-7504",
+          "conclusion": "fixture 构造真实 ProductionSessionWorkers/AgentDb owner，经现有 transaction append 保存原 JSON，搜索读取该 owner 的 transcript entries；shutdown 关闭 owner/pool，reopen 从同一路径重取，非内存 fake transcript。"
+        },
+        {
+          "path": "source/host/src/extensions/content_search/extension.rs:177-215; source/host/src/extensions/content_search/search_index_service.rs:288-320; source/host/src/extensions/content_search/search_index_db.rs:142-196",
+          "conclusion": "可用索引仍由既有 readiness/SQLite FTS owner 供给自身 snippet；服务 None 表示 unavailable/error 并回退，Some(rows) 包括 Some(empty) 继续保持既有可用索引语义。RSU 不声称所有 indexed-backend Unicode 等价。"
+        },
+        {
+          "path": "source/host/Cargo.toml",
+          "conclusion": "两个 integration test 文件由既有标准 tests 目录承载；rusqlite/serde_json 已是现有依赖，没有新增 crate、构建边或依赖。"
+        }
+      ],
+      "lens_conclusions": {
+        "code_reuse": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "agent_content_search.rs:78-174 持有整串 normalization、span 映射与 snippet 拼装；roster_search.rs:7,102-104 仅 import + 委托。",
+            "删除 roster 原有独立 flatten/lowercase/window/slicing 实现及 char_boundary_at_or_after/before，未遗留同一 mapping 的第二个实现。",
+            "新增 SnippetContext 只有现有两个真实窗口消费者；byte helper 为 pub(crate)，保留原 typed 和 roster public 函数形状，不引入宽泛公用层。"
+          ]
+        },
+        "architecture_and_structure": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "helper 仍为纯同步读投影，无 I/O、状态、task、callback、权限或索引生命周期；Session/SQLite、TranscriptManager/roster、index readiness 与 renderer projection 责任保持。",
+            "content_search 的纯 helper 不反向依赖 transcript/Session，因此委托没有形成新的模块环。",
+            "规范记录 existing-owner-first 的具体复用，并明确 UI/remote/platform/Memory citation/full-migration 仍待独立验收。"
+          ]
+        },
+        "simplification": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "窗口单位以私有 enum 参数表达，公共文本处理路径只保留一份，既没有复制 Unicode 算法，也无需把 Session/索引数据模型合并。",
+            "原 typed helper 的 flat chars、query chars、lowered chars 和 source_index Vec 及朴素逐位置字符切片比较被整串 lowercase + str::find + 单次来源扫描替代。",
+            "当前变更没有证据支持额外抽象或进一步 churn；不存在仅凭偏好提出的重构 finding。"
+          ]
+        },
+        "unicode_correctness": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "agent_content_search.rs:86-105 在 flat.to_lowercase() 上查找，不会用逐字符 lowercase 破坏最终 sigma；随后只用 ch.to_lowercase() 的 UTF-8 长度累加定位原字符。",
+            "严格大于 match_start 选择首个来源字符，大于等于 match_end 选择末个来源字符的完整结尾；在字符边界、İ 展开内部和跨展开匹配时都包含完整原字符，不会按 normalized byte offset 切原文。",
+            "来源长度与整串 mapping 的已知差异是 Σ 的上下文 σ/ς，二者均为两个 UTF-8 bytes；其他字符使用同一 unconditional conversion。官方 alloc/core source 交叉阅读支持该设计；不是以逐字符值替代整串 lookup。",
+            "Characters 分支反向取最多 30 个前置字符并正向取 60 个尾随字符；Bytes 分支在 original match 两端加 30/60 bytes 后向内修正 UTF-8 boundary；两者均先取得合法且完整的 original span。",
+            "flatten_whitespace 保留原 typed 流程，和 roster 原 split_whitespace().join(\" \") 的 Unicode whitespace collapsing 结果一致；empty/no-match/ellipses 与 ASCII 窗口保持。"
+          ]
+        },
+        "performance": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "新增映射对 original flat.char_indices() 单向最多遍历一次，未 lowercase growing prefixes、没有回头扫描 origin map；每字符 lowercase iterator 大小有界。",
+            "除底层 whole-string lowercase 和 substring search 外，flatten 与来源映射为 O(input)，窗口查找只遍历固定 30/60 字符，UTF-8 byte rounding 最多跨一个标量的余下 bytes。",
+            "保留 flat 与 lowered String，临时空间仍 O(input)，但不再为每个来源字符及每个 lowercase 字符保存多个 Vec；roster 原有的 split Vec 也移除。",
+            "这是源码复杂度判断，没有运行 benchmark、分配测量或平台性能验收，不声称测得加速。"
+          ]
+        }
+      },
+      "test_oracle_review": {
+        "result": "APPROVED_SOURCE_ONLY",
+        "new_helper_controls": [
+          "90 个 İ 与 K 前缀独立预期 30 个原字符，分开覆盖 UTF-8 扩张和收缩。",
+          "i、combining dot、i+dot、跨展开的 dot+y 都期望完整原始 İ。",
+          "ΟΣ/ΟΣΑ/孤立 Σ 及 case-ignorable combining mark 提供整串 contextual sigma 正负例。",
+          "emoji/CJK 明确的字符窗口，Unicode whitespace，空串、全空白、空 query、no-match。"
+        ],
+        "actual_gateway_controls": [
+          "roster_search_contract.rs:171-217 使用真实 Session append 并从 agent.db_path 的 read-only SQLite connection 核对每个 fixture 的原 JSON，再比较完整 JSON 结果。",
+          "预期片段直接为 15 个 İ、10 个 K、7/14 个 emoji、30 个 z/20 个 CJK 等固定数学窗口；不调用另一份实现生成期望。",
+          "absent、unready、ready-but-None 三条 fallback 均执行完整 Unicode/隐藏 peer/roles/timestamps/no-match/empty/limit0/read-only/reopen 检查。",
+          "unready 的 readiness_calls=5、message_calls=0；unavailable 的两项均为5，符合四次有效查询加 reopen 查询；empty 与 limit0 提前返回不记调用。",
+          "unicode limits 用两个真实 agent、七条命中与 newest hidden 行，独立预期 recency/per-agent=5/global explicit limit=3。",
+          "ready-index 用例新增 timestamp=2000 的 linear-only Unicode 命中，却仍要求 indexed-message，能识别意外跳过 index；原 stale-agent/media/type/dimensions 控制完整保留。"
+        ],
+        "retained_assertions": "两份测试基线中的所有测试函数和 assertions 保留；diff 只新增测试、辅助读取/网关封装及 ready-index 的匹配 fallback fixture。",
+        "scope_limit": "这些测试的源码可判定 oracle 合理；本审查没有执行它们，也没有把 controlled index/Session seam 当成完整 UI/HTTP/全部真实 backend 验收。"
+      },
+      "workflow_review": {
+        "result": "APPROVED_SOURCE_ONLY",
+        "linux": {
+          "evidence": ".github/workflows/rust-desktop-runtime.yml:1777-1922",
+          "conclusion": "复用 channel_pending_recovery 原 command/cache；既有四个 target 后加入 agent_content_search_contract 与 roster_search_contract。11 个 RSU 关键名称均是实际函数名，并在 required_integration 中逐项要求 passed.count(name)==1。每 case 同时要求 cargo/capture exit=0、有效且正数的 test summaries、没有 missing/nonunique positives；总 receipt 仅全部 case 接受才 passed。H/tree/U、command、run identity、输入/log hashes 与初始 failed-or-incomplete 保留。"
+        },
+        "macos": {
+          "evidence": ".github/workflows/rust-desktop-runtime.yml:300-326,700-733,824-870,1235",
+          "conclusion": "在现有 integration-contracts command 中各加一次两个 target；既有 MGS receipt 增列同样11个 RSU required test names，要求唯一成功名称、恰好一条 integration-contracts=0 exit、当前 H/tree 与 subject 一致；主命令失败/缺名/重复名均不能取得该 receipt 的 passed。输入绑定增加 spec/helper/roster/gateway/tests/UI consumer。"
+        },
+        "preserved_incoming_controls": [
+          "MGS 原四个 required names、transcript_manager_contract target、原 assertions 与 scope 限制完整保留。",
+          "MRU/media command/required positives/receipt 未改变；candidate diff 没有删除或重写其 oracle。",
+          "macOS recovery 的既有 Automation targets、lib filters、owned-fixture 捕获仍保留；Linux Automation admission/App 步骤、exact binary test selection、failed 初始 receipt 与 named positives 未变。",
+          "CS05-INPUT 的 malformed base hash / newer commit / legacy controls 与原 input staging cleanup 生产路径均不在 source change scope；workflow required test names 在原位置保留。",
+          "Linux CARGO_PROFILE_DEV_DEBUG=0、CARGO_PROFILE_TEST_DEBUG=0、CARGO_INCREMENTAL=0、仅去 debug/incremental 而保留断言的设置未变；build-storage subject 与 df/du 前后记录保留。",
+          "Automation/App 前的 always early upload-artifact 仍在1933-1940，后续总 upload 与 failure fixture 捕获保留；RSU 复用已有 evidence 目录进入该保存链。"
+        ],
+        "runtime_limit": "该结论只证明声明的验收链未见假绿漏洞；只有冻结 candidate tree 物化为最终 H 并在 GitHub Actions 产生实际 commands/exits/named receipts/artifacts 后，才可 adjudicate 本批运行结果。"
+      },
+      "requirement_disposition": [
+        {
+          "id": "RSU-01",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "shared helper 78-105；typed Unicode tests 81-118；真实 gateway fixtures 177-207"
+        },
+        {
+          "id": "RSU-02",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "shared helper 116-174；typed tests 64-77,121-136；roster tests115-136"
+        },
+        {
+          "id": "RSU-03",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "roster search164-194；三种实际 gateway fallback tests171-264；ready index control360-401"
+        },
+        {
+          "id": "RSU-04",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "保留 roster投影/排序/limits/stale filtering；SQLite raw before/after/reopen；tests267-298及 retained assertions"
+        },
+        {
+          "id": "RSU-05",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "单 shared owner、单向映射、无 prefix lowercasing、无新增 persistent/runtime owner"
+        }
+      ],
+      "findings": [],
+      "limitations": [
+        "未执行任何本地或 htch-runtime 可执行验证；exact-H Actions、目标平台和完整迁移独立接受仍 pending。",
+        "本地 Fabushi 对象库不含固定 OpenClaw U 的产品 Git 对象。已直接读取 candidate 内 upstream.lock 与本轮 source authority metadata；依父侧补充，本批是现有 Fabushi consumer 缺陷修复，不需要为此读取无关 U 产品树。没有宣称读取上游产品源码或取得新 read/equivalence credit。",
+        "官方 Rust alloc/core source 页面用于交叉核对大小写映射机制；1.97.1 版本页面当前读取不可用，所读是官方公开源页面，不冒充精确 CI toolchain 的执行证据。",
+        "没有可复核证据支持把未运行判作 IMPL_BUG、TEST_FLAW 或 ENV failure；因此不为待执行验收捏造 finding。"
+      ],
+      "references": {
+        "official_rust_str_source": "https://doc.rust-lang.org/src/alloc/str.rs.html",
+        "official_rust_char_source": "https://doc.rust-lang.org/src/core/char/methods.rs.html",
+        "official_source_observation": "str::to_lowercase 的 contextual sigma 分支与其他 conversions::to_lower 分支；char::to_lowercase 的同一 conversions::to_lower 输入。"
+      },
+      "decision": {
+        "verdict": "APPROVE_SOURCE_REVIEW_ONLY",
+        "blocking_findings": 0,
+        "nonblocking_findings": 0,
+        "rationale": "在完整冻结 7 文件变更和必要生产上下游范围内，没有发现可证伪的复用、架构、简化、性能、实现或 oracle 缺陷。唯一共享 helper、原字符 span 映射、双窗口兼容和实际 Session 持久化测试设计满足 RSU-v1；共享 CI 的原有控制保留且逐名证据失败关闭。",
+        "implementation_verified": false,
+        "equivalence_accepted": false,
+        "source_review_is_not_exact_h_runtime_acceptance": true,
+        "next_gate": "集成人冻结与本 candidate tree 对应的实际 H，在 GitHub Actions 取得 RSU 受影响 target 的编译、全部测试及逐名收据；按真实结果区分 IMPL_BUG/TEST_FLAW/ENV，并保留所有完整 OCRM/平台/UI/服务最终门。"
+      }
+    }
+  ],
+  "root_decisions": {
+    "contract": "RSU-v1",
+    "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "source_review_decision": "APPROVED_SOURCE_ONLY",
+    "blocking_findings": 0,
+    "review_driven_product_changes": [],
+    "decisions": [
+      {
+        "finding": "RSU-FUNCTIONAL-CONTEXT-01",
+        "classification": "IMPL_BUG",
+        "severity": "P2",
+        "disposition": "DEFER",
+        "current_scope_effect": "NON_BLOCKING: unchanged adjacent UI, not introduced by the frozen seven-file candidate",
+        "rationale": "Root independently read the palette code-point normalization and null-score rejection. Lowercase final-sigma query can still discard a valid Rust search hit. Preserve this as an open product defect; current native Session fallback scope is not full UI acceptance or a whole-migration exemption. A separate actual-consumer contract is being inspected before editing.",
+        "required_followup": "Keep existing Rust search admission and ensure current authoritative message results survive renderer presentation with stale-request negatives; retain participant/command behavior and exact-H evidence."
+      }
+    ],
+    "excluded_uncommitted_paths": [
+      {
+        "paths": [
+          ".github/ocrm-reviewed-objects/manifest.json",
+          ".github/ocrm-reviewed-objects/object.patch",
+          ".github/workflows/ocrm-stage-reviewed-objects.yml"
+        ],
+        "reason": "Unexpected untracked copies of exact old 7d staging blobs appeared after incoming40dad removal; current task did not author them and they are excluded/preserved. Frozen tree retains incoming removals."
+      }
+    ],
+    "runtime": "pending exact-H GitHub Actions; no local execution or status promotion"
+  },
+  "retained_parent_ci_evidence": {
+    "observation_window_utc": {
+      "status_started": "2026-11-02T22:01:12Z",
+      "status_finished": "2026-11-02T22:01:13Z",
+      "terminal_logs_and_artifact_metadata_finished": "2026-11-02T22:01:33Z"
+    },
+    "subjects": {
+      "mgs": {
+        "sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+        "source": 41531742497,
+        "runtime": 41531742609,
+        "source_job": 125573404762,
+        "restore_job": 125573405782,
+        "renderer_job": 125573406034
+      },
+      "lpg": {
+        "sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+        "source": 41530832703,
+        "runtime": 41530832715,
+        "source_job": 125570257337,
+        "restore_job": 125570259010,
+        "renderer_job": 125570258624
+      }
+    },
+    "completed_evidence": [
+      {
+        "subject": "mgs",
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "kind": "source",
+        "run_id": 41531742497,
+        "job_id": 125573404762,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742497/job/125573404762",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573404762/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 31522,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "test_commands": [
+          "python3 projects/openclaw-rust/scripts/test_source_review.py",
+          "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py"
+        ],
+        "actual_counts": {
+          "source_review_tests": 33,
+          "inventory_materialization_tests": 21
+        },
+        "structural_results": {
+          "g01_g02": "PASS",
+          "source_paths": 62130,
+          "mapped": 850,
+          "unread_or_partial": 62099,
+          "pending_forward_links": 0,
+          "source_closure": "open"
+        },
+        "claim_limit": "Source structural authority and contract checks only; no semantic migration or product acceptance."
+      },
+      {
+        "subject": "mgs",
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "kind": "renderer",
+        "run_id": 41531742609,
+        "job_id": 125573406034,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742609/job/125573406034",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573406034/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 51518,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "tests": 104,
+          "passed": 104,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "commands": [
+          "2026-11-02T21:57:12.5565686Z ##[group]Run npm --prefix desktop run build:electron -- --plugin-skills-contracts",
+          "2026-11-02T21:57:15.0423934Z ##[group]Run node --test desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+        ],
+        "claim_limit": "Selected Electron build plus Plugin Skills/model-settings/MCP/carrier contract tests. Later broad architecture, renderer build/typecheck, co-staging and final gates were skipped."
+      },
+      {
+        "subject": "mgs",
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "kind": "restore",
+        "run_id": 41531742609,
+        "job_id": 125573405782,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742609/job/125573405782",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573405782/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 88575,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "ordinary": {
+            "passed": 29,
+            "failed": 0,
+            "ignored": 2
+          },
+          "mounted_file": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "mounted_symlink": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "distinct_passed": 31
+        },
+        "commands": [
+          "2026-11-02T21:58:24.3486758Z Executing [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--nocapture\"]",
+          "2026-11-02T21:58:25.2963924Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_file_restore_boundary\", \"--ignored\", \"--nocapture\"]",
+          "2026-11-02T21:58:25.3181320Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_symlink_restore_boundary\", \"--ignored\", \"--nocapture\"]"
+        ],
+        "claim_limit": "Linux ordinary restore and real private-mount descendant file/symlink controls; not macOS, complete backup/client compatibility, or exclusion of concurrent external namespace mutation."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "source",
+        "run_id": 41530832703,
+        "job_id": 125570257337,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832703/job/125570257337",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570257337/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 31514,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "test_commands": [
+          "python3 projects/openclaw-rust/scripts/test_source_review.py",
+          "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py"
+        ],
+        "actual_counts": {
+          "source_review_tests": 33,
+          "inventory_materialization_tests": 21
+        },
+        "structural_results": {
+          "g01_g02": "PASS",
+          "source_paths": 62130,
+          "mapped": 850,
+          "unread_or_partial": 62099,
+          "pending_forward_links": 0,
+          "source_closure": "open"
+        },
+        "claim_limit": "Source structural authority and contract checks only; no semantic migration or product acceptance."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "renderer",
+        "run_id": 41530832715,
+        "job_id": 125570258624,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715/job/125570258624",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570258624/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 51434,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "tests": 104,
+          "passed": 104,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "commands": [
+          "2026-11-02T21:48:18.1539864Z ##[group]Run npm --prefix desktop run build:electron -- --plugin-skills-contracts",
+          "2026-11-02T21:48:20.9719209Z ##[group]Run node --test desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+        ],
+        "claim_limit": "Selected Electron build plus Plugin Skills/model-settings/MCP/carrier contract tests. Later broad architecture, renderer build/typecheck, co-staging and final gates were skipped."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "restore",
+        "run_id": 41530832715,
+        "job_id": 125570259010,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715/job/125570259010",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570259010/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 88663,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "ordinary": {
+            "passed": 29,
+            "failed": 0,
+            "ignored": 2
+          },
+          "mounted_file": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "mounted_symlink": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "distinct_passed": 31
+        },
+        "commands": [
+          "2026-11-02T21:50:06.7269250Z Executing [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--nocapture\"]",
+          "2026-11-02T21:50:07.6912990Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_file_restore_boundary\", \"--ignored\", \"--nocapture\"]",
+          "2026-11-02T21:50:07.7137713Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_symlink_restore_boundary\", \"--ignored\", \"--nocapture\"]"
+        ],
+        "claim_limit": "Linux ordinary restore and real private-mount descendant file/symlink controls; not macOS, complete backup/client compatibility, or exclusion of concurrent external namespace mutation."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "inventory_persistence",
+        "run_id": 41530832703,
+        "job_id": 125573880197,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832703/job/125573880197",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573880197/logs",
+        "full_log_retrieved": true,
+        "inspection_scope": "Complete 217-line persistence job log",
+        "result": "Successful no-op: no new source-derived shard content; no new commit created, scoped dispatch skipped.",
+        "materialized": false
+      }
+    ],
+    "mgs_memory_step": {
+      "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+      "job_id": 125573405387,
+      "step_number": 9,
+      "step_name": "Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_level": "GitHub Actions step conclusion on exact MGS H; no full sqlite job log or Memory receipt retrieved while the job remains in_progress.",
+      "required_names_from_previously_read_exact_H_workflow": [
+        "memory_gateway_rejects_path_selectors_before_external_memory_read",
+        "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+        "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+        "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation"
+      ],
+      "workflow_source_url": "https://github.com/bhrumom/fabushi-desktop/blob/42ee1165d216a08361e6a1c7f9fe29bd609c8b1c/.github/workflows/rust-desktop-runtime.yml",
+      "direct_named_output_observed_this_round": false,
+      "counts_from_direct_output": null,
+      "boundary": "The successful step is positive gate-level evidence. Do not present the required-name list as individually extracted runtime output or invent counts."
+    },
+    "runs": [
+      {
+        "id": 41531742497,
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "status": "queued",
+        "conclusion": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742497",
+        "artifact_metadata": [
+          {
+            "id": 13181829233,
+            "name": "ocrm-p0-authority-42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+            "size_in_bytes": 4938775,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181829233",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181829233/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:57:43Z",
+            "expires_at": "2026-12-02T21:57:42Z",
+            "updated_at": "2026-11-02T21:57:43Z",
+            "digest": "sha256:284b9c5c471258e810465d155ace76fc9c5247d32406a951ef0d98a3345fe32c",
+            "workflow_run": {
+              "id": 41531742497,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c"
+            }
+          }
+        ]
+      },
+      {
+        "id": 41531742609,
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "status": "queued",
+        "conclusion": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742609",
+        "artifact_metadata": [
+          {
+            "id": 13183175955,
+            "name": "ocrm-plugin-edge-42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+            "size_in_bytes": 2659,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13183175955",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13183175955/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:57:16Z",
+            "expires_at": "2027-01-31T21:48:48Z",
+            "updated_at": "2026-11-02T21:57:16Z",
+            "digest": "sha256:8c341669bc8faae3546eaf9805df447443c7de7c15e3ceb909511ae1691b6f15",
+            "workflow_run": {
+              "id": 41531742609,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c"
+            }
+          },
+          {
+            "id": 13182178702,
+            "name": "ocrm-config-restore-linux-42ee1165d216a08361e6a1c7f9fe29bd609c8b1c-41531742609-1",
+            "size_in_bytes": 47487,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182178702",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182178702/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:58:25Z",
+            "expires_at": "2027-01-31T21:48:48Z",
+            "updated_at": "2026-11-02T21:58:25Z",
+            "digest": "sha256:076ec8b672fe3726536ecc8b389f019b1f8c099d54373f16133873c89b2a1b10",
+            "workflow_run": {
+              "id": 41531742609,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c"
+            }
+          }
+        ]
+      },
+      {
+        "id": 41530832703,
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832703",
+        "artifact_metadata": [
+          {
+            "id": 13181688473,
+            "name": "ocrm-p0-authority-93130e0a4e1e4753043e714bb64802e5572d863e",
+            "size_in_bytes": 4938772,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181688473",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181688473/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:49:39Z",
+            "expires_at": "2026-12-02T21:49:38Z",
+            "updated_at": "2026-11-02T21:49:39Z",
+            "digest": "sha256:764fc696ceb1490ae86dc40b72159f5faf7abf18b1731faa14649f14a1cff3d6",
+            "workflow_run": {
+              "id": 41530832703,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e"
+            }
+          }
+        ]
+      },
+      {
+        "id": 41530832715,
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "status": "queued",
+        "conclusion": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715",
+        "artifact_metadata": [
+          {
+            "id": 13181632960,
+            "name": "ocrm-plugin-edge-93130e0a4e1e4753043e714bb64802e5572d863e",
+            "size_in_bytes": 2658,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181632960",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181632960/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:48:22Z",
+            "expires_at": "2027-01-31T21:42:45Z",
+            "updated_at": "2026-11-02T21:48:22Z",
+            "digest": "sha256:b749bf17b0a108a1b787bfb2f80595e142e73b92d9070d485aaaff6032f9d30f",
+            "workflow_run": {
+              "id": 41530832715,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e"
+            }
+          },
+          {
+            "id": 13181269010,
+            "name": "ocrm-config-restore-linux-93130e0a4e1e4753043e714bb64802e5572d863e-41530832715-1",
+            "size_in_bytes": 47448,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181269010",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181269010/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:50:08Z",
+            "expires_at": "2027-01-31T21:42:45Z",
+            "updated_at": "2026-11-02T21:50:08Z",
+            "digest": "sha256:0a62595e14301ec6cd6a9ba363528a32a9104e7161af4389c75378216b0861c5",
+            "workflow_run": {
+              "id": 41530832715,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e"
+            }
+          }
+        ]
+      }
+    ],
+    "failure_assessment": {
+      "completed_failure_observed": false,
+      "implementation_failure": null,
+      "test_oracle_failure": null,
+      "environment_failure": null,
+      "actionable_faults": [],
+      "reason": "Every completed non-skipped job in this single observation succeeded. The remaining sqlite jobs are in_progress and rust-host jobs queued; no terminal failure log is available for causal classification.",
+      "historical_lpg_oracle": "The already-recorded LPG source-oracle TEST_FLAW remains historical; neither current observed runtime has reached a terminal LPG verdict."
+    },
+    "pending_gaps": [
+      "MGS source persist-verified-inventory job 125577897519 remains queued.",
+      "MGS sqlite 125573405387: typed Automation step 10 in_progress; actual Automation App step 11 and LPG step 12 pending.",
+      "LPG sqlite 125570259012: actual Automation App step 11 in_progress; LPG step 12 pending.",
+      "Full sqlite logs/receipts needed for direct MGS per-name output, actual counts, preserved Automation custody and LPG evidence.",
+      "MGS rust-host 125573405761 and LPG rust-host 125570258884 remain queued; no actual macOS acceptance.",
+      "Both runtime workflows retain skipped platform-worker/Pressure profiler and skipped later renderer-wide gates.",
+      "Source closure, full migration and final candidate acceptance remain open; no evidence transfer to a later RSU H."
+    ],
+    "scope": "Historical exact-subject positives remain attributed to their own H; they are not RSU runtime verification."
+  },
+  "runtime_status": "Awaiting exact 8e5545b61ad916bb9781539dfe0f28543ffc68dd Actions; source review and API delivery do not establish execution.",
+  "open_acceptance": [
+    "RSU exact-H compilation/contract receipts and artifacts",
+    "Inherited final-sigma UI second-filter defect RSU-FUNCTIONAL-CONTEXT-01",
+    "Current MGS/LPG App and macOS terminal evidence",
+    "Complete fixed-U dependency/resource/legal closure and risk-appropriate reviews",
+    "All applicable full G01-G12/AC01-AC24, real services/devices/UI/soak/packages/upgrades/rollback/Fabushi regressions and independent ACCEPT"
+  ],
+  "evidence_carrier": "The commit storing this JSON is an evidence carrier only. Runtime claims refer to explicit subject_target or retained parent exact H; no shipping SHA or final artifact is asserted.",
+  "local_executable_validation_performed": false,
+  "global_completion_flags_promoted": false
+}
