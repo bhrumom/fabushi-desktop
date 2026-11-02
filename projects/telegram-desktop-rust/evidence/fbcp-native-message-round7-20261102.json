@@ -237,15 +237,15 @@
   "actual_route": "Existing Human reaction control / transcript -> Coordinator -> Session gateway -> ProductionSessionWorkers -> issuer/account-bound Native client -> existing SandAgentDb and durable intent -> transcript events -> same cached/older-page projection and single Transcript.",
   "requirements_review": {
     "requested_run": "Exact63da requested run/logs/counts completed; minimal TEST_FLAW fixture correction30b4 remotely verified and actually passed.",
-    "fixed_source": "U retained. Canonical184-row ledger and six source reviews preserved; complete16381-identity risk review and external/generated/LFS/legal closure remain open.",
+    "fixed_source": "Fixed U retained. Eight exact pending sparse-history/parser records append to the unique canonical ledger (14 recorded,2 complete at this candidate), with six new full dossier reads and two explicit rereads; no overall source/legal closure or counter promotion.",
     "risk_review": "Only existing selected fixed-U source sections claimed; all changed production/caller/state/recovery paths reviewed. No unread-to-read or source acceptance promotion.",
     "existing_owner": "Session/Transcript/nativeclient/current renderer retained; no parallel message/reaction/database/UI owner. Later nonblocking send and old-runtime retirement changes preserved.",
     "behavior_batch": "Actual target admission, stable page/restart negatives and renderer completion/viewport fixes plus tests; no plan-only product claim.",
     "preservation": "No user-data deletion/migration; existing Agent, forward, credential, CLI/package and shipping tests preserved. Full Bot acceptance remains open.",
     "shared_contracts": "Root integration retains gateway/spec/workflow/unique ledger; isolated tests/UI diffs reviewed. Existing NMR49/50/51 meanings preserved.",
-    "actions_only": "All execution above is exact-H GitHub Actions; no local or htch-runtime executable validation. The shipping job remains queued, and no final acceptance is promoted.",
+    "actions_only": "All executable validation is GitHub Actions only. Exact5d38 Human63/recovery3/resource3 passed; inherited creation and UI failures, Social TEST_FLAW and queued shipping are preserved. Causal fixes require a new exact-H run. No local or htch-runtime validation.",
     "causal_recovery": "Initial63da fixtures repaired and passed30b4. Newafb failure was compile-only TEST_FLAW with zero Human execution; concurrent106 one-line lifecycle repair preserved, Human62 actually passed. Do not rerun failingafb or count compilation as tests.",
-    "single_accounting": "Append only to existing FBCP-NMR-001; all other rows/source_reviews/source and acceptance fields retained. Current SOURCE01 validator changes preserved.",
+    "single_accounting": "Unique184-row ledger gains only reviewed FBCP-NMR-001 test evidence and eight exact pending source reviews; all unrelated rows, historical/source counters and acceptance fields retained.",
     "final_acceptance": "Incomplete: source/legal/product/realservice/packages/platform/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain open.",
     "delivery": "Use temporary exact-object transport only after interrupted large connector write; final root publication requires force=false, expected_sha CAS, remote full SHA/content readback, and exact-H gates."
   },
@@ -296,6 +296,37 @@
       "root_full_objects_read_and_reviewed_append_matched": true,
       "product_validation": false,
       "disposition": "Not installed: canonical ledger advanced to240a31aed59e8db794a9d54532831349d965b8da before root CAS. Preserve all concurrent ledger changes; refresh the pinned input at job execution and append current execution evidence."
+    },
+    {
+      "commit": "44a8023da67def068a59979533635ecab7b29e8e",
+      "run": 41527953196,
+      "job": 125560451947,
+      "conclusion": "failure",
+      "classification": "TEST_FLAW in object-transport identity assertion",
+      "full_log_characters": 25298,
+      "cause": "Input hash used a literal backslash/zero instead of the Git blob header NUL separator. Refused before storing/publishing ledger; no product test or ref update.",
+      "repair_commit": "5d1b04368e33d209dd025f37db35de4a33c125c2",
+      "repair": "Use an explicit zero byte in the same hash assertion."
+    },
+    {
+      "sha": "5d1b04368e33d209dd025f37db35de4a33c125c2",
+      "parent": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+      "tree": "f316df80aec4f4119099d75be392394b17861c0e",
+      "workflow_blob": "00dfa697ec765e7c279a9b9fe965ba304efb53ec",
+      "verified": true,
+      "run": 41528258876,
+      "job": 125561479200,
+      "conclusion": "success",
+      "input_commit": "5d1b04368e33d209dd025f37db35de4a33c125c2",
+      "input_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+      "ledger_blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+      "artifact": 13181610239,
+      "artifact_digest": "sha256:662c21f909ce7239d1efb3e1a00e6b6000d0e87edf1a3c6fb4170f9f8b28d2ef",
+      "full_log_characters": 28457,
+      "root_full_input_output_read": true,
+      "only_reviewed_append": true,
+      "refs_updated_by_job": false,
+      "product_validation": false
     }
   ],
   "publication": {
@@ -626,7 +657,179 @@
         "job": 125557283811,
         "status": "queued",
         "accepted": false
-      }
+      },
+      "ui": {
+        "job": 125557284111,
+        "conclusion": "failure",
+        "full_log_characters": 127277,
+        "passed_before_failure": {
+          "transcript": 33,
+          "cursor_rpc": 17,
+          "forward_settlement": 5,
+          "chromium_forward_dialog": 16
+        },
+        "renderer_compile": "success",
+        "actual_production_renderer": {
+          "executed": 11,
+          "passed": 1,
+          "failed": 10,
+          "retries": 0
+        },
+        "failure": "Ten cases stopped at the shared pending().older expected1/actual0 precondition; nine in openAlice and one in initial-tail-remap. Do not describe this as16 executed scenarios or ten independently proved product defects.",
+        "later_steps": "Transcript cache and continuation step skipped",
+        "current_recovery": "Concurrent441425/e4f91d/270583 viewport/scroll readiness changes retained; read-only causal review of latest fixture ongoing, containing-H execution required."
+      },
+      "additional_results": {
+        "retained_direct_c": {
+          "job": 125557283306,
+          "conclusion": "success",
+          "passed": 15,
+          "failed": 0,
+          "ignored": 1,
+          "ignored_reason": "requires a live Telegram production data center",
+          "full_log_characters": 55819
+        },
+        "electron": {
+          "job": 125557283661,
+          "conclusion": "success",
+          "passed": {
+            "carrier": 10,
+            "auth": 8,
+            "fixture_copy": 3,
+            "update_source": 16,
+            "publisher": 28,
+            "metadata": 18,
+            "package_scope": 10,
+            "promotion": 7
+          },
+          "compile": "success",
+          "full_log_characters": 92389
+        },
+        "windows": {
+          "job": 125557283737,
+          "conclusion": "success",
+          "passed": 11,
+          "failed": 0,
+          "full_log_characters": 36120,
+          "scope": "temporary inert native API fixtures; no signing acceptance"
+        }
+      },
+      "artifacts": [
+        {
+          "id": 13181260066,
+          "name": "desktop-social-owner-behaviors-5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+          "size_in_bytes": 14696,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181260066",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181260066/zip",
+          "expired": false,
+          "created_at": "2026-11-02T21:22:01Z",
+          "expires_at": "2027-01-31T21:17:43Z",
+          "updated_at": "2026-11-02T21:22:01Z",
+          "digest": "sha256:31334075d257a759205c1a4a885b6399a5e2e78f565df8cc742f42fe7df40359",
+          "workflow_run": {
+            "id": 41527025791,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23"
+          }
+        },
+        {
+          "id": 13180671322,
+          "name": "native-message-ui-5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+          "size_in_bytes": 21251002,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180671322",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180671322/zip",
+          "expired": false,
+          "created_at": "2026-11-02T21:23:44Z",
+          "expires_at": "2027-01-31T21:17:43Z",
+          "updated_at": "2026-11-02T21:23:44Z",
+          "digest": "sha256:98460db30023cd4343f8d347f480244f3457d84ebaa2f7ca58758edb5b4e3424",
+          "workflow_run": {
+            "id": 41527025791,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23"
+          }
+        },
+        {
+          "id": 13180496883,
+          "name": "windows-update-publisher-5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+          "size_in_bytes": 1825,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180496883",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180496883/zip",
+          "expired": false,
+          "created_at": "2026-11-02T21:20:17Z",
+          "expires_at": "2027-01-31T21:17:43Z",
+          "updated_at": "2026-11-02T21:20:17Z",
+          "digest": "sha256:acdc0da80400ab679772f46b2c6f6524764025e7e03063734fa16fc7d040e22f",
+          "workflow_run": {
+            "id": 41527025791,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23"
+          }
+        },
+        {
+          "id": 13179893497,
+          "name": "native-message-reconciliation-5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+          "size_in_bytes": 20954,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179893497",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179893497/zip",
+          "expired": false,
+          "created_at": "2026-11-02T21:22:00Z",
+          "expires_at": "2027-01-31T21:17:43Z",
+          "updated_at": "2026-11-02T21:22:00Z",
+          "digest": "sha256:d18607ada118554eef2624fa472810a62c9b7558e5a604beed2dc2585a11d60b",
+          "workflow_run": {
+            "id": 41527025791,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23"
+          }
+        },
+        {
+          "id": 13179763238,
+          "name": "retained-direct-ffi-compatibility-5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+          "size_in_bytes": 2545,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179763238",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179763238/zip",
+          "expired": false,
+          "created_at": "2026-11-02T21:19:06Z",
+          "expires_at": "2027-01-31T21:17:43Z",
+          "updated_at": "2026-11-02T21:19:06Z",
+          "digest": "sha256:221e4c460d7f426151ad07694cb50fa63e3eae748b4c03d5bff9b752de3b1d5b",
+          "workflow_run": {
+            "id": 41527025791,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23"
+          }
+        },
+        {
+          "id": 13178599658,
+          "name": "native-message-electron-5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+          "size_in_bytes": 14811,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178599658",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178599658/zip",
+          "expired": false,
+          "created_at": "2026-11-02T21:19:08Z",
+          "expires_at": "2027-01-31T21:17:43Z",
+          "updated_at": "2026-11-02T21:19:08Z",
+          "digest": "sha256:2823b5a796718706a8247535dcc465f9fe81b3f17e1fc7844b0494003d1f728d",
+          "workflow_run": {
+            "id": 41527025791,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23"
+          }
+        }
+      ]
     }
   },
   "artifact_visual_inspection": {
@@ -672,7 +875,17 @@
     "new_relative_to_dossier": 6,
     "repeated_full_reads": 2,
     "source_review_disposition": "pending; complete responsibility mapping/implementation/acceptance unfinished",
-    "canonical_ledger_append": "prepared but not yet published; do not count as installed source_reviews",
+    "canonical_ledger_append": {
+      "ledger_blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+      "input_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+      "rows": 184,
+      "source_reviews": 14,
+      "complete_reviews": 2,
+      "new_reviews": 8,
+      "new_review_status": "pending",
+      "unrelated_rows_and_all_old_reviews_and_acceptance_states": "unchanged",
+      "publication_rule": "Install this object in the same containing commit only after the input remains the current canonical ledger; nonforced expected-head CAS and full remote readback remain required."
+    },
     "target_gap_observation": "35fe95331cdb67eb32430e03043ab9246b9b1453: complete=false has no consumer continuation under the precisely stated no-independent-trigger conditions; static finding, no browser reproduction",
     "overall_source_acceptance": false
   }
