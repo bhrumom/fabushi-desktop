@@ -9,6 +9,10 @@ on:
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
       - 'frontend/src/production/model.ts'
+      - 'desktop/native-message-projection.html'
+      - 'desktop/e2e/native-message-projection.spec.ts'
+      - 'desktop/e2e/fixtures/native-message-projection.tsx'
+      - 'desktop/playwright.config.ts'
       - 'desktop/forward-dialog-test.html'
       - 'desktop/forward-dialog-test.ts'
       - 'frontend/src/production/ForwardMessageDialog*'
@@ -24,6 +28,7 @@ on:
       - 'frontend/src/production/coordinator-client.ts'
       - 'frontend/src/production/transcript-projection*'
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
+      - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
       - 'source/electron-main/coordinator/rust-coordinator-carrier*'
       - 'source/product/fabushi/fabushi-account-service*'
       - 'source/electron-main/update/**'
@@ -220,7 +225,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 62 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 63 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -629,8 +634,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 29' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 29' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 33' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 33' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -678,12 +683,41 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
+      - name: Actual ProductionRenderer history, account and restart projection behaviors
+        shell: bash
+        working-directory: desktop
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../artifacts/native-message-ui/production-renderer.json
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/native-message-projection.spec.ts --workers=1 --retries=0 --reporter=line,json 2>&1 | tee ../artifacts/native-message-ui/production-renderer.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
+          assert.equal(report.stats.expected, 11);
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 11);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('actual ProductionRenderer: 11 passed, 0 failed, 0 skipped, 0 retries');
+          NODE
       - name: Preserve exact renderer evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-message-ui-${{ github.sha }}
-          path: artifacts/native-message-ui
+          path: |
+            artifacts/native-message-ui
+            desktop/test-results
           if-no-files-found: error
   native-message-electron:
     if: github.event_name == 'push' || inputs.message_batch

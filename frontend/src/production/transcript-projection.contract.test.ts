@@ -12,6 +12,9 @@ import {
   applyTranscriptReadUpdates,
   createHumanReactionSettlement,
   currentTranscriptReadBuffers,
+  mergeAuthoritativeTranscriptMessage,
+  recordTranscriptReadUpdate,
+  reconcileTranscriptMutation,
   reconcileAuthoritativeTranscriptBaseline,
   reconcileLateInitialTranscriptPage,
   reconcileTranscriptFeedBaseline,
@@ -688,3 +691,108 @@ test("NMR-26 disposed reaction completion cannot mutate the renderer or show a s
   await request;
   await controller.run(reactionTarget, async () => { assert.fail("disposed request sent"); }, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
 });
+
+test("NMR-26 Human empty snapshots clear content and resources while Agent partial echoes retain them", () => {
+  const human: TranscriptMessage = {
+    ...message("human-1", "old body"), authorKind: "human", authorId: "local",
+    attachments: [{ path: "/old-resource", name: "old.txt" }], richText: "old-rich-text", clientNonce: "old",
+  };
+  const partial = mergeAuthoritativeTranscriptMessage(human, {
+    ...message("human-1", "changed body"), authorKind: "human", authorId: "local",
+  });
+  assert.deepEqual(partial.attachments, human.attachments);
+  assert.equal(partial.richText, human.richText);
+  assert.equal(partial.clientNonce, human.clientNonce);
+  const cleared = mergeAuthoritativeTranscriptMessage(partial, {
+    ...message("human-1", ""), authorKind: "human", authorId: "local", attachments: [], richText: "", reactions: [],
+  });
+  assert.equal(cleared.text, "");
+  assert.deepEqual(cleared.attachments, []);
+  assert.equal(cleared.richText, "");
+  assert.equal(cleared.clientNonce, human.clientNonce);
+  const agentTurn = { ...message("pending-agent", "Agent prompt"), attachments: human.attachments,
+    delivery: "pending" as const, clientNonce: "agent-nonce" };
+  const echo = mergeAuthoritativeTranscriptMessage(agentTurn, {
+    ...message("attachment-echo", ""), attachments: [{ path: "/new-resource", name: "new.txt" }], delivery: "sent",
+  }, { preserveCurrentId: true });
+  assert.equal(echo.id, agentTurn.id);
+  assert.equal(echo.text, agentTurn.text);
+  assert.equal(echo.delivery, "pending");
+  assert.equal(echo.clientNonce, "agent-nonce");
+  assert.deepEqual(echo.attachments?.map((attachment) => attachment.path), ["/old-resource", "/new-resource"]);
+});
+
+test("NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder", () => {
+  const pending: TranscriptMessage = { ...message("pending-n", "local draft"), authorKind: "human", authorId: "local", clientNonce: "n", delivery: "pending" };
+  const peer = { ...pending, id: "peer-1", authorId: "peer", text: "peer body" };
+  const missingAuthor = { ...pending, id: "unknown", authorId: undefined };
+  assert.equal(transcriptEntriesCorrelate(pending, peer), false);
+  assert.equal(transcriptEntriesCorrelate(pending, missingAuthor), false);
+  assert.equal(transcriptEntriesCorrelate(pending, { ...pending, id: "assistant", role: "assistant" }), false);
+  assert.deepEqual(ids(reconcileAuthoritativeTranscriptBaseline([pending], [peer])), ["peer-1", "pending-n"]);
+  assert.deepEqual(ids(reconcileTranscriptMutation([pending], peer, { previousId: pending.id, appendIfMissing: true })), ["pending-n", "peer-1"]);
+  const authorless = { ...message("authorless"), clientNonce: "n" };
+  assert.deepEqual(ids(reconcileTranscriptMutation([pending], authorless, { previousId: pending.id })), [pending.id]);
+  assert.deepEqual(applyTranscriptReadUpdates([pending], new Map([[pending.id, peer]])), [pending]);
+  assert.deepEqual(applyTranscriptReadUpdates([pending], new Map([[pending.id, authorless]])), [pending]);
+  const local = { ...pending, id: "local-1", delivery: "sent" as const };
+  assert.deepEqual(ids(reconcileTranscriptMutation([pending, peer], local, { previousId: pending.id })), ["local-1", "peer-1"]);
+});
+
+test("NMR-26 before-ID canonicalization and a delayed receipt preserve one newer settled Human row", () => {
+  const pending: TranscriptMessage = { ...message("pending-n", "composed"), authorKind: "human", authorId: "local", clientNonce: "n", delivery: "pending" };
+  const accepted = { ...pending, id: "remote-1", delivery: "sent" as const };
+  const afterEvent = reconcileTranscriptMutation([pending], accepted, { previousId: pending.id });
+  assert.deepEqual(ids(afterEvent), [accepted.id]);
+  const newer = { ...accepted, text: "", attachments: [], reactions: [{ emoji: "💙", by: "me" }] };
+  const withNewer = reconcileTranscriptMutation(afterEvent, newer);
+  const settled = reconcileTranscriptMutation([...withNewer, pending], accepted, { previousId: pending.id, preserveSettled: true });
+  assert.deepEqual(ids(settled), [accepted.id]);
+  assert.equal(row(settled, accepted.id).text, "");
+  assert.deepEqual(row(settled, accepted.id).reactions, newer.reactions);
+  const latePage = applyTranscriptReadUpdates([pending], new Map([[pending.id, accepted], [accepted.id, newer]]));
+  assert.deepEqual(ids(latePage), [accepted.id]);
+  assert.equal(row(latePage, accepted.id).text, "");
+  assert.deepEqual(row(latePage, accepted.id).reactions, newer.reactions);
+  const updates = new Map<string, ConversationTranscriptEntry>();
+  recordTranscriptReadUpdate(updates, { ...newer, richText: "" }, pending.id);
+  recordTranscriptReadUpdate(updates, { ...accepted, text: "later partial" });
+  const clearThenPartial = applyTranscriptReadUpdates([{ ...pending, attachments: [{ path: "/old", name: "old.txt" }], richText: "old-rich-text" }], updates);
+  assert.deepEqual(ids(clearThenPartial), [accepted.id]);
+  assert.equal(row(clearThenPartial, accepted.id).text, "later partial");
+  assert.deepEqual(row(clearThenPartial, accepted.id).attachments, []);
+  assert.deepEqual(row(clearThenPartial, accepted.id).reactions, newer.reactions);
+  assert.equal(row(clearThenPartial, accepted.id).richText, "");
+  recordTranscriptReadUpdate(updates, { ...newer, id: "peer", authorId: "peer" }, pending.id);
+  assert.equal(row(applyTranscriptReadUpdates([pending], updates), accepted.id).text, "later partial");
+  const noNonce = { ...accepted, clientNonce: undefined, id: "rewritten-id" };
+  assert.deepEqual(ids(reconcileTranscriptMutation(afterEvent, noNonce, { previousId: accepted.id })), [noNonce.id]);
+});
+
+test("NMR-26 overlapping older windows preserve canonical anchors and loaded/in-flight identity updates", async () => {
+  const current = [message("m2", "newer"), message("m4"), message("m5")];
+  const merged = mergeOlderTranscriptEntries(current, [message("m1"), message("m2", "stale"), message("m3"), message("m4")]);
+  assert.deepEqual(ids(merged), ["m1", "m2", "m3", "m4", "m5"]);
+  assert.equal(row(merged, "m2").text, "newer");
+  const old: TranscriptMessage = { ...message("old"), authorKind: "human", authorId: "local" };
+  const remapped = { ...old, id: "canonical", text: "edited", attachments: [] };
+  const page = deferred<TranscriptHistoryPage>();
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation", fetchPage: () => page.promise,
+  });
+  controller.installInitialPage({ entries: [old, message("tail")], nextBeforeSeq: 3 });
+  controller.ingestEntryUpdate("account", "conversation", remapped, old.id);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  controller.ingestEntryUpdate("account", "conversation", { ...remapped, id: "peer", authorId: "peer" }, remapped.id);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  controller.installInitialPage({ entries: [], nextBeforeSeq: 3 });
+  const loading = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", { ...remapped, id: "peer", authorId: "peer" }, old.id);
+  controller.ingestEntryUpdate("account", "conversation", remapped, old.id);
+  page.resolve({ entries: [old, message("tail")] });
+  await loading;
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["canonical", "tail"]);
+  assert.equal(row(controller.getSnapshot().entries, "canonical").text, "edited");
+  controller.dispose();
+});
+

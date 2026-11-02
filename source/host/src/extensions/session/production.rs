@@ -2484,7 +2484,7 @@ impl ProductionSessionWorkers {
     fn store_human_coverage(owner: &SandAgentDb, after_id: u64, complete: bool) -> Result<(), String> {
         if !owner.set_metadata(
             "humanHistoryCoverage",
-            serde_json::json!({"afterId": after_id, "complete": complete}),
+            serde_json::json!({"version": 1, "afterId": after_id, "complete": complete}),
         ).map_err(|error| error.to_string())? {
             return Err("Human history coverage checkpoint was not durably stored".into());
         }
@@ -2515,6 +2515,29 @@ impl ProductionSessionWorkers {
         if client.identity()?.user_id != local_human_id {
             return Err("Fabushi native messaging credential changed Human account".into());
         }
+        let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
+        let (covered, complete) = match coverage.as_ref() {
+            None | Some(serde_json::Value::Null) => (0, false),
+            Some(checkpoint) => {
+                let after_id = checkpoint.get("afterId")
+                    .and_then(serde_json::Value::as_u64)
+                    .filter(|value| *value <= MAX_SAFE_ID)
+                    .ok_or_else(|| "persisted Human history coverage cursor is invalid".to_string())?;
+                let complete = checkpoint.get("complete")
+                    .and_then(serde_json::Value::as_bool)
+                    .ok_or_else(|| "persisted Human history coverage completion flag is invalid".to_string())?;
+                match checkpoint.get("version") {
+                    Some(version) if version.as_u64() == Some(1) => (after_id, complete),
+                    None => {
+                        // Older clients persisted this shape without requiring
+                        // historyCursor. Preserve their rows and checkpoint until
+                        // a qualified origin page is durably applied.
+                        (0, false)
+                    }
+                    Some(_) => return Err("persisted Human history coverage version is unsupported".into()),
+                }
+            }
+        };
         self.replay_human_reaction_intent(&owner, &metadata, client)?;
         let pending = owner.get_transcript_entries().map_err(|error| error.to_string())?
             .into_iter().filter(|entry| {
@@ -2551,20 +2574,6 @@ impl ProductionSessionWorkers {
             );
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
-        let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
-        let (covered, complete) = match coverage.as_ref() {
-            None | Some(serde_json::Value::Null) => (0, false),
-            Some(checkpoint) => {
-                let after_id = checkpoint.get("afterId")
-                    .and_then(serde_json::Value::as_u64)
-                    .ok_or_else(|| "persisted Human history coverage cursor is invalid".to_string())?;
-                let complete = checkpoint.get("complete")
-                    .and_then(serde_json::Value::as_bool)
-                    .ok_or_else(|| "persisted Human history coverage completion flag is invalid".to_string())?;
-                (after_id, complete)
-            }
-        };
-        if covered > MAX_SAFE_ID { return Err("persisted Human history coverage cursor is invalid".into()); }
         let mut after = if complete && covered < PAGE_LIMIT as u64 { 0 } else { covered };
         let mut rejected: Option<String> = None;
         let mut reached_end = false;

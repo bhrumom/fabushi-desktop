@@ -28,6 +28,8 @@ export interface ComposerSubmissionQueue {
   cancelQueued(nonce: string): boolean;
   flush(): void;
   snapshot(): readonly ComposerSubmissionRecord[];
+  /** Abandons a prior account's renderer records; it does not cancel Host work. */
+  reset(): void;
   dispose(): void;
 }
 
@@ -106,6 +108,13 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     }
   };
 
+  const reset = () => {
+    generation += 1;
+    activeByAgent.clear();
+    for (const record of records.values()) record.resolve("cancelled");
+    records.clear();
+  };
+
   return {
     submit(input) {
       if (disposed) return { nonce: input.nonce, completion: Promise.resolve("cancelled") };
@@ -136,13 +145,13 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     snapshot() {
       return [...records.values()].map((record) => ({ ...record.input, phase: record.phase }));
     },
+    reset() {
+      if (!disposed) reset();
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
-      generation += 1;
-      activeByAgent.clear();
-      for (const record of records.values()) record.resolve("cancelled");
-      records.clear();
+      reset();
     }
   };
 }

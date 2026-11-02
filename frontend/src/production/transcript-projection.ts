@@ -47,23 +47,27 @@ export function mergeAuthoritativeTranscriptMessage(
     return {
       ...incoming,
       ...current,
-      attachments: mergeTranscriptAttachments(incoming.attachments, current.attachments),
+      attachments: current.attachments ?? incoming.attachments,
     };
   }
+  // A Human snapshot can explicitly clear content/resources. Omitted optional
+  // fields retain their partial-update meaning; Agent attachment echoes extend.
+  const human = incoming.authorKind === "human";
   return {
     ...current,
     ...incoming,
     id: options.preserveCurrentId ? current.id : incoming.id,
-    text: incoming.text.length > 0 ? incoming.text : current.text,
-    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
+    text: human || incoming.text.length > 0 ? incoming.text : current.text,
+    attachments: human ? incoming.attachments ?? current.attachments : mergeTranscriptAttachments(current.attachments, incoming.attachments),
     clientNonce: incoming.clientNonce ?? current.clientNonce,
-    delivery: incoming.delivery ?? current.delivery,
+    delivery: options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery,
   };
 }
 
 export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
   if (left.id === right.id) return true;
   if (left.kind !== "message" || right.kind !== "message"
+    || left.role !== "user" || right.role !== "user"
     || left.clientNonce == null || right.clientNonce == null
     || left.clientNonce !== right.clientNonce) return false;
   if (left.authorKind !== "human" && right.authorKind !== "human") return true;
@@ -88,7 +92,7 @@ function isLocalSendPlaceholder(entry: ConversationTranscriptEntry): entry is Tr
   if (entry.authorKind !== "human") return entry.id === `pending-${entry.clientNonce}`;
   return typeof entry.authorId === "string" && entry.authorId.trim().length > 0
     && entry.remoteMessageId === undefined
-    && entry.id === `human-message:${entry.clientNonce}`
+    && (entry.id === `human-message:${entry.clientNonce}` || entry.id === `pending-${entry.clientNonce}`)
     && (entry.delivery === "pending" || entry.delivery === "queued" || entry.delivery === "failed");
 }
 
@@ -105,19 +109,40 @@ export function mergeOlderTranscriptEntries(
   currentEntries: readonly ConversationTranscriptEntry[],
   olderEntries: readonly ConversationTranscriptEntry[],
 ): ConversationTranscriptEntry[] {
-  const currentIds = new Set(currentEntries.map((entry) => entry.id));
-  const seen = new Set<string>();
-  const merged: ConversationTranscriptEntry[] = [];
-  for (const entry of olderEntries) {
-    if (currentIds.has(entry.id) || seen.has(entry.id)) continue;
-    seen.add(entry.id);
-    merged.push(entry);
+  const unique = (entries: readonly ConversationTranscriptEntry[]) => {
+    const seen = new Set<string>();
+    return entries.filter((entry) => {
+      if (seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    });
+  };
+  const current = unique(currentEntries);
+  const positions = new Map(current.map((entry, index) => [entry.id, index]));
+  const insertions = new Map<number, ConversationTranscriptEntry[]>();
+  let pending: ConversationTranscriptEntry[] = [];
+  let lastAnchor = -1;
+  const insertAt = (index: number) => {
+    if (pending.length > 0) insertions.set(index, [...(insertions.get(index) ?? []), ...pending]);
+    pending = [];
+  };
+  for (const older of unique(olderEntries)) {
+    const position = positions.get(older.id);
+    if (position == null) pending.push(older);
+    else {
+      insertAt(position);
+      lastAnchor = position;
+    }
   }
-  for (const entry of currentEntries) {
-    if (seen.has(entry.id)) continue;
-    seen.add(entry.id);
-    merged.push(entry);
+  // Overlapping pages supply chronological anchors; prepending unseen IDs
+  // would turn [1,2,3,4] plus cached [2,4,5] into [1,3,2,4,5].
+  insertAt(lastAnchor >= 0 ? lastAnchor + 1 : 0);
+  const ordered: ConversationTranscriptEntry[] = [];
+  for (let index = 0; index <= current.length; index += 1) {
+    ordered.push(...(insertions.get(index) ?? []));
+    if (index < current.length) ordered.push(current[index]);
   }
+  const merged = unique(ordered);
   const settled = new Map<string, TranscriptMessage[]>();
   for (const entry of merged) {
     if (!isCanonicalHumanSend(entry)) continue;
@@ -129,17 +154,85 @@ export function mergeOlderTranscriptEntries(
     || !(settled.get(entry.clientNonce!) ?? []).some((canonical) => transcriptEntriesCorrelate(entry, canonical)));
 }
 
+function previousIdentityMatches(current: ConversationTranscriptEntry, incoming: ConversationTranscriptEntry): boolean {
+  if ((current.kind === "message" && current.authorKind === "human")
+    || (incoming.kind === "message" && incoming.authorKind === "human")) {
+    return current.kind === "message" && incoming.kind === "message"
+      && current.authorKind === "human" && incoming.authorKind === "human"
+      && incoming.authorId != null && incoming.authorId.length > 0 && current.authorId === incoming.authorId;
+  }
+  return true;
+}
+
+/** Preserve optional fields from earlier events while a snapshot is pending. */
+export function recordTranscriptReadUpdate(
+  updates: Map<string, ConversationTranscriptEntry>,
+  incoming: ConversationTranscriptEntry,
+  previousId?: string,
+): void {
+  const matches = (entry: ConversationTranscriptEntry) => transcriptEntriesCorrelate(entry, incoming)
+    || (entry.id === previousId && previousIdentityMatches(entry, incoming));
+  const current = updates.get(incoming.id) ?? (previousId == null ? undefined : updates.get(previousId));
+  const merged = current != null && matches(current) && current.kind === "message" && incoming.kind === "message"
+    ? mergeAuthoritativeTranscriptMessage(current, incoming)
+    : incoming;
+  // Keep existing aliases on the latest complete projection, including a
+  // clear followed by a partial event that omits the now-empty resources.
+  for (const [id, entry] of updates) {
+    if (matches(entry)) updates.set(id, merged);
+  }
+  updates.set(incoming.id, merged);
+  if (previousId != null) {
+    const previous = updates.get(previousId);
+    if (previous == null || matches(previous)) updates.set(previousId, merged);
+  }
+}
+
+/** Apply one Host mutation or command receipt without keeping its old placeholder. */
+export function reconcileTranscriptMutation(
+  current: readonly ConversationTranscriptEntry[],
+  incoming: ConversationTranscriptEntry,
+  options: { previousId?: string; appendIfMissing?: boolean; preserveSettled?: boolean; preserveCurrentId?: boolean } = {},
+): ConversationTranscriptEntry[] {
+  const matches = (entry: ConversationTranscriptEntry) => transcriptEntriesCorrelate(entry, incoming)
+    || (entry.id === options.previousId && previousIdentityMatches(entry, incoming));
+  const previous = current.find((entry) => entry.id === incoming.id) ?? current.find(matches);
+  if (previous == null) return options.appendIfMissing ? [...current, incoming] : current as ConversationTranscriptEntry[];
+  // A send receipt can lag behind the feed/history row that settled the send.
+  // Keep that canonical row, including empty content and its latest reactions.
+  const settled = options.preserveSettled && current.find((entry) => matches(entry)
+    && entry.kind === "message" && entry.delivery === "sent" && !entry.id.startsWith("pending-"));
+  const next = settled || (previous.kind === "message" && incoming.kind === "message"
+    ? mergeAuthoritativeTranscriptMessage(previous, incoming, options)
+    : incoming);
+  let emitted = false;
+  return current.flatMap((entry) => {
+    if (!matches(entry)) return [entry];
+    if (emitted) return [];
+    emitted = true;
+    return [next];
+  });
+}
+
 /** Apply updates captured during this read only to rows in its returned window. */
 export function applyTranscriptReadUpdates(
   entries: readonly ConversationTranscriptEntry[],
   updates: ReadonlyMap<string, ConversationTranscriptEntry>,
 ): ConversationTranscriptEntry[] {
   return entries.map((entry) => {
-    const update = updates.get(entry.id);
-    if (update == null) return entry;
-    return entry.kind === "message" && update.kind === "message"
-      ? mergeAuthoritativeTranscriptMessage(entry, update)
-      : update;
+    let current = entry;
+    const visited = new Set<string>();
+    while (!visited.has(current.id)) {
+      visited.add(current.id);
+      const update = updates.get(current.id);
+      if (update == null || (current.id !== update.id && !previousIdentityMatches(current, update))) break;
+      const previousId = current.id;
+      current = current.kind === "message" && update.kind === "message"
+        ? mergeAuthoritativeTranscriptMessage(current, update)
+        : update;
+      if (current.id === previousId) break;
+    }
+    return current;
   });
 }
 

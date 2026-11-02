@@ -562,3 +562,15 @@ Backend PR137 remains read-only/open/draft and unmerged. Complete source/legal a
 packages and stapling metadata, supported platforms, real services, Bot regressions, security/performance,
 soak, upgrade/rollback and independent ACCEPT remain required and unaccepted.
 
+### Request round 9: NMR-23a / NMR-26a / NMR-26b
+
+| Existing requirement | Actual owner / authored behavioral evidence | Execution boundary |
+|---|---|---|
+| NMR-23a | Session coverage version1; legacy metadata preserved until matching historyCursor page; invalid versions refuse before same-conversation replay; new legacy-upgrade/reopen case plus retained6400/32 and short/empty32 | Human63 in containing-H Actions; no production Worker claim |
+| NMR-26a | Existing projection/root/older-page caches compose explicit empty fields and identity remaps while preserving Agent semantics | Projection33 plus actual ProductionRenderer11; existing cursor17 retained |
+| NMR-26b | Existing account/queue/feed owners fence delayed acknowledgements and drain offline sends once after connected state commits | Actual renderer switch/logout/in-flight-or-queued account reset/reconnect scenarios; Electron/carrier and shipping gates retained |
+| FMEP-SOURCE-01 | Existing authority CLI subprocess rejects real open acquisition after candidate markers are removed; source review schema/helpers preserved | Actions-only regression; no source or product acceptance promotion |
+
+Exact evidence is recorded in the containing request-round9 receipt; authored
+cases, prerequisite results and actual execution remain distinct. All other
+responsibility rows and current acceptance requirements remain unchanged.

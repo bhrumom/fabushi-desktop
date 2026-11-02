@@ -1,5 +1,5 @@
 import type { ConversationTranscriptEntry } from "./model";
-import { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
+import { mergeOlderTranscriptEntries, reconcileTranscriptMutation } from "../../../../production/transcript-projection.ts";
 export { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
 
 /**
@@ -60,7 +60,7 @@ export interface TranscriptPaginationRootHandoff {
   subscribe(listener: () => void): () => void;
   setScope(accountSlot: string | null, agentId: string | null): void;
   installInitialPage(page: TranscriptHistoryPage): boolean;
-  ingestEntryUpdate(accountSlot: string | null, agentId: string, entry: ConversationTranscriptEntry): void;
+  ingestEntryUpdate(accountSlot: string | null, agentId: string, entry: ConversationTranscriptEntry, previousId?: string): void;
   loadOlder(): Promise<void>;
   bindViewport(viewport: TranscriptViewport | null): void;
   onEntriesCommitted(): boolean;
@@ -127,7 +127,7 @@ export function createTranscriptPaginationController(
   let pageGeneration = 0;
   let requestGeneration = 0;
   let inFlight: Promise<void> | null = null;
-  const updatesDuringRequest = new Map<string, ConversationTranscriptEntry>();
+  const updatesDuringRequest: { entry: ConversationTranscriptEntry; previousId?: string }[] = [];
   let viewport: TranscriptViewport | null = null;
   let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number; ready: boolean } | null = null;
   let disposed = false;
@@ -168,7 +168,7 @@ export function createTranscriptPaginationController(
     cursor = EMPTY_CURSOR;
     olderFailure = null;
     pendingAnchor = null;
-    updatesDuringRequest.clear();
+    updatesDuringRequest.length = 0;
   };
 
   return {
@@ -197,7 +197,7 @@ export function createTranscriptPaginationController(
       pageGeneration += 1;
       requestGeneration += 1;
       inFlight = null;
-      updatesDuringRequest.clear();
+      updatesDuringRequest.length = 0;
       entries = uniqueEntries(page.entries);
       cursor = cursorFromPage(page);
       olderFailure = null;
@@ -206,13 +206,14 @@ export function createTranscriptPaginationController(
       return true;
     },
 
-    ingestEntryUpdate(updateAccountSlot, ownerId, entry) {
+    ingestEntryUpdate(updateAccountSlot, ownerId, entry, previousId) {
       if (disposed || updateAccountSlot !== accountSlot || ownerId !== agentId) return;
       // A failed page can be retried with an older snapshot. Keep the latest
       // committed overlay for that read until a successful page consumes it.
-      if (inFlight != null || updatesDuringRequest.has(entry.id)) updatesDuringRequest.set(entry.id, entry);
-      if (!entries.some((candidate) => candidate.id === entry.id)) return;
-      entries = entries.map((candidate) => candidate.id === entry.id ? entry : candidate);
+      if (inFlight != null || updatesDuringRequest.length > 0) updatesDuringRequest.push({ entry, previousId });
+      const next = reconcileTranscriptMutation(entries, entry, { previousId });
+      if (next === entries) return;
+      entries = next;
       emit();
     },
 
@@ -250,7 +251,10 @@ export function createTranscriptPaginationController(
             ...(beforeCursor === undefined ? {} : { beforeCursor }),
           });
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
-          const refreshedPage = page.entries.map((entry) => updatesDuringRequest.get(entry.id) ?? entry);
+          let refreshedPage = page.entries;
+          for (const update of updatesDuringRequest) {
+            refreshedPage = reconcileTranscriptMutation(refreshedPage, update.entry, { previousId: update.previousId });
+          }
           entries = mergeOlderTranscriptEntries(entries, refreshedPage);
           if (pendingAnchor != null) pendingAnchor.ready = true;
           cursor = cursorFromPage(page);
@@ -260,14 +264,14 @@ export function createTranscriptPaginationController(
             nextBeforeSeq: page.nextBeforeSeq,
             ...(page.nextBeforeCursor === undefined ? {} : { nextBeforeCursor: page.nextBeforeCursor }),
           });
-          updatesDuringRequest.clear();
+          updatesDuringRequest.length = 0;
           emit();
         } catch (error) {
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           if (isCapabilityUnavailableFailure(error)) {
             cursor = { kind: "unavailable" };
             olderFailure = null;
-            updatesDuringRequest.clear();
+            updatesDuringRequest.length = 0;
           } else olderFailure = error;
           pendingAnchor = null;
           emit();

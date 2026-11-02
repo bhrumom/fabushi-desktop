@@ -3514,7 +3514,7 @@ fn shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_co
     let owner = first.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_transcript_entries().expect("page persisted").len(), 200);
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("watermark"),
-        Some(json!({"afterId":200,"complete":false})));
+        Some(json!({"version":1,"afterId":200,"complete":false})));
     first.shutdown();
     drop(owner);
     drop(first);
@@ -3543,7 +3543,7 @@ fn shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_co
     assert_eq!(rows[200]["id"], "human-server-message:201");
     let owner = resumed.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("finished"),
-        Some(json!({"afterId":201,"complete":true})));
+        Some(json!({"version":1,"afterId":201,"complete":true})));
     let requests = second_server.join().expect("resume HTTP");
     assert_eq!(requests.len(), 2);
     assert!(requests[0].contains("&afterId=200"));
@@ -3628,19 +3628,56 @@ fn shipping_human_history_rejects_oversized_page_before_persisting_coverage() {
 #[test]
 fn shipping_human_history_rejects_damaged_checkpoint_before_any_network_request() {
     let root = temp_root("human-bad-history-checkpoint");
-    let (url, server) = spawn_human_message_fixture(vec![]);
+    // Keep the socket open through every refusal. A forbidden POST would
+    // either change the causal error or remain observable in its accept queue.
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind no-dispatch observer");
+    listener.set_nonblocking(true).expect("observe without waiting for HTTP");
+    let url = format!("http://{}", listener.local_addr().expect("observer address"));
     let runtime = human_message_fixture_runtime(&root, &url);
     let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
         .as_str().expect("conversation id").to_string();
     let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
-    assert!(owner.set_metadata("humanHistoryCoverage", json!({"afterId":"corrupt","complete":false}))
-        .expect("stage invalid checkpoint"));
-    let error = runtime.sync_human_conversation(&id).expect_err("invalid checkpoint must fail");
-    assert_eq!(error, "persisted Human history coverage cursor is invalid");
-    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("untouched checkpoint"),
-        Some(json!({"afterId":"corrupt","complete":false})));
-    assert!(owner.get_transcript_entries().expect("unchanged transcript").is_empty());
-    assert!(server.join().expect("no network").is_empty());
+    let original = json!({
+        "id":"human-server-message:777","kind":"message","role":"user",
+        "authorKind":"human","authorId":"2","content":"reaction target",
+        "timestampMs":1000.0,"delivery":"sent","remoteMessageId":"777",
+        "remoteReactions":[],"reactions":[]
+    });
+    let pending = json!({
+        "id":"human-message:coverage-pending","kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","clientNonce":"coverage-pending",
+        "content":"keep pending","timestampMs":1001.0,"delivery":"pending"
+    });
+    let intent = json!({
+        "entryId":"human-server-message:777","remoteMessageId":"777",
+        "emoji":"👍","active":true,"localHumanId":"1"
+    });
+    assert!(owner.append_transcript_entry(&original).expect("persist reaction target"));
+    assert!(owner.append_transcript_entry(&pending).expect("persist pending outbox"));
+    // Test the pending send both by itself and behind a valid reaction intent.
+    // No forwarding batch is staged: its independent recovery remains unchanged.
+    for with_reaction in [false, true] {
+        let staged_intent = if with_reaction { intent.clone() } else { serde_json::Value::Null };
+        assert!(owner.set_metadata("humanReactionIntent", staged_intent.clone()).expect("stage reaction recovery"));
+        for (checkpoint, expected) in [
+            (json!({"afterId":"corrupt","complete":false}), "persisted Human history coverage cursor is invalid"),
+            (json!({"version":1,"afterId":9_007_199_254_740_992_u64,"complete":false}), "persisted Human history coverage cursor is invalid"),
+            (json!({"version":1,"afterId":200,"complete":"false"}), "persisted Human history coverage completion flag is invalid"),
+            (json!({"version":null,"afterId":200,"complete":false}), "persisted Human history coverage version is unsupported"),
+            (json!({"version":"1","afterId":200,"complete":false}), "persisted Human history coverage version is unsupported"),
+            (json!({"version":2,"afterId":200,"complete":false}), "persisted Human history coverage version is unsupported"),
+            (json!({"version":{},"afterId":200,"complete":false}), "persisted Human history coverage version is unsupported"),
+        ] {
+            assert!(owner.set_metadata("humanHistoryCoverage", checkpoint.clone()).expect("stage invalid checkpoint"));
+            let metadata = owner.read_metadata().expect("metadata before rejection");
+            assert_eq!(runtime.sync_human_conversation(&id).expect_err("invalid checkpoint must fail"), expected);
+            assert_eq!(owner.read_metadata().expect("no checkpoint or intent mutation"), metadata);
+            assert_eq!(owner.get_transcript_entries().expect("outbox was not dispatched"),
+                vec![original.clone(), pending.clone()]);
+            assert!(matches!(listener.accept(), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock),
+                "same-conversation recovery must not dispatch before coverage validation");
+        }
+    }
     runtime.shutdown(); drop(owner); drop(runtime);
     let _ = fs::remove_dir_all(root);
 }
@@ -3781,7 +3818,7 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
         "every row appears exactly once in canonical order across all 32 pages");
     let owner = first.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint"),
-        Some(json!({"afterId":6400,"complete":false})));
+        Some(json!({"version":1,"afterId":6400,"complete":false})));
     first.shutdown();
     drop(owner);
     drop(first);
@@ -3803,7 +3840,7 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     assert_eq!(resumed_rows[6400]["id"], "human-server-message:6401");
     let owner = resumed.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("complete checkpoint"),
-        Some(json!({"afterId":6401,"complete":true})));
+        Some(json!({"version":1,"afterId":6401,"complete":true})));
     let requests = second_server.join().expect("resume fixture");
     assert_eq!(requests.len(), 2);
     assert!(requests[0].contains("&afterId=6400"), "resume must not replay first 6400");
@@ -3811,6 +3848,84 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     resumed.shutdown();
     drop(owner);
     drop(resumed);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page() {
+    let root = temp_root("human-legacy-coverage-upgrade");
+    let remote = fixture_remote_human_message(501, 2, 1, "retained content", None, json!([]));
+    let next = fixture_remote_human_message(502, 2, 1, "new content", None, json!([]));
+    let (url, server) = spawn_human_message_fixture(vec![
+        // Raw bytes deliberately bypass the fixture's compatible-backend cursor
+        // default. An old service cannot qualify a previously stored watermark.
+        HumanMessageFixtureReply::Bytes(200, json!({
+            "success":true,"data":{"messages":[remote.clone()]}
+        }).to_string().into_bytes()),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{
+            "messages":[remote.clone()],"historyCursor":{"mode":"after-id","afterId":0},"nextAfterId":501
+        }})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[remote.clone()]}})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{
+            "messages":[next.clone()],"historyCursor":{"mode":"after-id","afterId":501},"nextAfterId":502
+        }})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[remote,next]}})),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let original = json!({
+        "id":"human-server-message:501","kind":"message","role":"user",
+        "authorKind":"human","authorId":"2","content":"retained content",
+        "timestampMs":1000.0,"delivery":"sent","remoteMessageId":"501",
+        "retainedLocalMetadata":{"keep":true},"remoteReactions":[],"reactions":[]
+    });
+    assert!(owner.append_transcript_entry(&original).expect("retain existing user content"));
+    let legacy = json!({"afterId":9999,"complete":true});
+    assert!(owner.set_metadata("humanHistoryCoverage", legacy.clone()).expect("legacy checkpoint"));
+    let original_metadata = owner.read_metadata().expect("legacy metadata");
+    assert_eq!(runtime.sync_human_conversation(&id).expect_err("old service cannot qualify coverage"),
+        "Fabushi Human history response omitted historyCursor");
+    assert_eq!(owner.read_metadata().expect("unqualified response preserves metadata"), original_metadata);
+    assert_eq!(owner.get_transcript_entries().expect("unqualified response preserves content"), vec![original.clone()]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("owner after restart");
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("legacy survives restart"), Some(legacy));
+    assert_eq!(owner.get_transcript_entries().expect("pure reopen retains content"), vec![original.clone()]);
+    let recovered = restarted.sync_human_conversation(&id).expect("qualified origin rebuild");
+    assert_eq!(recovered.len(), 1, "existing canonical identity is refreshed without duplication");
+    assert_eq!(recovered[0]["id"], original["id"]);
+    assert_eq!(recovered[0]["content"], original["content"]);
+    assert_eq!(recovered[0]["retainedLocalMetadata"], original["retainedLocalMetadata"]);
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("qualified checkpoint"),
+        Some(json!({"version":1,"afterId":501,"complete":true})));
+    restarted.shutdown(); drop(owner); drop(restarted);
+
+    let resumed = human_message_fixture_runtime(&root, &url);
+    assert_eq!(resumed.read_human_conversation_transcript(&id).expect("qualified reopen"), recovered);
+    let rows = resumed.sync_human_conversation(&id).expect("resume the qualified interval");
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0], recovered[0], "later sync preserves the rebuilt row and local metadata");
+    assert_eq!(rows[1]["id"], "human-server-message:502");
+    let owner = resumed.open_human_conversation_db_owner(&id).expect("resumed owner");
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("resumed checkpoint"),
+        Some(json!({"version":1,"afterId":502,"complete":true})));
+    let requests = server.join().expect("upgrade and restart request trace");
+    assert_eq!(requests.len(), 5);
+    for index in [0, 1] {
+        assert!(requests[index].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
+    }
+    assert!(requests[3].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=501 "));
+    for index in [2, 4] {
+        assert!(requests[index].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
+    }
+    resumed.shutdown(); drop(owner); drop(resumed);
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(reopened.read_human_conversation_transcript(&id).expect("durable resumed content"), rows);
+    reopened.shutdown(); drop(reopened);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -6535,7 +6650,7 @@ fn shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_
     let remote_timestamp = committed[0]["timestampMs"].clone();
     assert_eq!(owner.get_metadata("lastActivityAt").expect("repaired native activity"), Some(remote_timestamp.clone()));
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint only after repair"),
-        Some(json!({"afterId":78,"complete":true})));
+        Some(json!({"version":1,"afterId":78,"complete":true})));
     let db = rusqlite::Connection::open(forward_db_path(&root, &id)).expect("Agent activity fault injector");
     db.busy_timeout(std::time::Duration::from_secs(5)).expect("bounded second SQLite fixture");
     db.execute_batch(reject_activity).expect("reject Agent activity persistence");
@@ -6838,7 +6953,7 @@ fn shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync() {
         }
         let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
         assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("coverage"),
-            Some(json!({"afterId":last_id,"complete":true})));
+            Some(json!({"version":1,"afterId":last_id,"complete":true})));
         let requests = server.join().expect("no 33rd refresh");
         assert_eq!(requests.len(), 32);
         for (index, request) in requests.iter().enumerate() {
@@ -6863,7 +6978,7 @@ fn shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync() {
         assert_eq!(refreshed[last_index], expected_last);
         let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
         assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("retained completion"),
-            Some(json!({"afterId":last_id,"complete":true})));
+            Some(json!({"version":1,"afterId":last_id,"complete":true})));
         let requests = server.join().expect("deferred refresh fixture");
         assert_eq!(requests.len(), 2);
         assert!(requests[0].starts_with(&format!("GET /api/social/messages?contactId=2&limit=200&afterId={last_id} ")));
@@ -6901,7 +7016,7 @@ fn shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart(
         assert_eq!(row, &human_local_history_message(2_000_001 + index as u64));
     }
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("prior complete page only"),
-        Some(json!({"afterId":2_000_200,"complete":false})));
+        Some(json!({"version":1,"afterId":2_000_200,"complete":false})));
     runtime.shutdown(); drop(owner); drop(runtime);
 
     let restarted = human_message_fixture_runtime(&root, &url);
@@ -6914,7 +7029,7 @@ fn shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart(
         .expect("resource bytes"), vec![21, 22, 23, 24]);
     let owner = restarted.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("full page committed"),
-        Some(json!({"afterId":2_000_203,"complete":true})));
+        Some(json!({"version":1,"afterId":2_000_203,"complete":true})));
     let requests = server.join().expect("midpage fixture");
     assert_eq!(requests.len(), 6, "prefix replay and latest refresh reuse the committed resource");
     assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
@@ -7015,7 +7130,7 @@ fn shipping_human_reaction_restart_replays_already_applied_intent_without_retogg
     assert!(owner.set_metadata("humanReactionIntent", json!({
         "entryId":target_id,"remoteMessageId":"4000777","emoji":"👍","active":true,"localHumanId":"1"
     })).expect("uncleared intent"));
-    assert!(owner.set_metadata("humanHistoryCoverage", json!({"afterId":4_000_777,"complete":false}))
+    assert!(owner.set_metadata("humanHistoryCoverage", json!({"version":1,"afterId":4_000_777,"complete":false}))
         .expect("covered history"));
     runtime.shutdown(); drop(owner); drop(runtime);
 
@@ -7025,7 +7140,7 @@ fn shipping_human_reaction_restart_replays_already_applied_intent_without_retogg
     let owner = restarted.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanReactionIntent").expect("durable ack"), Some(json!(null)));
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("complete"),
-        Some(json!({"afterId":4_000_777,"complete":true})));
+        Some(json!({"version":1,"afterId":4_000_777,"complete":true})));
     assert!(events.lock().expect("events").iter().all(|event| event["entries"] == json!([applied.clone()])),
         "recovery never publishes an inactive or partial intermediate row");
     restarted.shutdown(); drop(owner); drop(restarted);
@@ -7415,7 +7530,7 @@ fn shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_aft
         let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
         let mut original = human_local_history_message(after);
         original["retainedLocalMetadata"] = json!({"case":label,"keep":"established complete row"});
-        let coverage = json!({"afterId":after,"complete":false});
+        let coverage = json!({"version":1,"afterId":after,"complete":false});
         assert!(owner.append_transcript_entry(&original).expect("seed established anchor"));
         assert!(owner.set_metadata("humanHistoryCoverage", coverage.clone()).expect("seed coverage"));
         let events = Arc::new(std::sync::Mutex::new(Vec::<serde_json::Value>::new()));
@@ -7478,7 +7593,7 @@ fn shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_aft
         let owner = restarted.open_human_conversation_db_owner(&id).expect("recovery owner");
         assert_eq!(owner.get_transcript_entries().expect("recovered complete rows"), expected_rows, "{label}");
         assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("recovered coverage"),
-            Some(json!({"afterId":after + 1,"complete":true})), "{label}");
+            Some(json!({"version":1,"afterId":after + 1,"complete":true})), "{label}");
         let requests = resume_server.join().expect("valid recovery fixture");
         assert_eq!(requests.len(), 2);
         assert!(requests[0].starts_with(&format!("GET /api/social/messages?contactId=2&limit=200&afterId={after} ")));
