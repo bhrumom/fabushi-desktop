@@ -87,3 +87,20 @@ owner's lifecycle; no automatic retry is added. Rollback removes this bounded
 guard and restores the stranded-wait risk. Full OCRM gates and all eight global
 flags remain unchanged.
 
+## Exact-job oracle recovery — ARW-ORACLE-01
+
+Subject `18ef48cf1b72c045141f56b227be79226056113b`, Actions run
+`41477395549` attempt 1, Host job `125387737100` failed the ordinary-backend-error
+control because it expected the injected transport detail without the existing
+`SandCredentialRenewalError::Transport` display context. The recovered original
+log records the complete contextual error; carrier run `41482649513` and artifact
+`13160178463` preserve that log without rerunning the failed subject.
+
+Classification: **TEST_FLAW**. The required report is the exact existing typed
+error display, including its transport context and injected detail. Correct only
+that expected literal. Retain every epoch, retry, failure-count, stored-credential,
+callback and owned-worker cleanup assertion; do not change production error
+formatting, retry policy or worker lifecycle. The corrected subject requires
+the existing Auth worker-exit module and affected shared Actions gates. Recovered
+historical evidence does not establish a new subject's pass or full acceptance.
+

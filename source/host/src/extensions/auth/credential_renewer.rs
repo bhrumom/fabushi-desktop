@@ -881,7 +881,7 @@ mod worker_exit_tests {
         assert_eq!(reports[0].consecutive_failures, 1);
         assert_eq!(
             reports[0].error_summary.as_deref(),
-            Some("injected ordinary backend failure"),
+            Some("Sand inference-credential renewal request failed: injected ordinary backend failure"),
         );
         assert_eq!(reports[1].outcome, RenewalOutcome::Renewed);
         assert_eq!(reports[1].consecutive_failures, 0);
