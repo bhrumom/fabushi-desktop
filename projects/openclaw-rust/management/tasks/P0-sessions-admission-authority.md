@@ -8,6 +8,21 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation subject: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; historical unit reads and later discovery candidates do not replace this subject or confer scoped authority.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+## 2026-11-02 checked upgrade-marker handoff
+
+`SWA-UPGRADE-MARKER-CHECKED-v1` now has a frozen implementation through the
+existing marker store, Transcript admission/manager and shipping HostUpgrade
+hooks. Checked whole-image reads and batch writes preserve corrupt evidence;
+Runtime snapshot/write/quiesce share one admission guard, and cancellation
+follows durable success. Startup validates all markers before any dispatch.
+The original eleven-path candidate received independent source approval;
+integration on `3761bde297377bca80ad7497d1664f6f3d32bc58` preserves incoming
+connector, checkpoint, compaction, Host and Plugin changes and all valid tests.
+The integrated candidate still requires review and exact-H Actions. Markers
+remain per-agent hints for a hidden replacement turn; original-turn recovery,
+unknown effects and asynchronous revival/Automation/delete custody remain open.
+No source authority or global completion flag is promoted.
+
 ## 2026-11-02 bounded Host takeover refusal
 
 `OCRM-HOST-TAKEOVER-REFUSAL-v1` uses the existing `host_lock.rs` owner and

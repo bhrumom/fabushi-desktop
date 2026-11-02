@@ -1062,6 +1062,93 @@ Existing Actions already selects this target. A fresh independent review
 and exact-H affected Actions must pass; prior positive results remain
 evidence only for their exact subjects and unchanged scope.
 
+## Checked upgrade-marker handoff — SWA-UPGRADE-MARKER-CHECKED-v1
+
+At exact target base `7382badafe5c3a793835b7760bf3ab54e7fb54c9`, an unreadable
+or malformed upgrade-marker file is treated as empty, failed writes are
+discarded, and replacement can delete the previous file before a failing
+rename. This amendment repairs that target defect under SWA-06/07. Fixed U
+remains `1440bb1771372334bea23d7642bb52deb7db1845`. The existing
+`SandUpgradeResumeStore`, Transcript runtime/manager and HostUpgrade hooks
+remain the only owners; no new recovery scheduler or persistence authority is
+introduced.
+
+- MARKER-01: checked production discovery distinguishes a missing file from
+  malformed JSON/envelope, unsupported version, invalid row identity, I/O
+  failure and poisoned owner lock. Only `NotFound` is automatic empty state;
+  a valid explicit empty `pending` array is also empty. Current version 1 and
+  the legacy versionless `{pending: [...]}` envelope remain accepted when
+  every row has a nonempty agent identity, finite numeric timestamp, correctly
+  typed optional strings and consistent automation/run identity. Duplicate
+  agent rows are ambiguous and rejected. The existing explicitly lenient
+  parser/coercion API remains unchanged for compatibility inspection.
+- MARKER-02: checked batch upsert validates every existing and incoming row
+  under the same store lock, then publishes the whole batch once. It retains
+  a later timestamp for the same agent (and the existing row on a tie), never
+  publishes a prefix, and preserves original target bytes if replacement
+  fails. A unique create-new temporary file is flushed before rename; there
+  is no delete-target-then-retry fallback. This is same-owner serialization,
+  not a cross-process file lock or a claim that two stores are transactional.
+- MARKER-03: exact clear returns `Ok(false)` for stale/absent identity and an
+  error for failed reading or mutation; an old recovery pass cannot delete a
+  newer marker. Compatibility mutation wrappers, if retained, delegate to
+  checked operations and cannot overwrite/delete corrupt or poisoned state.
+- MARKER-04: upgrade quiesce persists the complete running-agent batch before
+  reporting successful runtime quiescence. The manager issues the registry
+  quiesce request only after persistence succeeds: that request cancels live
+  tasks and cannot be undone by resetting its flag. Preparation and explicit
+  resume are serialized in the same manager. Runtime holds its existing
+  admission-state guard across running-agent snapshot, marker write and
+  quiesce flag publication. Both actual send admission paths check that flag
+  under the same guard before starting new work. Existing in-flight nonces,
+  durable replay records and already-accepted queued turns retain their
+  coalescing, digest checks, result and lease ownership; quiesce must not
+  reject/discard their previously accepted state on wait re-entry. The only
+  shipping registry registration path requires that exact accepted lease,
+  including group-member turns. No new scheduler or admission state is added.
+  A failed batch releases the guard without flag publication or task
+  cancellation; subsequent admission remains possible. Kickstart
+  marker source normalization to `turn` occurs in that batch; Host composition
+  must not consume introduction intent before the durable batch succeeds.
+  Failure propagates through the existing fallible HostUpgrade peer hook and
+  Gateway response. Previously suspended Automation/sharing owners remain
+  suspended for an explicit retry/resume; this slice does not silently undo
+  their independent state or claim a cross-owner transaction.
+- MARKER-05: startup performs checked discovery before calling any per-marker
+  scheduling/HTTP/provider callback. Invalid stored state returns through the
+  existing `upgrade_resume_boot_failed` path without dispatch or deletion.
+  Per-marker cleanup uses checked exact clear and propagates I/O errors.
+  Gateway resume imports markers as one checked batch and consumes a checked
+  ID projection before resume/dispatch. Its `resumed` count means accepted
+  dispatches, not the number of discovered markers. The prepare response also consumes a
+  checked projection. Failure cannot be reported as empty recovery success.
+
+The bounded production scope is the existing marker store, Transcript runtime
+and manager, shipping Host marker preparation/discovery/commands, and affected
+durable-store, runtime, manager, HostUpgrade service/production, kickstart and
+shipping behavior oracles. Tests retain legacy parser, normal quiesce, peer ordering,
+exact-marker and pending-wake assertions. New negative cases use real owner
+files and state: corrupt/unsupported/invalid rows, lock poison, failed batch
+commit with unchanged prior bytes, stale clear, quiesce refusal, checked error
+propagation, and zero startup dispatch on failed discovery. An actual marker
+writer barrier must prove new routed/execute sends cannot cross a successful
+snapshot/write/flag boundary, while failed persistence leaves admission and
+existing cancellation tokens live. Existing queued and coalesced turns must
+still settle or replay under their original owner. Deterministic
+replacement fault injection supplements real file I/O; source wiring checks
+supplement actual owner behavior. All executable validation is GitHub Actions
+at the integrated exact H, with independent frozen review before acceptance.
+
+Markers remain discovery hints. The existing valid-marker hidden recreation
+behavior and clear-after-accepted-dispatch rule are not original-turn recovery.
+Original stream/model/generation/checkpoint claim and final settlement remain
+open. Asynchronous CompletionRevival marker failure propagation, Automation
+observer handoff custody and deletion across pending-wake/marker stores also
+remain open where their existing void interfaces cannot return an error. This
+batch makes their marker mutation non-destructive and reports failures; it
+does not claim those full lifecycles, unknown execution results, restart or
+the global OCRM acceptance matrix are closed.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

@@ -149,6 +149,7 @@ pub struct TranscriptManager {
     handoff_service: Mutex<Option<BoxHandoffService>>,
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
+    upgrade_handoff_lock: Mutex<()>,
     automation_config_changed_observer: Mutex<Option<AutomationConfigChangedObserver>>,
     channel_config_changed_observer: Arc<Mutex<Option<ChannelConfigChangedObserver>>>,
     listener_connect_observer: Mutex<Option<ListenerConnectObserver>>,
@@ -205,6 +206,7 @@ impl TranscriptManager {
             handoff_service: Mutex::new(None),
             shared_rooms,
             services: Mutex::new(None),
+            upgrade_handoff_lock: Mutex::new(()),
             automation_config_changed_observer: Mutex::new(None),
             channel_config_changed_observer,
             listener_connect_observer: Mutex::new(None),
@@ -856,27 +858,40 @@ impl TranscriptManager {
         self.transcript_runtime.recreate_carry_pending_wakes()
     }
 
-    pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
+    pub fn quiesce_for_upgrade(&self) -> Result<UpgradeQuiesceSummary, String> {
         if let Some(services) = self.production_services() {
             services.trace_flusher.flush_tracing();
         }
+        // Serialize durable preparation and the cancellation request with
+        // explicit resume. The registry request cancels live tasks, so it
+        // cannot safely be issued before a fallible durable handoff.
+        let _handoff = self.upgrade_handoff_lock.lock()
+            .map_err(|_| "Transcript upgrade handoff lock is poisoned".to_string())?;
+        let summary = self.transcript_runtime.quiesce_for_upgrade()?;
         self.runner_registry.request_quiesce_for_upgrade();
-        self.transcript_runtime.quiesce_for_upgrade()
+        Ok(summary)
     }
 
     pub fn is_quiescing_for_upgrade(&self) -> bool {
         self.transcript_runtime.is_quiescing_for_upgrade()
     }
 
-    pub fn mark_upgrade_resume_pending(&self, marker: UpgradeResumeMarker) {
-        if let Some(store) = self.transcript_runtime.upgrade_resume_store() {
-            store.mark_pending(marker);
-        }
+    pub fn mark_upgrade_resume_pending(&self, marker: UpgradeResumeMarker) -> Result<(), String> {
+        self.mark_upgrade_resume_batch_pending(&[marker])
     }
 
-    pub fn resume_after_recreate(&self) {
+    pub fn mark_upgrade_resume_batch_pending(&self, markers: &[UpgradeResumeMarker]) -> Result<(), String> {
+        let store = self.transcript_runtime.upgrade_resume_store()
+            .ok_or_else(|| "upgrade resume marker store is unavailable".to_string())?;
+        store.mark_pending_batch_checked(markers).map_err(|error| error.to_string())
+    }
+
+    pub fn resume_after_recreate(&self) -> Result<(), String> {
+        let _handoff = self.upgrade_handoff_lock.lock()
+            .map_err(|_| "Transcript upgrade handoff lock is poisoned".to_string())?;
         self.runner_registry.cancel_quiesce_for_upgrade();
         self.transcript_runtime.resume_after_recreate();
+        Ok(())
     }
 
     pub fn is_disposed(&self) -> bool {

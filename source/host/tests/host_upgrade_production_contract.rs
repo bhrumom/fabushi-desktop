@@ -8,6 +8,8 @@ use mahayana_host_runtime::extensions::host_upgrade::production::{
     ProductionHostUpgradePeers, start_production_host_upgrade_extension_with,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 
 #[derive(Default)]
 struct FakeFetcher {
@@ -73,6 +75,56 @@ fn production_upgrade_telemetry_uses_frozen_event_name() {
     assert_eq!(metadata.get("outcome").map(String::as_str), Some("applied"));
 }
 
+#[test]
+fn production_upgrade_service_propagates_real_transcript_marker_refusal() {
+    let root = std::env::temp_dir().join(format!("fabushi-host-upgrade-marker-refusal-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&root).unwrap();
+    let telemetry = HostTelemetryService::open(root.join("telemetry.jsonl")).unwrap();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let manager = Arc::new(TranscriptManager::new(&root, sessions));
+    let runtime = manager.transcript_runtime();
+    runtime.begin_provider_run("running");
+    let store = runtime.upgrade_resume_store().unwrap().clone();
+    std::fs::write(store.file_path(), b"corrupt pending upgrade").unwrap();
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let suspend_calls = Arc::clone(&calls);
+    let sharing_calls = Arc::clone(&calls);
+    let quiesce_calls = Arc::clone(&calls);
+    let quiesce_manager = Arc::clone(&manager);
+    let resume_store = store.clone();
+    let extension = start_production_host_upgrade_extension_with(
+        ProductionHostUpgradePeers {
+            suspend_automation_wakes: Arc::new(move || {
+                suspend_calls.lock().unwrap().push("suspend"); Ok(())
+            }),
+            prepare_sharing_for_upgrade: Arc::new(move || { sharing_calls.lock().unwrap().push("sharing"); }),
+            quiesce_transcript_for_upgrade: Arc::new(move || {
+                quiesce_calls.lock().unwrap().push("quiesce");
+                quiesce_manager.quiesce_for_upgrade().map(|_| ())
+            }),
+            resume_interrupted_upgrade_turns: Arc::new(move || {
+                resume_store.list_pending_checked().map(|_| ()).map_err(|error| error.to_string())
+            }),
+        },
+        telemetry.logs.clone(), Arc::new(FakeFetcher::default()), root.join("upgrade-marker.json"),
+        Arc::new(|| Ok(())),
+    ).unwrap();
+    assert!(extension.service().prepare_for_upgrade().unwrap_err().contains("malformed"));
+    assert_eq!(*calls.lock().unwrap(), vec!["suspend", "sharing", "quiesce"]);
+    assert!(!manager.is_quiescing_for_upgrade());
+    assert!(!manager.runner_registry().is_quiescing_for_upgrade());
+    assert!(runtime.is_agent_running("running"));
+    assert!(extension.service().resume_interrupted_upgrade_turns().unwrap_err().contains("malformed"));
+    assert_eq!(std::fs::read(store.file_path()).unwrap(), b"corrupt pending upgrade");
+    std::fs::remove_file(store.file_path()).unwrap();
+    extension.service().prepare_for_upgrade().unwrap();
+    assert!(manager.is_quiescing_for_upgrade());
+    assert_eq!(store.list_pending_checked().unwrap()[0].agent_id, "running");
+    extension.stop_background_work();
+    manager.dispose();
+    let _ = std::fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn shipping_host_recreates_durable_upgrade_turns_before_ack_redrive() {
@@ -132,14 +184,17 @@ fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
     let resume = SHIPPING_HOST
         .find("fn resume_interrupted_upgrade_turns(&self)")
         .expect("shipping upgrade resume owner");
-    let resume_body = &SHIPPING_HOST[resume..];
+    let resume_body = SHIPPING_HOST[resume..].split("fn preempt_group_member_runs_for_direct_send").next().unwrap();
+    let checked_discovery = resume_body.find("visit_upgrade_resume_markers_checked(store, |marker|")
+        .expect("checked discovery before any marker callback");
     let can_execute = resume_body
         .find("if !self.transcript_manager.can_execute()")
         .expect("execution guard before durable marker settlement");
     assert!(!resume_body.contains("store.clear_all();"));
     let clear_if_matches = resume_body
-        .rfind("store.clear_if_matches(&marker)")
+        .rfind("store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?")
         .expect("exact durable marker settlement");
+    assert!(checked_discovery < can_execute);
     assert!(can_execute < clear_if_matches);
     let dispatch_failure = resume_body
         .find("if let Err(error) = result")
@@ -157,4 +212,9 @@ fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
     assert!(SHIPPING_HOST.contains("upgrade_resume_telemetry_failed"));
     assert!(SHIPPING_HOST.contains("observed.quiesced_for_upgrade"));
     assert!(SHIPPING_HOST.contains("automation_run_id: observed.automation_run_id.clone()"));
+    assert!(SHIPPING_HOST.contains("prepare_upgrade_transcript_handoff(&host_upgrade_transcript, &host_upgrade_sessions)"));
+    assert!(SHIPPING_HOST.contains("upgrade_resume_boot_failed"));
+    assert!(SHIPPING_HOST.contains(".mark_upgrade_resume_batch_pending(&imported_markers)"));
+    assert!(SHIPPING_HOST.contains("let resumed = self.resume_interrupted_upgrade_turns()"));
+    assert!(SHIPPING_HOST.contains("\"resumed\": resumed"));
 }

@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
     upgrade_resume_marker_identity_is_well_formed, SandUpgradeResumeStore, UpgradeResumeMarker,
-    parse_upgrade_resume_file,
+    parse_upgrade_resume_file, UpgradeResumeStoreError,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -175,6 +175,106 @@ fn upgrade_resume_marker_rejects_incomplete_automation_identity() {
         automation_run_id: Some("run-a".into()),
     };
     assert!(!upgrade_resume_marker_identity_is_well_formed(&marker));
+}
+
+fn checked_upgrade_marker(agent_id: &str, at: f64) -> UpgradeResumeMarker {
+    UpgradeResumeMarker {
+        agent_id: agent_id.into(), marked_at_ms: at, source: Some("turn".into()),
+        automation_id: None, automation_run_id: None,
+    }
+}
+
+#[test]
+fn checked_upgrade_store_accepts_only_absence_explicit_empty_and_complete_legacy_or_v1_rows() {
+    let root = temp_root("checked-upgrade-format");
+    let store = SandUpgradeResumeStore::new(&root);
+    assert!(store.list_pending_checked().unwrap().is_empty());
+    assert!(!store.file_path().exists());
+    fs::create_dir_all(&root).unwrap();
+    for document in [r#"{"pending":[]}"#, r#"{"version":1,"pending":[]}"#] {
+        fs::write(store.file_path(), document).unwrap();
+        assert!(store.list_pending_checked().unwrap().is_empty());
+        assert_eq!(fs::read_to_string(store.file_path()).unwrap(), document);
+    }
+    fs::write(store.file_path(), r#"{"pending":[{"agentId":"legacy","markedAtMs":0,"source":null}]}"#).unwrap();
+    assert_eq!(store.list_pending_checked().unwrap()[0].agent_id, "legacy");
+    store.mark_pending_checked(checked_upgrade_marker("current", 2.0)).unwrap();
+    let reopened = SandUpgradeResumeStore::new(&root);
+    let rows = reopened.list_pending_checked().unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0].agent_id, "legacy");
+    assert_eq!(rows[1], checked_upgrade_marker("current", 2.0));
+    let written: serde_json::Value = serde_json::from_slice(&fs::read(store.file_path()).unwrap()).unwrap();
+    assert_eq!(written["version"], 1);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_upgrade_store_refuses_corruption_without_replacing_or_clearing_evidence() {
+    let root = temp_root("checked-upgrade-corrupt");
+    fs::create_dir_all(&root).unwrap();
+    let store = SandUpgradeResumeStore::new(&root);
+    let saved = checked_upgrade_marker("a", 1.0);
+    for (document, expected) in [
+        ("", "malformed"),
+        ("not-json", "malformed"),
+        (r#"[]"#, "malformed"),
+        (r#"{"version":1}"#, "malformed"),
+        (r#"{"version":2,"pending":[]}"#, "unsupported"),
+        (r#"{"version":null,"pending":[]}"#, "unsupported"),
+        (r#"{"version":1,"pending":[{"agentId":"a","markedAtMs":1},{"agentId":" ","markedAtMs":2}]}"#, "invalid"),
+        (r#"{"pending":[{"agentId":"a","markedAtMs":"bad"}]}"#, "invalid"),
+        (r#"{"pending":[{"agentId":"a"}]}"#, "invalid"),
+        (r#"{"pending":[{"agentId":"a","markedAtMs":1,"source":7}]}"#, "invalid"),
+        (r#"{"pending":[{"agentId":"a","markedAtMs":1,"automationRunId":"run"}]}"#, "invalid"),
+        (r#"{"pending":[{"agentId":"a","markedAtMs":1},{"agentId":"a","markedAtMs":2}]}"#, "invalid"),
+    ] {
+        fs::write(store.file_path(), document).unwrap();
+        let error = store.list_pending_checked().unwrap_err();
+        assert!(error.to_string().contains(expected), "{error}");
+        assert!(store.mark_pending_batch_checked(&[checked_upgrade_marker("new", 3.0)]).is_err());
+        assert!(store.clear_if_matches_checked(&saved).is_err());
+        assert!(store.clear_checked("a").is_err());
+        assert!(store.clear_all_checked().is_err());
+        store.mark_pending(checked_upgrade_marker("new", 3.0));
+        store.clear("a");
+        store.clear_all();
+        assert!(!store.clear_if_matches(&saved));
+        assert_eq!(fs::read_to_string(store.file_path()).unwrap(), document);
+    }
+    fs::remove_file(store.file_path()).unwrap();
+    fs::create_dir(store.file_path()).unwrap();
+    assert!(matches!(store.list_pending_checked(), Err(UpgradeResumeStoreError::Io { operation: "read", .. })));
+    assert!(store.mark_pending_checked(saved).is_err());
+    assert!(store.file_path().is_dir());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_upgrade_batch_is_all_or_nothing_and_retains_newest_same_agent_marker() {
+    let root = temp_root("checked-upgrade-batch");
+    let store = SandUpgradeResumeStore::new(&root);
+    let original = checked_upgrade_marker("retained", 100.0);
+    store.mark_pending_checked(original.clone()).unwrap();
+    let bytes = fs::read(store.file_path()).unwrap();
+    let mut invalid = checked_upgrade_marker("invalid", 2.0);
+    invalid.automation_run_id = Some("run-without-automation".into());
+    assert!(store.mark_pending_batch_checked(&[checked_upgrade_marker("first", 1.0), invalid]).is_err());
+    assert_eq!(fs::read(store.file_path()).unwrap(), bytes);
+    let handles = [30.0, 10.0, 20.0].into_iter().map(|at| {
+        let owner = store.clone();
+        std::thread::spawn(move || owner.mark_pending_checked(checked_upgrade_marker("racing", at)).unwrap())
+    }).collect::<Vec<_>>();
+    for handle in handles { handle.join().unwrap(); }
+    store.mark_pending_checked(checked_upgrade_marker("retained", 90.0)).unwrap();
+    let rows = store.list_pending_checked().unwrap();
+    assert!(rows.contains(&original));
+    assert!(rows.contains(&checked_upgrade_marker("racing", 30.0)));
+    assert_eq!(rows.len(), 2);
+    assert!(!store.clear_if_matches_checked(&checked_upgrade_marker("racing", 20.0)).unwrap());
+    assert_eq!(store.list_pending_checked().unwrap(), rows);
+    assert!(!store.clear_checked("absent").unwrap());
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

@@ -661,7 +661,7 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
         source: Some("background-revival".into()),
         automation_id: None,
         automation_run_id: None,
-    });
+    }).expect("durable marker");
     assert_eq!(
         manager.transcript_runtime().upgrade_resume_agent_ids(),
         vec!["agent-upgrade".to_string()]
@@ -669,12 +669,12 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
 
     let registry = manager.runner_registry();
     assert!(!registry.is_quiescing_for_upgrade());
-    let summary = manager.quiesce_for_upgrade();
+    let summary = manager.quiesce_for_upgrade().expect("durable handoff");
     assert!(summary.quiescing);
     assert_eq!(summary.running_turns, 0);
     assert!(manager.is_quiescing_for_upgrade());
     assert!(registry.is_quiescing_for_upgrade());
-    manager.resume_after_recreate();
+    manager.resume_after_recreate().expect("explicit resume");
     assert!(!manager.is_quiescing_for_upgrade());
     assert!(!registry.is_quiescing_for_upgrade());
 
@@ -682,6 +682,48 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn manager_refuses_failed_marker_handoff_and_preserves_existing_quiesce() {
+    use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
+
+    let root = temp_root();
+    fs::create_dir_all(&root).unwrap();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let manager = TranscriptManager::new(&root, sessions);
+    let runtime = manager.transcript_runtime();
+    let registry = manager.runner_registry();
+    runtime.begin_provider_run("running");
+    let cancellation = registry.register_routed_provider("running", "marker-refusal-running").unwrap();
+    let store = runtime.upgrade_resume_store().unwrap();
+    fs::write(store.file_path(), b"bad recovery evidence").unwrap();
+    assert!(manager.quiesce_for_upgrade().unwrap_err().contains("malformed"));
+    assert!(!manager.is_quiescing_for_upgrade());
+    assert!(!registry.is_quiescing_for_upgrade());
+    assert!(!cancellation.is_cancelled(), "failed handoff cannot irreversibly cancel the task");
+    assert!(runtime.is_agent_running("running"));
+    assert!(manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+        agent_id: "other".into(), marked_at_ms: 1.0, source: None,
+        automation_id: None, automation_run_id: None,
+    }).is_err());
+    assert_eq!(fs::read(store.file_path()).unwrap(), b"bad recovery evidence");
+
+    fs::remove_file(store.file_path()).unwrap();
+    assert!(manager.quiesce_for_upgrade().unwrap().quiescing);
+    assert!(manager.is_quiescing_for_upgrade());
+    assert!(registry.is_quiescing_for_upgrade());
+    assert!(cancellation.is_cancelled(), "cancellation follows durable handoff");
+    fs::write(store.file_path(), b"later corruption").unwrap();
+    assert!(manager.quiesce_for_upgrade().is_err());
+    assert!(registry.is_quiescing_for_upgrade(), "a retry refusal cannot undo existing quiesce");
+    assert!(manager.is_quiescing_for_upgrade());
+    assert_eq!(fs::read(store.file_path()).unwrap(), b"later corruption");
+    manager.resume_after_recreate().unwrap();
+    assert!(!registry.is_quiescing_for_upgrade());
+    assert!(!manager.is_quiescing_for_upgrade());
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn manager_emits_active_session_automations_through_the_roster_surface() {

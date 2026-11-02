@@ -162,7 +162,7 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     mcp_auth_resume_prompt, should_resume_hidden_handoff,
 };
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
-    upgrade_resume_marker_identity_is_well_formed, UpgradeResumeMarker,
+    upgrade_resume_marker_identity_is_well_formed, SandUpgradeResumeStore, UpgradeResumeMarker,
 };
 use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
@@ -1432,6 +1432,37 @@ fn prepare_routed_turn_model_admission(
     })
 }
 
+fn prepare_upgrade_transcript_handoff(
+    transcript: &TranscriptManager,
+    sessions: &ProductionSessionWorkers,
+) -> Result<(), String> {
+    let kickstart_agent_ids = transcript.live_running_agent_ids()
+        .into_iter()
+        .filter(|agent_id| transcript.active_turn_source(agent_id).as_deref() == Some("kickstart"))
+        .collect::<Vec<_>>();
+    // The runtime normalizes kickstart markers in the same durable batch.
+    // A failed handoff must not consume the pending introduction intent.
+    transcript.quiesce_for_upgrade()?;
+    for agent_id in kickstart_agent_ids {
+        sessions.set_agent_introduction_pending(&agent_id, false)?;
+    }
+    Ok(())
+}
+
+fn visit_upgrade_resume_markers_checked(
+    store: &SandUpgradeResumeStore,
+    mut visit: impl FnMut(UpgradeResumeMarker) -> Result<bool, String>,
+) -> Result<usize, String> {
+    // Validate the complete durable image before any scheduling callback.
+    // The store lock is released before visiting a marker.
+    let pending = store.list_pending_checked().map_err(|error| error.to_string())?;
+    let mut accepted = 0;
+    for marker in pending {
+        accepted += usize::from(visit(marker)?);
+    }
+    Ok(accepted)
+}
+
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     auth: Arc<HostAuthExtension>,
@@ -1602,8 +1633,7 @@ impl CreatedAgentKickstartRuntimePort for ProductionCreatedAgentKickstartRuntime
                 source: Some(source.to_string()),
                 automation_id: None,
                 automation_run_id: None,
-            });
-        Ok(())
+            })
     }
 
     fn report_failure(&self, agent_id: &str, error: &KickstartRunError) {
@@ -2212,7 +2242,7 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
         let Some(gateway) = self.gateway() else {
             return;
         };
-        gateway
+        if let Err(error) = gateway
             .transcript_manager
             .mark_upgrade_resume_pending(UpgradeResumeMarker {
                 agent_id: agent_id.to_string(),
@@ -2220,7 +2250,10 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
                 source: Some("background-revival".into()),
                 automation_id: None,
                 automation_run_id: None,
-            });
+            })
+        {
+            self.report_revival_error(agent_id, "Could not preserve upgrade recovery marker", &error);
+        }
     }
 
     fn report_revival(&self, report: RevivalReport) {
@@ -3541,36 +3574,31 @@ impl UnifiedGatewayApi {
         }
     }
 
-    fn resume_interrupted_upgrade_turns(&self) -> Result<(), String> {
-        if !self.transcript_manager.can_execute() {
-            return Ok(());
-        }
+    fn resume_interrupted_upgrade_turns(&self) -> Result<usize, String> {
         let Some(store) = self.transcript_runtime.upgrade_resume_store() else {
-            return Ok(());
+            return Err("upgrade resume marker store is unavailable".into());
         };
-        let pending = store.list_pending();
-        if pending.is_empty() {
-            return Ok(());
-        }
-
-        for marker in pending {
+        visit_upgrade_resume_markers_checked(store, |marker| {
+            if !self.transcript_manager.can_execute() {
+                return Ok(false);
+            }
             if !upgrade_resume_marker_identity_is_well_formed(&marker) {
                 eprintln!(
                     "mahayana-host upgrade_resume_identity_invalid agent={}",
                     marker.agent_id
                 );
-                continue;
+                return Err("upgrade resume marker identity is invalid".into());
             }
             let Some(summary) = self
                 .session_workers
                 .summarize_agent_by_id(&marker.agent_id, None)?
             else {
-                let _ = store.clear_if_matches(&marker);
-                continue;
+                store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
+                return Ok(false);
             };
             if summary.is_group {
-                let _ = store.clear_if_matches(&marker);
-                continue;
+                store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
+                return Ok(false);
             }
 
             let resumed_source = match marker.source.as_deref() {
@@ -3672,11 +3700,12 @@ impl UnifiedGatewayApi {
                     "mahayana-host upgrade_resume_failed agent={} error={error}",
                     marker.agent_id
                 );
+                Ok(false)
             } else {
-                let _ = store.clear_if_matches(&marker);
+                store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
+                Ok(true)
             }
-        }
-        Ok(())
+        })
     }
 
     fn preempt_group_member_runs_for_direct_send(&self, args: &serde_json::Value) -> bool {
@@ -12461,15 +12490,17 @@ impl GatewayApi for UnifiedGatewayApi {
         }
 
         if method == "resumeAfterRecreate" {
-            let local_ids = self.transcript_runtime.upgrade_resume_agent_ids();
+            let local_ids = self.transcript_runtime.upgrade_resume_agent_ids_checked()
+                .map_err(GatewayCommandError::Internal)?;
             let mut resume_ids = local_ids.clone();
+            let mut imported_markers = Vec::new();
             if let Some(agent_ids) = args.get("agentIds").and_then(serde_json::Value::as_array) {
                 for agent_id in agent_ids.iter().filter_map(serde_json::Value::as_str) {
                     let agent_id = agent_id.trim();
                     if agent_id.is_empty() || resume_ids.iter().any(|known| known == agent_id) {
                         continue;
                     }
-                    self.transcript_manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+                    imported_markers.push(UpgradeResumeMarker {
                         agent_id: agent_id.to_string(),
                         marked_at_ms: started_at_ms() as f64,
                         source: None,
@@ -12479,7 +12510,12 @@ impl GatewayApi for UnifiedGatewayApi {
                     resume_ids.push(agent_id.to_string());
                 }
             }
-            self.transcript_manager.resume_after_recreate();
+            self.transcript_manager.mark_upgrade_resume_batch_pending(&imported_markers)
+                .map_err(GatewayCommandError::Internal)?;
+            self.transcript_runtime.upgrade_resume_agent_ids_checked()
+                .map_err(GatewayCommandError::Internal)?;
+            self.transcript_manager.resume_after_recreate()
+                .map_err(GatewayCommandError::Internal)?;
             let carried = args
                 .get("resumePendingWakes")
                 .and_then(serde_json::Value::as_array)
@@ -12489,10 +12525,10 @@ impl GatewayApi for UnifiedGatewayApi {
                 .transcript_manager
                 .restore_recreate_pending_wakes(carried)
                 .map_err(GatewayCommandError::Internal)?;
-            self.resume_interrupted_upgrade_turns()
+            let resumed = self.resume_interrupted_upgrade_turns()
                 .map_err(GatewayCommandError::Internal)?;
             return Ok(serde_json::json!({
-                "resumed": resume_ids.len(),
+                "resumed": resumed,
                 "restoredPendingWakes": restored_pending_wakes,
             }));
         }
@@ -13880,7 +13916,8 @@ impl GatewayApi for UnifiedGatewayApi {
         Ok(serde_json::json!({
             "quiescing": self.transcript_manager.is_quiescing_for_upgrade(),
             "runningTurns": running_turns,
-            "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
+            "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids_checked()
+                .map_err(GatewayCommandError::Internal)?,
             "resumePendingWakes": self.transcript_manager.recreate_carry_pending_wakes(),
         }))
     }
@@ -15378,13 +15415,15 @@ fn main() {
             .run_path()
             .set_run_reporter(Some(Arc::new(move |observed| {
                 if observed.quiesced_for_upgrade {
-                    run_transcript_manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+                    if let Err(error) = run_transcript_manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
                         agent_id: observed.agent_id.clone(),
                         marked_at_ms: started_at_ms() as f64,
                         source: Some("automation".into()),
                         automation_id: Some(observed.automation_id.clone()),
                         automation_run_id: observed.automation_run_id.clone(),
-                    });
+                    }) {
+                        eprintln!("mahayana-host automation_upgrade_marker_failed agent={} error={error}", observed.agent_id);
+                    }
                 }
                 let Some(is_group) = observed.is_group else {
                     return;
@@ -16362,27 +16401,7 @@ fn main() {
                 host_upgrade_sharing.prepare_for_upgrade();
             }),
             quiesce_transcript_for_upgrade: Arc::new(move || {
-                let kickstart_agent_ids = host_upgrade_transcript
-                    .live_running_agent_ids()
-                    .into_iter()
-                    .filter(|agent_id| {
-                        host_upgrade_transcript.active_turn_source(agent_id).as_deref()
-                            == Some("kickstart")
-                    })
-                    .collect::<Vec<_>>();
-                host_upgrade_transcript.quiesce_for_upgrade();
-                for agent_id in kickstart_agent_ids {
-                    let _ = host_upgrade_sessions
-                        .set_agent_introduction_pending(&agent_id, false);
-                    host_upgrade_transcript.mark_upgrade_resume_pending(UpgradeResumeMarker {
-                        agent_id,
-                        marked_at_ms: started_at_ms() as f64,
-                        source: Some("turn".into()),
-                        automation_id: None,
-                        automation_run_id: None,
-                    });
-                }
-                Ok(())
+                prepare_upgrade_transcript_handoff(&host_upgrade_transcript, &host_upgrade_sessions)
             }),
             resume_interrupted_upgrade_turns: Arc::new(move || {
                 let gateway = host_upgrade_resume_gateway
@@ -16390,7 +16409,7 @@ fn main() {
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
                     .upgrade()
                     .ok_or_else(|| "Host gateway is not ready for upgrade resume".to_string())?;
-                gateway.resume_interrupted_upgrade_turns()
+                gateway.resume_interrupted_upgrade_turns().map(|_| ())
             }),
         },
     ) {
@@ -17596,6 +17615,104 @@ mod tests {
         assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation_before + 1);
         sessions.shutdown();
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn upgrade_marker_handoff_preserves_kickstart_intent_on_failure() {
+        use std::sync::Arc;
+        use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
+
+        let root = std::env::temp_dir().join(format!("fabushi-shipping-upgrade-marker-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        sessions.set_agent_introduction_pending(&record.id, true).unwrap();
+        let manager = super::TranscriptManager::new(&root, Arc::clone(&sessions));
+        let runtime = manager.transcript_runtime();
+        runtime.accept_routed_send(&serde_json::json!({
+            "agentId": record.id, "prompt":"introduction", "streamId":"upgrade-kickstart",
+            "clientNonce":"upgrade-kickstart", "requestSource":"kickstart",
+        }), |_| Ok(PersistedSendContext::default())).unwrap();
+        runtime.begin_provider_run(&record.id);
+        let cancellation = manager.runner_registry().register_routed_provider(&record.id, "upgrade-kickstart").unwrap();
+        assert_eq!(runtime.active_turn_source(&record.id).as_deref(), Some("kickstart"));
+        let store = runtime.upgrade_resume_store().unwrap();
+        fs::write(store.file_path(), b"corrupt marker evidence").unwrap();
+        assert!(super::prepare_upgrade_transcript_handoff(&manager, &sessions).unwrap_err().contains("malformed"));
+        assert!(sessions.get_agent_introduction_pending(&record.id).unwrap());
+        assert!(!manager.is_quiescing_for_upgrade());
+        assert!(!manager.runner_registry().is_quiescing_for_upgrade());
+        assert!(!cancellation.is_cancelled());
+        assert_eq!(fs::read(store.file_path()).unwrap(), b"corrupt marker evidence");
+
+        fs::remove_file(store.file_path()).unwrap();
+        super::prepare_upgrade_transcript_handoff(&manager, &sessions).unwrap();
+        assert!(!sessions.get_agent_introduction_pending(&record.id).unwrap());
+        assert!(manager.is_quiescing_for_upgrade());
+        assert!(cancellation.is_cancelled());
+        let rows = store.list_pending_checked().unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].agent_id, record.id);
+        assert_eq!(rows[0].source.as_deref(), Some("turn"));
+        manager.dispose();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn upgrade_marker_startup_checks_all_rows_before_any_dispatch() {
+        let root = std::env::temp_dir().join(format!("fabushi-shipping-upgrade-discovery-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let store = super::SandUpgradeResumeStore::new(&root);
+        for corrupt in [
+            "broken marker state",
+            r#"{"version":2,"pending":[]}"#,
+            r#"{"pending":[{"agentId":"valid-first","markedAtMs":1},{"agentId":7}]}"#,
+        ] {
+            fs::write(store.file_path(), corrupt).unwrap();
+            let mut dispatched = 0;
+            let result = super::visit_upgrade_resume_markers_checked(&store, |_| {
+                dispatched += 1;
+                Ok(true)
+            });
+            assert!(result.is_err());
+            assert_eq!(dispatched, 0, "no scheduling callback may run on a partial image");
+            assert_eq!(fs::read_to_string(store.file_path()).unwrap(), corrupt);
+        }
+        fs::remove_file(store.file_path()).unwrap();
+        let mut dispatched = 0;
+        assert_eq!(super::visit_upgrade_resume_markers_checked(&store, |_| {
+            dispatched += 1; Ok(true)
+        }).unwrap(), 0);
+        assert_eq!(dispatched, 0);
+        fs::create_dir(store.file_path()).unwrap();
+        assert!(super::visit_upgrade_resume_markers_checked(&store, |_| {
+            dispatched += 1; Ok(true)
+        }).is_err());
+        assert_eq!(dispatched, 0, "unreadable marker state cannot schedule");
+        assert!(store.file_path().is_dir());
+        fs::remove_dir(store.file_path()).unwrap();
+        let marker = super::UpgradeResumeMarker {
+            agent_id: "pending".into(), marked_at_ms: 1.0, source: Some("turn".into()),
+            automation_id: None, automation_run_id: None,
+        };
+        store.mark_pending_checked(marker.clone()).unwrap();
+        assert_eq!(super::visit_upgrade_resume_markers_checked(&store, |_| Ok(false)).unwrap(), 0,
+            "a retained marker alone is not accepted dispatch");
+        assert_eq!(store.list_pending_checked().unwrap(), vec![marker.clone()]);
+        let newer = super::UpgradeResumeMarker { marked_at_ms: 2.0, ..marker.clone() };
+        assert_eq!(super::visit_upgrade_resume_markers_checked(&store, |observed| {
+            store.mark_pending_checked(newer.clone()).map_err(|error| error.to_string())?;
+            assert!(!store.clear_if_matches_checked(&observed).unwrap());
+            Ok(true)
+        }).unwrap(), 1);
+        assert_eq!(store.list_pending_checked().unwrap(), vec![newer]);
+        let result = super::visit_upgrade_resume_markers_checked(&store, |observed| {
+            fs::write(store.file_path(), b"changed before exact clear").unwrap();
+            store.clear_if_matches_checked(&observed).map(|_| true).map_err(|error| error.to_string())
+        });
+        assert!(result.unwrap_err().contains("malformed"));
+        assert_eq!(fs::read(store.file_path()).unwrap(), b"changed before exact clear");
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

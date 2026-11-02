@@ -788,7 +788,7 @@ fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {
 
     runtime.begin_provider_run("agent-a");
     runtime.begin_provider_run("agent-b");
-    let summary = runtime.quiesce_for_upgrade();
+    let summary = runtime.quiesce_for_upgrade().expect("durable upgrade handoff");
     assert!(summary.quiescing);
     assert_eq!(summary.running_turns, 2);
     assert!(runtime.is_quiescing_for_upgrade());
@@ -819,6 +819,44 @@ fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn production_runtime_refuses_corrupt_or_unavailable_upgrade_handoff_without_quiescing() {
+    let root = temp_root("upgrade-quiesce-refusal");
+    fs::create_dir_all(&root).unwrap();
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    runtime.begin_provider_run("agent-a");
+    runtime.begin_provider_run("agent-b");
+    let store = runtime.upgrade_resume_store().unwrap();
+    let corrupt = br#"{"version":1,"pending":[{"agentId":"existing","markedAtMs":1},{"agentId":7}]}"#;
+    fs::write(store.file_path(), corrupt).unwrap();
+    assert!(runtime.quiesce_for_upgrade().unwrap_err().contains("invalid"));
+    assert!(!runtime.is_quiescing_for_upgrade());
+    assert_eq!(runtime.live_running_agent_ids(), vec!["agent-a", "agent-b"]);
+    assert_eq!(fs::read(store.file_path()).unwrap(), corrupt);
+    assert!(runtime.upgrade_resume_agent_ids_checked().is_err());
+
+    fs::write(store.file_path(), br#"{"version":1,"pending":[{"agentId":"existing","markedAtMs":1}]}"#).unwrap();
+    let summary = runtime.quiesce_for_upgrade().unwrap();
+    assert!(summary.quiescing);
+    assert_eq!(summary.running_turns, 2);
+    assert_eq!(runtime.upgrade_resume_agent_ids_checked().unwrap(), vec!["agent-a", "agent-b", "existing"]);
+    runtime.resume_after_recreate();
+    assert!(!runtime.is_quiescing_for_upgrade());
+
+    let no_store = ProductionTranscriptRuntime::new(None);
+    assert!(no_store.quiesce_for_upgrade().unwrap_err().contains("unavailable"));
+    assert!(no_store.upgrade_resume_agent_ids_checked().is_err());
+    assert!(!no_store.is_quiescing_for_upgrade());
+    let blocked_root = root.join("not-a-directory");
+    fs::write(&blocked_root, b"preserve parent evidence").unwrap();
+    let unwritable = ProductionTranscriptRuntime::new(Some(&blocked_root));
+    unwritable.begin_provider_run("cannot-handoff");
+    assert!(unwritable.quiesce_for_upgrade().is_err());
+    assert!(!unwritable.is_quiescing_for_upgrade());
+    assert_eq!(fs::read(&blocked_root).unwrap(), b"preserve parent evidence");
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn stale_queued_user_turn_is_superseded_when_latest_turn_can_recover_via_prepend() {
