@@ -10,7 +10,7 @@
     "unread": null,
     "omitted": 0,
     "responsibilities_total": 184,
-    "unmapped_responsibilities": 0
+    "unmapped_responsibilities": 2
   },
   "rows": [
     {
@@ -14511,7 +14511,7 @@
         "Recovery retries more than once and forms a hot loop",
         "Container-nested bad-time notifications are rejected before the same authenticated recovery policy is applied"
       ],
-      "ui_disposition": "No UI change. This is transport/session lifecycle inside the existing embedded Telegram runtime used by canonical Fabushi account and conversation owners.",
+      "ui_disposition": "The retained compatibility implementation has no new direct UI; current Native capability mapping and any resulting canonical UI obligations remain unresolved.",
       "non_ui_responsibilities": [
         "MTProto bad-message classification",
         "Trusted server-time correction",
@@ -14529,7 +14529,7 @@
         "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
         "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
       ],
-      "existing_owner": "Canonical shared MTProto telegram-network EstablishedSession + telegram-protocol MessageIdGuard, consumed by the existing desktop TelegramClientLease/runtime chain",
+      "existing_owner": "Current Native source-neutral owner mapping unresolved; retained protocol/network implementation remains compatibility research with historical desktop lease wiring",
       "rejected_existing_owners": [
         "Renderer/AppHost cannot own MTProto message-id, session-sequence, or retry state",
         "A second Telegram runtime/session owner would split auth-key and replay truth",
@@ -14566,7 +14566,7 @@
         "bad_server_salt -> existing salt replacement + bounded retry remains unchanged"
       ],
       "state_owner": "Existing EstablishedSession owns live auth key, server salt/time, message-id guard, sequence and session id; MessageIdGuard owns client-id floor and server replay window.",
-      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "lifecycle_owner": "Current Native lifecycle mapping unresolved; the retained compatibility implementation historically used account-bound TelegramClientLease / RuntimeClient / EstablishedSession.",
       "persistence_and_restart": "No new persistence is introduced. Existing persisted auth-key/DC/salt/server-time material continues to reconstruct the same runtime; stale persisted server_time is not used as a permanent reconnect clock offset. Recovery clock offset is live session state and is re-derived from authenticated service messages when needed.",
       "concurrency_and_cancellation": "Recovery happens synchronously inside the same mutable EstablishedSession invocation. Retry budget is one per invoke_raw/send_ping call, preventing parallel or recursive recovery ownership.",
       "security_boundary": "Only authenticated/decrypted MTProto service messages can trigger recovery. Server replay/parity checks remain active; the narrow outside-window exception applies only to direct fixed-U time-recovery bad_msg_notification codes and still preserves replay history.",
@@ -14574,28 +14574,24 @@
         "Existing embedded Telegram MTProto encrypted transport",
         "Fixed-U MTProto bad_msg_notification/bad_server_salt/new_session_created service constructors"
       ],
-      "service_owner": "Canonical embedded Telegram network/session runtime; no external recovery service or provider.",
+      "service_owner": "Current Native service ownership for this protocol responsibility is unresolved; the retained embedded Telegram network/runtime service is historical compatibility implementation.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
-      "coverage_disposition": "rewritten",
+      "implementation_status": "understood",
+      "coverage_disposition": "pending",
       "blockers": [
-        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
-        "Broader fixed-U semantic/implementation closure remains open.",
-        "Complete Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure and independent release ACCEPT remain open."
+        "Map the exact fixed-U protocol obligation to an existing Native production owner or justify an evidenced protocol-specific disposition; the retired desktop lease is not current production wiring.",
+        "Full source/legal, supported service/platform package and independent product acceptance remain open; historical implementation and compatibility tests do not close these gates."
       ],
-      "production_entrypoints": [
-        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
-        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw/send_ping -> bounded bad-message recovery"
-      ],
+      "production_entrypoints": [],
       "production_evidence": [
-        "platform-core-spec-commit:47ed28d35dbb6c7dd19bdcf1cd66fbf88dc68f67",
-        "platform-core-implementation-commit:ac9e20217812aa72b92049d4dfb52f76d6380da6",
-        "platform-core-path:native/telegram-network/src/lib.rs@ba9935b54e9c178c7d9377cd75572f2c21b62144",
-        "platform-core-path:native/telegram-protocol/src/session.rs@ab8fd351a05543854c3f62de5c8332a13b7ff472",
-        "desktop-implementation-commit:6c714e664d6cd4d66228b313664a6e776a4fd558",
-        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@ba9935b54e9c178c7d9377cd75572f2c21b62144",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs@ab8fd351a05543854c3f62de5c8332a13b7ff472",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@34bcd749f758cfd3f562b6e701ee10eb51d5d0c2"
+        "historical-compatibility-implementation:platform-core-spec-commit:47ed28d35dbb6c7dd19bdcf1cd66fbf88dc68f67",
+        "historical-compatibility-implementation:platform-core-implementation-commit:ac9e20217812aa72b92049d4dfb52f76d6380da6",
+        "historical-compatibility-implementation:platform-core-path:native/telegram-network/src/lib.rs@ba9935b54e9c178c7d9377cd75572f2c21b62144",
+        "historical-compatibility-implementation:platform-core-path:native/telegram-protocol/src/session.rs@ab8fd351a05543854c3f62de5c8332a13b7ff472",
+        "historical-compatibility-implementation:desktop-implementation-commit:6c714e664d6cd4d66228b313664a6e776a4fd558",
+        "historical-compatibility-implementation:path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@ba9935b54e9c178c7d9377cd75572f2c21b62144",
+        "historical-compatibility-implementation:path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/session.rs@ab8fd351a05543854c3f62de5c8332a13b7ff472",
+        "historical-compatibility-implementation:path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@34bcd749f758cfd3f562b6e701ee10eb51d5d0c2"
       ],
       "test_evidence": [
         "platform-core native/telegram-network/src/lib.rs recovery_contract_tests authored, not run",
@@ -14609,7 +14605,7 @@
       "job": null,
       "artifact_id": null,
       "artifact_digest": null,
-      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_root": "Current Native composition mapping unresolved for this exact protocol responsibility; the previous Telegram lease and shared MTProto composition are retained historical compatibility evidence.",
       "composition_slot": "Embedded Telegram encrypted session lifecycle",
       "capability_component": "Bounded MTProto bad-message recovery on the unique EstablishedSession",
       "variation_axes": [
@@ -14635,7 +14631,7 @@
       "creation_flow": "Existing canonical conversation creation; no change",
       "object_action_scope": "Not applicable",
       "detail_section": "Not applicable",
-      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "capability_surface": "Current Native capability surface is unresolved for this exact protocol responsibility; the former ConversationWorkspace provider/runtime path is historical compatibility evidence.",
       "route_contract": "No new route.",
       "search_scope": "Not applicable",
       "search_provider": "Existing canonical Search owner; unchanged",
@@ -14732,11 +14728,11 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "release_gate_status": "pending",
+      "release_gate_status": "blocked",
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614 and the corresponding MTProto constructor declarations in Telegram/SourceFiles/mtproto/scheme/mtproto.tl@76225965bfc794388db241f3f760db8ab79e84f8. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row records a responsibility slice from session_private.cpp and does not claim whole-file semantic closure, so global unknown/unread counters are intentionally unchanged. Authored tests are not executed; validation_status remains not-run and accepted remains false.",
+      "notes": "Stage A implementation only. This row records a responsibility slice from session_private.cpp and does not claim whole-file semantic closure, so global unknown/unread counters are intentionally unchanged. Authored tests are not executed; validation_status remains not-run and accepted remains false.\n2026-11-02 recovery round3 current-owner correction at 6660b6516f8936160496496814c298124d09e953: the retained compatibility implementation is not the current Native Human message owner. AppHost has no Telegram lease handoff and the production desktop FeatureHost refuses the old MessagingService route. The current source-neutral owner mapping for this exact protocol obligation remains unresolved; generic native HTTP retry/history behavior is not assumed equivalent. Prior owner: Canonical shared MTProto telegram-network EstablishedSession + telegram-protocol MessageIdGuard, consumed by the existing desktop TelegramClientLease/runtime chain. Prior entrypoints: [\"source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol\", \"existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw/send_ping -> bounded bad-message recovery\"]. Prior blockers, retained as historical observations rather than current acquisition state: [\"Stage B executable build/unit/contract/integration/packaged validation has not run.\", \"Broader fixed-U semantic/implementation closure remains open.\", \"Complete Boost/libiconv member enumeration, original-host GitLab blockers, adopted/copied-derived legal closure and independent release ACCEPT remain open.\"]. Protocol122/TCP9 including live handshake/ping/service RPC actually passed at94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498; those compatibility results do not establish Native production absorption. Preserve target commits, implementation paths, source identities, legal obligations and all historical evidence. Current state is understood/pending, release blocked, no source or product ACCEPT. See projects/telegram-desktop-rust/evidence/round3-native-owner-recovery-20261102.json. Prior lifecycle_owner (historical): \"Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.\". Prior composition_root (historical): \"Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition\". Both canonical mapping fields are explicitly reopened with the other current-owner fields; no present Native composition/lifecycle equivalence is assumed. Prior service_owner (historical): \"Canonical embedded Telegram network/session runtime; no external recovery service or provider.\". Prior capability_surface (historical): \"Existing ConversationWorkspace through the same provider/runtime; no new surface\". Prior ui_disposition (historical): \"No UI change. This is transport/session lifecycle inside the existing embedded Telegram runtime used by canonical Fabushi account and conversation owners.\". Unchanged protocol behavior/state/concurrency/security contracts and target paths describe the retained compatibility implementation only; they do not claim equivalent Native service behavior or present desktop wiring.",
       "test_execution_evidence": []
     },
     {
@@ -16338,7 +16334,7 @@
         "An inner message bypasses the existing server message-id replay guard",
         "Implementation introduces _sentContainers or arbitrary historical request/container routing"
       ],
-      "ui_disposition": "No UI change. This is receive-side MTProto container traversal inside the existing embedded runtime.",
+      "ui_disposition": "The retained compatibility implementation has no new direct UI; current Native capability mapping and any resulting canonical UI obligations remain unresolved.",
       "non_ui_responsibilities": [
         "Bounded MTProto msg_container decoding",
         "Inner server message-id validation before recursive handling",
@@ -16353,7 +16349,7 @@
         "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
         "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
       ],
-      "existing_owner": "Canonical shared Telegram protocol parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain",
+      "existing_owner": "Current Native source-neutral owner mapping unresolved; retained protocol/network implementation remains compatibility research with historical desktop lease wiring",
       "rejected_existing_owners": [
         "Renderer/AppHost cannot own MTProto receive-container parsing",
         "Storage cannot own live recursive service-message dispatch",
@@ -16386,7 +16382,7 @@
         "no outbound _sentContainers/wasSent/haveSent/multi-request fan-out is inferred or introduced"
       ],
       "state_owner": "Existing EstablishedSession owns live current RPC/current ping and MessageIdGuard; protocol TlReader owns bounded container decoding.",
-      "lifecycle_owner": "Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.",
+      "lifecycle_owner": "Current Native lifecycle mapping unresolved; the retained compatibility implementation historically used account-bound TelegramClientLease / RuntimeClient / EstablishedSession.",
       "persistence_and_restart": "No new persistence. Receive-container traversal is live session state only; outbound historical container/request routing remains intentionally absent.",
       "concurrency_and_cancellation": "The existing synchronous EstablishedSession retains one outstanding invoke_raw RPC or current ping path. Container traversal creates no background work and no parallel callback registry.",
       "security_boundary": "Only authenticated/decrypted MTProto messages reach container parsing. Bounded counts/lengths, exact full-buffer consumption, and existing MessageIdGuard replay checks fail closed before inner service handling.",
@@ -16394,31 +16390,25 @@
         "Existing embedded Telegram MTProto encrypted transport",
         "fixed-U msg_container#73f1f8dc"
       ],
-      "service_owner": "Canonical embedded Telegram protocol/network runtime; no external container service or provider.",
+      "service_owner": "Current Native service ownership for this protocol responsibility is unresolved; the retained embedded Telegram network/runtime service is historical compatibility implementation.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
-      "coverage_disposition": "rewritten",
+      "implementation_status": "understood",
+      "coverage_disposition": "pending",
       "blockers": [
-        "Stage B executable build/unit/contract/integration/packaged validation has not run.",
-        "Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and acknowledgement bookkeeping remain open and fail-closed.",
-        "gzip_packed decompression nesting/budget semantics remain open and fail-closed.",
-        "Higher-level new-session update/difference propagation remains open.",
-        "Broader fixed-U source/legal/release closure remains open."
+        "Map the exact fixed-U protocol obligation to an existing Native production owner or justify an evidenced protocol-specific disposition; the retired desktop lease is not current production wiring.",
+        "Full source/legal, supported service/platform package and independent product acceptance remain open; historical implementation and compatibility tests do not close these gates."
       ],
-      "production_entrypoints": [
-        "source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol",
-        "existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw or send_ping -> typed parse_message_container -> MessageIdGuard -> recursive current RPC/ping service handling"
-      ],
+      "production_entrypoints": [],
       "production_evidence": [
-        "platform-core-spec-commit:b223407bc9829a2fc14449bb5a7cfe6d7f4b082e",
-        "platform-core-implementation-commit:98a2ff425407725571966a4ed17b1643fba87b4d",
-        "platform-core-path:native/telegram-protocol/src/api.rs@14c282bfc20a33446c69a47db4fdd6f0b887348a",
-        "platform-core-path:native/telegram-protocol/src/lib.rs@f21d38495e5a7f5c6e2a35f28a633ac6e3433d4b",
-        "platform-core-path:native/telegram-network/src/lib.rs@bab8893bd8a2a0632014d826503a8091cfe64d46",
-        "desktop-implementation-commit:e8091133b85eb7e368839e6c9b09547620be17c2",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@14c282bfc20a33446c69a47db4fdd6f0b887348a",
-        "path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@f21d38495e5a7f5c6e2a35f28a633ac6e3433d4b",
-        "path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@bab8893bd8a2a0632014d826503a8091cfe64d46"
+        "historical-compatibility-implementation:platform-core-spec-commit:b223407bc9829a2fc14449bb5a7cfe6d7f4b082e",
+        "historical-compatibility-implementation:platform-core-implementation-commit:98a2ff425407725571966a4ed17b1643fba87b4d",
+        "historical-compatibility-implementation:platform-core-path:native/telegram-protocol/src/api.rs@14c282bfc20a33446c69a47db4fdd6f0b887348a",
+        "historical-compatibility-implementation:platform-core-path:native/telegram-protocol/src/lib.rs@f21d38495e5a7f5c6e2a35f28a633ac6e3433d4b",
+        "historical-compatibility-implementation:platform-core-path:native/telegram-network/src/lib.rs@bab8893bd8a2a0632014d826503a8091cfe64d46",
+        "historical-compatibility-implementation:desktop-implementation-commit:e8091133b85eb7e368839e6c9b09547620be17c2",
+        "historical-compatibility-implementation:path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs@14c282bfc20a33446c69a47db4fdd6f0b887348a",
+        "historical-compatibility-implementation:path:source/mahayana/mahayana-rs/providers/telegram-protocol/src/lib.rs@f21d38495e5a7f5c6e2a35f28a633ac6e3433d4b",
+        "historical-compatibility-implementation:path:source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs@bab8893bd8a2a0632014d826503a8091cfe64d46"
       ],
       "test_evidence": [
         "platform-core native/telegram-protocol/src/api.rs msg_container parse/malformed contracts authored, not run",
@@ -16431,7 +16421,7 @@
       "job": null,
       "artifact_id": null,
       "artifact_digest": null,
-      "composition_root": "Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition",
+      "composition_root": "Current Native composition mapping unresolved for this exact protocol responsibility; the previous Telegram lease and shared MTProto composition are retained historical compatibility evidence.",
       "composition_slot": "Embedded Telegram encrypted session receive-side container traversal",
       "capability_component": "Bounded current-RPC/current-ping MTProto message-container dispatch",
       "variation_axes": [
@@ -16458,7 +16448,7 @@
       "creation_flow": "Existing canonical conversation creation; no change",
       "object_action_scope": "Not applicable",
       "detail_section": "Not applicable",
-      "capability_surface": "Existing ConversationWorkspace through the same provider/runtime; no new surface",
+      "capability_surface": "Current Native capability surface is unresolved for this exact protocol responsibility; the former ConversationWorkspace provider/runtime path is historical compatibility evidence.",
       "route_contract": "No new route.",
       "search_scope": "Not applicable",
       "search_provider": "Existing canonical Search owner; unchanged",
@@ -16552,11 +16542,11 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "release_gate_status": "pending",
+      "release_gate_status": "blocked",
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral responsibility is anchored to fixed-U telegramdesktop/tdesktop Telegram/SourceFiles/mtproto/session_private.cpp@13cbc76ec723386027b5b4dcac79999b791c4614. The implementation is source-neutral Rust and copies no upstream C++ implementation.",
-      "notes": "Stage A implementation only. This row records only the receive-side msg_container subset exactly representable by the single outstanding RPC/current ping owners. Arbitrary outbound wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and gzip_packed remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.",
+      "notes": "Stage A implementation only. This row records only the receive-side msg_container subset exactly representable by the single outstanding RPC/current ping owners. Arbitrary outbound wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and gzip_packed remain open and fail-closed. Global unknown/unread source-entry counts are intentionally unchanged; contracts are authored but not executed; validation_status=not-run and accepted=false.\n2026-11-02 recovery round3 current-owner correction at 6660b6516f8936160496496814c298124d09e953: the retained compatibility implementation is not the current Native Human message owner. AppHost has no Telegram lease handoff and the production desktop FeatureHost refuses the old MessagingService route. The current source-neutral owner mapping for this exact protocol obligation remains unresolved; generic native HTTP retry/history behavior is not assumed equivalent. Prior owner: Canonical shared Telegram protocol parser + telegram-network EstablishedSession consumed by the existing desktop lease/runtime chain. Prior entrypoints: [\"source/mahayana/mahayana-rs/Cargo.toml -> mahayana-telegram -> providers/telegram-runtime -> providers/telegram-network + providers/telegram-protocol\", \"existing TelegramClientLease/RuntimeClient -> EstablishedSession::invoke_raw or send_ping -> typed parse_message_container -> MessageIdGuard -> recursive current RPC/ping service handling\"]. Prior blockers, retained as historical observations rather than current acquisition state: [\"Stage B executable build/unit/contract/integration/packaged validation has not run.\", \"Outbound/multi-request wasSent/haveSent/_resendingIds/toSend/_sentContainers fan-out and acknowledgement bookkeeping remain open and fail-closed.\", \"gzip_packed decompression nesting/budget semantics remain open and fail-closed.\", \"Higher-level new-session update/difference propagation remains open.\", \"Broader fixed-U source/legal/release closure remains open.\"]. Protocol122/TCP9 including live handshake/ping/service RPC actually passed at94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498; those compatibility results do not establish Native production absorption. Preserve target commits, implementation paths, source identities, legal obligations and all historical evidence. Current state is understood/pending, release blocked, no source or product ACCEPT. See projects/telegram-desktop-rust/evidence/round3-native-owner-recovery-20261102.json. Prior lifecycle_owner (historical): \"Existing account-bound TelegramClientLease -> RuntimeClient -> EstablishedSession production chain.\". Prior composition_root (historical): \"Canonical Fabushi account + existing TelegramClientLease/runtime + shared MTProto protocol/network production composition\". Both canonical mapping fields are explicitly reopened with the other current-owner fields; no present Native composition/lifecycle equivalence is assumed. Prior service_owner (historical): \"Canonical embedded Telegram protocol/network runtime; no external container service or provider.\". Prior capability_surface (historical): \"Existing ConversationWorkspace through the same provider/runtime; no new surface\". Prior ui_disposition (historical): \"No UI change. This is receive-side MTProto container traversal inside the existing embedded runtime.\". Unchanged protocol behavior/state/concurrency/security contracts and target paths describe the retained compatibility implementation only; they do not claim equivalent Native service behavior or present desktop wiring.",
       "test_execution_evidence": []
     },
     {

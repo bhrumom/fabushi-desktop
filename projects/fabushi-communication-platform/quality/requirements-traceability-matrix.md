@@ -622,3 +622,18 @@ production pagination, source/legal/full Bot and independent ACCEPT stay open.
 The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
 harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
 focused job is not a signed-package, live-service or independent acceptance gate.
+
+## Recovery round 3 — retired protocol ownership correction (2026-11-02)
+
+`TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001` and
+`TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001` are reopened as
+`understood / pending / blocked`. The actual desktop Native Session does not
+use their former Telegram lease/runtime chain. Current owner, lifecycle,
+service, composition, capability and UI mappings remain unresolved; original
+values and implementation evidence are retained as historical compatibility.
+The unique ledger records two known unmapped responsibilities. Source identities,
+six scoped source reviews, global null unknown/unread and acceptance are preserved.
+Exact94/run41513767498 protocol122/TCP9 successes qualify compatibility only.
+The corrected containing H must pass existing source/schema/candidate Actions;
+later Native shipping and every selected product gate remain independently required.
+Evidence: `projects/telegram-desktop-rust/evidence/round3-native-owner-recovery-20261102.json`.
