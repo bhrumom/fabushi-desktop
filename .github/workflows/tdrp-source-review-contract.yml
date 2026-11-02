@@ -1,7 +1,7 @@
 name: TDRP source review contract
 on:
   push:
-    branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-round17-auth-settings-20bf9475]
     paths:
       - scripts/tdrp-source-review*.mjs
       - scripts/tdrp-source-review*.py
@@ -86,7 +86,7 @@ jobs:
           if-no-files-found: error
   fixed-source-candidate:
     needs: contract
-    if: github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    if: (github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1' || github.ref == 'refs/heads/checkpoint/tdrp-round17-auth-settings-20bf9475')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

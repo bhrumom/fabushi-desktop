@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-round17-auth-settings-20bf9475]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/tests/session_gateway_contract.rs'
@@ -434,6 +434,9 @@ jobs:
           test "$(grep -c 'NMR-41 proxy removal passed:' artifacts/native-message-shipping/native-composition.log)" -eq 48
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-startup-retention.log
           grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log
+          grep -F 'NMR-AC-28 legacy auth matrix: 12 routes, 12 omitted-params requests, 6 ID forms, 125 refusals;' artifacts/native-message-shipping/native-startup-retention.log
+          test "$(grep -Fc 'NMR-AC-28 Settings matrix: restart=false, 29 typed rows across 15 kinds,' artifacts/native-message-shipping/native-startup-retention.log)" -eq 3
+          test "$(grep -Fc 'NMR-AC-28 Settings matrix: restart=true, 29 typed rows across 15 kinds,' artifacts/native-message-shipping/native-startup-retention.log)" -eq 4
       - name: Retained messaging stores and Agent automation boundaries
         shell: bash
         run: |

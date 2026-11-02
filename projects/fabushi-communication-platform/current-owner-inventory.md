@@ -132,8 +132,17 @@ projection types are only test inputs. Production Normal/Build graph and actual
 executable symbols must be qualified at the containing commit. The twelve
 legacy auth routes retain explicit errors and do not become another writer.
 
-`mahayana-ffi` still force-links direct Telegram C APIs, and `mahayana-cli`
-actually consumes its generic RuntimeHandle ABI. Electron's positive launch
+`mahayana-ffi` still force-links direct Telegram C APIs. At inspected
+`9329aced33343e8e356ba34dfd0f474f3e767914`, Desktop CLI/gateway directly own
+`RuntimeHandle(MahayanaHost)`; the CLI manifest selects `desktop-full` and
+`local-only` and has no `mahayana-ffi` dependency. Its former generic-ABI
+call path is historical. At independently read `bhrumom/fabushi` main
+`edde714def34e6eb5ae133dba20790c80a355c85`, that repository's vendored
+CLI/gateway still call `mahayana_runtime_*` through their own bundled
+`../mahayana-ffi`. This does not prove use of the current Desktop binary;
+other external, dynamic or issued consumers remain unknown. Exact blobs and
+scope are recorded in `projects/telegram-desktop-rust/evidence/round17-live-ffi-refresh.json`.
+Electron's positive launch
 path selects the `source/host/app` executable through process IPC. NMR-39
 limits its resources/bin copy to the four staged executable names/Windows
 forms and excludes nested files. It retains original staging contents and

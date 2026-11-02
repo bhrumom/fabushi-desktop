@@ -628,6 +628,20 @@ Bot regression, upgrade/rollback, soak and independent ACCEPT remain open.
 
 ### Round 17 account matrix and actual AppHost resource-copy evidence
 
+Current-head supplement at frozen batch base
+`3949d54a79c9e22710ce8f66abea0aaf05908174`: keep the later Social/forwarding
+cases and the production owners unchanged. The existing 125-request auth
+matrix must include omitted `params` through real serde and varied request
+IDs, serialized result omission, Unicode first-name whitespace, and immediate
+feature/native-shell event absence after each refusal. Drain legitimate
+pre-existing account/Agent events once before this matrix; a refusal must not
+create a new event. Settings assertions must compare an independently stated
+complete state after each operation, including adjacent middle/last removal,
+same-list preference reset, invalid/idempotent promotion, Disabled-preserving
+compatibility retry, persistence failure/recovery and full process restart.
+The current 17-row dispatch table alone does not prove those intermediate
+states; strengthen this same harness without dropping subsequent owner guards.
+
 NMR-AC-28 remains required in full: extend the existing six process scenarios,
 not a parallel account harness. Exercise each of the twelve legacy methods
 with its valid historical parameters and malformed JSON parameter envelopes;

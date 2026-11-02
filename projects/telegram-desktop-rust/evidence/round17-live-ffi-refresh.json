@@ -1,0 +1,125 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 17,
+  "observed_at_utc": "2026-11-02T20:55:04Z",
+  "followup_source": "9329aced33343e8e356ba34dfd0f474f3e767914",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "initial_checkpoint": "43dd738ca92965deb109681fdf5d521deae566e4",
+  "main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "source_binding": "Read at initial H; complete compare to followup H changes nine files and leaves the seven CLI/Host/FFI/provider production inputs unchanged. Runtime owner and new FFI test/workflow read directly at followup H.",
+  "desktop_sources": [
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml",
+      "blob": "ea55cc299e16a6cc309d17a118a654f83be47be2"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+      "blob": "e15f6f75da0bd29581fe629585a64f4edad7c013"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+      "blob": "57994430a95dad45a0deb5ca879623e40b98c592"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "blob": "9b4bdaf53de31370a651e5a8d8e30eea14707026"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml",
+      "blob": "8b0d6b7671cacbb52760057d15edd72349716bf0"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+      "blob": "1fd7fa7d8881477de368172af73f7210e09c060c"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs",
+      "blob": "9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+      "blob": "5771a5ee104612ec844d65f4298d037454527361"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs",
+      "blob": "f6234339c3a1d644f7f06c08e36635c7a851c882"
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d"
+    }
+  ],
+  "desktop_authority": {
+    "cli_gateway": "RuntimeHandle(MahayanaHost), HostCreateConfig serde then MahayanaHost::create; execute/receive/resolve_approval/interrupt use typed Host methods. CLI manifest selects desktop-full/local-only, contains no mahayana-ffi dependency. This bounded source trace is not actual new-H binary or package evidence.",
+    "generic_abi": "mahayana-ffi owns only C/JSON conversion, process-local numeric RUNTIMES handles and Arc<MahayanaHost>. mahayana_runtime_create invokes the same Host create guard before product configuration, storage or runtime construction; explicit telegram client or self-id is rejected.",
+    "retained_direct_abi": "ffi manifest still hard-depends on fabushi-telegram-runtime; mahayana_runtime_force_link references five direct Telegram exports. Those C wrappers call the separate RuntimeClient/CLIENTS owner in providers/telegram-runtime, including EncryptedSqliteStore open/restore and command mutation. They do not pass through ensure_native_host_handoff. Retention is not runtime retirement.",
+    "canonical_human_writer": "FBCP-NMR-001: SandAgentDb through ProductionSessionWorkers::open_human_conversation_db_owner owns local Human transcript/retry intent; authenticated Fabushi service owns remote message/resource identity and authorization; renderer remains projection. CLI/ABI does not create a new desktop message writer."
+  },
+  "external": {
+    "repository": "bhrumom/fabushi",
+    "main": "edde714def34e6eb5ae133dba20790c80a355c85",
+    "unchanged_since_prior_audit": true,
+    "sources": [
+      {
+        "path": "third_party/mahayana/mahayana-rs/mahayana-cli/Cargo.toml",
+        "blob": "5896c0ed152f71bb06cb55d24d213446b86d13ca"
+      },
+      {
+        "path": "third_party/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+        "blob": "a0e0a98f20e7f24eb75dc13ae9bffdf5c4846b6e"
+      },
+      {
+        "path": "third_party/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+        "blob": "660eca96a76f1bd0fb2ae05d7b03f60a579f24ca"
+      }
+    ],
+    "calls": "Both RuntimeHandle(u64) clients invoke mahayana_runtime_create/execute/receive/resolve_approval/interrupt/close/free_string. Cargo path ../mahayana-ffi binds that repository's own bundled source.",
+    "limit": "Real source-level ABI callers are verified. Consumption of the current fabushi-desktop compiled library is not established. Dynamic/unindexed/released consumers remain unknown; no absence or deletion conclusion."
+  },
+  "concurrent_ffi_tests": {
+    "commit": "9329aced33343e8e356ba34dfd0f474f3e767914",
+    "authored_expected": {
+      "passed": 15,
+      "ignored_live_dc": 1
+    },
+    "changes": "Five actual exported-C tests cover response allocation/free, handle close/reuse, temporary encrypted-store reopen, allocated non-UTF8/JSON buffers, null path/key and real allocated 0/31/33-byte key negatives. Existing eleven include one explicitly ignored live-DC test. New Ubuntu job binds exact H and --locked input.",
+    "execution": "Not queried or claimed by this audit; containing-H Actions required. No final static/shared library, installed consumer, active Telegram DC, real user-data or product acceptance."
+  },
+  "responsibility_anchor": {
+    "path": "projects/telegram-desktop-rust/parity-ledger.json",
+    "blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+    "id": "FBCP-NMR-001",
+    "implementation_status": "implemented",
+    "release_gate_status": "blocked",
+    "acceptance_reviewer": null,
+    "finding": "Current row already records typed CLI owner and new retained-wrapper compatibility scope; no contradictory current FFI owner found. Preserve all execution/source/acceptance fields and concurrent additions."
+  },
+  "inventory_correction": {
+    "path": "projects/fabushi-communication-platform/current-owner-inventory.md",
+    "input_blob": "9474034c18457086caaf25393b054345118c8248",
+    "output_blob": "f18a1e057293c647ffb6e7304c7748cccb1e5ed6",
+    "output_sha256": "8f2d3687348bb1a8c8b2e089b2e5dcefb7e42fab4f4440f27eabca89c89ed6aa",
+    "bytes": 28625,
+    "scope": "Replace only the old two-line assertion that Desktop CLI still consumes generic ABI with the exact-H typed owner and independently pinned external bundled caller. Preserve current Round18 section, historical data and Electron packaging scope.",
+    "publication": "Prepared on the exact frozen base; containing Git commit and file identities must be remotely reread before delivery."
+  },
+  "audit_actions": {
+    "remote_reads": true,
+    "remote_writes": false,
+    "local_build_test_lint_validator": false,
+    "service_probe": false,
+    "product_code_or_ledger_mutation": false,
+    "artifact_download": false
+  },
+  "final_acceptance": false,
+  "frozen_validation_branch": "checkpoint/tdrp-round17-auth-settings-20bf9475",
+  "frozen_validation_base": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+  "production_identity_recheck": {
+    "head": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+    "scope": "all eight listed desktop production sources, excluding workflow and test entries",
+    "unchanged": true,
+    "execution": false
+  }
+}

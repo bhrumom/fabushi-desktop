@@ -147,16 +147,66 @@ fn identified_request(
     response
 }
 
+fn assert_no_new_feature_or_shell_event(host: &AppHost, label: &str) {
+    let event = host.receive_feature_event(Duration::ZERO)
+        .expect("receive actual feature event after dispatch");
+    assert!(event.is_none(), "{label} unexpectedly published a feature event: {event:?}");
+    assert!(
+        host.take_startup_native_shell_event().expect("startup shell event").is_none(),
+        "{label} unexpectedly activated a native-shell carrier",
+    );
+}
+
+fn drain_existing_account_agent_events(host: &AppHost) {
+    // These fixtures only construct a host, change Native accounts and manage
+    // the public Agent roster before a matrix. Do not discard a prior message,
+    // automation mutation or other unexpected event as account housekeeping.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    for _ in 0..256 {
+        assert!(Instant::now() < deadline, "account/Agent event queue did not settle");
+        let Some(event) = host.receive_feature_event(Duration::ZERO)
+            .expect("receive pre-existing account/Agent event") else {
+            return;
+        };
+        assert!(matches!(event.get("type").and_then(Value::as_str),
+            Some("host.ready" | "bot.listed" | "bot.changed")),
+            "unexpected event before refusal/Settings matrix: {event:?}");
+    }
+    panic!("account/Agent event queue exceeded the bounded fixture event budget");
+}
+
+fn assert_refused_request(host: &AppHost, request: HostRequest, expected_error: &str) {
+    let id = request.id.clone();
+    let method = request.method.clone();
+    let response = host.dispatch(request);
+    assert_eq!(response.id, id, "{method} must echo the original request identity");
+    assert!(!response.ok, "request unexpectedly succeeded: {method}");
+    assert!(response.result.is_none(), "{method} cannot return an accepted result");
+    assert_eq!(response.error.as_deref(), Some(expected_error), "{method} error precedence");
+    assert!(
+        serde_json::to_value(&response).expect("serialize public refusal").get("result").is_none(),
+        "{method} must omit result from the wire refusal",
+    );
+    assert_no_new_feature_or_shell_event(host, &method);
+}
+
 fn assert_legacy_auth_matrix(host: &AppHost) {
     // Real public AppHost dispatch; the twelve retired routes retain their
     // historical names/argument shapes, but must never restart a provider.
+    // Drain legitimate account/Agent events once. Each subsequent refusal is
+    // observed before another request or account refresh can clear its events.
+    drain_existing_account_agent_events(host);
+    let ids = [
+        None, Some(Value::Null), Some(json!(0)), Some(json!("public-legacy-request")),
+        Some(json!({"publicRequest": 1})), Some(json!(["public-request", 2])),
+    ];
     let methods = [
         ("telegramStatus", json!({})),
         ("telegramSendCode", json!({"phoneNumber": "+10000000000"})),
         ("telegramSignIn", json!({"code": "public-code"})),
         ("telegramPassword", json!({"password": "public-password"})),
         ("telegramRegistration", json!({"firstName": "Public", "lastName": "Fixture"})),
-        ("telegramResendCode", json!({})),
+        ("telegramResendCode", json!({"reason": "public-fixture-reason"})),
         ("telegramCancelCode", json!({})),
         ("telegramRequestPasswordRecovery", json!({})),
         ("telegramCheckRecoveryPassword", json!({"code": "public-recovery"})),
@@ -164,75 +214,71 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
         ("telegramVerifyEmail", json!({"code": "public-email-code"})),
         ("telegramRefreshPasswordChallenge", json!({})),
     ];
+    let malformed = [
+        json!({}),
+        Value::Null,
+        json!(false),
+        json!(7),
+        json!("not-an-object"),
+        json!([]),
+        json!({"firstName": 7, "phoneNumber": false, "code": {"untrusted": true},
+            "password": [], "email": null, "reason": {"unexpected": true}}),
+    ];
     let mut checked = 0;
     for (method, valid) in methods {
-        let malformed = [
-            valid,
-            json!({}),
-            Value::Null,
-            json!(false),
-            json!(7),
-            json!("not-an-object"),
-            json!([]),
-            json!({"firstName": 7, "code": {"untrusted": true}}),
-            json!({"firstName": "  ", "telegramApiHash": "must-not-activate"}),
-        ];
-        for (variant, params) in malformed.into_iter().enumerate() {
-            let registration_has_name = params.get("firstName")
-                .and_then(Value::as_str)
-                .map(|name| !name.trim().is_empty())
-                .unwrap_or(false);
-            let response = identified_request(
-                host,
-                &format!("legacy-{method}-{variant}"),
-                &format!("feature.auth.{method}"),
-                params,
-            );
-            assert!(!response.ok, "legacy method unexpectedly succeeded: {method}/{variant}");
-            assert!(response.result.is_none(), "legacy method emitted a result");
-            let expected = if method == "telegramRegistration" && !registration_has_name {
+        for (variant, params) in std::iter::once(valid).chain(malformed.iter().cloned()).enumerate() {
+            let expected = if method == "telegramRegistration" && variant != 0 {
                 "invalid request: firstName is required"
             } else {
                 LEGACY_UNAVAILABLE
             };
-            assert_eq!(response.error.as_deref(), Some(expected), "legacy {method}/{variant}");
+            assert_refused_request(host, HostRequest {
+                id: ids[checked % ids.len()].clone(),
+                method: format!("feature.auth.{method}"),
+                params,
+            }, expected);
             checked += 1;
         }
+
+        // Exercise HostRequest's real serde default, rather than substituting
+        // an explicit null params value for an omitted wire member.
+        let request = serde_json::from_value::<HostRequest>(json!({
+            "id": format!("legacy-{method}-omitted-params"),
+            "method": format!("feature.auth.{method}"),
+        })).expect("decode public request with omitted params");
+        assert_refused_request(host, request, if method == "telegramRegistration" {
+            "invalid request: firstName is required"
+        } else {
+            LEGACY_UNAVAILABLE
+        });
+        checked += 1;
     }
 
     // Registration uniquely validates firstName first, including whitespace,
-    // type confusion and non-object values. Other twelve-route refusals are
+    // type confusion and non-object values. The other eleven refusals are
     // deliberately parameter-independent and must not parse legacy secrets.
     let extra_registration = [
-        json!({"firstName": " Public "}),
-        json!({"firstName": ""}),
-        json!({"firstName": " \t "}),
-        json!({"firstName": null}),
-        json!({"firstName": 0}),
-        json!({"firstName": false}),
-        json!({"firstName": []}),
-        json!({"firstName": {}}),
-        json!({"firstName": "Public", "lastName": 999}),
-        json!({"firstName": "Public", "phoneNumber": false}),
-        json!({"firstName": "Public", "password": {"unexpected": true}}),
+        (json!({"firstName": " Public "}), true),
+        (json!({"firstName": ""}), false),
+        (json!({"firstName": " \t\n ", "telegramApiHash": "must-not-activate"}), false),
+        (json!({"firstName": "\u{2003}"}), false),
+        (json!({"firstName": null}), false),
+        (json!({"firstName": 0}), false),
+        (json!({"firstName": false}), false),
+        (json!({"firstName": []}), false),
+        (json!({"firstName": {}}), false),
+        (json!({"firstName": "Public", "lastName": 999}), true),
+        (json!({"firstName": "Public", "phoneNumber": false,
+            "password": {"unexpected": true}}), true),
     ];
-    for (variant, params) in extra_registration.into_iter().enumerate() {
-        let has_name = params.get("firstName")
-            .and_then(Value::as_str)
-            .map(|name| !name.trim().is_empty())
-            .unwrap_or(false);
-        let response = identified_request(
-            host, &format!("registration-extra-{variant}"),
-            "feature.auth.telegramRegistration", params,
-        );
-        assert!(!response.ok);
-        assert!(response.result.is_none());
-        assert_eq!(
-            response.error.as_deref(),
-            Some(if has_name { LEGACY_UNAVAILABLE } else {
-                "invalid request: firstName is required"
-            }),
-        );
+    for (params, has_name) in extra_registration {
+        assert_refused_request(host, HostRequest {
+            id: ids[checked % ids.len()].clone(),
+            method: "feature.auth.telegramRegistration".into(),
+            params,
+        }, if has_name { LEGACY_UNAVAILABLE } else {
+            "invalid request: firstName is required"
+        });
         checked += 1;
     }
     for (variant, method) in [
@@ -243,17 +289,15 @@ fn assert_legacy_auth_matrix(host: &AppHost) {
         "feature.auth.TELEGRAMSTATUS",
         "feature.auth.telegramVerifyEmailLegacy",
     ].into_iter().enumerate() {
-        let response = identified_request(host, &format!("legacy-unknown-{variant}"), method, json!({}));
-        assert!(!response.ok);
-        assert!(response.result.is_none());
-        assert_eq!(
-            response.error.as_deref(),
-            Some(format!("invalid request: unknown feature method {method}").as_str()),
-        );
+        assert_refused_request(host, HostRequest {
+            id: ids[checked % ids.len()].clone(),
+            method: method.into(),
+            params: if variant % 2 == 0 { Value::Null } else { json!({"firstName": "Public"}) },
+        }, &format!("invalid request: unknown feature method {method}"));
         checked += 1;
     }
     assert_eq!(checked, 125, "twelve historical methods, eleven registration variants and six unknown negatives");
-    assert_no_messaging_event(host);
+    eprintln!("NMR-AC-28 legacy auth matrix: 12 routes, 12 omitted-params requests, 6 ID forms, {checked} refusals; wire result omitted and no new feature/native-shell event after every refusal");
 }
 
 fn assert_no_messaging_event(host: &AppHost) {
@@ -557,6 +601,7 @@ fn child_case(root: &Path, mode: &str) {
     assert_eq!(status["loggedIn"], true);
     assert_legacy_unavailable(&host);
     let first = account.current_scope().expect("Native account scope");
+    let retained_settings = assert_settings_restart_matrix(&host, root, mode != "isolated");
 
     if mode == "production" {
         assert_eq!(
@@ -593,6 +638,7 @@ fn child_case(root: &Path, mode: &str) {
             assert_ne!(first.account_id, second.account_id);
             assert_eq!(second.account_id, expected_isolated_id("456"));
             assert!(second.generation > first.generation);
+            assert_persisted_settings(&host, root, &retained_settings);
             assert_eq!(count(&host), baseline, "B must not inherit A's roster");
             assert!(!contains_bot(&host, BOT_A));
             create(&host, BOT_B);
@@ -604,6 +650,7 @@ fn child_case(root: &Path, mode: &str) {
             let returned = account.current_scope().expect("returned A scope");
             assert_eq!(returned.account_id, first.account_id);
             assert!(returned.generation > second.generation);
+            assert_persisted_settings(&host, root, &retained_settings);
             assert_eq!(count(&host), baseline + 1);
             assert!(contains_bot(&host, BOT_A));
             assert!(!contains_bot(&host, BOT_B));
@@ -627,6 +674,8 @@ fn child_case(root: &Path, mode: &str) {
             }
             assert!(!contains_bot(&host, BOT_A));
             assert!(!contains_bot(&host, BOT_B));
+            assert_legacy_auth_matrix(&host);
+            assert_persisted_settings(&host, root, &retained_settings);
 
             expected_credential = replace_native_credential(&credential, ISOLATED, "123");
             assert_eq!(auth(&host)["loggedIn"], true);
@@ -639,10 +688,13 @@ fn child_case(root: &Path, mode: &str) {
             );
             assert!(contains_bot(&host, BOT_A));
             assert!(!contains_bot(&host, BOT_B));
+            assert_legacy_auth_matrix(&host);
+            assert_persisted_settings(&host, root, &retained_settings);
         }
     }
     assert_standalone_messaging_unavailable(&host, &first.account_id);
     assert!(messaging_entries(root).is_empty(), "issuer transitions cannot create a second message store");
+    assert_persisted_settings(&host, root, &retained_settings);
     // Read-only restoration must not mutate the Native owner's file or import
     // the public fixture into the legacy Rust account-session persistence path.
     let current = fs::read(&credential).expect("Native fixture remains");
@@ -678,162 +730,269 @@ fn assert_settings_disk(host: &AppHost, root: &Path) -> Value {
     snapshot
 }
 
+fn assert_persisted_settings(host: &AppHost, root: &Path, expected: &Value) {
+    assert_eq!(&assert_settings_disk(host, root), expected,
+        "complete Settings differ from the independently stated state");
+    assert!(!settings_disk_path(root).with_extension("json.tmp").exists(),
+        "successful Settings replacement must settle its temporary path");
+}
+
 fn settings_mutation(
-    host: &AppHost, root: &Path, label: &str, mutation: Value, publication: bool,
-) -> Value {
+    host: &AppHost, root: &Path, label: &str, mutation: Value,
+    expected: &Value, publication: bool,
+) {
+    let before = settings_snapshot(host);
+    let path = settings_disk_path(root);
+    let before_bytes = if path.exists() {
+        Some(fs::read(&path).expect("Settings bytes before typed mutation"))
+    } else {
+        None
+    };
     let response = identified_request(
         host, label, "settings.mutateNetworkProxy", json!({"mutation": mutation}),
     );
     assert!(response.ok, "Settings mutation {label} failed: {:?}", response.error);
     assert!(response.error.is_none());
-    let result = response.result.expect("Settings mutation response");
-    let snapshot = assert_settings_disk(host, root);
-    assert_eq!(result["settings"], snapshot);
-    if publication {
-        assert_eq!(result["publication"], json!({
+    let publication = if publication {
+        json!({
             "available": false, "reason": "telegramClientUnavailable"
-        }), "Settings cannot activate an absent legacy proxy carrier");
+        })
     } else {
-        assert!(result["publication"].is_null(), "unrelated Settings changes cannot publish");
+        Value::Null
+    };
+    assert_eq!(response.result, Some(json!({"settings": expected, "publication": publication})),
+        "complete Settings response for {label}");
+    assert_no_new_feature_or_shell_event(host, label);
+    assert_persisted_settings(host, root, expected);
+    if before == *expected {
+        if let Some(bytes) = before_bytes {
+            assert_eq!(fs::read(path).expect("unchanged Settings bytes"), bytes,
+                "idempotent typed mutation {label} must preserve the document");
+        }
     }
-    assert_no_messaging_event(host);
-    snapshot
 }
 
-fn settings_enabled(host: &AppHost, root: &Path, label: &str, enabled: bool) -> Value {
+fn settings_enabled(host: &AppHost, root: &Path, label: &str, enabled: bool, expected: &Value) {
+    let before = settings_snapshot(host);
+    let raw = fs::read(settings_disk_path(root)).expect("Settings before compatibility request");
     let response = identified_request(
         host, label, "settings.setNetworkProxyEnabled", json!({"proxyEnabled": enabled}),
     );
     assert!(response.ok, "Settings compatibility toggle failed: {:?}", response.error);
-    let result = response.result.expect("Settings toggle result");
-    let snapshot = assert_settings_disk(host, root);
-    assert_eq!(result["settings"], snapshot);
-    assert_eq!(result["publication"], json!({
-        "available": false, "reason": "telegramClientUnavailable"
-    }), "same-value retries must republish the unavailability envelope");
-    assert_no_messaging_event(host);
-    snapshot
+    assert!(response.error.is_none());
+    assert_eq!(response.result, Some(json!({"settings": expected, "publication": {
+        "available": false, "reason": "telegramClientUnavailable",
+    }})), "same-value retries must preserve the complete Settings/unavailability response");
+    assert_no_new_feature_or_shell_event(host, label);
+    assert_persisted_settings(host, root, expected);
+    if before == *expected {
+        assert_eq!(fs::read(settings_disk_path(root)).expect("unchanged Settings bytes"), raw,
+            "idempotent compatibility request must preserve the document");
+    }
 }
 
-fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) {
+fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) -> Value {
     let path = settings_disk_path(root);
     let a = json!({"type":"socks5","host":"a.example.invalid","port":1080,"user":"","password":""});
     let b = json!({"type":"http","host":"b.example.invalid","port":8080,"user":"public-b","password":"public-fixture-b"});
     let c = json!({"type":"mtproto","host":"c.example.invalid","port":443,"user":"","password":"public-fixture-c"});
     let d = json!({"type":"web","host":"d.example.invalid","port":8443,"user":"","password":"public-fixture-d"});
     let e = json!({"type":"socks5","host":"e.example.invalid","port":1081,"user":"","password":""});
-    if !restart {
-        let initial = settings_snapshot(host);
-        assert_eq!(initial["version"], 2);
-        assert_eq!(initial["network"]["proxy"]["mode"], "system");
-        assert!(!path.exists(), "new owner must not create Settings until a real mutation");
-
-        // Every one of the existing fifteen mutation variants uses the
-        // production AppHost dispatch and canonical product-settings.json.
-        let cases = [
-            ("list", json!({"type":"setList","list":[a.clone(),b.clone(),c.clone()]}), false),
-            ("selected-and-mode", json!({"type":"setSelectedAndMode","proxy":b.clone(),"mode":"enabled"}), true),
-            ("preference", json!({"type":"setRotationPreferredIndices","indices":[0,1,2,1,-1,7]}), false),
-            ("remove-first", json!({"type":"remove","proxy":a.clone()}), false),
-            ("insert", json!({"type":"insert","index":1,"proxy":d.clone()}), false),
-            ("replace", json!({"type":"replace","was":d.clone(),"proxy":c.clone()}), false),
-            ("add", json!({"type":"add","proxy":e.clone()}), false),
-            ("promote", json!({"type":"promoteRotationPreferredIndex","index":3}), false),
-            ("selected", json!({"type":"setSelected","proxy":e.clone()}), true),
-            ("ipv6", json!({"type":"setTryIpv6","enabled":false}), true),
-            ("calls", json!({"type":"setUseProxyForCalls","enabled":true}), false),
-            ("warning", json!({"type":"setCheckIpWarningShown","shown":true}), false),
-            ("rotate", json!({"type":"setRotationEnabled","enabled":true}), false),
-            ("timeout-default", json!({"type":"setRotationTimeout","seconds":-1}), false),
-            ("mode-disabled", json!({"type":"setMode","mode":"disabled"}), true),
-            ("timeout-42", json!({"type":"setRotationTimeout","seconds":42}), false),
-            ("mode-enabled", json!({"type":"setMode","mode":"enabled"}), true),
-        ];
-        for (label, mutation, publication) in cases {
-            let snapshot = settings_mutation(host, root, label, mutation, publication);
-            if label == "remove-first" {
-                assert_eq!(snapshot["network"]["proxy"]["rotation"]["preferredIndices"], json!([0,1]),
-                    "removing A must retain B/C preference identity and relative priority");
-                assert_eq!(snapshot["network"]["proxy"]["list"], json!([b.clone(),c.clone()]));
-            }
-        }
-
-        for (variant, enabled) in [true,true,false,false,true,true].into_iter().enumerate() {
-            settings_enabled(host, root, &format!("compatibility-{variant}"), enabled);
-        }
-
-        // Invalid JSON/enum/typed values fail without persistence or mutation.
-        let invalid = [
-            (json!({}), "invalid request: settings.mutateNetworkProxy requires mutation"),
-            (json!({"mutation": null}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setMode","mode":"bogus"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setList","list":"not-an-array"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"insert","index":"bad","proxy":b.clone()}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setSelected","proxy":false}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setRotationPreferredIndices","indices":[{}]}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
-            (json!({"mutation": {"type":"setRotationTimeout","seconds":4294967296_i64}}), "invalid request: settings.mutateNetworkProxy rotation timeout is out of range"),
-        ];
-        for (variant, (params, prefix)) in invalid.into_iter().enumerate() {
-            let before = assert_settings_disk(host, root);
-            let raw = fs::read(&path).expect("retained valid Settings document");
-            let response = identified_request(host, &format!("settings-invalid-{variant}"), "settings.mutateNetworkProxy", params);
-            assert!(!response.ok);
-            assert!(response.result.is_none());
-            assert!(response.error.as_deref().unwrap_or("").starts_with(prefix), "unexpected invalid Settings envelope: {:?}", response.error);
-            assert_eq!(assert_settings_disk(host, root), before);
-            assert_eq!(fs::read(&path).expect("unchanged Settings bytes"), raw);
-        }
-        for (variant, value) in [Value::Null, json!("false"), json!(0), json!([]), json!({}), json!({"proxyEnabled":42})].into_iter().enumerate() {
-            let params = if value.is_object() { value } else { json!({"proxyEnabled": value}) };
-            let before = assert_settings_disk(host, root);
-            let response = identified_request(host, &format!("compatibility-invalid-{variant}"), "settings.setNetworkProxyEnabled", params);
-            assert!(!response.ok);
-            assert!(response.result.is_none());
-            assert_eq!(response.error.as_deref(), Some("invalid request: settings.setNetworkProxyEnabled requires boolean proxyEnabled"));
-            assert_eq!(assert_settings_disk(host, root), before);
-        }
-
-        // A deterministic filesystem fault blocks both mutation types before
-        // they can publish or change the in-memory canonical state.
-        let temp = path.with_extension("json.tmp");
-        fs::create_dir(&temp).expect("reserve the Settings atomic replacement path");
-        let before = assert_settings_disk(host, root);
-        let raw = fs::read(&path).expect("original Settings bytes");
-        for (label, method, params) in [
-            ("typed-write-fault", "settings.mutateNetworkProxy",
-                json!({"mutation":{"type":"setMode","mode":"disabled"}})),
-            ("compat-write-fault", "settings.setNetworkProxyEnabled",
-                json!({"proxyEnabled":false})),
-        ] {
-            let response = identified_request(host, label, method, params);
-            assert!(!response.ok);
-            assert!(response.result.is_none());
-            assert!(response.error.as_deref().unwrap_or("").contains("write product Settings temporary file:"));
-            assert_eq!(settings_snapshot(host), before, "failed persistence cannot update memory");
-            assert_eq!(fs::read(&path).expect("read unmodified Settings"), raw);
-        }
-        fs::remove_dir(&temp).expect("clear only synthetic fault fixture");
-        settings_mutation(host, root, "typed-write-recovery",
-            json!({"type":"setMode","mode":"disabled"}), true);
-        settings_enabled(host, root, "compat-write-recovery", true);
-    }
-
-    // The same complete oracle is applied after a brand new process has
-    // reconstructed the canonical owner, not a cached state or old test seam.
-    let expected = json!({
+    let retained = json!({
         "version":2,
         "network":{"proxy":{
             "mode":"enabled", "selected":e.clone(),
-            "list":[b,c.clone(),c,e],
+            "list":[b.clone(),c.clone(),c.clone(),e.clone()],
             "tryIpv6":false, "useProxyForCalls":true, "checkIpWarningShown":true,
             "rotation":{"enabled":true,"timeoutSeconds":42,"preferredIndices":[3,0,2]}
         }}
     });
-    let restored = assert_settings_disk(host, root);
-    assert_eq!(restored, expected, "all typed Settings and surviving preference order must survive restart");
-    let repeated = settings_enabled(host, root, "restart-idempotent-publication", true);
-    assert_eq!(repeated, expected, "restart same-value publication cannot rewrite authoritative state");
-    assert_no_messaging_event(host);
+    let mut expected = if restart {
+        retained.clone()
+    } else {
+        json!({"version":2,"network":{"proxy":{
+            "mode":"system", "selected":null, "list":[], "tryIpv6":true,
+            "useProxyForCalls":false, "checkIpWarningShown":false,
+            "rotation":{"enabled":false,"timeoutSeconds":10,"preferredIndices":[]}
+        }}})
+    };
+    assert_eq!(settings_snapshot(host), expected,
+        "the complete Settings owner must survive the process/issuer boundary");
+    if restart {
+        assert_persisted_settings(host, root, &expected);
+    } else {
+        assert!(!path.exists(), "new owner must not create Settings until a real mutation");
+    }
+    drain_existing_account_agent_events(host);
+
+    // Preserve the existing seventeen dispatch cases, then exercise reverse
+    // middle/last removal and idempotence through the same public owner. Each
+    // delta is an independent state oracle; response/disk equality alone would
+    // miss a mutation that consistently overwrote an unrelated preference.
+    let cases = [
+        ("list", json!({"type":"setList","list":[a.clone(),b.clone(),c.clone()]}),
+            json!({"/network/proxy/list":[a.clone(),b.clone(),c.clone()],"/network/proxy/rotation/preferredIndices":[]}), false),
+        ("selected-and-mode", json!({"type":"setSelectedAndMode","proxy":b.clone(),"mode":"enabled"}),
+            json!({"/network/proxy/selected":b.clone(),"/network/proxy/mode":"enabled"}), true),
+        ("preference", json!({"type":"setRotationPreferredIndices","indices":[0,1,2,1,-1,7]}),
+            json!({"/network/proxy/rotation/preferredIndices":[0,1,2]}), false),
+        ("remove-first", json!({"type":"remove","proxy":a.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone()],"/network/proxy/rotation/preferredIndices":[0,1]}), false),
+        ("insert", json!({"type":"insert","index":1,"proxy":d.clone()}),
+            json!({"/network/proxy/list":[b.clone(),d.clone(),c.clone()],"/network/proxy/rotation/preferredIndices":[0,2]}), false),
+        ("replace", json!({"type":"replace","was":d.clone(),"proxy":c.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone(),c.clone()]}), false),
+        ("add", json!({"type":"add","proxy":e.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone(),c.clone(),e.clone()]}), false),
+        ("promote", json!({"type":"promoteRotationPreferredIndex","index":3}),
+            json!({"/network/proxy/rotation/preferredIndices":[3,0,2]}), false),
+        ("selected", json!({"type":"setSelected","proxy":e.clone()}),
+            json!({"/network/proxy/selected":e.clone()}), true),
+        ("ipv6", json!({"type":"setTryIpv6","enabled":false}),
+            json!({"/network/proxy/tryIpv6":false}), true),
+        ("calls", json!({"type":"setUseProxyForCalls","enabled":true}),
+            json!({"/network/proxy/useProxyForCalls":true}), false),
+        ("warning", json!({"type":"setCheckIpWarningShown","shown":true}),
+            json!({"/network/proxy/checkIpWarningShown":true}), false),
+        ("rotate", json!({"type":"setRotationEnabled","enabled":true}),
+            json!({"/network/proxy/rotation/enabled":true}), false),
+        ("timeout-default", json!({"type":"setRotationTimeout","seconds":-1}),
+            json!({"/network/proxy/rotation/timeoutSeconds":10}), false),
+        ("mode-disabled", json!({"type":"setMode","mode":"disabled"}),
+            json!({"/network/proxy/mode":"disabled"}), true),
+        ("timeout-42", json!({"type":"setRotationTimeout","seconds":42}),
+            json!({"/network/proxy/rotation/timeoutSeconds":42}), false),
+        ("mode-enabled", json!({"type":"setMode","mode":"enabled"}),
+            json!({"/network/proxy/mode":"enabled"}), true),
+        ("reverse-preferred", json!({"type":"setRotationPreferredIndices","indices":[3,2,1,0]}),
+            json!({"/network/proxy/rotation/preferredIndices":[3,2,1,0]}), false),
+        ("remove-middle-preserves-neighbor", json!({"type":"remove","proxy":c.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone(),e.clone()],"/network/proxy/rotation/preferredIndices":[2,1,0]}), false),
+        ("remove-last-preserves-order", json!({"type":"remove","proxy":e.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone()],"/network/proxy/rotation/preferredIndices":[1,0]}), false),
+        ("restore-middle", json!({"type":"insert","index":1,"proxy":c.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone(),c.clone()],"/network/proxy/rotation/preferredIndices":[2,0]}), false),
+        ("restore-last", json!({"type":"add","proxy":e.clone()}),
+            json!({"/network/proxy/list":[b.clone(),c.clone(),c.clone(),e.clone()]}), false),
+        ("same-list-clears-preferences", json!({"type":"setList","list":[b.clone(),c.clone(),c.clone(),e.clone()]}),
+            json!({"/network/proxy/rotation/preferredIndices":[]}), false),
+        ("restore-preference", json!({"type":"setRotationPreferredIndices","indices":[0,2,2,-1,7]}),
+            json!({"/network/proxy/rotation/preferredIndices":[0,2]}), false),
+        ("promote-restored", json!({"type":"promoteRotationPreferredIndex","index":3}),
+            json!({"/network/proxy/rotation/preferredIndices":[3,0,2]}), false),
+        ("same-promotion", json!({"type":"promoteRotationPreferredIndex","index":3}), json!({}), false),
+        ("invalid-promotion", json!({"type":"promoteRotationPreferredIndex","index":99}), json!({}), false),
+        ("selected-none", json!({"type":"setSelected","proxy":null}),
+            json!({"/network/proxy/selected":null}), true),
+        ("restore-selected", json!({"type":"setSelected","proxy":e.clone()}),
+            json!({"/network/proxy/selected":e.clone()}), true),
+    ];
+    let typed_count = cases.len();
+    assert_eq!(typed_count, 29, "all fifteen mutation kinds plus intermediate-state cases");
+    for (label, mutation, delta, publication) in cases {
+        for (pointer, value) in delta.as_object().expect("independent Settings delta") {
+            *expected.pointer_mut(pointer).expect("existing canonical Settings field") = value.clone();
+        }
+        settings_mutation(host, root, label, mutation, &expected, publication);
+    }
+    assert_eq!(expected, retained);
+
+    // Keep the original six compatibility retries and add false while Disabled.
+    // The setup and recovery commands are separate from the 29-row typed table.
+    expected["network"]["proxy"]["mode"] = json!("disabled");
+    settings_mutation(host, root, "compatibility-disabled-setup",
+        json!({"type":"setMode","mode":"disabled"}), &expected, true);
+    let compatibility = [
+        (false, "disabled"), (true, "enabled"), (true, "enabled"),
+        (false, "system"), (false, "system"), (true, "enabled"), (true, "enabled"),
+    ];
+    let compatibility_count = compatibility.len();
+    for (variant, (enabled, mode)) in compatibility.into_iter().enumerate() {
+        expected["network"]["proxy"]["mode"] = json!(mode);
+        settings_enabled(host, root, &format!("compatibility-{variant}"), enabled, &expected);
+    }
+
+    // Retain every original invalid typed shape, plus omitted/non-object outer
+    // envelopes and malformed endpoint/operation/boolean cases.
+    let invalid = [
+        (json!({}), "invalid request: settings.mutateNetworkProxy requires mutation", true),
+        (json!({"mutation": null}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setMode","mode":"bogus"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setList","list":"not-an-array"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"insert","index":"bad","proxy":b.clone()}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setSelected","proxy":false}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setRotationPreferredIndices","indices":[{}]}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setRotationTimeout","seconds":4294967296_i64}}), "invalid request: settings.mutateNetworkProxy rotation timeout is out of range", true),
+        (Value::Null, "invalid request: settings.mutateNetworkProxy requires mutation", true),
+        (json!([]), "invalid request: settings.mutateNetworkProxy requires mutation", true),
+        (json!({"mutation": []}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"unknown"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setSelected","proxy":{"host":"incomplete.example.invalid"}}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+        (json!({"mutation": {"type":"setTryIpv6","enabled":"false"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:", false),
+    ];
+    let invalid_typed_count = invalid.len();
+    let raw = fs::read(&path).expect("retained valid Settings document");
+    for (variant, (params, error, exact)) in invalid.into_iter().enumerate() {
+        let label = format!("settings-invalid-{variant}");
+        let response = identified_request(host, &label, "settings.mutateNetworkProxy", params);
+        assert!(!response.ok);
+        assert!(response.result.is_none());
+        if exact {
+            assert_eq!(response.error.as_deref(), Some(error));
+        } else {
+            assert!(response.error.as_deref().unwrap_or("").starts_with(error),
+                "unexpected invalid Settings envelope: {:?}", response.error);
+        }
+        assert!(serde_json::to_value(&response).expect("serialize invalid Settings response").get("result").is_none());
+        assert_no_new_feature_or_shell_event(host, &label);
+        assert_persisted_settings(host, root, &expected);
+        assert_eq!(fs::read(&path).expect("unchanged Settings bytes"), raw);
+    }
+    let invalid_compatibility = [
+        Value::Null, json!({}), json!({"proxyEnabled":null}), json!({"proxyEnabled":"false"}),
+        json!({"proxyEnabled":0}), json!({"proxyEnabled":[]}), json!({"proxyEnabled":42}),
+    ];
+    let invalid_compatibility_count = invalid_compatibility.len();
+    for (variant, params) in invalid_compatibility.into_iter().enumerate() {
+        assert_refused_request(host, HostRequest {
+            id: Some(json!(format!("compatibility-invalid-{variant}"))),
+            method: "settings.setNetworkProxyEnabled".into(), params,
+        }, "invalid request: settings.setNetworkProxyEnabled requires boolean proxyEnabled");
+        assert_persisted_settings(host, root, &expected);
+        assert_eq!(fs::read(&path).expect("unchanged Settings bytes"), raw);
+    }
+
+    // Obstruct only this fixture's temporary path. Both mutation kinds must
+    // fail before publication or changing the complete active/durable state.
+    let temp = path.with_extension("json.tmp");
+    fs::create_dir(&temp).expect("reserve the Settings atomic replacement path");
+    for (label, method, params) in [
+        ("typed-write-fault", "settings.mutateNetworkProxy",
+            json!({"mutation":{"type":"setMode","mode":"disabled"}})),
+        ("compat-write-fault", "settings.setNetworkProxyEnabled",
+            json!({"proxyEnabled":false})),
+    ] {
+        let response = identified_request(host, label, method, params);
+        assert!(!response.ok);
+        assert!(response.result.is_none());
+        assert!(response.error.as_deref().unwrap_or("").starts_with(
+            "host operation failed: write product Settings temporary file:"
+        ));
+        assert!(serde_json::to_value(&response).expect("serialize failed Settings write").get("result").is_none());
+        assert_no_new_feature_or_shell_event(host, label);
+        assert_eq!(settings_snapshot(host), expected, "failed persistence cannot update memory");
+        assert_eq!(fs::read(&path).expect("read unmodified Settings"), raw);
+    }
+    fs::remove_dir(&temp).expect("clear only synthetic fault fixture");
+    expected["network"]["proxy"]["mode"] = json!("disabled");
+    settings_mutation(host, root, "typed-write-recovery",
+        json!({"type":"setMode","mode":"disabled"}), &expected, true);
+    expected["network"]["proxy"]["mode"] = json!("enabled");
+    settings_enabled(host, root, "compat-write-recovery", true, &expected);
+    assert_eq!(expected, retained, "complete Settings and surviving preference order must remain intact");
+    settings_enabled(host, root, "restart-idempotent-publication", true, &retained);
+    eprintln!("NMR-AC-28 Settings matrix: restart={restart}, {typed_count} typed rows across 15 kinds, 1 Disabled setup, {compatibility_count} compatibility variants, {invalid_typed_count} invalid typed requests, {invalid_compatibility_count} invalid compatibility requests, 2 write failures, 2 recoveries and 1 final idempotent publication; complete response/memory/disk and per-command event oracles");
+    retained
 }
 
 fn legacy_child_case(root: &Path, restart: bool) {
@@ -849,7 +1008,7 @@ fn legacy_child_case(root: &Path, restart: bool) {
         assert!(!contains_bot(&host, BOT_RETAINED));
         create(&host, BOT_RETAINED);
     }
-    assert_settings_restart_matrix(&host, root, restart);
+    let _ = assert_settings_restart_matrix(&host, root, restart);
     assert_eq!(fs::read(credential).expect("retained Native credential"), expected_credential);
     assert!(!root.join("app-host/feature-host/account-session.json").exists());
     drop(host);
@@ -1147,6 +1306,7 @@ fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
     } else {
         create(&host, BOT_MESSAGING_B);
     }
+    assert_legacy_auth_matrix(&host);
     assert_standalone_messaging_unavailable(&host, &second.account_id);
     assert_retained_automation_boundary(&host, root, &second.account_id, true);
     assert_eq!(messaging_entries(root), before, "account switch touched standalone messaging state");
@@ -1156,6 +1316,7 @@ fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
     fs::remove_file(&credential).expect("Native logout removes only its credential");
     assert_eq!(auth(&host)["loggedIn"], false);
     assert!(account.current_scope().is_err());
+    assert_legacy_auth_matrix(&host);
     assert_standalone_messaging_unavailable(&host, &second.account_id);
     assert_retained_automation_boundary(&host, root, &second.account_id, false);
     assert!(!contains_bot(&host, BOT_MESSAGING_A));
@@ -1169,6 +1330,7 @@ fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
     assert!(returned.generation > second.generation);
     assert!(contains_bot(&host, BOT_MESSAGING_A));
     assert!(!contains_bot(&host, BOT_MESSAGING_B));
+    assert_legacy_auth_matrix(&host);
     assert_standalone_messaging_unavailable(&host, &returned.account_id);
     assert_retained_automation_boundary(&host, root, &returned.account_id, true);
     assert_eq!(fs::read(&credential).expect("Native credential remains"), expected);
