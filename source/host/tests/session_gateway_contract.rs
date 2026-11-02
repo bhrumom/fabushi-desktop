@@ -1761,6 +1761,50 @@ fn fixture_remote_human_message(
 }
 
 #[test]
+fn shipping_human_known_refresh_preserves_omitted_reactions_and_clears_explicit_empty() {
+    let root = temp_root("human-known-refresh");
+    let mut initial = fixture_remote_human_message(51, 2, 1, "canonical", None, json!([]));
+    initial["reactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
+    let mut partial = initial.clone();
+    partial.as_object_mut().expect("message object").remove("reactions");
+    partial["readAt"] = json!("2026-10-05T02:00:00Z");
+    let mut clear = partial.clone();
+    clear["reactions"] = json!([]);
+    clear["readAt"] = json!("2026-10-05T01:30:00Z");
+    let pages = [initial, partial, clear].into_iter().map(|message|
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true, "data":{"messages":[message]}
+        }))
+    ).collect::<Vec<_>>();
+    let (url, server) = spawn_human_message_fixture(pages);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2","Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let first = runtime.sync_human_conversation(&conversation_id).expect("initial");
+    assert_eq!(first.len(),1);
+    assert_eq!(first[0]["reactions"],json!([{"emoji":"👍","by":"2"}]));
+    let second = runtime.sync_human_conversation(&conversation_id).expect("partial refresh");
+    assert_eq!(second.len(),1,"known row has stable identity");
+    assert_eq!(second[0]["reactions"],first[0]["reactions"]);
+    assert_eq!(second[0]["readAt"],json!("2026-10-05T02:00:00Z"));
+    let third = runtime.sync_human_conversation(&conversation_id).expect("explicit removal");
+    assert_eq!(third.len(),1);
+    assert_eq!(third[0]["reactions"],json!([]));
+    assert_eq!(third[0]["readAt"],second[0]["readAt"],"read state is monotonic");
+    runtime.shutdown();
+    let reopened = human_message_fixture_runtime(&root,&url);
+    let owner = reopened.open_human_conversation_db_owner(&conversation_id).expect("reopen owner");
+    let stored = owner.get_transcript_entries().expect("durable entries");
+    assert_eq!(stored.len(),1);
+    assert_eq!(stored[0]["reactions"],json!([]));
+    assert_eq!(stored[0]["readAt"],second[0]["readAt"]);
+    let requests = server.join().expect("fixture requests");
+    assert_eq!(requests.len(),3);
+    reopened.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap() {
     let root = temp_root("nmr-foreign");
     let forbidden_resource = json!([{

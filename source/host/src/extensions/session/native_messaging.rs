@@ -68,8 +68,9 @@ pub struct FabushiRemoteHumanMessage {
     pub reply_to_message_id: Option<Value>,
     #[serde(default)]
     pub attachments: Vec<FabushiRemoteHumanAttachment>,
+    // Missing means a partial snapshot. An explicit [] is an authoritative clear.
     #[serde(default)]
-    pub reactions: Vec<FabushiRemoteHumanReaction>,
+    pub reactions: Option<Vec<FabushiRemoteHumanReaction>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -657,6 +658,28 @@ impl FabushiNativeMessagingClient {
         before: Option<&str>,
         limit: usize,
     ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
+        self.list_direct_messages_window(peer_human_id, before, None, limit)
+    }
+
+    pub fn list_direct_messages_after(
+        &self,
+        peer_human_id: &str,
+        after_id: u64,
+        limit: usize,
+    ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
+        if after_id == 0 || after_id > 9_007_199_254_740_991 {
+            return Err("Fabushi Human sync afterId is not a positive safe integer".into());
+        }
+        self.list_direct_messages_window(peer_human_id, None, Some(after_id), limit)
+    }
+
+    fn list_direct_messages_window(
+        &self,
+        peer_human_id: &str,
+        before: Option<&str>,
+        after_id: Option<u64>,
+        limit: usize,
+    ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let credentials = self.read_bound_credentials()?;
         let mut url = self.endpoint("/api/social/messages")?;
@@ -667,27 +690,24 @@ impl FabushiNativeMessagingClient {
             if let Some(before) = before.map(str::trim).filter(|value| !value.is_empty()) {
                 query.append_pair("before", before);
             }
+            if let Some(after_id) = after_id {
+                query.append_pair("afterId", &after_id.to_string());
+            }
         }
-        let response = self
-            .client
+        let response = self.client
             .get(url)
             .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
-            .header(
-                "x-fabushi-device-id",
-                required_trimmed(&credentials.device_id, "deviceId")?,
-            )
+            .header("x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?)
             .header("accept", "application/json")
             .send()
             .map_err(|error| format!("Fabushi Human message sync failed: {error}"))?;
         let status = response.status();
-        let body = response
-            .text()
+        let body = response.text()
             .map_err(|error| format!("Fabushi Human message sync response could not be read: {error}"))?;
         let envelope: ListEnvelope = serde_json::from_str(&body).map_err(|error| {
-            format!(
-                "Fabushi Human message sync response was invalid JSON (HTTP {}): {error}",
-                status.as_u16()
-            )
+            format!("Fabushi Human message sync response was invalid JSON (HTTP {}): {error}",
+                status.as_u16())
         })?;
         if !status.is_success() || !envelope.success {
             return Err(format!(
@@ -696,7 +716,8 @@ impl FabushiNativeMessagingClient {
                 envelope.error.unwrap_or_else(|| "unknown backend error".into())
             ));
         }
-        Ok(envelope.data.map(|data| data.messages).unwrap_or_default())
+        envelope.data.map(|data| data.messages)
+            .ok_or_else(|| "Fabushi Human message sync response omitted the messages envelope".into())
     }
 
     pub fn get_human_call_ice_servers(

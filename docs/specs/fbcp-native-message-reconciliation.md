@@ -115,3 +115,26 @@ NMR-AC-12: Add three real Host/SQLite/loopback behaviors to the existing ten `sh
 Provenance: `bhrumom/fabushi@edde714def34e6eb5ae133dba20790c80a355c85`, `fabushi/web/src/handlers/friends.js` blob `e3c6461a01181eb66f1dccbb3845fea530ec072e`: `handleSetDirectMessageReaction` authorizes the authenticated sender/recipient and writes only that user; GET and POST use `loadReactionMap`. Migration `fabushi/web/migrations/20261005_direct_message_remote_semantics.sql`, blob `048c6f922b726460ba7eea8c4ef5551b62b2a4ca`, uniquely keys message/user/emoji. The two-person bound follows the normal authorized write path and that key. The SQL table has no participant CHECK and the aggregator does not filter corrupted third-party rows, so malformed stored/service results still require client rejection. This source commit is inspected backend code, not proof of its live deployment.
 
 Known-row refresh, complete history-range coverage, GET/POST freshness races, monotonic read receipts, packaged UI and full service acceptance remain separate work. Rollback is a code-only revert of these guards/projections and tests; there is no data deletion or schema migration, and invalid responses do not overwrite prior durable reaction state.
+
+### Round 5 incremental prerequisite — known message state refresh (NMR-21a)
+
+Following successful prerequisite run 41402071662 at exact H
+68d4f07688741e8f54b35f3746a087f7fdd12108, the existing native
+Session/Transcript owner must refresh known authorized remote Human message
+rows, rather than using an overlap ID to skip state changes. An omitted
+reaction field in a partial snapshot preserves the last durable reaction
+state; an explicit empty reaction list clears it. Missing or older read
+timestamps cannot regress a newer valid stored receipt. Preserve local
+metadata, canonical identity and forward provenance during refresh.
+The native HTTP client also exposes the server's positive safe-integer
+afterId lookup and rejects missing success envelopes.
+
+NMR-AC-13a: the real Host/SQLite/loopback fixture refreshes one known ID
+with a partial reaction snapshot and then an explicit empty list. Reopen
+proves one stable canonical ID and monotonic read receipt. The additional
+shipping_human_known_refresh_preserves_omitted_reactions_and_clears_explicit_empty
+test must actually execute on the new exact H with the previous 13 Human
+tests, 4 Agent nonce cases and shipping compile/protocol/TCP gates.
+This first increment does not close durable history-range coverage,
+same-conversation reaction concurrency, POST restart recovery, saturated
+time-cursor handling, full product acceptance or independent ACCEPT.

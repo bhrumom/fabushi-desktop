@@ -2028,7 +2028,9 @@ impl ProductionSessionWorkers {
         }) {
             return Err("remote Human canonical identity conflicts with the persisted sender".into());
         }
-        Self::validate_remote_human_reactions(&remote.reactions)?;
+        if let Some(reactions) = remote.reactions.as_deref() {
+            Self::validate_remote_human_reactions(reactions)?;
+        }
 
         // Peer request provenance can never acknowledge a local intent. On our own
         // outgoing echo, both canonical-ID and nonce lookups must pass the same
@@ -2192,27 +2194,32 @@ impl ProductionSessionWorkers {
         } else {
             sender_id.as_str()
         };
-        let projected_reactions =
-            Self::project_remote_human_reactions(&remote.reactions, peer_human_id);
-        object.insert(
-            "remoteReactions".into(),
-            serde_json::to_value(&remote.reactions).map_err(|error| {
-                format!("remote Human reactions could not be projected: {error}")
-            })?,
-        );
-        object.insert(
-            "reactions".into(),
-            serde_json::Value::Array(projected_reactions),
-        );
+        if let Some(reactions) = remote.reactions.as_deref() {
+            let projected_reactions =
+                Self::project_remote_human_reactions(reactions, peer_human_id);
+            object.insert("remoteReactions".into(), serde_json::to_value(reactions)
+                .map_err(|error| format!("remote Human reactions could not be projected: {error}"))?);
+            object.insert("reactions".into(), serde_json::Value::Array(projected_reactions));
+        }
         if let Some(current) = existing.iter().find(|candidate| {
             candidate.get("id").and_then(serde_json::Value::as_str)
                 == entry.get("id").and_then(serde_json::Value::as_str)
         }) {
-            if let Some(context) = current.get("forwardContext").cloned() {
-                entry
-                    .as_object_mut()
-                    .ok_or_else(|| "remote Human message projection failed".to_string())?
-                    .insert("forwardContext".into(), context);
+            // A remote refresh must not erase local identity or delivery context.
+            if let (Some(next), Some(prior)) = (entry.as_object_mut(), current.as_object()) {
+                for (key, value) in prior {
+                    if !next.contains_key(key) {
+                        next.insert(key.clone(), value.clone());
+                    }
+                }
+            }
+            if let Some(read_at) = current.get("readAt").and_then(serde_json::Value::as_str) {
+                let newer = entry.get("readAt").and_then(serde_json::Value::as_str)
+                    .is_some_and(|value| value >= read_at);
+                if !newer {
+                    entry.as_object_mut().expect("entry is an object")
+                        .insert("readAt".into(), serde_json::json!(read_at));
+                }
             }
             if current == &entry {
                 return Ok(current.clone());
@@ -2364,9 +2371,11 @@ impl ProductionSessionWorkers {
                     break;
                 }
             }
-            let unseen_start = overlap_at.map_or(0, |index| index + 1);
-            if unseen_start < admitted.len() {
-                unseen_pages.push(admitted[unseen_start..].to_vec());
+            // Refresh already-known IDs too: reaction, read and resource state may change
+            // on another device after the first materialization.
+            let _ = overlap_at;
+            if !admitted.is_empty() {
+                unseen_pages.push(admitted);
             }
 
             if overlap_at.is_some() || page.len() < PAGE_LIMIT {
