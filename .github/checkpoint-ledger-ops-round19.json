@@ -1,0 +1,35 @@
+{
+  "schema": "fabushi.round19.ledger-evidence-append.v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "expected_input_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
+  "expected_output_blob": "aadb1c99f17fe420406e463b3548c267000f37bd",
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "append": {
+        "test_execution_evidence": [
+          "round19-resumption-20261102: exact5281b87d878c9223dc9cd1c100c0f56186c81173/run41460570824 attempt1 completed/failure; full reconciliation125328236617 Human33/Agent4/private3 and UI125328237237 Transcript16 passed. shipping125328237120 composition12/Native6/FeatureHost7/Host6/ABI7 then gateway E0004; CLI3/gateway5/approval2 and all later gates were not executed. Full log digests in projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+          "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 attempt1 completed/success. Reconciliation125511939428 Human44/sharebox1/journal12/Agent4/credential3/HTTP1; shipping125511939405 CLI3/gateway5/library11, six proxy permutations, protocol122/TCP9/actualcopy4+3 expected negatives; actual AppHost160158128bytes SHA256708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b. This does not qualify later Human47 or expanded journal assertions. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+        ],
+        "test_evidence": [
+          "NMR-47e authored oracle extension: source/host/src/extensions/session/forward_batch_journal.rs#tests::stale_same_batch_snapshot_cannot_regress_completed_destination; two independent SQLite handles, exact raw metadata preservation after stale initial/mixed/second-terminal refusals, second valid batch/unrelated metadata preservation, fresh incomplete-error recovery, identical terminal replay and close/reopen. Existing test name and journal12 count retained; containing-H Actions required. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+        ]
+      },
+      "note": "\n\nRound19 resumed verification preserves all concurrent code, source reviews and ledger fields. Original gateway/permutation/metadata repairs are already present; they are not reapplied from stale preparation. Current completed-to-pending protection is NMR-47e, already delivered in4f1070d and qualified in94dcf7a. Only the existing journal case receives additional independent persistence oracles; no new message owner/schema/state or production guard is introduced. Exact936 UI18/settlement5/Chromium16, Electron10/8/3/16/28/18 and Windows11 passed, while its two macOS Rust jobs were queued at20:18:05UTC. Full source/platform/package/service/Bot/independent ACCEPT remains open. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+    },
+    {
+      "id": "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001",
+      "append": {
+        "requirement_ids": [
+          "NMR-41",
+          "NMR-AC-32"
+        ],
+        "test_execution_evidence": [
+          "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 shipping125511939405 composition12 passed; proxy matrix16 ordered subsets/48 removals/48 repeated no-ops, all6 full permutations/18 full-permutation deletions,48 actual per-case markers. This is one existing Rust matrix test, not48 top-level cases. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+        ]
+      },
+      "note": "\n\nRound19 resumed full-log verification closes the requested six-permutation execution evidence at exact94dcf7a while preserving current ProductSettingsOwner, retained data and all other responsibility fields. Complete Native profile consumption, full Settings/platform/security/upgrade/rollback and independent ACCEPT are not inferred from the matrix. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+    }
+  ]
+}
