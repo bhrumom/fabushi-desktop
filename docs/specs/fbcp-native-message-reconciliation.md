@@ -2023,3 +2023,48 @@ state decoder; no new state, storage, wire format or runtime owner is introduced
 Rollback is an ordinary test/workflow revert; no user data or production format
 migration is involved. All full source, real-service, supported-package, UI/Bot,
 upgrade/rollback and independent acceptance requirements remain open.
+
+
+### Recovery round15: strict retained-source discovery (NMR-DATA-ADMISSION-01)
+
+The existing Session gateway and `ProductionSessionWorkers` retain authority
+for Native forwarding intent, source journals and destination transcript/outbox.
+Current Human creation, explicit retry, reply/history/resource contracts and
+generic Agent recovery remain with their existing owners.
+
+- NMR-DATA-ADMISSION-01: Initial request-ID discovery and ordinary restart
+  recovery enumerate all retained source journals before dispatch. Missing,
+  unreadable or invalid source identity is reported; it cannot release an
+  old request ID for another source or silently authorize a second send. Keep
+  durable own-account revoked-source denial, other-account journal isolation,
+  ordinary roster compatibility and existing metadata/SQLite owners.
+- FBCP-HUMAN-CREATE-04 follow-up: Actual f544 Actions exposed deletion of
+  retained WAL/SHM/journal when a 50-byte NOTADB main reached the sidecar bypass.
+  Preserve the current nonempty-short-main refusal and SQLite immutable
+  negative main-format probe. Preserve the peer's PRIVATE_CACHE setting and propagation of all
+  schema_version errors; no corruption-error exception is introduced. The probe does not establish WAL integrity
+  or current source identity. Before any SQLite open, a missing or zero-byte
+  main with any known -wal/-shm/-journal entry refuses, including empty or
+  symbolic-link entries. Zero-byte main with no sidecars and a genuinely
+  missing store with no sidecars retain existing creation/recovery behavior.
+  Keep all current creation14/storage3 cases, including real retained-WAL and
+  cross-process lock controls, six-byte and truncated/full-header negatives,
+  healthy schema-only recovery and the unrelated-sentinel positive.
+  Zero/missing-main and singleton-sidecar variants extend the existing
+  first-call/retry/restart byte-preservation case without increasing its count.
+- NMR-AC-DATA-ADMISSION-01: Extend the real process/HTTP/SQLite recovery fixture
+  with source policy loss, another account, invalid metadata, missing DB and
+  plain no-sidecar NOTADB cases. Require retained bytes, no dispatch on failed
+  enumeration and no replacement source journal. Preserve all current gates,
+  including concurrent Human retry cases; Human68 is current67 plus this one
+  strict recovery case. Exact containing-H Actions remain required.
+
+The unpublished broader admission prototype is withdrawn: its readonly_shm
+preflight is unsafe with pinned SQLite3.51.3 corrupt-WAL handling, and an
+independent main-file open/close risks same-process POSIX locks. This batch adds
+neither path, FFI, dependency upgrade nor alternate initializer. The existing
+immutable probe uses SQLite's standard VFS lifecycle and is only a conservative
+negative check; it does not accept arbitrary corrupt WAL, hot journals or crash
+states. Multi-AppHost forward uniqueness, complete source/legal accounting,
+live Worker/afterId=0, supported signed packages, Bot regression, upgrade/rollback
+and independent ACCEPT remain open.

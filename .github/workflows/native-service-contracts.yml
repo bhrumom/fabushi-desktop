@@ -286,7 +286,8 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 67 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 68 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Fq 'shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy ... ok' artifacts/native-message/session-gateway.log
           for case_name in \
             shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload \
             shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation \

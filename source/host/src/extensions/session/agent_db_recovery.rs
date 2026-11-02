@@ -128,7 +128,10 @@ pub(super) fn probe_human_conversation_store(
 ) -> Result<(), AgentDbRecoveryError> {
     // A raw open/read/close can release another SQLite connection's POSIX
     // locks. Only inspect metadata here; let SQLite manage all file handles.
-    let main_len = match std::fs::metadata(db_path) {
+    let main_len = match std::fs::symlink_metadata(db_path) {
+        Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_file() => {
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        }
         Ok(metadata) => metadata.len(),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => 0,
         Err(error) => return Err(error.into()),
@@ -138,12 +141,11 @@ pub(super) fn probe_human_conversation_store(
     for suffix in ["-wal", "-shm", "-journal"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
-        match std::fs::metadata(PathBuf::from(path)) {
-            Ok(metadata) if metadata.len() > 0 => {
+        match std::fs::symlink_metadata(PathBuf::from(path)) {
+            Ok(metadata) => {
                 has_retained_sidecar = true;
-                has_snapshot_sidecar |= suffix != "-shm";
+                has_snapshot_sidecar |= suffix != "-shm" && metadata.len() > 0;
             }
-            Ok(_) => {},
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
             Err(error) => return Err(error.into()),
         }

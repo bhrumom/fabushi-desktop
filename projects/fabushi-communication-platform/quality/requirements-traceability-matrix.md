@@ -699,3 +699,23 @@ The exact containing-H Actions gate requires5/5 plus69 successful scenario marke
 HTTP owner6, native handoff7 and actual AppHost compilation; authoring is not execution.
 Receipt: `projects/telegram-desktop-rust/evidence/round25-native-response-binding.json`.
 All independent/source/service/publisher/signed-package/full product ACCEPT gates remain open.
+
+## Recovery round15 — retained forwarding source discovery
+
+Bindings: NMR-DATA-ADMISSION-01 / NMR-AC-DATA-ADMISSION-01 in the native-message
+Spec; existing responsibility FBCP-NMR-001. Receipt:
+`projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json`.
+
+| Requirement | Existing production owner | Authored oracle and required execution |
+| --- | --- | --- |
+| NMR-DATA-ADMISSION-01 | Session forward/sync → ProductionSessionWorkers → source SandAgentDb journal | Enumerate retained sources before dispatch; unavailable source cannot free requestId or stage another source. Own revoked-source denial and other-account isolation remain. |
+| FBCP-HUMAN-CREATE-04 follow-up | Existing Human creation/cold probe before SQLite open | Preserve the current peer-owned immutable negative check, PRIVATE_CACHE and propagation of every probe error. Missing/zero main with any known sidecar refuses before open; zero/no-sidecar remains valid. Existing creation14/storage3 and all corruption/retry/restart oracles remain; no independent main-file descriptor, FFI or readonly_shm. |
+| NMR-AC-DATA-ADMISSION-01 | Existing native-service-contracts workflow | Human68 = current67 + one strict process/HTTP/SQLite recovery case. Preserve creation14/storage3, resource3/sharebox1/journal12/Agent4/private3/HTTP1 and every current UI, retry, FeatureHost, Host, ABI, protocol/TCP and shipping gate. Containing-H execution is required. |
+
+The broader unpublished seven-case admission prototype is withdrawn, not executed
+or accepted. Pinned-source review qualifies reuse of the existing probe only as
+a negative main-format check, not WAL integrity, identity or arbitrary crash
+preservation. Existing concurrent CREATE01..04 and Human retry implementation
+are preserved, not re-attributed. Source completeness and independent ACCEPT
+are unchanged; historical counts remain scoped to their immutable H and attempt.
+

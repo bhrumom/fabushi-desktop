@@ -236,3 +236,70 @@ existing Session/native_messaging path. No owner or user-data migration is added
 The named NMR-SOCIAL-OWNER spec adds three missing real FeatureHost dispatch
 controls and keeps existing Agent, automation, non-desktop and Test boundaries.
 Exact-H execution remains required; no whole-owner acceptance is promoted.
+
+### Recovery round15: retained forwarding source discovery
+
+The actual Session forward/sync entry continues through
+`ProductionSessionWorkers`, source `SandAgentDb` journals and the existing Native
+HTTP client. Initial request lookup and restart recovery inspect retained source
+journals before dispatch and report missing/unreadable identity, so unavailable
+data cannot release a requestId for another source. Own revoked-source denial,
+other-account isolation and explicit Human retry keep their existing owners.
+
+One added process/HTTP/SQLite case raises the current Human gate from67 to68.
+Existing CREATE01..04 creation14/storage3 retain all current positive/negative
+oracles. Their immutable negative main-format check uses a private pager and
+propagates all schema_version errors; the peer's real retained-WAL and
+cross-process lock cases remain.
+Missing/zero main with any retained -wal/-shm/-journal refuses before any open;
+zero/no-sidecar creation remains compatible. No independent main-file
+descriptor, readonly_shm path, new FFI or alternate initializer is added.
+Arbitrary corrupt-WAL/hot-journal/crash preservation remains unqualified.
+
+This update is recorded in the root inventory. The two dated round26/28 sections
+previously present only in the same-named nested copy are retained below; that
+nested path now links here. Separately named P0 captures remain dated evidence,
+not an additional current state authority.
+
+
+### 2026-11-03 Forward journal recovery and storage admission (round 28)
+
+At the inspected base, renderer `forwardHumanMessage` calls the existing
+Session gateway and `ProductionSessionWorkers`, constructed by the actual
+AppHost entry. Source `SandAgentDb` metadata owns the whole forwarding intent;
+destination transcript/outbox owns local delivery, and the existing Native
+HTTP service owns remote message IDs. Ordinary sync discovers the same journal.
+This round adds expected-key-value CAS to that metadata writer, preventing a
+different batch from being erased by an earlier read/merge snapshot. Source
+policy denial persists on unfinished targets and does not stop unrelated
+history; storage failure still fails closed. No owner, public schema or
+service API is added. Five process/HTTP/SQLite integration cases and one CAS
+regression are authored, not-run at preparation. Remote source permission and
+provenance, attachment retention and simultaneous multi-AppHost cross-source
+uniqueness remain unqualified. See the round28 evidence receipt and exact-H
+Actions artifacts; prior round27 claims of five existing tests are withdrawn.
+
+### 2026-11-02 Forward account and dialog lifetime (round 26)
+
+The actual forwarding entry is ProductionRenderer Transcript action → existing
+ForwardMessageDialog → coordinator searchHumanRecipients/forwardHumanMessage
+→ authenticated Gateway allowlist → Session gateway/ProductionSessionWorkers
+→ the same native client and SandAgentDb transcript/outbox. Electron account
+observation remains identity authority; renderer accountScopeGenerationRef is
+an invalidation projection, not a second identity or persistence owner.
+NMR-46 binds source selection, asynchronous search/send and subsequent roster
+projection to that generation. Dialog close/source change/unmount invalidates
+its own lifetime; renderer unmount invalidates the same generation in layout
+cleanup. No durable send is cancelled or undone by suppressing stale UI.
+
+At inspected H, run41496846317 passed Social9 and HTTP-owner6; the retained
+Social provider's queued/running/waiting recovery must remain intact. Gateway
+HTTP1 proves Bearer authentication and allowlisted method reachability with a
+TestApi echo; Human33 exercises the actual Session service boundary separately.
+It is not an end-to-end real production forwarding proof. AppHost copy4 is
+three fixtures plus one real copied binary; Windows native11 uses an ephemeral
+CI-only signer. The historical authored-only statements below are superseded
+for those bounded scopes. Full signed product/real service/source/legal/ACCEPT
+remain blocked. Whole-destination-plan durability and remote forward provenance
+remain separate gaps in the existing owners. See `projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json`.
+

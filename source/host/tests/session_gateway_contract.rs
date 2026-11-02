@@ -8039,6 +8039,9 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
             rows
         };
         let raw_before = raw_rows();
+        let raw_metadata = || db.query_row("SELECT value FROM kv WHERE key = 'metadata'", [],
+            |row| row.get::<_, String>(0)).expect("read exact retained metadata bytes");
+        let raw_metadata_before = raw_metadata();
         let (events, subscription) = record_human_target_events(&id, row["id"].as_str().unwrap());
         for _ in 0..2 {
             let result = dispatch_production_session_gateway_call(&runtime, "retryHumanMessage", &args)
@@ -8053,16 +8056,24 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
             assert_eq!(owner.get_transcript_entries().expect("unchanged complete rows"), before, "{label}");
             assert_eq!(owner.read_metadata().expect("unchanged metadata"), metadata, "{label}");
             assert_eq!(raw_rows(), raw_before, "invalid stored payload is preserved byte for byte: {label}");
+            assert_eq!(raw_metadata(), raw_metadata_before, "retained metadata bytes are unchanged: {label}");
         }
         assert!(events.lock().expect("admission mutation events").is_empty(), "no retry mutation: {label}");
         subscription.unsubscribe();
         runtime.shutdown(); drop(owner); drop(runtime);
         let reopened = human_message_fixture_runtime(&root, &url);
-        let owner = reopened.open_human_conversation_db_owner(&id).expect("pure reopen owner");
-        assert_eq!(owner.get_transcript_entries().expect("reopened unchanged rows"), before, "{label}");
-        assert_eq!(owner.read_metadata().expect("reopened unchanged metadata"), metadata, "{label}");
+        if matches!(label, "participants-more-than-two" | "participants-duplicate-local"
+            | "participants-empty-peer" | "participants-padded-peer") {
+            assert!(reopened.open_human_conversation_db_owner(&id).is_err(),
+                "cold admission rejects malformed participant pairs: {label}");
+        } else {
+            let owner = reopened.open_human_conversation_db_owner(&id).expect("pure reopen owner");
+            assert_eq!(owner.get_transcript_entries().expect("reopened unchanged rows"), before, "{label}");
+            assert_eq!(owner.read_metadata().expect("reopened unchanged metadata"), metadata, "{label}");
+        }
         assert_eq!(raw_rows(), raw_before, "reopen preserves the same physical identities: {label}");
-        reopened.shutdown(); drop(owner); drop(reopened);
+        assert_eq!(raw_metadata(), raw_metadata_before, "reopen preserves retained metadata bytes: {label}");
+        reopened.shutdown(); drop(reopened);
         drop(db);
         stop.send(()).expect("stop live retry admission listener");
         assert!(server.join().expect("retry admission HTTP fixture").is_empty(),
@@ -8316,5 +8327,223 @@ fn shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_f
         assert_eq!(fixture_request_json(&requests[1])["clientRequestId"], nonce);
         let _ = fs::remove_dir_all(root);
     }
+}
+
+fn retained_admission_files(
+    root: &std::path::Path,
+) -> std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>> {
+    fn visit(
+        root: &std::path::Path,
+        directory: &std::path::Path,
+        files: &mut std::collections::BTreeMap<std::path::PathBuf, Option<Vec<u8>>>,
+    ) {
+        for entry in fs::read_dir(directory).expect("retained fixture directory") {
+            let entry = entry.expect("retained fixture entry");
+            let path = entry.path();
+            let relative = path.strip_prefix(root).expect("fixture path is scoped").to_path_buf();
+            if entry.file_type().expect("fixture file type").is_dir() {
+                files.insert(relative, None);
+                visit(root, &path, files);
+            } else {
+                files.insert(relative, Some(fs::read(path).expect("retained fixture bytes")));
+            }
+        }
+    }
+    let mut files = std::collections::BTreeMap::new();
+    visit(root, root, &mut files);
+    files
+}
+
+#[test]
+fn shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy() {
+    let root = temp_root("forward-strict-recovery");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post(); child.terminate(); server.release_first_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    assert!(source_owner.set_metadata("participantIds", json!(["2", "9"])).unwrap());
+
+    // A real second-account owner writes a valid incomplete batch through the
+    // same Session API. Its journal must remain untouched by account 1 recovery.
+    let agents = root.join("agents");
+    let other = ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        agents.clone(), 500, Some("9".into()), Arc::new(|| None),
+        Arc::new(mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(agents)),
+    );
+    let other_source = other.create_human_conversation("8", "Other account source").unwrap()["id"].as_str().unwrap().to_string();
+    let other_entry = other.append_human_message(&other_source, "other account intent", "other-source", None, None, &[]).unwrap();
+    let other_result = other.forward_human_message(
+        &other_source, other_entry["id"].as_str().unwrap(),
+        &["human-direct-uncreated-target".to_string()], "other-account-forward", false, false,
+    ).unwrap();
+    assert_eq!(other_result["destinations"][0]["status"], "failed");
+    let other_metadata = read_forward_metadata_from_disk(&root, &other_source);
+    other.shutdown(); drop(other);
+
+    runtime.sync_human_conversation(second).expect("revoked source must not starve unrelated history");
+    assert_eq!(server.history_count(), 1);
+    assert_eq!(server.post_count(), 1, "revoked source and another account never dispatch");
+    let denied = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    assert!(denied[0]["destinations"].as_array().unwrap().iter().all(|destination|
+        destination["completed"] == false
+            && destination["error"].as_str().is_some_and(|error| error.contains("participant"))
+    ), "ordinary sync durably records denial even though source membership was removed");
+    assert_eq!(read_forward_metadata_from_disk(&root, &other_source), other_metadata);
+    let candidate = runtime.create_human_conversation("5", "Another valid source").unwrap()["id"]
+        .as_str().unwrap().to_string();
+    let candidate_owner = runtime.open_human_conversation_db_owner(&candidate).unwrap();
+    assert!(candidate_owner.append_transcript_entry(&json!({
+        "id":"human-server-message:52","kind":"message","role":"user",
+        "authorKind":"human","authorId":"5","content":"different source payload",
+        "delivery":"sent","timestampMs":1000.0,"remoteMessageId":"52",
+        "remoteCreatedAt":"1970-01-01T00:00:01Z"
+    })).unwrap());
+    let candidate_metadata = candidate_owner.read_metadata().unwrap();
+    assert!(candidate_metadata.get("humanForwardBatches").is_none());
+    assert!(runtime.search_human_recipients(&candidate, "human-server-message:52", "", 50)
+        .expect("candidate source is eligible under the real permission path")
+        .iter().any(|conversation| conversation["id"] == second));
+    let mut rebound = args.clone();
+    rebound["sourceConversationId"] = json!(candidate);
+    rebound["sourceEntryId"] = json!("human-server-message:52");
+    assert!(forward_gateway_result(&runtime, &rebound).is_err(), "existing identity cannot bind another source");
+    let roster = runtime.list_human_conversations().unwrap();
+    assert!(roster.iter().any(|conversation| conversation["id"] == second));
+    assert!(!roster.iter().any(|conversation| conversation["id"] == source || conversation["id"] == other_source));
+
+    // A cached Arc is not an exemption from persisted identity checks. Keep
+    // the same live owner and restore its original value after each refusal.
+    let source_metadata = source_owner.read_metadata().unwrap();
+    let canonical_raw = source_owner.read_kv("metadata").unwrap().unwrap();
+    let mut invalid_participants = source_metadata.clone();
+    invalid_participants["participantIds"] = json!(["2", "2"]);
+    let invalid_pair_hex = invalid_participants.to_string().as_bytes().iter()
+        .map(|byte| format!("{byte:02x}")).collect::<String>();
+    for invalid_raw in [Some("🙂".to_string()), Some(invalid_pair_hex), None] {
+        match invalid_raw {
+            Some(raw) => assert!(source_owner.write_kv("metadata", &raw).unwrap()),
+            None => assert!(source_owner.delete_kv("metadata").unwrap()),
+        }
+        let retained = source_owner.read_kv("metadata").unwrap();
+        let history_before = server.history_count();
+        assert!(runtime.open_human_conversation_db_owner(source).is_err());
+        assert!(runtime.sync_human_conversation(second).is_err());
+        assert!(forward_gateway_result(&runtime, &rebound).is_err());
+        assert_eq!(server.history_count(), history_before);
+        assert_eq!(server.post_count(), 1);
+        assert_eq!(source_owner.read_kv("metadata").unwrap(), retained);
+        assert!(!source_owner.is_closed(), "failed validation must retain the cached handle");
+        assert!(source_owner.write_kv("metadata", &canonical_raw).unwrap());
+        assert!(Arc::ptr_eq(&source_owner, &runtime.open_human_conversation_db_owner(source).unwrap()));
+    }
+    runtime.shutdown(); drop(source_owner); drop(candidate_owner); drop(runtime); drop(child);
+
+    let path = forward_db_path(&root, source);
+    let directory = path.parent().unwrap();
+    let db = rusqlite::Connection::open(&path).unwrap();
+    db.execute_batch("PRAGMA journal_mode=WAL;").unwrap();
+    drop(db);
+    let healthy = fs::read(&path).unwrap();
+    for failure in ["invalid-metadata", "non-ascii-metadata", "missing-metadata", "missing-db", "nonregular-db", "corrupt-sqlite"] {
+        match failure {
+            "invalid-metadata" | "non-ascii-metadata" | "missing-metadata" => {
+                let db = rusqlite::Connection::open(&path).unwrap();
+                if failure == "missing-metadata" {
+                    db.execute("DELETE FROM kv WHERE key = 'metadata'", []).unwrap();
+                } else {
+                    let raw = if failure == "invalid-metadata" { "7b" } else { "🙂" };
+                    db.execute("UPDATE kv SET value = ?1 WHERE key = 'metadata'", [raw]).unwrap();
+                }
+                drop(db);
+            }
+            "missing-db" => { fs::rename(&path, directory.join("store.db.retained")).unwrap(); }
+            "nonregular-db" => {
+                fs::rename(&path, directory.join("store.db.retained")).unwrap();
+                fs::create_dir(&path).unwrap();
+            }
+            _ => { fs::write(&path, b"retained corrupt source bytes").unwrap(); }
+        }
+        // This bounded oracle does not feed arbitrary retained WAL/journal
+        // bytes to SQLite. The inherited Human opener probes this cold main
+        // file before configuring it, with corruption recovery disabled.
+        for suffix in ["-wal", "-shm", "-journal"] {
+            assert!(!directory.join(format!("store.db{suffix}")).exists(),
+                "the {failure} fixture is closed and has no retained sidecar");
+        }
+        let before = retained_admission_files(directory);
+        let history_before = server.history_count();
+        let runtime = human_message_fixture_runtime(&root, &server.url);
+        assert!(runtime.list_human_conversations().unwrap().iter().any(|conversation| conversation["id"] == second),
+            "ordinary roster remains compatible when one source is unreadable");
+        assert!(runtime.sync_human_conversation(second).is_err(), "recovery must report {failure}");
+        assert!(forward_gateway_result(&runtime, &rebound).is_err(),
+            "{failure} must not free the original requestId for a different valid source");
+        assert_eq!(read_forward_metadata_from_disk(&root, &candidate), candidate_metadata,
+            "failed identity discovery cannot stage a replacement source journal");
+        assert_eq!(server.history_count(), history_before, "no later history after failed recovery enumeration");
+        assert_eq!(server.post_count(), 1, "no dispatch after failed recovery enumeration");
+        runtime.shutdown(); drop(runtime);
+        assert_eq!(retained_admission_files(directory), before, "failed recovery preserves {failure}");
+        if failure == "nonregular-db" {
+            fs::remove_dir(&path).unwrap();
+        }
+        if failure == "missing-db" || failure == "nonregular-db" {
+            fs::rename(directory.join("store.db.retained"), &path).unwrap();
+        } else {
+            fs::write(&path, &healthy).unwrap();
+        }
+        let resumed = human_message_fixture_runtime(&root, &server.url);
+        resumed.sync_human_conversation(second).expect("retry after restoring retained source");
+        assert_eq!(server.history_count(), history_before + 1);
+        assert_eq!(server.post_count(), 1);
+        assert_eq!(read_forward_metadata_from_disk(&root, &other_source), other_metadata);
+        resumed.shutdown(); drop(resumed);
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        for directory_alias in [true, false] {
+            let original = if directory_alias { directory.to_path_buf() } else { path.clone() };
+            // The retained directory must be outside the discovery root so a
+            // second real directory cannot mask a skipped source alias.
+            let retained = if directory_alias {
+                root.join("retained-forward-source")
+            } else {
+                directory.join("store.db.retained")
+            };
+            fs::rename(&original, &retained).unwrap();
+            symlink(&retained, &original).unwrap();
+            let snapshot_root = if directory_alias { retained.as_path() } else { directory };
+            let before = retained_admission_files(snapshot_root);
+            let history_before = server.history_count();
+            let runtime = human_message_fixture_runtime(&root, &server.url);
+            assert!(runtime.open_human_conversation_db_owner(source).is_err());
+            assert!(runtime.sync_human_conversation(second).is_err(),
+                "source aliases must be rejected by complete recovery discovery");
+            assert!(forward_gateway_result(&runtime, &rebound).is_err(),
+                "an aliased source cannot free its durable request identity");
+            assert_eq!(read_forward_metadata_from_disk(&root, &candidate), candidate_metadata);
+            assert_eq!(server.history_count(), history_before);
+            assert_eq!(server.post_count(), 1);
+            runtime.shutdown(); drop(runtime);
+            assert!(fs::symlink_metadata(&original).unwrap().file_type().is_symlink());
+            assert_eq!(fs::read_link(&original).unwrap(), retained);
+            assert_eq!(retained_admission_files(snapshot_root), before);
+            fs::remove_file(&original).unwrap();
+            fs::rename(&retained, &original).unwrap();
+            let resumed = human_message_fixture_runtime(&root, &server.url);
+            resumed.sync_human_conversation(second).expect("restored real source resumes recovery");
+            assert_eq!(server.history_count(), history_before + 1);
+            assert_eq!(server.post_count(), 1);
+            assert_eq!(read_forward_metadata_from_disk(&root, &other_source), other_metadata);
+            resumed.shutdown(); drop(resumed);
+        }
+    }
+    server.finish(); fs::remove_dir_all(root).unwrap();
 }
 

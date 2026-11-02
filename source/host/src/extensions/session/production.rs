@@ -2908,14 +2908,50 @@ impl ProductionSessionWorkers {
         }
     }
 
+    fn read_human_conversation_metadata(
+        owner: &SandAgentDb,
+        conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let raw = owner.read_kv("metadata").map_err(|error| error.to_string())?
+            .ok_or_else(|| "existing Human conversation metadata is missing".to_string())?;
+        // Match the creation boundary before the shared hex decoder can slice
+        // corrupt UTF-8. Missing identity must never become Agent defaults.
+        if !raw.trim().is_ascii() {
+            return Err("existing Human conversation metadata encoding is invalid".into());
+        }
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
+        {
+            return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
+        }
+        let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+            .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
+        if participants.len() != 2
+            || participants.iter().any(|value| value.as_str()
+                .is_none_or(|id| id.trim().is_empty() || id.trim() != id))
+            || participants[0] == participants[1]
+        {
+            return Err("existing Human conversation participants are invalid".into());
+        }
+        Ok(metadata)
+    }
+
     pub fn open_human_conversation_db_owner(
         &self,
         conversation_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
             .map_err(|error| error.to_string())?;
-        if !db_path.is_file() {
-            return Err(format!("Human conversation missing: {conversation_id}"));
+        let directory = db_path.parent()
+            .ok_or_else(|| "native Human conversation database has no parent".to_string())?;
+        let directory_type = fs::symlink_metadata(directory).map_err(|error| error.to_string())?;
+        if directory_type.file_type().is_symlink() || !directory_type.is_dir() {
+            return Err(format!("Human conversation parent is not a real directory: {conversation_id}"));
+        }
+        let file_type = fs::symlink_metadata(&db_path).map_err(|error| error.to_string())?;
+        if file_type.file_type().is_symlink() || !file_type.is_file() {
+            return Err(format!("Human conversation store is not a regular non-symlink file: {conversation_id}"));
         }
         let key = Self::native_conversation_owner_key(conversation_id);
         let mut owners = self
@@ -2927,24 +2963,16 @@ impl ProductionSessionWorkers {
             // the owner was cached. Cached handles cannot bypass the same
             // conversation identity check as a freshly opened source.
             drop(owners);
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
-                || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
-            {
-                return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
-            }
+            Self::read_human_conversation_metadata(&owner, conversation_id)?;
             return Ok(owner);
         }
         let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
+            SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
-            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
-        {
+        if let Err(error) = Self::read_human_conversation_metadata(&owner, conversation_id) {
             owner.close(false);
-            return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
+            return Err(error);
         }
         owners.insert(key, Arc::clone(&owner));
         Ok(owner)
@@ -3133,13 +3161,17 @@ impl ProductionSessionWorkers {
         let mut matched: Option<HumanForwardBatch> = None;
         for entry in entries {
             let entry = entry.map_err(|error| error.to_string())?;
-            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
+            let kind = entry.file_type().map_err(|error| error.to_string())?;
+            if kind.is_symlink() {
+                return Err("Human forward source directory is a symbolic link; retained identity cannot be skipped".into());
+            }
+            if !kind.is_dir() {
                 continue;
             }
             let id = entry.file_name().to_string_lossy().into_owned();
-            let db_path = get_native_conversation_db_path(&self.agents_root, &id)
-                .map_err(|error| error.to_string())?;
-            if !db_path.is_file() { continue; }
+            // A retained directory with unavailable storage may own this
+            // request identity. Never free it for another source by skipping
+            // a failed stat/open; retry only after storage recovers.
             let owner = self.open_human_conversation_db_owner(&id)?;
             for batch in load_forward_batches(&owner, &id)? {
                 if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
@@ -3288,29 +3320,39 @@ impl ProductionSessionWorkers {
     fn resume_human_forward_batches(&self) -> Result<(), String> {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
         let (account, issuer) = self.human_forward_scope()?;
-        // Unlike the visible roster, recovery cannot omit revoked sources or
-        // silently skip corrupt stored metadata. Reuse the strict source scan
-        // semantics of find_forward_request, without filtering by request ID.
+        // Ordinary roster discovery is best-effort. Durable forward recovery
+        // must instead surface unreadable or malformed stores before dispatch,
+        // without turning another account's valid source into local authority.
         let root = get_native_conversations_root(&self.agents_root);
         let entries = match fs::read_dir(root) {
             Ok(entries) => entries,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(error) => return Err(error.to_string()),
         };
+        let mut sources = Vec::new();
         for entry in entries {
             let entry = entry.map_err(|error| error.to_string())?;
-            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
-                continue;
+            let kind = entry.file_type().map_err(|error| error.to_string())?;
+            if kind.is_symlink() {
+                return Err("Human forward source directory is a symbolic link; retained identity cannot be skipped".into());
             }
-            let source_id = entry.file_name().to_string_lossy().into_owned();
-            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
-                .map_err(|error| error.to_string())?;
-            if !db_path.is_file() { continue; }
-            let owner = self.open_human_conversation_db_owner(&source_id)?;
-            for batch in load_forward_batches(&owner, &source_id)? {
+            if !kind.is_dir() { continue; }
+            let id = entry.file_name().to_string_lossy().into_owned();
+            let owner = self.open_human_conversation_db_owner(&id)?;
+            // An account-owned intent remains discoverable after source
+            // membership is revoked. Delivery persists its policy denial;
+            // other accounts' valid batches are filtered below and untouched.
+            let batches = load_forward_batches(&owner, &id)?;
+            sources.push((id, batches));
+        }
+        for (source_id, batches) in sources {
+            for batch in batches {
                 if batch.account_id != account || batch.issuer != issuer
                     || batch.destinations.iter().all(|target| target.completed)
                 { continue; }
+                // Do not erase or bypass an invalid source on recovery. An
+                // unavailable source retains the original intent, and no
+                // destination is sent without reauthorization.
                 self.deliver_forward_batch(&source_id, &batch.request_id, None)?;
             }
         }

@@ -717,19 +717,31 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for (corruption, retained_header_length) in [
-        ("notadb", None),
-        ("short-header", Some(6)),
-        ("truncated-header", None),
-        ("notadb-full-header", None),
-        ("schema", None),
-        ("data-page-delete-mode", None),
-        ("short-header-1", Some(1)),
-        ("short-header-15", Some(15)),
-        ("truncated-header-16", Some(16)),
-        ("truncated-header-99", Some(99)),
-        ("missing-main-sidecars", None),
-        ("empty-main-sidecars", None),
+    for (corruption, retained_header_length, orphan_sidecar) in [
+        ("notadb", None, None),
+        ("short-header", Some(6), None),
+        ("truncated-header", None, None),
+        ("notadb-full-header", None, None),
+        ("schema", None, None),
+        ("data-page-delete-mode", None, None),
+        ("short-header-1", Some(1), None),
+        ("short-header-15", Some(15), None),
+        ("truncated-header-16", Some(16), None),
+        ("truncated-header-99", Some(99), None),
+        ("missing-main-sidecars", None, None),
+        ("empty-main-sidecars", None, None),
+        ("missing-main-sidecars", None, Some(("-wal", false))),
+        ("missing-main-sidecars", None, Some(("-shm", false))),
+        ("missing-main-sidecars", None, Some(("-journal", false))),
+        ("missing-main-sidecars", None, Some(("-wal", true))),
+        ("missing-main-sidecars", None, Some(("-shm", true))),
+        ("missing-main-sidecars", None, Some(("-journal", true))),
+        ("empty-main-sidecars", None, Some(("-wal", false))),
+        ("empty-main-sidecars", None, Some(("-shm", false))),
+        ("empty-main-sidecars", None, Some(("-journal", false))),
+        ("empty-main-sidecars", None, Some(("-wal", true))),
+        ("empty-main-sidecars", None, Some(("-shm", true))),
+        ("empty-main-sidecars", None, Some(("-journal", true))),
     ] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
@@ -796,8 +808,13 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
                 fs::write(&path, retained_bytes).unwrap();
             }
             for suffix in ["-wal", "-shm", "-journal"] {
-                fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
-                    format!("retained original {suffix} bytes")).unwrap();
+                if orphan_sidecar.is_some_and(|(selected, _)| selected != suffix) { continue; }
+                let bytes = if orphan_sidecar.is_some_and(|(_, empty)| empty) {
+                    Vec::new()
+                } else {
+                    format!("retained original {suffix} bytes").into_bytes()
+                };
+                fs::write(PathBuf::from(format!("{}{suffix}", path.display())), bytes).unwrap();
             }
         }
         fs::write(directory.join("unrelated-resource.bin"), b"retained resource outside corrupt SQLite").unwrap();
@@ -808,8 +825,10 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         assert!(cached_owner(&workers, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
         assert_eq!(directory_file_bytes(directory), saved, "{corruption}: original files must survive refusal");
+        if corruption == "missing-main-sidecars" { assert!(!path.exists()); }
         workers.create_human_conversation(PEER, "Retry must preserve corrupt data").expect_err("same-worker refusal");
         assert_eq!(directory_file_bytes(directory), saved, "{corruption}: original files must survive refusal");
+        if corruption == "missing-main-sidecars" { assert!(!path.exists()); }
         workers.shutdown();
         drop(workers);
         let restarted = test_workers(&root);
@@ -817,6 +836,7 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         assert!(cached_owner(&restarted, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
         assert_eq!(directory_file_bytes(directory), saved, "{corruption}: original files must survive refusal");
+        if corruption == "missing-main-sidecars" { assert!(!path.exists()); }
         restarted.shutdown();
         drop(restarted);
         fs::remove_dir_all(root).unwrap();
