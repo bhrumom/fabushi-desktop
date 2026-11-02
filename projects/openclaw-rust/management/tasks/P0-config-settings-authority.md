@@ -8,6 +8,77 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation source: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; accepted identity and scoped evidence remain pending. Later discovery candidates do not reopen this fixed subject.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+### Active production batch — REC-UNKNOWN-01 (2026-11-02)
+
+Decision **ADOPT / existing implementation**: concurrent
+`3761bde297377bca80ad7497d1664f6f3d32bc58` supplies the same necessary
+downstream-unknown guard and shipping bridge through the existing
+`REC-07/08/09` contract, plus tool-relay instance isolation. Preserve that
+implementation; an independent read-only review approved its full 15-path
+source integration. The unpublished
+`OCRM-RUNNER-REMOTE-OUTCOME-v1` proposal never changed production and is
+withdrawn rather than creating a duplicate wire flag, helper or custody owner.
+Its Source `41422752039` and renderer job `125202548865` passed; Runtime
+`41422752089` has passed shipping Host compilation but still requires its own
+remaining contract results before a full shared-gate verdict. The later
+`7e5f4b59` / `a1883a25e316b39634757eccddeb0958f047466f` checked upgrade-marker
+handoff and completion-idle changes were adopted from the remote's exact
+16-path content. Their expanded workflow selections are retained. Their Source
+`41423475394` passed and independent full-scope source review approved that
+integration. Its Runtime `41423475524` has no accepted result here; no older H's
+results are substituted. The subsequent `81ff0cc84` / `febef8ba077fd667ce2c06f4b0cdd3edd1570cde`
+shipping app lock repair and zero-skill plugin retention were also adopted from
+seven exact remote files. Preserve all `SHIPPING-LOCK-01` locked commands and
+plugin assertions alongside this batch. Their Source `41424605612` passed;
+Runtime `41424605638` remains pending, including Cargo's committed-graph check.
+
+The Coordinator's existing `control_command` remains a separate concrete
+cleanup gap at the authoring base: a write error or receive timeout returns
+without retiring its request in the existing client's pending/waiter maps.
+Decision **REC-CONTROL-RETIRE-01 — FIX / IMPL_BUG** was specified as `REC-10`
+before implementation. The shipping wrapper now calls the existing client's
+synchronous helper with the original 15-second duration and writer. An exact
+request guard retires both entries on every exit, including poisoned cleanup,
+without changing remote failure payloads or granting cancellation/replay.
+Six new cases in the existing `coordinator_contract` target cover held remote
+work after timeout/write failure/settlement, unrelated-waiter survival, ignored
+late replies, synchronous reentry, remote success/failure and pre-write refusal.
+The workflow selects that target alongside both existing relay targets. The
+six-path frozen tree `5ba652a83ecfeb0e9b120d7c6d6b2427acdc0718` received
+independent source/lifetime approval. Integration on `febef8ba` preserves the
+same three Node blobs and REC-10 spec; its workflow/task union needs a fresh
+focused review. These are authored oracles, not executed results; the final
+changed H's Actions remain required. Retain the incoming
+legacy request/discovery contracts. Shared baseline `ecb6f6bd` Runtime
+`41420478914` completed successfully on its own H. Its control client, Node
+main, relay, Coordinator contract and manifest blobs are unchanged at `3761`.
+This independent Node cleanup can therefore proceed while the newly integrated
+Host changes finish their own checks. It does not transfer baseline approval
+to `3761` or the cleanup candidate; the final changed H still needs all selected
+checks. The seven preceding `2391dc04` Skills/account paths were adopted
+byte-for-byte and are not reimplemented here.
+
+Our group-oracle commit `e4f7d45ee72ba9e2b70075c5a6a9381dd963978a` was pushed
+and its commit/tree/ref and both complete changed files were API-read back.
+Source `41421185458` passed with 18 matching input digests. Runtime
+`41421185404` was cancelled before any job or artifact: `NOT_EXECUTED`, not
+compile/test approval or a diagnosed implementation/environment failure. The
+API metadata does not identify the cancelling actor. The subsequent
+`2391dc04cd118f9aa5e809c8198690182b21b6ec` Source `41422082112` also passed
+with matching inputs, but Runtime `41422082134` was likewise cancelled with
+zero jobs/artifacts. Both are `NOT_EXECUTED`; their source evidence stays
+valid for its own H, and the latest integrated runtime needs its own execution.
+
+The preceding exact `6e64f43570932653341a3552a17cc028c2fcf22d` now has its own
+final result: Source `41418897891` passed; Runtime `41418897782` failed only the
+same missing-selector fixture (`TEST_FLAW`). Its 684 unique Rust passes include
+20 composition controls, 9 Host MCP relay controls and 3 lifecycle controls.
+There was one failed case and one ignored private restart entry; 7 repeated
+child summaries are excluded. The 15 selected SDK/Host Node.js cases passed.
+Coordinator MCP step 17 was skipped, so its four selected tests have no result;
+configuration evidence creation/upload was also skipped. These historical
+passes are not promoted to the repaired H or the next production change.
+
 ### Active shared-gate recovery — GROUP-ROUTE-ORACLE-01 (2026-11-02)
 
 Decision **FIX / TEST_FLAW**, recorded before edits. Exact H

@@ -315,10 +315,10 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
-      - name: Test scoped Coordinator MCP and Runner relay correlation
+      - name: Test scoped Coordinator control retirement and relay correlation
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
-        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract
+        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |
@@ -413,6 +413,10 @@ jobs:
               "runner_downstream_custody_contract": "REC-07/08/09",
               "runner_downstream_custody_result": "passed",
               "runner_downstream_custody_scope": "Real Host execution relay, guarded Responses/checkpoint owner and shipping private bridge preserve unknown post-publication outcomes, reject replay and isolate relay incarnations. Coordinator echo covers opaque legacy/new IDs. No original-turn restart, external termination or durable outcome reconciliation is claimed.",
+              "coordinator_control_retirement_contract": "REC-10",
+              "coordinator_control_retirement_result": "passed",
+              "coordinator_control_retirement_target": "source/node-agent-coordinator:coordinator_contract",
+              "coordinator_control_retirement_scope": "The shipping synchronous control helper retires only its own pending request and waiter after local return, including timeout and failed publication. Actual client, relay, held-remote-work and late-reply controls do not establish remote cancellation, termination or durable reconciliation.",
               "runner_effect_custody_scope": "In-process per-run effect custody and immutable direct/MCP attempt admission, post-persistence checkpoint fencing, and refusal to replay uncovered or unknown tool effects, including known MCP HTTP response loss and Unix TCP reset control. Actual Responses loopback and local MCP oracles are not external service acceptance, original-turn disk recovery, or proof that detached tools terminated.",
               "automation_history_contract": "OCRM-AUTOMATION-HISTORY-ACK-v1",
               "automation_history_result": "passed",

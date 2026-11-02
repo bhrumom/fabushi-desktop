@@ -4,7 +4,7 @@ use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
 use mahayana_node_agent_coordinator::control_port_client::{
-    ClientAction, ControlPortClient, ControlPortPhase,
+    ClientAction, ControlPortClient, ControlPortPhase, call_control_command,
 };
 use mahayana_node_agent_coordinator::client_side_tool_v2_relay::{
     ClientSideToolV2Relay, CLIENT_SIDE_TOOL_V2_FAMILY,
@@ -282,37 +282,13 @@ fn control_command(
     method: &str,
     args: Value,
 ) -> Result<Value, Failure> {
-    let waiter = state
-        .control_port
-        .lock()
-        .map_err(|_| Failure::new(COORDINATOR_DISCONNECTED, "control port lock poisoned"))?
-        .call_waiting(method.to_string(), args)?;
-    let frame = match waiter.action {
-        ClientAction::Post(frame) => frame,
-        _ => {
-            return Err(Failure::new(
-                "COORDINATOR_CONTROL_PROTOCOL_ERROR",
-                "control command did not produce a request frame",
-            ));
-        }
-    };
-    state
-        .write_frame(CarrierChannel::Control, &frame)
-        .map_err(|error| {
-            Failure::new(
-                COORDINATOR_DISCONNECTED,
-                format!("control request write failed: {error}"),
-            )
-        })?;
-    waiter
-        .reply
-        .recv_timeout(Duration::from_secs(15))
-        .map_err(|error| {
-            Failure::new(
-                COORDINATOR_DISCONNECTED,
-                format!("control request {method} did not settle: {error}"),
-            )
-        })?
+    call_control_command(
+        &state.control_port,
+        method,
+        args,
+        Duration::from_secs(15),
+        |frame| state.write_frame(CarrierChannel::Control, frame),
+    )
 }
 
 fn local_exec_error(error: Failure) -> LocalExecSupervisorError {

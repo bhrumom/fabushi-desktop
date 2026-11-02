@@ -286,6 +286,53 @@ its `CoordinatorToolExecutionError` retains the original relay error and an
 Runner `coordinator_tool_execution_error` maps that fact to provider errors.
 No other caller changes the original generic `request(method, args)` contract.
 
+### Coordinator control waiter retirement — REC-10
+
+Decision `REC-CONTROL-RETIRE-01 — FIX / IMPL_BUG`, specified before code on
+`3761bde297377bca80ad7497d1664f6f3d32bc58`; fixed U is unchanged. The actual
+`control_command` registers a request and waiter in `ControlPortClient`, writes
+the frame, and waits 15 seconds. Its write-error and timeout exits currently
+leave both entries behind until a late remote reply or whole-port shutdown.
+Repeated lost replies retain unbounded local wait state. REC-07 correctly
+preserves the remote outcome as unknown, but does not retire this Node state.
+
+Keep the existing control client as sole correlation/waiter owner. Factor the
+current synchronous call into a production-used helper in that module, accepting
+the existing mutex, method/args, wait duration and frame-write callback. The
+shipping wrapper supplies the existing 15-second duration and carrier writer.
+Keep `ControlCallResult`, ordinary `call_waiting`, all legacy control consumers,
+Runner relay payloads, and `Failure`/frame schemas unchanged. No new execution
+disposition, permission owner, retry policy or second waiter map is needed.
+
+Before returning after write failure, receive timeout/disconnection or an
+unexpected post-registration action, retire exactly that request from both
+existing maps. Retirement is idempotent against a reply or port settlement
+that already won. A late reply for the retired ID produces no resolution; an
+unrelated request retains its waiter and can still finish. Never hold the client
+mutex across the writer callback or blocking receive. Registration refusal does
+not invoke the writer. Preserve original error code/message projection, and
+keep cleanup independent of diagnostics. Poisoned cleanup must not strand the
+owned entries when the mutex can be recovered for that exact removal.
+
+This is local wait-state retirement, never remote cancellation or termination.
+A write can partially publish before failing; a timeout or port close can leave
+Electron work running. Continue returning the existing failure so REC-07–09
+keeps its unknown outcome; do not synthesize a success or permit replay.
+
+Actions oracles use the real client and production helper, with a short injected
+deadline and counted remote work held behind entry/release/completion channels.
+Cover timeout while work still runs, invoked write failure, closure/protocol
+settlement, exact two-map cleanup, a surviving unrelated waiter, ignored late
+reply, synchronous reply/callback reentry, ordinary remote failure and refusal
+before the callback. Preserve existing control/relay assertions. Exercise the
+helper through `execute_runner_tool_request` to retain the real Host resolution
+shape. The actual main wrapper must call that helper; compile the shipping
+Coordinator and run its existing `coordinator_contract` target with the retained
+relay targets. No local executable validation. Shared gates and independent
+frozen-scope review precede verification claims. There is no persisted-format
+change; rollback restores the prior local leak, and external reconciliation,
+original-turn restart and full acceptance remain open.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or

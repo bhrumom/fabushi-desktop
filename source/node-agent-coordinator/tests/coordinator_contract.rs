@@ -140,6 +140,305 @@ fn waitable_control_calls_resolve_reject_and_settle_on_disconnect() {
     assert_eq!(failure.code, mahayana_node_agent_coordinator::protocol::COORDINATOR_DISCONNECTED);
 }
 
+mod control_command_retirement {
+    use std::io;
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+    use std::sync::{
+        Arc, Mutex,
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{self, Receiver, Sender, TryRecvError},
+    };
+    use std::thread::{self, JoinHandle};
+    use std::time::Duration;
+
+    use mahayana_node_agent_coordinator::control_port_client::{
+        ClientAction, ControlPortClient, call_control_command,
+    };
+    use mahayana_node_agent_coordinator::protocol::{
+        COORDINATOR_DISCONNECTED, CoordinatorFrame, Failure, ReplyOutcome, ShutdownReason,
+    };
+    use mahayana_node_agent_coordinator::runner_tool_relay::{
+        ROUTED_TOOL_EXECUTE_METHOD, execute_runner_tool_request,
+    };
+    use serde_json::json;
+
+    const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
+
+    fn ready_client() -> Arc<Mutex<ControlPortClient>> {
+        let mut client = ControlPortClient::default();
+        client.handle_frame(CoordinatorFrame::ready());
+        Arc::new(Mutex::new(client))
+    }
+
+    fn counts(client: &Mutex<ControlPortClient>) -> (usize, usize) {
+        let client = client.lock().expect("control client");
+        (client.pending_count(), client.waiter_count())
+    }
+
+    struct HeldRemoteEffect {
+        request_id: String,
+        calls: Arc<AtomicUsize>,
+        release: Option<Sender<()>>,
+        completion: Receiver<Vec<ClientAction>>,
+        worker: Option<JoinHandle<()>>,
+    }
+
+    impl HeldRemoteEffect {
+        fn start(client: Arc<Mutex<ControlPortClient>>, frame: &CoordinatorFrame) -> Self {
+            let CoordinatorFrame::Request { request_id, method, .. } = frame else {
+                panic!("writer must receive the registered request");
+            };
+            assert_eq!(method, ROUTED_TOOL_EXECUTE_METHOD);
+            {
+                let client = client.try_lock().expect("writer may reenter the client");
+                assert!(client.pending_count() > 0);
+                assert!(client.waiter_count() > 0);
+            }
+            let request_id = request_id.clone();
+            let remote_request_id = request_id.clone();
+            let calls = Arc::new(AtomicUsize::new(0));
+            let remote_calls = Arc::clone(&calls);
+            let (entered_tx, entered_rx) = mpsc::channel();
+            let (release_tx, release_rx) = mpsc::channel();
+            let (completion_tx, completion) = mpsc::channel();
+            let worker = thread::spawn(move || {
+                remote_calls.fetch_add(1, Ordering::SeqCst);
+                entered_tx.send(()).expect("remote effect entered");
+                release_rx.recv().expect("release only this remote effect");
+                let actions = client.lock().expect("remote reply client").handle_frame(
+                    CoordinatorFrame::Reply {
+                        request_id: remote_request_id,
+                        outcome: ReplyOutcome::Ok { value: json!({"effect":"completed"}) },
+                    },
+                );
+                let _ = completion_tx.send(actions);
+            });
+            let effect = Self {
+                request_id,
+                calls,
+                release: Some(release_tx),
+                completion,
+                worker: Some(worker),
+            };
+            entered_rx.recv_timeout(PROBE_TIMEOUT).expect("observe remote entry");
+            effect
+        }
+
+        fn assert_running(&self) {
+            assert_eq!(self.calls.load(Ordering::SeqCst), 1);
+            assert!(!self.worker.as_ref().expect("owned remote worker").is_finished());
+            assert!(matches!(self.completion.try_recv(), Err(TryRecvError::Empty)));
+        }
+
+        fn finish(mut self) -> Vec<ClientAction> {
+            self.release.take().expect("remote release").send(()).expect("release remote");
+            let actions = self.completion.recv_timeout(PROBE_TIMEOUT).expect("late remote reply");
+            self.worker.take().expect("owned remote worker").join().expect("remote completed");
+            actions
+        }
+    }
+
+    impl Drop for HeldRemoteEffect {
+        fn drop(&mut self) {
+            if let Some(release) = self.release.take() {
+                let _ = release.send(());
+            }
+            if let Some(worker) = self.worker.take() {
+                let _ = worker.join();
+            }
+        }
+    }
+
+    #[test]
+    fn timeout_retires_only_owned_waiter_while_remote_effect_continues() {
+        let client = ready_client();
+        let unrelated = client.lock().expect("control client")
+            .call_waiting("resolveGatewayConnection", json!({}))
+            .expect("unrelated waiter");
+        let mut effect = None;
+        let failure = call_control_command(
+            &client,
+            ROUTED_TOOL_EXECUTE_METHOD,
+            json!({"toolName":"counted_write"}),
+            Duration::from_millis(10),
+            |frame| {
+                effect = Some(HeldRemoteEffect::start(Arc::clone(&client), frame));
+                Ok(())
+            },
+        ).expect_err("local wait expires while remote work is held");
+        assert_eq!(failure, Failure::new(
+            COORDINATOR_DISCONNECTED,
+            format!("control request {ROUTED_TOOL_EXECUTE_METHOD} did not settle: {}", mpsc::RecvTimeoutError::Timeout),
+        ));
+        let effect = effect.expect("writer published remote work");
+        effect.assert_running();
+        assert_eq!(counts(&client), (1, 1));
+        assert!(client.lock().expect("control client").cancel(&effect.request_id).is_none());
+        assert!(effect.finish().is_empty(), "late reply cannot resolve the retired call");
+        assert_eq!(counts(&client), (1, 1));
+        assert!(matches!(unrelated.reply.try_recv(), Err(TryRecvError::Empty)));
+
+        let actions = client.lock().expect("control client").handle_frame(CoordinatorFrame::Reply {
+            request_id: unrelated.request_id.clone(),
+            outcome: ReplyOutcome::Ok { value: json!({"unrelated":"completed"}) },
+        });
+        assert!(matches!(actions.as_slice(), [ClientAction::Resolve { request_id, .. }]
+            if request_id == &unrelated.request_id));
+        assert_eq!(unrelated.reply.recv_timeout(PROBE_TIMEOUT).expect("surviving waiter"),
+            Ok(json!({"unrelated":"completed"})));
+        assert_eq!(counts(&client), (0, 0));
+    }
+
+    #[test]
+    fn write_failure_preserves_runner_resolution_while_published_effect_continues() {
+        let client = ready_client();
+        let mut effect = None;
+        let resolution = execute_runner_tool_request(
+            &json!({
+                "requestId":"runner-tool-opaque-held",
+                "method":ROUTED_TOOL_EXECUTE_METHOD,
+                "args":{"toolName":"counted_write"},
+            }),
+            |method, args| call_control_command(&client, method, args, PROBE_TIMEOUT, |frame| {
+                effect = Some(HeldRemoteEffect::start(Arc::clone(&client), frame));
+                Err(io::Error::other("carrier flush failed after publication"))
+            }),
+        ).expect("Runner keeps the legacy failed resolution");
+        assert_eq!(resolution, json!({
+            "requestId":"runner-tool-opaque-held",
+            "ok":false,
+            "error":"COORDINATOR_DISCONNECTED: control request write failed: carrier flush failed after publication",
+        }));
+        let effect = effect.expect("writer published before failing");
+        effect.assert_running();
+        assert_eq!(counts(&client), (0, 0));
+        assert!(effect.finish().is_empty());
+        assert_eq!(counts(&client), (0, 0));
+    }
+
+    #[test]
+    fn synchronous_callback_reentry_preserves_remote_success_and_failure() {
+        let client = ready_client();
+        for expected in [
+            Ok(json!({"baseUrl":"http://127.0.0.1:1234"})),
+            Err(Failure::with_transport_kind("DENIED", "credential denied", "permission")),
+        ] {
+            let mut write_calls = 0;
+            let mut settled_request_id = String::new();
+            let result = call_control_command(&client, "resolveGatewayConnection", json!({}), PROBE_TIMEOUT, |frame| {
+                write_calls += 1;
+                let CoordinatorFrame::Request { request_id, method, args } = frame else {
+                    panic!("control request frame");
+                };
+                assert_eq!(method, "resolveGatewayConnection");
+                assert_eq!(args, &json!({}));
+                settled_request_id = request_id.clone();
+                let mut client = client.try_lock().expect("writer runs outside client mutex");
+                assert_eq!((client.pending_count(), client.waiter_count()), (1, 1));
+                let outcome = match &expected {
+                    Ok(value) => ReplyOutcome::Ok { value: value.clone() },
+                    Err(failure) => ReplyOutcome::Failed { failure: failure.clone() },
+                };
+                assert_eq!(client.handle_frame(CoordinatorFrame::Reply {
+                    request_id: request_id.clone(), outcome,
+                }).len(), 1);
+                Ok(())
+            });
+            assert_eq!(result, expected);
+            assert_eq!(write_calls, 1);
+            assert_eq!(counts(&client), (0, 0));
+            assert!(client.lock().expect("control client").handle_frame(CoordinatorFrame::Reply {
+                request_id: settled_request_id,
+                outcome: ReplyOutcome::Ok { value: json!("duplicate") },
+            }).is_empty());
+        }
+    }
+
+    #[test]
+    fn closed_registration_refuses_before_writer_callback() {
+        let client = ready_client();
+        client.lock().expect("control client").handle_port_closed();
+        let mut write_calls = 0;
+        let result = call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |_| {
+            write_calls += 1;
+            Ok(())
+        });
+        assert_eq!(result, Err(Failure::new(COORDINATOR_DISCONNECTED, "control port is settled")));
+        assert_eq!(write_calls, 0);
+        assert_eq!(counts(&client), (0, 0));
+    }
+
+    #[test]
+    fn port_closure_and_protocol_settlement_leave_remote_work_running() {
+        for (settlement_frame, message) in [
+            (None, "control port closed"),
+            (Some(CoordinatorFrame::shutdown(ShutdownReason::Requested, Some("remote shutdown".into()))), "remote shutdown"),
+            (Some(CoordinatorFrame::Event { family: "invalid-direction".into(), payload: json!({}) }), "server posted a client-direction frame"),
+        ] {
+            let client = ready_client();
+            let mut effect = None;
+            let result = call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |frame| {
+                effect = Some(HeldRemoteEffect::start(Arc::clone(&client), frame));
+                let mut client = client.try_lock().expect("settlement may reenter the client");
+                let actions = match settlement_frame {
+                    Some(frame) => client.handle_frame(frame),
+                    None => client.handle_port_closed(),
+                };
+                assert!(matches!(actions.last(), Some(ClientAction::Close)));
+                Ok(())
+            });
+            assert_eq!(result, Err(Failure::new(COORDINATOR_DISCONNECTED, message)));
+            let effect = effect.expect("remote work entered before local settlement");
+            effect.assert_running();
+            assert_eq!(counts(&client), (0, 0));
+            assert!(effect.finish().is_empty());
+            assert_eq!(counts(&client), (0, 0));
+        }
+    }
+
+    #[test]
+    fn poisoned_cleanup_retires_only_owned_entries_and_preserves_write_failure() {
+        let client = ready_client();
+        let unrelated = client.lock().expect("control client")
+            .call_waiting("resolveGatewayConnection", json!({}))
+            .expect("unrelated waiter");
+        let mut retired_request_id = String::new();
+        let result = call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |frame| {
+            let CoordinatorFrame::Request { request_id, .. } = frame else {
+                panic!("control request frame");
+            };
+            retired_request_id = request_id.clone();
+            assert!(catch_unwind(AssertUnwindSafe(|| {
+                let _guard = client.lock().expect("poison only this test client");
+                panic!("controlled client poison");
+            })).is_err());
+            Err(io::Error::other("carrier write failed"))
+        });
+        assert_eq!(result, Err(Failure::new(COORDINATOR_DISCONNECTED,
+            "control request write failed: carrier write failed")));
+        {
+            let mut client = client.lock().unwrap_or_else(|error| error.into_inner());
+            assert_eq!((client.pending_count(), client.waiter_count()), (1, 1));
+            assert!(client.handle_frame(CoordinatorFrame::Reply {
+                request_id: retired_request_id,
+                outcome: ReplyOutcome::Ok { value: json!("late") },
+            }).is_empty());
+            client.handle_frame(CoordinatorFrame::Reply {
+                request_id: unrelated.request_id.clone(),
+                outcome: ReplyOutcome::Ok { value: json!("unrelated") },
+            });
+            assert_eq!((client.pending_count(), client.waiter_count()), (0, 0));
+        }
+        assert_eq!(unrelated.reply.recv_timeout(PROBE_TIMEOUT).expect("unrelated waiter survives"), Ok(json!("unrelated")));
+        let mut write_calls = 0;
+        assert_eq!(call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |_| {
+            write_calls += 1;
+            Ok(())
+        }), Err(Failure::new(COORDINATOR_DISCONNECTED, "control port lock poisoned")));
+        assert_eq!(write_calls, 0);
+    }
+}
+
 #[test]
 fn disconnect_rejects_every_pending_control_call() {
     let mut client = ControlPortClient::default();
