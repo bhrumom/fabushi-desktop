@@ -1662,16 +1662,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   useEffect(() => {
     replyThreadController.setScope({ accountSlot: transcriptAccountSlot, agentId: activeAgentId.length > 0 ? activeAgentId : null });
   }, [activeAgentId, replyThreadController, transcriptAccountSlot]);
-  useLayoutEffect(() => {
-    if (typeof document === "undefined") return;
-    const transcript = document.querySelector<HTMLElement>(".sand-virtual-transcript");
+  const bindTranscriptViewport = useCallback((transcript: HTMLDivElement | null) => {
     transcriptPaginationController.bindViewport(transcript);
     setFindTranscriptContainer(transcript);
-    return () => {
-      transcriptPaginationController.bindViewport(null);
-      setFindTranscriptContainer(null);
-    };
-  }, [activeAgentId, transcriptPaginationController]);
+  }, [transcriptPaginationController]);
   useLayoutEffect(() => {
     transcriptPaginationController.onEntriesCommitted();
   }, [transcriptPaginationController, transcriptPaginationSnapshot.entries]);
@@ -1975,7 +1969,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         ) return;
         if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
         const pagination = transcriptPaginationController.getSnapshot();
-        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder) return;
+        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder || pagination.olderFailure != null) return;
         await transcriptPaginationController.loadOlder();
       }
       transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
@@ -4275,6 +4269,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 entries={entries}
                 hasOlder={transcriptPaginationSnapshot.hasOlder}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
+                olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
+                onViewportChanged={bindTranscriptViewport}
                 isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
                 isTransportDown={transport === "down"}
                 loadOlder={loadOlderTranscript}

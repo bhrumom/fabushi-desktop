@@ -8,6 +8,10 @@ on:
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
+      - 'frontend/src/production/ProductionRenderer.transcript.*'
+      - 'frontend/src/recovered/features/conversation/workspace/transcript.tsx'
+      - 'desktop/transcript-test.html'
+      - 'desktop/transcript-test.ts'
       - 'frontend/src/production/model.ts'
       - 'desktop/native-message-projection.html'
       - 'desktop/e2e/native-message-projection.spec.ts'
@@ -718,6 +722,17 @@ jobs:
           }
           console.log('actual ProductionRenderer: 11 passed, 0 failed, 0 skipped, 0 retries');
           NODE
+      - name: Actual ProductionRenderer Transcript cache and continuation behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 8' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 8' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/production-transcript.log
       - name: Preserve exact renderer evidence
         if: always()
         uses: actions/upload-artifact@v4

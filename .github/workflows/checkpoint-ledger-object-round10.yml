@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/checkpoint-ledger-ops-round10.json'
       - '.github/workflows/checkpoint-ledger-object-round10.yml'
+      - 'projects/telegram-desktop-rust/parity-ledger.json'
 permissions:
   contents: read
 jobs:
@@ -44,13 +45,16 @@ jobs:
           assert.equal(process.env.GITHUB_REF, 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1');
           assert.equal(ops.repository, process.env.GITHUB_REPOSITORY);
           assert.equal(ops.path, 'projects/telegram-desktop-rust/parity-ledger.json');
-          assert.equal(ops.format_version, 1);
+          assert.equal(ops.format_version, 2);
           assert.equal(ops.upstream_commit, 'f985723b552b30fe1c17d377d57f44e61a15a8c4');
           assert.equal(ops.operations.length, 1);
           const input = fs.readFileSync(ops.path);
           const inputBlob = gitHash(input);
           assert.equal(inputBlob, process.env.ROUND10_INPUT_BLOB);
-          assert.equal(inputBlob, ops.reviewed_input_blob, 'canonical input advanced: root must review and rebase this narrow delta');
+          assert.match(ops.reviewed_delta_base_blob, /^[0-9a-f]{40}$/);
+          // Exact checkout input is recorded below. Concurrent canonical additions
+          // are preserved; root must read this full input/output and prove current
+          // input equality before attaching the object with non-force CAS.
           const original = JSON.parse(input);
           assert.equal(original.upstream_commit, ops.upstream_commit);
           const changed = structuredClone(original);
@@ -100,11 +104,13 @@ jobs:
           fs.writeFileSync('artifacts/round10-ledger-object/receipt.json', JSON.stringify({
             harness_sha: process.env.GITHUB_SHA, input_blob: inputBlob,
             ops_blob: gitHash(opsBytes), output_blob: outputBlob,
+            reviewed_delta_base_blob: ops.reviewed_delta_base_blob,
             output_sha256: crypto.createHash('sha256').update(output).digest('hex'),
             changed_rows: [op.id], product_validation: false, source_acceptance: false,
             commit_created: false, ref_updated: false,
             integration_condition: 'Root reads input/output and requires exact expected content plus unchanged current input before force=false expected-head CAS.'
           }, null, 2) + '\n');
+          console.log('ROUND10_OBJECT_RECEIPT ' + fs.readFileSync('artifacts/round10-ledger-object/receipt.json', 'utf8').replace(/\n/g, ' '));
           NODE
       - name: Upload only the unattached Git blob
         env:

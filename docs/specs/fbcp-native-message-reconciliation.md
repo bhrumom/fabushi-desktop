@@ -1835,3 +1835,51 @@ package-resource paths retain their current owners.
   existing message/Agent/MiniApp behavior and zero-network controls. These
   tests execute only in containing-H Actions and do not prove a real backend
   cross-account vulnerability, service readiness or final acceptance.
+
+### Round10 Transcript pagination extension to NMR-26a / NMR-AC-17
+
+This bounded extension retains the existing NMR-26a/26b renderer requirements
+and their separate scenarios. It adds eight pagination cases in
+`ProductionRenderer.transcript.behavior.test.mjs`; it does not replace the other
+renderer, cursor, forwarding or reaction gates.
+
+The existing ProductionRenderer cache and pagination controller remain the only
+owners. A failed older-page request preserves its cursor and current live-row
+overlays, stops automatic scrolling and find-driven repeats, and exposes a
+generic accessible alert with an explicit keyboard-operable Retry. Retry uses
+the existing single-flight request and the same opaque `beforeCursor` with its
+`beforeSeq`; it must not disclose a raw transport error. After initial-load
+failure and Retry, bind the controller and Find to the actual replacement DOM
+viewport. A row commit while a prepend is pending must not consume the existing
+`pendingAnchor.ready` anchor before its accepted page is applied.
+
+| Case | Actual-root behavior |
+| --- | --- |
+| UI-NMR-OLDER-RETRY-001 | Two failures preserve live overlays and exact opaque continuation; automatic retry pauses, keyboard/double-click Retry stays single-flight; cache A→B→A restores the next continuation. |
+| UI-NMR-INITIAL-RETRY-VIEWPORT-001 | Initial-error Retry replaces the real viewport; both ordinary prepend and an intermediate older-row commit retain the visible anchor. |
+| UI-NMR-REFRESH-PAGE-RACE-001 | Real reconnect drives roster/sync/full read; live edits/appends win over stale reads and a retired older-page result cannot revive its continuation. |
+| UI-NMR-CLEAR-PAGE-001 | Clear invalidates pending reads and permits a fresh initial read; a late old page cannot repopulate the cleared scope. |
+| UI-NMR-ACCOUNT-PAGE-001 | A new account using the same conversation ID owns a separate opaque walk; the previous account's late failure cannot poison the current request. |
+| UI-NMR-CONVERSATION-PAGE-001 | Leaving a conversation discards its pending result; returning restores its committed cache and continuation. |
+| UI-NMR-UNMOUNT-PAGE-001 | Actual root/client disposal closes ports; late failure cannot mutate UI or start another read. |
+| UI-NMR-FIND-PAGE-FAILURE-001 | Actual Find of an unloaded hit stops after one failed continuation, including Next match; explicit Retry remains usable. |
+
+The fixture mounts the actual production bootstrap in StrictMode, real
+Coordinator port broker/client and native transcript event feed. Only external
+desktop/service DTOs and deferred replies are controlled. Undeclared boundary
+calls, browser errors and unsuccessful resource requests fail the case; no
+copied cache model or permissive boundary proxy is allowed. Preserve complete
+per-case request/port/error JSON and screenshots in the exact-H UI artifact.
+Require exactly eight executed/passed, zero failed/cancelled/skipped/todo in
+GitHub Actions, alongside all inherited gates. Preparation and source review
+are not execution or full visual/accessibility/packaged acceptance.
+
+Original d247/run41421314346 is retained as failed (20/22 Human passed); our
+9d73/run41423909766 passed Human30/Agent4 and shipping but exposed a renderer
+telemetry compilation defect subsequently fixed by a concurrent commit.
+Exact106bb/run41523018920 separately passed Human62, Transcript29, cursor17,
+settlement5, forward Chromium16 and Electron/Windows subsets; Shipping was
+still queued at that observation. These results cannot qualify a later H.
+The sole round10 evidence file keeps exact SHAs, counts, job logs and artifact
+identities. Fixed U, source/acceptance fields and every full migration gate remain
+unchanged.
