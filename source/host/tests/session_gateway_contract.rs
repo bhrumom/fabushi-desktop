@@ -4106,7 +4106,15 @@ fn shipping_human_reaction_rejects_midflight_credential_rotation_and_recovers_af
         release_response.send(()).expect("release obsolete success response");
         let error = running.join().expect("reaction thread")
             .expect_err("obsolete response must not commit");
-        assert!(error.contains("credential"), "{label}: {error}");
+        if label == "issuer" {
+            assert_eq!(
+                error,
+                "Fabushi messaging API must use an approved Native issuer origin.",
+                "{label}",
+            );
+        } else {
+            assert!(error.contains("credential"), "{label}: {error}");
+        }
         assert_eq!(owner.get_transcript_entries().expect("no stale projection"), vec![original.clone()], "{label}");
         assert_eq!(owner.get_metadata("humanReactionIntent").expect("retained intent"), Some(json!({
             "entryId":entry_id,"remoteMessageId":"777",
@@ -4216,4 +4224,5 @@ fn shipping_human_reaction_rejects_credential_change_while_response_body_is_stre
     drop(resumed);
     let _ = fs::remove_dir_all(root);
 }
+
 

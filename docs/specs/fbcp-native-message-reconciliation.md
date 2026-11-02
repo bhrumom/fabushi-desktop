@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–10
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–12
 
 ## Context and goal
 
@@ -285,4 +285,31 @@ credentials or resource deletion is authorized. These gates qualify this
 batch only. Packaged visual/a11y/platform evidence, source/legal closure,
 complete Bot regression, upgrade/rollback, soak and independent ACCEPT remain
 required for final FBCP/TDRP acceptance.
+
+### Round 12 credential-rotation oracle recovery (NMR-29)
+
+Run `41428797981` at `34b71fbd2b76a31380406c73c7b4a915f21a40e7`
+executed 32 Human cases: 31 passed, one failed, none ignored. The failed
+midflight-rotation case expected the word `credential` for every rejection;
+the invalid issuer instead correctly failed the existing approved-origin
+check with `Fabushi messaging API must use an approved Native issuer origin.`
+This is `TEST_FLAW`, not permission to change that production refusal.
+The response-body rotation/restart case passed. Agent nonce did not run.
+Shipping, renderer and Electron jobs passed; retain that exact-H evidence.
+
+- NMR-29: A reaction response must remain bound to its dispatched Native
+  account, device, token, session, expiry and issuer through response-body
+  consumption. A changed or invalid credential must leave the prior durable
+  entry unchanged and preserve the staged desired-state intent. Reopening
+  with the original valid account must replay that same desired state once.
+- NMR-AC-20: Keep all six rotation variants, the streaming-body variant,
+  complete durable-state assertions and restart replay. For invalid issuer,
+  assert the exact approved-origin refusal; other rotations retain the
+  credential-refusal oracle. The existing Human gate must require all 32
+  cases with zero failures/ignored tests, followed by four Agent nonce cases
+  on the repaired H. Its previous count of 30 is stale and must not reject
+  the two newly authored behaviors after they pass. No assertion is removed,
+  no failing case is excluded, and diagnostic dependency upgrades are not
+  adopted. Full service/packaged/independent acceptance remains open.
+
 
