@@ -1158,7 +1158,7 @@ fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
             "timestampMs": 1000.0,
             "delivery": "sent",
             "remoteMessageId": "10",
-            "remoteCreatedAt": "2026-10-05T00:59:59Z"
+            "remoteCreatedAt": "2026-10-05T01:03:21Z"
         }))
         .expect("remote anchor"));
 
@@ -2318,7 +2318,7 @@ fn shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_over
         page.push(bad_known);
         assert_eq!(page.len(), 200);
         let mut older = fixture_remote_human_message(
-            base - 1, 2, 1, "older page still required", None, json!([]),
+            base + 201, 2, 1, "next afterId page still required", None, json!([]),
         );
         older["createdAt"] = json!("2026-10-05T00:59:59Z");
         let (base_url, server) = spawn_human_message_fixture(vec![
@@ -2341,10 +2341,10 @@ fn shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_over
         assert_eq!(runtime.sync_human_conversation(&id)
             .expect_err("malformed summary must reject before overlap or resources"), expected_error, "{label}");
         let rows = owner.get_transcript_entries().expect("independent valid progress");
-        assert_eq!(rows.len(), 200, "anchor, older page, and 198 valid first-page rows: {label}");
+        assert_eq!(rows.len(), 200, "anchor, next page, and 198 valid first-page rows: {label}");
         assert_eq!(rows[0], anchor, "known invalid row must not replace any persisted field: {label}");
-        assert_eq!(rows[1]["remoteMessageId"], (base - 1).to_string(), "older page was not skipped: {label}");
-        for (index, row) in rows[2..].iter().enumerate() {
+        assert_eq!(rows[199]["remoteMessageId"], (base + 201).to_string(), "next afterId page was not skipped: {label}");
+        for (index, row) in rows[1..199].iter().enumerate() {
             let offset = index as u64 + 1;
             assert_eq!(row["remoteMessageId"], (base + offset).to_string(), "ordered valid progress: {label}");
             assert_eq!(row["content"], format!("valid-{offset}"));
