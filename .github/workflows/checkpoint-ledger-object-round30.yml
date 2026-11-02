@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/checkpoint-ledger-ops-round30.json'
       - '.github/workflows/checkpoint-ledger-object-round30.yml'
+      - 'projects/telegram-desktop-rust/parity-ledger.json'
 permissions:
   contents: write
 jobs:
