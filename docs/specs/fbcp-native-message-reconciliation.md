@@ -1629,3 +1629,21 @@ All new and retained behavior is qualified only by GitHub Actions at the exact
 containing commit. Preserve the observed afb reconciliation compile failure
 (run41522324008/job125541192099, E0382) and repair only the incorrect shutdown
 receiver in its restart test before executing the new candidate.
+
+### Retained direct FFI wrapper qualification
+
+The standalone legacy Telegram C wrappers remain a compatibility surface.
+They do not regain an AppHost or CLI production registration. Extend the
+existing `providers/telegram-runtime/tests/runtime_ffi.rs` target to call the
+actual exported C create, persistent-create, execute, close and free functions.
+Exercise owned response allocation/free, ordinary and persistent close/reopen,
+and the existing null/UTF-8/key-length/closed-handle rejection contracts. Use
+only correctly allocated caller buffers and synthetic temporary stores/keys;
+never fabricate dangling pointers or open original user stores for a probe.
+
+Run these integration cases only at the containing-H Actions. Preserve the
+explicitly ignored live-DC case as unexecuted service coverage; require exact
+pass/ignored counts for the non-live target. This qualifies the C wrappers and
+rollback fixture, not a final staticlib/cdylib producer, export table or external
+installed consumer. Preserve all original data, readers, public ABI signatures,
+the generic Host C ABI7 gate and complete release/independent-ACCEPT blockers.

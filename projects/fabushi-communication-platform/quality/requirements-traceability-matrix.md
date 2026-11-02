@@ -472,3 +472,37 @@ qualified later predecessor94dc, unpublished superseded preparation and the new
 containing-H candidate. Authored source counts must include all concurrent Human
 and Transcript additions; actual results require the final exact-H Actions logs.
 No mounted reaction/visual/a11y, source or full independent acceptance is claimed.
+
+### Resumed round16: exact delivery correction, auxiliary inputs and retained C wrappers
+
+This annotation preserves the dated snapshots above. Actual round16 delivery
+was `23f737faba69b4f60eecb6ec1a031602f87f60dc`: its run `41451598911`
+passed the built AppHost dependency/symbol/library checks and three synthetic
+package-copy cases, but did **not** contain the locally prepared twelve-route
+account matrix or the original ledger/owner-matrix edits. The later verified
+`59f5fa24827812f78336c464995d161f403dedfb` run `41508537631` includes
+the actual AppHost resource copy, Human38 and the separately recorded later
+composition/CLI/gateway checks. Neither result qualifies subsequent Session,
+UI or source-review changes. The old thirteen-Human paragraph above is the
+exact95 historical gate; containing-H workflow requirements remain authoritative.
+
+| Requirement / owner | Actual input or executable case | Evidence and remaining gate |
+| --- | --- | --- |
+| FMEP-SOURCE-01 / existing desktop package builders | Coordinator and box Cargo.lock; network worker go.mod/go.sum; existing npm, Rust CI and macOS release commands require locked/readonly inputs | Capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389, job125513870853, artifact13175461007 SHA25685488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b. Four input files match the original artifact bytes. Capture Mac jobs skipped; pinned-H actual binary/owner verification remains required. |
+| NMR-AC-30 / same Coordinator, Box and network-worker owners | `staged-runtime-source-contracts.yml`: required tracked inputs; actual macOS executables; normal/build dependencies and symbol/library refusals; Coordinator1+1+4, Box13+Host supervisor3, Go13 | Authored containing-H gates, not executed at preparation. No fabricated substitute binaries; actual Box path is supplied to the Host lifecycle fixture. Full signed package, other platforms and dependency source/legal acceptance remain open. |
+| NMR-39 compatibility retention / existing legacy C exports | `providers/telegram-runtime/tests/runtime_ffi.rs`: five direct create/persistent-create/execute/close/free cases, persistent close/reopen, owned response frees, null/UTF-8/key-length/closed-handle refusal | Fifteen non-live tests plus the original one explicitly ignored live-DC test are required by `retained-direct-ffi-compatibility`; authored, not run at preparation. Invalid-length buffers are allocated; all stores/keys are synthetic. This does not qualify a final shared/static library or installed external consumer. |
+
+Concurrent commit `e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e` already
+integrated the identical four inputs, desktop locked builders, capture=false and
+release readonly build. This batch preserves that delivery, adds the remaining
+CI/release input guards and the retained C-wrapper target; it does not replay
+or claim authorship of the concurrent pin commit.
+
+The authoritative receipt remains
+`projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
+The unique ledger's two existing responsibility rows retain source identities,
+review depths, all concurrent source reviews and unaccepted release states.
+Original SQLite/sidecars/keys/readers are preserved. Backend PR137 remains
+open/draft and read-only; its skipped production readiness job is not service
+acceptance. External mobile/installer producer-consumer mismatches remain
+separately recorded gaps, with no external repository mutation.

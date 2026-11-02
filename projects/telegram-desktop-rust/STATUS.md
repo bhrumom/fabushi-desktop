@@ -5,6 +5,26 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Concurrent round16 — pinned package inputs and retained C wrapper qualification
+
+The original requested run41447812811 passed at exact
+`adf15caadac5775fdd8582227cad3bbf9c93cf0f`; actual round16 NMR38/39
+delivery and all artifact bytes were reconciled at23f737f and its successful
+run41451598911. Later59f5fa/run41508537631 supplies separately scoped actual
+AppHost resource-copy and owner evidence; it does not qualify later changes.
+
+Input capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389
+succeeded. The two independent Cargo locks and Go manifest/checksums match
+artifact13175461007 exactly; capture Mac jobs skipped. Concurrent e13c34a5 already committed those
+inputs, disabled capture and locked the normal builders. This batch preserves
+that work, completes the remaining CI/release input guards and adds five
+direct C wrapper/temporary-store recovery cases while retaining the original
+ignored live-DC case. Pinned-H actual Mac binaries/owner tests and the Ubuntu
+C-wrapper gate are **not run at preparation**. Original data/readers, concurrent
+Session/UI work, the fixed U and all source/release acceptance blockers remain.
+Receipt: `evidence/round16-apphost-package-boundary.json`.
+
+
 ## Round 18 scoped result — native CLI Host and installer artifact boundary
 
 Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
