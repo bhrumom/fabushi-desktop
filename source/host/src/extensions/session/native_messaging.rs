@@ -564,6 +564,28 @@ impl FabushiNativeMessagingClient {
         emoji: &str,
         active: bool,
     ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
+        self.set_direct_message_reaction_bound(message_id, emoji, active, None)
+    }
+
+    pub fn set_direct_message_reaction_for_user(
+        &self,
+        message_id: &str,
+        emoji: &str,
+        active: bool,
+        expected_user_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
+        self.set_direct_message_reaction_bound(
+            message_id, emoji, active, Some(expected_user_id),
+        )
+    }
+
+    fn set_direct_message_reaction_bound(
+        &self,
+        message_id: &str,
+        emoji: &str,
+        active: bool,
+        expected_user_id: Option<&str>,
+    ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
         let message_id = required_trimmed(message_id, "message id")?;
         if message_id
             .parse::<u64>()
@@ -578,6 +600,7 @@ impl FabushiNativeMessagingClient {
             return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
         }
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let path = format!("/api/social/messages/{message_id}/reactions");
         let response = self
             .client
@@ -658,7 +681,7 @@ impl FabushiNativeMessagingClient {
         before: Option<&str>,
         limit: usize,
     ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
-        self.list_direct_messages_window(peer_human_id, before, None, limit)
+        self.list_direct_messages_window(peer_human_id, before, None, limit, None)
     }
 
     pub fn list_direct_messages_after(
@@ -667,10 +690,38 @@ impl FabushiNativeMessagingClient {
         after_id: u64,
         limit: usize,
     ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
-        if after_id == 0 || after_id > 9_007_199_254_740_991 {
-            return Err("Fabushi Human sync afterId is not a positive safe integer".into());
+        if after_id > 9_007_199_254_740_991 {
+            return Err("Fabushi Human sync afterId is not a safe integer".into());
         }
-        self.list_direct_messages_window(peer_human_id, None, Some(after_id), limit)
+        self.list_direct_messages_window(peer_human_id, None, Some(after_id), limit, None)
+    }
+
+    /// Pair queries bind the credential read to the active Human owner.
+    pub fn list_direct_messages_after_for_user(
+        &self,
+        peer_human_id: &str,
+        expected_user_id: &str,
+        after_id: u64,
+        limit: usize,
+    ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
+        if after_id > 9_007_199_254_740_991 {
+            return Err("Fabushi Human sync afterId is not a safe integer".into());
+        }
+        self.list_direct_messages_window(
+            peer_human_id, None, Some(after_id), limit, Some(expected_user_id),
+        )
+    }
+
+    pub fn list_direct_messages_for_user(
+        &self,
+        peer_human_id: &str,
+        expected_user_id: &str,
+        before: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
+        self.list_direct_messages_window(
+            peer_human_id, before, None, limit, Some(expected_user_id),
+        )
     }
 
     fn list_direct_messages_window(
@@ -679,9 +730,11 @@ impl FabushiNativeMessagingClient {
         before: Option<&str>,
         after_id: Option<u64>,
         limit: usize,
+        expected_user_id: Option<&str>,
     ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let mut url = self.endpoint("/api/social/messages")?;
         {
             let mut query = url.query_pairs_mut();
@@ -987,6 +1040,18 @@ impl FabushiNativeMessagingClient {
         self.base_url
             .join(path.trim_start_matches('/'))
             .map_err(|error| format!("Fabushi messaging endpoint is invalid: {error}"))
+    }
+
+    fn ensure_bound_user(
+        credentials: &CredentialFile,
+        expected_user_id: Option<&str>,
+    ) -> Result<(), String> {
+        if let Some(expected) = expected_user_id {
+            if fabushi_identity_text(&credentials.user_id)? != expected {
+                return Err("Fabushi native messaging credential changed Human account".into());
+            }
+        }
+        Ok(())
     }
 
     fn read_bound_credentials(&self) -> Result<CredentialFile, String> {
