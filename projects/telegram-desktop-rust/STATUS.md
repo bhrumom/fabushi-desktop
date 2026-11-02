@@ -472,20 +472,25 @@ failed/skipped/retried cases. Its Host reconciliation passed116 including
 Human72 and actual6400/32-page, concurrency and restart cases; peer Linux23
 and Windows23, carrier100, Windows11 and Social37 also passed.
 
-Exact808 Mac run41543732546 failed Plugins0/2 and Human0/2; the latter never
-entered message behavior because capture startup blocked. The follow-up fixes
-background roster/restore/clear navigation dismissing Plugins in the existing
-Renderer, adds a22nd deterministic real-UI case, and installs the locked
-Playwright video dependency with bounded fail-closed capture initialization.
-Actual Electron2/Plugins2 and author22 require the new frozen-H Actions.
-The exact808 macOS shipping job was still queued at the observation.
+Exact808 Mac run41543732546 failed Plugins0/2 and Human0/2 before Human
+message behavior. Exact487083725db93109b0d3d2b4bdddd483d148ba30 follow-up
+retains the existing Renderer and fixes background roster/restore/clear closing
+Plugins. Its actual Mac run41546866898 passed Plugins2/2 and reached both
+Human first-lifetime business, video/trace and real shutdown checks. Both Human
+cases then failed in the fixture's post-close app.process() evidence access;
+no second-process recovery passed. The fixture now captures the same
+ChildProcess before close and retains all original process-exit and reopen
+assertions. Its containing-H Mac run is required. Author22 was still running
+in run41546866976 at23:46:30 UTC; exact808 and487 shipping remained queued.
 
-The existing authority trace check is shared with an actual canonical NMR
-checkout test. Thirty-three RTM links, four target paths and sixteen symbol
-spellings are reconciled to their real definitions/files/declarations; no
-accepted guard or source counter is loosened. Source158/schema37/candidate
-passed at808 without source acceptance; the follow-up requires its own
-three added contract cases (nominal combined161), not an old green result.
+The shared authority trace check and actual canonical NMR checkout test
+passed at exact487 in run41546866900: Node161, Python37 and zero schema errors.
+All55 target paths,60 symbols and158 trace entries were checked;183 other
+ledger rows and source-review/candidate counters stayed unchanged. Actual
+accepted entrypoint still refuses the candidate; full source acceptance is false.
+Exact487 run41546866976 also passed Host116 (including Human72), Social37,
+carrier100, peer Linux23/Windows23 and Windows publisher11. Retained FFI had
+15 passed and1 ignored; that ignored live-DC case is not a pass.
 
 Original H5d534898/run41413368942 message and shipping gates passed. Review
 H375936fb compiled and passed pure41/cursor17/Forward5+16, but historical

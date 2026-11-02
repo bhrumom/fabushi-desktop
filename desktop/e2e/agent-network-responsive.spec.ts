@@ -1018,6 +1018,7 @@ async function humanMilestone(lifetime: HumanLifetime, capture: HumanCapture, na
 
 async function closeHumanLifetime(lifetime: HumanLifetime, capture: HumanCapture) {
   if (lifetime.closed) throw new Error('Human Electron lifetime was closed twice');
+  const ownedProcess = lifetime.app.process();
   const current = observedLiveProcessTree(await readProcessTable(), lifetime);
   for (const entry of current) if (!lifetime.identities.some((prior) =>
     prior.pid === entry.pid && prior.started === entry.started && prior.command === entry.command)) lifetime.identities.push(entry);
@@ -1037,8 +1038,8 @@ async function closeHumanLifetime(lifetime: HumanLifetime, capture: HumanCapture
   lifetime.closed = true;
   capture.evidence.push({
     kind: 'shutdown-observed', lifetime: lifetime.label, at: Date.now(), durationMs: Date.now() - started,
-    actualMode: 'ElectronApplication.close', exitCode: lifetime.app.process().exitCode,
-    signal: lifetime.app.process().signalCode, remainingObservedProcesses: [],
+    actualMode: 'ElectronApplication.close', exitCode: ownedProcess.exitCode,
+    signal: ownedProcess.signalCode, remainingObservedProcesses: [],
   });
 }
 

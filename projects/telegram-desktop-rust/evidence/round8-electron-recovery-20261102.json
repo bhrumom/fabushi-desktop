@@ -625,5 +625,206 @@
     "blob": "2bd5e660ec352366d6e77fab5cdb04e3a2afeb68",
     "actual_browser_case22": "NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation",
     "scope": "Separate background transcript restoration from explicit navigation. Actual Mac Plugins2 still required at containing H."
+  },
+  "observed_exact_487_execution": {
+    "schemaVersion": 1,
+    "kind": "NMR-ELECTRON-01/FPM-UI-CLOSE-01 exact-H execution failure evidence",
+    "repository": "bhrumom/fabushi-desktop",
+    "headSha": "487083725db93109b0d3d2b4bdddd483d148ba30",
+    "run": {
+      "id": 41546866898,
+      "attempt": 1,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41546866898",
+      "jobId": 125624456887,
+      "jobName": "plugins-close-pointer",
+      "conclusion": "failure"
+    },
+    "source": {
+      "workflow": ".github/workflows/plugins-window-close.yml",
+      "workflowBlob": "c89a006015d1f38b4c4cdf6146123328bc9dc95c",
+      "spec": "desktop/e2e/agent-network-responsive.spec.ts",
+      "specBlob": "1761c8c91622bd0eda1b1f69ee4c543ef344e540"
+    },
+    "build": {
+      "lockedPlaywrightFfmpegInstall": "success",
+      "electron": "success",
+      "controlledNetworkWorker": "success",
+      "host": "success",
+      "renderer": "success",
+      "desktopRuntime": "success",
+      "exactHumanBinaryBinding": "success"
+    },
+    "counts": {
+      "basis": "Complete decoded job log was read; Plugins reports 2 passed and its JSON audit completes. Human lists both cases, reports 2 failed, and exits before its success JSON audit. Both commands use workers=1 and retries=0.",
+      "plugins": {
+        "expected": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "retries": 0
+      },
+      "human": {
+        "expected": 2,
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "timedOut": 0,
+        "skipped": 0,
+        "retries": 0
+      },
+      "humanFullyCompletedReopenCases": 0
+    },
+    "plugins": [
+      {
+        "title": "shipping Plugins close 1024x684 uses a real pointer and preserves the window-control band",
+        "result": "passed",
+        "behavior": "Existing geometry, real pointer Close, overlay dismissal and reopen assertions all completed."
+      },
+      {
+        "title": "shipping Plugins close 1280x900 uses a real pointer and preserves the window-control band",
+        "result": "passed",
+        "behavior": "Existing geometry, real pointer Close, overlay dismissal and reopen assertions all completed."
+      }
+    ],
+    "human": [
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+        "result": "failed",
+        "firstLifetime": "offline-first",
+        "startup": {
+          "videoArtifactInitialized": true,
+          "documentDomContentLoaded": true,
+          "preloadIpcReady": true,
+          "traceStartSucceededAt": "2026-11-02T23:43:07.7476920Z",
+          "traceStopSucceededAt": "2026-11-02T23:43:11.3656600Z",
+          "videoEncoderExitCode": 0,
+          "videoAttached": true,
+          "traceAttached": true
+        },
+        "reached": [
+          "Actual UI send through production Electron/preload/Host and controlled HTTP completed.",
+          "Canonical transcript text/timestamp/nonpending/nonfailed and unique SQLite row checks passed.",
+          "Controlled afterId=0 request and saved Human session checks passed.",
+          "First ElectronApplication.close succeeded and the owned-process zero-survivor poll passed."
+        ],
+        "gracefulCloseSucceededAt": "2026-11-02T23:43:12.3764130Z",
+        "failureAt": "2026-11-02T23:43:12.4795830Z",
+        "failure": {
+          "name": "TypeError",
+          "message": "Cannot read properties of undefined (reading '_object')",
+          "helper": "closeHumanLifetime",
+          "sourceLine": 1040,
+          "testCallSourceLine": 1269,
+          "expression": "lifetime.app.process().exitCode"
+        },
+        "notReached": [
+          "Second process launch",
+          "Offline same-directory persistence and reconciliation after reopen"
+        ]
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+        "result": "failed",
+        "firstLifetime": "held-first",
+        "startup": {
+          "videoArtifactInitialized": true,
+          "documentDomContentLoaded": true,
+          "preloadIpcReady": true,
+          "traceStartSucceededAt": "2026-11-02T23:43:14.6061350Z",
+          "traceStopSucceededAt": "2026-11-02T23:43:17.6293900Z",
+          "videoEncoderExitCode": 0,
+          "videoAttached": true,
+          "traceAttached": true
+        },
+        "reached": [
+          "Actual UI send committed through the controlled HTTP service while its response remained held.",
+          "SQLite contained exactly one matching pending/dispatching Human row without a remote message id.",
+          "Canonical UI row was absent while response remained held.",
+          "Actual preload read verified original draft text/id and persisted local Human author, nonce and draft-id submission binding, with no recovery.",
+          "First ElectronApplication.close succeeded and the owned-process zero-survivor poll passed."
+        ],
+        "gracefulCloseSucceededAt": "2026-11-02T23:43:18.3283920Z",
+        "failureAt": "2026-11-02T23:43:18.4182660Z",
+        "failure": {
+          "name": "TypeError",
+          "message": "Cannot read properties of undefined (reading '_object')",
+          "helper": "closeHumanLifetime",
+          "sourceLine": 1040,
+          "testCallSourceLine": 1369,
+          "expression": "lifetime.app.process().exitCode"
+        },
+        "notReached": [
+          "Second or third process launch",
+          "Canonical retirement of original draft A",
+          "Persistent same-text new draft B",
+          "Old closed response release",
+          "New-nonce real Send after process recovery"
+        ]
+      }
+    ],
+    "rootCause": {
+      "classification": "test-fixture lifecycle defect",
+      "evidence": "Both failures occur only when the fixture re-fetches app.process() after successful app.close and the surviving-owned-process poll. The pinned Playwright process() implementation resolves through the live connection mapping. Holding the existing ChildProcess before close avoids querying that disposed mapping.",
+      "primarySource": "https://github.com/microsoft/playwright/blob/v1.62.1/packages/playwright-core/src/client/electron.ts",
+      "distinction": "This is not evidence of failed process termination or completed reopen behavior. No product behavior is accepted beyond the assertions actually reached."
+    },
+    "repair": {
+      "path": "desktop/e2e/agent-network-responsive.spec.ts",
+      "baseBlob": "1761c8c91622bd0eda1b1f69ee4c543ef344e540",
+      "replacementBlob": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "fullApiReadback": true,
+      "changes": [
+        "Capture const ownedProcess = lifetime.app.process() immediately after the already-closed guard.",
+        "Read exitCode and signalCode from that same reference after close."
+      ],
+      "preserved": "Original process disappearance poll, all message/reopen assertions, trace/video capture, case counts, retries=0 and timeout budgets.",
+      "staticReviewOfOtherProcessCalls": "Launch obtains the ChildProcess before closing; existing Plugins cleanup also captures ownedProcess before close. No other post-close process() call remains.",
+      "execution": "Replacement blob has not yet been executed by GitHub Actions."
+    },
+    "artifact": {
+      "id": 13188962956,
+      "name": "plugins-close-pointer-487083725db93109b0d3d2b4bdddd483d148ba30",
+      "sizeInBytes": 11123162,
+      "digest": "sha256:1ff294f1f95cd1a9d7a1e63a78f06293d8c52ddcc52740caf7b43e427a97e2f0",
+      "headSha": "487083725db93109b0d3d2b4bdddd483d148ba30",
+      "apiUrl": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13188962956",
+      "identityVerifiedViaApi": true,
+      "mediaReview": "Trace/video/screenshot production and artifact identity verified from source, full logs and API; no visual inspection of media was performed."
+    },
+    "fullLog": {
+      "location": "Original GitHub Actions job log; no raw copy is uploaded by this receipt.",
+      "apiUrl": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125624456887/logs",
+      "decodedCharactersRead": 265191,
+      "splitLinesRead": 3274,
+      "failureLineRanges": [
+        [
+          2677,
+          2689
+        ],
+        [
+          3164,
+          3176
+        ]
+      ]
+    },
+    "acceptanceLimits": [
+      "Actual Electron, preload, Host and SQLite with controlled HTTP only.",
+      "No deployed backend afterId=0 contract, signed package, forced-crash recovery, full migration or independent acceptance is established.",
+      "Both Human reopen cases remain failing and incomplete on this exact H."
+    ]
+  },
+  "closed_process_fixture_repair": {
+    "path": "desktop/e2e/agent-network-responsive.spec.ts",
+    "base_blob": "1761c8c91622bd0eda1b1f69ee4c543ef344e540",
+    "final_blob": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+    "readback_verified": true,
+    "change": "Save the existing ChildProcess while the Playwright channel is live; read the saved process after real graceful shutdown for exit metadata.",
+    "cases_changed": false,
+    "assertions_removed": false,
+    "retries": 0,
+    "execution": "Not-run at preparation. The containing commit must pass both existing Plugins cases and both complete Human process-reopen cases in Actions.",
+    "independent_review": "Root full-content comparison confirms exactly one added binding and two property replacements; existing real process disappearance checks and all test bodies remain unchanged. Independent core_recovery full-blob review confirmed the same exact three-line delta and no remaining post-close process() access."
   }
 }
