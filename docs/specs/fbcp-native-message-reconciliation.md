@@ -2273,3 +2273,76 @@ production root and bridge; the Electron held-receipt case must assert original
 A retirement before any new edit, create a new B identity through real
 A-to-other-to-A editing, and retain B across the next real process reopen.
 Authored/static evidence is not execution, deployed-service or independent ACCEPT.
+
+
+## NMR-FEED-01 — Scoped production forwarding of durable Human updates
+
+At exact desktop H `487083725db93109b0d3d2b4bdddd483d148ba30` (retained
+unchanged by the following Electron fixture-only commit), Session's committed
+SQLite upserts publish through `transcript_mutation_events`, while the shipping
+`TranscriptExtension` installs no subscription to that registry. The existing
+`ProductionRosterEmit` -> Host Gateway SSE -> Rust Coordinator -> Electron
+carrier/preload -> Renderer transcript consumer already supports an
+`updated` payload. Controlled feed fixtures alone do not prove this producer
+connection. The audited source identities are retained in evidence blobs
+`44792fe02191a56c7a729d67436423ed252ae081` and
+`1698bf8c3273ea092dfbc1133da7769af6f1c2b0`.
+
+This bounded batch wires already committed Human row updates to that existing
+production projection. Session/SQLite remains the only message authority.
+There is no second store, polling owner, service client or public RPC.
+
+- **NMR-FEED-01a:** The shared Transcript extension constructor registers exactly
+  one Human upsert observer, also used by the actual production bootstrap.
+  Forward `entries-upserted` through the existing
+  `ProductionRosterEmit::publish_transcript_updated` envelope
+  `{channel: "transcript", payload: {type: "updated", agentId, entry}}`.
+  Do not emit `before: null`, an unconsumed single-row deleted event, a synthetic
+  clear or an Agent echo. Existing append, snapshot and Agent owners remain.
+- **NMR-FEED-01b:** Global notifications carry an internal `originDbPath`
+  identity produced only from the writer's trusted database path. The shared
+  `transcript_mutation_origin(&Path) -> Option<String>` computes the existing
+  canonical path; failure supplies no qualified origin. This internal value is
+  never copied into Gateway/renderer events or public message metadata.
+  The Session projection checks the expected database under its own root
+  against that origin, validates the existing Human conversation metadata and
+  local participant, and reads each requested ID from that same durable owner.
+  Never resolve or open a path supplied by the notification. Never trust its
+  supplied message body. Same conversation IDs/participants in another root,
+  Agent databases, missing or malformed origins and unauthorized metadata must
+  produce no projected event. Deduplicate repeated requested IDs.
+- **NMR-FEED-01c:** Use the existing indexed per-ID read; do not reread an entire
+  transcript for each update or acquire the conversation mutation lane again
+  from a synchronous post-commit callback. Reads and event projection perform
+  no HTTP, outbox replay, database creation or durable write. A failed commit
+  has no successful upsert to forward. Preserve canonical IDs/order, author,
+  nonce, reactions, read receipts and all other current row fields.
+- **NMR-FEED-01d:** The observer belongs to the Transcript extension lifetime.
+  A shared admission fence covers each admitted read/publication and disposal.
+  Drop closes admission, waits for admitted projection to finish and explicitly
+  unsubscribes before disposing the manager. A callback already copied into
+  the global registry's dispatch snapshot but not yet admitted cannot emit
+  after disposal; creating the replacement extension installs one observer.
+  The current registry subscription has no automatic Drop cleanup, so merely
+  dropping or taking that handle is insufficient.
+
+**NMR-AC-FEED-01:** Extend the existing real Session/HTTP/SQLite integration
+harness with four `shipping_human_` cases: (1) a real native history refresh of
+an already imported row reaches the started Transcript extension and existing
+Host event bus as the exact durable `updated` message; (2) forged notification
+body and duplicate IDs can only publish the current durable row once; (3)
+same-ID/two-root, Agent, nonparticipant and malformed-origin negatives emit
+nothing; (4) a deterministic blocked global dispatch snapshot proves disposal
+rejects the old callback and replacement startup emits exactly once. Preserve
+all existing Human cases, actual Renderer older-page/update tests and Agent
+consumers. Execute affected compile, these behavior cases and downstream
+gates only in Actions at the frozen containing H. Static source reachability
+is distinguished from actual dynamic evidence.
+
+This does not add remote edit/delete commands, a revision/tombstone protocol,
+arbitrary-old-message change discovery, physical Human clear/delete semantics
+or reaction-conflict retirement. Those actual service/state-machine gaps stay
+open, as do active afterId=0 deployment, complete source/legal, signed supported
+platforms, full UI/a11y/Bot/soak/upgrade/rollback and independent ACCEPT.
+Rollback removes only this projection wiring; persisted user messages,
+resources, outbox and source identities remain intact.
