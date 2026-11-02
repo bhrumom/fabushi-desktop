@@ -14,6 +14,31 @@ This file records the current production owners that FBCP must absorb into. It i
 
 ## Method
 
+### 2026-11-02 immutable forward picker intent (task20bf round1 resumed)
+
+Current inspected input is `59f5fa24827812f78336c464995d161f403dedfb` on the
+existing migration branch; main remains `5528062177e3865eef60a073a066cca144f9e3e8`.
+The existing transcript action opens `ForwardMessageDialog`; its callback goes
+through the Coordinator Session gateway to `ProductionSessionWorkers::forward_human_message`.
+The existing source-conversation `HumanForwardBatch` journal binds account,
+issuer, source, normalized privacy and original targets before the first POST;
+destination SandAgentDb rows plus the authenticated Fabushi service settle the
+messages. Same-nonce subset retries are allowed, expansion/privacy changes are
+rejected. No renderer state can authorize or own these sends.
+
+This batch changes the existing picker intent and settlement projection only:
+immutable retry parameters, exact requested-target confirmation, the Host's
+32-recipient limit, reverse privacy transition and close-with-durable-work
+semantics. The already integrated account-generation and roster/unmount fences
+remain. Search, resources, approvals, Agent execution and old data retain their
+current owners. The historical statement that desktop Telegram/FeatureHost
+writers remain reachable is superseded by the current Native guards below and
+their later changes; no old registration or database is deleted here.
+
+Oracle: ORA-TDRP-FORWARD-INTENT-UI-001. Exact-H execution is recorded by the
+existing native-service-contracts Actions artifacts; source reviews and final
+service/package/Bot/independent acceptance remain separate.
+
 ### 2026-11-03 Windows updater publisher authority (round 22; narrow owner)
 
 At base `8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`, production main-process update wiring constructed the existing `SandWindowsInstaller` without a publisher override, accepting inherited Anysphere common names by default. Neither product metadata nor historical signer names establishes formal Fabushi publisher authority. The round-22 implementation at `5d271ff0c03d8f01368ca44026d14cd7519ad6bd` retains the existing `entry.ts` → production binding → `update-wiring.ts` → `SandUpdateService` → `win32-installer.ts` → apply-marker/Settings path; it removes the default, requires trusted `FABUSHI_WINDOWS_UPDATE_PUBLISHERS_JSON` exact certificate subject plus DER SHA-256, checks valid embedded Authenticode and candidate bytes, and consumes the launch receipt once. Missing/invalid policy disables updates; persistent data and staged failure recovery remain untouched. No new updater, identity owner, or renderer authorization surface is created.

@@ -1,241 +1,95 @@
 diff --git a/projects/telegram-desktop-rust/parity-ledger.json b/projects/telegram-desktop-rust/parity-ledger.json
-index a35e5157..81e9d400 100644
+index 81e9d400..e494ba34 100644
 --- a/projects/telegram-desktop-rust/parity-ledger.json
 +++ b/projects/telegram-desktop-rust/parity-ledger.json
-@@ -1930,7 +1930,7 @@
-         "MessageContent",
-         "Message.forward_origin"
+@@ -1982,7 +1982,8 @@
+         "pub fn clear_caption(&mut self)",
+         "ClientCommand::ForwardMessage",
+         "Command::ForwardMessage",
+-        "fn idempotent_send_replay("
++        "fn idempotent_send_replay(",
++        "HumanForwardBatch::validate"
        ],
--      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/share-box-complete-read.md",
-+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md",
-       "behavior_contract": "Forward privacy is a canonical option snapshot: hiding captions also hides sender provenance; restoring sender visibility implies captions are not hidden. The native domain applies the normalized snapshot to forwarded Message content/provenance, and idempotent replay rejects reuse of the same client identity with changed privacy options.",
-       "state_machine": "forward request + privacy options -> normalize coupled policy -> service replay comparison -> native ForwardMessage -> strip canonical caption and/or provenance -> one canonical pending Message.",
-       "side_effects": [
-@@ -1958,7 +1958,7 @@
-         "native/mahayana-messaging/src/service.rs",
-         "native/mahayana-messaging/src/engine.rs"
+       "target_language": "Rust",
+       "language_rationale": "Forward privacy changes canonical persisted message content/provenance and replay semantics, so it belongs below the renderer in the existing Rust messaging domain.",
+@@ -2030,12 +2031,15 @@
+         "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
+         "path:source/host/src/extensions/session/production.rs#forward_human_message",
+         "path:source/host/Cargo.toml#fabushi-messaging-core",
+-        "path:source/host/src/extensions/session/production.rs#ForwardPrivacy::normalized"
++        "path:source/host/src/extensions/session/production.rs#ForwardPrivacy::normalized",
++        "path:source/host/src/extensions/session/forward_batch_journal.rs#HumanForwardBatch::validate"
        ],
--      "existing_owner": "Fabushi canonical Message + MessagingService + MessagingEngine owners",
-+      "existing_owner": "Existing ProductionRenderer / ForwardMessageDialog / Session HumanForwardBatch and SandAgentDb; shared ForwardPrivacy normalization",
-       "rejected_existing_owners": [
-         "Renderer-only privacy state is not the privacy boundary",
-         "A new Share/Telegram forwarding owner would duplicate canonical message truth"
-@@ -1969,7 +1969,12 @@
-         "native/mahayana-messaging/src/message.rs",
-         "native/mahayana-messaging/src/protocol.rs",
-         "native/mahayana-messaging/src/service.rs",
--        "native/mahayana-messaging/src/engine.rs"
-+        "native/mahayana-messaging/src/engine.rs",
-+        "frontend/src/production/ForwardMessageDialog.tsx",
-+        "frontend/src/production/ForwardMessageDialog.fixture.tsx",
-+        "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
-+        "frontend/src/production/forward-settlement.ts",
-+        "source/host/src/extensions/session/forward_batch_journal.rs"
+       "test_evidence": [
+         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
+         "native/mahayana-messaging/tests/service_contract.rs#forward_replay_is_idempotent_and_conflicts_on_changed_options",
+-        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart"
++        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
++        "source/host/src/extensions/session/forward_batch_journal.rs#forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent",
++        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair"
        ],
-       "fabushi_target_symbols": [
-         "ForwardPrivacy",
-@@ -1985,10 +1990,10 @@
-         "ClientCommand::ForwardMessage privacy -> MessagingService replay check -> Command::ForwardMessage privacy -> Event::MessageQueued",
-         "drop_captions=true normalizes drop_sender_names=true before Message creation"
-       ],
--      "state_owner": "Canonical ForwardPrivacy command snapshot plus canonical Message content/provenance",
--      "lifecycle_owner": "MessagingService + MessagingEngine canonical forward lifecycle",
-+      "state_owner": "Existing account/issuer-bound Session source-conversation forward journal and destination SandAgentDb transcript/outbox; authenticated Fabushi service owns remote message/resource IDs. Picker intent is a presentation snapshot.",
-+      "lifecycle_owner": "Existing renderer account-generation fence and dialog lifetime for UI; existing Session forward batch recovery for durable intent",
-       "persistence_and_restart": "Privacy effects are materialized into canonical Message content/forward_origin and therefore persist through the existing message state store.",
--      "concurrency_and_cancellation": "Privacy is evaluated in the same transaction as forward creation; actor-scoped client_message_id replay compares the resulting privacy snapshot and rejects changed-option retries.",
-+      "concurrency_and_cancellation": "First dispatch fixes normalized options, original destination set and nonce; one synchronous submit fence; retry only unconfirmed original destinations; search/scope callbacks are separate; close retires UI without deleting or cancelling accepted durable Host work.",
-       "security_boundary": "Native messaging state is the privacy boundary; UI state cannot leave hidden sender/caption data exposed in the destination Message.",
-       "network_service_dependencies": [
-         "Existing Fabushi messaging service only"
-@@ -1998,12 +2003,15 @@
-       "implementation_status": "implemented",
-       "coverage_disposition": "rewritten",
-       "blockers": [
--        "Current-head GitHub Actions compile/test/integration evidence is pending",
--        "Paid-send revalidation plus repeat/suggested/effect/video/ephemeral applicability remain open ShareBox responsibilities"
-+        "Current containing-H GitHub Actions for this picker extension are pending at authoring; inherited historical target_commit is not execution evidence for this change.",
-+        "Remote forward provenance and forced-provenance/rich-page/source eligibility remain unclosed.",
-+        "Typed topic/sublist/source-removal/reply-draft lifetimes, paid-send, exact self/destination feedback and remaining ShareBox options remain separate open source responsibilities.",
-+        "Real service, signed supported-platform packages, complete visual/a11y/temporal/Bot/performance/soak, upgrade/rollback and independent ACCEPT remain open."
-       ],
-       "production_entrypoints": [
--        "ProductionRenderer ConversationTranscript onForward -> ForwardMessageDialog -> Host gateway forwardHumanMessage -> ProductionSessionWorkers::forward_human_message -> append_human_message_with_context -> existing Human Message persistence/dispatch/recovery owner",
--        "Native canonical contract remains ClientCommand::ForwardMessage -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical Message"
-+        "ProductionRenderer transcript Forward action -> existing ForwardMessageDialog immutable request -> Session gateway forwardHumanMessage -> ProductionSessionWorkers.forward_human_message -> source-conversation HumanForwardBatch -> destination append_human_message_with_context -> Fabushi native service -> same SandAgentDb/Transcript projection",
-+        "ProductionRenderer account generation -> existing dialog lifetime fence and settleForwardProjection -> current-account roster projection only; Host owns durable sends after dialog close",
-+        "Session genuinely reuses fabushi_messaging_core::ForwardPrivacy::normalized; isolated domain MessagingService tests are not the shipping desktop command chain"
-       ],
-       "production_evidence": [
-         "commit:633d54b0a393b9ee042266d85e1ccbd9fc661300",
-@@ -2104,12 +2112,18 @@
-         "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+       "target_commit": "21ab7870a3ba3129172942d722befb83c321f413",
+       "workflow_run": null,
+@@ -2103,17 +2107,21 @@
+       "motion_contract": "No new motion.",
+       "reduced_motion_contract": "No new motion.",
+       "visual_baseline_ids": [],
+-      "visual_evidence": [],
++      "visual_evidence": [
++        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570/artifacts/13174992345"
++      ],
+       "accessibility_evidence": [],
+       "design_exception_adr": null,
+       "design_reviewer": null,
+       "quality_risk": "high",
+       "requirement_ids": [
+-        "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
++        "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
++        "NMR-48d"
        ],
        "oracle_ids": [
--        "ORA-TDRP-SHARE-FORWARD-PRIVACY-001"
-+        "ORA-TDRP-SHARE-FORWARD-PRIVACY-001",
-+        "ORA-TDRP-FORWARD-INTENT-UI-001"
+         "ORA-TDRP-SHARE-FORWARD-PRIVACY-001",
+-        "ORA-TDRP-FORWARD-INTENT-UI-001"
++        "ORA-TDRP-FORWARD-INTENT-UI-001",
++        "NMR-AC-39b"
        ],
        "invariant_ids": [
          "INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001",
-         "INV-TDRP-FORWARD-PRIVACY-NATIVE-001",
--        "INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001"
-+        "INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001",
-+        "FWD-UI-01",
-+        "FWD-UI-02",
-+        "FWD-UI-03",
-+        "FWD-UI-04",
-+        "FWD-UI-05"
+@@ -2125,7 +2133,9 @@
+         "FWD-UI-04",
+         "FWD-UI-05"
        ],
-       "unit_case_ids": [],
-       "property_state_case_ids": [
-@@ -2128,7 +2142,13 @@
-       "fault_recovery_case_ids": [
-         "FAULT-TDRP-SHARE-FORWARD-PRIVACY-001"
-       ],
--      "ui_functional_case_ids": [],
-+      "ui_functional_case_ids": [
-+        "ForwardMessageDialog.behavior.test.mjs:partial retry only sends failed destination with stable identity",
-+        "ForwardMessageDialog.behavior.test.mjs:ambiguous missing duplicate and unexpected settlements retain the frozen retry intent",
-+        "ForwardMessageDialog.behavior.test.mjs:recipient limit stays editable and counts selections outside the current search",
-+        "ForwardMessageDialog.behavior.test.mjs:closing a pending forward retires presentation without cancelling or settling a reopened intent",
-+        "ForwardMessageDialog.behavior.test.mjs:late searches preserve send failure and retry destinations even when selected rows are hidden"
+-      "unit_case_ids": [],
++      "unit_case_ids": [
++        "forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent"
 +      ],
-       "visual_case_ids": [],
-       "accessibility_case_ids": [],
-       "performance_case_ids": [],
-@@ -2157,7 +2177,21 @@
+       "property_state_case_ids": [
+         "PROP-TDRP-SHARE-FORWARD-PRIVACY-001"
+       ],
+@@ -2140,7 +2150,8 @@
+         "TEMP-TDRP-SHARE-FORWARD-PRIVACY-001"
+       ],
+       "fault_recovery_case_ids": [
+-        "FAULT-TDRP-SHARE-FORWARD-PRIVACY-001"
++        "FAULT-TDRP-SHARE-FORWARD-PRIVACY-001",
++        "shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair"
+       ],
+       "ui_functional_case_ids": [
+         "ForwardMessageDialog.behavior.test.mjs:partial retry only sends failed destination with stable identity",
+@@ -2172,12 +2183,14 @@
+       ],
+       "coverage_matrix_status": "pending",
+       "flake_status": "stable",
+-      "test_execution_evidence": [],
++      "test_execution_evidence": [
++        "projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json#execution_history"
++      ],
+       "acceptance_reviewer": null,
        "release_gate_status": "pending",
        "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
        "reviewer": null,
--      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending."
-+      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending.\nTask20bf round1 resumed on live59f5fa after preserving interrupted local changes. Existing account lifetime and Host whole-batch journal are retained. FWD-UI-01..05 repairs immutable normalized retry, ambiguous settlement, 32-target selection, reverse privacy and presentation close in the actual picker. Six source bodies were read: only the two options files have complete exact source-to-responsibility records; panel/phrase records explicitly remain pending mapping. Current batch tests are authored, not locally executed; containing-H Actions artifacts establish execution. Historical target_commit/run fields remain historical and no product/source/independent acceptance is promoted.",
-+      "additional_source_identities": [
-+        {
-+          "repository": "telegramdesktop/tdesktop",
-+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+          "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
-+          "object": "65db5fbe067e340e0259a23ae57cda59096ccda0"
-+        },
-+        {
-+          "repository": "telegramdesktop/tdesktop",
-+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+          "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
-+          "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf"
-+        }
-+      ]
-     },
-     {
-       "source_repository": "telegramdesktop/tdesktop",
-@@ -50956,7 +50990,7 @@
-     "nested_gitlinks_discovered": 4,
-     "nested_gitlinks_resolved": 4,
-     "nested_gitlinks_blocked": 0,
--    "source_responsibility_rows": "183 current canonical responsibility rows; exact source tuples require the full fixed-U inventory contract; this is not the 16,381-identity source review set",
-+    "source_responsibility_rows": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six source review records comprise two complete option contracts and four pending draft/feedback mappings; global review counts remain undetermined and acceptance is false.",
-     "unknown": null,
-     "unread": null,
-     "omitted_known": 0,
-@@ -50967,5 +51001,101 @@
-       "git_tree_verified": true,
-       "reason": "The original-host transport blocker is cleared. GitHub Actions run 41395923342/job 125117103688 at target d00fdb48200b105b7aea9f2cb865cf4e7b482b2d fetched the exact declared GitLab commit and verified cppgir tree b70fee3ca4bf9e4c6fa2a761bd3461be3754f7f8 (103 blobs, 22 trees, one gitlink). Its exact .gitmodules blob e0c91502bcb2798a8a57bd85e49c76e0ef7275a3 declares https://github.com/martinmoene/expected-lite.git at 95b9cb015fa17baa749c2b396b335906e1596a9e; that child tree is 5f38901998c76e9c3dcc52bfbbe26877820cbbda (43 blobs, 12 trees, no further gitlinks). All entry and edge JSONL SHA256 digests were remotely read back and matched. Artifact 13119680890 digest sha256:61c39c84a93982b5788e8dba6c3cf1627ebf85cdabf8c08851537ddfa5b970be preserves the evidence; details are in evidence/fbcp-native-message-round3-20261102.json. The four resolved nested Git edges include the previously observed libcbor/doxygen-theme and range-v3/doc/gh-pages trees. Zero blocked here concerns those four Git-tree acquisitions only: canonical fixed-U inventory, build-time/generated-input accounting, legal and semantic review, and product/independent acceptance remain open. The subsequently produced complete fixed-U Git-only inventory is pinned at producer9f77bb2389cba6a65d589eb309d1392501ed308d/run41397005716/artifact13118749668 and recovered by1cd59bb01513624d26e12f77bfab66729ab72694/run41401970993. Its41 repository nodes and40 edges include all four nested edges. Current source disposition/depth and external/build/generated/LFS/legal/product acceptance remain open."
-     }
--  }
-+  },
-+  "source_reviews": [
-+    {
-+      "repository": "telegramdesktop/tdesktop",
-+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+      "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
-+      "object": "65db5fbe067e340e0259a23ae57cda59096ccda0",
-+      "category": "mixed-ui",
-+      "risk": "high",
-+      "review_depth": "deep",
-+      "status": "complete",
-+      "rationale": "Entire declaration read: coupled sender/caption option state, shared callback and supplied lifetime; mapped to the existing canonical forward privacy responsibility.",
-+      "evidence": [
-+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
-+      ],
-+      "responsibility_ids": [
-+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
-+      ]
-+    },
-+    {
-+      "repository": "telegramdesktop/tdesktop",
-+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+      "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
-+      "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
-+      "category": "mixed-ui",
-+      "risk": "high",
-+      "review_depth": "deep",
-+      "status": "complete",
-+      "rationale": "Entire implementation and scoped callers read: hiding captions hides names; showing names restores captions; one emitted snapshot and lifetime. Shipping picker and Session policy reuse are recorded separately from test execution and product acceptance.",
-+      "evidence": [
-+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
-+      ],
-+      "responsibility_ids": [
-+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
-+      ]
-+    },
-+    {
-+      "repository": "telegramdesktop/tdesktop",
-+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
-+      "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
-+      "category": "mixed-ui",
-+      "risk": "high",
-+      "review_depth": "deep",
-+      "status": "pending",
-+      "rationale": "Entire file read at fixed U. Full forward/reply draft, destination lifetime and source eligibility obligations still require decomposition and exact responsibility mapping; not credited as complete.",
-+      "evidence": [
-+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
-+      ],
-+      "responsibility_ids": []
-+    },
-+    {
-+      "repository": "telegramdesktop/tdesktop",
-+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
-+      "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
-+      "category": "mixed-ui",
-+      "risk": "high",
-+      "review_depth": "deep",
-+      "status": "pending",
-+      "rationale": "Entire file and scoped consumers read. Forced provenance/rich-page eligibility, source removal, typed destination destruction, matching reply/suggestion clearing and delayed cloud-save obligations remain open; source reading alone does not close these mappings.",
-+      "evidence": [
-+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
-+      ],
-+      "responsibility_ids": []
-+    },
-+    {
-+      "repository": "telegramdesktop/tdesktop",
-+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
-+      "object": "86865db47439dbce848fc812df2554335d3e004c",
-+      "category": "mixed-ui",
-+      "risk": "medium",
-+      "review_depth": "deep",
-+      "status": "pending",
-+      "rationale": "Entire declaration read. Complete destination/self/premium-aware terminal feedback and navigation responsibility mapping remains open.",
-+      "evidence": [
-+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
-+      ],
-+      "responsibility_ids": []
-+    },
-+    {
-+      "repository": "telegramdesktop/tdesktop",
-+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-+      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
-+      "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
-+      "category": "mixed-ui",
-+      "risk": "medium",
-+      "review_depth": "deep",
-+      "status": "pending",
-+      "rationale": "Entire implementation read. Saved/self/premium, one/two/many destination feedback and session-window navigation exceed the existing generic settlement count; decomposition and production closure remain open.",
-+      "evidence": [
-+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
-+      ],
-+      "responsibility_ids": []
-+    }
-+  ]
- }
+-      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending.\nTask20bf round1 resumed on live59f5fa after preserving interrupted local changes. Existing account lifetime and Host whole-batch journal are retained. FWD-UI-01..05 repairs immutable normalized retry, ambiguous settlement, 32-target selection, reverse privacy and presentation close in the actual picker. Six source bodies were read: only the two options files have complete exact source-to-responsibility records; panel/phrase records explicitly remain pending mapping. Current batch tests are authored, not locally executed; containing-H Actions artifacts establish execution. Historical target_commit/run fields remain historical and no product/source/independent acceptance is promoted.",
++      "notes": "Shipping Human Forward now reuses canonical fabushi-messaging-core ForwardPrivacy::normalized() before Host persistence, removing the prior duplicated executable privacy policy while the existing Host Session remains the sole shipping Human Message owner. This row remains implemented, not verified: exact-head native/Host integration, Electron E2E, temporal/reload/restart/recovery and independent evidence are pending.\nTask20bf round1 resumed on live59f5fa after preserving interrupted local changes. Existing account lifetime and Host whole-batch journal are retained. FWD-UI-01..05 repairs immutable normalized retry, ambiguous settlement, 32-target selection, reverse privacy and presentation close in the actual picker. Six source bodies were read: only the two options files have complete exact source-to-responsibility records; panel/phrase records explicitly remain pending mapping. Current batch tests are authored, not locally executed; containing-H Actions artifacts establish execution. Historical target_commit/run fields remain historical and no product/source/independent acceptance is promoted.\nH73cc6e1cc9fa871e5f80931979606ac9ee810551 was pushed and API commit/tree/files reread. Source157/schema37/candidate, Chromium16/settlement5/Transcript16, Electron83 and Windows11 passed; six actual UI screenshots reviewed. macOS Host/shipping outcomes were still pending at this observation, not passing. A separate current-source review found valid-JSON persisted privacy contradictions; NMR-48d now rejects these at the existing load/store validator without rewriting accepted intent. Added journal and cold/cached HTTP/SQLite restart cases require Human45/journal13 at the containing new H. No complete source/product/independent acceptance claim; earlier fields remain historical.",
+       "additional_source_identities": [
+         {
+           "repository": "telegramdesktop/tdesktop",

@@ -1,0 +1,121 @@
+name: NMR49 temporary ledger object delivery
+
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/workflows/nmr49-ledger-object.yml'
+      - 'projects/telegram-desktop-rust/evidence/round12-ledger-object-transfer.json'
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-exact-ledger-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Preserve all source fields and create only the reviewed Git blob
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const repo = 'bhrumom/fabushi-desktop';
+          const branch = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1';
+          const ledgerPath = 'projects/telegram-desktop-rust/parity-ledger.json';
+          const baseBlob = '81e9d4009231b07d78a851cbdff3a4cc0ef29796';
+          const targetBlob = 'eddd11c7db0e8be8cfa26a58fb177901ce09b55e';
+          const allowed = ['requirement_ids','fabushi_target_paths','fabushi_target_symbols',
+            'contract_case_ids','integration_case_ids','fault_recovery_case_ids',
+            'security_case_ids','ui_functional_case_ids','test_evidence','production_evidence',
+            'test_execution_evidence','notes','blockers'];
+          assert.equal(process.env.GITHUB_EVENT_NAME, 'push');
+          assert.equal(process.env.GITHUB_REPOSITORY, repo);
+          assert.equal(process.env.GITHUB_REF, 'refs/heads/' + branch);
+          assert.match(process.env.GITHUB_SHA ?? '', /^[a-f0-9]{40}$/);
+          const blobId = text => {
+            const bytes = Buffer.from(text, 'utf8');
+            return crypto.createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex');
+          };
+          const input = JSON.parse(fs.readFileSync('projects/telegram-desktop-rust/evidence/round12-ledger-object-transfer.json', 'utf8'));
+          assert.equal(input.schema, 'fabushi-nmr49-ledger-object-transfer-v1');
+          assert.equal(input.repository, repo);
+          assert.equal(input.branch, branch);
+          assert.equal(input.path, ledgerPath);
+          assert.equal(input.responsibility_id, 'FBCP-NMR-001');
+          assert.equal(input.base_blob, baseBlob);
+          assert.equal(input.target_blob, targetBlob);
+          assert.equal(input.append_newline, true);
+          assert.deepEqual(input.allowed_fields, allowed);
+          const original = fs.readFileSync(ledgerPath, 'utf8');
+          assert.equal(blobId(original), baseBlob, 'changed base ledger is never overwritten');
+          const beforeRow = JSON.parse(input.before_row);
+          const afterRow = JSON.parse(input.after_row);
+          const before = JSON.parse(original);
+          const matches = before.rows.map((row,index) => row.responsibility_id === 'FBCP-NMR-001' ? index : -1).filter(index => index >= 0);
+          assert.equal(matches.length, 1);
+          const index = matches[0];
+          assert.deepEqual(beforeRow, before.rows[index]);
+          assert.deepEqual(Object.keys(afterRow), Object.keys(beforeRow));
+          for (const key of Object.keys(beforeRow)) {
+            if (!allowed.includes(key)) {
+              assert.deepEqual(afterRow[key], beforeRow[key], 'protected NMR field ' + key);
+            } else if (Array.isArray(beforeRow[key])) {
+              assert.ok(Array.isArray(afterRow[key]));
+              assert.deepEqual(afterRow[key].slice(0,beforeRow[key].length), beforeRow[key], 'append-only ' + key);
+            } else {
+              assert.equal(key, 'notes');
+              assert.ok(afterRow.notes.startsWith(beforeRow.notes), 'preserve historical notes');
+            }
+          }
+          const position = original.indexOf(input.before_row);
+          assert.ok(position >= 0);
+          assert.equal(original.indexOf(input.before_row, position + 1), -1);
+          const updated = original.slice(0,position) + input.after_row + original.slice(position + input.before_row.length) + '\n';
+          assert.equal(blobId(updated), targetBlob);
+          const after = JSON.parse(updated);
+          const expected = structuredClone(before);
+          expected.rows[index] = afterRow;
+          assert.deepEqual(after, expected, 'all other rows and root/source/acceptance data stay identical');
+          assert.ok(process.env.GH_TOKEN, 'GitHub object creation token is required');
+          const response = await fetch('https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs', {
+            method: 'POST', redirect: 'error', signal: AbortSignal.timeout(60000),
+            headers: {Authorization: 'Bearer ' + process.env.GH_TOKEN, Accept: 'application/vnd.github+json',
+              'Content-Type':'application/json', 'X-GitHub-Api-Version':'2022-11-28'},
+            body: JSON.stringify({content:updated,encoding:'utf-8'}),
+          });
+          assert.equal(response.status, 201, 'fixed Git blob endpoint must create the reviewed object');
+          const created = await response.json();
+          assert.equal(created.sha, targetBlob);
+          fs.mkdirSync('artifacts/nmr49-ledger-object', {recursive:true});
+          fs.writeFileSync('artifacts/nmr49-ledger-object/receipt.json', JSON.stringify({
+            repository:repo,checkout:process.env.GITHUB_SHA,path:ledgerPath,base_blob:baseBlob,
+            created_blob:created.sha,bytes:Buffer.byteLength(updated),row:'FBCP-NMR-001',
+            scope:'Unattached exact Git object only; no commit/ref/push and no validation or acceptance claim.',
+          },null,2) + '\n');
+          console.log('Created only exact unattached ledger blob ' + created.sha);
+          NODE
+      - name: Preserve object delivery receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nmr49-ledger-object-${{ github.sha }}
+          path: artifacts/nmr49-ledger-object
+          if-no-files-found: error

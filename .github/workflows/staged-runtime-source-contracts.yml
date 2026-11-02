@@ -26,7 +26,95 @@ env:
   FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  acquire-inputs:
+    name: Acquire or verify auxiliary dependency inputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      input_mode: ${{ steps.inputs.outputs.input_mode }}
+    env:
+      GOTOOLCHAIN: local
+      CGO_ENABLED: '0'
+      GOOS: darwin
+      GOARCH: arm64
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.FABUSHI_TARGET_SHA }}
+          fetch-depth: 1
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache: false
+      - name: Capture exact input identities without compiling or running products
+        id: inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$FABUSHI_TARGET_SHA"
+          evidence="$GITHUB_WORKSPACE/artifacts/staged-runtime-inputs"
+          mkdir -p "$evidence"
+          printf '%s\n' "$FABUSHI_TARGET_SHA" > "$evidence/target-sha.txt"
+          { rustc -Vv; cargo -V; go version; go env GOOS GOARCH CGO_ENABLED GOTOOLCHAIN GOPROXY GOSUMDB; uname -a; } > "$evidence/toolchains.txt"
+          if [ "$FBCP_CAPTURE_MISSING_INPUTS" = true ]; then
+            mode=capture
+          else
+            mode=locked
+          fi
+          printf '%s\n' "$mode" > "$evidence/input-mode.txt"
+          for root in source/node-agent-coordinator source/box-exec-daemon; do
+            mkdir -p "$evidence/$root"
+            if ! git ls-files --error-unmatch "$root/Cargo.lock" > /dev/null 2>&1; then
+              test "$mode" = capture
+              cargo generate-lockfile --manifest-path "$root/Cargo.toml"
+            fi
+            cargo metadata --locked --format-version 1 --manifest-path "$root/Cargo.toml" > "$evidence/$root/cargo-metadata.json"
+            cp "$root/Cargo.toml" "$root/Cargo.lock" "$evidence/$root/"
+            git diff --exit-code -- "$root/Cargo.toml"
+            if [ "$mode" = locked ]; then
+              git diff --exit-code -- "$root/Cargo.lock"
+            fi
+          done
+          mkdir -p "$evidence/source/fabushi-network-worker"
+          cp source/fabushi-network-worker/go.mod "$evidence/source/fabushi-network-worker/original-go.mod"
+          if ! git ls-files --error-unmatch source/fabushi-network-worker/go.sum > /dev/null 2>&1; then
+            test "$mode" = capture
+            (cd source/fabushi-network-worker && go mod tidy)
+          fi
+          (
+            cd source/fabushi-network-worker
+            test "$(go list -mod=readonly -m -f '{{.Version}}' tailscale.com)" = v1.104.1
+            go mod download -json all > "$evidence/source/fabushi-network-worker/downloaded-modules.json"
+            go mod verify > "$evidence/source/fabushi-network-worker/module-verify.log"
+            go list -mod=readonly -m -json all > "$evidence/source/fabushi-network-worker/modules.json"
+            GOFLAGS=-mod=readonly go mod graph > "$evidence/source/fabushi-network-worker/module-graph.txt"
+            cp go.mod go.sum "$evidence/source/fabushi-network-worker/"
+            git diff -- go.mod > "$evidence/source/fabushi-network-worker/go-mod-resolution.patch"
+            if [ "$mode" = locked ]; then
+              git diff --exit-code -- go.mod go.sum
+            fi
+          )
+          (
+            cd "$evidence"
+            sha256sum source/node-agent-coordinator/Cargo.toml source/node-agent-coordinator/Cargo.lock source/box-exec-daemon/Cargo.toml source/box-exec-daemon/Cargo.lock source/fabushi-network-worker/go.mod source/fabushi-network-worker/go.sum > input-sha256.txt
+          )
+          printf '%s\n' 'Dependency acquisition/checksum evidence only. No product execution, macOS binary qualification, signed package or source/release ACCEPT is supplied by this job.' > "$evidence/scope.txt"
+          printf 'input_mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+      - name: Preserve the exact dependency inputs for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staged-runtime-inputs-${{ env.FABUSHI_TARGET_SHA }}
+          path: artifacts/staged-runtime-inputs
+          if-no-files-found: error
+          retention-days: 90
+
   rust-auxiliary:
+    needs: acquire-inputs
+    if: needs.acquire-inputs.outputs.input_mode == 'locked'
     name: Source and binary / ${{ matrix.binary }}
     runs-on: macos-15
     timeout-minutes: 30
@@ -140,6 +228,8 @@ jobs:
           retention-days: 90
 
   go-network-worker:
+    needs: acquire-inputs
+    if: needs.acquire-inputs.outputs.input_mode == 'locked'
     name: Source and binary / fabushi-network-worker
     runs-on: macos-15
     timeout-minutes: 30

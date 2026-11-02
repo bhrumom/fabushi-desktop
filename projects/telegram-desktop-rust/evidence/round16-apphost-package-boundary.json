@@ -5644,5 +5644,159 @@
       }
     ],
     "observed_at_utc": "2026-11-02T19:38:30.535743+00:00"
+  },
+  "auxiliary_input_acquisition_split": {
+    "base": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+    "base_tree": "12553d2f212aa7e6df7be5c3a4060628943b96c2",
+    "preserved_concurrent_heads": [
+      "06fb24c4963f35d1450c122e7222ee39e21b4192",
+      "94dcf7a2213808a8ded6baddaf069562d365c6d7"
+    ],
+    "previous_capture_commit": "77d8a251eb453eb0c7260717f576c20fecc6fd8a",
+    "previous_run": 41512531965,
+    "previous_jobs": [
+      125507739810,
+      125507740548,
+      125507740619
+    ],
+    "previous_observation": "All three queued with no steps through 19:48 UTC; no product execution or failure log. Queue cause is not established; no rerun/cancellation performed.",
+    "change": "Move dependency-only resolution/download/checksum capture to Ubuntu, with the same Rust/Go versions and unchanged direct manifests. Keep original macOS binary and owner gates byte-for-byte except needs/input-mode dependency; they are required after pinned mode is enabled.",
+    "capture_status": "authored, not-run at this preparation",
+    "source_or_binary_acceptance": false,
+    "review": {
+      "schema": "fabushi-independent-review-v1",
+      "review": "source-only Ubuntu acquisition delta before pinned macOS qualification",
+      "original_static_review": "runtime-lock-initial-review.json",
+      "resolved_oracle_review": "runtime-lock-fixed-review.json",
+      "base_commit": "77d8a251eb453eb0c7260717f576c20fecc6fd8a",
+      "base_workflow_blob": "ddd9f3d7f148eb09e3ffba7359ff03bc01088eb1",
+      "frozen_workflow": {
+        "path": ".github/workflows/staged-runtime-source-contracts.yml",
+        "sha256": "95ec765b411639fbad6c397a255a799c7db3d3f06fda5c37cb863306c2e02037",
+        "bytes": 17062
+      },
+      "frozen_spec": {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "section": "Auxiliary packaged executable source locks (FMEP-SOURCE-01)",
+        "sha256": "c7440965546b6eeace8c03d48134f2a36af1fcc111254bdaa7055ccadbf49b0c",
+        "unchanged": true
+      },
+      "verdict": "APPROVE_STATIC_SCOPE",
+      "blocking_findings": [],
+      "nonblocking_findings": [],
+      "exact_delta_evidence": {
+        "macJobBodiesIdenticalExceptTwoNeedsAndIf": true,
+        "triggerPermissionAndGlobalEnvUnchanged": true,
+        "method": "Read exact remote77d8 workflow and current frozen local workflow as text; excluding only the new job and two needs/if additions leaves identical Mac job bodies. No product execution or validator was invoked.",
+        "preserved_tests": "Coordinator1+1+4; Box13; supplied-real-daemon Host3; Go13 top-level with fail/skip rejection.",
+        "preserved_previous_fix": "All four Rust summary checks retain the legal finished-in numeric seconds suffix."
+      },
+      "observed_original_run": {
+        "id": 41512531965,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41512531965",
+        "head_sha": "77d8a251eb453eb0c7260717f576c20fecc6fd8a",
+        "status": "queued",
+        "conclusion": null,
+        "jobs": [
+          {
+            "id": 125507739810,
+            "name": "Source and binary / fabushi-network-worker",
+            "status": "queued",
+            "conclusion": null,
+            "steps": null
+          },
+          {
+            "id": 125507740548,
+            "name": "Source and binary / box-exec-daemon",
+            "status": "queued",
+            "conclusion": null,
+            "steps": null
+          },
+          {
+            "id": 125507740619,
+            "name": "Source and binary / mahayana-node-agent-coordinator",
+            "status": "queued",
+            "conclusion": null,
+            "steps": null
+          }
+        ],
+        "interpretation": "The original three Mac jobs are still queued with null steps. No failure log, executed gate or success can be inferred. This audit did not cancel or rerun the workflow."
+      },
+      "mode_contract": {
+        "capture": {
+          "configured_flag": "true",
+          "acquisition_output": "capture",
+          "mac_jobs": "skipped by the explicit locked-output condition",
+          "allowed_claim": "Missing dependency-input capture/review only",
+          "forbidden_claim": "No macOS build/ABI/lifecycle pass, no pinned input/source/release acceptance."
+        },
+        "pinned": {
+          "required_flag": "false",
+          "acquisition_output": "locked only after successful source/input checks",
+          "absent_inputs": "Both missing Cargo locks and missing go.sum fail before an output is published.",
+          "drift": "Tracked Rust manifests/locks and Go go.mod/go.sum are compared with git diff --exit-code.",
+          "mac_jobs": "needs acquire-inputs plus exact locked output; acquisition failure retains the normal needs success restriction.",
+          "required_execution": "All original Mac compilation, dependency/symbol/library controls and owner tests remain required when the reviewed flag is false."
+        },
+        "output_timing": "input_mode is written to GITHUB_OUTPUT at the end of the complete inputs step, after module verification, drift checks, six-file hashes and scope metadata. An early failing command cannot emit a successful locked output.",
+        "source_binding": "Acquisition and each Mac job check the same exact PR-head or push SHA; job isolation does not reuse uncommitted acquisition inputs for product execution. The pinned Mac jobs check out the committed lock files at the new exact H."
+      },
+      "acquisition_review": {
+        "platform": "ubuntu-24.04; source acquisition only. Toolchain versions remain Rust1.97.1 and Go1.27.1; Go target metadata retains darwin/arm64 and CGO0.",
+        "rust": [
+          "Two existing independent roots only; missing lock generation is allowed only in capture mode.",
+          "cargo metadata --locked resolves and records source/dependency metadata without compiling build scripts or products.",
+          "Both unchanged direct manifests and generated or tracked Cargo locks are copied into per-root paths and hashed.",
+          "Pinned tracked input drift causes failure; normal/build dependency and ABI negatives remain in the Mac qualification jobs."
+        ],
+        "go": [
+          "The original go.mod is preserved before any tidy.",
+          "Tidy runs only if go.sum is untracked and mode is capture; tracked missing files subsequently fail required operations.",
+          "The selected Tailscale version is checked against v1.104.1.",
+          "go mod download -json all captures module downloads/checksums, followed by go mod verify and readonly complete module listing/graph.",
+          "Final go.mod/go.sum, their resolution diff, original manifest, toolchains and exact H are retained.",
+          "In locked mode a download/list command that changes tracked go.mod/go.sum is rejected by the following diff check; no such drift is accepted as a successful locked acquisition."
+        ],
+        "six_hashed_inputs": [
+          "source/node-agent-coordinator/Cargo.toml",
+          "source/node-agent-coordinator/Cargo.lock",
+          "source/box-exec-daemon/Cargo.toml",
+          "source/box-exec-daemon/Cargo.lock",
+          "source/fabushi-network-worker/go.mod",
+          "source/fabushi-network-worker/go.sum"
+        ],
+        "workflow_notes": [
+          "Step id inputs and job output input_mode match; needs and job conditions refer to the declared acquire-inputs job.",
+          "The added job contains no cargo build/test, go build/test, product launch, deployment, database opening or schema change.",
+          "Contents read permission and existing upload-artifact path are preserved. Evidence scope explicitly denies product/macOS/signed-package/source/release acceptance."
+        ]
+      },
+      "required_followup": [
+        "Read the new exact-H acquisition job and artifacts before relying on generated dependency inputs.",
+        "Review the captured resolutions/checksums and commit the exact inputs with CAS, including the reviewed resolved Go manifest.",
+        "Set the acquisition flag false, require production Cargo --locked and Go -mod=readonly without tidy, and obtain actual terminal Mac gate evidence at that pinned H.",
+        "If Mac capacity remains unavailable, record queued/not-executed status and preserve full acceptance blockers rather than substituting Ubuntu acquisition success."
+      ],
+      "evidence_limits": [
+        "This is a static review, not Actions execution.",
+        "Source-declared counts remain unexecuted for this workflow until actual pinned-H logs exist.",
+        "Cross-host source acquisition does not establish macOS linker or runtime correctness; the unchanged Mac jobs are the required next evidence.",
+        "Full recursive source/legal review, supported-platform signed packages, real service enrollment, original-data upgrade/rollback, Bot regression and independent ACCEPT remain outside this delta."
+      ],
+      "isolation": {
+        "other_current_delta_review_opinions_read": false,
+        "source_files_edited": false,
+        "github_mutations": false,
+        "local_build_test_lint_schema_generator_execution": false,
+        "allowed_actions": "Read-only API/source/log metadata and hashes; only this report authored."
+      },
+      "effort": {
+        "selected": "xhigh",
+        "reason": "Acquisition state, dependency completeness, output publication and mandatory binary-test gates must remain consistent.",
+        "actual": "Inherited model and effort retained; no runtime override claimed."
+      },
+      "source_acceptance": false,
+      "release_acceptance": false
+    }
   }
 }

@@ -150,13 +150,14 @@ export function validateResponsibilitySources(inventory, rows) {
   return {source_identities: expected.size, responsibilities: sourcesByResponsibility.size};
 }
 
-export function validateSourceReviews(inventory, reviews, rows) {
+function validateSourceReviewRecords(inventory, reviews, rows, allowPending = false) {
   if (!Array.isArray(inventory) || !inventory.length || !Array.isArray(reviews)) {
     throw Error('source reviews and non-empty inventory required');
   }
   const {expected, sourcesByResponsibility} = responsibilitySourceRelations(inventory, rows);
 
   const seen = new Set();
+  let completed = 0;
   for (const review of reviews) {
     const key = identityKey(review, 'review');
     if (Object.keys(review).some(field => !reviewFields.includes(field))) throw Error('unknown source review field');
@@ -165,14 +166,15 @@ export function validateSourceReviews(inventory, reviews, rows) {
     if (!['product', 'mixed-ui', 'generated', 'dependency', 'resource', 'documentation', 'tooling'].includes(review.category)) throw Error('unknown category');
     if (!['low', 'medium', 'high'].includes(review.risk)) throw Error('unknown risk');
     if (!['deep', 'contract', 'disposition'].includes(review.review_depth)) throw Error('unknown review depth');
-    if (review.status !== 'complete' || !text(review.rationale) ||
-        !uniqueTextArray(review.evidence) || !review.evidence.length) {
+    const pending = allowPending && review.status === 'pending';
+    if ((!pending && review.status !== 'complete') || !text(review.rationale) ||
+        !uniqueTextArray(review.evidence) || (!pending && !review.evidence.length)) {
       throw Error('incomplete or duplicate review evidence');
     }
     const product = ['product', 'mixed-ui'].includes(review.category);
-    if ((product || review.risk === 'high') && review.review_depth !== 'deep') throw Error('deep review required');
-    if (['generated', 'dependency'].includes(review.category) && review.review_depth === 'disposition') throw Error('contract review required');
-    if (!uniqueTextArray(review.responsibility_ids) || (product && !review.responsibility_ids.length)) {
+    if (!pending && (product || review.risk === 'high') && review.review_depth !== 'deep') throw Error('deep review required');
+    if (!pending && ['generated', 'dependency'].includes(review.category) && review.review_depth === 'disposition') throw Error('contract review required');
+    if (!uniqueTextArray(review.responsibility_ids) || (!pending && product && !review.responsibility_ids.length)) {
       throw Error('missing or duplicate responsibility links');
     }
     for (const id of review.responsibility_ids) {
@@ -180,9 +182,17 @@ export function validateSourceReviews(inventory, reviews, rows) {
       if (!related) throw Error('unmapped responsibility: ' + id);
       if (!related.has(key)) throw Error('responsibility does not cover source identity: ' + id + ' ' + key);
     }
+    if (!pending) completed++;
   }
-  if (seen.size !== expected.size) throw Error('missing source reviews');
-  return {source_identities: expected.size, reviewed: seen.size};
+  return {source_identities: expected.size, reviewed: completed, recorded: seen.size};
+}
+
+// Acceptance always requires the complete identity set. Candidate checks below
+// reuse the same record/relationship rules without promoting a reviewed subset.
+export function validateSourceReviews(inventory, reviews, rows) {
+  const result = validateSourceReviewRecords(inventory, reviews, rows);
+  if (result.reviewed !== result.source_identities) throw Error('missing source reviews');
+  return {source_identities: result.source_identities, reviewed: result.reviewed};
 }
 
 
@@ -461,6 +471,10 @@ export function validateSourceCandidate({
     }
   }
 
+  const authoredReviews = Object.hasOwn(ledger, 'source_reviews')
+    ? validateSourceReviewRecords(recursiveInventory.entries, ledger.source_reviews, ledger.rows, true)
+    : {recorded: 0, reviewed: 0};
+
   const {report, candidates, contexts, delta, artifact} = buildInputs;
   check(object(artifact) && artifact.repository === 'bhrumom/fabushi-desktop' &&
     oid(artifact.head_sha) && integer(artifact.run_id) && artifact.run_id > 0 &&
@@ -575,7 +589,10 @@ export function validateSourceCandidate({
   return {
     status: 'unaccepted-candidate-consistent', upstream_commit: upstream.commit,
     source_entries_total: sourceCount, root_source_entries_total: rootCount,
-    responsibility_rows: ledger.rows.length, unknown: null, unread: null,
+    responsibility_rows: ledger.rows.length,
+    authored_source_review_records: authoredReviews.recorded,
+    completed_source_review_records: authoredReviews.reviewed,
+    unknown: null, unread: null,
     lexical_observations: candidateIds.size, counts_by_scope: scopeCounts,
     text_files_read: readKeys.size, opaque_inputs_unread: unreadKeys.size,
     unresolved_ref_observations: unresolved,

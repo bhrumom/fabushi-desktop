@@ -678,6 +678,66 @@ test('candidate evidence object key order does not change its immutable identity
   assert.equal(validateSourceCandidate(fixture).status, 'unaccepted-candidate-consistent');
 });
 
+test('candidate checks authored review subset against the full inventory without granting closure', () => {
+  const fixture = candidateFixture();
+  const row = fixture.ledger.rows[0];
+  fixture.ledger.source_reviews = [{...review, repository: row.source_repository,
+    commit: row.source_commit, path: row.source_path, object: row.source_blob_sha}];
+  const result = validateSourceCandidate(fixture);
+  assert.equal(result.authored_source_review_records, 1);
+  assert.equal(result.completed_source_review_records, 1);
+  assert.equal(result.source_entries_total, fixture.recursiveInventory.entries.length);
+  assert.equal(result.source_closure_ready, false);
+  assert.equal(result.baseline_accepted, false);
+  assert.equal(result.unknown, null);
+  assert.equal(result.unread, null);
+  assert.throws(() => validate(fixture.recursiveInventory.entries,
+    fixture.ledger.source_reviews, fixture.ledger.rows), /missing source reviews/);
+  assert.throws(() => assertNoOpenSourceCandidate(fixture.ledger), /rebaseline candidate/);
+});
+
+test('candidate admits schema-compatible pending work without counting it as reviewed', () => {
+  const fixture = candidateFixture();
+  const row = fixture.ledger.rows[0];
+  fixture.ledger.source_reviews = [{...review, repository: row.source_repository,
+    commit: row.source_commit, path: row.source_path, object: row.source_blob_sha,
+    status: 'pending', review_depth: 'disposition', evidence: [], responsibility_ids: []}];
+  const result = validateSourceCandidate(fixture);
+  assert.equal(result.authored_source_review_records, 1);
+  assert.equal(result.completed_source_review_records, 0);
+  assert.equal(result.source_closure_ready, false);
+  assert.throws(() => validate(fixture.recursiveInventory.entries,
+    fixture.ledger.source_reviews, fixture.ledger.rows), /incomplete or duplicate review evidence/);
+  fixture.ledger.source_reviews[0].object = '0'.repeat(40);
+  assert.throws(() => validateSourceCandidate(fixture), /unknown, stale or duplicate source review/);
+});
+
+for (const [name, patch, reason] of [
+  ['stale object', {object: '0'.repeat(40)}, /unknown, stale or duplicate source review/],
+  ['missing evidence', {evidence: []}, /incomplete or duplicate review evidence/],
+  ['shallow mixed UI', {category: 'mixed-ui', review_depth: 'contract'}, /deep review required/],
+  ['unrelated responsibility', {responsibility_ids: ['absent']}, /unmapped responsibility/],
+]) {
+  test('candidate rejects authored review ' + name, () => {
+    const fixture = candidateFixture();
+    const row = fixture.ledger.rows[0];
+    fixture.ledger.source_reviews = [{...review, repository: row.source_repository,
+      commit: row.source_commit, path: row.source_path, object: row.source_blob_sha, ...patch}];
+    assert.throws(() => validateSourceCandidate(fixture), reason);
+  });
+}
+
+test('candidate rejects duplicate or nonarray authored reviews', () => {
+  const fixture = candidateFixture();
+  const row = fixture.ledger.rows[0];
+  const record = {...review, repository: row.source_repository,
+    commit: row.source_commit, path: row.source_path, object: row.source_blob_sha};
+  fixture.ledger.source_reviews = [record, record];
+  assert.throws(() => validateSourceCandidate(fixture), /duplicate source review/);
+  fixture.ledger.source_reviews = null;
+  assert.throws(() => validateSourceCandidate(fixture), /source reviews and non-empty inventory required/);
+});
+
 test('a consistently reduced graph cannot omit the separately required cppgir child', () => {
   const fixture = candidateFixture();
   fixture.recursiveInventory.entries.splice(-2);
