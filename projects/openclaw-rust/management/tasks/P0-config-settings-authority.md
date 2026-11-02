@@ -1245,3 +1245,15 @@ with the actual App fixture and explicit Actions selectors. The current
 refusal/no-effect and newer-model/reopen controls. HMAC/redaction already exists;
 retain its owner and existing ledger/RTM anchors. Implementation and named tests
 require immutable review and exact-H Actions; no scope or status is promoted.
+
+### Host-confirmed router preference — OCRM-ROUTER-SETTINGS-ACK-v1
+
+The existing router desktop RPC currently writes its local provider before Host
+acknowledgement and reports it even after Host failure. Implement
+`../../docs/specs/inference-router-settings-bridge.md` through the existing
+MainEdge, Coordinator ports and Rust Settings owner. Serialize only this edge's
+router read/write acknowledgement and mirror settlement; retain the Rust
+effective-route policy and explicitly reconcile unknown outcomes by a later
+read. The real served-edge/file-mirror controls run in the existing renderer
+target using the existing push-triggered OCRM workflow. No new provider
+capability, source-coverage promotion, native pass or full UI acceptance follows.

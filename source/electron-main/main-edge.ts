@@ -91,6 +91,23 @@ function parseAgentModel(value: unknown, requireNonWhitespaceId: boolean, preser
 }
 
 export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
+  // Order only this edge's router IPC through Host acknowledgement and mirror persistence.
+  let inferenceRouterTail = Promise.resolve();
+  const runInferenceRouter = (operation: () => Promise<unknown>): Promise<unknown> => {
+    const result = inferenceRouterTail.then(operation);
+    // A failed or unknown Host outcome must still allow a later read to reconcile it.
+    inferenceRouterTail = result.then(() => undefined, () => undefined);
+    return result;
+  };
+  const mirrorInferenceRouter = (settings: unknown) => {
+    if (settings == null) throw new SandHostSettingsUnreachableError("Couldn't confirm the inference provider with the computer.");
+    const record = req(settings);
+    const provider = record.inferenceProvider;
+    invariant(isSandInferenceProvider(provider), "The computer returned an invalid inference provider.");
+    // This is the Host configuration preference; Rust still owns effective routing policy.
+    invoke(deps.settingsStore, "setInferenceProvider", provider);
+    return { provider, usage: record.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() };
+  };
   const handlers: HandlerMap = {
     getUpdateStatus: () => invoke(updateService(deps), "getStatus"),
     checkForUpdates: () => invoke(updateService(deps), "checkForUpdates", { trigger: "explicit" }),
@@ -133,8 +150,12 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getHostSidebarSections: async () => (await deps.readHostSettingsFromBox()).sidebarSections ?? null,
     setHostSidebarSections: (raw) => echo(deps, "sidebarSections", req(raw).sections, "sidebar sections"),
     getAvailableModels: () => deps.fetchAvailableModels(),
-    getInferenceRouter: async () => { const settings = await deps.readHostSettingsFromBox().catch(() => ({} as UnknownRecord)); const provider = invoke(deps.settingsStore, "getInferenceProvider"); return { provider: isSandInferenceProvider(provider) ? provider : "cursor", usage: settings.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() }; },
-    setInferenceRouter: async (raw) => { const provider = req(raw).provider; invariant(isSandInferenceProvider(provider), "Unknown inference provider."); invoke(deps.settingsStore, "setInferenceProvider", provider); const settings = await deps.syncHostSettingsToBox({ inferenceProvider: provider }).catch(() => null); return { provider, usage: settings?.inferenceRouterUsage ?? invoke(deps.settingsStore, "getInferenceRouterUsage") ?? null, local: getLocalInferenceCliStatus() }; },
+    getInferenceRouter: () => runInferenceRouter(async () => mirrorInferenceRouter(await deps.readHostSettingsFromBox())),
+    setInferenceRouter: (raw) => {
+      const provider = req(raw).provider;
+      invariant(isSandInferenceProvider(provider), "Unknown inference provider.");
+      return runInferenceRouter(async () => mirrorInferenceRouter(await deps.syncHostSettingsToBox({ inferenceProvider: provider })));
+    },
     getBoxRuntime: async () => { const mode = invoke(deps.settingsStore, "getBoxRuntime"); invariant(isSandBoxRuntime(mode), "Unknown box runtime."); return { mode, status: await getLocalDockerStatus(String(Reflect.get(deps.settingsStore, "settingsPath"))) }; },
     setBoxRuntime: async (raw) => { const mode = req(raw).mode; invariant(isSandBoxRuntime(mode), "Unknown box runtime."); const settingsPath = String(Reflect.get(deps.settingsStore, "settingsPath")); invoke(deps.settingsStore, "setBoxRuntime", mode); try { if (mode === "local-docker") await startLocalDockerBox(settingsPath); else await stopLocalDockerBox(); } catch (error) { invoke(deps.settingsStore, "setBoxRuntime", mode === "local-docker" ? "remote" : "local-docker"); throw error; } invoke(deps.boxRecovery, "restartCoordinator"); return { mode, status: await getLocalDockerStatus(settingsPath) }; },
 

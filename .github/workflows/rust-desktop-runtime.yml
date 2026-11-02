@@ -2470,28 +2470,48 @@ jobs:
       - name: Test Plugin Skills, model settings bridge and routed MCP carrier
         env:
           FABUSHI_COORDINATOR_CARRIER_ARTIFACT: ${{ github.workspace }}/desktop/dist/node-agent-coordinator/main.cjs
-        run: >-
-          node --test
-          desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs
-          desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs
-          desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs
-          desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs
-          desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence
+          node --test --test-reporter=tap \
+            desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs \
+            2>&1 | tee .evidence/ocrm-plugin-edge.tap
       - name: Record exact-subject Plugin Skills edge evidence
         shell: bash
         env:
           PLUGIN_EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
         run: |
           mkdir -p .evidence
           python3 - <<'PY'
-          import hashlib, json, os, subprocess
+          import hashlib, json, os, re, subprocess
           from pathlib import Path
           head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["PLUGIN_EXPECTED_SHA"]
           lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          router_cases = ["router set waits for Host acknowledgement and mirrors its canonical provider", "router preserves all five configured providers and reconciles reads with diagnostic fallbacks", "router invalid requests and untrusted frames cause no Host or mirror effects", "router refuses malformed Host replies without local fallback and permits later reconciliation", "router Host refusal releases a queued read and read rejection does not poison later calls", "router unknown transport outcome can follow a Host commit and requires an explicit read", "router local persistence failure leaves the Host commit intact and a later get repairs the mirror", "router orders a held get before set through mirror persistence", "router orders a held set before get through mirror persistence", "router serializes two sets so a late acknowledgement cannot overwrite the later mirror", "a pending router IPC does not order unrelated methods or another MainEdge instance"]
+          tap_path = Path(".evidence/ocrm-plugin-edge.tap")
+          tap = tap_path.read_text()
+          for name in router_cases:
+              assert re.search(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap), "Missing successful router control: " + name
+          counts = {}
+          for label in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):
+              matches = re.findall(r"(?m)^# " + label + r" ([0-9]+)$", tap)
+              assert matches, "Missing TAP completion count: " + label
+              counts[label] = int(matches[-1])
+          assert counts["tests"] > 0 and counts["pass"] == counts["tests"]
+          assert all(counts[label] == 0 for label in ("fail", "cancelled", "skipped", "todo"))
           evidence={
               "contract": "OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1",
               "subject_commit": head,
+              "validation_scope": os.environ["DESKTOP_VALIDATION_SCOPE"],
+              "node_tap_counts": counts,
+              "node_tap_sha256": hashlib.sha256(tap_path.read_bytes()).hexdigest(),
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"],
@@ -2507,6 +2527,7 @@ jobs:
                       "source/shared/rpc/coordinator-main.ts",
                       "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
                       "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+                      "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
                       "source/electron-main/main-edge.ts",
                       "source/electron-main/main-edge-model.contract.test.ts",
                       "source/shared/agents/sand-agent-model.ts",
@@ -2516,7 +2537,7 @@ jobs:
               },
               "desktop_mcp_intent_contract": "OCRM-MCP-DESKTOP-INTENT-v1",
               "desktop_mcp_intent_result": "passed",
-              "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress contracts execute separately on this H; live accounts and process-loss revocation remain open.",
+              "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress require separately bound evidence; this renderer receipt asserts no native-job result. Live accounts and process-loss revocation remain open.",
               "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test"],
               "node_contract_result": "passed",
               "runner_mcp_carrier_target": "coordinator-control-server.contract.test",
@@ -2525,6 +2546,11 @@ jobs:
               "model_settings_bridge_target": "main-edge-model.contract.test",
               "model_settings_bridge_result": "passed",
               "model_settings_bridge_scope": "Actual served default-model handler and file-backed display mirror with controlled Host acknowledgment/refusal. Provider field presence and value reach the Rust validation boundary without a desktop policy owner. Real provider, full picker UI and cross-process account acceptance remain open.",
+              "router_settings_ack_contract": "OCRM-ROUTER-SETTINGS-ACK-v1",
+              "router_settings_ack_target": "main-edge-model.contract.test",
+              "router_settings_ack_result": "passed",
+              "router_settings_ack_required_positives": router_cases,
+              "router_settings_ack_scope": "Actual served router get/set, per-edge IPC ordering and file-backed display mirror with controlled Host replies. Invalid input/replies, queued refusal recovery, unknown Host commit, actual local write refusal and explicit read reconciliation are covered. The returned provider is committed Host configuration, not effective runtime routing. This receipt asserts no Rust execution, real provider, full picker UI or account acceptance.",
               "mcp_account_retirement_contract": "MCP-ACCOUNT-LIST-RETIRE-v1",
               "mcp_account_retirement_result": "passed",
               "mcp_account_retirement_scope": "Real runtime reset, manager publication, captured-account projection, persistent settings and discovery denial under held I/O. Late first-load success/unavailable, established cache, held backend list, reentrant disposal and replacement-manager positives are local lifecycle evidence; live accounts, remote work cancellation and full Rust permission migration remain open.",
@@ -2533,7 +2559,7 @@ jobs:
               "mcp_runtime_construction_scope": "Actual runtime construction, reset, shutdown and callback/token ports under controlled causal factory, auth and cleanup boundaries. Concurrent callers share the current attempt; retired results cannot publish, callback or obtain replacement credentials, and cleanup retains exact-attempt ownership. Factory-internal side effects before settlement, already-returned facades, separate official OAuth changes, real accounts and full Rust permission migration remain open.",
               "runner_mcp_carrier_scope": "Actual generated/backend MCP result producers, control server, native MessageChannel clone and shipping carrier JSON I/O. A bounded local echo peer is not the Rust Coordinator binary, real Electron utilityProcess or external MCP service acceptance.",
               "compiler": "Existing shipping esbuild common options and dependency resolution; not a whole-graph TypeScript strict typecheck",
-              "scope": "Actual Host loader and SDK listing/materialization boundaries with controlled transport/cache inputs. Rust admission evidence belongs to the separate rust-host job on this same H. Real marketplace/accounts, live revocation on persistence failure, all MCP permissions and final acceptance remain pending.",
+              "scope": "Actual Host loader and SDK listing/materialization boundaries with controlled transport/cache inputs. Rust admission requires separately bound native evidence; this renderer receipt asserts no native-job result. Real marketplace/accounts, live revocation on persistence failure, all MCP permissions and final acceptance remain pending.",
               "independent_acceptance": "pending",
           }
           Path(".evidence/ocrm-plugin-edge.json").write_text(json.dumps(evidence, sort_keys=True, indent=2)+"\n")
@@ -2542,7 +2568,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ocrm-plugin-edge-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          path: .evidence/ocrm-plugin-edge.json
+          path: |
+            .evidence/ocrm-plugin-edge.json
+            .evidence/ocrm-plugin-edge.tap
           if-no-files-found: error
           retention-days: 90
       - name: Check production architecture boundary
