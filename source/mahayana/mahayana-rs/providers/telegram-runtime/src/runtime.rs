@@ -923,7 +923,8 @@ fn apply_network_proxy_command(client_id: u64, request: &Value) -> Result<Value,
             .as_ref()
             .filter(|proxy| proxy.kind == NetworkProxyKind::Web)
             .map(prepare_web_proxy_relay)
-            .transpose()?
+            .transpose()
+            .map_err(|error| RuntimeError::Network(error.to_string()))?
     } else {
         None
     };
@@ -3052,6 +3053,28 @@ mod network_proxy_contracts {
         let state = clients.get(&client).unwrap();
         assert!(state.sessions.primary().is_none());
         assert_eq!(state.network_proxy.selected.as_ref().unwrap().kind, NetworkProxyKind::Web);
+        drop(clients);
+        close_client(client).unwrap();
+    }
+
+    #[test]
+    fn invalid_web_projection_returns_network_error_without_replacing_current_proxy() {
+        let client = create_client();
+        execute_value(client, request("mtproto")).unwrap();
+        let previous = CLIENTS.lock().unwrap().get(&client).unwrap().network_proxy.clone();
+        let mut invalid = request("web");
+        invalid["selected"]["password"] = json!("invalid-secret-do-not-log");
+
+        let response = execute_json(client, &invalid.to_string());
+        let result: Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(result["ok"], false);
+        assert_eq!(result["errorCode"], "network_failed");
+        assert!(!response.contains("invalid-secret-do-not-log"));
+        assert!(result.get("data").is_none());
+        let clients = CLIENTS.lock().unwrap();
+        let state = clients.get(&client).unwrap();
+        assert!(state.network_proxy == previous);
+        assert!(state.sessions.primary().is_none());
         drop(clients);
         close_client(client).unwrap();
     }

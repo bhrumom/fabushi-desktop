@@ -1,0 +1,144 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 3,
+  "date": "2026-11-02",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "inspected_target": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
+  "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "spec": "docs/specs/fbcp-native-message-reconciliation.md",
+  "source_authority_consistency": {
+    "status": "blocked",
+    "reason": "Ledger names fixed U, but upstream.lock.json and inventory/index.json still name 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Historical source counters do not establish current completeness; no source-review state is promoted by this compile repair."
+  },
+  "prior_run": {
+    "id": 41392023824,
+    "attempt": 1,
+    "head_sha": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41392023824",
+    "jobs": [
+      {
+        "id": 125105286712,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "tests": {
+          "passed": 10,
+          "failed": 0,
+          "ignored": 0,
+          "filtered_out": 14
+        },
+        "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125105286712/logs"
+      },
+      {
+        "id": 125105286411,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "failure",
+        "protocol_tcp": "skipped",
+        "classification": "IMPL_BUG",
+        "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125105286411/logs",
+        "failure_signatures": [
+          "E0433/E0432: native_desktop_session.rs imports base64 without a direct manifest dependency",
+          "E0277: runtime.rs::apply_network_proxy_command uses NetworkError ? in a RuntimeError return boundary"
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13118041850,
+        "name": "native-message-reconciliation-3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
+        "size_in_bytes": 5330,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118041850",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118041850/zip",
+        "expired": false,
+        "created_at": "2026-11-02T05:08:03Z",
+        "expires_at": "2027-01-31T05:05:49Z",
+        "updated_at": "2026-11-02T05:08:03Z",
+        "digest": "sha256:dc86a28bafc7b4a70df31eded6bb492223af48d14c92cdc532289e757b2b1bff",
+        "workflow_run": {
+          "id": 41392023824,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23"
+        }
+      },
+      {
+        "id": 13117917699,
+        "name": "native-message-shipping-compile-3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
+        "size_in_bytes": 10992,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13117917699",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13117917699/zip",
+        "expired": false,
+        "created_at": "2026-11-02T05:07:32Z",
+        "expires_at": "2027-01-31T05:05:49Z",
+        "updated_at": "2026-11-02T05:07:32Z",
+        "digest": "sha256:60c2733d9e4cf95df496a41a9a620e7d963fee8d4c17f18424bfb0fb5fd5ecc1",
+        "workflow_run": {
+          "id": 41392023824,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23"
+        }
+      }
+    ],
+    "environment": {
+      "runner": "macos-15 / macos-15-arm64",
+      "image_version": "20261028.0489.1",
+      "rust": "1.97.1",
+      "cargo_locked": true
+    }
+  },
+  "repair_scope": [
+    "docs/specs/fbcp-native-message-reconciliation.md",
+    "source/mahayana/mahayana-rs/mahayana-product/Cargo.toml",
+    "source/host/app/Cargo.lock",
+    "source/mahayana/mahayana-rs/Cargo.lock",
+    "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+    "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+    ".github/workflows/native-service-contracts.yml",
+    "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+  ],
+  "repair_rationale": [
+    "Add base64.workspace at its actual credential consumer and only base64 0.22.1 dependency edges in the AppHost and workspace locks.",
+    "Add the declared serde edge for fabushi-telegram-runtime in the workspace lock. Keep existing registry packages, versions and checksums unchanged; source/host/Cargo.lock remains unchanged.",
+    "Map optional Web proxy bootstrap errors to the existing RuntimeError::Network; reject before replacing client proxy state and test secret-free failure plus preservation.",
+    "Pass Option<i64> unchanged through Host; remove the nonexistent cached authorization initializer. Existing provider checks live authorization_snapshot.",
+    "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
+  ],
+  "validation": {
+    "status": "pending-exact-repair-commit",
+    "local_executable_validation": "not-run",
+    "dependent_message_batches": "blocked",
+    "full_product_acceptance": false,
+    "independent_acceptance": false
+  },
+  "retained_limits": [
+    "Loopback HTTP contracts do not prove deployed service behavior.",
+    "Compatibility compilation and tests do not retire legacy Telegram callers/storage or qualify them as native Fabushi ownership.",
+    "Full supported-platform packages, UI/temporal/a11y/security/soak/update/rollback and existing Bot regression remain outstanding."
+  ],
+  "runs": [],
+  "review": {
+    "scope_base": "3ccbf37dbe8b648c93c7c8c5e35aab9438cb3e23",
+    "verdict": "approved-for-focused-actions",
+    "scope": [
+      "docs/specs/fbcp-native-message-reconciliation.md",
+      "source/mahayana/mahayana-rs/mahayana-product/Cargo.toml",
+      "source/host/app/Cargo.lock",
+      "source/mahayana/mahayana-rs/Cargo.lock",
+      "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+      ".github/workflows/native-service-contracts.yml",
+      "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+    ],
+    "blocking_findings": [],
+    "method": "Independent read-only diff/caller/manifest review; no local executable validation; not final ACCEPT.",
+    "effort": "inherited parent model and effort"
+  }
+}

@@ -2070,9 +2070,6 @@ fn create_feature_host(
         codex_home: std::env::var_os("MAHAYANA_CODEX_HOME").map(PathBuf::from),
         product_storage_passphrase: storage_passphrase,
         telegram_client_id: telegram_handoff.as_ref().map(|handoff| handoff.client_id),
-        telegram_authorization_state: telegram_handoff
-            .as_ref()
-            .map(|handoff| handoff.authorization_state.clone()),
         telegram_self_user_id: telegram_handoff
             .as_ref()
             .and_then(|handoff| handoff.self_user_id),

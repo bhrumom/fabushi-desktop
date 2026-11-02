@@ -5744,6 +5744,7 @@ dependencies = [
  "fabushi-telegram-protocol",
  "fabushi-telegram-storage",
  "once_cell",
+ "serde",
  "serde_json",
  "tempfile",
  "thiserror 1.0.69",
@@ -9541,6 +9542,7 @@ name = "mahayana-platform-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "mahayana-auth",
  "mahayana-host-protocol",
  "mahayana-platform-core",

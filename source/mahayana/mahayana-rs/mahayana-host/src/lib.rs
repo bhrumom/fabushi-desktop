@@ -407,7 +407,7 @@ fn build_runtime(
     if let Some(telegram_client_id) = create.telegram_client_id {
         let provider = Arc::new(TelegramConversationProvider::from_client_id(
             telegram_client_id,
-            create.telegram_self_user_id.unwrap_or_default(),
+            create.telegram_self_user_id,
         ));
         #[cfg(feature = "codex-compat")]
         compatibility_conversation_providers

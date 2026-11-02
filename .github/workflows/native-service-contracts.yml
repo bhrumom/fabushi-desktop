@@ -170,7 +170,17 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-protocol --test protocol_contract 2>&1 | tee artifacts/native-message-shipping/telegram-protocol-contract.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-protocol-contract.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-network --test tcp_transport 2>&1 | tee artifacts/native-message-shipping/telegram-tcp-transport.log
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-tcp-transport.log
+      - name: Verify proxy rejection and Native credential boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --lib network_proxy_contracts -- --nocapture 2>&1 | tee artifacts/native-message-shipping/telegram-proxy-boundary.log
+          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-proxy-boundary.log
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_schema_is_not_ci_export_and_has_no_ci_ttl_cap -- --nocapture 2>&1 | tee artifacts/native-message-shipping/native-credential-schema.log
+          grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-credential-schema.log
       - name: Diagnose locked AppHost dependency drift (no acceptance)
         if: failure()
         shell: bash
