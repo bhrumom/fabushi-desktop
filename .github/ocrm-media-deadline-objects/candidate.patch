@@ -1,0 +1,826 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 413fa01dd..8896faff2 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -493,6 +493,9 @@ jobs:
+               "media_http_error_gateway_read_failure_preserves_status",
+               "media_http_error_gateway_empty_and_whitespace_omit_body",
+               "media_http_error_gateway_success_and_default_guard_controls",
++              "media_http_deadline_gateway_trickle_preserves_http_status",
++              "media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
++              "media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata",
+               "media_fetch_hostname_allowlist_matches_normalized_patterns",
+               "media_fetch_hostname_allowlist_does_not_override_private_trust",
+               "media_fetch_url_admission_enforces_http_and_https_requirements",
+@@ -522,7 +525,7 @@ jobs:
+           receipt = {key: subject[key] for key in (
+               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+           receipt.update({
+-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1", "command": command, "command_exit_records": exits,
++              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1", "command": command, "command_exit_records": exits,
+               "required_tests": required, "observed_passed_test_names": passed,
+               "projection_command": (root / "media-input-url-projection.command.txt").read_text().strip(),
+               "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
+@@ -533,7 +536,7 @@ jobs:
+               "missing_or_nonunique_positive_results": missing,
+               "log_sha256": hashlib.sha256(log).hexdigest(),
+               "result": "passed" if accepted else "failed",
+-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
++              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+           })
+           (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+           print(json.dumps(receipt, indent=2))
+@@ -1333,6 +1336,9 @@ jobs:
+               "media_reference_unicode_contract": "MRU-v1",
+               "media_reference_unicode_result": "passed",
+               "media_reference_unicode_scope": "UTF-8-safe ASCII scheme decisions, unchanged inbound URI refusals, and actual ProductionXuserHost/AttachmentsService plus ordered publisher callbacks with a controlled relay. Fresh desktop producer projection, actual sharing accounts, platforms and full media acceptance remain open.",
++              "media_request_deadline_contract": "MHT-v1",
++              "media_request_deadline_result": "passed",
++              "media_request_deadline_scope": "Both existing remote media readers apply the configured timeout as a total connection-through-body budget; controlled trickling error/success responses settle without resetting it, errors retain known HTTP status, and timely payload/store controls remain. Separate read-idle/header budgets, caller cancellation, full network and real-service acceptance stay open.",
+               "media_http_error_contract": "MHE-v1",
+               "media_http_error_target": "openclaw_media_fetch_contract",
+               "media_http_error_result": "passed",
+@@ -1862,6 +1868,9 @@ jobs:
+               "media_http_error_gateway_read_failure_preserves_status",
+               "media_http_error_gateway_empty_and_whitespace_omit_body",
+               "media_http_error_gateway_success_and_default_guard_controls",
++              "media_http_deadline_gateway_trickle_preserves_http_status",
++              "media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
++              "media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata",
+               "media_fetch_hostname_allowlist_matches_normalized_patterns",
+               "media_fetch_hostname_allowlist_does_not_override_private_trust",
+               "media_fetch_url_admission_enforces_http_and_https_requirements",
+@@ -1916,7 +1925,7 @@ jobs:
+               "source/host/tests/channel_attachment_contract.rs",
+           ]
+           receipt = {
+-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1", "subject_commit": head,
++              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1", "subject_commit": head,
+               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+@@ -1933,7 +1942,7 @@ jobs:
+               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+               "log_sha256": hashlib.sha256(log).hexdigest(),
+               "result": "passed" if accepted else "failed",
+-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
++              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+           }
+           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+           print(json.dumps(receipt, indent=2))
+diff --git a/projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md b/projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md
+index 6a10cdc66..6aea4bb17 100644
+--- a/projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md
++++ b/projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md
+@@ -124,3 +124,88 @@ path twice to R24/AC24 evidence lists, violating their `uniqueItems` schema.
+ Remove only the newly duplicated entries and retain the new MHE spec refs;
+ all original tests, flags and assertions remain. The source-reviewed schema
+ defect requires this correction and a fresh focused review before Actions.
++
++## Aggregate remote-request deadline — MHT-v1
++
++Implementation base is `1b9803de2283322a7809dc626a5ca35a52eb834e` after MURL
++integration. The publication parent advances to
++`0d6acd9bf4b9725bc2030c785db5064d277a68cd` (tree
++`a7a8f97c57f1b38fc5efecf981b553c443da592d`), preserving the incoming
++Automation, model/Config, native preview, Memory and Unicode work. Its shared
++workflow and ledger changes are retained without promoting any global flag.
++**MHT-01 — FIX / IMPL_BUG**: MHE's bounded diagnostic reader calls
++blocking `Read` repeatedly. Locked reqwest `0.12.28` restarts the blocking
++client wait for each read, whereas the earlier buffer-error `text()` wrapped
++one complete body future. A trickling peer below the diagnostic byte budget
++can therefore keep the operation alive beyond the configured timeout. The
++save path already had this aggregate-deadline gap; the buffer error path
++regressed in MHE. Do not undo bounded diagnostics to restore the old timing.
++
++Reuse reqwest's existing per-request `.timeout(effective_timeout)` on both
++`read_remote_media_buffer_with_headers` and `save_remote_media`. Resolve the
++same existing `timeout_ms`/30,000 ms default once and apply it to the client
++wait and request. This intentionally sets one connection-through-body budget,
++including redirects and successful responses. It tightens previous split
++header/body/per-read timing; it is not a claim of unchanged timeout semantics.
++No new worker, timer, runtime, retry, option or dependency is introduced.
++
++Required behavior:
++
++- MHT-01: trickled non-success bodies cannot reset the total request budget.
++  Once the deadline expires, preserve the already known HTTP status and omit
++  the unavailable snippet through the existing error/service boundary.
++- MHT-02: timely complete/chunked successful responses retain exact bytes,
++  metadata and store behavior. An incomplete successful body at the total
++  deadline returns the existing fetch error and publishes no partial file.
++- MHT-03: retain MHE exact-cap/Unicode/redaction controls, MURL initial and
++  redirect admission/caps, byte bounds and unchanged owner state. Dropping
++  the response/request-local client retains existing lifetime ownership.
++
++Extend the existing owned HTTP fixture and real service controls. Supply
++headers promptly, trickle bytes with observed gaps below the configured
++timeout and keep EOF/suffix behind a fixture-owned gate. Require an actual
++status-preserving result before that gate opens; a harness receive timeout is
++failure. Record progress so a stalled server cannot masquerade as the total
++deadline. Release/join every owned caller and server on failure. Retain a
++timely multi-chunk success control and unchanged-store failure controls.
++
++The exact dependency API review uses reqwest release
++`d97859910c357827ad5993d37ce750ad595f4fff`: blocking response blob
++`19fb7fe203fbd86266ad6592a4476a28cb4398ea`, blocking request blob
++`7ac08a768fd31c42fed77b6ee3eb787abb6eb6f5`, blocking client blob
++`255d9d8aa4fb2318cb923e6ff4e3db994b781b4d`, and async client blob
++`d6dc03ad346c5f78a532f07f73ad99867f848145`, and error Display blob
++`1128d633e57d6f7f614c331be1cf86f06ea7f548`. The service exposes the existing
++body/decode error category; timeout causality comes from actual pre-EOF
++settlement with continuing observed chunk progress, not a nested Display
++message. This is a timeout/consumer contract
++review, not complete dependency source or archive acceptance.
++
++Root owns the production owner, spec/workflow/ledger changes; a separate worker
++may edit only the existing media-fetch contract test file against this contract.
++Freeze and independently review before publication; require exact-H Actions
++named positives and existing media regressions. No local execution. Caller
++cancellation, separate header/read-idle budgets, proxy/DNS/IP security,
++outer HTTP/desktop consumers, real services and full migration acceptance
++remain open. Rollback must retain the aggregate deadline or disable the
++affected remote entry; no stored format or data migration changes.
++
++**MHT-ORACLE-01 — FIX / TEST_FLAW.** Independent review of frozen tree
++`fc52fc3aa4e954761261693a673bcf5baed715b3` found that the timely-body control
++asserted the buffer result's `file_name`/`content_type` keys for both methods.
++The existing saver serializes `SavedRemoteMedia` as `fileName`/`contentType`.
++Keep those product wire contracts unchanged; assert each method's actual
++metadata keys in its own branch, retaining exact byte/size/store assertions.
++This source-proven oracle correction requires a fresh focused review and
++exact-H Actions execution; it is not a product compatibility change.
++
++**MHT-MERGE-01 — FIX / integration preservation.** The incoming native preview
++implementation supersedes the local unpublished LPR prototype; preserve its
++single registry/carrier, shared service, Host-lane isolation and preview mutex.
++Retain every incoming MRU, Memory, Config, Automation and preview command and
++positive-result gate. The overlapping media receipt labels/scopes are the union
++of MRU and MHT, with neither one's execution replaced or relabeled. Interrupted
++review/large-blob submission is not approval or delivery; freeze the reconciled
++tree and obtain fresh review. The large ledger blob is delivered only through
++the repository's existing exact-object Actions carrier after an unconfirmed
++large connector submission; that carrier is not product verification.
+diff --git a/projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md b/projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md
+index 091f762e2..8bfd3ec88 100644
+--- a/projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md
++++ b/projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md
+@@ -155,3 +155,11 @@ Location behavior, deadlines, read scope, generic save/media-store downloads,
+ accepted-turn composition and real channel/provider acceptance. In particular,
+ the old `"::1"` comparison does not handle URL's bracketed IPv6 representation;
+ MURL does not claim to repair that wider classifier.
++
++MHT-v1 in the existing [HTTP diagnostic spec](../docs/specs/media-http-error-diagnostics.md)
++adds a total request deadline to both remote entries after the bounded-read
++change exposed per-read timeout renewal. It deliberately tightens successful
++response timing as well. Actual trickled-response, status-preservation,
++timely-body and no-store controls are required in Actions; caller cancellation
++and separate idle/header budgets remain open. No read or acceptance state is
++promoted by this correction.
+diff --git a/projects/openclaw-rust/evidence/media-url-admission-1b9803de-20261102.json b/projects/openclaw-rust/evidence/media-url-admission-1b9803de-20261102.json
+new file mode 100644
+index 000000000..5aa2c9ace
+--- /dev/null
++++ b/projects/openclaw-rust/evidence/media-url-admission-1b9803de-20261102.json
+@@ -0,0 +1,201 @@
++{
++  "record_kind": "scoped-actions-observation",
++  "subject": {
++    "commit": "1b9803de2283322a7809dc626a5ca35a52eb834e",
++    "tree": "7ffa987205bbc71af80114f6c15267937f2cf09a",
++    "upstream": {
++      "repository": "openclaw/openclaw",
++      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
++      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
++    }
++  },
++  "scope": "MURL-v1 restrictive input URL/redirect admission, retaining MIP/LPIP/MHE and portable CWR controls; not whole-unit/source closure or shipping acceptance",
++  "history": [
++    {
++      "commit": "181cf49d4e14f08c1fc5daa9587928164ad09a12",
++      "run_id": 41526525909,
++      "result": "failed-before-jobs",
++      "classification": "TEST_FLAW",
++      "decision": "MURL-CI-01"
++    }
++  ],
++  "runtime": {
++    "run_id": 41526955264,
++    "run_attempt": 1,
++    "linux_job_id": 125557036050,
++    "media": {
++      "result": "passed",
++      "integration_passed": 53,
++      "projection_passed": 1,
++      "failed": 0,
++      "ignored": 0,
++      "required_integration_count": 30,
++      "missing_or_nonunique_positive_results": [],
++      "command": [
++        "cargo",
++        "test",
++        "--locked",
++        "--no-fail-fast",
++        "--manifest-path",
++        "source/host/Cargo.toml",
++        "--test",
++        "openclaw_input_files_contract",
++        "--test",
++        "safe_link_preview_fetch_contract",
++        "--test",
++        "attachments_service_contract",
++        "--test",
++        "openclaw_media_fetch_contract"
++      ],
++      "projection_command": [
++        "cargo",
++        "test",
++        "--locked",
++        "--manifest-path",
++        "source/host/Cargo.toml",
++        "--lib",
++        "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
++        "--",
++        "--exact"
++      ],
++      "cargo_exit": 0,
++      "capture_exit": 0,
++      "projection_exit": 0,
++      "projection_capture_exit": 0,
++      "log_sha256": "bd74513bb5033b70bde5a2bc0e18ea392d8f873a893e9f276db5a03c6f9f85a0",
++      "projection_log_sha256": "974128998f9badec6b1bea8db956ca1d9cc4684027b7823672b1d5cbce77c643"
++    },
++    "portable_recovery": {
++      "result": "passed",
++      "passed": 57,
++      "failed": 0,
++      "ignored": 0,
++      "executions": [
++        {
++          "case": "integration",
++          "command": [
++            "cargo",
++            "test",
++            "--locked",
++            "--manifest-path",
++            "source/host/Cargo.toml",
++            "--no-fail-fast",
++            "--test",
++            "durable_recovery_stores_contract",
++            "--test",
++            "pending_wake_rearm_contract",
++            "--test",
++            "transcript_manager_contract",
++            "--test",
++            "cloud_agent_pending_wake_rearm_production_contract",
++            "--",
++            "--test-threads=1"
++          ],
++          "cargo_exit": 0,
++          "capture_exit": 0,
++          "required_positive_count": 21,
++          "missing_or_nonunique_positive_results": [],
++          "oracle_accepted": true,
++          "log_sha256": "8aff9442bc139c704a4c8d49b378621a83f8b77309cd6b7846663c45f26bbc55"
++        },
++        {
++          "case": "checked-store",
++          "command": [
++            "cargo",
++            "test",
++            "--locked",
++            "--manifest-path",
++            "source/host/Cargo.toml",
++            "--lib",
++            "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
++            "--",
++            "--test-threads=1"
++          ],
++          "cargo_exit": 0,
++          "capture_exit": 0,
++          "required_positive_count": 3,
++          "missing_or_nonunique_positive_results": [],
++          "oracle_accepted": true,
++          "log_sha256": "597b4b3527d9e05b28268651edac834bb79b33f7acf250c365802373a2bb7e93"
++        },
++        {
++          "case": "paired-device-sse",
++          "command": [
++            "cargo",
++            "test",
++            "--locked",
++            "--manifest-path",
++            "source/host/Cargo.toml",
++            "--lib",
++            "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
++            "--",
++            "--exact",
++            "--test-threads=1"
++          ],
++          "cargo_exit": 0,
++          "capture_exit": 0,
++          "required_positive_count": 1,
++          "missing_or_nonunique_positive_results": [],
++          "oracle_accepted": true,
++          "log_sha256": "21a1bd4ba79af17d1e7e1a0b7066b35cc45a080b4de3e5a09df1d2ddd25ced88"
++        }
++      ]
++    },
++    "other_jobs": [
++      {
++        "id": 125557035585,
++        "name": "renderer",
++        "result": "success"
++      },
++      {
++        "id": 125557035833,
++        "name": "Linux installation-key restore",
++        "result": "success"
++      },
++      {
++        "id": 125557035734,
++        "name": "macOS rust-host",
++        "result": "queued",
++        "acceptance": "not accepted"
++      }
++    ],
++    "artifacts": [
++      {
++        "id": 13180970076,
++        "name": "ocrm-config-restore-linux-1b9803de2283322a7809dc626a5ca35a52eb834e-41526955264-1",
++        "digest": "sha256:ba76ed99156409a15d6e5dd45d3cc0be7a873e30614c557dbc10ce0cefb15350",
++        "size_in_bytes": 47443
++      },
++      {
++        "id": 13180715687,
++        "name": "ocrm-plugin-edge-1b9803de2283322a7809dc626a5ca35a52eb834e",
++        "digest": "sha256:3155548a872fec2741803677178c6ba797881522db93278c57b75c074ce3a6b4",
++        "size_in_bytes": 2127
++      },
++      {
++        "id": 13178644876,
++        "name": "ocrm-sqlite-native-path-1b9803de2283322a7809dc626a5ca35a52eb834e-41526955264-1",
++        "digest": "sha256:bcb6f6d7f35192283959f7384558d491a47433a5221bc4cebaa59414b4e01f61",
++        "size_in_bytes": 50771
++      }
++    ]
++  },
++  "source_authority": {
++    "run_id": 41526955277,
++    "result": "success",
++    "scope": "P0 structural; not final source/dependency/review closure"
++  },
++  "delivery": {
++    "sha": "1b9803de2283322a7809dc626a5ca35a52eb834e",
++    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/1b9803de2283322a7809dc626a5ca35a52eb834e",
++    "remote_commit_tree_and_changed_file_bodies_read_back": true
++  },
++  "remaining": [
++    "Outer Host HTTP registration and desktop/accepted-turn consumers",
++    "Incoming aggregate response deadline gap; MHT-v1 next",
++    "Complete DNS/IP/proxy/caller-cancellation/read-scope contracts",
++    "Real provider/channel/plugin/node/device/platform/UI/performance/packaged acceptance",
++    "All eight global OCRM completion flags remain false"
++  ],
++  "verification_boundary": "Actions execution only; no local executable verification. This file is a later evidence carrier for the explicit subject, not self-SHA acceptance."
++}
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 4ca873703..2c7b233c8 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -11369,7 +11369,8 @@
+         "Diagnostic body read failure preserves the known HTTP status and omits unavailable body detail",
+         "Telegram bot tokens in URLs and error messages must be redacted with 6-char prefix and 4-char suffix separated by ellipsis",
+         "MURL-v1: restrictive hostname patterns are conjunctive with private trust and apply before the initial and every followed request; matching the list never grants private access",
+-        "MURL-v1: explicit zero/custom redirect caps and typed redirect-policy errors survive the existing reader and actual gateway boundary; full DNS/IP/proxy/cancellation parity is not established"
++        "MURL-v1: explicit zero/custom redirect caps and typed redirect-policy errors survive the existing reader and actual gateway boundary; full DNS/IP/proxy/cancellation parity is not established",
++        "MHT-v1: both remote fetch entries apply the configured timeout to the whole request including body; chunk progress cannot renew it, known HTTP errors retain their status, and incomplete successful bodies publish no store file"
+       ],
+       "migration_rollback": "Reject remote media fetch requests and return MediaFetchError::fetch_failed",
+       "oracle_ids": [
+@@ -11445,7 +11446,10 @@
+         "source/host/tests/openclaw_media_fetch_contract.rs::media_fetch_url_admission_enforces_http_and_https_requirements",
+         "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
+         "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_checks_relative_and_off_list_redirects",
+-        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_applies_explicit_and_default_redirect_caps"
++        "source/host/tests/openclaw_media_fetch_contract.rs::gateway_media_fetch_applies_explicit_and_default_redirect_caps",
++        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_deadline_gateway_trickle_preserves_http_status",
++        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
++        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata"
+       ],
+       "typed_contracts": [
+         "read_remote_media_buffer(options: &FetchMediaOptions) -> Result<FetchMediaResult, MediaFetchError>",
+diff --git a/source/host/src/extensions/attachments/media_fetch.rs b/source/host/src/extensions/attachments/media_fetch.rs
+index 63cd3df31..447ee3910 100644
+--- a/source/host/src/extensions/attachments/media_fetch.rs
++++ b/source/host/src/extensions/attachments/media_fetch.rs
+@@ -781,8 +781,9 @@ pub fn read_remote_media_buffer_with_headers(
+ 
+     let redirect_options = options.clone();
+     let max_redirects = options.max_redirects.unwrap_or(5);
++    let effective_timeout = Duration::from_millis(options.timeout_ms.unwrap_or(30_000));
+     let client = reqwest::blocking::Client::builder()
+-        .timeout(Duration::from_millis(options.timeout_ms.unwrap_or(30_000)))
++        .timeout(effective_timeout)
+         .redirect(reqwest::redirect::Policy::custom(move |attempt| {
+             if attempt.previous().len() > max_redirects {
+                 return attempt.error(MediaFetchError::fetch_failed(
+@@ -800,6 +801,7 @@ pub fn read_remote_media_buffer_with_headers(
+ 
+     let mut res = client
+         .get(source_url)
++        .timeout(effective_timeout)
+         .send()
+         .map_err(|error| media_request_error(source_url, error))?;
+ 
+@@ -1041,14 +1043,16 @@ pub fn save_remote_media(
+         return Err(MediaFetchError::fetch_failed(source_url, "HTTPS required"));
+     }
+ 
++    let effective_timeout = Duration::from_millis(options.timeout_ms.unwrap_or(30_000));
+     let client = reqwest::blocking::Client::builder()
+-        .timeout(Duration::from_millis(options.timeout_ms.unwrap_or(30_000)))
++        .timeout(effective_timeout)
+         .redirect(reqwest::redirect::Policy::limited(5))
+         .build()
+         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
+ 
+     let mut res = client
+         .get(source_url)
++        .timeout(effective_timeout)
+         .send()
+         .map_err(|e| MediaFetchError::fetch_failed(source_url, e.to_string()))?;
+ 
+diff --git a/source/host/tests/openclaw_media_fetch_contract.rs b/source/host/tests/openclaw_media_fetch_contract.rs
+index abcfbaf37..89233ed52 100644
+--- a/source/host/tests/openclaw_media_fetch_contract.rs
++++ b/source/host/tests/openclaw_media_fetch_contract.rs
+@@ -10,6 +10,7 @@
+ //! - Empty body / 204 rejection without disk pollution.
+ //! - Gateway dispatch integration for `readRemoteMediaBuffer` and `saveRemoteMedia`.
+ //! - Bounded non-2xx diagnostics through real HTTP responses and Gateway calls.
++//! - Aggregate remote-request deadlines with progressing bodies and unchanged failed saves.
+ //! - Restrictive hostname admission, private-origin trust, and per-hop redirect policy.
+ //! - Real loopback response bodies, byte bounds, and explicit/default redirect caps.
+ 
+@@ -84,17 +85,49 @@ impl AttachmentsBox for MockBox {
+     }
+ }
+ 
++enum MediaHttpBody {
++    Prefix {
++        body: Vec<u8>,
++        declared_length: usize,
++        suffix: Option<Vec<u8>>,
++    },
++    Chunked {
++        chunks: Vec<Vec<u8>>,
++        interval: Duration,
++        repeat_until_release: bool,
++    },
++}
++
++#[derive(Debug, Default)]
++struct MediaHttpProgress {
++    headers_sent: Option<Instant>,
++    chunks_sent: Vec<(Instant, usize)>,
++}
++
+ struct MediaHttpFixture {
+     origin: String,
+     release: Option<mpsc::Sender<()>>,
+     prefix_sent: mpsc::Receiver<()>,
+     accepted: Arc<AtomicBool>,
+     suffix_released: Arc<AtomicBool>,
+-    worker: Option<thread::JoinHandle<io::Result<()>>>,
++    worker: Option<thread::JoinHandle<io::Result<MediaHttpProgress>>>,
+ }
+ 
+ impl MediaHttpFixture {
+     fn start(status: u16, body: Vec<u8>, declared_length: usize, suffix: Option<Vec<u8>>) -> Self {
++        Self::start_response(status, MediaHttpBody::Prefix { body, declared_length, suffix })
++    }
++
++    fn start_chunks(
++        status: u16,
++        chunks: Vec<Vec<u8>>,
++        interval: Duration,
++        repeat_until_release: bool,
++    ) -> Self {
++        Self::start_response(status, MediaHttpBody::Chunked { chunks, interval, repeat_until_release })
++    }
++
++    fn start_response(status: u16, body: MediaHttpBody) -> Self {
+         let listener = TcpListener::bind("127.0.0.1:0").expect("bind media HTTP fixture");
+         listener.set_nonblocking(true).unwrap();
+         let origin = format!("http://{}", listener.local_addr().unwrap());
+@@ -110,7 +143,9 @@ impl MediaHttpFixture {
+                     Ok((stream, _)) => break stream,
+                     Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                         match released.try_recv() {
+-                            Ok(()) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
++                            Ok(()) | Err(mpsc::TryRecvError::Disconnected) => {
++                                return Ok(MediaHttpProgress::default());
++                            }
+                             Err(mpsc::TryRecvError::Empty) => {}
+                         }
+                         thread::park_timeout(Duration::from_millis(5));
+@@ -134,24 +169,93 @@ impl MediaHttpFixture {
+             if !request.starts_with(b"GET ") {
+                 return Err(io::Error::new(io::ErrorKind::InvalidData, "expected media GET"));
+             }
+-            write!(
+-                stream,
+-                "HTTP/1.1 {status} Fixture\r\nContent-Length: {declared_length}\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n"
+-            )?;
+-            stream.write_all(&body)?;
+-            stream.flush()?;
+-            let _ = prefix_ready.send(());
+-            if let Some(suffix) = suffix {
+-                // No EOF or suffix reaches the client until the test releases
+-                // this exact server, including assertion-failure cleanup.
+-                let _ = released.recv();
+-                worker_released.store(true, Ordering::SeqCst);
+-                // A bounded reader has already dropped its response, so a
+-                // closed peer during cleanup is expected.
+-                let _ = stream.write_all(&suffix);
+-                let _ = stream.flush();
++            let mut progress = MediaHttpProgress::default();
++            match body {
++                MediaHttpBody::Prefix { body, declared_length, suffix } => {
++                    write!(
++                        stream,
++                        "HTTP/1.1 {status} Fixture\r\nContent-Length: {declared_length}\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n"
++                    )?;
++                    stream.write_all(&body)?;
++                    stream.flush()?;
++                    let _ = prefix_ready.send(());
++                    if let Some(suffix) = suffix {
++                        // No EOF or suffix reaches the client until the test releases
++                        // this exact server, including assertion-failure cleanup.
++                        let _ = released.recv();
++                        worker_released.store(true, Ordering::SeqCst);
++                        // A bounded reader has already dropped its response, so a
++                        // closed peer during cleanup is expected.
++                        let _ = stream.write_all(&suffix);
++                        let _ = stream.flush();
++                    }
++                }
++                MediaHttpBody::Chunked { chunks, interval, repeat_until_release } => {
++                    if chunks.is_empty() || chunks.iter().any(Vec::is_empty) {
++                        return Err(io::Error::new(io::ErrorKind::InvalidInput, "expected nonempty HTTP chunks"));
++                    }
++                    stream.set_nodelay(true)?;
++                    write!(
++                        stream,
++                        "HTTP/1.1 {status} Fixture\r\nTransfer-Encoding: chunked\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Disposition: attachment; filename*=UTF-8''deadline%20fixture.dat\r\nConnection: close\r\n\r\n"
++                    )?;
++                    stream.flush()?;
++                    progress.headers_sent = Some(Instant::now());
++                    let mut sent_bytes = 0;
++                    loop {
++                        if !progress.chunks_sent.is_empty() {
++                            match released.recv_timeout(interval) {
++                                Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => {
++                                    worker_released.store(true, Ordering::SeqCst);
++                                    break;
++                                }
++                                Err(mpsc::RecvTimeoutError::Timeout) => {}
++                            }
++                        }
++                        let chunk = &chunks[progress.chunks_sent.len() % chunks.len()];
++                        if sent_bytes + chunk.len() >= 8192 {
++                            return Err(io::Error::new(io::ErrorKind::InvalidData, "fixture reached the diagnostic byte budget"));
++                        }
++                        let written = (|| -> io::Result<()> {
++                            write!(stream, "{:x}\r\n", chunk.len())?;
++                            stream.write_all(chunk)?;
++                            stream.write_all(b"\r\n")?;
++                            stream.flush()
++                        })();
++                        if let Err(error) = written {
++                            if !repeat_until_release || !matches!(
++                                error.kind(),
++                                io::ErrorKind::BrokenPipe | io::ErrorKind::ConnectionReset | io::ErrorKind::ConnectionAborted
++                            ) {
++                                return Err(error);
++                            }
++                            // A deadline may close the peer just before its caller
++                            // publishes the result. Keep this socket owned and EOF
++                            // gated even when subsequent writes detect that close.
++                            let _ = released.recv();
++                            worker_released.store(true, Ordering::SeqCst);
++                            return Ok(progress);
++                        }
++                        sent_bytes += chunk.len();
++                        progress.chunks_sent.push((Instant::now(), chunk.len()));
++                        if progress.chunks_sent.len() == 1 {
++                            let _ = prefix_ready.send(());
++                        }
++                        if !repeat_until_release && progress.chunks_sent.len() == chunks.len() {
++                            break;
++                        }
++                    }
++                    if repeat_until_release {
++                        // Only owned teardown can finish a trickling response.
++                        let _ = stream.write_all(b"0\r\n\r\n");
++                        let _ = stream.flush();
++                    } else {
++                        stream.write_all(b"0\r\n\r\n")?;
++                        stream.flush()?;
++                    }
++                }
+             }
+-            Ok(())
++            Ok(progress)
+         });
+         Self {
+             origin,
+@@ -183,13 +287,13 @@ impl MediaHttpFixture {
+         }
+     }
+ 
+-    fn finish(&mut self) -> io::Result<()> {
++    fn finish(&mut self) -> io::Result<MediaHttpProgress> {
+         self.release();
+         match self.worker.take() {
+             Some(worker) => worker.join().unwrap_or_else(|_| {
+                 Err(io::Error::new(io::ErrorKind::Other, "media HTTP fixture panicked"))
+             }),
+-            None => Ok(()),
++            None => Ok(MediaHttpProgress::default()),
+         }
+     }
+ }
+@@ -225,6 +329,91 @@ fn media_tree_snapshot(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+     snapshot
+ }
+ 
++#[derive(Debug)]
++struct MediaGatewayObservation {
++    started: Instant,
++    settled: Instant,
++    result: Result<Value, String>,
++}
++
++fn observe_media_gateway_response(
++    method: &'static str,
++    fixture: &mut MediaHttpFixture,
++    args: Value,
++    root: &Path,
++) -> (MediaGatewayObservation, MediaHttpProgress, bool) {
++    let root = root.to_path_buf();
++    let (result_tx, result_rx) = mpsc::channel();
++    let caller = thread::spawn(move || {
++        let started = Instant::now();
++        let result = media_gateway_call(method, &args, &root);
++        let _ = result_tx.send(MediaGatewayObservation { started, settled: Instant::now(), result });
++    });
++    let result_before_release = result_rx.recv_timeout(Duration::from_secs(6));
++    let eof_was_held = !fixture.suffix_released.load(Ordering::SeqCst);
++    // Even a harness timeout or caller panic releases the exact server and
++    // joins both owned threads before any assertion or result unwrap.
++    fixture.release();
++    let caller_joined = caller.join();
++    let server_joined = fixture.finish();
++    caller_joined.expect("media gateway caller did not panic");
++    let progress = server_joined.expect("streaming media HTTP fixture completed");
++    let observation = result_before_release
++        .expect("actual media gateway result must arrive before fixture teardown; harness timeout is failure");
++    (observation, progress, eof_was_held)
++}
++
++fn media_gateway_trickle_deadline(method: &'static str, status: u16) -> (String, Result<Value, String>) {
++    let temp = TempTestDir::new("gateway-aggregate-deadline");
++    fs::write(temp.path.join("keep.bin"), b"existing media stays intact").unwrap();
++    let before = media_tree_snapshot(&temp.path);
++    let timeout = Duration::from_millis(1_500);
++    let mut fixture = MediaHttpFixture::start_chunks(
++        status,
++        vec![b"PARTIAL_MUST_NOT_BE_RETURNED ".to_vec()],
++        Duration::from_millis(125),
++        true,
++    );
++    let mut args = fixture.args(&temp.path);
++    args["timeout_ms"] = serde_json::json!(timeout.as_millis() as u64);
++    let (observation, progress, eof_was_held) =
++        observe_media_gateway_response(method, &mut fixture, args, &temp.path);
++
++    assert!(fixture.accepted.load(Ordering::SeqCst), "the actual request must reach the owned server");
++    assert!(eof_was_held, "the final chunk and EOF must remain gated until after the actual result");
++    let headers_sent = progress.headers_sent.expect("the complete response headers must be sent");
++    assert!(headers_sent.duration_since(observation.started) < timeout / 2,
++        "headers must arrive promptly enough to exercise the response body deadline");
++    // Server timestamps come from successful writes, not intended sleep times.
++    // Exclude any write racing after the service result. The final gap matters:
++    // a stalled peer followed by a per-read idle timeout is not this oracle.
++    let chunks: Vec<_> = progress.chunks_sent.iter()
++        .filter(|(sent, _)| *sent <= observation.settled)
++        .collect();
++    assert!(chunks.len() >= 3, "the body must make repeated progress before settlement: {progress:?}");
++    let first = chunks.first().unwrap().0;
++    let last = chunks.last().unwrap().0;
++    assert!(first.duration_since(headers_sent) < timeout / 2, "first chunk must follow headers promptly");
++    assert!(last.duration_since(first) >= timeout / 2,
++        "positive body progress must span a substantial part of the request budget: {progress:?}");
++    for pair in chunks.windows(2) {
++        assert!(pair[1].0.duration_since(pair[0].0) < timeout / 2,
++            "a stalled fixture cannot establish an aggregate deadline: {progress:?}");
++    }
++    assert!(observation.settled.duration_since(last) < timeout / 2,
++        "the last successful chunk must precede settlement by less than an idle timeout: {progress:?}");
++    assert!(observation.settled.duration_since(observation.started) >= timeout,
++        "an unrelated early failure cannot establish the configured deadline: {observation:?}");
++    assert!(observation.settled.duration_since(headers_sent) < timeout + timeout / 2,
++        "body progress must not extend the configured total budget: {observation:?}");
++    let sent_bytes: usize = chunks.iter().map(|(_, bytes)| *bytes).sum();
++    assert!(sent_bytes > 0 && sent_bytes < 8192,
++        "the result must precede the diagnostic byte bound, with positive partial data");
++    assert_eq!(media_tree_snapshot(&temp.path), before,
++        "deadline failures must neither publish partial media nor leave temporary files");
++    (fixture.origin.clone(), observation.result)
++}
++
+ fn assert_media_gateway_stops_before_eof(method: &'static str) {
+     let temp = TempTestDir::new(method);
+     fs::write(temp.path.join("keep.bin"), b"existing media stays intact").unwrap();
+@@ -727,6 +916,79 @@ fn media_http_error_gateway_success_and_default_guard_controls() {
+     }
+ }
+ 
++#[test]
++fn media_http_deadline_gateway_trickle_preserves_http_status() {
++    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
++        let (origin, result) = media_gateway_trickle_deadline(method, 503);
++        assert_eq!(result.unwrap_err(), format!(
++            "MediaFetchError: Failed to fetch media from {origin}/media: HTTP 503",
++        ), "{method}: a timed-out diagnostic retains the known status and omits all partial detail");
++    }
++}
++
++#[test]
++fn media_http_deadline_gateway_trickle_success_leaves_store_unchanged() {
++    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
++        let (origin, result) = media_gateway_trickle_deadline(method, 200);
++        let error = result.expect_err("an incomplete successful body must fail at the total deadline");
++        let prefix = format!("MediaFetchError: Failed to fetch media from {origin}/media: ");
++        let cause = error.strip_prefix(&prefix)
++            .unwrap_or_else(|| panic!("{method}: preserve the existing fetch-error boundary: {error}"));
++        // Locked reqwest displays the body/decode category; the nested timeout
++        // is established by the real progressing response and closed EOF gate.
++        assert!(matches!(cause, "request or response body error" | "error decoding response body"),
++            "{method}: preserve the existing response-read error: {error}");
++    }
++}
++
++#[test]
++fn media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata() {
++    let chunks = vec![b"timely \xf0".to_vec(), b"\x9f\x98".to_vec(), b"\x80 media\r\nbytes".to_vec()];
++    let body = chunks.concat();
++    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
++        let temp = TempTestDir::new("gateway-timely-chunks");
++        fs::write(temp.path.join("keep.bin"), b"existing media stays intact").unwrap();
++        let before = media_tree_snapshot(&temp.path);
++        let mut fixture = MediaHttpFixture::start_chunks(
++            200, chunks.clone(), Duration::from_millis(25), false,
++        );
++        let mut args = fixture.args(&temp.path);
++        args["timeout_ms"] = serde_json::json!(5_000);
++        args["max_bytes"] = serde_json::json!(body.len());
++        let (observation, progress, _) =
++            observe_media_gateway_response(method, &mut fixture, args, &temp.path);
++
++        assert!(fixture.accepted.load(Ordering::SeqCst));
++        assert_eq!(progress.chunks_sent.len(), chunks.len(), "every split chunk must be delivered");
++        assert!(progress.chunks_sent.windows(2).all(|pair| pair[0].0 < pair[1].0),
++            "the positive control must deliver separate chunks");
++        let headers_sent = progress.headers_sent.expect("timely response headers must be sent");
++        assert!(progress.chunks_sent.last().unwrap().0.duration_since(headers_sent) < Duration::from_secs(5),
++            "the complete body must be supplied within the configured request budget");
++        let result = observation.result.expect("timely complete chunked media must succeed");
++        if method == "readRemoteMediaBuffer" {
++            assert_eq!(result["file_name"], "deadline fixture.dat", "{method}");
++            assert_eq!(result["content_type"], "text/plain; charset=utf-8", "{method}");
++            assert_eq!(result["buffer"], serde_json::json!(body), "UTF-8 split across chunks stays byte-exact");
++            assert_eq!(media_tree_snapshot(&temp.path), before);
++        } else {
++            assert_eq!(result["fileName"], "deadline fixture.dat", "{method}");
++            assert_eq!(result["contentType"], "text/plain; charset=utf-8", "{method}");
++            let saved_path = Path::new(result["path"].as_str().unwrap());
++            let canonical_root = fs::canonicalize(&temp.path).unwrap();
++            let relative = saved_path.strip_prefix(&canonical_root)
++                .expect("the complete save must stay within the owned media root").to_path_buf();
++            assert_eq!(result["size"], serde_json::json!(body.len()));
++            assert_eq!(fs::read(saved_path).unwrap(), body);
++            let mut expected = before;
++            expected.insert(PathBuf::from("inbound"), None);
++            expected.insert(relative, Some(body.clone()));
++            assert_eq!(media_tree_snapshot(&temp.path), expected,
++                "only the complete saved file and its directory may be published");
++        }
++    }
++}
++
+ #[test]
+ fn media_fetch_hostname_allowlist_matches_normalized_patterns() {
+     // These controls exercise the production admission owner without DNS or HTTP.

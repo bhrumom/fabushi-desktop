@@ -1,0 +1,60 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "base_commit": "601749cc84d44c94f303a2c0b5e1e6afef24a8e4",
+  "candidate_tree": "6e3dc500b183e04905947a8a7821ba59cd2f85d3",
+  "patch_sha256": "4c289dfd4bfc3c1fc37c9dddb3daed34afe9191f7ffbb67e3434bab76ff6227a",
+  "files": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "before_blob": "413fa01ddfc0480dadcff160b9028d246569e4c9",
+      "after_blob": "8896faff24078e762e2987899b980d7539a9c881",
+      "after_bytes": 264763,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+      "before_blob": "6a10cdc6606703f03e0eef6a8a3a07ee094de343",
+      "after_blob": "6aea4bb173f3df25a69a2dfed6426b2c12981b8e",
+      "after_bytes": 14572,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md",
+      "before_blob": "091f762e2b620144f99cde4f76f4eef7e1d032a5",
+      "after_blob": "8bfd3ec887648e90f2eb6898c226ab31d265f9e6",
+      "after_bytes": 12105,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "before_blob": "4ca8737039f45b4d159753058cc538d967050a6a",
+      "after_blob": "2c7b233c8d5d0456050e8d2dc5e16a223155e550",
+      "after_bytes": 1385203,
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_fetch.rs",
+      "before_blob": "63cd3df316ad190b3d37f699098f2d157f0fdde3",
+      "after_blob": "447ee3910bf98e0f5663af5a9648f36cea80ef79",
+      "after_bytes": 36360,
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/tests/openclaw_media_fetch_contract.rs",
+      "before_blob": "abcfbaf373641c96d64c461923321ffccc7346d5",
+      "after_blob": "89233ed521e733122513c8304c98fa02f698c17f",
+      "after_bytes": 70744,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-url-admission-1b9803de-20261102.json",
+      "before_blob": null,
+      "after_blob": "5aa2c9ace0a81644ee85b9d807b3118e02e62e71",
+      "after_bytes": 6691,
+      "mode": "100644"
+    }
+  ],
+  "purpose": "Exact reviewed object delivery only; no branch update and no product validation"
+}
