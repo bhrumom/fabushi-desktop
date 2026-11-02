@@ -167,18 +167,28 @@ struct CapturedRequest {
     response_status: String,
 }
 
+fn fixture_io_error(stage: &str, error: std::io::Error) -> String {
+    // Retain causal I/O facts without copying headers, bodies or credentials.
+    format!("{stage}: kind={:?}, os={:?}", error.kind(), error.raw_os_error())
+}
+
 fn read_request(stream: &mut TcpStream) -> Result<CapturedRequest, String> {
-    stream.set_read_timeout(Some(Duration::from_secs(5))).map_err(|error| error.to_string())?;
-    stream.set_write_timeout(Some(Duration::from_secs(5))).map_err(|error| error.to_string())?;
+    // Accepted sockets can inherit O_NONBLOCK on macOS/BSD. Request reads and
+    // response writes use bounded blocking I/O; only listener polling is nonblocking.
+    stream.set_nonblocking(false).map_err(|error| fixture_io_error("set blocking I/O", error))?;
+    stream.set_read_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| fixture_io_error("set read timeout", error))?;
+    stream.set_write_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| fixture_io_error("set write timeout", error))?;
     let mut reader = BufReader::new(stream);
     let mut request_line = String::new();
-    reader.read_line(&mut request_line).map_err(|error| error.to_string())?;
+    reader.read_line(&mut request_line).map_err(|error| fixture_io_error("read request line", error))?;
     let mut content_length = None;
     let mut host = String::new();
     let mut authorization = String::new();
     loop {
         let mut line = String::new();
-        if reader.read_line(&mut line).map_err(|error| error.to_string())? == 0 {
+        if reader.read_line(&mut line).map_err(|error| fixture_io_error("read request headers", error))? == 0 {
             return Err("HTTP headers ended early".into());
         }
         if line == "\r\n" { break; }
@@ -193,7 +203,7 @@ fn read_request(stream: &mut TcpStream) -> Result<CapturedRequest, String> {
     let length = content_length.ok_or("missing body length")?;
     if length > 4 * 1024 * 1024 { return Err("oversized fixture request".into()); }
     let mut body = vec![0; length];
-    reader.read_exact(&mut body).map_err(|error| error.to_string())?;
+    reader.read_exact(&mut body).map_err(|error| fixture_io_error("read request body", error))?;
     Ok(CapturedRequest {
         request_line: request_line.trim_end().into(), host, authorization, body,
         response_status: String::new(),
@@ -203,6 +213,7 @@ fn read_request(stream: &mut TcpStream) -> Result<CapturedRequest, String> {
 struct Loopback {
     endpoint: String,
     origin: String,
+    label: String,
     requests: Arc<Mutex<Vec<CapturedRequest>>>,
     stop: Arc<AtomicBool>,
     worker: Option<JoinHandle<Result<(), String>>>,
@@ -224,6 +235,9 @@ impl Loopback {
         rotate: bool,
         http_error: Option<(&'static str, String)>,
     ) -> Self {
+        let label = format!("case={case} initial_refusal={initial_refusal} rotate={rotate} http_status={}",
+            http_error.as_ref().map(|(status, _)| *status).unwrap_or("none"));
+        eprintln!("[credential-fixture] start {label}");
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind observable Responses fixture");
         listener.set_nonblocking(true).expect("pollable fixture");
         let origin = format!("http://{}", listener.local_addr().unwrap());
@@ -253,7 +267,7 @@ impl Loopback {
                         thread::sleep(Duration::from_millis(2));
                         continue;
                     }
-                    Err(error) => return Err(error.to_string()),
+                    Err(error) => return Err(fixture_io_error("accept request", error)),
                 };
                 let mut request = read_request(&mut stream)?;
                 let first_401 = if let Some(image) = next.take() {
@@ -280,11 +294,11 @@ impl Loopback {
                 capture.lock().map_err(|_| "capture lock")?.push(request);
                 let response = format!("HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
                 stream.write_all(response.as_bytes())
-                    .map_err(|error| error.to_string())?;
+                    .map_err(|error| fixture_io_error("write response", error))?;
             }
             Ok(())
         });
-        Self { endpoint: format!("{origin}{REQUEST_PATH}"), origin, requests, stop, worker: Some(worker) }
+        Self { endpoint: format!("{origin}{REQUEST_PATH}"), origin, label, requests, stop, worker: Some(worker) }
     }
 
     fn finish(&mut self) -> Vec<CapturedRequest> {
@@ -297,7 +311,17 @@ impl Loopback {
 impl Drop for Loopback {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::Release);
-        if let Some(worker) = self.worker.take() { let _ = worker.join(); }
+        if let Some(worker) = self.worker.take() {
+            // A child assertion can unwind before finish(). Preserve the
+            // fixture outcome too, without a second panic hiding that failure.
+            let outcome = match worker.join() {
+                Ok(Ok(())) => "stopped without I/O error".to_string(),
+                Ok(Err(error)) => error,
+                Err(_) => "fixture thread panicked".to_string(),
+            };
+            let captured = self.requests.lock().ok().map(|requests| requests.len());
+            eprintln!("[credential-fixture] {} shutdown={outcome} captured_requests={captured:?}", self.label);
+        }
     }
 }
 
@@ -578,6 +602,8 @@ fn run_child(root: &Path, endpoint: &str, credential_path: &Path, expected: &str
         .env_remove("SAND_PACKAGED").env_remove("FABUSHI_PRODUCT_MODE")
         .stdout(fs::File::create(&stdout).unwrap()).stderr(fs::File::create(&stderr).unwrap())
         .spawn().expect("spawn isolated provider invocation"));
+    eprintln!("[credential-fixture] child_pid={} expected={expected} control={control:?} new_transport={new_transport}",
+        child.0.id());
     let status = child.wait();
     assert!(status.success(), "provider child failed: {status}\n{}\n{}",
         fs::read_to_string(stdout).unwrap(), fs::read_to_string(stderr).unwrap());

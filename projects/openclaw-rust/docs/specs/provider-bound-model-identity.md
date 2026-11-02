@@ -441,6 +441,50 @@ structured values. This is not global arbitrary-response or all-provider
 redaction acceptance. Fresh focused independent review and final exact-H
 Actions are required before verification.
 
+### Credential HTTP fixture I/O — FC-04-HTTP-02
+
+Decision **FC-04-HTTP-02 — FIX / TEST_FLAW**, before implementation. At
+`2c32127539bba5e797eaef89a02096bb2cb24f5d`, Runtime `41440794963`, Host job
+`125263299411`, the real credential child returned Transport while its valid
+oracle required Authentication. The fixture makes its listener nonblocking
+but uses blocking-style request reads without resetting accepted sockets;
+macOS/BSD can inherit that mode. The existing model/custody fixtures already
+clear it. The parent also panics before joining the server, and Drop discards
+its error, so the old log cannot establish the particular server error or case.
+This is a source-proven fixture portability/capture defect, not proof that the
+production identity check failed or that this specific failure was WouldBlock.
+
+Set each accepted fixture connection to blocking I/O before the existing
+bounded read/write timeouts. Preserve nonblocking listener polling, bounded
+child lifetime, complete responses, every case, request count, model/body,
+typed refusal, redaction, cancellation, custody and execution-receipt assertion.
+Report the failing fixture case/phase and server I/O outcome even when the
+child fails; diagnostics must not print authorization, request bodies or
+credential documents. A socket/fixture error remains failure, never a typed
+authentication result or a successful negative control. No production retry,
+credential policy, dependency, source lock or acceptance threshold changes.
+Fresh focused review and the whole existing credential target plus the affected
+shared gates on the resulting exact H in GitHub Actions are required. Preserve
+the original failed run; do not rerun the unchanged instrument to select green.
+
+
+### Private transport fixture I/O — FC-04-HTTP-03
+
+Decision **FC-04-HTTP-03 — FIX / TEST_FLAW**, before the source-review correction.
+The same accepted-stream assumption remains in the existing `#[cfg(test)]`
+`provider_session::fabushi_credential_context_tests` reader. Both of its real
+HTTP listeners are nonblocking, so this shared reader must restore blocking
+mode before its existing five-second read/write timeouts. Retain the actual
+transport, all five request/endpoint/context/token/body assertions, typed
+callback refusal, child nonce and bounded lifecycle. Its normal path already
+joins the server before adjudicating child success; no production or retry
+change is required. The existing selected private lib filter did not execute
+at failed H `2c32127539bba5e797eaef89a02096bb2cb24f5d`; this is a source-proven
+adjacent fixture defect, not another observed CI failure. Include this test-only
+source delta in fresh focused review and final exact-H Actions with the whole
+credential target and shared gates. Fixed U and full acceptance remain intact.
+
+
 ### Frozen terminal tool-custody evidence — REC-11/12/13
 
 Contract: `OCRM-RUNNER-TERMINAL-CUSTODY-v1`, specified before code on

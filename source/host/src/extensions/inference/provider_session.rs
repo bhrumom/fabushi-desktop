@@ -2925,6 +2925,9 @@ mod fabushi_credential_context_tests {
     type Request = (bool, String, String, Vec<u8>);
 
     fn read_request(stream: &mut TcpStream, next_endpoint: bool) -> Request {
+        // Accepted sockets can inherit the nonblocking listener mode on macOS.
+        // Header/body reads and response writes use the bounded blocking path.
+        stream.set_nonblocking(false).expect("private transport fixture blocking I/O");
         stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
         stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
         let mut reader = BufReader::new(stream);
