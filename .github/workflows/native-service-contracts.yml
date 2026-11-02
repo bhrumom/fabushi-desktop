@@ -329,6 +329,21 @@ jobs:
             exit 1
           fi
           grep -F 'bind the hash recorded by the actual AppHost build step' artifacts/native-message-shipping/package-invalid-hash-negative.log
+          mismatched_hash="0${FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256:1}"
+          if [ "$mismatched_hash" = "$FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256" ]; then
+            mismatched_hash="1${FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256:1}"
+          fi
+          if env FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256="$mismatched_hash" node --test --test-reporter=tap --test-name-pattern='NMR-40 actual' desktop/scripts/native-package-resources.contract.test.mjs > artifacts/native-message-shipping/package-mismatched-hash-negative.log 2>&1; then
+            echo 'actual package-copy invocation accepted a mismatched build hash' >&2
+            exit 1
+          fi
+          grep -F 'copy only the same binary whose hash was captured after build' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# tests 1' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# pass 0' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# fail 1' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# cancelled 0' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          grep -Fx '# skipped 0' artifacts/native-message-shipping/package-mismatched-hash-negative.log
+          test ! -e "$FABUSHI_PACKAGE_EVIDENCE_DIR"
           node --test --test-reporter=tap desktop/scripts/native-package-resources.contract.test.mjs 2>&1 | tee artifacts/native-message-shipping/actual-package-resource.log
           grep -Fx '# tests 4' artifacts/native-message-shipping/actual-package-resource.log
           grep -Fx '# pass 4' artifacts/native-message-shipping/actual-package-resource.log
@@ -481,6 +496,18 @@ jobs:
           grep -Fx '# cancelled 0' ../artifacts/native-message-electron/update-source.log
           grep -Fx '# skipped 0' ../artifacts/native-message-electron/update-source.log
           grep -Fx '# todo 0' ../artifacts/native-message-electron/update-source.log
+      - name: Windows publisher authorization and candidate recovery behaviors
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap ../source/electron-main/update/windows-publisher.contract.test.mjs 2>&1 | tee ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# tests 28' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# pass 28' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# fail 0' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# cancelled 0' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# skipped 0' ../artifacts/native-message-electron/windows-publisher.log
+          grep -Fx '# todo 0' ../artifacts/native-message-electron/windows-publisher.log
       - name: Final macOS update metadata and blockmap behaviors
         shell: bash
         run: |
@@ -584,11 +611,50 @@ jobs:
           name: native-message-electron-${{ github.sha }}
           path: artifacts/native-message-electron
           if-no-files-found: error
-
-
-
-
-
-
-
-
+  windows-update-publisher:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact Windows publisher source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/windows-update-publisher
+          git rev-parse HEAD > artifacts/windows-update-publisher/target-sha.txt
+          printf '%s\n' 'EUS-WIN-02/04/06; actual Windows Authenticode with an ephemeral CI-only certificate and inert signed fixture; no installer execution, formal publisher authorization, or package acceptance' > artifacts/windows-update-publisher/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Actual Windows signature and Unicode publisher contracts
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap ../source/electron-main/update/windows-publisher.native.test.mjs 2>&1 | tee ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# tests 11' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# pass 11' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# fail 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# cancelled 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# skipped 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -Fx '# todo 0' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -F 'FABUSHI_WINDOWS_NATIVE_FIXTURE ' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -F 'FABUSHI_WINDOWS_NATIVE_UNICODE ' ../artifacts/windows-update-publisher/native-publisher.log
+          grep -F 'FABUSHI_WINDOWS_NATIVE_CLEANUP ' ../artifacts/windows-update-publisher/native-publisher.log
+      - name: Preserve native API evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-update-publisher-${{ github.sha }}
+          path: artifacts/windows-update-publisher
+          if-no-files-found: error

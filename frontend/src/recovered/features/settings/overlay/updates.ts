@@ -20,7 +20,9 @@ export type DisabledUpdateReason =
   | "unsupported-platform"
   | "disabled-by-env"
   | "update-source-unconfigured"
-  | "update-source-invalid";
+  | "update-source-invalid"
+  | "windows-publisher-unconfigured"
+  | "windows-publisher-invalid";
 
 export type LastUpdateCheck =
   | { result: "up-to-date" }
@@ -68,6 +70,10 @@ export function disabledUpdateMessage(status: UpdateStatus): string {
       return "Updates are unavailable until an update source is configured";
     case "update-source-invalid":
       return "The configured update source is invalid";
+    case "windows-publisher-unconfigured":
+      return "Windows updates are unavailable until a publisher is authorized";
+    case "windows-publisher-invalid":
+      return "The Windows update publisher configuration is invalid";
   }
 }
 
@@ -116,4 +122,5 @@ export function egressTunnelStatusDescription(status: EgressTunnelStatus): strin
       return "Enabled, but not routing yet — waiting for Fabushi's computer to connect with egress enabled.";
   }
 }
+
 

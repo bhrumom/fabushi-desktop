@@ -69,6 +69,7 @@ function harness(t) {
     quitAndInstall() { assert.fail("unexpected Squirrel install while source check is gated"); },
   });
   const windows = {
+    getDisabledReason: () => null, // Explicitly authorized controlled port; native publisher cases are separate.
     async verifySignature(path) { verified.push({ path, bytes: readFileSync(path) }); },
     quit() { quits += 1; },
     installOnQuit(path, options) { installed.push({ path, options }); },
@@ -399,3 +400,4 @@ test("EUS-04 approved explicit feed retains verified download, installer staging
   assert.equal(h.installed[0].options.forceRun, true);
   assert.equal(JSON.parse(readFileSync(markerPath, "utf8")).phase, "spawned");
 });
+

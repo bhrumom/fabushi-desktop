@@ -15,8 +15,10 @@ export function createUpdateServiceWiring(deps: {
   readonly platform?: NodeJS.Platform; readonly env?: NodeJS.ProcessEnv; readonly log?: (message: string) => void; readonly createService?: (options: SandUpdateServiceOptions) => SandUpdateService; readonly createWindowsInstaller?: (options: ConstructorParameters<typeof SandWindowsInstaller>[0]) => NonNullable<SandUpdateServiceOptions["windows"]>;
 }) {
   const platform = deps.platform ?? process.platform; const log = deps.log ?? ((message: string) => console.error(`[sand-update] ${message}`));
-  const feedBaseUrl = configuredUpdateFeedBaseUrl(deps.env ?? process.env);
-  const windows = platform === "win32" ? (deps.createWindowsInstaller ?? ((options) => new SandWindowsInstaller(options)))({ quit: () => deps.electron.app.quit(), log }) : null;
+  const env = deps.env ?? process.env;
+  const feedBaseUrl = configuredUpdateFeedBaseUrl(env);
+  const publisherPolicyJson = env.FABUSHI_WINDOWS_UPDATE_PUBLISHERS_JSON;
+  const windows = platform === "win32" ? (deps.createWindowsInstaller ?? ((options) => new SandWindowsInstaller(options)))({ quit: () => deps.electron.app.quit(), log, ...(publisherPolicyJson === undefined ? {} : { publisherPolicyJson }) }) : null;
   const options: SandUpdateServiceOptions = {
     currentVersion: deps.currentVersion, buildDefaultTrack: deps.buildDefaultTrack, ...(deps.disabledReason === undefined ? {} : { disabledReason: deps.disabledReason }), squirrel: platform === "darwin" ? deps.electron.autoUpdater : null, windows, platform, tempDir: deps.electron.app.getPath("temp"), machineId: deps.machineId, ...(feedBaseUrl === undefined ? {} : { feedBaseUrl }),
     getTrackOverride: () => deps.settingsStore.getUpdateTrackOverride(), persistTrackOverride: (track) => deps.settingsStore.setUpdateTrackOverride(track), getAutoUpdateWhenIdleOptIn: () => deps.settingsStore.getAutoUpdateWhenIdleOptIn(), persistAutoUpdateWhenIdleOptIn: (enabled) => deps.settingsStore.setAutoUpdateWhenIdleOptIn(enabled), getAutoUpdateWhenIdleGateEnabled: () => deps.getExperimentService()?.checkFeatureGate("sand_auto_update_when_idle") ?? false,
@@ -26,4 +28,5 @@ export function createUpdateServiceWiring(deps: {
   };
   const service = (deps.createService ?? ((value) => new SandUpdateService(value)))(options); service.start(); return service;
 }
+
 

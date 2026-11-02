@@ -10,6 +10,7 @@ import { runPeriodicIdleApplyTick, tryApplyStagedWhenIdle } from "./idle-relaunc
 import { SquirrelFeedServer } from "./squirrel-feed-server.js";
 import { classifyUpdateCheckError, updateDisabledError, updateError } from "./update-telemetry.js";
 import { compareVersions, isNewerVersion, isPrerelease, parseVersion } from "./update-version.js";
+import type { WindowsPublisherDisabledReason } from "./win32-installer.js";
 
 export const DEFAULT_INITIAL_CHECK_DELAY_MS = 30_000;
 export const DEFAULT_CHECK_INTERVAL_MS = 60 * 60_000;
@@ -17,11 +18,11 @@ export const DEFAULT_CHECK_INTERVAL_JITTER_MS = 5 * 60_000;
 export const DEFAULT_STAGING_TIMEOUT_MS = 10 * 60_000;
 export const PROGRESS_EMIT_STEP = 0.01;
 export class SandUpdateApplyError extends Error {}
-export type UpdateDisabledReason = "disabled-by-env" | "lab-build" | "not-packaged" | "unsupported-platform" | "update-source-unconfigured" | "update-source-invalid";
+export type UpdateDisabledReason = "disabled-by-env" | "lab-build" | "not-packaged" | "unsupported-platform" | "update-source-unconfigured" | "update-source-invalid" | WindowsPublisherDisabledReason;
 export type SandUpdateState = { type: "disabled"; reason: UpdateDisabledReason } | { type: "idle"; lastCheck?: unknown } | { type: "checking" } | { type: "available" | "staging" | "ready"; version: string; lastCheck?: unknown } | { type: "downloading"; version: string; progress: number | null };
 
 interface SquirrelPort { on(event: string, listener: (...args: any[]) => void): void; setFeedURL(options: { url: string }): void; checkForUpdates(): void; quitAndInstall(): void }
-interface WindowsPort { verifySignature(path: string): Promise<void>; quit(): void; installOnQuit(path: string, options: { forceRun: boolean; onSpawnError(error: unknown): void }): void }
+interface WindowsPort { getDisabledReason?(): WindowsPublisherDisabledReason | null; verifySignature(path: string): Promise<void>; quit(): void; installOnQuit(path: string, options: { forceRun: boolean; onSpawnError(error: unknown): void }): void }
 interface ApplyMarkerPort { peek(): UpdateApplyMarker | null; recordStaged(input: any): void; recordRequested(input: any): void; recordSpawned(): void; recordSpawnFailed(error: unknown): void; clear(): void }
 export interface SandUpdateServiceOptions {
   readonly currentVersion: string; readonly buildDefaultTrack: SandUpdateTrack | null; readonly disabledReason?: UpdateDisabledReason | null; readonly squirrel?: SquirrelPort | null; readonly windows?: WindowsPort | null; readonly tempDir: string; readonly machineId: string; readonly feedBaseUrl?: string; readonly platform?: NodeJS.Platform; readonly arch?: string;
@@ -36,18 +37,22 @@ export class SandUpdateService {
   readonly updatePlatform: string;
   readonly responseKind: "squirrel" | "iupdate";
   private readonly feedSource: ResolvedUpdateFeedSource;
+  private readonly windowsPublisherDisabledReason: WindowsPublisherDisabledReason | null;
   private readonly clock: Clock; private readonly now: () => number; private readonly feedServer: SquirrelFeedServer;
   private checkAbort: AbortController | null = null; private attemptTrack: SandUpdateTrack | null = null; private notedEffectiveTrack: SandUpdateTrack | null = null; private stagedZipPath: string | null = null; private stagedVersion: string | null = null; private stagedAtMs: number | null = null; private checkSeq = 0; private stagedInstallerPath: string | null = null; private forceRunOnQuit = false; private initialArm: { dispose(): void } | null = null; private periodicArm: { dispose(): void } | null = null; private periodicTickInFlight = false; private stagingArm: { dispose(): void } | null = null; private isDisposed = false; private backendRequiresUpdate = false; private stagingDir: string | null = null; private installerLaunched = false;
 
   constructor(private readonly options: SandUpdateServiceOptions) {
     this.clock = options.clock ?? realClock; this.now = options.now ?? Date.now; this.feedServer = options.feedServer ?? new SquirrelFeedServer();
     this.feedSource = resolveUpdateFeedSource(options.feedBaseUrl);
-    const disabledReason = options.disabledReason ?? this.feedSource.disabledReason;
-    this.updatePlatform = resolveUpdatePlatform(options.platform ?? process.platform, options.arch ?? process.arch); this.responseKind = updateResponseKind(this.updatePlatform); this.state = disabledReason != null ? { type: "disabled", reason: disabledReason } : { type: "idle" };
+    this.updatePlatform = resolveUpdatePlatform(options.platform ?? process.platform, options.arch ?? process.arch); this.responseKind = updateResponseKind(this.updatePlatform);
+    const publisherReason = this.responseKind === "iupdate" ? options.windows?.getDisabledReason?.() : null;
+    this.windowsPublisherDisabledReason = publisherReason === null ? null : publisherReason ?? "windows-publisher-unconfigured";
+    const disabledReason = options.disabledReason ?? this.feedSource.disabledReason ?? this.windowsPublisherDisabledReason;
+    this.state = disabledReason != null ? { type: "disabled", reason: disabledReason } : { type: "idle" };
     options.squirrel?.on("update-downloaded", () => this.onSquirrelStaged()); options.squirrel?.on("error", (...args) => this.onSquirrelError(args[0] instanceof Error ? args[0].message : String(args[0]), "failed")); options.squirrel?.on("update-not-available", () => this.onSquirrelError("Squirrel declined the staged update (update-not-available)", "declined"));
   }
   start(): void { if (this.isDisposed) return; this.settleApplyMarker(); if (this.state.type === "disabled") { this.emitCheckReport({ action: "result", seq: ++this.checkSeq, trigger: "startup", track: this.effectiveTrack(), result: "disabled", error: updateDisabledError(this.state.reason) }); return; } this.initialArm = this.clock.schedule(this.options.initialCheckDelayMs ?? DEFAULT_INITIAL_CHECK_DELAY_MS, () => { void this.checkForUpdates({ trigger: "startup" }); }); this.scheduleNextPeriodicCheck(); }
-  applyDisabledReason(reason: UpdateDisabledReason | null): void { if (this.isDisposed) return; reason ??= this.feedSource.disabledReason; if (reason != null) { if (this.state.type === "disabled" && this.state.reason === reason) return; this.stopChecks(); this.discardStaged(); this.setState({ type: "disabled", reason }); this.emitCheckReport({ action: "result", seq: ++this.checkSeq, trigger: "gate_change", track: this.effectiveTrack(), result: "disabled", error: updateDisabledError(reason) }); return; } if (this.state.type !== "disabled") return; this.setState({ type: "idle" }); this.start(); }
+  applyDisabledReason(reason: UpdateDisabledReason | null): void { if (this.isDisposed) return; reason ??= this.feedSource.disabledReason ?? this.windowsPublisherDisabledReason; if (reason != null) { if (this.state.type === "disabled" && this.state.reason === reason) return; this.stopChecks(); this.discardStaged(); this.setState({ type: "disabled", reason }); this.emitCheckReport({ action: "result", seq: ++this.checkSeq, trigger: "gate_change", track: this.effectiveTrack(), result: "disabled", error: updateDisabledError(reason) }); return; } if (this.state.type !== "disabled") return; this.setState({ type: "idle" }); this.start(); }
   private clearPeriodicArm(): void { this.periodicArm?.dispose(); this.periodicArm = null; }
   private stopChecks(): void { this.initialArm?.dispose(); this.initialArm = null; this.clearPeriodicArm(); this.checkAbort?.abort(); this.checkAbort = null; this.cleanupStagingArtifacts(); }
   private discardStaged(): void { if (this.stagedInstallerPath != null) { void this.removeFile(this.stagedInstallerPath, "staged-cleanup"); this.stagedInstallerPath = null; } this.stagedVersion = null; this.stagedAtMs = null; this.forceRunOnQuit = false; this.options.applyMarker?.clear(); }
@@ -98,4 +103,5 @@ export class SandUpdateService {
   private failure(leg: string, error: unknown): void { try { this.options.reportCleanupFailure?.(leg, error); } catch {} }
 }
 function message(error: unknown): string { return error instanceof Error ? error.message : String(error); }
+
 
