@@ -10,6 +10,7 @@ import {
 } from "../recovered/features/conversation/workspace/pagination.ts";
 import {
   applyTranscriptReadUpdates,
+  createHumanReactionSettlement,
   currentTranscriptReadBuffers,
   reconcileAuthoritativeTranscriptBaseline,
   reconcileLateInitialTranscriptPage,
@@ -504,3 +505,186 @@ test("Human older pages cannot resurrect a settled pending row in the root cache
   controller.dispose();
 });
 
+test("NMR-26 an intermediate row commit cannot consume an older-page viewport anchor", async () => {
+  const read = deferred<TranscriptHistoryPage>();
+  const requests: TranscriptHistoryRequest[] = [];
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "conversation",
+    fetchPage: (request) => {
+      requests.push(request);
+      return request.beforeSeq === 5
+        ? Promise.resolve({ entries: [message("m3")], nextBeforeSeq: 3, nextBeforeCursor: "opaque-walk:3" })
+        : read.promise;
+    },
+  });
+  controller.installInitialPage({ entries: [], nextBeforeSeq: 5, nextBeforeCursor: "opaque-walk:5" });
+  await controller.loadOlder();
+  const viewport = { scrollTop: 40, scrollHeight: 400 };
+  controller.bindViewport(viewport);
+  const loading = controller.loadOlder();
+  controller.ingestEntryUpdate("account", "conversation", message("m3", "updated"));
+  assert.equal(controller.getSnapshot().isLoadingOlder, true);
+  // The renderer commits this row update while the older read is still pending.
+  assert.equal(controller.onEntriesCommitted(), false);
+  assert.equal(viewport.scrollTop, 40);
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 3, beforeCursor: "opaque-walk:3" });
+  read.resolve({ entries: [message("m1"), message("m2"), message("m3", "stale overlap")], nextBeforeSeq: 1, nextBeforeCursor: "opaque-walk:1" });
+  await loading;
+  assert.deepEqual(requests, [
+    { id: "conversation", limit: 200, beforeSeq: 5, beforeCursor: "opaque-walk:5" },
+    { id: "conversation", limit: 200, beforeSeq: 3, beforeCursor: "opaque-walk:3" },
+  ]);
+  viewport.scrollHeight = 480;
+  assert.equal(controller.onEntriesCommitted(), true);
+  assert.equal(viewport.scrollTop, 120);
+  assert.deepEqual(ids(controller.getSnapshot().entries), ["m1", "m2", "m3"]);
+  assert.equal(row(controller.getSnapshot().entries, "m3").text, "updated");
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 1, beforeCursor: "opaque-walk:1" });
+  assert.equal(controller.onEntriesCommitted(), false);
+  controller.dispose();
+});
+
+const reactionTarget = { conversationId: "human-a", entryId: "older-entry" };
+const unexpectedReactionFailure = (error: unknown): never => { throw error; };
+
+test("NMR-26 a late first reaction response cannot replace a later mutation settlement", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const first = deferred<string>();
+  const second = deferred<string>();
+  const applied: string[] = [];
+  const a = controller.run(reactionTarget, () => first.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  const b = controller.run(reactionTarget, () => second.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  second.resolve("new reaction state");
+  await b;
+  first.resolve("old reaction state");
+  await a;
+  assert.deepEqual(applied, ["new reaction state"]);
+  controller.dispose();
+});
+
+test("NMR-26 an authoritative event wins over an outstanding reaction RPC response", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const pending = deferred<string>();
+  const applied: string[] = [];
+  const request = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  controller.observeEntry(reactionTarget);
+  applied.push("authoritative event");
+  pending.resolve("obsolete response");
+  await request;
+  assert.deepEqual(applied, ["authoritative event"]);
+  controller.dispose();
+});
+
+test("NMR-26 account generation fences a reaction across logout and return to the same identity", async () => {
+  let generation = 1;
+  const controller = createHumanReactionSettlement(() => generation);
+  const pending = deferred<string>();
+  const applied: string[] = [];
+  const request = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  generation = 2;
+  generation = 3;
+  pending.resolve("departed scope");
+  await request;
+  await controller.run(reactionTarget, async () => "current scope", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  assert.deepEqual(applied, ["current scope"]);
+  controller.dispose();
+});
+
+test("NMR-26 independent conversation and message reactions retain their completion scope", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const pending = deferred<string>();
+  const applied: string[] = [];
+  const first = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, unexpectedReactionFailure);
+  await controller.run({ conversationId: "human-b", entryId: reactionTarget.entryId }, async () => "other conversation", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  await controller.run({ conversationId: reactionTarget.conversationId, entryId: "other-entry" }, async () => "other entry", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  pending.resolve("original entry");
+  await first;
+  assert.deepEqual(applied, ["other conversation", "other entry", "original entry"]);
+  controller.dispose();
+});
+
+test("NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const errors: unknown[] = [];
+  const applied: string[] = [];
+  const failure = new Error("offline");
+  await controller.run(reactionTarget, async () => { throw failure; }, () => assert.fail("failed request applied"), (error) => { errors.push(error); });
+  const invalid = new Error("invalid settlement");
+  await controller.run(reactionTarget, async () => "invalid", () => { throw invalid; }, (error) => { errors.push(error); });
+  const pending = deferred<string>();
+  const old = controller.run(reactionTarget, () => pending.promise, (value) => { applied.push(value); }, (error) => { errors.push(error); });
+  await controller.run(reactionTarget, async () => "recovered", (value) => { applied.push(value); }, unexpectedReactionFailure);
+  pending.reject(new Error("obsolete failure"));
+  await old;
+  assert.deepEqual(errors, [failure, invalid]);
+  assert.deepEqual(applied, ["recovered"]);
+  controller.dispose();
+});
+
+test("NMR-26 deferred reaction state and error updates recheck events, clear and account generation", async () => {
+  let generation = 1;
+  const controller = createHumanReactionSettlement(() => generation);
+  const deferredApplications: Array<() => void> = [];
+  const applied: string[] = [];
+  const enqueue = (value: string, isCurrent: () => boolean) => {
+    deferredApplications.push(() => { if (isCurrent()) applied.push(value); });
+  };
+  await controller.run(reactionTarget, async () => "old event", enqueue, unexpectedReactionFailure);
+  controller.observeEntry(reactionTarget);
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => "cleared conversation", enqueue, unexpectedReactionFailure);
+  controller.clearConversation(reactionTarget.conversationId);
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => "old account", enqueue, unexpectedReactionFailure);
+  generation += 1;
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => { throw new Error("old account error"); }, enqueue,
+    (_error, isCurrent) => enqueue("stale error notice", isCurrent));
+  generation += 1;
+  deferredApplications.shift()!();
+  await controller.run(reactionTarget, async () => "current state", enqueue, unexpectedReactionFailure);
+  deferredApplications.shift()!();
+  assert.deepEqual(applied, ["current state"]);
+  controller.dispose();
+});
+
+test("NMR-26 Human reaction settlement and a later event refresh an older row without moving it", async () => {
+  const pagination = createTranscriptPaginationController({
+    accountSlot: "account", agentId: reactionTarget.conversationId,
+    fetchPage: async ({ beforeSeq, beforeCursor }) => {
+      assert.equal(beforeSeq, 2);
+      assert.equal(beforeCursor, "opaque-walk:2");
+      return { entries: [message(reactionTarget.entryId)], nextBeforeSeq: 1, nextBeforeCursor: "opaque-walk:1" };
+    },
+  });
+  pagination.installInitialPage({ entries: [message("tail")], nextBeforeSeq: 2, nextBeforeCursor: "opaque-walk:2" });
+  await pagination.loadOlder();
+  const cursor = pagination.getSnapshot().cursor;
+  const controller = createHumanReactionSettlement(() => 1);
+  const reacted = { ...message(reactionTarget.entryId), reactions: [{ emoji: "👍", by: "me" }] };
+  const apply = (value: TranscriptMessage) => pagination.ingestEntryUpdate("account", reactionTarget.conversationId, value);
+  await controller.run(reactionTarget, async () => reacted, apply, unexpectedReactionFailure);
+  assert.deepEqual(pagination.getSnapshot().entries, [reacted, message("tail")]);
+  const late = deferred<TranscriptMessage>();
+  const pending = controller.run(reactionTarget, () => late.promise, apply, unexpectedReactionFailure);
+  const refreshed = { ...message(reactionTarget.entryId), reactions: [{ emoji: "❤️", by: "me" }] };
+  controller.observeEntry(reactionTarget);
+  pagination.ingestEntryUpdate("account", reactionTarget.conversationId, refreshed);
+  late.resolve(reacted);
+  await pending;
+  assert.deepEqual(pagination.getSnapshot().entries, [refreshed, message("tail")]);
+  assert.equal(pagination.getSnapshot().cursor, cursor);
+  assert.deepEqual(pagination.getSnapshot().cursor, { kind: "more", beforeSeq: 1, beforeCursor: "opaque-walk:1" });
+  controller.dispose();
+  pagination.dispose();
+});
+
+test("NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error", async () => {
+  const controller = createHumanReactionSettlement(() => 1);
+  const pending = deferred<string>();
+  const request = controller.run(reactionTarget, () => pending.promise, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
+  controller.dispose();
+  pending.reject(new Error("disconnected after dispose"));
+  await request;
+  await controller.run(reactionTarget, async () => { assert.fail("disposed request sent"); }, () => assert.fail("disposed result applied"), unexpectedReactionFailure);
+});

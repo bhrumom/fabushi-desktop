@@ -1551,3 +1551,40 @@ identity before it is exposed. This batch does not claim a changefeed for older
 remote edits/reactions, multi-device or cancellation completeness, real Worker
 deployment, full source/legal closure, signed platforms, full UI/a11y/Bot/soak,
 upgrade/rollback acceptance, or independent ACCEPT.
+
+### Round 7 resumed qualification — existing NMR-22/24/26 boundaries
+
+Resume base: `3c9995a97c59d89824b2f6e0e49e72cef4825439`; retain all later
+NMR-25 through NMR-50 contracts and the fixed U. Earlier unpublished preparation
+is not authority to restore blocking sends or replace current projection owners.
+
+Before replaying a durable Human reaction intention, require a message whose
+`authorKind` is Human and whose author is the authenticated local Human or the
+selected peer. Require a canonical positive safe-integer remote ID and exact
+untrimmed emoji identity. Reject malformed/foreign/missing/changed targets before
+HTTP, preserve the complete row and intention, and publish no mutation. Recheck
+the current target and remote identity after HTTP before replacing reaction
+fields; retain unrelated current metadata. New toggles use the same admission
+before staging an intention. Existing credential/session response fences remain.
+
+Qualify the actual short and empty 32nd pages without a 33rd list GET, partial-page
+resource failure followed by checkpoint replay, equal-timestamp `beforeSeq`
+stability, and crash recovery when the row was committed but the desired intent
+was not yet cleared. Use the existing real Host/HTTP/SQLite/reopen harness.
+Remote message identities must be canonical positive safe-integer strings or
+equivalent integer JSON numbers before canonical-row lookup or materialization.
+Do not normalize padded, signed or leading-zero text into a second identity.
+An ascending history page must advance strictly from the requested cursor, even
+when its cursor echo and numeric nextAfterId are otherwise valid. Reject malformed,
+duplicate, backward and nonadvancing pages before resource access, row publication
+or coverage advancement; retain the checkpoint and recover from it after restart.
+
+The existing pagination anchor must remain pending through intermediate React
+commits caused by row updates while an older page is in flight. Consume it only
+after that page is installed. Human reaction RPC projection must reject obsolete
+account generations, superseded mutations and authoritative transcript events,
+including deferred React updaters; current failures use the existing notice.
+Reuse `transcript-projection.ts`, the current read buffers/cursor cache, and one
+Transcript. Preserve all existing tests and validate only in exact-H Actions.
+No full source, backend deployment, package, visual/a11y or independent ACCEPT
+is implied by these bounded cases.

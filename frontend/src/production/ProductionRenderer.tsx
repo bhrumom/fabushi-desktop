@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -1324,26 +1324,49 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     scope: { accountSlot: null, agentId: null },
     ...reactionRootCallbacks
   }));
+  const [humanReactionSettlement] = useState(() => createHumanReactionSettlement(() => accountScopeGenerationRef.current));
+  useStrictModeSafeDisposal(humanReactionSettlement);
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
-      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
-      if (conversation == null) throw new Error("Human reaction conversation is unavailable");
-      const value = await client.call("reactHumanMessage", {
-        conversationId: input.agentId,
-        entryId: input.entryId,
-        emoji: input.emoji
-      });
-      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
-      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
-      setEntriesByAgent((current) => {
-        const entries = current[input.agentId];
-        if (entries == null) return current;
-        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
-        return { ...current, [input.agentId]: next };
-      });
+      const currentAccount = accountRef.current;
+      if (currentAccount?.kind !== "logged-in") return;
+      const accountSlot = currentAccount.authId ?? currentAccount.email ?? "account";
+      await humanReactionSettlement.run(
+        { conversationId: input.agentId, entryId: input.entryId },
+        async () => {
+          const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+          if (conversation == null) throw new Error("Human reaction conversation is unavailable");
+          const value = await client.call("reactHumanMessage", {
+            conversationId: input.agentId,
+            entryId: input.entryId,
+            emoji: input.emoji
+          });
+          const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+          if (projected == null || projected.id !== input.entryId) throw new Error("Human reaction settlement returned an invalid transcript entry");
+          return projected;
+        },
+        (projected, isCurrent) => {
+          transcriptPaginationController.ingestEntryUpdate(accountSlot, input.agentId, projected);
+          setEntriesByAgent((current) => {
+            if (!isCurrent()) return current;
+            const entries = current[input.agentId];
+            if (entries == null || !entries.some((entry) => entry.id === input.entryId)) return current;
+            return {
+              ...current,
+              [input.agentId]: entries.map((entry) => entry.id !== input.entryId ? entry
+                : entry.kind === "message" && projected.kind === "message"
+                  ? mergeAuthoritativeTranscriptMessage(entry, projected)
+                  : projected)
+            };
+          });
+        },
+        (error, isCurrent) => setNotice((current) => isCurrent()
+          ? error instanceof Error ? `Human reaction unavailable: ${error.message}` : `Human reaction unavailable: ${String(error)}`
+          : current),
+      );
     }
-  } : undefined, [activeIsHuman, client]);
+  } : undefined, [activeIsHuman, client, humanReactionSettlement, transcriptPaginationController]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
@@ -2867,6 +2890,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
         }
         for (const entry of projectedEntries) {
+          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
           if (entry.kind !== "message" || entry.clientNonce == null) continue;
           acknowledgementController.ingestTranscriptEvent({
             accountSlot: acknowledgementScopeRef.current.accountSlot,
@@ -2891,6 +2915,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
         if (projected == null || !ownerId) return;
+        humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
         rememberPreBaselineFeedEntry(ownerId, projected.id);
         for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
           read.updates.set(projected.id, projected);
@@ -2911,6 +2936,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       },
       onCleared: (ownerId) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+        humanReactionSettlement.clearConversation(ownerId);
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
         transcriptHistoryCursorsRef.current.delete(ownerId);
@@ -2935,6 +2961,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const owner = agentsRef.current.find((agent) => agent.id === ownerId);
       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
       if (projected == null || !ownerId) return;
+      humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
       rememberPreBaselineFeedEntry(ownerId, projected.id);
       for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
         read.updates.set(projected.id, projected);
@@ -2987,7 +3014,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -3742,6 +3769,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountScopeGeneration = accountScopeGenerationRef.current;
     await client.call("deleteAgents", { ids: [agentId] });
     if (accountScopeGenerationRef.current !== accountScopeGeneration) return;
+    humanReactionSettlement.clearConversation(agentId);
     transcriptHistoryCursorsRef.current.delete(agentId);
     for (const read of pendingTranscriptReadsRef.current) {
       if (read.agentId === agentId) pendingTranscriptReadsRef.current.delete(read);

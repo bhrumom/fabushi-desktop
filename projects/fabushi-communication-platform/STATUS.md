@@ -6,6 +6,21 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
+## Round7 resumed NMR-22/24/26 qualification
+
+The existing Session/gateway now refuses malformed reaction targets and emoji
+before staging or HTTP, preserves current row fields at delayed settlement,
+and keeps durable rejected intentions diagnosable. Existing Transcript projection
+fences obsolete reaction responses, and pagination waits for the accepted page
+before consuming its viewport anchor. Later reply/upload/forward/credential/CLI
+changes remain intact. Eight Host and nine production-helper cases are added,
+including canonical message-ID and strictly advancing page refusal/recovery;
+containing-H Actions execution is required. Initial run41409695104 executed16
+Human cases:14passed/2failed; fixture repair30b4/run41410242810 passed16Human/4Agent
+and shipping gates.
+See `projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json`.
+Full migration, real service, source/legal, packages/UI/a11y/Bot and ACCEPT remain open.
+
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
 Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.

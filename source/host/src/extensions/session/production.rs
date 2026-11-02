@@ -88,7 +88,7 @@ use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobSt
 use super::native_messaging::{
     FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
     FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
-    fabushi_identity_text,
+    fabushi_identity_text, fabushi_message_identity_text,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -2050,7 +2050,7 @@ impl ProductionSessionWorkers {
         peer_human_id: &str,
         existing: &[serde_json::Value],
     ) -> Result<(), String> {
-        let remote_id = fabushi_identity_text(&remote.id)?;
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
         if !((sender_id == local_human_id && recipient_id == peer_human_id)
@@ -2168,7 +2168,7 @@ impl ProductionSessionWorkers {
         existing: &[serde_json::Value],
     ) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?;
-        let remote_id = fabushi_identity_text(&remote.id)?;
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
@@ -2588,7 +2588,7 @@ impl ProductionSessionWorkers {
             let mut last = after;
             let mut accepted = Vec::new();
             for remote in &page {
-                let id = fabushi_identity_text(&remote.id)?.parse::<u64>()
+                let id = fabushi_message_identity_text(&remote.id)?.parse::<u64>()
                     .map_err(|_| "remote Human history id is not a positive integer".to_string())?;
                 if id <= last || id > MAX_SAFE_ID {
                     return Err("Fabushi Human history afterId did not advance monotonically".into());
@@ -2619,7 +2619,7 @@ impl ProductionSessionWorkers {
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
                 .and_then(serde_json::Value::as_str).map(str::to_string)).collect::<BTreeSet<_>>();
             for remote in latest {
-                let remote_id = fabushi_identity_text(&remote.id)?;
+                let remote_id = fabushi_message_identity_text(&remote.id)?;
                 if !known.contains(remote_id.as_str()) { continue; }
                 self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot)?;
                 let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
@@ -3870,6 +3870,28 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    fn human_reaction_remote_identity(entry: &serde_json::Value) -> Result<String, String> {
+        let value = entry.get("remoteMessageId")
+            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
+        fabushi_message_identity_text(value)
+            .map_err(|_| "Human reaction target has an invalid canonical remote message identity".to_string())
+    }
+
+    fn validate_human_reaction_target(
+        entry: &serde_json::Value,
+        local_human_id: &str,
+        peer_human_id: &str,
+    ) -> Result<(), String> {
+        let author = entry.get("authorId").and_then(serde_json::Value::as_str);
+        if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+            || !matches!(author, Some(value) if value == local_human_id || value == peer_human_id)
+        {
+            return Err("persisted Human reaction target is outside the selected Human conversation".into());
+        }
+        Ok(())
+    }
+
     fn replay_human_reaction_intent(
         &self,
         owner: &SandAgentDb,
@@ -3891,14 +3913,20 @@ impl ProductionSessionWorkers {
         if author != self.local_human_id()? || !self.metadata_has_local_human(metadata)? {
             return Err("persisted Human reaction intent belongs to a different account".into());
         }
-        if emoji.trim().is_empty() || emoji.as_bytes().len() > 32 {
+        if emoji.is_empty() || emoji != emoji.trim() || emoji.as_bytes().len() > 32 {
             return Err("persisted Human reaction intent contains invalid emoji".into());
         }
+        if remote_id.parse::<u64>().ok().filter(|id| {
+            *id > 0 && *id <= 9_007_199_254_740_991 && id.to_string() == remote_id
+        }).is_none() {
+            return Err("persisted Human reaction intent contains invalid remote identity".into());
+        }
+        let peer = self.peer_human_id_from_metadata(metadata)?;
         let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "persisted Human reaction target disappeared".to_string())?;
-        if current.get("remoteMessageId").map(fabushi_identity_text).transpose()?
-            .as_deref() != Some(remote_id) {
+        Self::validate_human_reaction_target(&current, author, &peer)?;
+        if Self::human_reaction_remote_identity(&current)? != remote_id {
             return Err("persisted Human reaction remote identity changed".into());
         }
         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
@@ -3912,9 +3940,14 @@ impl ProductionSessionWorkers {
         if observed_active != active {
             return Err("Fabushi Human reaction response did not confirm the desired state".into());
         }
-        let peer = self.peer_human_id_from_metadata(metadata)?;
         let projected = Self::project_remote_human_reactions(&remote, &peer);
-        let mut next = current;
+        let mut next = owner.get_transcript_entry_by_id(entry_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
+        Self::validate_human_reaction_target(&next, author, &peer)?;
+        if Self::human_reaction_remote_identity(&next)? != remote_id {
+            return Err("persisted Human reaction remote identity changed".into());
+        }
         let is_peer = next.get("authorId").and_then(serde_json::Value::as_str) != Some(author);
         let object = next.as_object_mut()
             .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
@@ -3942,8 +3975,10 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         emoji: &str,
     ) -> Result<serde_json::Value, String> {
-        let emoji = emoji.trim();
-        if emoji.is_empty() { return Err("reactHumanMessage requires emoji".into()); }
+        if emoji.trim().is_empty() { return Err("reactHumanMessage requires emoji".into()); }
+        if emoji != emoji.trim() {
+            return Err("Fabushi Human reaction emoji must not contain surrounding whitespace".into());
+        }
         if emoji.as_bytes().len() > 32 {
             return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
         }
@@ -3967,9 +4002,8 @@ impl ProductionSessionWorkers {
         let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target is not in this conversation".to_string())?;
-        let remote_id = current.get("remoteMessageId")
-            .map(fabushi_identity_text).transpose()?
-            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
+        Self::validate_human_reaction_target(&current, self.local_human_id()?, &self.peer_human_id_from_metadata(&metadata)?)?;
+        let remote_id = Self::human_reaction_remote_identity(&current)?;
         let active = current.get("remoteReactions")
             .and_then(serde_json::Value::as_array).is_some_and(|reactions| {
                 reactions.iter().any(|reaction| {

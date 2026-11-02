@@ -453,3 +453,22 @@ The actual production path is the existing Human workspace -> Coordinator `getHu
 | NMR-ACTIVITY-01 | History and Agent handoff serialize at the existing lane; older timestamps cannot regress activity; failed metadata commits report failure and replay repairs the durable row/metadata gap | `shipping_human_agent_handoff_and_history_download_keep_activity_monotonic`; `shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart` |
 
 The existing exact-H Actions job retains every current message, credential, reply/forward, upload, AppHost/shipping, UI/Chromium/Electron and Windows gate. At the integrated freeze the authored selected counts are Human52, projection20 and cursor/RPC17; execution remains pending until the containing-H logs show the actual results. Two concurrent NMR49 cases retain their complete physical-row/atomic/permission assertions and separately assert the new public canonical ordering. Existing prerequisite results are provenance only; see `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. Full source/legal, deployed Worker, supported signed packages, UI/a11y/temporal/Bot/soak and independent ACCEPT remain open.
+
+### Round7 resumed NMR-22/24/26 boundary evidence
+
+Current additions retain the existing FBCP-NMR-001 row and production route.
+Eight new `shipping_human_` cases in `session_gateway_contract.rs` cover short/empty
+32nd pages, durable partial-page replay, stable equal-timestamp beforeSeq,
+applied-row/uncleared-intention restart, malformed persisted target admission,
+post-HTTP target changes, and actual gateway pre-staging refusal with a numeric-ID
+positive control, plus canonical message-ID and strict page-order rejection with
+checkpoint-preserving restart recovery. All prior Human/forward/Agent/credential/shipping cases remain.
+Nine new cases in `transcript-projection.contract.test.ts` exercise the actual
+completion fence and intermediate-render viewport anchor. Existing tail merge,
+read buffers, cursor cache, immutable forward UI and one Transcript remain.
+
+The round7 evidence receipt separates original failed63da, passed fixture30b4,
+qualified later predecessor94dc, unpublished superseded preparation and the new
+containing-H candidate. Authored source counts must include all concurrent Human
+and Transcript additions; actual results require the final exact-H Actions logs.
+No mounted reaction/visual/a11y, source or full independent acceptance is claimed.

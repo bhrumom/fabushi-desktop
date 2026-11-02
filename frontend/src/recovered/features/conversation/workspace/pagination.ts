@@ -129,7 +129,7 @@ export function createTranscriptPaginationController(
   let inFlight: Promise<void> | null = null;
   const updatesDuringRequest = new Map<string, ConversationTranscriptEntry>();
   let viewport: TranscriptViewport | null = null;
-  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number } | null = null;
+  let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number; ready: boolean } | null = null;
   let disposed = false;
 
   const buildSnapshot = (): TranscriptPaginationSnapshot => ({
@@ -231,7 +231,8 @@ export function createTranscriptPaginationController(
           generation,
           pageGeneration,
           scrollTop: viewport.scrollTop,
-          scrollHeight: viewport.scrollHeight
+          scrollHeight: viewport.scrollHeight,
+          ready: false
         };
       } else pendingAnchor = null;
       olderFailure = null;
@@ -251,6 +252,7 @@ export function createTranscriptPaginationController(
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           const refreshedPage = page.entries.map((entry) => updatesDuringRequest.get(entry.id) ?? entry);
           entries = mergeOlderTranscriptEntries(entries, refreshedPage);
+          if (pendingAnchor != null) pendingAnchor.ready = true;
           cursor = cursorFromPage(page);
           olderFailure = null;
           options.onPageApplied?.({ accountSlot: requestAccountSlot, agentId: requestAgentId }, {
@@ -288,7 +290,7 @@ export function createTranscriptPaginationController(
     },
 
     onEntriesCommitted() {
-      if (disposed || pendingAnchor == null || viewport == null) return false;
+      if (disposed || pendingAnchor == null || !pendingAnchor.ready || viewport == null) return false;
       const anchor = pendingAnchor;
       pendingAnchor = null;
       if (anchor.generation !== generation || anchor.pageGeneration !== pageGeneration) return false;
