@@ -9,7 +9,7 @@ use crate::extensions::settings::settings_service::SettingsService;
 use super::cursor_inference_transport::CursorInferenceAuth;
 use super::cursor_session::{
     RequestLineage, RequestedModel, ResolveRequestedModelInputs, SandAttachedMediaUrlProvider,
-    SAND_SUMMARIZATION_MODEL_ID, SandSessionOptions, resolve_sand_requested_model,
+    SAND_DEFAULT_MODEL_ID, SAND_SUMMARIZATION_MODEL_ID, SandSessionOptions, resolve_sand_requested_model,
 };
 use super::generated_inference_codec::InferenceReason;
 use super::sand_labeling::{
@@ -209,6 +209,20 @@ fn model_selection_from_value(value: Option<serde_json::Value>) -> Option<SandAg
     })
 }
 
+// The native Responses default and the Cursor catalog default differ.
+ // A turn without an explicit model must retain the native default.
+fn has_explicit_first_party_model(
+    selected: &RequestedModel,
+    options: &SandSessionOptions,
+    has_saved_default: bool,
+    has_env_override: bool,
+) -> bool {
+    options.model_id.as_deref().is_some_and(|value| !value.trim().is_empty())
+        || has_saved_default
+        || has_env_override
+        || selected.model_id != SAND_DEFAULT_MODEL_ID
+}
+
 impl ProductionAgentInferenceOwner {
     pub fn configured_provider(&self) -> String {
         self.settings.get_inference_provider()
@@ -280,6 +294,7 @@ impl AgentInferenceOwner for ProductionAgentInferenceOwner {}
 struct ProductionCursorInferenceAuth {
     auth: Arc<HostAuthExtension>,
     requested_model: RequestedModel,
+    first_party_responses_model: Option<String>,
     session_options: SandSessionOptions,
     labeling_client: Arc<SandLabelingClient>,
     labeling_tracker: Arc<Mutex<FollowupLabelingTracker>>,
@@ -297,6 +312,10 @@ impl CursorInferenceAuth for ProductionCursorInferenceAuth {
 
     fn requested_model(&self) -> RequestedModel {
         self.requested_model.clone()
+    }
+
+    fn first_party_responses_model(&self) -> Option<String> {
+        self.first_party_responses_model.clone()
     }
 
     fn conversation_id(&self) -> Option<String> {
@@ -427,12 +446,21 @@ impl ProductionInferenceExtension {
         session_options: Option<&SandSessionOptions>,
     ) -> Arc<dyn CursorInferenceAuth> {
         let session_options = session_options.cloned().unwrap_or_default();
+        let owner = self.runtime.port();
+        let requested_model = owner.resolve_requested_model(Some(&session_options));
+        let first_party_responses_model = has_explicit_first_party_model(
+            &requested_model,
+            &session_options,
+            owner.settings.get_agent_default_model().is_some(),
+            std::env::var("SAND_AGENT_MODEL")
+                .ok()
+                .is_some_and(|value| !value.trim().is_empty()),
+        )
+        .then(|| requested_model.model_id.clone());
         Arc::new(ProductionCursorInferenceAuth {
             auth: Arc::clone(&self.auth),
-            requested_model: self
-                .runtime
-                .port()
-                .resolve_requested_model(Some(&session_options)),
+            requested_model,
+            first_party_responses_model,
             session_options,
             labeling_client: Arc::clone(&self.labeling_client),
             labeling_tracker: Arc::clone(&self.labeling_tracker),
@@ -564,7 +592,12 @@ pub fn start_production_inference_extension(
 
 #[cfg(test)]
 mod tests {
-    use super::{RoutedProvider, resolve_production_inference_provider};
+    use super::{
+        RoutedProvider, has_explicit_first_party_model, resolve_production_inference_provider,
+    };
+    use crate::extensions::inference::cursor_session::{
+        RequestedModel, SAND_DEFAULT_MODEL_ID, SandSessionOptions,
+    };
 
     #[test]
     fn packaged_fabushi_is_pinned_to_first_party_inference() {
@@ -591,4 +624,28 @@ mod tests {
             RoutedProvider::OpenRouter,
         );
     }
+    #[test]
+    fn native_responses_preserves_unconfigured_default_and_binds_explicit_turn_models() {
+        let unconfigured = RequestedModel {
+            model_id: SAND_DEFAULT_MODEL_ID.into(),
+            max_mode: None,
+            parameters: Vec::new(),
+        };
+        let ordinary = SandSessionOptions::default();
+        assert!(!has_explicit_first_party_model(&unconfigured, &ordinary, false, false));
+        assert!(has_explicit_first_party_model(&unconfigured, &ordinary, true, false));
+        assert!(has_explicit_first_party_model(&unconfigured, &ordinary, false, true));
+        let overridden = SandSessionOptions {
+            model_id: Some("explicit-session-model".into()),
+            session_model_override: true,
+            ..SandSessionOptions::default()
+        };
+        assert!(has_explicit_first_party_model(&unconfigured, &overridden, false, false));
+        let experiment_choice = RequestedModel {
+            model_id: "experiment-model".into(),
+            ..unconfigured
+        };
+        assert!(has_explicit_first_party_model(&experiment_choice, &ordinary, false, false));
+    }
+
 }

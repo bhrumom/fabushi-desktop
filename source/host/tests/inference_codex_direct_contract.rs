@@ -115,6 +115,8 @@ fn codex_direct_streams_text_executes_tools_and_continues_the_same_turn() {
         ]
     );
     assert_eq!(transport.requests.len(), 2);
+    assert_eq!(transport.requests[0]["model"], "gpt-test");
+    assert_eq!(transport.requests[1]["model"], "gpt-test");
     let second_input = transport.requests[1]["input"].as_array().expect("second input");
     assert!(second_input.iter().any(|item| item["type"] == "function_call_output"));
 }
@@ -422,4 +424,45 @@ fn codex_direct_does_not_execute_mixed_or_undeclared_dsml_text() {
         assert_eq!(result.text, text);
         assert_eq!(transport.requests.len(), 1);
     }
+}
+
+#[test]
+fn checkpoint_model_identity_is_durable_and_cross_model_resume_fails_before_request() {
+    let checkpoint = CodexDirectCheckpoint {
+        model: Some("selected-model-a".into()),
+        input: vec![json!({"role":"user","content":"turn"})],
+        text: "partial".into(),
+        response_id: "response-1".into(),
+        usage: Default::default(),
+        completed_steps: 1,
+        tool_calls_completed: 1,
+    };
+    let persisted = serde_json::to_value(&checkpoint).expect("encode checkpoint");
+    assert_eq!(persisted["model"], "selected-model-a");
+    let decoded: CodexDirectCheckpoint = serde_json::from_value(persisted)
+        .expect("decode persisted model identity");
+    assert_eq!(decoded, checkpoint);
+    let legacy: CodexDirectCheckpoint = serde_json::from_value(json!({
+        "input": [], "text": "", "response_id": "",
+        "usage": {"input_tokens":0,"output_tokens":0,"cache_read_tokens":0,"cache_write_tokens":0},
+        "completed_steps": 1, "tool_calls_completed": 0
+    })).expect("legacy checkpoint remains decodable without claiming model identity");
+    assert_eq!(legacy.model, None);
+
+    let mut transport = FakeTransport { responses: VecDeque::new(), requests: Vec::new() };
+    let options = CodexDirectOptions::new("selected-model-b", "instructions", vec![]);
+    let error = run_codex_direct_responses_with_lifecycle(
+        &mut transport,
+        &options,
+        Some(&checkpoint),
+        &mut |_tool, _args, _call_id| Ok(Value::Null),
+        &mut |_delta, _accumulated| {},
+        &mut |_checkpoint| Ok(()),
+        &|| false,
+    ).expect_err("different model must not consume the checkpoint");
+    assert!(matches!(
+        error,
+        CodexDirectError::Protocol(message) if message.contains("model identity")
+    ));
+    assert!(transport.requests.is_empty());
 }

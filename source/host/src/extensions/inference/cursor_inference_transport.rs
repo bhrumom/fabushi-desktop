@@ -46,6 +46,11 @@ pub trait CursorInferenceAuth: Send + Sync {
             parameters: selection.parameters,
         }
     }
+    /// Turn-frozen explicit selection for the first-party Responses route;
+    /// None preserves the Native Responses default.
+    fn first_party_responses_model(&self) -> Option<String> {
+        None
+    }
     fn conversation_id(&self) -> Option<String> {
         None
     }

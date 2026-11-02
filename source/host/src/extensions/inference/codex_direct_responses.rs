@@ -67,6 +67,8 @@ pub struct CodexDirectResult {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CodexDirectCheckpoint {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
     pub input: Vec<Value>,
     pub text: String,
     pub response_id: String,
@@ -448,6 +450,13 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
     should_cancel: &dyn Fn() -> bool,
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    if let Some(model) = resume_from.and_then(|checkpoint| checkpoint.model.as_deref()) {
+        if model != options.model.as_str() {
+            return Err(CodexDirectError::Protocol(
+                "provider checkpoint model identity does not match this turn".into(),
+            ));
+        }
+    }
     let max_steps = options.max_steps.max(1);
     let tools_by_name = options
         .tools
@@ -660,6 +669,7 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         tool_calls_completed =
             tool_calls_completed.saturating_add(calls_in_step);
         on_checkpoint(&CodexDirectCheckpoint {
+            model: Some(options.model.clone()),
             input: input.clone(),
             text: text.clone(),
             response_id: response_id.clone(),

@@ -392,6 +392,15 @@ fn configured_fabushi_model() -> String {
         .unwrap_or_else(|| "deepseek-chat".into())
 }
 
+fn selected_fabushi_model_for_request(
+    auth: Option<&Arc<dyn CursorInferenceAuth>>,
+) -> String {
+    auth.and_then(|bound| bound.first_party_responses_model())
+        .map(|model| model.trim().to_string())
+        .filter(|model| !model.is_empty())
+        .unwrap_or_else(configured_fabushi_model)
+}
+
 fn configured_codex_model() -> String {
     env::var("SAND_CODEX_MODEL")
         .ok()
@@ -1369,9 +1378,11 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
+    let model = configured_fabushi_model();
     run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
         messages,
         None,
+        &model,
         tools,
         execute_tool,
         on_text_delta,
@@ -1387,6 +1398,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
 fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
     messages: &[ProviderMessage],
     typed_replay: Option<&[TypedReplayEntry]>,
+    model: &str,
     tools: &[RoutedToolDefinition],
     execute_tool: &mut dyn FnMut(
         &RoutedToolDefinition,
@@ -1404,7 +1416,6 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_r
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new_fabushi()?;
-    let model = configured_fabushi_model();
     let system_prompt = format!(
         "{}\n\nRuntime inference metadata: provider=Fabushi first-party Responses API; model={model}. If the user asks which provider or model is active, answer from this runtime metadata and do not infer a different vendor identity.",
         assembled_provider_system_prompt(messages),
@@ -1577,9 +1588,11 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
             let mut fabushi_checkpoint = |checkpoint: &CodexDirectCheckpoint| {
                 on_checkpoint(&RoutedProviderCheckpoint::Fabushi(checkpoint.clone()))
             };
+            let model = selected_fabushi_model_for_request(options.cursor_auth.as_ref());
             run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
                 messages,
                 options.typed_replay,
+                &model,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,
@@ -2621,12 +2634,31 @@ mod tests {
         FABUSHI_ROUTER_SYSTEM_PROMPT, RoutedProvider, await_cancelable_provider_io,
         credential_issuer, ensure_responses_issuer_matches, jwt_audience,
         provider_io_runtime, responses_http_client,
+        selected_fabushi_model_for_request, configured_fabushi_model,
         toml_string_setting, validate_fabushi_responses_url,
     };
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
     use std::cell::Cell;
     use std::future::pending;
+    use std::sync::Arc;
+    use super::CursorInferenceAuth;
+
+    struct SelectedFirstPartyModel;
+    impl CursorInferenceAuth for SelectedFirstPartyModel {
+        fn access_token(&self) -> Result<String, String> { Ok("unused".into()) }
+        fn machine_id(&self) -> Result<String, String> { Ok("unused".into()) }
+        fn first_party_responses_model(&self) -> Option<String> {
+            Some("  selected-from-settings  ".into())
+        }
+    }
+
+    #[test]
+    fn first_party_request_uses_frozen_selection_without_changing_unconfigured_default() {
+        let auth: Arc<dyn CursorInferenceAuth> = Arc::new(SelectedFirstPartyModel);
+        assert_eq!(selected_fabushi_model_for_request(Some(&auth)), "selected-from-settings");
+        assert_eq!(selected_fabushi_model_for_request(None), configured_fabushi_model());
+    }
 
     #[test]
     fn fabushi_router_prompt_declares_product_identity() {
