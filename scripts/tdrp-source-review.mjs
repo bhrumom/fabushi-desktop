@@ -100,10 +100,8 @@ function uniqueTextArray(values) {
   return Array.isArray(values) && values.every(text) && new Set(values).size === values.length;
 }
 
-export function validateSourceReviews(inventory, reviews, rows) {
-  if (!Array.isArray(inventory) || !inventory.length || !Array.isArray(reviews)) {
-    throw Error('source reviews and non-empty inventory required');
-  }
+function responsibilitySourceRelations(inventory, rows) {
+  if (!Array.isArray(inventory) || !inventory.length) throw Error('non-empty inventory required');
   if (!Array.isArray(rows)) throw Error('responsibility rows required');
 
   const expected = new Set();
@@ -140,6 +138,23 @@ export function validateSourceReviews(inventory, reviews, rows) {
     }
     sourcesByResponsibility.set(id, related);
   }
+
+  return {expected, sourcesByResponsibility};
+}
+
+// The inventory must come from the caller's pinned recursive acquisition, not
+// from fetching the identities asserted by a row. Mapping is checked even when
+// review coverage is incomplete; these counts grant no acceptance status.
+export function validateResponsibilitySources(inventory, rows) {
+  const {expected, sourcesByResponsibility} = responsibilitySourceRelations(inventory, rows);
+  return {source_identities: expected.size, responsibilities: sourcesByResponsibility.size};
+}
+
+export function validateSourceReviews(inventory, reviews, rows) {
+  if (!Array.isArray(inventory) || !inventory.length || !Array.isArray(reviews)) {
+    throw Error('source reviews and non-empty inventory required');
+  }
+  const {expected, sourcesByResponsibility} = responsibilitySourceRelations(inventory, rows);
 
   const seen = new Set();
   for (const review of reviews) {

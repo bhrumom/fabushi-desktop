@@ -9,6 +9,7 @@ import {
   assertNoOpenSourceCandidate,
   assertSourceAcquisitionClosure,
   validateSourceCandidate,
+  validateResponsibilitySources,
   readFrozenUpstreamCommit,
   validateSourceReviews as validate,
 } from './tdrp-source-review.mjs';
@@ -162,6 +163,78 @@ test('complete review records cannot override explicit unresolved generated LFS 
       owner[field] = false;
       assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /remains unresolved/);
     }
+  }
+});
+
+test('responsibility mapping accepts root and recursive primary sources at their own pinned commits', () => {
+  const dependency = {...secondSource, path: source.path};
+  const gitlabDependency = {...dependency, repository: 'gitlab.com/owner/dependency'};
+  const inventory = [source, dependency, gitlabDependency];
+  const mapped = [rowFor(source), rowFor(dependency, 'dependency'), rowFor(gitlabDependency, 'gitlab')];
+  assert.deepEqual(validateResponsibilitySources(inventory, mapped), {
+    source_identities: 3, responsibilities: 3,
+  });
+  // This is a pre-acceptance mapping check: source_reviews need not yet exist,
+  // but the accepted review gate must still reject incomplete review coverage.
+  assert.throws(() => validate(inventory, undefined, mapped), /source reviews/);
+  assert.deepEqual(validate(inventory, [
+    review,
+    {...review, ...dependency, responsibility_ids: ['dependency']},
+    {...review, ...gitlabDependency, responsibility_ids: ['gitlab']},
+  ], mapped), {source_identities: 3, reviewed: 3});
+});
+
+for (const [field, value] of Object.entries({
+  repository: 'unrelated/repository',
+  commit: 'e'.repeat(40),
+  path: 'unacquired/message.h',
+  object: 'f'.repeat(40),
+})) {
+  test('responsibility mapping rejects recursive primary ' + field + ' drift', () => {
+    assert.throws(() => validateResponsibilitySources([source, secondSource],
+      [rowFor(source), rowFor({...secondSource, [field]: value}, 'dependency')]),
+    /unknown responsibility source identity/);
+  });
+}
+
+test('a row cannot declare its own recursive inventory membership', () => {
+  assert.throws(() => validateResponsibilitySources([source], [rowFor(secondSource)]),
+    /unknown responsibility source identity/);
+  const foreign = {...source, repository: 'unrelated/repository'};
+  assert.throws(() => validateResponsibilitySources([source], [rowFor(foreign)]),
+    /unknown responsibility source identity/);
+});
+
+test('pre-acceptance mapping retains strict additional identity and uniqueness checks', () => {
+  const linked = {...rows[0], additional_source_identities: [secondSource]};
+  assert.deepEqual(validateResponsibilitySources([source, secondSource], [linked]), {
+    source_identities: 2, responsibilities: 1,
+  });
+  assert.throws(() => validateResponsibilitySources([source], [linked]), /unknown additional source identity/);
+  assert.throws(() => validateResponsibilitySources([source, secondSource],
+    [{...linked, additional_source_identities: [{...secondSource, wildcard: true}]}]),
+  /unknown additional source identity field/);
+  assert.throws(() => validateResponsibilitySources([source, secondSource],
+    [{...linked, additional_source_identities: [secondSource, {...secondSource}]}]),
+  /duplicate responsibility source identity/);
+  assert.throws(() => validateResponsibilitySources([source],
+    [{...rows[0], additional_source_identities: [source]}]), /duplicate responsibility source identity/);
+  assert.throws(() => validateResponsibilitySources([source], [rows[0], {...rows[0]}]),
+    /duplicate responsibility id/);
+  assert.throws(() => validateResponsibilitySources([source, {...source, mount: 'other'}], rows),
+    /duplicate inventory source identity/);
+});
+
+test('pre-acceptance mapping rejects missing collections and malformed Git identities', () => {
+  for (const inventory of [undefined, [], {}]) {
+    assert.throws(() => validateResponsibilitySources(inventory, rows), /non-empty inventory required/);
+  }
+  assert.throws(() => validateResponsibilitySources([source], undefined), /responsibility rows required/);
+  for (const field of ['commit', 'object']) {
+    const invalid = {...secondSource, [field]: 'not-a-git-oid'};
+    assert.throws(() => validateResponsibilitySources([source, invalid], rows), /invalid source identity: inventory/);
+    assert.throws(() => validateResponsibilitySources([source, secondSource], [rowFor(invalid)]),
+      /invalid source identity: responsibility/);
   }
 });
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure } from './tdrp-source-review.mjs';
+import { validateResponsibilitySources, validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure } from './tdrp-source-review.mjs';
 import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
@@ -558,12 +558,8 @@ const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
 for (const row of ledger.rows) {
   for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
-  fail(row.source_commit===lock.upstream.commit,'row '+row.responsibility_id+' source commit differs from accepted upstream');
   fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
   responsibilityIds.add(row.responsibility_id);
-  const sourceObject=(await ghTree(lock.upstream.repository,lock.upstream.commit)).tree.find(e=>e.path===row.source_path);
-  fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
-  fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
   fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
   fail(row.existing_owner || row.novel_capability===true,'existing-owner-first unresolved for '+row.responsibility_id);
   if (row.novel_capability!==true) {
@@ -689,6 +685,9 @@ recursiveInventory.push(...childEntries.map(e=>({
 })));
 
 fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+// Primary and additional rows may refer to any actually acquired source in U's
+// graph. A row's own repository/commit cannot introduce an unrelated source.
+validateResponsibilitySources(recursiveInventory, ledger.rows);
 
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');

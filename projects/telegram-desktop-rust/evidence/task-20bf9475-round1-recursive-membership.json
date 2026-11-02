@@ -1,0 +1,58 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 1,
+  "scope": "R-SOURCE-CALLER-01: recursive responsibility membership in the existing full source authority caller",
+  "base": "59308cf3cee48213278c52e4ad60bfd9250fb545",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "requirements": [
+    "FMEP-SOURCE-01",
+    "TDRP-SRC-02",
+    "TDRP-MAP-02",
+    "TDRP-MAP-03",
+    "NMR-08"
+  ],
+  "implementation": {
+    "owner": "existing scripts/tdrp-source-review.mjs and scripts/validate-tdrp-revision9-authority.mjs",
+    "defect": "The full authority caller required all primary rows to name the root U commit/tree, rejecting valid recursively acquired dependency identities.",
+    "change": "Share exact inventory/responsibility relation checks; invoke unconditionally after actual recursive acquisition and count verification, before authority artifact writes. Remove the root-only row commit/path/blob restriction together.",
+    "preserved": "Fixed U; exact root/direct/nested original-host acquisition; uniqueness; strict additional identities; review/depth/evidence relation; open-candidate rejection; concurrent 59308 source-acquisition closure guard; no arbitrary fetch based on row assertions.",
+    "blobs": {
+      "scripts/tdrp-source-review.mjs": "f61848d4573ff2215a495f2878f08b8333ffe6cf",
+      "scripts/tdrp-source-review.test.mjs": "ff74ba1fd1c5a3ce2c7aba85ad159678e8317c29",
+      "scripts/validate-tdrp-revision9-authority.mjs": "2b828d3f4f86128c53f4962fb39a5341a87234f7"
+    }
+  },
+  "review": {
+    "kind": "independent static spec/compliance/correctness review",
+    "result": "No concrete blocking defect found in the frozen three-file delta; all base/candidate Git blob identities independently checked.",
+    "execution": "No local tests, builds, syntax/schema/validator or runtime execution."
+  },
+  "authored_tests": {
+    "new_cases": 8,
+    "oracle": "Actual shared function accepts root and recursive primary identities at their own commits, including same relative paths and original-host GitLab; rejects each one-field drift, foreign/unacquired sources, duplicate relations, extra fields and malformed identities.",
+    "scope": "Checker contract, not full acquisition acceptance or product functionality."
+  },
+  "execution_at_freeze": {
+    "status": "not-run",
+    "workflow": ".github/workflows/tdrp-source-review-contract.yml",
+    "required_jobs": [
+      "contract",
+      "fixed-source-candidate"
+    ],
+    "binding": "The push run's github.sha must match the containing code commit; read complete logs and artifact metadata before claiming execution."
+  },
+  "source_accounting": {
+    "inventory": "projects/telegram-desktop-rust/inventory/index.json",
+    "ledger": "projects/telegram-desktop-rust/parity-ledger.json",
+    "rtm": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+    "changed": false,
+    "recursive_identities_observed": 16381,
+    "unknown": null,
+    "unread": null,
+    "accepted": false
+  },
+  "pending_product_work": "The independent canonical forward dialog assessment found retained request identities with editable retry privacy/destinations; a production UI fix is in progress under NMR-46/47c in this task.",
+  "acceptance": false
+}
