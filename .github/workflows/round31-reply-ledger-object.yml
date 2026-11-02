@@ -22,21 +22,44 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          import base64, copy, hashlib, json, os, pathlib, re, subprocess, urllib.parse, urllib.request
           assert os.environ['GITHUB_REPOSITORY'] == 'bhrumom/fabushi-desktop'
           assert os.environ['GITHUB_REF'] == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           assert head == os.environ['GITHUB_SHA']
+          # Read the fixed shared path at one immutable observation of the live
+          # checkpoint. Concurrent integrations must never be overwritten by an
+          # output derived from an older workflow checkout.
+          assert os.environ['GITHUB_API_URL'] == 'https://api.github.com'
           path = pathlib.Path('projects/telegram-desktop-rust/parity-ledger.json')
-          source = path.read_bytes()
+          branch = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          def read_json(endpoint):
+              request = urllib.request.Request(
+                  'https://api.github.com' + endpoint, method='GET',
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(request, timeout=90) as response:
+                  return json.load(response)
+          ref = read_json('/repos/bhrumom/fabushi-desktop/git/ref/heads/' + urllib.parse.quote(branch, safe='/'))
+          assert ref['ref'] == 'refs/heads/' + branch
+          assert ref['object']['type'] == 'commit'
+          ledger_source_head = ref['object']['sha']
+          assert re.fullmatch(r'[0-9a-f]{40}', ledger_source_head)
+          entry = read_json('/repos/bhrumom/fabushi-desktop/contents/' + str(path) + '?ref=' + ledger_source_head)
+          assert entry['path'] == str(path) and entry['type'] == 'file'
+          assert re.fullmatch(r'[0-9a-f]{40}', entry['sha'])
+          assert isinstance(entry['size'], int) and 0 < entry['size'] <= 10 * 1024 * 1024
+          blob = read_json('/repos/bhrumom/fabushi-desktop/git/blobs/' + entry['sha'])
+          assert blob['sha'] == entry['sha'] and blob['encoding'] == 'base64'
+          source = base64.b64decode(''.join(blob['content'].split()), validate=True)
+          assert len(source) == entry['size'] == blob['size']
           base_blob = hashlib.sha1(b'blob ' + str(len(source)).encode() + b'\0' + source).hexdigest()
-          assert base_blob == "0b1427684a862213d04763ef3aa0d9e6a39234c9", ('ledger input drift', base_blob)
+          assert base_blob == entry['sha'], ('ledger object identity mismatch', base_blob)
           original = json.loads(source)
           updated = copy.deepcopy(original)
           rows = [row for row in updated['rows'] if row['responsibility_id'] == 'FBCP-NMR-001']
           assert len(rows) == 1
           row = rows[0]
-          note = "\nTask20bf round31 / NMR-49c / AC-40: retain the concurrent63c59566aae7fa9b424a364df1429176c792d249 direct-target Human kind/author/settlement guards and existing Ubuntu24.04 reconciliation environment. This round routes both direct and historical parent remote IDs through the existing canonical positive safe-integer message parser. The existing historical reply test retains11 scenarios and adds14 invalid-ID path variants plus3 positive controls, total28 without a new test function; the direct17-case test uses readable notice fixtures for non-message parents. Complete physical rows, independently specified chronological projection, zero unsafe HTTP for refusals, idempotent admitted sends, ordinary sync and reopen are required. Original06/job125508112546 was cancelled before runner assignment; exactff6d49/run41516172127 shipping succeeded while its reconciliation remains unexecuted at observation. Containing106bb95/run41523018920 reconciliation125543545349 actually passed Human62/resource3/sharebox1/journal12/Agent4/credential3/forwardHTTP1, including the requested recovery tests; this does not qualify the subsequent strict-ID patch, which requires its own containing-H execution. Receipt: projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json. No source coverage, historical execution or independent release acceptance is promoted."
+          note = "\nTask20bf round31 / NMR-49c / AC-40: retain the concurrent63c59566aae7fa9b424a364df1429176c792d249 direct-target Human kind/author/settlement guards and existing Ubuntu24.04 reconciliation environment. This round routes both direct and historical parent remote IDs through the existing canonical positive safe-integer message parser. The existing historical reply test retains11 scenarios and adds14 invalid-ID path variants plus3 positive controls, total28 without a new test function; the direct17-case test uses readable notice fixtures for non-message parents. Complete physical rows, independently specified chronological projection, zero unsafe HTTP for refusals, idempotent admitted sends, ordinary sync and reopen are required. Original06/job125508112546 was cancelled before runner assignment; exactff6d49/run41516172127 shipping succeeded while its reconciliation remains unexecuted at observation. Containing106bb95/run41523018920 reconciliation125543545349 actually passed Human62/resource3/sharebox1/journal12/Agent4/credential3/forwardHTTP1, including the requested recovery tests; subsequent exact4cbd7ddbe58ae789db9d2c674e8c9fa73146af40/run41524748572 reconciliation125549482711 also passed those62/3/1/12/4/3/1 gates at2026-11-02T21:07:14Z, including the new28-scenario historical reply matrix and17 direct-target cases. That same-H shipping125549483258 remains queued at observation. Receipt: projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json. No source coverage, historical execution or independent release acceptance is promoted."
           evidence = 'projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json'
           assert 'Task20bf round31 / NMR-49c' not in row['notes']
           assert evidence not in row['test_evidence']
@@ -57,7 +80,7 @@ jobs:
           with urllib.request.urlopen(request, timeout=90) as response:
               result = json.load(response)
           assert result.get('sha') == expected, result.get('sha')
-          receipt = {'task_id': '20bf9475-a885-4314-b509-bea53ef8849f', 'round': 31, 'head_sha': head, 'input_blob': base_blob, 'output_blob': expected, 'output_sha256': hashlib.sha256(content).hexdigest(), 'bytes': len(content), 'path': str(path), 'scope': 'FBCP-NMR-001 notes and test_evidence append only', 'ref_updated': False, 'product_acceptance': False}
+          receipt = {'task_id': '20bf9475-a885-4314-b509-bea53ef8849f', 'round': 31, 'head_sha': head, 'ledger_source_head': ledger_source_head, 'input_blob': base_blob, 'output_blob': expected, 'output_sha256': hashlib.sha256(content).hexdigest(), 'bytes': len(content), 'path': str(path), 'scope': 'FBCP-NMR-001 notes and test_evidence append only', 'ref_updated': False, 'product_acceptance': False}
           pathlib.Path('artifacts/round31').mkdir(parents=True)
           pathlib.Path('artifacts/round31/ledger-object.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
           print(json.dumps(receipt, sort_keys=True))
