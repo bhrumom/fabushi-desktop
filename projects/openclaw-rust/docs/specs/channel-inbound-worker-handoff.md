@@ -445,3 +445,52 @@ fresh append transaction. Physical opaque rows cannot authorize this fast path.
 A controlled file-facts boundary in the real persister must prove zero reads
 for a duplicate and real committed attachment facts for a fresh send; this does
 not replace provider, filesystem-platform or performance-budget acceptance.
+
+### Exact echo failure observation — FC-ECHO-OBSERVATION-01
+
+Decision **FC-ECHO-OBSERVATION-01 — FIX / TEST_FLAW (capture)**, before the
+focused evidence repair on `fdfdfb2d6a5635fc9c79da51b9fc4b09486b553a`. At
+`364cca21ce04cbcf2d7ace69ce607fb4af95a1df`, Actions run `41446276172`, job
+`125280031635`, the opaque-namespace Gateway test passed visible row count,
+unique IDs and the durable/echo-count checks, then failed its complete echo
+equality assertion. The log identifies neither producer order nor differing
+field. The original failure stays unresolved; an unchanged green retry is not
+an explanation, and no later assertions are counted as passed for that case.
+
+The Gateway returns staged Values after the real SQLite commit. Rows are
+written as JSON text and decoded by the existing Session reader. Its default
+clock can supply fractional `f64` milliseconds. The locked serde_json 1.0.154
+decoder without `float_roundtrip` rounds a decimal significand before scaling;
+this permits a numeric round-trip difference, but the old log cannot prove
+that it caused this particular failure. This is bounded dependency-contract
+review, not a new upstream whole-file reading or an environment diagnosis.
+
+- Keep both existing producer orders, the default-clock case, every full-entry
+  equality, physical-ID/opaque-row, nonce/recovery and zero-publication check.
+  Before adjudicating each echo, capture its synthetic fixture value, matching
+  public row or absence, raw SQL text, producer order and both timestamp bits.
+  Compare raw committed text with the serialized echo and its decoded value
+  with the public reader, then retain the original full equality assertion.
+- Add a real public Gateway/Session/SQLite control using the existing
+  `composedAtMs` argument: integral 1000.0 and the representable value
+  `1_793_000_000_000.0 + 6.0 / 4096.0`. Close and reopen the existing owners and
+  require the same entire returned echo, timestamp bits, durable bytes and
+  duplicate-nonce/no-new-echo behavior. No copied persistence implementation,
+  rounded expected value, dropped field or approximate equality is permitted.
+- Run the existing selected Gateway target in Actions at the new exact H.
+  Correct serialized bytes with decoded-only timestamp drift establishes a
+  numeric fidelity defect against this exact-echo oracle; absent/changed bytes
+  or other fields require the observed owner-path repair. Preserve the failed
+  subject and captured values before choosing a production change. Source
+  arithmetic is a control design, not executable proof or acceptance.
+
+Scope is this contract and the existing Gateway test. There is no production,
+dependency, lockfile, workflow, schema or permission change in this diagnostic
+increment. The current bounded credential fixture integration may share the
+same frozen H, with its own assertions retained. Full source/ecosystem/shipping
+acceptance remains open. Primary reviewed contracts are serde_json tag
+`v1.0.154`, `src/de.rs` decimal and f64 conversion paths and `src/number.rs`
+equality; the feature declaration in `Cargo.toml` blob
+`059ac2957d93da5de73e6203fdbf720b4e417dd0` distinguishes fixed-precision
+round trips from arbitrary-precision JSON preservation and documents its
+float-parsing cost. No unobserved timing or performance claim follows.

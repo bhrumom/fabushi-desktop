@@ -25,6 +25,46 @@ fn temp_root(label: &str) -> std::path::PathBuf {
     ))
 }
 
+fn observe_durable_echo(
+    db: &rusqlite::Connection,
+    entries: &[serde_json::Value],
+    echo: &serde_json::Value,
+    case: &str,
+) {
+    use rusqlite::OptionalExtension;
+
+    let id = echo.get("id").and_then(serde_json::Value::as_str);
+    let visible = entries.iter().find(|entry| entry.get("id") == echo.get("id"));
+    let raw = db.query_row(
+        "SELECT entry FROM transcript_entries WHERE id = ?1",
+        [id.unwrap_or("<missing echo identity>")],
+        |row| row.get::<_, String>(0),
+    ).optional();
+    let decoded = raw.as_ref().ok().and_then(|value| value.as_deref())
+        .map(serde_json::from_str::<serde_json::Value>);
+    let decoded_value = decoded.as_ref().and_then(|value| value.as_ref().ok());
+    let bits = |entry: &serde_json::Value| {
+        entry.get("timestampMs").and_then(serde_json::Value::as_f64).map(f64::to_bits)
+    };
+    // These are exclusively synthetic fixture rows. Capture the complete
+    // boundary evidence before a failed equality hides the differing field.
+    let diagnostic = json!({
+        "case":case, "id":id, "echo":echo, "visible":visible,
+        "raw":raw.as_ref().ok(), "sqlError":raw.as_ref().err().map(ToString::to_string),
+        "decoded":decoded_value,
+        "decodeError":decoded.as_ref().and_then(|value| value.as_ref().err()).map(ToString::to_string),
+        "echoTimestampBits":bits(echo), "visibleTimestampBits":visible.and_then(bits),
+    });
+    eprintln!("gateway-echo evidence: {diagnostic}");
+    assert!(id.is_some(), "the returned echo has an identity: {diagnostic}");
+    let raw = raw.as_ref().expect("read independent durable echo row");
+    assert_eq!(raw.as_deref(), Some(echo.to_string().as_str()),
+        "the exact serialized echo was committed: {diagnostic}");
+    assert!(decoded.as_ref().is_some_and(|value| value.is_ok()),
+        "the committed row decodes: {diagnostic}");
+    assert_eq!(decoded_value, visible, "public readback matches the committed JSON: {diagnostic}");
+}
+
 fn dispatch(
     runtime: &Arc<ProductionSessionWorkers>,
     method: &str,
@@ -585,7 +625,9 @@ fn fresh_gateway_channel_and_legacy_agent_messages_share_the_physical_id_namespa
         assert!(context.accepted_durably);
         assert!(context.acceptance_effects_applied);
         assert_eq!(context.accepted_echoes.len(), 2);
-        for echo in &context.accepted_echoes {
+        for (index, echo) in context.accepted_echoes.iter().enumerate() {
+            observe_durable_echo(&db, &entries, &echo.entry,
+                &format!("shared-namespace order={producer_order:?} echo={index}"));
             assert!(entries.contains(&echo.entry), "echo is the actual committed entry");
         }
         assert_eq!(context.accepted_echoes[0].entry["kind"], "user-attachment");
@@ -672,7 +714,9 @@ fn fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_s
         let context = direct_context.unwrap();
         assert!(context.accepted_durably && context.acceptance_effects_applied);
         assert_eq!(context.accepted_echoes.len(), 2);
-        for echo in &context.accepted_echoes {
+        for (index, echo) in context.accepted_echoes.iter().enumerate() {
+            observe_durable_echo(&db, &entries, &echo.entry,
+                &format!("opaque-namespace gateway_first={gateway_first} echo={index}"));
             assert!(entries.contains(&echo.entry), "the returned echo was committed");
         }
         assert_eq!(context.accepted_echoes[0].entry["kind"], "user-attachment");
@@ -710,6 +754,74 @@ fn fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_s
         drop(db);
         runtime.shutdown();
         let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn gateway_echoes_preserve_fractional_timestamps_through_durable_reopen() {
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    for (case, composed_at_ms) in [
+        ("integral", 1000.0_f64),
+        ("fractional", 1_793_000_000_000.0_f64 + 6.0 / 4096.0),
+    ] {
+        let root = std::env::temp_dir().join(format!("fabushi-gateway-echo-{}", uuid::Uuid::new_v4()));
+        fs::create_dir(&root).expect("exclusively reserve echo fixture");
+        let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let target = runtime.materialize_new_session(None, "user", None).unwrap();
+        let args = json!({
+            "agentId":target.id, "prompt":"exact durable echo", "clientNonce":"fractional-echo",
+            "composedAtMs":composed_at_ms,
+        });
+        let context = persist_accepted_send_prompt_context(&runtime, &args, &json!({"accepted":true}))
+            .expect("fresh echo through the actual Gateway");
+        assert!(context.accepted_durably && context.acceptance_effects_applied);
+        assert_eq!(context.accepted_echoes.len(), 1);
+        let echo = context.accepted_echoes[0].entry.clone();
+        let initial = runtime.read_agent_transcript_entries(&target.id).unwrap();
+        let db_path = runtime.session_db_path(&target.id).unwrap();
+        let db = rusqlite::Connection::open(&db_path).unwrap();
+        observe_durable_echo(&db, &initial, &echo, &format!("{case} before-reopen"));
+        drop(db);
+        runtime.shutdown();
+        drop(runtime);
+
+        let reopened = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let entries = reopened.read_agent_transcript_entries(&target.id).unwrap();
+        let db = rusqlite::Connection::open(&db_path).unwrap();
+        observe_durable_echo(&db, &entries, &echo, &format!("{case} after-reopen"));
+        let events = Arc::new(AtomicUsize::new(0));
+        let subscription = subscribe_transcript_mutations({
+            let events = Arc::clone(&events);
+            let agent_id = target.id.clone();
+            move |event| {
+                if event.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                    events.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        });
+        let replay = persist_accepted_send_prompt_context(&reopened, &args, &json!({"accepted":true}))
+            .expect("the original nonce survives owner restart");
+        assert_eq!(replay.echo_entry_id, context.echo_entry_id);
+        assert_eq!(replay.user_message_id, context.user_message_id);
+        assert_eq!(replay.recent_user_messages, context.recent_user_messages);
+        assert!(replay.accepted_echoes.is_empty());
+        assert!(!replay.accepted_durably && !replay.acceptance_effects_applied);
+        assert_eq!(events.load(Ordering::SeqCst), 0);
+        assert_eq!(reopened.read_agent_transcript_entries(&target.id).unwrap(), entries);
+        subscription.unsubscribe();
+        drop(db);
+        reopened.shutdown();
+        drop(reopened);
+
+        // Adjudicate complete equality after collecting both durable views.
+        // Do not round the expectation or hide a timestamp difference.
+        assert_eq!(echo["timestampMs"].as_f64().unwrap().to_bits(), composed_at_ms.to_bits());
+        assert_eq!(echo["sentWhileOfflineAtMs"].as_f64().unwrap().to_bits(), composed_at_ms.to_bits());
+        assert_eq!(initial, vec![echo.clone()], "exact echo before reopen: {case}");
+        assert_eq!(entries, vec![echo], "exact echo after reopen: {case}");
+        fs::remove_dir_all(root).expect("remove the completed owned echo fixture");
     }
 }
 
