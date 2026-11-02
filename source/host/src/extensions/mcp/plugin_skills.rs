@@ -11,7 +11,7 @@ use super::legacy_live_references::remove_workflow_live_references;
 use super::plugin_skills_cache::{
     PluginAuthBlock, PluginSkillRecord, PluginSkillsCache, PluginSkillsCacheWriteIndex,
     get_plugin_skills_dir, get_plugins_root_dir, read_plugin_skills_cache,
-    write_plugin_skills_cache,
+    read_plugin_skills_snapshot, stage_plugin_skills_cache,
 };
 
 pub const EFFECTIVE_PLUGINS_RPC_TIMEOUT_MS: u64 = 15_000;
@@ -116,6 +116,59 @@ fn plugin_db_id(identifier: &PluginIdentifier) -> Option<&str> {
     )
     .then_some(identifier.plugin_db_id.as_deref())
     .flatten()
+}
+
+fn is_canonical_plugin_id(id: &str) -> bool {
+    !id.is_empty() && id.trim() == id
+}
+
+fn validate_loaded_plugins(loaded: &LoadedPlugins) -> Result<(), String> {
+    let mut listed = HashSet::new();
+    for id in &loaded.listed_plugin_ids {
+        if !is_canonical_plugin_id(id) {
+            return Err("plugin skills loader returned an invalid listed plugin ID".into());
+        }
+        if !listed.insert(id.as_str()) {
+            return Err("plugin skills loader returned a duplicate listed plugin ID".into());
+        }
+    }
+    let mut plugin_ids = HashSet::new();
+    for plugin in &loaded.plugins {
+        if !matches!(
+            plugin.identifier.source.as_str(),
+            "cursor-first-party" | "cursor-third-party"
+        ) {
+            continue;
+        }
+        let id = plugin_db_id(&plugin.identifier)
+            .filter(|id| is_canonical_plugin_id(id))
+            .ok_or_else(|| "plugin skills loader returned an invalid plugin ID".to_string())?;
+        if !listed.contains(id) {
+            return Err("plugin skills loader returned an unlisted plugin ID".into());
+        }
+        if !plugin_ids.insert(id) {
+            return Err("plugin skills loader returned a duplicate plugin ID".into());
+        }
+    }
+    for block in &loaded.auth_blocked {
+        if !is_canonical_plugin_id(&block.plugin_id) {
+            return Err("plugin skills loader returned an invalid blocked plugin ID".into());
+        }
+        if !listed.contains(block.plugin_id.as_str()) {
+            return Err("plugin skills loader returned an unlisted blocked plugin ID".into());
+        }
+    }
+    Ok(())
+}
+
+fn auth_blocks_identity(blocks: &[PluginAuthBlock]) -> Vec<&str> {
+    let mut ids = blocks
+        .iter()
+        .map(|block| block.plugin_id.as_str())
+        .collect::<Vec<_>>();
+    ids.sort_unstable();
+    ids.dedup();
+    ids
 }
 
 fn clamp_line(value: &str, max: usize) -> String {
@@ -231,22 +284,18 @@ pub fn plugin_auth_blocks_from_failures(failures: &[PluginLoadFailure]) -> Vec<P
         if !auth_failure {
             continue;
         }
-        let plugin_id = failure
+        let Some(plugin_id) = failure
             .plugin_db_id
             .as_deref()
-            .or(failure.plugin_id.as_deref())
-            .unwrap_or_default()
-            .to_string();
-        let key = if plugin_id.is_empty() {
-            format!("name:{}", failure.plugin_name)
-        } else {
-            plugin_id.clone()
+            .filter(|id| is_canonical_plugin_id(id))
+        else {
+            continue;
         };
-        if !seen.insert(key) {
+        if !seen.insert(plugin_id) {
             continue;
         }
         blocks.push(PluginAuthBlock {
-            plugin_id,
+            plugin_id: plugin_id.to_string(),
             plugin_name: failure.plugin_name.clone(),
             marketplace_name: failure.marketplace_name.clone(),
         });
@@ -354,6 +403,7 @@ pub struct SandPluginSkillsService {
     loader: Arc<dyn PluginSkillsLoader>,
     now: Arc<dyn Fn() -> i64 + Send + Sync>,
     report_sync: Option<Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>>,
+    publication: Mutex<()>,
     state: Mutex<ServiceState>,
     changed: Condvar,
 }
@@ -365,6 +415,7 @@ impl SandPluginSkillsService {
             loader,
             now: Arc::new(|| chrono::Utc::now().timestamp_millis()),
             report_sync: None,
+            publication: Mutex::new(()),
             state: Mutex::new(ServiceState::default()),
             changed: Condvar::new(),
         }
@@ -388,8 +439,8 @@ impl SandPluginSkillsService {
     }
 
     pub fn current(&self) -> Vec<PluginSkillRecord> {
-        self.current_index()
-            .map(|index| index.skills)
+        read_plugin_skills_snapshot(get_plugin_skills_dir(&self.sand_root_dir))
+            .map(|snapshot| snapshot.eligible_skills().cloned().collect())
             .unwrap_or_default()
     }
 
@@ -404,10 +455,25 @@ impl SandPluginSkillsService {
     }
 
     pub fn dispose(&self) {
+        let _publication = self.publication.lock().expect("plugin skills publication poisoned");
         let mut state = self.state.lock().expect("plugin skills state poisoned");
         state.disposed = true;
         state.pending = None;
         self.changed.notify_all();
+    }
+
+    fn publish_snapshot_if_active(
+        &self,
+        staged: super::plugin_skills_cache::StagedPluginSkillsCache,
+    ) -> Result<bool, String> {
+        // Lock order is publication, then the brief state check. Staging and
+        // all external callbacks stay outside both locks.
+        let _publication = self.publication.lock().expect("plugin skills publication poisoned");
+        if self.state.lock().expect("plugin skills state poisoned").disposed {
+            return Ok(false);
+        }
+        staged.publish()?;
+        Ok(true)
     }
 
     pub fn sync(&self, trigger: &str) -> SyncResult {
@@ -499,7 +565,10 @@ impl SandPluginSkillsService {
 
     fn run_pass(&self, trigger: &str) -> Result<Vec<PluginSkillRecord>, String> {
         let started = (self.now)();
-        let loaded = match self.loader.load() {
+        let loaded = match self.loader.load().and_then(|loaded| {
+            validate_loaded_plugins(&loaded)?;
+            Ok(loaded)
+        }) {
             Ok(value) => value,
             Err(error) => {
                 if let Some(report) = &self.report_sync {
@@ -523,9 +592,16 @@ impl SandPluginSkillsService {
         {
             return Ok(self.current());
         }
-        let previous = self.current_index();
-        let mut records =
-            plugin_contents_to_skill_records(&loaded.plugins, &loaded.publisher_facts);
+        let cache_dir = get_plugin_skills_dir(&self.sand_root_dir);
+        let previous = read_plugin_skills_snapshot(&cache_dir);
+        let previous_records = previous
+            .as_ref()
+            .map(|snapshot| snapshot.eligible_skills().cloned().collect::<Vec<_>>())
+            .unwrap_or_default();
+        let previous_blocks = previous
+            .as_ref()
+            .map(|snapshot| snapshot.canonical_auth_blocked())
+            .unwrap_or_default();
         let listed = loaded
             .listed_plugin_ids
             .iter()
@@ -539,54 +615,89 @@ impl SandPluginSkillsService {
             })
             .filter_map(|plugin| plugin_db_id(&plugin.identifier).map(str::to_string))
             .collect::<HashSet<_>>();
-        if let Some(previous) = &previous {
-            records.extend(
-                previous
-                    .skills
-                    .iter()
-                    .filter(|record| {
-                        listed.contains(&record.plugin_id)
-                            && !loaded_ids.contains(&record.plugin_id)
-                    })
-                    .cloned(),
-            );
+
+        // Current denial wins over success. Prior canonical denials survive a
+        // transient failure only while the plugin is still authoritatively listed.
+        let mut denied = HashSet::new();
+        let mut auth_blocked = Vec::new();
+        for block in &loaded.auth_blocked {
+            if denied.insert(block.plugin_id.clone()) {
+                auth_blocked.push(block.clone());
+            }
         }
+        for block in previous_blocks {
+            if listed.contains(&block.plugin_id)
+                && !loaded_ids.contains(&block.plugin_id)
+                && denied.insert(block.plugin_id.clone())
+            {
+                auth_blocked.push(block.clone());
+            }
+        }
+        let mut records =
+            plugin_contents_to_skill_records(&loaded.plugins, &loaded.publisher_facts);
+        records.retain(|record| {
+            listed.contains(&record.plugin_id) && !denied.contains(&record.plugin_id)
+        });
+        records.extend(
+            previous_records
+                .iter()
+                .filter(|record| {
+                    listed.contains(&record.plugin_id)
+                        && !loaded_ids.contains(&record.plugin_id)
+                        && !denied.contains(&record.plugin_id)
+                })
+                .cloned(),
+        );
 
         let values = records
             .iter()
             .map(|record| serde_json::to_value(record).expect("plugin skill record serializes"))
             .collect::<Vec<Value>>();
-        write_plugin_skills_cache(
-            get_plugin_skills_dir(&self.sand_root_dir),
+        let staged = stage_plugin_skills_cache(
+            &cache_dir,
             &PluginSkillsCacheWriteIndex {
                 current_user_id: Some(
-                    loaded
-                        .current_user_id
-                        .or_else(|| previous.as_ref().and_then(|value| value.current_user_id)),
+                    loaded.current_user_id.or_else(|| {
+                        previous.as_ref().and_then(|value| value.index.current_user_id)
+                    }),
                 ),
                 skills: values,
-                auth_blocked: Some(loaded.auth_blocked.clone()),
+                auth_blocked: Some(auth_blocked),
             },
             || (self.now)() as f64,
         )?;
-        prune_uninstalled_plugin_dirs(
-            &get_plugins_root_dir(&self.sand_root_dir).join("cache"),
-            &loaded.listed_cache_keys,
-            &records
-                .iter()
-                .map(|record| record.file_path.clone())
-                .collect::<Vec<_>>(),
-        );
+        // Sample the callback before the publication fence. It may reenter or
+        // dispose the service; no callback runs while publication is locked.
+        let duration_ms = (self.now)().saturating_sub(started);
+        if !self.publish_snapshot_if_active(staged)? {
+            return Ok(self.current());
+        }
+        let committed = read_plugin_skills_snapshot(&cache_dir)
+            .ok_or_else(|| "could not read committed plugin skills snapshot".to_string())?;
+        let records = committed.eligible_skills().cloned().collect::<Vec<_>>();
+        // A partial materialization may still publish denials or safe fallback,
+        // but cannot prove that old materialized directories are uninstalled.
+        if listed.is_subset(&loaded_ids) && denied.is_empty() {
+            prune_uninstalled_plugin_dirs(
+                &get_plugins_root_dir(&self.sand_root_dir).join("cache"),
+                &loaded.listed_cache_keys,
+                &records
+                    .iter()
+                    .map(|record| record.file_path.clone())
+                    .collect::<Vec<_>>(),
+            );
+        }
         if let Some(report) = &self.report_sync {
-            let changed = previous.as_ref().is_none_or(|value| {
-                skill_records_identity(&value.skills) != skill_records_identity(&records)
-            });
+            let changed = previous.is_none()
+                || skill_records_identity(&previous_records) != skill_records_identity(&records)
+                || auth_blocks_identity(previous_blocks)
+                    != auth_blocks_identity(committed.canonical_auth_blocked());
             report(PluginSkillsSyncEvent {
                 trigger: trigger.into(),
                 outcome: "ok".into(),
                 changed,
                 skill_count: records.len(),
-                duration_ms: (self.now)().saturating_sub(started),
+                duration_ms,
                 error_class: None,
             });
         }

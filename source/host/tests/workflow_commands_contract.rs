@@ -267,6 +267,59 @@ fn normal_send_expands_enabled_rich_text_workflow_reference() {
 }
 
 #[test]
+fn committed_plugin_denial_reaches_session_commands_and_run_prompt_consumers() {
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        PluginAuthBlock, PluginSkillsCacheWriteIndex, get_plugin_skills_dir,
+        write_plugin_skills_cache,
+    };
+
+    let root = temp_root("plugin-denial");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let session = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = session.create_session(None, "user", None).unwrap();
+    let skill_file = root.join("plugins/cache/market/review/v1/skills/review/SKILL.md");
+    fs::create_dir_all(skill_file.parent().unwrap()).unwrap();
+    fs::write(&skill_file, "---\nname: Installed review\n---\nPRIVATE_PLUGIN_RECIPE\n").unwrap();
+    let workflow_id = "plugin-42-review";
+    let rich_text = serde_json::json!({"type":"doc","content":[{
+        "type":"workflowReference","attrs":{"id":workflow_id,"label":"Installed review"}
+    }]}).to_string();
+    let values = vec![serde_json::json!({
+        "id":workflow_id,"pluginId":"42","pluginName":"Review","name":"Installed review",
+        "description":"","filePath":skill_file.to_string_lossy(),"publisherUserId":9
+    })];
+    for blocked in [false, true, false] {
+        write_plugin_skills_cache(
+            get_plugin_skills_dir(&root),
+            &PluginSkillsCacheWriteIndex {
+                current_user_id: Some(Some(9)), skills: values.clone(),
+                auth_blocked: Some(if blocked { vec![PluginAuthBlock {
+                    plugin_id: "42".into(), plugin_name: "Review".into(), marketplace_name: None,
+                }] } else { Vec::new() }),
+            },
+            || if blocked { 2.0 } else { 1.0 },
+        ).unwrap();
+        let listed = call(Arc::clone(&workers), "getAgentWorkflows", serde_json::json!({"id":agent.id}));
+        assert_eq!(listed.as_array().unwrap().iter().any(|row| row["id"] == workflow_id), !blocked);
+        let plan = prepare_workflow_run_now(Arc::clone(&workers),
+            &serde_json::json!({"id":agent.id,"workflowId":workflow_id})).unwrap();
+        assert_eq!(plan.is_some(), !blocked);
+        let expanded = expand_workflow_references(Arc::clone(&workers), &agent.id,
+            "keep the user request", Some(&rich_text)).unwrap();
+        if blocked {
+            assert_eq!(expanded, "keep the user request");
+        } else {
+            assert!(expanded.contains("PRIVATE_PLUGIN_RECIPE"));
+        }
+        assert!(expanded.ends_with("keep the user request"));
+    }
+    assert_eq!(fs::read_to_string(&skill_file).unwrap(),
+        "---\nname: Installed review\n---\nPRIVATE_PLUGIN_RECIPE\n");
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn workflow_run_now_reference_plan_matches_frozen_rich_text_and_recipe_expansion() {
     let root = temp_root("run-now-reference");
     let workers = Arc::new(ProductionSessionWorkers::with_agents_root(

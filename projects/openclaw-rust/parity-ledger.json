@@ -12,10 +12,10 @@
   "file_coverage": {
     "applicability_assessed_paths": 0,
     "dispositioned_paths": 0,
-    "mapped_paths": 815,
+    "mapped_paths": 816,
     "omitted_known": 0,
     "tracked_paths": 62130,
-    "unclassified_paths": 61315,
+    "unclassified_paths": 61314,
     "unreviewed_applicable_paths": 0
   },
   "inventory_authority": {
@@ -31391,16 +31391,35 @@
         "skills.runtime_library"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::skills::skill_runtime"
+        "mahayana_host_runtime::extensions::skills::skill_runtime",
+        "mahayana_host_runtime::workflows::workflow_store",
+        "mahayana_host_runtime::extensions::mcp::plugin_skills",
+        "mahayana_host_runtime::extensions::mcp::plugin_skills_cache"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_snapshot_skills_contract.rs",
-        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "source/host/tests/plugin_skills_contract.rs",
+        "source/host/tests/host_bundle_and_plugin_cache_contract.rs",
+        "source/host/tests/workflow_store_contract.rs",
+        "source/host/tests/workflow_commands_contract.rs",
+        "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+        "source/packages/cursor-plugins/loader.contract.test.ts"
       ],
       "existing_owner_candidates": [
         {
           "path": "source/host/src/extensions/skills/skill_runtime.rs",
           "reason": "Host skill parser, registry, and system prompt injection formatter"
+        },
+        {
+          "path": "source/host/src/workflows/workflow_store.rs",
+          "reason": "Existing production projection for user, managed and plugin skills; consumed by Session commands and shipping prompt construction"
+        },
+        {
+          "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+          "reason": "Existing installed Plugin Skills lifecycle/cache reconciliation owner, paired with plugin_skills_cache.rs admission"
         }
       ],
       "historical_source_refs": [
@@ -31416,19 +31435,22 @@
       ],
       "id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
       "integration": {
-        "consumer": "No production skills-runtime consumer identified; SkillRegistry has no non-test callers",
-        "entrypoint": "source/host/src/extensions/skills/skill_runtime.rs::parse_skill_markdown",
-        "owner": "source/host/src/extensions/skills/skill_runtime.rs",
-        "producer": "No production skills-runtime producer identified; skill records are supplied only by contract fixtures"
+        "consumer": "Session workflow list/get/update and workflow_commands run/reference expansion; shipping main.rs workflow_store.list -> append_budgeted_workflows_system_prompt. Full library and live revocation lifecycle remain incomplete.",
+        "entrypoint": "McpExtension startup/refresh/auth and McpHostService install/uninstall -> SandPluginSkillsService::sync",
+        "owner": "FileWorkflowStore runtime projection; SandPluginSkillsService owns plugin cache publication and reconciliation",
+        "producer": "CoordinatorPluginSkillsLoader -> createHostPluginSkillsLoader -> existing effective-listing SDK; valid listing distinct from source failure"
       },
       "invariants": [
-        "Skills missing frontmatter boundary or name attribute are rejected"
+        "Skills missing frontmatter boundary or name attribute are rejected",
+        "Authoritative listing failure cannot retire the committed cache or prune materialized plugin files",
+        "Only canonical committed permission-eligible plugin records reach workflow list/get/update and prompt consumers",
+        "Dispose before publication prevents late cache replacement; broader live revocation and restart acceptance remain open"
       ],
-      "migration_rollback": "Use static hardcoded prompt instructions without dynamic skill injection",
+      "migration_rollback": "Keep the existing workflow and plugin cache owners. Version 1 distinguishes canonical denials from ambiguous legacy data; successful authoritative refresh migrates. Older binaries may ignore eligibility, so rollback is not permission acceptance.",
       "oracle_ids": [
         "OCRM-SKILLS-RUNTIME-O01"
       ],
-      "owner_decision": "Native implementation in skill_runtime under skills extension",
+      "owner_decision": "Use existing FileWorkflowStore for runtime skill projection and existing SandPluginSkillsService for installed-plugin cache/lifecycle admission. SkillRegistry remains a non-wired parser helper; no second runtime registry is introduced.",
       "postconditions": [
         "Skill parsed and registered; system prompt injection formatted"
       ],
@@ -31455,8 +31477,8 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Medium; invalid skill frontmatter parsing prevents prompt injection of specialized agent capabilities",
-      "selected_owner": "source/host/src/extensions/skills/skill_runtime.rs",
+      "risk": "High: stale or malformed permission snapshots can expose revoked plugin skills; dispose/publication ordering, partial materialization and failed-authority cleanup require direct negative controls.",
+      "selected_owner": "source/host/src/workflows/workflow_store.rs",
       "source_refs": [
         {
           "blob_sha": "27290bd8111b472c995e0284a856530f7f19152a",
@@ -31475,11 +31497,20 @@
             "start_line": 1
           },
           "symbol": "resolveWorkspaceSkillSourcePlan"
+        },
+        {
+          "blob_sha": "19fcb97b484bbe4b199324c69cc86eef4d3235a4",
+          "path": "src/skills/loading/plugin-skills.ts",
+          "range": {
+            "end_line": 414,
+            "start_line": 1
+          },
+          "symbol": "capturePluginSkillContributions / resolvePluginSkillRootsFromContributions"
         }
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "implemented",
+        "implementation": "implementing",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -31487,11 +31518,14 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/skills/skill_runtime.rs",
-        "symbol": "SkillRegistry"
+        "path": "source/host/src/workflows/workflow_store.rs",
+        "symbol": "FileWorkflowStore"
       },
       "tests": [
-        "source/host/tests/openclaw_snapshot_skills_contract.rs::test_ocrm_skills_runtime"
+        "source/host/tests/openclaw_snapshot_skills_contract.rs::test_ocrm_skills_runtime",
+        "source/host/tests/workflow_store_contract.rs::committed_plugin_admission_is_shared_by_list_get_and_update",
+        "source/host/tests/workflow_commands_contract.rs::committed_plugin_denial_reaches_session_commands_and_run_prompt_consumers",
+        "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs"
       ],
       "typed_contracts": [
         "SkillDefinition",

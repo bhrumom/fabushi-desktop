@@ -134,3 +134,57 @@ The read closes source evidence only. The selected Rust
 PostgreSQL port/export owner; its existing contract must not be presented as
 equivalent to the full upstream database worker. Production snapshot command
 and restore wiring, executable verification, and acceptance remain pending.
+
+## 8. Plugin Skills committed admission — fixed-U production batch (2026-11-02)
+
+`OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1` is implemented under the existing
+`SandPluginSkillsService` cache/lifecycle owner and `FileWorkflowStore` runtime
+projection, with Electron remaining the SDK/materialization edge. Integration
+base is `74073f19037a6eaec5f34331b27dfe9fd8c0b334`; the source below is
+fixed U `1440bb1771372334bea23d7642bb52deb7db1845`, not the historical ad8d
+reading above. The integrator acquired these exact blobs through GitHub and
+read each complete implementation, including its branches, effects and imports:
+
+| Fixed-U path | Exact blob |
+| --- | --- |
+| `src/skills/loading/plugin-skills.ts` | `19fcb97b484bbe4b199324c69cc86eef4d3235a4` |
+| `src/plugins/plugin-root-contributions.ts` | `614b703b81889b048f43efd67d260e398cf86131` |
+| `src/plugins/config-activation-shared.ts` | `f1d6c806adab30da1f194b90482b056953803c38` |
+| `src/plugins/uninstall.ts` | `8a9015d2de7bbc0dda157a7113696614a2fb796f` |
+| `src/plugins/uninstall-package-plan.ts` | `661aebe2a3846f2d2500f6f4ce87a1eb69c4c3b4` |
+| `src/plugins/uninstall-package-config.ts` | `e99f0490eb8f5a8b554138854fe3537e09bef807` |
+
+The first three separate effective activation from filesystem publication:
+global/explicit/channel denial precedes allow/default activation, contributions
+are selected by canonical plugin identity, and stale generated skill entries
+retire only within the owner's publication domain. The uninstall implementations
+separate runtime child policy from the package install owner, preserve explicit
+disable intent, and recheck persistent-apply authority before destructive
+cleanup. These inform snapshot eligibility and delayed cleanup; this batch does
+not implement or accept all slot, package, npm, hardlink or uninstall semantics.
+Their recursive helpers remain separate review/acceptance obligations. No
+historical read, generated/dependency review, or global flag is relabeled.
+
+Actual producer-to-consumer trace was re-read: production MCP composition builds
+`CoordinatorPluginSkillsLoader` and one `SandPluginSkillsService`; the existing
+extension invokes startup/refresh/auth sync and MCP install/uninstall invoke
+that same service. The relay reaches `createHostPluginSkillsLoader` and the
+existing SDK. Rust reconciles the authoritative listed IDs, canonical denies,
+fresh loads and eligible prior fallback, stages one cache, and serializes final
+publication with dispose. `FileWorkflowStore` applies the same parsed-snapshot
+eligibility to list/get/update. Session workflow commands and reference/run-now
+expansion consume that store; shipping `main.rs` obtains its `.list()` for
+`append_budgeted_workflows_system_prompt`. No second skill registry is wired.
+
+Auth failure versus valid empty listing, legacy identity ambiguity, malformed
+denials, staged publication, partial materialization and dispose are covered by
+new real-owner Rust and SDK/Host edge controls. The two Node entries use the
+shipping esbuild options/dependency resolution and are selected in Actions; this is not
+a whole-graph TypeScript strict typecheck. Independent candidate review and
+exact-H execution remain pending at authoring. Full library/source precedence,
+live revocation when cache publication fails, account switching, manual RPC/UI
+lifecycle, all MCP permissions and real service/platform acceptance remain
+open. The canonical ledger now points this broad library responsibility at the
+existing workflow owner with implementation still in progress and wiring/
+verification/acceptance unpromoted; the old `SkillRegistry` is retained as a
+non-wired helper rather than presented as the production owner.

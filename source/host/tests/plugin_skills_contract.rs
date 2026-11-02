@@ -80,6 +80,22 @@ fn auth_failures_are_deduplicated_and_non_auth_failures_are_ignored() {
             error_message: "network".into(),
             error_kind: Some("network".into()),
         },
+        PluginLoadFailure {
+            plugin_db_id: None,
+            plugin_id: Some("1".into()),
+            plugin_name: "looks like another canonical ID".into(),
+            marketplace_name: None,
+            error_message: "permission denied".into(),
+            error_kind: Some("user_git_access".into()),
+        },
+        PluginLoadFailure {
+            plugin_db_id: Some(" ".into()),
+            plugin_id: Some("3".into()),
+            plugin_name: "missing canonical identity".into(),
+            marketplace_name: None,
+            error_message: "permission denied".into(),
+            error_kind: Some("user_git_access".into()),
+        },
     ];
     let blocks = plugin_auth_blocks_from_failures(&failures);
     assert_eq!(blocks.len(), 1);

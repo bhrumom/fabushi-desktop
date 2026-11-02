@@ -66,7 +66,9 @@
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/production_agent_store_recovery_contract.rs",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -269,7 +271,9 @@
         "source/host/tests/session_conversation_state_contract.rs",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/production_agent_store_recovery_contract.rs",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -392,7 +396,9 @@
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -788,7 +794,9 @@
         "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
         "source/host/tests/agent_lifecycle_contract.rs",
         "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
-        "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md"
+        "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
@@ -942,7 +950,9 @@
         "source/host/tests/openclaw_pdf_and_parse_contract.rs",
         "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md",
         "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md",
-        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md"
+        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1274,7 +1284,9 @@
         "source/host/tests/session_conversation_state_contract.rs",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/production_agent_store_recovery_contract.rs",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -1736,7 +1748,9 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_plugins_automations_contract.rs",
-        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md"
+        "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC21",
@@ -1888,7 +1902,9 @@
         "source/host/tests/openclaw_pdf_and_parse_contract.rs",
         "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md",
         "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md",
-        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md"
+        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md",
+        "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -2056,8 +2072,8 @@
   ],
   "schema_version": 1,
   "upstream": {
-    "repository": "openclaw/openclaw",
     "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "repository": "openclaw/openclaw",
     "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
   }
 }

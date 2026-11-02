@@ -8,6 +8,73 @@ Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
 Last updated: 2026-10-31（Asia/Shanghai）
 
+### 2026-11-02 production batch: committed Plugin Skills admission
+
+`OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1` freezes the actual loader → Rust lifecycle/
+cache → workflow/Session/prompt boundary on parent
+`74073f19037a6eaec5f34331b27dfe9fd8c0b334`. Failed authoritative listings
+must preserve cache/files; successful empty is distinct. Canonical denial
+survives transient materialization failure and filters every committed skill
+consumer; malformed/ambiguous legacy denial cannot silently become permission.
+Publication and dispose share the existing service boundary, with callbacks
+outside locks and SDK cleanup deferred until a valid committed complete pass.
+The integrator owns cache/schema/locks/workflow/ledger; disjoint Rust lifecycle
+and SDK workers use actual xhigh effort. All authored tests remain unexecuted
+until this candidate's Actions; source review facts are in the existing Skills
+dossier. No local validation or global acceptance promotion occurs.
+
+The canonical Skills responsibility is corrected to the existing workflow/
+Plugin Skills production owners without claiming that the entire skill library
+or plugin/MCP lifecycle is wired. Failed-publication live revocation, account
+switch, manual status/sync RPC and real ecosystem acceptance remain open.
+
+Plugin review R1 of frozen tree `d47b4d4352ccc88504102b2ad1f2c52d45439e44`
+found a missing reverse inventory link for the newly cited fixed-U
+`src/skills/loading/plugin-skills.ts` (blob
+`19fcb97b484bbe4b199324c69cc86eef4d3235a4`). **PS-R1 — FIX / IMPL_BUG**:
+keep the source reference and the audit assertion; edit only this row's
+responsibility mapping to `OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001`, and update
+the shard/manifest identities plus mapped/unclassified counters together.
+This is a candidate metadata edit, not a local generator/validation run.
+Preserve every source identity, literal reading fact, pending review state and
+false completion flag. A fresh frozen review and the existing Actions source
+integrity gates must decide the corrected candidate.
+
+The independent permission/lifetime/oracle review found no blocker in R1.
+**PS-N1 — DEFER / NON_BLOCKING** records the pre-existing raw cache-key versus
+SDK directory-normalization mismatch: a listed zero-skill plugin named
+`review.tools` may materialize as `review_tools` and lose that directory in
+cleanup. Preserve this finding for a separate production fix with an actual
+zero-skill control; it does not start or widen the current repair round.
+
+Before publication, live branch advanced to
+`88143ef99a21e87d2da0a31cc509aff3e5176552` (tree
+`a1185d2279ec066f181d52194c454698d797262e`, parent H740). Preserve its complete
+14-path checked-checkpoint recovery work. The integrator reconciles shared
+workflow targets/evidence and both ledger/RTM additions; separate C3 cancellation
+work stays outside the Plugin candidate. Channel Runtime `41408747120` was
+cancelled while queued and is not positive evidence; the new parent's run
+`41409355083` includes its inherited handoff controls. Automation H d94 Runtime
+`41408033942` passed, artifact `13125310521`, digest
+`sha256:6ce01a58d4dcbe3815206c5e7842c9182d7b822024a81942977b6205100c74b7`.
+
+Both independent focused reviews converged on repaired Plugin tree
+`334940ea5a52d344c52bc29dee508661904d6d19`; a separate full review of H881
+also found no blocker. The next publication lease found concurrent H
+`7382badafe5c3a793835b7760bf3ab54e7fb54c9`, tree
+`c02da5d4a25186cc3eddb953388e6bdeb1723dd8`, adding the existing MCP relay's
+shutdown waiter custody. Preserve all five incoming paths and reconcile its
+new relay contract/filter and evidence with the Plugin targets, without
+duplicating the already selected MCP extension/production suites. Freeze and
+review that integration before publication; no parent Runtime result is
+assumed, and no already-admitted remote operation retraction is claimed.
+Channel H740 was pushed and all seven files/complete SHA read back; its two
+independent reviews converged on tree `156ae25b8c79229a83971b4a81598a026e8ad3d8`.
+Source/Runtime Actions `41408746988`/`41408747120` were started, not yet verified.
+Parent H3aa Runtime `41407135148` passed; Automation H d94 is independently
+running `41408033942` and has passed source Actions `41408033959` (artifact
+`13124670624`, digest `sha256:daf12763bd57c90d735b9ebb02f456f329f7870d687015d984fe98dd37e82eb8`).
+
 ### 2026-11-02 production batch: channel inbound idle handoff
 
 `OCRM-CHANNEL-IDLE-HANDOFF-v1` in `docs/specs/channel-inbound-worker-handoff.md`

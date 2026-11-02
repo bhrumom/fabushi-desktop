@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "9de9da2e9cdf8f9cf85021d899a38132b2eba269e9607899b7fb34ab814e7216",
+  "canonical_inventory_sha256": "72c936652facdc6844c1685c56363ba3b605079ebf3b0b8564056cbddf89bfbd",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -399,12 +399,12 @@
       "uncompressed_sha256": "1d5167e06246d62b48d2a0a96218f3079d5461da2f1ff4e4a63b03dc26c4601a"
     },
     {
-      "compressed_sha256": "89679484b66fa7e73824b1f8d6f16cca9a3e681c9855e3acb852066bde776eb6",
+      "compressed_sha256": "3fcf7a69cd44cbe373ac9a0f6977d054e097dcc1645824e8274b9e78fa967a4d",
       "count": 1024,
       "first_path": "src/skills/lifecycle/skill-tree-digest.test.ts",
       "last_path": "src/state/user-profile-github-identity.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0049.jsonl.gz",
-      "uncompressed_sha256": "7906682039c651740d1ecd293fe921f999737693e0d7d0dbfa8bf6ef36d2a8c5"
+      "uncompressed_sha256": "ff2971a6f5da39f3897e866ff5a5c3d325f5a5d5cf81891be1f90ffee7819c8a"
     },
     {
       "compressed_sha256": "14d9bca5453ab0b88c8fcf5b414cfaf964e3738888dd26af900c1e9fb154bbaa",

@@ -366,6 +366,83 @@ fn only_current_user_plugin_skill_can_be_edited_and_frontmatter_is_preserved() {
 }
 
 #[test]
+fn committed_plugin_admission_is_shared_by_list_get_and_update() {
+    use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
+        ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        get_plugin_skills_cache_path, get_plugin_skills_dir,
+    };
+
+    let root = root("plugin-admission");
+    let cache_dir = get_plugin_skills_dir(&root);
+    fs::create_dir_all(&cache_dir).unwrap();
+    let cache_path = get_plugin_skills_cache_path(&cache_dir);
+    let files = [root.join("plugins/one/SKILL.md"), root.join("plugins/two/SKILL.md")];
+    for file in &files {
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, "---\nname: Review\n---\nOriginal body\n").unwrap();
+    }
+    write_managed_skills_cache(
+        get_managed_skills_dir(&root),
+        &[ManagedSkill { id: "managed-admission-control".into(), name: "Managed".into(),
+            description: String::new(), body: "Managed body".into() }],
+        1.0,
+    ).unwrap();
+    let store = FileWorkflowStore::new(root.join("agents/a"), root.join("workflows"));
+    let user = store.create(&WorkflowSpec { name: "User control".into(), description: String::new(),
+        body: "User body".into(), trigger: None, source_ref: None }).unwrap().unwrap();
+    let base = serde_json::json!({
+        "fetchedAt": 1, "currentUserId": 9,
+        "skills": [
+            {"id":"plugin-11-review","pluginId":"11","pluginName":"22","name":"Review",
+             "description":"","filePath":files[0].to_string_lossy(),"publisherUserId":9},
+            {"id":"plugin-22-review","pluginId":"22","pluginName":"Other","name":"Review",
+             "description":"","filePath":files[1].to_string_lossy(),"publisherUserId":9}
+        ]
+    });
+    let denied = serde_json::json!([{"pluginId":"22","pluginName":"display name is not authority"}]);
+    let cases = [
+        (None, None, vec!["plugin-11-review", "plugin-22-review"]),
+        (None, Some(serde_json::json!([])), vec!["plugin-11-review", "plugin-22-review"]),
+        (Some(serde_json::json!(1)), Some(denied.clone()), vec!["plugin-11-review"]),
+        (None, Some(denied), vec![]),
+        (Some(serde_json::json!(1)), Some(serde_json::json!(null)), vec![]),
+        (Some(serde_json::json!(1)), None, vec![]),
+        (Some(serde_json::json!(7)), Some(serde_json::json!([])), vec![]),
+        (Some(serde_json::json!(1)), Some(serde_json::json!([])), vec!["plugin-11-review", "plugin-22-review"]),
+    ];
+    for (format, blocks, admitted) in cases {
+        let mut value = base.clone();
+        if let Some(format) = format { value["cacheFormatVersion"] = format; }
+        if let Some(blocks) = blocks { value["authBlocked"] = blocks; }
+        let bytes = serde_json::to_vec(&value).unwrap();
+        fs::write(&cache_path, &bytes).unwrap();
+        let all = store.list_all();
+        assert!(all.iter().any(|record| record.id == user.id));
+        assert!(all.iter().any(|record| record.id == "managed-admission-control"));
+        let mut actual = all.iter().filter(|record| record.source == "plugin")
+            .map(|record| record.id.as_str()).collect::<Vec<_>>();
+        actual.sort();
+        assert_eq!(actual, admitted, "{value}");
+        for (id, file) in ["plugin-11-review", "plugin-22-review"].into_iter().zip(&files) {
+            let allowed = admitted.contains(&id);
+            assert_eq!(store.get(id).is_some(), allowed, "get {id}: {value}");
+            assert_eq!(store.list().iter().any(|record| record.id == id), allowed, "list {id}: {value}");
+            let before = fs::read(file).unwrap();
+            let updated = store.update(id, &WorkflowSpec { name: "Updated".into(),
+                description: "new description".into(), body: "Updated body".into(),
+                trigger: None, source_ref: None }).unwrap();
+            assert_eq!(updated.is_some(), allowed, "update {id}: {value}");
+            if !allowed { assert_eq!(fs::read(file).unwrap(), before); }
+        }
+        assert_eq!(fs::read(&cache_path).unwrap(), bytes);
+    }
+    drop(store);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn workflow_store_watches_managed_and_plugin_skill_caches() {
     use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
         ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,

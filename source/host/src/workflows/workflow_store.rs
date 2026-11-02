@@ -16,8 +16,8 @@ use crate::extensions::managed_setup::managed_skills_cache::{
     get_managed_skills_cache_path, get_managed_skills_dir, read_managed_skills_cache,
 };
 use crate::extensions::mcp::plugin_skills_cache::{
-    PluginSkillRecord, PluginSkillsCache, get_plugin_skills_cache_path,
-    get_plugin_skills_dir, read_plugin_skills_cache,
+    PluginSkillRecord, PluginSkillsCache, PluginSkillsSnapshot, get_plugin_skills_cache_path,
+    get_plugin_skills_dir, read_plugin_skills_snapshot,
 };
 use crate::watched_directory::{ChangeListener, WatchedDirectory};
 
@@ -95,7 +95,7 @@ pub struct FileWorkflowStore {
     plugin_skills_dir: PathBuf,
     plugin_skills_dir_watcher: WatchedDirectory,
     managed_index_cache: StatKeyedParseCache<Option<ManagedSkillsCache>>,
-    plugin_index_cache: StatKeyedParseCache<Option<PluginSkillsCache>>,
+    plugin_index_cache: StatKeyedParseCache<Option<PluginSkillsSnapshot>>,
     plugin_parse_cache: StatKeyedParseCache<Option<PluginSkillFacts>>,
 }
 
@@ -273,11 +273,11 @@ impl FileWorkflowStore {
             .unwrap_or_default()
     }
 
-    fn read_plugin_skills_index(&self) -> Option<PluginSkillsCache> {
+    fn read_plugin_skills_index(&self) -> Option<PluginSkillsSnapshot> {
         let path = get_plugin_skills_cache_path(&self.plugin_skills_dir);
         self.plugin_index_cache
             .read(std::slice::from_ref(&path), || {
-                read_plugin_skills_cache(&self.plugin_skills_dir)
+                read_plugin_skills_snapshot(&self.plugin_skills_dir)
             })
             .flatten()
     }
@@ -357,17 +357,16 @@ impl FileWorkflowStore {
             return Vec::new();
         };
         index
-            .skills
-            .iter()
+            .eligible_skills()
             .filter(|record| !excluded_ids.contains(&record.id))
-            .filter_map(|record| self.plugin_skill_to_workflow(record.clone(), &index))
+            .filter_map(|record| self.plugin_skill_to_workflow(record.clone(), &index.index))
             .collect()
     }
 
     fn plugin_skill_record(&self, id: &str) -> Option<(PluginSkillRecord, PluginSkillsCache)> {
         let index = self.read_plugin_skills_index()?;
-        let record = index.skills.iter().find(|record| record.id == id)?.clone();
-        Some((record, index))
+        let record = index.eligible_skills().find(|record| record.id == id)?.clone();
+        Some((record, index.index))
     }
 
     pub fn list_all(&self) -> Vec<WorkflowRecord> {

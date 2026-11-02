@@ -85,3 +85,20 @@ await build({
   entryPoints: [path.join(repoRoot, "source", "electron-preload", "preload-miniapp-tools.ts")],
   outfile: path.join(outPreload, "preload-miniapp-tools.cjs"),
 });
+
+// Compile the actual SDK/Host-loader contract entries with the same module
+// resolution and Node target as the shipping Electron runtime.
+if (process.argv.includes("--plugin-skills-contracts")) {
+  const outContracts = path.join(desktopRoot, ".tmp-grok-electron", "ocrm-plugin");
+  await fs.mkdir(outContracts, { recursive: true });
+  for (const [entry, filename] of [
+    ["source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts", "host-plugin-skills-loader.contract.test.cjs"],
+    ["source/packages/cursor-plugins/loader.contract.test.ts", "loader.contract.test.cjs"],
+  ]) {
+    await build({
+      ...common,
+      entryPoints: [path.join(repoRoot, entry)],
+      outfile: path.join(outContracts, filename),
+    });
+  }
+}
