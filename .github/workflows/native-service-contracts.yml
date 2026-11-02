@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-r8-author-recovery-ddfff221]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
@@ -16,6 +16,8 @@ on:
       - 'frontend/src/production/model.ts'
       - 'desktop/native-message-projection.html'
       - 'desktop/e2e/native-message-projection.spec.ts'
+      - 'desktop/e2e/native-message-author-recovery.spec.ts'
+      - 'desktop/e2e/fixtures/native-message-author-recovery.tsx'
       - 'desktop/e2e/fixtures/native-message-projection.tsx'
       - 'desktop/playwright.config.ts'
       - 'desktop/forward-dialog-test.html'
@@ -100,7 +102,7 @@ permissions:
   contents: read
 jobs:
   native-auth-and-journal:
-    if: github.event_name != 'push' && !inputs.message_batch
+    if: (github.event_name != 'push' && !inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     strategy:
       fail-fast: false
       matrix:
@@ -147,7 +149,7 @@ jobs:
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
           echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
   retained-direct-ffi-compatibility:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -199,7 +201,7 @@ jobs:
           if-no-files-found: error
 
   gateway-peer-durability:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     strategy:
       fail-fast: false
       matrix:
@@ -239,7 +241,7 @@ jobs:
           path: artifacts/gateway-peer-durability
           if-no-files-found: error
   native-message-reconciliation:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
@@ -350,7 +352,7 @@ jobs:
           path: artifacts/native-message
           if-no-files-found: error
   desktop-social-owner-behaviors:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
@@ -425,7 +427,7 @@ jobs:
           if-no-files-found: error
 
   native-message-shipping-compile:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     runs-on: macos-15
     timeout-minutes: 60
     steps:
@@ -751,7 +753,7 @@ jobs:
   native-message-ui:
     if: github.event_name == 'push' || inputs.message_batch
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v6
         with:
@@ -779,8 +781,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 33' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 33' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 41' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 41' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -866,6 +868,34 @@ jobs:
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# todo 0' artifacts/native-message-ui/production-transcript.log
+      - name: Actual ProductionRenderer author and draft recovery behaviors
+        shell: bash
+        working-directory: desktop
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../artifacts/native-message-ui/author-recovery.json
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/native-message-author-recovery.spec.ts --output=author-recovery-results --retries=0 --workers=1 --reporter=line,json 2>&1 | tee ../artifacts/native-message-ui/author-recovery.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/author-recovery.json', 'utf8'));
+          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 16, actual: report.stats, errors: report.errors }, null, 2) + '\n');
+          assert.equal(report.stats.expected, 16, 'all sixteen author and recovery cases must actually pass');
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 16);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('actual ProductionRenderer author/recovery: 16 passed, 0 failed, 0 skipped, 0 retries');
+          NODE
       - name: Preserve exact renderer evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -874,9 +904,10 @@ jobs:
           path: |
             artifacts/native-message-ui
             desktop/test-results
+            desktop/author-recovery-results
           if-no-files-found: error
   native-message-electron:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -1082,7 +1113,7 @@ jobs:
           path: artifacts/native-message-electron
           if-no-files-found: error
   windows-update-publisher:
-    if: github.event_name == 'push' || inputs.message_batch
+    if: (github.event_name == 'push' || inputs.message_batch) && github.ref != 'refs/heads/checkpoint/tdrp-r8-author-recovery-ddfff221'
     runs-on: windows-2025
     timeout-minutes: 20
     steps:

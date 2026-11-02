@@ -419,6 +419,11 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   if (!isRecord(value)) return null;
   const id = stringValue(value.id) ?? `entry-${index}`;
   const timestampMs = numberValue(value.timestampMs, Date.now());
+  const transcriptAuthor = {
+    ...(value.authorKind === "human" ? { authorKind: "human" as const } : {}),
+    ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
+    ...(typeof value.remoteMessageId === "string" ? { remoteMessageId: value.remoteMessageId } : {}),
+  };
   const composedAtMs = typeof (value.composedAtMs ?? value.queuedAtMs) === "number" && Number.isFinite(value.composedAtMs ?? value.queuedAtMs)
     ? Number(value.composedAtMs ?? value.queuedAtMs)
     : undefined;
@@ -500,6 +505,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     const attachment = projectUserAttachmentGalleryAttachment(projection);
     return {
       kind: "message", id, role: "user", author: "You", text: "", timestampMs, attachments: [attachment],
+      ...transcriptAuthor,
       sourceKind: "user-attachment",
       userAttachment: projection,
       delivery: transcriptDelivery(value) ?? "sent",
@@ -513,6 +519,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   if (attachment != null) {
     return {
       kind: "message", id, role: "user", author: "You", text: "", timestampMs, attachments: [attachment],
+      ...transcriptAuthor,
       delivery: transcriptDelivery(value) ?? "sent",
       ...(typeof value.clientNonce === "string" ? { clientNonce: value.clientNonce } : {}),
       ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
@@ -534,11 +541,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(transcriptRichText(value) === undefined ? {} : { richText: transcriptRichText(value) }),
     delivery: transcriptDelivery(value) ?? "sent",
     ...(typeof value.clientNonce === "string" ? { clientNonce: value.clientNonce } : {}),
-    ...(value.authorKind === "human"
-      ? { authorKind: "human" as const,
-        ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
-        ...(typeof value.remoteMessageId === "string" ? { remoteMessageId: value.remoteMessageId } : {}) }
-      : {}),
+    ...transcriptAuthor,
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),
     ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
@@ -584,7 +587,8 @@ export function coalesceProjectedUserAttachmentTurns(
   const firstAttachmentEntryByNonce = new Map<string, ProjectedUserAttachmentMessage>();
 
   for (const entry of entries) {
-    if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) continue;
+    if (entry.kind !== "message" || entry.role !== "user" || entry.authorKind === "human" || entry.authorId != null
+      || entry.clientNonce == null || entry.clientNonce.length === 0) continue;
     if (isProjectedUserAttachmentMessage(entry)) {
       const attachments = attachmentGroups.get(entry.clientNonce) ?? [];
       attachmentGroups.set(
@@ -603,7 +607,8 @@ export function coalesceProjectedUserAttachmentTurns(
 
   const emittedAttachmentOnly = new Set<string>();
   return entries.flatMap((entry) => {
-    if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) {
+    if (entry.kind !== "message" || entry.role !== "user" || entry.authorKind === "human" || entry.authorId != null
+      || entry.clientNonce == null || entry.clientNonce.length === 0) {
       return [entry];
     }
     const attachments = attachmentGroups.get(entry.clientNonce);
