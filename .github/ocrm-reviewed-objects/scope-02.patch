@@ -1,0 +1,692 @@
++    agent_id: &str,
++    work: &ChannelFailureWork<serde_json::Value>,
++    run: impl FnOnce(RoutedProvider, &[serde_json::Value]) -> Result<RevivalExecution, String>,
++) -> ChannelFailureAction<serde_json::Value> {
++    {
++        let state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
++        if !state.owns_channel_failure_work(agent_id, work)
++            || state.channel_failure_state(agent_id) != Some(ChannelFailureState::ActiveBeforeDispatch)
++        {
++            return ChannelFailureAction::Stale;
++        }
++    }
++    let pause = |failures| {
++        wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++            .pause_channel_failure_before_dispatch(agent_id, work, failures)
++    };
++    let finish = || {
++        if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++            .finish_channel_failure_work(agent_id, work)
++        {
++            ChannelFailureAction::Finished
++        } else {
++            ChannelFailureAction::Stale
++        }
++    };
++    let mut failures = work.failures.clone();
++    if let Err(error) = filter_current_channel_failure_markers(deps, agent_id, &mut failures) {
++        eprintln!("mahayana-host channel_failure_marker_read_failed agent={agent_id} error={error}");
++        return pause(failures);
++    }
++    if failures.is_empty() {
++        return finish();
++    }
++    let summary = match deps.session_workers.summarize_agent_by_id(agent_id, None) {
++        Ok(Some(summary)) => summary,
++        Ok(None) => {
++            clear_durable_channel_failure_markers(deps, agent_id, &failures);
++            return finish();
++        }
++        Err(error) => {
++            eprintln!("mahayana-host channel_failure_resolve_failed agent={agent_id} error={error}");
++            return pause(failures);
++        }
++    };
++    if summary.is_group {
++        clear_durable_channel_failure_markers(deps, agent_id, &failures);
++        return finish();
++    }
++    if let Err(error) = filter_current_channel_failure_provenance(deps, agent_id, &mut failures) {
++        eprintln!("mahayana-host channel_failure_provenance_resolve_failed agent={agent_id} error={error}");
++        return pause(failures);
++    }
++    if failures.is_empty() {
++        return finish();
++    }
++    let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
++        return pause(failures);
++    };
++    if deps.transcript_runtime.is_quiescing_for_upgrade() {
++        return pause(failures);
++    }
++
++    handoff_channel_failure_followup(
++        wakes,
++        agent_id,
++        work,
++        failures,
++        |failures| run(provider, failures),
++        |failures| {
++            clear_durable_channel_failure_markers(deps, agent_id, failures);
++            let _ = roster.emit_agent_update(agent_id);
++        },
++        |error| {
++            let classified_error = ProviderSessionError::Tool(error.to_string());
++            let report = AgentErrorReport {
++                source: "channel_failure".into(),
++                conversation_id: agent_id.to_string(),
++                request_id: None,
++                error: classify_agent_error(&classified_error),
++                detail: Some(sand_error_detail(error)),
++            };
++            if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
++                eprintln!("mahayana-host channel_failure_telemetry_failed agent={agent_id} error={telemetry_error}");
++            }
++            let mut tray = provider_failure_tray(agent_id, error, started_at_ms() as i64);
++            tray.title = "Delivery-failure follow-up failed".into();
++            deps.trays.push_error(tray);
++        },
++    )
++}
++
+ fn run_channel_failure_revival_worker(
+     deps: LocalRoutedRunnerDeps,
+     roster: Arc<ProductionRosterEmit>,
+     wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+     agent_id: String,
++    initial_work: ChannelFailureWork<serde_json::Value>,
+ ) {
++    let mut initial_work = Some(initial_work);
+     drain_channel_revival_batches(
+         || {
+-            let mut state = wakes
+-                .lock()
+-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+-            state.take_pending_channel_failures_or_end_revival(&agent_id)
+-        },
+-        |mut failures| {
+-            if let Err(error) = filter_current_channel_failure_markers(&deps, &agent_id, &mut failures) {
+-                eprintln!("mahayana-host channel_failure_marker_read_failed agent={agent_id} error={error}");
+-                requeue_channel_failures(&wakes, &agent_id, failures);
+-                return false;
+-            }
+-            if failures.is_empty() {
+-                return true;
+-            }
+-            let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
+-                Ok(Some(summary)) => summary,
+-                Ok(None) => {
+-                    clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+-                    return true;
+-                }
+-                Err(error) => {
+-                    eprintln!(
+-                        "mahayana-host channel_failure_resolve_failed agent={} error={error}",
+-                        agent_id
+-                    );
+-                    requeue_channel_failures(&wakes, &agent_id, failures);
+-                    return false;
+-                }
+-            };
+-            if summary.is_group {
+-                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+-                return true;
+-            }
+-            if let Err(error) = filter_current_channel_failure_provenance(
+-                &deps,
+-                &agent_id,
+-                &mut failures,
+-            ) {
+-                eprintln!(
+-                    "mahayana-host channel_failure_provenance_resolve_failed agent={} error={error}",
+-                    agent_id
+-                );
+-                requeue_channel_failures(&wakes, &agent_id, failures);
+-                return false;
+-            }
+-            if failures.is_empty() {
+-                return true;
+-            }
+-            let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
+-                requeue_channel_failures(&wakes, &agent_id, failures);
+-                return false;
+-            };
+-            if deps.transcript_runtime.is_quiescing_for_upgrade() {
+-                requeue_channel_failures(&wakes, &agent_id, failures);
+-                return false;
+-            }
+-
+-            let prompt = build_channel_delivery_failure_wake_prompt(&failures);
+-            let widget_prompts = deps
+-                .transcript_manager
+-                .widget_responses()
+-                .collect_unanswered_question_prompts(&agent_id)
+-                .unwrap_or_default();
+-            match run_local_background_revival_turn_with_context(
+-                deps.clone(),
+-                provider,
+-                &agent_id,
+-                "connector",
+-                &prompt,
+-                false,
+-                "continue",
+-                BackgroundRevivalContext {
+-                    selected_images: Vec::new(),
+-                    skipped_question_prompts: widget_prompts.skipped_question_prompts,
+-                    dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+-                    ..BackgroundRevivalContext::default()
+-                },
+-            ) {
+-                Ok(execution)
+-                    if !execution.aborted
+-                        && !execution.quiesced_for_upgrade
+-                        && execution.sent_message_count > 0 =>
+-                {
+-                    clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+-                    let _ = roster.emit_agent_update(&agent_id);
+-                }
+-                Ok(_) => {
+-                    requeue_channel_failures(&wakes, &agent_id, failures);
+-                    return false;
+-                }
+-                Err(error) => {
+-                    let classified_error = ProviderSessionError::Tool(error.clone());
+-                    let report = AgentErrorReport {
+-                        source: "channel_failure".into(),
+-                        conversation_id: agent_id.clone(),
+-                        request_id: None,
+-                        error: classify_agent_error(&classified_error),
+-                        detail: Some(sand_error_detail(&error)),
+-                    };
+-                    if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+-                        eprintln!(
+-                            "mahayana-host channel_failure_telemetry_failed agent={} error={telemetry_error}",
+-                            agent_id
+-                        );
+-                    }
+-                    let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
+-                    tray.title = "Delivery-failure follow-up failed".into();
+-                    deps.trays.push_error(tray);
+-                    requeue_channel_failures(&wakes, &agent_id, failures);
+-                    return false;
+-                }
++            if let Some(work) = initial_work.take() {
++                return Some(work);
+             }
+-            true
+-        },
+-        || {
+-            let mut state = wakes
+-                .lock()
+-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+-            BackgroundWakes::<serde_json::Value>::end_revival(
+-                &mut state.reviving_channel_failure_agent_ids,
+-                &agent_id,
+-            );
++            wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++                .take_channel_failure_work_or_end_revival(&agent_id)
+         },
++        |work| drive_channel_failure_work(work, |work| {
++            process_channel_failure_work(
++                &deps, roster.as_ref(), wakes.as_ref(), &agent_id, work,
++                |provider, failures| {
++                    let prompt = build_channel_delivery_failure_wake_prompt(failures);
++                    let widget_prompts = deps.transcript_manager.widget_responses()
++                        .collect_unanswered_question_prompts(&agent_id)
++                        .unwrap_or_default();
++                    run_local_background_revival_turn_with_context(
++                        deps.clone(),
++                        provider,
++                        &agent_id,
++                        "connector",
++                        &prompt,
++                        false,
++                        "continue",
++                        BackgroundRevivalContext {
++                            selected_images: Vec::new(),
++                            skipped_question_prompts: widget_prompts.skipped_question_prompts,
++                            dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
++                            ..BackgroundRevivalContext::default()
++                        },
++                    )
++                },
++            )
++        }),
++        // Pause, retention and failed admission retire only their own token.
++        // A generic cleanup here could clear a concurrently admitted successor.
++        || {},
+     );
+ }
+ 
++fn launch_channel_failure_worker(
++    deps: LocalRoutedRunnerDeps,
++    roster: Arc<ProductionRosterEmit>,
++    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
++    agent_id: String,
++    work: ChannelFailureWork<serde_json::Value>,
++    #[cfg(test)] completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
++) -> Result<bool, String> {
++    let worker_agent_id = agent_id.clone();
++    let worker_wakes = Arc::clone(&wakes);
++    launch_channel_failure_work(wakes.as_ref(), &agent_id, work, move |work| {
++        thread::Builder::new()
++            .name(format!("mahayana-channel-failure-{worker_agent_id}"))
++            .spawn(move || {
++                #[cfg(test)]
++                let completed_agent_id = worker_agent_id.clone();
++                run_channel_failure_revival_worker(deps, roster, worker_wakes, worker_agent_id, work);
++                #[cfg(test)]
++                if let Some(completion) = completion {
++                    let _ = completion.send(ChannelDeliveryWorkerFinished::FailureRevival {
++                        agent_id: completed_agent_id,
++                    });
++                }
++            })
++            .map(|_| ())
++            .map_err(|error| error.to_string())
++    })
++}
++
+ fn queue_channel_delivery_failure(
+     deps: LocalRoutedRunnerDeps,
+     roster: Arc<ProductionRosterEmit>,
+@@ -7498,26 +7630,24 @@ fn queue_channel_delivery_failure(
+             }
+         }
+     }
+-    let admission = {
+-        let mut state = wakes
+-            .lock()
+-            .unwrap_or_else(|poisoned| poisoned.into_inner());
++    let work = {
++        let mut state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+         enqueue_channel_failure(&mut state, &agent_id, failure)
+     };
+-    match admission {
+-        Ok(false) => {}
+-        Ok(true) => {
+-            if let Err(error) = spawn_channel_failure_revival_worker(
+-                deps, roster, wakes, agent_id,
+-                #[cfg(test)]
+-                completion,
+-            ) {
+-                eprintln!("mahayana-host channel_failure_worker_spawn_failed error={error}");
+-            }
+-        }
++    let work = match work {
++        Ok(Some(work)) => work,
++        Ok(None) => return,
+         Err(error) => {
+-            eprintln!("mahayana-host channel_failure_queue_refused agent={agent_id} error={error}");
++            eprintln!("mahayana-host channel_failure_enqueue_refused agent={agent_id} error={error}");
++            return;
+         }
++    };
++    if let Err(error) = launch_channel_failure_worker(
++        deps, roster, wakes, agent_id.clone(), work,
++        #[cfg(test)]
++        completion,
++    ) {
++        eprintln!("mahayana-host channel_failure_worker_spawn_failed agent={agent_id} error={error}");
+     }
+ }
+ 
+@@ -7531,17 +7661,17 @@ fn queue_recovered_channel_delivery_failure(
+     let failure = channel_failure_from_marker(marker)?;
+     let store = deps.transcript_runtime.pending_wake_store()
+         .ok_or_else(|| "channel failure pending-wake owner is unavailable".to_string())?;
+-    // Store -> wakes is the sole nested lock order. The callback has no I/O,
+-    // notifications, Session calls or spawn; recovery never rewrites the image.
+-    let should_spawn = store.with_matching_marker_checked(marker, || {
++    // Store -> wakes is the sole nested lock order. The callback only reserves
++    // a token; recovery does no disk write, Session call, notification or spawn.
++    let work = store.with_matching_marker_checked(marker, || {
+         let mut state = wakes.lock()
+             .map_err(|_| "channel failure wake owner is poisoned".to_string())?;
+         enqueue_channel_failure(&mut state, &marker.agent_id, failure)
+     }).map_err(|error| error.to_string())?
+         .ok_or_else(|| "channel failure marker is no longer pending".to_string())??;
+-    if should_spawn {
+-        spawn_channel_failure_revival_worker(
+-            deps, roster, wakes, marker.agent_id.clone(),
++    if let Some(work) = work {
++        launch_channel_failure_worker(
++            deps, roster, wakes, marker.agent_id.clone(), work,
+             #[cfg(test)]
+             completion,
+         )?;
+@@ -7549,41 +7679,6 @@ fn queue_recovered_channel_delivery_failure(
+     Ok(())
+ }
+ 
+-fn spawn_channel_failure_revival_worker(
+-    deps: LocalRoutedRunnerDeps,
+-    roster: Arc<ProductionRosterEmit>,
+-    wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+-    agent_id: String,
+-    #[cfg(test)] completion: Option<mpsc::Sender<ChannelDeliveryWorkerFinished>>,
+-) -> Result<(), String> {
+-    let worker_agent_id = agent_id.clone();
+-    let worker_wakes = Arc::clone(&wakes);
+-    if let Err(error) = thread::Builder::new()
+-        .name(format!("mahayana-channel-failure-{agent_id}"))
+-        .spawn(move || {
+-            #[cfg(test)]
+-            let completed_agent_id = worker_agent_id.clone();
+-            run_channel_failure_revival_worker(deps, roster, worker_wakes, worker_agent_id);
+-            #[cfg(test)]
+-            if let Some(completion) = completion {
+-                let _ = completion.send(ChannelDeliveryWorkerFinished::FailureRevival {
+-                    agent_id: completed_agent_id,
+-                });
+-            }
+-        })
+-    {
+-        let mut state = wakes
+-            .lock()
+-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+-        BackgroundWakes::<serde_json::Value>::end_revival(
+-            &mut state.reviving_channel_failure_agent_ids,
+-            &agent_id,
+-        );
+-        return Err(format!("channel failure worker spawn failed for {agent_id}: {error}"));
+-    }
+-    Ok(())
+-}
+-
+ fn automatic_ack_redrive_marker_snapshot(
+     runtime: &ProductionTranscriptRuntime,
+ ) -> Result<std::collections::HashSet<String>, String> {
+@@ -12890,7 +12985,7 @@ impl GatewayApi for UnifiedGatewayApi {
+             self.transcript_runtime.upgrade_resume_agent_ids_checked()
+                 .map_err(GatewayCommandError::Internal)?;
+             resume_channel_inbound_after_recreate(self.transcript_manager.as_ref(), || {
+-                self.request_channel_inbound_readiness();
++                self.request_channel_background_readiness();
+             })
+                 .map_err(GatewayCommandError::Internal)?;
+             let carried = args
+@@ -16879,7 +16974,7 @@ fn main() {
+     let _channel_inbound_settings_subscription = bind_channel_inbound_settings(
+         settings_extension.as_ref(), move || {
+             if let Some(gateway) = channel_inbound_gateway.upgrade() {
+-                gateway.request_channel_inbound_readiness();
++                gateway.request_channel_background_readiness();
+             }
+         },
+     );
+@@ -17415,6 +17510,8 @@ mod tests {
+ 
+     #[path = "channel_inbound_readiness_tests.rs"]
+     mod channel_inbound_readiness_tests;
++    #[path = "channel_failure_readiness_tests.rs"]
++    mod channel_failure_readiness_tests;
+ 
+     #[path = "config_secret_boundary_tests.rs"]
+     mod config_secret_boundary_tests;
+diff --git a/source/host/app/src/tests/channel_failure_handoff_tests.rs b/source/host/app/src/tests/channel_failure_handoff_tests.rs
+index 1552e6f07c945a46b4fbbe6a7b32ce14bb5292bd..9a32023bbb3654ae305f4d74660a7012cc168885 100644
+--- a/source/host/app/src/tests/channel_failure_handoff_tests.rs
++++ b/source/host/app/src/tests/channel_failure_handoff_tests.rs
+@@ -1,7 +1,8 @@
+ //! Causal controls for the shared shipping drain and channel-failure owner.
+ 
+ use super::super::{
+-    BackgroundWakes, drain_channel_revival_batches, requeue_channel_failures,
++    BackgroundWakes, ChannelFailureAction, ChannelFailureState,
++    drain_channel_revival_batches, drive_channel_failure_work,
+ };
+ use serde_json::{Value, json};
+ use std::sync::{Arc, Mutex, mpsc};
+@@ -49,7 +50,7 @@ fn channel_failure_idle_predecessor_preserves_successor_and_exact_batch() {
+         drain_channel_revival_batches(
+             || {
+                 let batch = predecessor_wakes.lock().unwrap()
+-                    .take_pending_channel_failures_or_end_revival("handoff-agent");
++                    .take_channel_failure_work_or_end_revival("handoff-agent");
+                 assert!(batch.is_none());
+                 // The actual owner has released idle custody; hold the same
+                 // production drain before it can observe None and return.
+@@ -68,39 +69,43 @@ fn channel_failure_idle_predecessor_preserves_successor_and_exact_batch() {
+     let mut owned = ReturningWorker { resume: resume_tx, thread: Some(predecessor) };
+     idle_rx.recv_timeout(WAIT).expect("atomic failure idle release");
+     let expected = vec![failure("first-operation"), failure("second-operation")];
+-    {
++    let successor = {
+         let mut state = wakes.lock().unwrap();
+-        for (index, item) in expected.iter().enumerate() {
+-            BackgroundWakes::enqueue(&mut state.pending_channel_failures, "handoff-agent", item.clone());
+-            assert_eq!(
+-                BackgroundWakes::<Value>::begin_revival(
+-                    &mut state.reviving_channel_failure_agent_ids, "handoff-agent",
+-                ),
+-                index == 0,
+-                "the first new failure admits exactly one successor",
+-            );
+-        }
+-    }
++        let successor = state.enqueue_channel_failure_and_claim(
++            "handoff-agent", expected[0].clone(),
++        ).unwrap().expect("the first new failure admits one successor");
++        assert!(state.enqueue_channel_failure_and_claim(
++            "handoff-agent", expected[1].clone(),
++        ).unwrap().is_none(), "later input cannot create a second worker");
++        successor
++    };
+     owned.resume.send(()).unwrap();
+     returned_rx.recv_timeout(WAIT).expect("predecessor returned through the shipping drain");
+     owned.thread.take().unwrap().join().expect("owned predecessor");
+     assert!(wakes.lock().unwrap().reviving_channel_failure_agent_ids.contains("handoff-agent"),
+         "the returning predecessor must not retire its successor");
+ 
++    let mut initial = Some(successor);
+     let mut claimed = Vec::new();
++    let mut claim_ids = std::collections::HashSet::new();
+     drain_channel_revival_batches(
+-        || wakes.lock().unwrap().take_pending_channel_failures_or_end_revival("handoff-agent"),
+-        |batch| {
++        || initial.take().or_else(|| wakes.lock().unwrap()
++            .take_channel_failure_work_or_end_revival("handoff-agent")),
++        |work| {
+             assert!(wakes.try_lock().is_ok(), "processing runs outside the queue mutex");
+-            claimed.push(batch);
+-            assert_eq!(claimed.len(), 1, "the queued failures are claimed once");
++            assert!(claim_ids.insert(work.claim_id.clone()), "each queued head is acquired once");
++            claimed.push(work.failures.clone());
++            assert!(wakes.lock().unwrap().finish_channel_failure_work("handoff-agent", &work));
+             true
+         },
+         || panic!("idle release needs no second cleanup"),
+     );
+-    assert_eq!(claimed, vec![expected]);
++    assert_eq!(claimed, vec![vec![expected[0].clone()], vec![expected[1].clone()]],
++        "input arriving after reservation remains in its ordered successor head");
++    assert_eq!(claimed.into_iter().flatten().collect::<Vec<_>>(), expected);
+     let state = wakes.lock().unwrap();
+     assert!(!state.pending_channel_failures.contains_key("handoff-agent"));
++    assert!(state.retained_channel_failures("handoff-agent").is_none());
+     assert!(!state.reviving_channel_failure_agent_ids.contains("handoff-agent"));
+ }
+ 
+@@ -109,45 +114,61 @@ fn channel_failure_nonempty_pause_preserves_order_and_releases_once() {
+     let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
+     let first = failure("original-operation");
+     let later = failure("later-operation");
+-    {
+-        let mut state = wakes.lock().unwrap();
+-        BackgroundWakes::enqueue(&mut state.pending_channel_failures, "handoff-agent", first.clone());
+-        assert!(BackgroundWakes::<Value>::begin_revival(
+-            &mut state.reviving_channel_failure_agent_ids, "handoff-agent",
+-        ));
+-    }
++    let initial = wakes.lock().unwrap().enqueue_channel_failure_and_claim(
++        "handoff-agent", first.clone(),
++    ).unwrap().unwrap();
++    let initial_claim = initial.claim_id.clone();
++    let initial_token = initial.worker_token.clone();
++    let mut initial = Some(initial);
+     let mut processed = 0;
+     let mut stopped = 0;
+     drain_channel_revival_batches(
+-        || wakes.lock().unwrap().take_pending_channel_failures_or_end_revival("handoff-agent"),
+-        |batch| {
++        || initial.take().or_else(|| wakes.lock().unwrap()
++            .take_channel_failure_work_or_end_revival("handoff-agent")),
++        |work| drive_channel_failure_work(work, |work| {
+             processed += 1;
+-            assert_eq!(processed, 1, "a nonempty pause must not spin or replay");
+-            assert_eq!(batch, vec![first.clone()]);
++            assert!(processed <= 2, "one coalesced signal cannot spin or replay indefinitely");
++            assert_eq!(work.claim_id, initial_claim, "recheck retains the original head");
++            assert_eq!(work.failures, vec![first.clone()]);
+             {
+                 let mut state = wakes.try_lock().expect("processing is outside the queue mutex");
+                 assert!(state.reviving_channel_failure_agent_ids.contains("handoff-agent"));
+-                BackgroundWakes::enqueue(&mut state.pending_channel_failures, "handoff-agent", later.clone());
+-                assert!(!BackgroundWakes::<Value>::begin_revival(
+-                    &mut state.reviving_channel_failure_agent_ids, "handoff-agent",
+-                ));
++                if processed == 1 {
++                    assert_eq!(work.worker_token, initial_token);
++                    assert!(state.enqueue_channel_failure_and_claim(
++                        "handoff-agent", later.clone(),
++                    ).unwrap().is_none(), "an active head only latches the new input signal");
++                } else {
++                    assert_ne!(work.worker_token, initial_token, "recheck owns a fresh token");
++                }
+             }
+-            requeue_channel_failures(&wakes, "handoff-agent", batch);
+-            false
+-        },
+-        || {
+-            stopped += 1;
+-            BackgroundWakes::<Value>::end_revival(
+-                &mut wakes.lock().unwrap().reviving_channel_failure_agent_ids,
+-                "handoff-agent",
++            let action = wakes.lock().unwrap().pause_channel_failure_before_dispatch(
++                "handoff-agent", work, work.failures.clone(),
+             );
+-        },
++            if processed == 1 {
++                assert!(matches!(&action, ChannelFailureAction::Retry(_)));
++            } else {
++                assert!(matches!(&action, ChannelFailureAction::Held));
++            }
++            action
++        }),
++        || { stopped += 1; },
+     );
+-    assert_eq!((processed, stopped), (1, 1));
++    assert_eq!((processed, stopped), (2, 1),
++        "the sole signal authorizes one recheck, then token retirement stops the drain once");
+     let mut state = wakes.lock().unwrap();
+-    assert_eq!(state.pending_channel_failures.get("handoff-agent"), Some(&vec![first, later]));
++    assert_eq!(state.channel_failure_state("handoff-agent"),
++        Some(ChannelFailureState::PausedBeforeDispatch));
++    assert_eq!(state.retained_channel_failures("handoff-agent"), Some([first.clone()].as_slice()));
++    assert_eq!(state.pending_channel_failures.get("handoff-agent"), Some(&vec![later.clone()]));
++    let retained_and_pending = state.retained_channel_failures("handoff-agent").unwrap().iter()
++        .chain(state.pending_channel_failures.get("handoff-agent").unwrap().iter())
++        .cloned().collect::<Vec<_>>();
++    assert_eq!(retained_and_pending, vec![first.clone(), later]);
+     assert!(!state.reviving_channel_failure_agent_ids.contains("handoff-agent"));
+-    assert!(BackgroundWakes::<Value>::begin_revival(
+-        &mut state.reviving_channel_failure_agent_ids, "handoff-agent",
+-    ), "a later existing signal can claim the retained batch");
++    let tickets = state.request_channel_failure_readiness();
++    assert_eq!(tickets.len(), 1, "a later supported signal can claim the retained head once");
++    assert_eq!(tickets[0].0, "handoff-agent");
++    assert_eq!(tickets[0].1.claim_id, initial_claim);
++    assert_eq!(tickets[0].1.failures, vec![first]);
+ }
+diff --git a/source/host/app/src/tests/channel_failure_readiness_tests.rs b/source/host/app/src/tests/channel_failure_readiness_tests.rs
+new file mode 100644
+index 0000000000000000000000000000000000000000..1ea1ef132275220fd6c4cdd792d47844fd594d6a
+--- /dev/null
++++ b/source/host/app/src/tests/channel_failure_readiness_tests.rs
+@@ -0,0 +1,862 @@
++//! Live-custody oracles use the shipping adapters and real Settings, Session,
++//! SQLite, TranscriptManager, roster and pending-marker owners. The last
++//! follow-up call is controlled; invocation counts are not service acceptance.
++
++use super::super as shipping;
++use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
++use mahayana_host_runtime::extensions::transcript::background_wakes::{
++    ChannelFailureAction, ChannelFailureState, ChannelFailureWork, InboundAppendAction,
++    InboundAppendWork,
++};
++use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
++    DurablePendingWakeMarker, SandPendingWakeStore,
++};
++use serde_json::{Value, json};
++use shipping::{
++    BackgroundWakes, ChannelInboundAppendOutcome, GatewayEventHub, LocalRoutedRunnerDeps,
++    ProductionRosterEmit, ProductionSessionWorkers, RevivalExecution, RoutedProvider,
++    SettingsService, SettingsSubscription, TranscriptManager,
++};
++use std::fs;
++use std::path::PathBuf;
++use std::sync::atomic::{AtomicUsize, Ordering};
++use std::sync::{Arc, Mutex, mpsc};
++use std::time::Duration;
++
++type ChangeSubscription = SettingsSubscription<dyn Fn(Vec<String>) + Send + Sync + 'static>;
++
++#[derive(Debug)]
++struct FollowupObservation {
++    provider: RoutedProvider,
++    failures: Vec<Value>,
++    rows: Vec<Value>,
++}
++
++#[derive(Debug)]
++struct RosterObservation {
++    event: Value,
++    phase: Option<ChannelFailureState>,
++    markers: Vec<DurablePendingWakeMarker>,
++}
++
++struct FailureReadinessFixture {
++    root: PathBuf,
++    agent_id: String,
++    session_key: String,
++    owners: Option<IdleRunnerOwners>,
++    roster: Arc<ProductionRosterEmit>,
++    wakes: Arc<Mutex<BackgroundWakes<Value>>>,
++    initial_rows: Vec<Value>,
++    readiness_calls: AtomicUsize,
++    launches: AtomicUsize,
++    passes: Mutex<Vec<ChannelFailureWork<Value>>>,
++    followups: Mutex<Vec<FollowupObservation>>,
++    inbound_tickets: Mutex<Vec<(String, InboundAppendWork<Value>)>>,
++    roster_events: Arc<Mutex<Vec<RosterObservation>>>,
++}
++
++impl FailureReadinessFixture {
++    fn new() -> Arc<Self> {
++        let root = std::env::temp_dir().join(format!(
++            "fabushi-channel-failure-readiness-{}", uuid::Uuid::new_v4(),
++        ));
++        fs::create_dir(&root).unwrap();
++        fs::write(root.join("settings.json"), b"{}").unwrap();
++        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
++        let agent_id = sessions.materialize_new_session(None, "user", None).unwrap().id;
++        let session_key = sessions.read_session_work_admission(&agent_id).unwrap().unwrap().session_key;
++        let mut attempt = None;
++        assert_eq!(shipping::append_channel_inbound_entries(
++            &sessions, &agent_id,
++            &[json!({"text":"durable history before failure", "address":"slack:room", "timestampMs":7})],
++            &mut attempt,
++        ), ChannelInboundAppendOutcome::Committed { inserted_count: 1 });
++        let initial_rows = sessions.read_agent_transcript_entries(&agent_id).unwrap();
++        let manager = Arc::new(TranscriptManager::new(&root, Arc::clone(&sessions)));
++        let wakes = manager.background_wakes();
++        let (host_tx, _host_rx) = mpsc::channel();
++        let owners = idle_runner_owners(
++            &root, host_tx, GatewayEventHub::default(), Arc::clone(&sessions), Arc::clone(&manager),
++        );
++        let roster_events = Arc::new(Mutex::new(Vec::new()));
++        let observed_events = Arc::clone(&roster_events);
++        let observed_wakes = Arc::clone(&wakes);
++        let observed_agent = agent_id.clone();
++        let marker_store = manager.transcript_runtime().pending_wake_store().unwrap().clone();

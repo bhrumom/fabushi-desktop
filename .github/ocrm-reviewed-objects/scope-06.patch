@@ -1,0 +1,513 @@
++            assert_eq!(state.channel_failure_state("agent-a"), Some(ChannelFailureState::PausedBeforeDispatch));
++            assert!(!state.reviving_channel_failure_agent_ids.contains("agent-a"));
++            assert_eq!(state.take_channel_failure_work_or_end_revival("agent-a"), None);
++            one_channel_failure_readiness_ticket(&mut state, "agent-a")
++        };
++        assert_eq!(retry.claim_id, original.claim_id);
++        assert_ne!(retry.worker_token, original.worker_token);
++        assert_eq!(retry.failures, retained, "retry uses the list just filtered by the worker");
++        assert_channel_failure_ticket_is_stale(&mut state, "agent-a", &original);
++        assert!(state.owns_channel_failure_work("agent-a", &retry));
++        assert_eq!(state.retained_channel_failures("agent-a"), Some(retained.as_slice()));
++        assert_eq!(state.pause_channel_failure_before_dispatch(
++            "agent-a", &retry, retry.failures.clone(),
++        ), ChannelFailureAction::Held, "three old hints permit one recheck, not a closed-gate spin");
++        assert_eq!(state.channel_failure_state("agent-a"), Some(ChannelFailureState::PausedBeforeDispatch));
++        assert!(!state.reviving_channel_failure_agent_ids.contains("agent-a"));
++        assert_eq!(state.take_channel_failure_work_or_end_revival("agent-a"), None);
++        assert!(!state.pending_channel_failures.contains_key("agent-a"));
++    }
++}
++
++#[test]
++fn channel_failure_targeted_readiness_preserves_other_tickets_paused_heads_and_raw_tails() {
++    let mut wakes = BackgroundWakes::<Value>::default();
++    let target = wakes.enqueue_channel_failure_and_claim("target", json!({"reason":"target head"})).unwrap().unwrap();
++    assert_eq!(wakes.pause_channel_failure_before_dispatch(
++        "target", &target, target.failures.clone(),
++    ), ChannelFailureAction::Held);
++    let active = wakes.enqueue_channel_failure_and_claim("active-other", json!({"reason":"other active head"})).unwrap().unwrap();
++    let paused = wakes.enqueue_channel_failure_and_claim("paused-other", json!({"reason":"other paused head"})).unwrap().unwrap();
++    assert_eq!(wakes.pause_channel_failure_before_dispatch(
++        "paused-other", &paused, paused.failures.clone(),
++    ), ChannelFailureAction::Held);
++    for agent in ["target", "active-other", "paused-other", "raw-only"] {
++        // Seed an ordered raw tail without signalling its head. The targeted
++        // request must not reserve or latch these unrelated agents as a side effect.
++        for ordinal in [1, 2] {
++            BackgroundWakes::enqueue(&mut wakes.pending_channel_failures, agent, json!({"agent":agent,"tail":ordinal}));
++        }
++    }
++    let expected_pending = wakes.pending_channel_failures.clone();
++    let resumed = wakes.request_channel_failure_readiness_for_agent("target")
++        .expect("only the requested paused head receives a launch ticket");
++    assert_eq!(resumed.claim_id, target.claim_id);
++    assert_ne!(resumed.worker_token, target.worker_token);
++    assert_eq!(resumed.failures, target.failures);
++    assert!(wakes.owns_channel_failure_work("target", &resumed));
++    assert_channel_failure_ticket_is_stale(&mut wakes, "target", &target);
++    assert_eq!(wakes.pending_channel_failures, expected_pending);
++    assert!(wakes.owns_channel_failure_work("active-other", &active));
++    assert_eq!(wakes.retained_channel_failures("active-other"), Some(active.failures.as_slice()));
++    assert_eq!(wakes.channel_failure_state("paused-other"), Some(ChannelFailureState::PausedBeforeDispatch));
++    assert_eq!(wakes.retained_channel_failures("paused-other"), Some(paused.failures.as_slice()));
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("paused-other"));
++    assert_eq!(wakes.channel_failure_state("raw-only"), None);
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("raw-only"));
++
++    let expected_revival = wakes.reviving_channel_failure_agent_ids.clone();
++    assert!(wakes.request_channel_failure_readiness_for_agent("missing-agent").is_none());
++    assert_eq!(wakes.reviving_channel_failure_agent_ids, expected_revival);
++    assert!(wakes.request_channel_failure_readiness_for_agent("target").is_none());
++    let retry = channel_failure_retry(wakes.pause_channel_failure_before_dispatch(
++        "target", &resumed, resumed.failures.clone(),
++    ));
++    assert_eq!(retry.claim_id, resumed.claim_id);
++    assert_ne!(retry.worker_token, resumed.worker_token);
++    assert_eq!(wakes.pause_channel_failure_before_dispatch(
++        "target", &retry, retry.failures.clone(),
++    ), ChannelFailureAction::Held);
++    assert_eq!(wakes.pause_channel_failure_before_dispatch(
++        "active-other", &active, active.failures.clone(),
++    ), ChannelFailureAction::Held, "targeted readiness must not leave a hidden latch on another active head");
++    assert_eq!(wakes.channel_failure_state("paused-other"), Some(ChannelFailureState::PausedBeforeDispatch));
++    assert_eq!(wakes.channel_failure_state("raw-only"), None);
++    assert_eq!(wakes.pending_channel_failures, expected_pending);
++
++    let other = wakes.request_channel_failure_readiness_for_agent("paused-other")
++        .expect("the untouched paused head can later be explicitly acquired");
++    assert_eq!(other.claim_id, paused.claim_id);
++    assert_ne!(other.worker_token, paused.worker_token);
++    assert_eq!(other.failures, paused.failures);
++    assert!(wakes.owns_channel_failure_work("paused-other", &other));
++    assert_eq!(wakes.pending_channel_failures, expected_pending);
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("target"));
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("active-other"));
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("raw-only"));
++}
++
++#[test]
++fn channel_failure_live_head_preserves_filtered_order_ahead_of_tail_until_definite_finish() {
++    let mut wakes = BackgroundWakes::<Value>::default();
++    let failures = channel_failure_idle_handoff_batch();
++    for failure in &failures {
++        BackgroundWakes::enqueue(&mut wakes.pending_channel_failures, "agent-a", failure.clone());
++    }
++    let original = one_channel_failure_readiness_ticket(&mut wakes, "agent-a");
++    let tail = vec![json!({"reason":"later first"}), json!({"reason":"later second"})];
++    for failure in &tail {
++        assert_eq!(wakes.enqueue_channel_failure_and_claim("agent-a", failure.clone()).unwrap(), None);
++    }
++    assert!(wakes.request_channel_failure_readiness().is_empty());
++    let filtered = vec![failures[1].clone()];
++    let retry = channel_failure_retry(wakes.pause_channel_failure_before_dispatch(
++        "agent-a", &original, filtered.clone(),
++    ));
++    assert_eq!(retry.claim_id, original.claim_id);
++    assert_ne!(retry.worker_token, original.worker_token);
++    assert_eq!(retry.failures, filtered);
++    assert_eq!(wakes.pending_channel_failures.get("agent-a"), Some(&tail));
++    assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-a"), None);
++    assert_eq!(wakes.take_pending_channel_failures_or_end_revival("agent-a"), None,
++        "the raw compatibility helper cannot bypass a live head");
++    assert!(wakes.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert_eq!(wakes.pending_channel_failures.get("agent-a"), Some(&tail));
++    assert_channel_failure_ticket_is_stale(&mut wakes, "agent-a", &original);
++    assert_eq!(wakes.retained_channel_failures("agent-a"), Some(filtered.as_slice()));
++
++    // A definite pre-dispatch no-work decision may finish this head. Readiness
++    // cannot steal the existing drain between that finish and its next take.
++    assert!(wakes.finish_channel_failure_work("agent-a", &retry));
++    assert!(!wakes.finish_channel_failure_work("agent-a", &retry));
++    assert!(wakes.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert_eq!(wakes.channel_failure_state("agent-a"), None);
++    assert!(wakes.request_channel_failure_readiness().is_empty());
++    let next = wakes.take_channel_failure_work_or_end_revival("agent-a").expect("tail after retained head");
++    assert_eq!(next.failures, tail);
++    assert_ne!(next.claim_id, retry.claim_id);
++    assert_ne!(next.worker_token, retry.worker_token);
++    assert_channel_failure_ticket_is_stale(&mut wakes, "agent-a", &retry);
++    assert!(wakes.owns_channel_failure_work("agent-a", &next));
++    assert!(wakes.begin_channel_failure_followup("agent-a", &next, next.failures.clone()));
++    assert!(wakes.finish_channel_failure_work("agent-a", &next));
++    assert!(wakes.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-a"), None);
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("agent-a"));
++}
++
++#[test]
++fn channel_failure_launch_error_and_delayed_callbacks_cannot_clear_a_successor() {
++    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
++    let failed = {
++        let mut state = wakes.lock().unwrap();
++        let original = state.enqueue_channel_failure_and_claim("agent-a", json!({"reason":"original"}))
++            .unwrap().unwrap();
++        let filtered = vec![json!({"reason":"latest retained identity", "markedAtMs":1002})];
++        assert_eq!(state.pause_channel_failure_before_dispatch("agent-a", &original, filtered.clone()), ChannelFailureAction::Held);
++        let failed = one_channel_failure_readiness_ticket(&mut state, "agent-a");
++        assert_eq!(failed.failures, filtered);
++        assert!(state.request_channel_failure_readiness().is_empty());
++        assert!(state.release_channel_failure_launch("agent-a", &failed));
++        assert!(!state.release_channel_failure_launch("agent-a", &failed));
++        assert_eq!(state.channel_failure_state("agent-a"), Some(ChannelFailureState::PausedBeforeDispatch));
++        assert_eq!(state.retained_channel_failures("agent-a"), Some(filtered.as_slice()));
++        assert!(!state.reviving_channel_failure_agent_ids.contains("agent-a"));
++        assert_eq!(state.take_channel_failure_work_or_end_revival("agent-a"), None,
++            "a failed launch does not retry its coalesced signal");
++        failed
++    };
++    let (release_tx, release_rx) = mpsc::channel();
++    let delayed_wakes = Arc::clone(&wakes);
++    let delayed_ticket = failed.clone();
++    let delayed = thread::spawn(move || {
++        release_rx.recv_timeout(Duration::from_secs(5)).expect("successor before delayed callbacks");
++        assert_channel_failure_ticket_is_stale(&mut delayed_wakes.lock().unwrap(), "agent-a", &delayed_ticket);
++    });
++    let successor = one_channel_failure_readiness_ticket(&mut wakes.lock().unwrap(), "agent-a");
++    assert_eq!(successor.claim_id, failed.claim_id);
++    assert_ne!(successor.worker_token, failed.worker_token);
++    assert_eq!(successor.failures, failed.failures);
++    release_tx.send(()).unwrap();
++    delayed.join().expect("old launch callbacks");
++    let mut state = wakes.lock().unwrap();
++    let mut wrong_claim = successor.clone();
++    wrong_claim.claim_id.push_str("-foreign");
++    let mut wrong_token = successor.clone();
++    wrong_token.worker_token.push_str("-foreign");
++    assert_channel_failure_ticket_is_stale(&mut state, "agent-a", &wrong_claim);
++    assert_channel_failure_ticket_is_stale(&mut state, "agent-a", &wrong_token);
++    assert_channel_failure_ticket_is_stale(&mut state, "agent-b", &successor);
++    assert!(state.owns_channel_failure_work("agent-a", &successor));
++    assert_eq!(state.retained_channel_failures("agent-a"), Some(successor.failures.as_slice()));
++    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert_eq!(state.pause_channel_failure_before_dispatch(
++        "agent-a", &successor, successor.failures.clone(),
++    ), ChannelFailureAction::Held, "the failed launch's latch does not carry to its successor");
++}
++
++#[test]
++fn channel_failure_entered_and_retained_heads_refuse_all_replay_and_phase_confusion() {
++    let mut wakes = BackgroundWakes::<Value>::default();
++    let work = wakes.enqueue_channel_failure_and_claim("agent-a", json!({"reason":"before filtering"}))
++        .unwrap().unwrap();
++    assert!(!wakes.retain_channel_failure_after_dispatch("agent-a", &work), "only an entered ticket can settle an invoked Runner");
++    assert!(wakes.request_channel_failure_readiness().is_empty());
++    let filtered = vec![json!({"reason":"current marker", "markedAtMs":1003})];
++    assert!(wakes.begin_channel_failure_followup("agent-a", &work, filtered.clone()));
++    assert_eq!(wakes.channel_failure_state("agent-a"), Some(ChannelFailureState::EnteredRunner));
++    assert!(wakes.owns_channel_failure_work("agent-a", &work));
++    assert!(!wakes.begin_channel_failure_followup("agent-a", &work, work.failures.clone()));
++    assert!(!wakes.release_channel_failure_launch("agent-a", &work));
++    assert_eq!(wakes.pause_channel_failure_before_dispatch("agent-a", &work, work.failures.clone()), ChannelFailureAction::Stale);
++    let mut tail = Vec::new();
++    for retained_after_dispatch in [false, true] {
++        if retained_after_dispatch {
++            assert!(wakes.retain_channel_failure_after_dispatch("agent-a", &work));
++            assert_eq!(wakes.channel_failure_state("agent-a"), Some(ChannelFailureState::RetainedAfterDispatch));
++            assert_channel_failure_ticket_is_stale(&mut wakes, "agent-a", &work);
++        }
++        for index in 0..3 {
++            let failure = json!({"tail":index,"afterDispatchRetention":retained_after_dispatch});
++            tail.push(failure.clone());
++            assert_eq!(wakes.enqueue_channel_failure_and_claim("agent-a", failure).unwrap(), None);
++            assert!(wakes.request_channel_failure_readiness().is_empty());
++            assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-a"), None);
++            assert_eq!(wakes.take_pending_channel_failures_or_end_revival("agent-a"), None);
++            assert_eq!(wakes.retained_channel_failures("agent-a"), Some(filtered.as_slice()));
++            assert_eq!(wakes.pending_channel_failures.get("agent-a"), Some(&tail));
++            assert_eq!(wakes.reviving_channel_failure_agent_ids.contains("agent-a"), !retained_after_dispatch);
++        }
++    }
++    // Raw mutable revival state is not permission to reacquire an invoked head.
++    assert!(BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_channel_failure_agent_ids, "agent-a"));
++    assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-a"), None);
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert_eq!(wakes.retained_channel_failures("agent-a"), Some(filtered.as_slice()));
++    assert_eq!(wakes.pending_channel_failures.get("agent-a"), Some(&tail));
++}
++
++#[test]
++fn channel_failure_live_take_requires_revival_and_releases_stored_empty_input() {
++    let mut wakes = BackgroundWakes::<Value>::default();
++    let failure = json!({"reason":"raw pending failure"});
++    BackgroundWakes::enqueue(&mut wakes.pending_channel_failures, "agent-a", failure.clone());
++    assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-a"), None);
++    assert_eq!(wakes.pending_channel_failures.get("agent-a"), Some(&vec![failure]));
++    assert_eq!(wakes.channel_failure_state("agent-a"), None);
++    wakes.pending_channel_failures.insert("agent-b".into(), Vec::new());
++    assert!(BackgroundWakes::<Value>::begin_revival(&mut wakes.reviving_channel_failure_agent_ids, "agent-b"));
++    assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-b"), None);
++    assert!(!wakes.pending_channel_failures.contains_key("agent-b"));
++    assert!(!wakes.reviving_channel_failure_agent_ids.contains("agent-b"));
++    assert_eq!(wakes.channel_failure_state("agent-b"), None);
++    assert!(wakes.pending_channel_failures.contains_key("agent-a"));
++}
++
++#[test]
++fn channel_failure_live_enqueue_before_idle_uses_current_drain_and_claims_ordered_head_once() {
++    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
++    let mut producer = wakes.lock().unwrap();
++    assert!(BackgroundWakes::<Value>::begin_revival(&mut producer.reviving_channel_failure_agent_ids, "agent-a"));
++    let (claiming_tx, claiming_rx) = mpsc::channel();
++    let worker_wakes = Arc::clone(&wakes);
++    let worker = thread::spawn(move || {
++        claiming_tx.send(()).unwrap();
++        worker_wakes.lock().unwrap().take_channel_failure_work_or_end_revival("agent-a")
++    });
++    claiming_rx.recv_timeout(Duration::from_secs(5)).expect("worker attempts the mutex held by ingress");
++    let failures = channel_failure_idle_handoff_batch();
++    for failure in &failures {
++        assert_eq!(producer.enqueue_channel_failure_and_claim("agent-a", failure.clone()).unwrap(), None);
++    }
++    drop(producer);
++    let work = worker.join().unwrap().expect("current drain claims arrivals before idle");
++    let mut state = wakes.lock().unwrap();
++    assert_eq!(work.failures, failures);
++    assert!(state.owns_channel_failure_work("agent-a", &work));
++    assert_eq!(state.take_channel_failure_work_or_end_revival("agent-a"), None);
++    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert_eq!(state.pause_channel_failure_before_dispatch("agent-a", &work, work.failures.clone()), ChannelFailureAction::Held,
++        "signals before acquisition do not manufacture an extra active-head recheck");
++}
++
++#[test]
++fn channel_failure_live_idle_before_enqueue_admits_one_successor_without_late_release() {
++    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
++    let mut retiring = wakes.lock().unwrap();
++    assert!(BackgroundWakes::<Value>::begin_revival(&mut retiring.reviving_channel_failure_agent_ids, "agent-a"));
++    let (enqueuing_tx, enqueuing_rx) = mpsc::channel();
++    let producer_wakes = Arc::clone(&wakes);
++    let failures = channel_failure_idle_handoff_batch();
++    let arriving = failures.clone();
++    let producer = thread::spawn(move || {
++        enqueuing_tx.send(()).unwrap();
++        let mut state = producer_wakes.lock().unwrap();
++        let first = state.enqueue_channel_failure_and_claim("agent-a", arriving[0].clone()).unwrap();
++        let second = state.enqueue_channel_failure_and_claim("agent-a", arriving[1].clone()).unwrap();
++        (first, second)
++    });
++    enqueuing_rx.recv_timeout(Duration::from_secs(5)).expect("producer attempts the mutex held by the idle worker");
++    assert_eq!(retiring.take_channel_failure_work_or_end_revival("agent-a"), None);
++    assert!(!retiring.reviving_channel_failure_agent_ids.contains("agent-a"));
++    drop(retiring);
++    let (successor, second) = producer.join().unwrap();
++    let successor = successor.expect("one successor launch after atomic idle release");
++    assert_eq!(second, None);
++    let mut state = wakes.lock().unwrap();
++    assert_eq!(successor.failures, vec![failures[0].clone()]);
++    assert_eq!(state.pending_channel_failures.get("agent-a"), Some(&vec![failures[1].clone()]));
++    assert_eq!(state.take_channel_failure_work_or_end_revival("agent-a"), None,
++        "a delayed duplicate take cannot clear an already acquired successor");
++    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
++    assert!(state.owns_channel_failure_work("agent-a", &successor));
++    assert!(state.begin_channel_failure_followup("agent-a", &successor, successor.failures.clone()));
++    assert!(state.finish_channel_failure_work("agent-a", &successor));
++    let next = state.take_channel_failure_work_or_end_revival("agent-a").unwrap();
++    assert_eq!(next.failures, vec![failures[1].clone()]);
++    assert_ne!(next.claim_id, successor.claim_id);
++    assert_channel_failure_ticket_is_stale(&mut state, "agent-a", &successor);
++    assert!(state.owns_channel_failure_work("agent-a", &next));
++    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
++}
++
++#[test]
++fn channel_failure_close_during_a_gate_revokes_all_phases_and_late_tickets_without_reopening() {
++    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
++    let tickets = {
++        let mut state = wakes.lock().unwrap();
++        let mut tickets = Vec::new();
++        for agent in ["active", "paused", "entered", "retained"] {
++            let work = state.enqueue_channel_failure_and_claim(agent, json!({"agent":agent})).unwrap().unwrap();
++            match agent {
++                "paused" => assert_eq!(state.pause_channel_failure_before_dispatch(agent, &work, work.failures.clone()), ChannelFailureAction::Held),
++                "entered" | "retained" => {
++                    assert!(state.begin_channel_failure_followup(agent, &work, work.failures.clone()));
++                    if agent == "retained" {
++                        assert!(state.retain_channel_failure_after_dispatch(agent, &work));
++                    }
++                }
++                _ => {}
++            }
++            if agent == "active" {
++                assert_eq!(state.enqueue_channel_failure_and_claim(agent, json!({"tail":agent})).unwrap(), None);
++            } else {
++                BackgroundWakes::enqueue(&mut state.pending_channel_failures, agent, json!({"tail":agent}));
++            }
++            tickets.push((agent, work));
++        }
++        tickets
++    };
++    let (close_tx, close_rx) = mpsc::channel();
++    let delayed_wakes = Arc::clone(&wakes);
++    let delayed_tickets = tickets.clone();
++    let delayed = thread::spawn(move || {
++        close_rx.recv_timeout(Duration::from_secs(5)).expect("close before delayed gate/settlement callbacks");
++        let mut state = delayed_wakes.lock().unwrap();
++        assert!(state.request_channel_failure_readiness().is_empty());
++        assert!(state.request_channel_failure_readiness_for_agent("never-observed").is_none());
++        for (agent, work) in &delayed_tickets {
++            assert!(state.request_channel_failure_readiness_for_agent(agent).is_none());
++            assert_channel_failure_ticket_is_stale(&mut state, agent, work);
++            assert_eq!(state.take_channel_failure_work_or_end_revival(agent), None);
++            assert_eq!(state.take_pending_channel_failures_or_end_revival(agent), None);
++            assert!(state.enqueue_channel_failure_and_claim(agent, json!({"late":true})).is_err());
++        }
++    });
++    wakes.lock().unwrap().close();
++    close_tx.send(()).unwrap();
++    delayed.join().expect("late callbacks against the permanently closed owner");
++    let mut state = wakes.lock().unwrap();
++    assert!(state.is_closed());
++    assert!(state.pending_channel_failures.is_empty());
++    assert!(state.reviving_channel_failure_agent_ids.is_empty());
++    let mut fresh = BackgroundWakes::<Value>::default();
++    for (agent, old) in &tickets {
++        assert_eq!(state.channel_failure_state(agent), None);
++        assert_eq!(state.retained_channel_failures(agent), None);
++        let replacement = fresh.enqueue_channel_failure_and_claim(agent, old.failures[0].clone()).unwrap().unwrap();
++        assert_ne!(replacement.claim_id, old.claim_id);
++        assert_ne!(replacement.worker_token, old.worker_token);
++        assert_channel_failure_ticket_is_stale(&mut fresh, agent, old);
++        assert!(fresh.owns_channel_failure_work(agent, &replacement));
++    }
++    // Even legacy writes to public raw collections cannot grant execution on a
++    // closed instance; a second close clears those compatibility-only values.
++    BackgroundWakes::enqueue(&mut state.pending_channel_failures, "late", json!({"legacy":true}));
++    state.reviving_channel_failure_agent_ids.insert("late".into());
++    assert!(state.request_channel_failure_readiness().is_empty());
++    assert_eq!(state.take_channel_failure_work_or_end_revival("late"), None);
++    assert_eq!(state.take_pending_channel_failures_or_end_revival("late"), None);
++    state.close();
++    assert!(state.is_closed());
++    assert!(state.pending_channel_failures.is_empty());
++    assert!(state.reviving_channel_failure_agent_ids.is_empty());
++    assert!(!fresh.is_closed());
++}
++
++#[test]
++fn channel_failure_retained_head_does_not_block_other_agents_or_wake_families() {
++    let mut wakes = BackgroundWakes::<Value>::default();
++    let inbound = wakes.enqueue_inbound_and_claim("agent-a", json!({"text":"independent inbound"})).unwrap().unwrap();
++    let failed = wakes.enqueue_channel_failure_and_claim("agent-a", json!({"reason":"possibly executed"})).unwrap().unwrap();
++    let other = wakes.enqueue_channel_failure_and_claim("agent-b", json!({"reason":"independent failure"})).unwrap().unwrap();
++    BackgroundWakes::enqueue(&mut wakes.pending_event_wakes, "agent-a", json!({"event":"unchanged"}));
++    wakes.reviving_event_agent_ids.insert("agent-a".into());
++    wakes.dm_preempted_wake_agent_ids.insert("agent-a".into());
++    let events = wakes.pending_event_wakes.clone();
++    let reviving_events = wakes.reviving_event_agent_ids.clone();
++    let preempted = wakes.dm_preempted_wake_agent_ids.clone();
++    assert!(wakes.begin_channel_failure_followup("agent-a", &failed, failed.failures.clone()));
++    assert!(wakes.retain_channel_failure_after_dispatch("agent-a", &failed));
++    assert_eq!(wakes.enqueue_channel_failure_and_claim("agent-a", json!({"reason":"blocked tail"})).unwrap(), None);
++    assert!(wakes.request_channel_failure_readiness().is_empty());
++    assert!(wakes.owns_channel_failure_work("agent-b", &other));
++    assert!(wakes.begin_channel_failure_followup("agent-b", &other, other.failures.clone()));
++    assert!(wakes.finish_channel_failure_work("agent-b", &other));
++    assert_eq!(wakes.take_channel_failure_work_or_end_revival("agent-b"), None);
++    assert_eq!(wakes.channel_failure_state("agent-a"), Some(ChannelFailureState::RetainedAfterDispatch));
++    assert_eq!(wakes.retained_channel_failures("agent-a"), Some(failed.failures.as_slice()));
++    assert_eq!(wakes.pending_channel_failures["agent-a"], vec![json!({"reason":"blocked tail"})]);
++    assert!(wakes.owns_inbound_append("agent-a", &inbound));
++    assert_eq!(wakes.inbound_append_state("agent-a"), Some(InboundAppendState::Active));
++    assert_eq!(wakes.pause_inbound_append("agent-a", &inbound), InboundAppendAction::Held,
++        "failure readiness does not set the inbound latch");
++    assert_eq!(wakes.pending_event_wakes, events);
++    assert_eq!(wakes.reviving_event_agent_ids, reviving_events);
++    assert_eq!(wakes.dm_preempted_wake_agent_ids, preempted);
++}
++
+ #[test]
+ fn inbound_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once() {
+     let wakes = Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+@@ -1681,10 +2172,10 @@ fn inbound_image_wiring_oracle_accepts_slice_calls_and_rejects_missing_or_wrong_
+     ));
+ }
+ 
+-fn channel_failure_shipping_worker(source: &str) -> Option<syn::ItemFn> {
++fn channel_failure_shipping_function(source: &str, name: &str) -> Option<syn::ItemFn> {
+     let mut workers = syn::parse_file(source).ok()?.items.into_iter().filter_map(|item| {
+         match item {
+-            syn::Item::Fn(function) if function.sig.ident == "run_channel_failure_revival_worker" => Some(function),
++            syn::Item::Fn(function) if function.sig.ident == name => Some(function),
+             _ => None,
+         }
+     });
+@@ -1692,45 +2183,177 @@ fn channel_failure_shipping_worker(source: &str) -> Option<syn::ItemFn> {
+     workers.next().is_none().then_some(worker)
+ }
+ 
++fn channel_failure_shipping_worker(source: &str) -> Option<syn::ItemFn> {
++    channel_failure_shipping_function(source, "run_channel_failure_revival_worker")
++}
++
++fn channel_failure_unconditional(attributes: &[syn::Attribute]) -> bool {
++    !attributes.iter().any(|attr| attr.path().is_ident("cfg") || attr.path().is_ident("cfg_attr"))
++}
++
++fn channel_failure_named_expression(expression: &syn::Expr, name: &str) -> bool {
++    match expression {
++        syn::Expr::Path(path) => channel_failure_unconditional(&path.attrs)
++            && path.qself.is_none() && path.path.is_ident(name),
++        syn::Expr::Reference(reference) => channel_failure_unconditional(&reference.attrs)
++            && reference.mutability.is_none() && channel_failure_named_expression(&reference.expr, name),
++        syn::Expr::Paren(paren) => channel_failure_unconditional(&paren.attrs)
++            && channel_failure_named_expression(&paren.expr, name),
++        _ => false,
++    }
++}
++
++fn channel_failure_named_pattern(pattern: &syn::Pat, name: &str) -> bool {
++    matches!(pattern, syn::Pat::Ident(binding)
++        if channel_failure_unconditional(&binding.attrs) && binding.ident == name
++            && binding.by_ref.is_none() && binding.subpat.is_none())
++}
++
++fn channel_failure_call<'a>(expression: &'a syn::Expr, name: &str) -> Option<&'a syn::ExprCall> {
++    match expression {
++        syn::Expr::Call(call) if channel_failure_unconditional(&call.attrs)
++            && channel_failure_named_expression(&call.func, name) => Some(call),
++        _ => None,
++    }
++}
++
+ // This checks the shipping wrapper's placement, not the shared drain's behavior.
+ // The real queue/control concurrency tests independently cover that behavior.
+ fn channel_failure_worker_has_terminal_drain(worker: &syn::ItemFn) -> bool {
+-    fn unconditional(attributes: &[syn::Attribute]) -> bool {
+-        !attributes.iter().any(|attr| attr.path().is_ident("cfg") || attr.path().is_ident("cfg_attr"))
+-    }
+-    let [syn::Stmt::Expr(syn::Expr::Call(drain), _)] = worker.block.stmts.as_slice() else {
++    let [syn::Stmt::Local(initial), syn::Stmt::Expr(drain_expression, _)] = worker.block.stmts.as_slice() else {
+         return false;
+     };
+-    if !unconditional(&worker.attrs) || !unconditional(&drain.attrs) || drain.args.len() != 3 {
++    let Some(drain) = channel_failure_call(drain_expression, "drain_channel_revival_batches") else { return false; };
++    if !channel_failure_unconditional(&worker.attrs) || !channel_failure_unconditional(&initial.attrs)
++        || !channel_failure_named_pattern(&initial.pat, "initial_work") || drain.args.len() != 3
++    {
+         return false;
+     }
+-    if !matches!(drain.func.as_ref(), syn::Expr::Path(path)
+-        if unconditional(&path.attrs) && path.qself.is_none() && path.path.is_ident("drain_channel_revival_batches"))
+-    {
++    let Some(initial_value) = initial.init.as_ref().filter(|init| init.diverge.is_none()) else { return false; };
++    let Some(initial_some) = channel_failure_call(&initial_value.expr, "Some") else { return false; };
++    if initial_some.args.len() != 1 || !channel_failure_named_expression(&initial_some.args[0], "initial_work") {
+         return false;
+     }
+     let syn::Expr::Closure(take) = &drain.args[0] else { return false; };
+     let syn::Expr::Block(take_body) = take.body.as_ref() else { return false; };
+-    let Some(syn::Stmt::Expr(syn::Expr::MethodCall(claim), None)) = take_body.block.stmts.last() else {
++    let [syn::Stmt::Expr(syn::Expr::If(initial_take), _), syn::Stmt::Expr(syn::Expr::MethodCall(claim), None)] =
++        take_body.block.stmts.as_slice() else { return false; };
++    if !channel_failure_unconditional(&take.attrs) || !take.inputs.is_empty()
++        || !channel_failure_unconditional(&take_body.attrs)
++        || !channel_failure_unconditional(&initial_take.attrs) || initial_take.else_branch.is_some()
++        || !channel_failure_unconditional(&claim.attrs)
++        || claim.method != "take_channel_failure_work_or_end_revival" || claim.args.len() != 1
++        || !channel_failure_named_expression(&claim.args[0], "agent_id")
++    {
++        return false;
++    }
++    let syn::Expr::Let(initial_condition) = initial_take.cond.as_ref() else { return false; };
++    let syn::Pat::TupleStruct(some_pattern) = initial_condition.pat.as_ref() else { return false; };

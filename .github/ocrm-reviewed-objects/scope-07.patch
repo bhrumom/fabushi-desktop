@@ -1,0 +1,289 @@
++    let syn::Expr::MethodCall(consume_initial) = initial_condition.expr.as_ref() else { return false; };
++    if !channel_failure_unconditional(&initial_condition.attrs)
++        || !channel_failure_unconditional(&some_pattern.attrs) || some_pattern.qself.is_some()
++        || !some_pattern.path.is_ident("Some") || some_pattern.elems.len() != 1
++        || !channel_failure_named_pattern(&some_pattern.elems[0], "work")
++        || !channel_failure_unconditional(&consume_initial.attrs) || consume_initial.method != "take"
++        || !consume_initial.args.is_empty()
++        || !channel_failure_named_expression(&consume_initial.receiver, "initial_work")
++    {
++        return false;
++    }
++    let [syn::Stmt::Expr(syn::Expr::Return(initial_return), _)] = initial_take.then_branch.stmts.as_slice() else {
++        return false;
++    };
++    let Some(returned) = initial_return.expr.as_ref().and_then(|expression| channel_failure_call(expression, "Some")) else {
+         return false;
+     };
+-    if !unconditional(&take.attrs) || !take.inputs.is_empty() || !unconditional(&take_body.attrs)
+-        || !unconditional(&claim.attrs) || claim.method != "take_pending_channel_failures_or_end_revival"
++    if !channel_failure_unconditional(&initial_return.attrs) || returned.args.len() != 1
++        || !channel_failure_named_expression(&returned.args[0], "work")
+     {
+         return false;
+     }
++
++    let syn::Expr::Closure(process) = &drain.args[1] else { return false; };
++    let Some(drive) = channel_failure_call(&process.body, "drive_channel_failure_work") else { return false; };
++    if !channel_failure_unconditional(&process.attrs) || process.inputs.len() != 1
++        || !channel_failure_named_pattern(&process.inputs[0], "work") || drive.args.len() != 2
++        || !channel_failure_named_expression(&drive.args[0], "work")
++    {
++        return false;
++    }
++    let syn::Expr::Closure(attempt) = &drive.args[1] else { return false; };
++    let syn::Expr::Block(attempt_body) = attempt.body.as_ref() else { return false; };
++    let [syn::Stmt::Expr(process_expression, None)] = attempt_body.block.stmts.as_slice() else { return false; };
++    let Some(process_work) = channel_failure_call(process_expression, "process_channel_failure_work") else { return false; };
++    if !channel_failure_unconditional(&attempt.attrs) || attempt.inputs.len() != 1
++        || !channel_failure_named_pattern(&attempt.inputs[0], "work")
++        || !channel_failure_unconditional(&attempt_body.attrs) || process_work.args.len() != 6
++        || !channel_failure_named_expression(&process_work.args[4], "work")
++    {
++        return false;
++    }
++    let syn::Expr::Closure(run) = &process_work.args[5] else { return false; };
++    let syn::Expr::Block(run_body) = run.body.as_ref() else { return false; };
++    let Some(syn::Stmt::Expr(runner_expression, None)) = run_body.block.stmts.last() else { return false; };
++    if !channel_failure_unconditional(&run.attrs) || run.inputs.len() != 2
++        || !channel_failure_named_pattern(&run.inputs[0], "provider")
++        || !channel_failure_named_pattern(&run.inputs[1], "failures")
++        || !channel_failure_unconditional(&run_body.attrs)
++        || channel_failure_call(runner_expression, "run_local_background_revival_turn_with_context").is_none()
++    {
++        return false;
++    }
++
+     let syn::Expr::Closure(stop) = &drain.args[2] else { return false; };
+     let syn::Expr::Block(stop_body) = stop.body.as_ref() else { return false; };
+-    let Some(syn::Stmt::Expr(syn::Expr::Call(cleanup), _)) = stop_body.block.stmts.last() else {
++    channel_failure_unconditional(&stop.attrs) && stop.inputs.is_empty()
++        && channel_failure_unconditional(&stop_body.attrs) && stop_body.block.stmts.is_empty()
++}
++
++// The actual Runner callback above must be forwarded through the shipping
++// process owner's terminal handoff and admitted before that handoff calls it.
++// This is deliberately a bounded placement check, not a general dataflow proof.
++fn channel_failure_process_delegates_handoff(process: &syn::ItemFn) -> bool {
++    let Some(syn::Stmt::Expr(expression, None)) = process.block.stmts.last() else { return false; };
++    let Some(handoff) = channel_failure_call(expression, "handoff_channel_failure_followup") else { return false; };
++    if !channel_failure_unconditional(&process.attrs) || handoff.args.len() != 7 {
+         return false;
+-    };
+-    unconditional(&stop.attrs) && stop.inputs.is_empty() && unconditional(&stop_body.attrs)
+-        && unconditional(&cleanup.attrs) && cleanup.args.len() == 2
+-        && matches!(cleanup.func.as_ref(), syn::Expr::Path(path)
+-            if unconditional(&path.attrs) && path.qself.is_none()
+-                && path.path.segments.len() == 2
+-                && path.path.segments[0].ident == "BackgroundWakes"
+-                && path.path.segments[1].ident == "end_revival")
++    }
++    let syn::Expr::Closure(run) = &handoff.args[4] else { return false; };
++    let Some(call) = channel_failure_call(&run.body, "run") else { return false; };
++    channel_failure_unconditional(&run.attrs) && run.inputs.len() == 1
++        && channel_failure_named_pattern(&run.inputs[0], "failures") && call.args.len() == 2
++        && channel_failure_named_expression(&call.args[0], "provider")
++        && channel_failure_named_expression(&call.args[1], "failures")
++}
++
++fn channel_failure_handoff_admits_before_runner(handoff: &syn::ItemFn) -> bool {
++    let [syn::Stmt::Expr(syn::Expr::If(admission), _), syn::Stmt::Local(outcome), ..] =
++        handoff.block.stmts.as_slice() else { return false; };
++    let syn::Expr::Unary(negated) = admission.cond.as_ref() else { return false; };
++    let syn::Expr::MethodCall(begin) = negated.expr.as_ref() else { return false; };
++    if !channel_failure_unconditional(&handoff.attrs) || !channel_failure_unconditional(&admission.attrs)
++        || admission.else_branch.is_some() || !channel_failure_unconditional(&negated.attrs)
++        || !matches!(&negated.op, syn::UnOp::Not(_)) || !channel_failure_unconditional(&begin.attrs)
++        || begin.method != "begin_channel_failure_followup" || begin.args.len() != 3
++        || !channel_failure_named_expression(&begin.args[0], "agent_id")
++        || !channel_failure_named_expression(&begin.args[1], "work")
++    {
++        return false;
++    }
++    let [syn::Stmt::Expr(syn::Expr::Return(refused), _)] = admission.then_branch.stmts.as_slice() else { return false; };
++    if !channel_failure_unconditional(&refused.attrs)
++        || !matches!(refused.expr.as_deref(), Some(syn::Expr::Path(path))
++            if channel_failure_unconditional(&path.attrs) && path.qself.is_none()
++                && path.path.segments.len() == 2 && path.path.segments[0].ident == "ChannelFailureAction"
++                && path.path.segments[1].ident == "Stale")
++        || !channel_failure_unconditional(&outcome.attrs)
++        || !channel_failure_named_pattern(&outcome.pat, "outcome")
++    {
++        return false;
++    }
++    let Some(initializer) = outcome.init.as_ref().filter(|init| init.diverge.is_none()) else { return false; };
++    let Some(run) = channel_failure_call(&initializer.expr, "run") else { return false; };
++    run.args.len() == 1 && channel_failure_named_expression(&run.args[0], "failures")
+ }
+ 
+ #[test]
+@@ -1739,10 +2362,22 @@ fn channel_failure_wiring_oracle_rejects_cleanup_after_idle_return() {
+     let mut worker = channel_failure_shipping_worker(SHIPPING_HOST).expect("one shipping failure worker");
+     assert!(channel_failure_worker_has_terminal_drain(&worker));
+ 
+-    // Move the actual cleanup, keeping its sole call and the other callbacks.
+-    // The old occurrence-count check accepted this successor-erasing wrapper.
++    // Reintroduce the predecessor's token-free cleanup in the real wrapper,
++    // then move it after the drain. Both placements can erase a successor;
++    // there is no generic cleanup callback now that token transitions own it.
++    {
++        let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[1] else {
++            panic!("actual terminal drain call");
++        };
++        let syn::Expr::Closure(stop) = &mut drain.args[2] else { panic!("actual stop callback"); };
++        stop.body = Box::new(syn::parse_str(r#"{
++            let mut state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
++            BackgroundWakes::end_revival(&mut state.reviving_channel_failure_agent_ids, &agent_id);
++        }"#).expect("well-formed predecessor cleanup"));
++    }
++    assert!(!channel_failure_worker_has_terminal_drain(&worker), "generic cleanup cannot own token settlement");
+     let moved_cleanup = {
+-        let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[0] else {
++        let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[1] else {
+             panic!("actual terminal drain call");
+         };
+         let syn::Expr::Closure(stop) = &mut drain.args[2] else { panic!("actual cleanup callback"); };
+@@ -1750,43 +2385,106 @@ fn channel_failure_wiring_oracle_rejects_cleanup_after_idle_return() {
+         let syn::Expr::Block(cleanup) = cleanup else { panic!("actual cleanup block"); };
+         cleanup.block.stmts
+     };
+-    assert!(!moved_cleanup.is_empty(), "move the real cleanup rather than an empty control");
++    assert!(!moved_cleanup.is_empty(), "move the adverse cleanup rather than an empty control");
+     worker.block.stmts.extend(moved_cleanup);
+     assert!(!channel_failure_worker_has_terminal_drain(&worker),
+         "cleanup after the common drain can clear a successor and must be rejected");
+ }
+ 
++#[test]
++fn channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission() {
++    use syn::parse::Parser;
++
++    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
++    let mut worker = channel_failure_shipping_worker(SHIPPING_HOST).unwrap();
++    assert!(channel_failure_worker_has_terminal_drain(&worker));
++    let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[1] else { panic!("actual drain"); };
++    let syn::Expr::Closure(take) = &mut drain.args[0] else { panic!("actual take callback"); };
++    let syn::Expr::Block(body) = take.body.as_mut() else { panic!("actual take block"); };
++    let Some(syn::Stmt::Expr(syn::Expr::MethodCall(claim), None)) = body.block.stmts.last_mut() else { panic!("actual claim"); };
++    claim.method = syn::parse_str("take_pending_channel_failures_or_end_revival").unwrap();
++    assert!(!channel_failure_worker_has_terminal_drain(&worker), "raw batches cannot replace reserved head tickets");
++
++    let mut worker = channel_failure_shipping_worker(SHIPPING_HOST).unwrap();
++    let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[1] else { panic!("actual drain"); };
++    let syn::Expr::Closure(process) = &mut drain.args[1] else { panic!("actual processing callback"); };
++    let syn::Expr::Call(drive) = process.body.as_mut() else { panic!("actual token driver"); };
++    drive.func = Box::new(syn::parse_str("process_without_failure_tokens").unwrap());
++    assert!(!channel_failure_worker_has_terminal_drain(&worker), "processing must use the token action driver");
++
++    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work").unwrap();
++    assert!(channel_failure_process_delegates_handoff(&process));
++    let Some(syn::Stmt::Expr(syn::Expr::Call(handoff), None)) = process.block.stmts.last_mut() else { panic!("actual handoff"); };
++    handoff.func = Box::new(syn::parse_str("run_without_channel_failure_admission").unwrap());
++    assert!(!channel_failure_process_delegates_handoff(&process), "process must forward its Runner through admission");
++
++    for mutation in ["missing admission", "run before admission", "wrong phase transition", "conditional admission"] {
++        let mut handoff = channel_failure_shipping_function(SHIPPING_HOST, "handoff_channel_failure_followup").unwrap();
++        assert!(channel_failure_handoff_admits_before_runner(&handoff));
++        match mutation {
++            "missing admission" => { handoff.block.stmts.remove(0); }
++            "run before admission" => handoff.block.stmts.swap(0, 1),
++            "wrong phase transition" => {
++                let syn::Stmt::Expr(syn::Expr::If(admission), _) = &mut handoff.block.stmts[0] else { panic!("actual admission"); };
++                let syn::Expr::Unary(negated) = admission.cond.as_mut() else { panic!("admission refusal"); };
++                let syn::Expr::MethodCall(begin) = negated.expr.as_mut() else { panic!("actual phase transition"); };
++                begin.method = syn::parse_str("owns_channel_failure_work").unwrap();
++            }
++            "conditional admission" => {
++                let syn::Stmt::Expr(syn::Expr::If(admission), _) = &mut handoff.block.stmts[0] else { panic!("actual admission"); };
++                admission.attrs = syn::Attribute::parse_outer.parse_str("#[cfg(test)]").unwrap();
++            }
++            _ => unreachable!(),
++        }
++        assert!(!channel_failure_handoff_admits_before_runner(&handoff), "unsafe handoff control: {mutation}");
++    }
++}
++
+ #[test]
+ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths() {
+     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+ 
+     let worker = channel_failure_shipping_worker(SHIPPING_HOST).expect("one shipping failure worker");
+     assert!(channel_failure_worker_has_terminal_drain(&worker),
+-        "the common drain must be terminal and own its nonempty cleanup callback");
++        "the common drain must be terminal and delegate all cleanup to matching token transitions");
++    let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work")
++        .expect("one shipping failure process owner");
++    assert!(channel_failure_process_delegates_handoff(&process));
++    let handoff = channel_failure_shipping_function(SHIPPING_HOST, "handoff_channel_failure_followup")
++        .expect("one shipping failure admission boundary");
++    assert!(channel_failure_handoff_admits_before_runner(&handoff));
+ 
+     // A bounded wiring supplement; the actual shared drain's idle and pause
+     // behavior is exercised by shipping app tests with the real queue owner.
+     let failure_worker = SHIPPING_HOST
+         .split_once("fn run_channel_failure_revival_worker(")
+         .expect("shipping failure worker").1
+-        .split_once("\nfn queue_channel_delivery_failure(")
++        .split_once("\nfn launch_channel_failure_worker(")
+         .expect("failure worker boundary").0
+         .split_whitespace().collect::<String>();
+     let inbound_worker = SHIPPING_HOST
+         .split_once("fn run_channel_inbound_revival_worker(")
+         .expect("shipping inbound worker").1
+-        .split_once("\nfn requeue_channel_failures(")
++        .split_once("\nfn clear_durable_channel_failure_markers(")
+         .expect("inbound worker boundary").0
+         .split_whitespace().collect::<String>();
+     for worker in [&failure_worker, &inbound_worker] {
+         assert_eq!(worker.matches("drain_channel_revival_batches(").count(), 1,
+             "both shipping workers must use the common drain control");
+     }
+-    assert!(failure_worker.contains("state.take_pending_channel_failures_or_end_revival(&agent_id)"));
++    assert!(failure_worker.contains(".take_channel_failure_work_or_end_revival(&agent_id)"));
+     assert!(!failure_worker.contains("BackgroundWakes::take_pending("),
+         "failure worker cannot restore the separate empty-take path");
+-    assert_eq!(failure_worker.matches("::end_revival(").count(), 1,
+-        "only the nonempty-stop callback may clear failure revival");
++    assert_eq!(failure_worker.matches("::end_revival(").count(), 0,
++        "token transitions own settlement; no generic cleanup can clear a successor");
++    let failure_process = SHIPPING_HOST
++        .split_once("fn process_channel_failure_work(").expect("shipping failure process").1
++        .split_once("\nfn run_channel_failure_revival_worker(").expect("failure process boundary").0
++        .split_whitespace().collect::<String>();
++    let failure_handoff = SHIPPING_HOST
++        .split_once("fn handoff_channel_failure_followup(").expect("shipping failure handoff").1
++        .split_once("\nfn bind_channel_inbound_settings(").expect("failure handoff boundary").0
++        .split_whitespace().collect::<String>();
+ 
+     let send_sink = SHIPPING_HOST
+         .find("struct ProductionSendMessageSink")
+@@ -1827,14 +2525,24 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
+     assert!(SHIPPING_HOST.contains(
+         "return Err(\"channel failure session provenance is unavailable\".into());"
+     ));
+-    assert!(failure_worker.contains(
+-        "Ok(None)=>{clear_durable_channel_failure_markers(&deps,&agent_id,&failures);returntrue;}"
++    assert!(failure_process.contains(
++        "Ok(None)=>{clear_durable_channel_failure_markers(deps,agent_id,&failures);returnfinish();}"
+     ));
+-    assert!(failure_worker.contains(
++    assert!(failure_handoff.contains(
+         "!execution.aborted&&!execution.quiesced_for_upgrade&&execution.sent_message_count>0"
+     ));
+-    assert!(SHIPPING_HOST.contains("requeue_channel_failures(&wakes, &agent_id, failures)"));
+-    assert!(failure_worker.contains("tray.title=\"Delivery-failurefollow-upfailed\".into();deps.trays.push_error(tray);requeue_channel_failures(&wakes,&agent_id,failures);returnfalse;"));
++    assert!(failure_process.contains(".pause_channel_failure_before_dispatch(agent_id,work,failures)"));
++    assert!(failure_process.contains("tray.title=\"Delivery-failurefollow-upfailed\".into();deps.trays.push_error(tray);"));
++    assert!(failure_handoff.contains("Err(error)=>failed(&error)"));
++    assert!(failure_handoff.contains(".retain_channel_failure_after_dispatch(agent_id,work)"));
++    assert!(failure_process.contains("clear_durable_channel_failure_markers(deps,agent_id,failures);let_=roster.emit_agent_update(agent_id);"));
++    let completion = failure_handoff.find("complete(&failures);").expect("success notification completion");
++    let finish = failure_handoff.find(".finish_channel_failure_work(agent_id,work)").expect("matching successful head finish");
++    assert!(completion < finish, "precise marker/roster completion precedes queue settlement");
++    assert!(!failure_process.contains("requeue_channel_failures("));
++    assert!(!failure_handoff.contains("requeue_channel_failures("));
++    assert!(failure_process.contains("ifsummary.is_group{"));
++    assert!(!failure_process.contains("summary.remote_room"), "failure policy keeps its existing group-only exclusion");
+     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
+     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
+     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));

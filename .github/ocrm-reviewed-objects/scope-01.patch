@@ -1,0 +1,521 @@
++  capture, and resume-before-later-fallible-restoration ordering. Failed writes,
++  failed CAS/resume and unrelated keys request no readiness. Each worker
++  re-reads its real provider, upgrade and Session/provenance gates. Preserve
++  failure policy; do not adopt inbound's additional remote-room exclusion.
++- **CFL-08 — permanent close.** The existing close operation also clears these
++  claims/latches. Instance enqueue, take, pause, admission, finish, late launch
++  cleanup and snapshotted readiness reject a closed owner or stale token and
++  cannot populate executable work. A fresh manager remains a separate object.
++  This does not join old workers or grant cancellation of admitted effects.
++  Integration decision **CFL-CLOSE-MARKER-01 — FIX / IMPL_BUG**, before the
++  correction: an already admitted transport can return failure after this
++  manager closes. Reject its executable enqueue, but preserve the CWR-v1
++  fresh-failure marker publication before that refusal so the next manager
++  can recover the actual delivery failure. An early closed check before marker
++  publication would silently discard durable custody. Keep marker I/O outside
++  the queue lock and prove the late failure creates no old-owner follow-up.
++- **CFL-09 — shared implementation and observations.** Reuse
++  `drain_channel_revival_batches<B>` and existing owner constructors. Production
++  must use the token transitions, with no generic stop callback that clears a
++  possibly newer revival bit. Expose only read-only claim phase/failure views
++  needed by existing status/tests; raw mutable state is not dispatch authority.
++  The legacy raw failure take refuses while a live head exists, without
++  changing that head, its tail or revival; otherwise retain its CFH behavior.
++  Keep all existing inbound, CFH, Session and Host-lane behavior assertions.
++- **CFL-10 — exact recovery joins live custody.** Keep CWR-v1 marker decoding
++  and equality in shipping composition. Recovery deduplicates against both the
++  retained head and raw tail; an exact duplicate signals only that agent's
++  existing pre-dispatch head, while entered/retained work remains non-replayable.
++  Different marker metadata remains distinct ordered input. Preserve the
++  checked store-then-wakes lock order, reserve the ticket inside that admission,
++  and launch after both guards are released. Each processing pass applies the
++  existing checked marker-currentness filter before Session/provenance gates;
++  read refusal pauses the original head, and fully stale input finishes without
++  Runner. Repeated recovery never re-inserts the same marker behind a held head.
++
++### Frozen shared interface
++
++The existing BackgroundWakes owner adds `ChannelFailureWork<T>` with
++`claim_id: String`, `worker_token: String` and `failures: Vec<T>`,
++`ChannelFailureState` with the four phases above, and
++`ChannelFailureAction<T>` with `Finished`, `Retry(ChannelFailureWork<T>)`,
++`Held` and `Stale`. `Finished` permits the existing drain to continue; it is
++not a delivery receipt. Use these instance methods:
++
++- `enqueue_channel_failure_and_claim(&mut self, agent_id: &str, failure: T)`
++  returns `Result<Option<ChannelFailureWork<T>>, String>`.
++- `request_channel_failure_readiness(&mut self)` returns
++  `Vec<(String, ChannelFailureWork<T>)>`.
++- `request_channel_failure_readiness_for_agent(&mut self, agent_id: &str)`
++  returns `Option<ChannelFailureWork<T>>`, checks permanent close, and requests
++  only that agent's existing head/tail. Composition uses this for a duplicate
++  exact marker already retained by the owner.
++- `owns_channel_failure_work(&self, agent_id, &work)` checks a live matching
++  active or entered ticket; phase-specific transitions check their own phase.
++- `release_channel_failure_launch(&mut self, agent_id, &work)` returns bool
++  and only retires a matching pre-dispatch ticket.
++- `pause_channel_failure_before_dispatch(&mut self, agent_id, &work,
++  retained_failures: Vec<T>)` returns `ChannelFailureAction<T>`.
++- `begin_channel_failure_followup(&mut self, agent_id, &work,
++  retained_failures: Vec<T>)` returns bool and only admits pre-dispatch work.
++- `retain_channel_failure_after_dispatch(&mut self, agent_id, &work)` returns
++  bool and only retains an entered ticket.
++- `finish_channel_failure_work(&mut self, agent_id, &work)` returns bool for a
++  matching pre-dispatch or entered ticket; callers own the definite completion
++  decision. Preserve revival for the next atomic take/idle operation.
++- `take_channel_failure_work_or_end_revival(&mut self, agent_id)` returns
++  `Option<ChannelFailureWork<T>>`, never acquires an entered/retained head and
++  never clears another active ticket.
++- `channel_failure_state(&self, agent_id)` returns the optional phase;
++  `retained_channel_failures(&self, agent_id)` returns `Option<&[T]>`.
++
++### Actions oracles, scope and limits
++
++Use the real BackgroundWakes owner and production-used launch, readiness,
++pause/admission/outcome adapters with actual Settings, Session/SQLite,
++TranscriptManager and pending-marker fixtures. Only the final provider/follow-up
++I/O may be controlled. A counted callback proves one invocation and control
++ordering, not real provider or channel acceptance. Required cases cover signals
++on both sides of pause, one coalesced recheck without spin, latest filtered head
++and tail ordering, successful resume and failed Settings/CAS/unrelated changes,
++entered error/cancellation/zero-message retention under every later signal,
++successful completion followed by a new head, failed launch versus successor,
++close during a gate and late cleanup, fresh-owner independence and wake-family
++isolation. Retain the real Host-lane append/operation/marker/no-transport-retry
++assertions. Migrate the old worker-shape AST supplement to the new token
++delegation, preserving the negative control for cleanup after idle release and
++all actual CFH concurrency controls; changed spelling is not a reason to drop
++the oracle. Add app selectors and matching receipt labels in the existing
++workflow; only exact-H Actions can establish execution evidence.
++The CFH app controls now acquire tickets before launch: a second arrival stays
++in the tail instead of joining an already reserved head. Preserve exact ordered
++payloads and one acquisition per head. In the nonempty pause control that second
++arrival is one supported signal, so require exactly one additional gate check,
++then a held original head ahead of the tail; do not weaken its no-spin assertion.
++
++Also select the complete `background_wakes_production_contract` target in the
++existing Linux pending-failure recovery step/cache. Keep every CWR command and
++positive control, and require the ten live-custody owner controls plus both
++token-wiring mutation controls exactly once. Bind the CFL spec and test inputs
++in that same exact-H receipt. This provides portable queue/state-machine
++evidence and explicitly identified source-wiring supplements. Also reuse the
++existing Linux shipping-App check and linked test harness to execute all
++fourteen failure-readiness, two handoff and eighteen Host-lane/CWR cases by
++exact name, retaining their real Settings/Session/marker and controlled final
++I/O boundaries. Keep its existing executable identity, exact-list and positive
++completion checks. Linux execution does not replace the macOS shipping gate,
++real-channel acceptance or any other supported platform's acceptance.
++
++Keep the actual shipping Session/provenance/provider/quiesce/marker/telemetry
++decisions in one private `process_channel_failure_work` adapter taking existing
++runner deps, roster, wakes, agent and work, plus a final
++`FnOnce(RoutedProvider, &[Value]) -> Result<RevivalExecution, String>` delegate.
++The worker supplies its real prompt/widget/Runner call; app tests supply only
++that final controlled I/O. Both use the same admission/outcome handoff helper.
++No test may copy the gate or outcome state machine as its own oracle.
++
++Production changes are limited to existing `background_wakes.rs` and shipping
++Host `main.rs`. Tests may extend `background_wakes_production_contract.rs`,
++existing private channel readiness/Host-lane fixtures and a private
++`channel_failure_readiness_tests.rs`; shared fixture exposure is test-only.
++Root integrates this existing spec, composition, workflow and narrow existing
++OCRM responsibility references serially. Add no dependency, lock, persistent
++schema, permission authority, transport registration or runtime module.
++
++If connector transport cannot carry the large reviewed Host/ledger blobs,
++reuse the repository's temporary `ocrm-stage-reviewed-objects.yml` delivery
++carrier. Bind its exact parent, fixed changed-path allowlist, before/after blob
++identities, patch digest and candidate tree; it may upload only those immutable
++Git objects, without committing source, changing refs or claiming validation.
++The formal implementation commit removes the carrier and must reproduce the
++reviewed candidate tree. Product verification runs against that formal H.
++
++Do not call `PendingWakeRearm::rearm_pending_wakes` as a readiness mechanism.
++Incoming CWR-v1 now preserves exact marker identity through bounded restart
++enqueue and retains it until the existing settlement path; keep that production
++implementation and its tests while integrating the live claims. These claims do
++not survive process loss. Original-turn reconciliation, post-dispatch custody
++across restart, unknown remote effects, failed marker publication, real services/platforms and
++all final G01–G12/AC01–AC24 gates remain open. Background terminal custody is not
++upgraded by this change. Rollback loses this live retention fence without
++deleting durable user data. Reuse only the existing fixed-U channel dossier's
++recorded coalescing/final-repump and no-blind-replay review extents; no historical
++full-read fact, scoped verification or global completion flag is promoted.
+diff --git a/projects/openclaw-rust/docs/specs/cron-session-reaper.md b/projects/openclaw-rust/docs/specs/cron-session-reaper.md
+index 46a6016345d1fe12cb98903af01be9ab201d48c3..007d3702fc86700dcdc7d022237138f7553dc69a 100644
+--- a/projects/openclaw-rust/docs/specs/cron-session-reaper.md
++++ b/projects/openclaw-rust/docs/specs/cron-session-reaper.md
+@@ -190,6 +190,28 @@ ACK-05. The same batch therefore also repairs these existing owner boundaries:
+   listeners, so a listener can read that same committed owner. A bounded real
+   Runtime oracle covers both legacy/bound collision refusal and bound callback
+   reads; no cross-store rollback of earlier routine disablement is implied.
++  **ACK-06-FIXTURE-01 — FIX / TEST_FLAW (2026-11-02):** exact
++  `09df841142a378436c490c38b375ac842ac3f419`, Runtime `41513854566`,
++  Host job `125512243925` failed while `prepare_away_agent` marked unread
++  activity, before the card assertions, because the expected Agent DB path
++  was not recognized as a regular file. The preserved command artifact contains
++  no fixture-root identity; the actual cause of that unavailable path is not
++  established. Source inspection does
++  establish that the two bounded parent tests can choose the same PID/timestamp
++  path, accept it through non-exclusive `create_dir_all`, and each later remove
++  the shared tree. Repair this invalid ownership assumption without changing
++  any Spend Guard, Session, insertion, rollback or listener assertion. An owned
++  child root is acquired only by successful exclusive directory creation;
++  collision chooses another candidate and never adopts, writes or deletes the
++  existing candidate. A deterministic same-candidate control must keep a live
++  sibling's contents intact through the other fixture's cleanup. Keep the exact
++  child exit/kill-and-wait boundary before cleanup and the completion receipt;
++  a child selecting no test remains failure. Include case, parent/child and root
++  identities in diagnostics, retain failed owned roots under the existing
++  `FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT` when configured, and clean successful
++  owned fixtures. Reuse the already-selected whole contract target in Actions.
++  The later successful `3c4bf6963cb30ecf01eb34b905315074886e1972` run does not
++  erase this earlier failure or prove its hypothesized collision occurred.
+ - ACK-07: cron registration, plain and fenced terminal settlement, fence
+   publication and projection must reach valid SQL in the existing `SandAgentDb`
+   owner. Preserve all identity/lifecycle/running-state predicates, admission
+diff --git a/projects/openclaw-rust/docs/specs/memory-append-read-integrity.md b/projects/openclaw-rust/docs/specs/memory-append-read-integrity.md
+index b55f26f2a85f1460d44166aa2a17ff94e4416a9e..d5006f0177d362d0aa4e1f63fe6c878a02721977 100644
+--- a/projects/openclaw-rust/docs/specs/memory-append-read-integrity.md
++++ b/projects/openclaw-rust/docs/specs/memory-append-read-integrity.md
+@@ -78,6 +78,19 @@ provider compatibility. Root integrates workflow
+ and RTM changes serially. Preserve MGS-v1 selector controls and every inherited
+ shared contract.
+ 
++Decision **MWR-FIXTURE-01 — FIX / TEST_FLAW**: Runtime `41537633075`, Linux
++job `125593431475`, at `c6be0cbc7bd47ac3392d02bec5b3ee8aa75a61bb` reached
++`bound_synthesis_gate_rejects_a_noncanonical_store_path` but its canonical
++positive used an ID without materializing a Session DB. The production gate
++correctly returns Invalid when Session work admission fails. Create a real
++Session through the existing owner for this positive and its foreign-path
++negative; retain Committed for the canonical admitted store and Invalid for
++the foreign store. Also retain an explicit canonical-but-missing-Session
++Invalid control. Do not relax production admission or replace the positive
++with a refusal expectation. Reuse the already-selected complete contract
++target; downstream missing receipts from this failure are not compilation
++or compatibility evidence.
++
+ Freeze the complete implementation/tests/CI candidate and obtain independent
+ source review. Extend the existing Linux portable Host command and macOS
+ recovery command with the affected targets and named positives, bind receipts
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 9c3510d944a0d7c7618f08da7820518340a7a56c..1b8ef3e156e34d1023e71a1312f158445c60e91a 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -6205,10 +6205,15 @@
+       "evidence_refs": [
+         "source/host/tests/openclaw_channel_delivery_contract.rs",
+         "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
++        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
++        "source/host/src/extensions/transcript/background_wakes.rs",
++        "source/host/app/src/main.rs",
++        "source/host/tests/background_wakes_production_contract.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_host_lane_tests.rs",
+         "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+         "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+-        "source/host/app/src/tests/channel_host_lane_tests.rs",
+         "source/host/tests/pending_wake_rearm_contract.rs",
+         "source/host/tests/durable_recovery_stores_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs"
+@@ -6293,6 +6298,7 @@
+       "typed_contracts": [
+         "HostChannelDelivery::deliver",
+         "HostChannelDelivery::set_port",
++        "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1 shipping dispatch failures reach the existing ordered BackgroundWakes head and precise marker owner; only pre-dispatch heads rearm, admitted non-success blocks replay and tail overtaking; exact-H execution, durable restart settlement and real registered-provider delivery remain pending",
+         "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open"
+       ],
+       "unit_id": "OCRM-UNIT-CHANNELS-001"
+@@ -16718,6 +16724,8 @@
+         "source/host/tests/background_wakes_production_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs",
+         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+         "source/host/src/host_lock.rs",
+         "source/host/tests/bootstrap_contract.rs",
+         "source/host/app/src/tests/original_turn_recovery_tests.rs",
+@@ -16896,6 +16904,8 @@
+         "source/host/tests/production_agent_store_recovery_contract.rs::malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_be_repaired",
+         "source/host/tests/production_agent_store_recovery_contract.rs::production_consumers_refuse_missing_or_corrupt_checkpoint_and_recover_after_repair",
+         "source/host/tests/agent_db_owner_contract.rs::checkpoint_root_cas_requires_an_explicit_string_root_before_any_commit",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs::channel_failure_entered_nonsuccess_retains_under_all_later_signals",
++        "source/host/app/src/tests/channel_host_lane_tests.rs::channel_send_host_lane_retains_exact_head_before_new_failure_tail",
+         "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work",
+         "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases",
+         "source/host/tests/production_checkpoint_restart_contract.rs",
+@@ -16919,6 +16929,7 @@
+         "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery",
+         "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication",
+         "OCRM-CHANNEL-INBOUND-REARM-v1 retained unappended head readiness, exact launch custody, coalesced retry and permanent disposal fence",
++        "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1 keeps one ordered failure head in the existing BackgroundWakes owner; committed Settings and successful resume recheck only pre-dispatch work, while admitted non-success remains retained without replay; durable restart settlement and real channel/provider acceptance remain open, and exact-H execution is pending",
+         "OCRM-HOST-PHYSICAL-CUSTODY-v1 existing Host startup guard prerequisite; original-turn durable claim/reconciliation and full restart acceptance remain open",
+         "ORT-v1 completed ordinary Native Journal turn: accepted original identity/model, private committed checkpoint observations and frozen terminal custody, bounded strict Session slot, whole-image marker v2 migration, guarded completed-marker acknowledgment and automatic ACK containment; newly declared implementation/tests require exact-H execution, unfinished and Legacy turn restoration remain open",
+         "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 1047a4d84ede5710a723ca330429f777625c6a5a..0ed534f8e868e7cb4b49f14f37d464432a452024 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -80,6 +80,8 @@
+         "source/host/tests/background_wakes_production_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs",
+         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+         "source/host/src/host_lock.rs",
+         "source/host/tests/bootstrap_contract.rs",
+         "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+@@ -357,6 +359,8 @@
+         "source/host/tests/background_wakes_production_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs",
+         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+         "source/host/src/host_lock.rs",
+         "source/host/tests/bootstrap_contract.rs",
+         "source/host/app/src/tests/original_turn_recovery_tests.rs",
+@@ -820,10 +824,13 @@
+         "source/host/tests/openclaw_storage_diagnostics_contract.rs",
+         "source/host/tests/openclaw_channel_delivery_contract.rs",
+         "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
++        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
++        "source/host/tests/background_wakes_production_contract.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_host_lane_tests.rs",
+         "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+         "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+-        "source/host/app/src/tests/channel_host_lane_tests.rs",
+         "source/host/tests/pending_wake_rearm_contract.rs",
+         "source/host/tests/durable_recovery_stores_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs"
+@@ -1615,6 +1622,8 @@
+         "source/host/tests/background_wakes_production_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs",
+         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+         "source/host/src/host_lock.rs",
+         "source/host/tests/bootstrap_contract.rs",
+         "source/host/app/src/tests/original_turn_recovery_tests.rs",
+@@ -1972,10 +1981,13 @@
+       "evidence_refs": [
+         "source/host/tests/openclaw_channel_delivery_contract.rs",
+         "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
++        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
++        "source/host/tests/background_wakes_production_contract.rs",
++        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
++        "source/host/app/src/tests/channel_host_lane_tests.rs",
+         "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+         "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+-        "source/host/app/src/tests/channel_host_lane_tests.rs",
+         "source/host/tests/pending_wake_rearm_contract.rs",
+         "source/host/tests/durable_recovery_stores_contract.rs",
+         "source/host/tests/transcript_manager_contract.rs"
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index 3cbfb8304ff7a956408ed0631bb9aca72734bdf8..78cb1a6405b8f0a6afec02a3820c5ea18b2aabab 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -119,7 +119,8 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
+     ProductionSendError, ProductionTranscriptRuntime,
+ };
+ use mahayana_host_runtime::extensions::transcript::background_wakes::{
+-    BackgroundWakes, InboundAppendAction, InboundAppendWork, build_channel_delivery_failure_wake_prompt,
++    BackgroundWakes, ChannelFailureAction, ChannelFailureState, ChannelFailureWork,
++    InboundAppendAction, InboundAppendWork, build_channel_delivery_failure_wake_prompt,
+     build_channel_inbound_wake_prompt, build_channel_outbound_message,
+     build_timeline_event_wake_prompt, distinct_inbound_channel_addresses,
+     format_channel_address_value, humanize_channel_delivery_failure,
+@@ -3312,6 +3313,21 @@ impl UnifiedGatewayApi {
+         });
+     }
+ 
++    fn request_channel_background_readiness(&self) {
++        self.request_channel_inbound_readiness();
++        request_channel_failure_readiness(self.background_wakes.as_ref(), |agent_id, work| {
++            launch_channel_failure_worker(
++                self.local_routed_runner_deps(),
++                Arc::clone(&self.roster_emit),
++                Arc::clone(&self.background_wakes),
++                agent_id,
++                work,
++                #[cfg(test)]
++                None,
++            )
++        });
++    }
++
+     fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
+         LocalRoutedRunnerDeps {
+             routed_tool_relay: Arc::clone(&self.routed_tool_relay),
+@@ -6834,6 +6850,105 @@ fn request_channel_inbound_readiness(
+     }
+ }
+ 
++fn launch_channel_failure_work(
++    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
++    agent_id: &str,
++    work: ChannelFailureWork<serde_json::Value>,
++    spawn: impl FnOnce(ChannelFailureWork<serde_json::Value>) -> Result<(), String>,
++) -> Result<bool, String> {
++    {
++        let state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
++        if !state.owns_channel_failure_work(agent_id, &work)
++            || state.channel_failure_state(agent_id) != Some(ChannelFailureState::ActiveBeforeDispatch)
++        {
++            return Ok(false);
++        }
++    }
++    let retained = work.clone();
++    if let Err(error) = spawn(work) {
++        wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++            .release_channel_failure_launch(agent_id, &retained);
++        return Err(format!("could not start channel failure worker: {error}"));
++    }
++    Ok(true)
++}
++
++fn request_channel_failure_readiness(
++    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
++    mut launch: impl FnMut(String, ChannelFailureWork<serde_json::Value>) -> Result<bool, String>,
++) {
++    let tickets = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++        .request_channel_failure_readiness();
++    for (agent_id, work) in tickets {
++        if let Err(error) = launch(agent_id.clone(), work) {
++            eprintln!("mahayana-host channel_failure_readiness_launch_failed agent={agent_id} error={error}");
++        }
++    }
++}
++
++fn drive_channel_failure_work(
++    mut work: ChannelFailureWork<serde_json::Value>,
++    mut process: impl FnMut(&ChannelFailureWork<serde_json::Value>) -> ChannelFailureAction<serde_json::Value>,
++) -> bool {
++    loop {
++        match process(&work) {
++            ChannelFailureAction::Retry(next) => work = next,
++            ChannelFailureAction::Finished => return true,
++            ChannelFailureAction::Held | ChannelFailureAction::Stale => return false,
++        }
++    }
++}
++
++fn handoff_channel_failure_followup(
++    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
++    agent_id: &str,
++    work: &ChannelFailureWork<serde_json::Value>,
++    failures: Vec<serde_json::Value>,
++    run: impl FnOnce(&[serde_json::Value]) -> Result<RevivalExecution, String>,
++    complete: impl FnOnce(&[serde_json::Value]),
++    failed: impl FnOnce(&str),
++) -> ChannelFailureAction<serde_json::Value> {
++    if !wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++        .begin_channel_failure_followup(agent_id, work, failures.clone())
++    {
++        return ChannelFailureAction::Stale;
++    }
++    let outcome = run(&failures);
++    {
++        let state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
++        if !state.owns_channel_failure_work(agent_id, work)
++            || state.channel_failure_state(agent_id) != Some(ChannelFailureState::EnteredRunner)
++        {
++            return ChannelFailureAction::Stale;
++        }
++    }
++    match outcome {
++        Ok(execution) if !execution.aborted
++            && !execution.quiesced_for_upgrade && execution.sent_message_count > 0 =>
++        {
++            complete(&failures);
++            return if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++                .finish_channel_failure_work(agent_id, work)
++            {
++                ChannelFailureAction::Finished
++            } else {
++                ChannelFailureAction::Stale
++            };
++        }
++        Ok(_) => {}
++        Err(error) => failed(&error),
++    }
++    // A returned local error, cancellation or empty response is not proof that
++    // the admitted Runner produced no effects. Later signals cannot replay it.
++    if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++        .retain_channel_failure_after_dispatch(agent_id, work)
++    {
++        ChannelFailureAction::Held
++    } else {
++        ChannelFailureAction::Stale
++    }
++}
++
+ fn bind_channel_inbound_settings(
+     settings: &SettingsService,
+     request_readiness: impl Fn() + Send + Sync + 'static,
+@@ -7098,27 +7213,6 @@ fn run_channel_inbound_revival_worker(
+     );
+ }
+ 
+-fn requeue_channel_failures(
+-    wakes: &Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
+-    agent_id: &str,
+-    failures: Vec<serde_json::Value>,
+-) {
+-    let mut state = wakes
+-        .lock()
+-        .unwrap_or_else(|poisoned| poisoned.into_inner());
+-    if state.is_closed() {
+-        return;
+-    }
+-    let pending = state.pending_channel_failures.remove(agent_id).unwrap_or_default();
+-    let mut retained = failures;
+-    for failure in pending {
+-        if !retained.iter().any(|current| same_channel_failure(agent_id, current, &failure)) {
+-            retained.push(failure);
+-        }
+-    }
+-    state.pending_channel_failures.insert(agent_id.to_string(), retained);
+-}
+-
+ fn same_channel_failure(agent_id: &str, left: &serde_json::Value, right: &serde_json::Value) -> bool {
+     match (
+         channel_failure_marker_from_failure(agent_id, left),
+@@ -7135,18 +7229,18 @@ fn enqueue_channel_failure(
+     state: &mut BackgroundWakes<serde_json::Value>,
+     agent_id: &str,
+     failure: serde_json::Value,
+-) -> Result<bool, String> {
++) -> Result<Option<ChannelFailureWork<serde_json::Value>>, String> {
+     if state.is_closed() {
+         return Err("channel failure wake owner is closed".into());
+     }
+-    let pending = state.pending_channel_failures.entry(agent_id.to_string()).or_default();
+-    if !pending.iter().any(|current| same_channel_failure(agent_id, current, &failure)) {
+-        pending.push(failure);
++    let already_retained = state.retained_channel_failures(agent_id)
++        .is_some_and(|head| head.iter().any(|current| same_channel_failure(agent_id, current, &failure)))
++        || state.pending_channel_failures.get(agent_id)
++            .is_some_and(|tail| tail.iter().any(|current| same_channel_failure(agent_id, current, &failure)));
++    if already_retained {
++        return Ok(state.request_channel_failure_readiness_for_agent(agent_id));
+     }
+-    Ok(BackgroundWakes::<serde_json::Value>::begin_revival(
+-        &mut state.reviving_channel_failure_agent_ids,
+-        agent_id,
+-    ))
++    state.enqueue_channel_failure_and_claim(agent_id, failure)
+ }
+ 
+ fn channel_failure_from_marker(marker: &DurablePendingWakeMarker) -> Result<serde_json::Value, String> {
+@@ -7315,140 +7409,178 @@ fn filter_current_channel_failure_provenance(
+     Ok(())
+ }
+ 
++fn process_channel_failure_work(
++    deps: &LocalRoutedRunnerDeps,
++    roster: &ProductionRosterEmit,
++    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
