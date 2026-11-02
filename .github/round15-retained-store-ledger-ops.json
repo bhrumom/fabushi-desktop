@@ -14,35 +14,44 @@
   "append": {
     "requirement_ids": [
       "NMR-DATA-ADMISSION-01",
-      "NMR-AC-DATA-ADMISSION-01"
+      "NMR-AC-DATA-ADMISSION-01",
+      "FBCP-HUMAN-CREATE-04"
     ],
     "fabushi_target_paths": [
       "source/host/src/extensions/session/production.rs",
-      "source/host/tests/session_gateway_contract.rs"
+      "source/host/tests/session_gateway_contract.rs",
+      "source/host/src/extensions/session/agent_db_recovery.rs",
+      "source/host/src/extensions/session/human_creation_tests.rs"
     ],
     "fabushi_target_symbols": [
       "ProductionSessionWorkers::find_forward_request",
       "ProductionSessionWorkers::resume_human_forward_batches",
-      "ProductionSessionWorkers::open_human_conversation_db_owner"
+      "ProductionSessionWorkers::open_human_conversation_db_owner",
+      "probe_human_conversation_store"
     ],
     "production_entrypoints": [
-      "Existing Session forward staging and ordinary sync -> complete retained-source discovery before requestId reuse or network dispatch; same SandAgentDb source journals and native HTTP owner"
+      "Existing Session forward staging and ordinary sync -> complete retained-source discovery before requestId reuse or network dispatch; same SandAgentDb source journals and native HTTP owner",
+      "Existing Human creation/cold owner -> probe_human_conversation_store: stat-only short-main refusal precedes every sidecar bypass and SQLite open"
     ],
     "production_evidence": [
       "Recovery round15 strict retained-source discovery extends the existing Session production owner. Current concurrent FBCP-HUMAN-CREATE implementation and creation12/storage3 remain owned by their original batch. Exact target Blobs and containing-H results belong to projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json; no local execution or independent ACCEPT."
     ],
     "test_evidence": [
-      "source/host/tests/session_gateway_contract.rs#shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+      "source/host/tests/session_gateway_contract.rs#shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
+      "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
     ],
     "fault_recovery_case_ids": [
-      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
+      "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
     ],
     "security_case_ids": [
-      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
+      "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
     ],
     "regression_ids": [
-      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
+      "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
     ]
   },
-  "note": "\nRecovery round15 strict retained-source discovery: initial request lookup and ordinary forwarding recovery must inspect retained source journals before dispatch and propagate missing/unreadable state; unavailable data cannot free a request identity for a different source. Preserve own revoked-source durable denial, other-account isolation, compatible roster behavior, existing canonical metadata/journal and all concurrent CREATE01..04 creation12/storage3, reply/history/resource/UI work. The broader unpublished seven-case admission draft and its readonly_shm/raw-header approach are withdrawn from this integration after pinned SQLite3.51.3 corrupt-WAL risk was confirmed; no unsafe preflight, duplicate initializer, generic Agent recovery change or dependency upgrade is introduced. Those authored-only draft cases and exact source rationale remain reconstructable in the round15 receipt; they are not executed or accepted. Current selected case counts are frozen in the containing workflow; all current gates must execute at the exact containing H. Arbitrary corrupt WAL/hot-journal/zero-main preservation, multi-AppHost forward uniqueness, all source/legal/service/package/Bot/upgrade/rollback and independent ACCEPT remain unqualified. Acceptance fields and historical execution pointers are untouched."
+  "note": "\nRecovery round15 strict retained-source discovery: initial request lookup and ordinary forwarding recovery must inspect retained source journals before dispatch and propagate missing/unreadable state; unavailable data cannot free a request identity for a different source. Preserve own revoked-source durable denial, other-account isolation, compatible roster behavior, existing canonical metadata/journal and all concurrent CREATE01..04 creation12/storage3, reply/history/resource/UI work. The broader unpublished seven-case admission draft and its readonly_shm/raw-header approach are withdrawn from this integration after pinned SQLite3.51.3 corrupt-WAL risk was confirmed; no unsafe preflight, duplicate initializer, generic Agent recovery change or dependency upgrade is introduced. Those authored-only draft cases and exact source rationale remain reconstructable in the round15 receipt; they are not executed or accepted. Current selected case counts are frozen in the containing workflow; all current gates must execute at the exact containing H. Arbitrary corrupt WAL/hot-journal/zero-main preservation, multi-AppHost forward uniqueness, all source/legal/service/package/Bot/upgrade/rollback and independent ACCEPT remain unqualified. Acceptance fields and historical execution pointers are untouched. Follow-up to actual f544 reconciliation125556686433: creation12 reached the retained NOTADB oracle and deleted original WAL/SHM/journal; this is a production data-preservation defect, not an oracle exception. The scoped fix checks an existing main file's stat length before any sidecar early-return/SQLite open and rejects fewer than100 bytes. No independent main-file descriptor is opened or closed. Missing main remains eligible for existing creation; healthy schema-only recovery remains. Preserve the original12-case gate and its NOTADB/schema/data-page fixtures; extend the same byte-preservation case with zero and truncated-header variants. Exact final run ID for the failing H and final code/execution identities are recorded in the round15 receipt; no prospective pass is asserted."
 }
