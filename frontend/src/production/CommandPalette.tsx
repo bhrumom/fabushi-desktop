@@ -138,7 +138,7 @@ export function CommandPalette({ agents, commands, routines, routineStatus, mess
   const isNested = commandStep.depth > 0;
   const tabs = useMemo(() => TABS.filter((candidate) => (candidate.id !== "files" || isFileSearchEnabled) && (candidate.id !== "messages" || isMessageSearchEnabled) && (candidate.id !== "links" || isLinkSearchEnabled)), [isFileSearchEnabled, isLinkSearchEnabled, isMessageSearchEnabled]);
   const tabIds = useMemo(() => tabs.map(({ id }) => id), [tabs]);
-  const entries = useMemo(() => commandPaletteEntries({ agents, commands: currentCommands, messages, files, links, routines, query, tab }), [agents, currentCommands, files, links, messages, query, routines, tab]);
+  const entries = useMemo(() => commandPaletteEntries({ agents, commands: currentCommands, messages, messageStatus, files, links, routines, query, tab }), [agents, currentCommands, files, links, messages, messageStatus, query, routines, tab]);
   const [listWindow, setListWindow] = useState(() => commandPaletteVirtualWindow({ rowCount: entries.length, rowPitchPx: PALETTE_ROW_PITCH_PX, leadingOffsetPx: PALETTE_LEADING_OFFSET_PX, scrollTopPx: 0, viewportPx: 360, overscanRows: PALETTE_OVERSCAN_ROWS }));
   const selected = entries.length === 0 ? 0 : Math.min(Math.max(highlight, 0), entries.length - 1);
   const paletteRef = useRef<HTMLElement>(null);

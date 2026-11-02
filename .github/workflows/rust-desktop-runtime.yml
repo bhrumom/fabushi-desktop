@@ -336,6 +336,13 @@ jobs:
               "source/host/tests/roster_search_contract.rs",
               "frontend/src/production/command-palette-message-provider.ts",
               "frontend/src/production/command-palette-model.ts",
+              "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+              "source/host/tests/palette_message_gateway_contract.rs",
+              "frontend/src/production/command-palette-link-provider.ts",
+              "frontend/src/production/command-palette-message-search.contract.test.ts",
+              "frontend/src/production/CommandPalette.tsx",
+              "frontend/src/production/ProductionRenderer.tsx",
+              "desktop/package.json", "desktop/package-lock.json", "desktop/tsconfig.json",
               "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
               "source/host/src/extensions/attachments/attachments_service.rs",
               "source/host/src/extensions/attachments/input_files.rs",
@@ -776,6 +783,7 @@ jobs:
             --test memory_gateway_authorization_contract \
             --test agent_content_search_contract \
             --test roster_search_contract \
+            --test palette_message_gateway_contract \
             --test memory_service_contract \
             --test memory_synthesis_store_contract \
             --test memory_synthesis_service_contract \
@@ -871,7 +879,7 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
-      - name: Require Memory selector, HTTP permission, append integrity and roster search positives from existing macOS commands
+      - name: Require Memory safety, roster search and palette producer positives from existing macOS commands
         if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
         shell: bash
         run: |
@@ -908,6 +916,7 @@ jobs:
               "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
               "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
               "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+              "palette_message_gateway_exports_persisted_rust_search_results",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
@@ -917,11 +926,11 @@ jobs:
               and tree == subject["subject_tree"] and exits == [["integration-contracts", "0"]] and not missing)
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          receipt.update({"contract": "MGS-v1/MGA-v1/RSU-v1", "command": command, "command_exit_records": exits,
+          receipt.update({"contract": "MGS-v1/MGA-v1/RSU-v1/PMS-v1-Rust-producer", "command": command, "command_exit_records": exits,
               "required_tests": required, "observed_passed_test_names": passed,
               "missing_or_nonunique_positive_results": missing, "log_sha256": hashlib.sha256(raw).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Actual TranscriptManager Memory read selector with real inside/outside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and mutation/snapshot control. RSU uses the existing Session gateway and persisted transcripts to preserve Unicode match spans across index fallback/reopen, with existing typed-character and roster-byte context windows plus ready-index controls. MGA uses actual HTTP, issued/revoked pairing credentials and the same Memory/Session owner: role/scope and no-ambient-fallback refusals precede payload/dispatch; native/write/admin positives retain mutations, prompt invalidation and durable reopen. Not symlink, cross-account, rendered UI, Windows, indexed-backend equivalence or whole-Memory acceptance."})
+              "scope": "Actual TranscriptManager Memory read selector with real inside/outside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and mutation/snapshot control. RSU uses the existing Session gateway and persisted transcripts to preserve Unicode match spans across index fallback/reopen, with existing typed-character and roster-byte context windows plus ready-index controls. MGA uses actual HTTP, issued/revoked pairing credentials and the same Memory/Session owner: role/scope and no-ambient-fallback refusals precede payload/dispatch; native/write/admin positives retain mutations, prompt invalidation and durable reopen. PMS adds persisted/reopened Session search replies, original Unicode snippets and Host order; the Node consumer runs separately on Linux. Not symlink, cross-account, rendered UI, Windows, indexed-backend equivalence or whole-Memory acceptance."})
           (root / "memory-gateway-selector.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
           append_required = [
@@ -1884,12 +1893,13 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
           PY
-      - name: Test portable recovery, Memory, roster and Session claim controls on the existing Linux Host cache
+      - name: Test portable recovery, Memory, palette search and Session claim controls on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         timeout-minutes: 15
         env:
           TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+          OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/sqlite-native-path/palette-message/${{ github.run_id }}-${{ github.run_attempt }}/palette-rust-results.json
         shell: bash
         run: |
           set -euo pipefail
@@ -1899,6 +1909,9 @@ jobs:
           root.mkdir(parents=True, exist_ok=True)
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["FABUSHI_TARGET_SHA"], "Exact CWR execution subject mismatch"
+          palette_fixture = pathlib.Path(os.environ["OCRM_PALETTE_FIXTURE_PATH"])
+          palette_fixture.parent.mkdir(parents=True, exist_ok=True)
+          assert not palette_fixture.exists(), "PMS export must be produced freshly by this exact-H Rust execution"
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml",
@@ -1915,6 +1928,13 @@ jobs:
               "source/host/tests/roster_search_contract.rs",
               "frontend/src/production/command-palette-message-provider.ts",
               "frontend/src/production/command-palette-model.ts",
+              "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+              "source/host/tests/palette_message_gateway_contract.rs",
+              "frontend/src/production/command-palette-link-provider.ts",
+              "frontend/src/production/command-palette-message-search.contract.test.ts",
+              "frontend/src/production/CommandPalette.tsx",
+              "frontend/src/production/ProductionRenderer.tsx",
+              "desktop/package.json", "desktop/package-lock.json", "desktop/tsconfig.json",
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
@@ -1953,7 +1973,7 @@ jobs:
           integration = base + ["--no-fail-fast"]
           for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
                          "transcript_manager_contract", "memory_gateway_authorization_contract", "cloud_agent_pending_wake_rearm_production_contract",
-                         "agent_content_search_contract", "roster_search_contract",
+                         "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract",
                          "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract",
                          "background_wakes_production_contract"):
               integration += ["--test", target]
@@ -1997,6 +2017,7 @@ jobs:
               "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
               "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
               "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+              "palette_message_gateway_exports_persisted_rust_search_results",
               "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
               "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
               "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
@@ -2067,7 +2088,7 @@ jobs:
               ("session-claim-commit-custody", base + ["--lib", fresh_filter, "--", "--test-threads=1"], required_fresh),
           ]
           receipt = {
-              "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1", "subject_commit": head,
+              "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
               "additional_contracts": ["SCP-CLAIM-v1"],
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -2078,7 +2099,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -2108,9 +2129,127 @@ jobs:
               })
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           receipt.pop("active_case", None)
-          accepted = len(receipt["executions"]) == len(cases) and all(case["oracle_accepted"] for case in receipt["executions"])
+          palette_exported = palette_fixture.is_file()
+          receipt["palette_export"] = {"path": str(palette_fixture),
+              "sha256": hashlib.sha256(palette_fixture.read_bytes()).hexdigest() if palette_exported else None,
+              "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"}
+          accepted = palette_exported and len(receipt["executions"]) == len(cases) and all(case["oracle_accepted"] for case in receipt["executions"])
           receipt["result"] = "passed" if accepted else "failed-or-incomplete"
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2), flush=True)
+          raise SystemExit(0 if accepted else 1)
+          PY
+      - name: Set up Node for the same-subject palette consumer
+        if: ${{ steps.channel_pending_recovery.outcome == 'success' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install existing desktop dependencies for palette contracts
+        if: ${{ steps.channel_pending_recovery.outcome == 'success' }}
+        timeout-minutes: 10
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Consume actual Rust message results and typecheck the production palette
+        if: ${{ steps.channel_pending_recovery.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/sqlite-native-path/palette-message/${{ github.run_id }}-${{ github.run_attempt }}/palette-rust-results.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          fixture = pathlib.Path(os.environ["OCRM_PALETTE_FIXTURE_PATH"])
+          root = fixture.parent
+          producer_path = pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery/receipt.json")
+          producer = json.loads(producer_path.read_text())
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          assert head == producer["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+          assert tree == producer["subject_tree"] and producer["result"] == "passed"
+          assert producer["palette_export"]["path"] == str(fixture)
+          fixture_hash = hashlib.sha256(fixture.read_bytes()).hexdigest()
+          assert fixture_hash == producer["palette_export"]["sha256"]
+          rust_case = next(case for case in producer["executions"] if case["case"] == "integration")
+          rust_name = "palette_message_gateway_exports_persisted_rust_search_results"
+          assert rust_case["oracle_accepted"] and rust_case["observed_passed_test_names"].count(rust_name) == 1
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "source/host/src/extensions/session/production.rs",
+              "source/host/src/extensions/session/gateway.rs",
+              "source/host/src/extensions/transcript/roster_search.rs",
+              "source/host/src/extensions/content_search/agent_content_search.rs",
+              "source/host/tests/palette_message_gateway_contract.rs",
+              "frontend/src/production/command-palette-message-provider.ts",
+              "frontend/src/production/command-palette-model.ts",
+              "frontend/src/production/command-palette-link-provider.ts",
+              "frontend/src/production/command-palette-message-search.contract.test.ts",
+              "frontend/src/production/CommandPalette.tsx",
+              "frontend/src/production/ProductionRenderer.tsx",
+              "desktop/package.json", "desktop/package-lock.json", "desktop/tsconfig.json",
+          ]
+          before = {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs}
+          required = ["pms_requires_real_rust_gateway_fixture","pms_rust_sigma_expansion_contraction_and_partial_originals_reach_entries","pms_nonempty_empty_token_queries_keep_rust_messages_in_all","pms_host_order_and_navigation_identity_survive_all_tab_placement","pms_other_categories_keep_matching_deduplication_tabs_and_order","pms_ready_array_provenance_rejects_forgery_clones_parser_output_and_query_aliases","pms_same_query_retry_failure_and_capability_failure_revoke_retained_arrays","pms_cancel_reset_unavailable_empty_and_dispose_revoke_ready_and_inflight_results","pms_ignored_abort_A_B_A_replies_cannot_replace_the_current_ready_array","pms_synchronous_loading_reentry_keeps_only_the_latest_request","pms_malformed_rows_and_duplicate_transport_provenance_do_not_grant_authority","pms_component_and_production_caller_wire_current_message_status"]
+          commands = [
+              ("consumer", ["node", "--experimental-strip-types", "--test", "--test-reporter=tap",
+                  "frontend/src/production/command-palette-message-search.contract.test.ts"]),
+              ("production-typecheck", ["npm", "--prefix", "desktop", "run", "typecheck"]),
+          ]
+          receipt = {
+              "contract": "PMS-v1", "subject_commit": head, "subject_tree": tree,
+              "upstream": producer["upstream"], "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"], "runner_os": os.environ["RUNNER_OS"],
+              "node": subprocess.check_output(["node", "--version"], text=True).strip(),
+              "inputs_sha256": before, "fixture_path": str(fixture), "fixture_sha256": fixture_hash,
+              "producer_receipt": str(producer_path),
+              "producer_receipt_sha256": hashlib.sha256(producer_path.read_bytes()).hexdigest(),
+              "producer_command": rust_case["command"], "producer_log_sha256": rust_case["log_sha256"],
+              "producer_required_test": rust_name, "required_consumer_tests": required,
+              "executions": [], "result": "failed-or-incomplete",
+              "scope": "Same-H persisted Rust Session search replies consumed by the actual desktop provider/model with unchanged snippets, identities and Host order; live-request revocation and ignored-abort controls, executable component/caller AST wiring and production TypeScript graph. Controlled transport does not establish real remote/indexed backend or rendered-browser, accessibility, platform/package acceptance.",
+          }
+          receipt_path = root / "receipt.json"
+          for label, command in commands:
+              receipt["active_case"] = label
+              receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
+              log_path = root / (label + ".log")
+              code, capture, error, raw = None, 0, None, b""
+              try:
+                  with log_path.open("wb") as output:
+                      code = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False).returncode
+                  raw = log_path.read_bytes()
+              except OSError as failure:
+                  capture, error = 1, str(failure)
+              text = raw.decode("utf-8", errors="replace")
+              print(text, flush=True)
+              record = {"case": label, "command": command, "command_exit": code, "capture_exit": capture,
+                  "execution_error": error, "log": log_path.name, "log_sha256": hashlib.sha256(raw).hexdigest()}
+              accepted = code == 0 and capture == 0
+              if label == "consumer":
+                  passed = re.findall(r"(?m)^ok [0-9]+ - ([^\n]+)$", text)
+                  missing = [name for name in required if passed.count(name) != 1]
+                  counts = {}
+                  for field in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):
+                      values = re.findall(r"(?m)^# " + field + r" ([0-9]+)$", text)
+                      counts[field] = int(values[-1]) if values else None
+                  accepted = accepted and not missing and counts["tests"] == counts["pass"] == len(required) and all(
+                      counts[field] == 0 for field in ("fail", "cancelled", "skipped", "todo"))
+                  record.update({"observed_passed_names": passed, "missing_or_nonunique_positive_results": missing, "tap_counts": counts})
+              record["oracle_accepted"] = bool(accepted)
+              receipt["executions"].append(record)
+              receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
+          after = {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs}
+          after_fixture = hashlib.sha256(fixture.read_bytes()).hexdigest()
+          receipt.pop("active_case", None)
+          receipt["inputs_sha256_after"] = after
+          receipt["fixture_sha256_after"] = after_fixture
+          accepted = before == after and fixture_hash == after_fixture and len(receipt["executions"]) == len(commands) and all(
+              case["oracle_accepted"] for case in receipt["executions"])
+          receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+          receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2), flush=True)
           raise SystemExit(0 if accepted else 1)
           PY

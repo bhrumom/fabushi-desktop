@@ -4,9 +4,9 @@
 
 import type { CommandPaletteRoutine } from "./command-palette-provider";
 import type { CommandPaletteFile } from "./command-palette-search-provider";
-import type { CommandPaletteMessage } from "./command-palette-message-provider";
+import { isCurrentCommandPaletteMessageResult, type CommandPaletteMessage, type CommandPaletteMessageSnapshot } from "./command-palette-message-provider.ts";
 import type { CommandPaletteLink } from "./command-palette-link-provider";
-import { commandPaletteLinkDisplayUrl } from "./command-palette-link-provider";
+import { commandPaletteLinkDisplayUrl } from "./command-palette-link-provider.ts";
 
 export type CommandPaletteTab = "all" | "messages" | "agents" | "groups" | "files" | "links" | "routines" | "actions";
 
@@ -36,6 +36,8 @@ export type CommandPaletteEntry =
   | { kind: "file"; file: CommandPaletteFile }
   | { kind: "link"; link: CommandPaletteLink }
   | { kind: "routine"; routine: CommandPaletteRoutine };
+
+type NonMessageCommandPaletteEntry = Exclude<CommandPaletteEntry, { kind: "message" }>;
 
 export interface CommandPaletteStep {
   commands: readonly CommandPaletteCommand[];
@@ -79,7 +81,7 @@ export function fuzzyPaletteScore(value: string, query: string): number | null {
   // Search distance is a product-level ranking rule, so count Unicode code
   // points rather than UTF-16 storage units. Otherwise an astral query gets a
   // larger fuzzy-span budget than an equivalent BMP query and can surface
-  // materially less-relevant participants/messages.
+  // materially less-relevant participants.
   const lowerValue = valueCodePoints.map((codePoint) => codePoint.toLowerCase());
   const lowerQuery = queryCodePoints.map((codePoint) => codePoint.toLowerCase());
   let score = 0;
@@ -109,10 +111,9 @@ export function fuzzyPaletteScore(value: string, query: string): number | null {
   return score - firstMatch * 0.1 - lowerValue.length * 0.02;
 }
 
-function entryLabelAndKeywords(entry: CommandPaletteEntry): { label: string; keywords: readonly string[] } {
+function entryLabelAndKeywords(entry: NonMessageCommandPaletteEntry): { label: string; keywords: readonly string[] } {
   if (entry.kind === "agent") return { label: entry.agent.name, keywords: entry.agent.title?.trim() ? [entry.agent.title] : [] };
   if (entry.kind === "command") return { label: entry.command.label, keywords: entry.command.keywords };
-  if (entry.kind === "message") return { label: entry.message.snippet, keywords: [entry.message.snippet] };
   if (entry.kind === "file") return { label: entry.file.fileName, keywords: [entry.file.kind, entry.file.ext] };
   if (entry.kind === "link") return { label: commandPaletteLinkDisplayUrl(entry.link.url), keywords: [entry.link.url] };
   return { label: entry.routine.automation.name, keywords: [entry.routine.automation.triggerDescription] };
@@ -128,7 +129,7 @@ function entryMatchesTab(entry: CommandPaletteEntry, tab: CommandPaletteTab): bo
   return entry.kind === "agent" && (tab === "groups" ? entry.agent.isGroup : !entry.agent.isGroup);
 }
 
-function scoreEntry(entry: CommandPaletteEntry, tokens: readonly string[], normalizedQuery: string): number | null {
+function scoreEntry(entry: NonMessageCommandPaletteEntry, tokens: readonly string[], normalizedQuery: string): number | null {
   const { label, keywords } = entryLabelAndKeywords(entry);
   const normalizedLabel = normalizePaletteSearch(label);
   const candidates = [normalizedLabel, ...keywords.map(normalizePaletteSearch)];
@@ -170,6 +171,7 @@ export function commandPaletteEntries({
   agents,
   commands,
   messages = [],
+  messageStatus = "unavailable",
   files = [],
   links = [],
   routines = [],
@@ -179,32 +181,42 @@ export function commandPaletteEntries({
   agents: readonly CommandPaletteAgent[];
   commands: readonly CommandPaletteCommand[];
   messages?: readonly CommandPaletteMessage[];
+  messageStatus?: CommandPaletteMessageSnapshot["status"];
   files?: readonly CommandPaletteFile[];
   links?: readonly CommandPaletteLink[];
   routines?: readonly CommandPaletteRoutine[];
   query: string;
   tab: CommandPaletteTab;
 }): CommandPaletteEntry[] {
+  // Rust owns message admission and rank. Local token/fuzzy rules remain only
+  // for the other categories, including queries with no local search tokens.
+  const messageEntries = messageStatus === "ready" && isCurrentCommandPaletteMessageResult(messages, query)
+    ? messages.map((message): CommandPaletteEntry => ({ kind: "message", message }))
+    : [];
+  if (tab === "messages") return messageEntries;
   const canonicalAgents = dedupeCommandPaletteAgents(agents);
-  const visibleAgents = canonicalAgents.filter((agent) => !agent.isHidden).map((agent): CommandPaletteEntry => ({ kind: "agent", agent }));
-  const commandEntries = commands.map((command): CommandPaletteEntry => ({ kind: "command", command }));
-  const messageEntries = messages.map((message): CommandPaletteEntry => ({ kind: "message", message }));
-  const fileEntries = files.map((file): CommandPaletteEntry => ({ kind: "file", file }));
-  const linkEntries = links.map((link): CommandPaletteEntry => ({ kind: "link", link }));
-  const routineEntries = routines.map((routine): CommandPaletteEntry => ({ kind: "routine", routine }));
-  const base = [...visibleAgents, ...routineEntries, ...fileEntries, ...linkEntries, ...messageEntries, ...commandEntries].filter((entry) => entryMatchesTab(entry, tab));
+  const visibleAgents = canonicalAgents.filter((agent) => !agent.isHidden).map((agent): NonMessageCommandPaletteEntry => ({ kind: "agent", agent }));
+  const commandEntries = commands.map((command): NonMessageCommandPaletteEntry => ({ kind: "command", command }));
+  const fileEntries = files.map((file): NonMessageCommandPaletteEntry => ({ kind: "file", file }));
+  const linkEntries = links.map((link): NonMessageCommandPaletteEntry => ({ kind: "link", link }));
+  const routineEntries = routines.map((routine): NonMessageCommandPaletteEntry => ({ kind: "routine", routine }));
+  const base = [...visibleAgents, ...routineEntries, ...fileEntries, ...linkEntries, ...commandEntries].filter((entry) => entryMatchesTab(entry, tab));
   const tokens = paletteSearchTokens(query);
-  if (tokens.length === 0) return tab === "all" ? [...visibleAgents, ...commandEntries] : base;
-  const hiddenAgents = canonicalAgents.filter((agent) => agent.isHidden).map((agent): CommandPaletteEntry => ({ kind: "agent", agent, isHidden: true }));
+  if (tokens.length === 0) return tab === "all" ? [...visibleAgents, ...commandEntries, ...messageEntries] : base;
+  const hiddenAgents = canonicalAgents.filter((agent) => agent.isHidden).map((agent): NonMessageCommandPaletteEntry => ({ kind: "agent", agent, isHidden: true }));
   const normalizedQuery = tokens.join(" ");
-  const score = (entries: CommandPaletteEntry[]) => entries
+  const score = (entries: NonMessageCommandPaletteEntry[]) => entries
     .map((entry) => ({ entry, score: scoreEntry(entry, tokens, normalizedQuery) }))
-    .filter((candidate): candidate is { entry: CommandPaletteEntry; score: number } => candidate.score != null);
+    .filter((candidate): candidate is { entry: NonMessageCommandPaletteEntry; score: number } => candidate.score != null);
   const scored = score(base);
   const scoredHidden = score(hiddenAgents.filter((entry) => entryMatchesTab(entry, tab)));
   scored.sort((left, right) => right.score - left.score);
   scoredHidden.sort((left, right) => right.score - left.score);
-  return [...scored, ...scoredHidden].map(({ entry }) => entry);
+  return [
+    ...scored.map(({ entry }) => entry),
+    ...(tab === "all" ? messageEntries : []),
+    ...scoredHidden.map(({ entry }) => entry),
+  ];
 }
 
 export function movePaletteHighlight(current: number, rowCount: number, delta: -1 | 1): number {

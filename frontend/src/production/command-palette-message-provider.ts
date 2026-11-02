@@ -35,6 +35,22 @@ export interface CommandPaletteMessageProvider {
 
 type MessageSource = Pick<RawPortCoordinatorSource, "searchAgents">;
 
+// Only this provider can authorize a parsed ready array. Transport fields and
+// copies carry no authority, and retained snapshots consult the live request.
+const readyResults = new WeakMap<readonly CommandPaletteMessage[], {
+  readonly query: string;
+  isCurrent(): boolean;
+}>();
+
+export function isCurrentCommandPaletteMessageResult(
+  messages: readonly CommandPaletteMessage[],
+  query: string,
+): boolean {
+  const provenance = readyResults.get(messages);
+  const trimmedQuery = query.trim();
+  return provenance != null && trimmedQuery.length > 0 && provenance.query === trimmedQuery && provenance.isCurrent();
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -135,8 +151,12 @@ export function createCommandPaletteMessageProvider(source: MessageSource): Comm
       }
 
       const previous = previousValue(snapshot);
-      publish({ status: "loading", value: previous });
       const currentRequestId = requestId;
+      publish({ status: "loading", value: previous });
+      // A subscriber may reset or replace the query synchronously on loading.
+      if (disposed || !available || currentRequestId !== requestId) {
+        return Promise.resolve({ status: "cancelled", value: previous });
+      }
       pendingPrevious = previous;
       return new Promise<CommandPaletteMessageSnapshot>((resolve) => {
         pendingResolve = resolve;
@@ -147,17 +167,30 @@ export function createCommandPaletteMessageProvider(source: MessageSource): Comm
           try {
             // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5507395
             const raw = await source.searchAgents({ query: normalized }, { signal: nextController.signal });
-            if (disposed || currentRequestId !== requestId || nextController.signal.aborted) {
+            if (disposed || !available || currentRequestId !== requestId || nextController.signal.aborted) {
               resolve({ status: "cancelled", value: previous });
               return;
             }
             const messages = commandPaletteMessagesFromSearch(raw);
+            if (disposed || !available || currentRequestId !== requestId || nextController.signal.aborted) {
+              resolve({ status: "cancelled", value: previous });
+              return;
+            }
+            for (const message of messages) Object.freeze(message);
+            Object.freeze(messages);
             const next: CommandPaletteMessageSnapshot = messages.length === 0 ? { status: "empty", value: [] } : { status: "ready", value: messages };
+            if (next.status === "ready") {
+              readyResults.set(messages, {
+                query: normalized,
+                isCurrent: () => !disposed && available && currentRequestId === requestId
+                  && snapshot.status === "ready" && snapshot.value === messages,
+              });
+            }
             pendingResolve = null;
             publish(next);
             resolve(next);
           } catch (error) {
-            if (disposed || currentRequestId !== requestId || nextController.signal.aborted) {
+            if (disposed || !available || currentRequestId !== requestId || nextController.signal.aborted) {
               resolve({ status: "cancelled", value: previous });
               return;
             }
