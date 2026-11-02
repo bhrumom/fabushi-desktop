@@ -1,0 +1,79 @@
+name: Round24 checkpoint ledger object transfer
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - .github/workflows/checkpoint-ledger-object-round24.yml
+      - .github/checkpoint-ledger-ops-round24.json
+permissions:
+  contents: read
+jobs:
+  store-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Materialize only the pinned ledger blob without moving any ref
+        env:
+          TRANSFER_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, urllib.request
+          payload_path = pathlib.Path('.github/checkpoint-ledger-ops-round24.json')
+          payload_bytes = payload_path.read_bytes()
+          payload = json.loads(payload_bytes)
+          repository = 'bhrumom/fabushi-desktop'
+          ledger_path = 'projects/telegram-desktop-rust/parity-ledger.json'
+          if payload['repository'] != repository or payload['path'] != ledger_path:
+              raise SystemExit('Unexpected object-transfer scope')
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if head != os.environ['GITHUB_SHA']:
+              raise SystemExit('Checkout identity differs from the workflow event')
+          before = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + ledger_path], text=True).strip()
+          if before != payload['expected_input_blob']:
+              raise SystemExit('Ledger advanced; reconcile operations before another transfer')
+          ledger = json.loads(pathlib.Path(ledger_path).read_text())
+          if {op['id'] for op in payload['operations']} != {'FBCP-NMR-001', 'TDRP-UPDATER-DISCOVERY-AUTHORITY-001'}:
+              raise SystemExit('Unexpected responsibility mutation scope')
+          for op in payload['operations']:
+              matches = [row for row in ledger['rows'] if row.get('responsibility_id') == op['id']]
+              if len(matches) != 1:
+                  raise SystemExit('Responsibility identity must be unique')
+              row = matches[0]
+              row.update(op['set'])
+              for key, values in op['append'].items():
+                  for value in values:
+                      if value not in row[key]:
+                          row[key].append(value)
+              row['notes'] += op['note']
+          content = json.dumps(ledger, ensure_ascii=False, indent=2) + '\n'
+          encoded = content.encode('utf-8')
+          blob = hashlib.sha1(b'blob ' + str(len(encoded)).encode() + b'\0' + encoded).hexdigest()
+          if blob != payload['expected_output_blob']:
+              raise SystemExit('Materialized ledger differs from the reviewed exact output')
+          request = urllib.request.Request(
+              'https://api.github.com/repos/' + repository + '/git/blobs',
+              data=json.dumps({'content': content, 'encoding': 'utf-8'}).encode(),
+              headers={'Authorization': 'Bearer ' + os.environ['TRANSFER_TOKEN'],
+                       'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
+                       'X-GitHub-Api-Version': '2022-11-28'}, method='POST')
+          with urllib.request.urlopen(request, timeout=60) as response:
+              result = json.load(response)
+          if result.get('sha') != blob:
+              raise SystemExit('GitHub object identity differs from the reviewed output')
+          receipt = {'source_sha': head, 'input_blob': before, 'ledger_blob': blob,
+                     'bytes': len(encoded), 'operations_sha256': hashlib.sha256(payload_bytes).hexdigest(),
+                     'refs_updated': False, 'product_validation': False}
+          pathlib.Path('round24-ledger-object-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('ROUND24_LEDGER_OBJECT ' + json.dumps(receipt))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round24-ledger-object-${{ github.sha }}
+          path: round24-ledger-object-receipt.json
+          if-no-files-found: error

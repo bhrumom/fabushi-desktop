@@ -24,7 +24,7 @@ jobs:
           git apply --check .github/round5-ledger-transfer.patch
           git apply .github/round5-ledger-transfer.patch
           test "$(git diff --name-only)" = projects/telegram-desktop-rust/parity-ledger.json
-          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = dddeddcfc3429de9cf86b89986b389e56abd7c0f
+          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = fa81a573e68b64a1a191886b3f0837c2ef32d917
       - name: Upload the exact frozen blob without moving any migration ref
         id: upload
         env:
@@ -36,9 +36,9 @@ jobs:
           from pathlib import Path
           import hashlib, json, os, urllib.request
           data = Path('projects/telegram-desktop-rust/parity-ledger.json').read_bytes()
-          expected = 'dddeddcfc3429de9cf86b89986b389e56abd7c0f'
+          expected = 'fa81a573e68b64a1a191886b3f0837c2ef32d917'
           actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-          if actual != expected or len(data) != 3551058:
+          if actual != expected or len(data) != 3551218:
               raise SystemExit('frozen ledger identity mismatch')
           body = json.dumps({'content': data.decode('utf-8'), 'encoding': 'utf-8'}).encode()
           request = urllib.request.Request(

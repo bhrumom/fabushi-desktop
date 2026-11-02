@@ -2646,22 +2646,29 @@ impl ProductionSessionWorkers {
             .db_owners
             .lock()
             .map_err(|_| "conversation db owner map poisoned".to_string())?;
-        if let Some(owner) = owners.get(&key) {
-            return Ok(Arc::clone(owner));
+        if let Some(owner) = owners.get(&key).cloned() {
+            // An independent SQLite writer may have changed this source after
+            // the owner was cached. Cached handles cannot bypass the same
+            // conversation identity check as a freshly opened source.
+            drop(owners);
+            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+            if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+                || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
+            {
+                return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
+            }
+            return Ok(owner);
         }
         let owner = Arc::new(
             SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
-        if owner
-            .get_metadata("conversationKind")
-            .map_err(|error| error.to_string())?
-            .and_then(|value| value.as_str().map(ToOwned::to_owned))
-            .as_deref()
-            != Some("human")
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
         {
             owner.close(false);
-            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
+            return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
         }
         owners.insert(key, Arc::clone(&owner));
         Ok(owner)

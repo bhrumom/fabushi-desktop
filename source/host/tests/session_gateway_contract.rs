@@ -5375,6 +5375,65 @@ fn shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_jou
             resumed.shutdown(); drop(resumed);
         }
     }
+    // Restore the original serialized metadata after malformed hex/JSON
+    // cases before deriving the next valid-JSON corruption fixtures.
+    db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+    // Valid JSON may still contain a damaged journal or a no-longer-Human
+    // source. Both must fail closed even when a Session cached its owner
+    // before an independent SQLite handle changed the committed metadata.
+    let original_metadata = read_forward_metadata_from_disk(&root, source);
+    let valid_batch = original_metadata["humanForwardBatches"][0].clone();
+    let mut wrong_version = valid_batch.clone();
+    wrong_version["version"] = json!(2);
+    let mut wrong_source = valid_batch.clone();
+    wrong_source["sourceConversationId"] = json!("wrong-source");
+    let mut wrong_nonce = valid_batch.clone();
+    wrong_nonce["destinations"][0]["clientNonce"] = json!("wrong-nonce");
+    let mut invalid_documents = Vec::new();
+    for (label, journal) in [
+        ("journal-null", serde_json::Value::Null),
+        ("journal-object", json!({"not":"a batch array"})),
+        ("journal-version", json!([wrong_version])),
+        ("journal-source", json!([wrong_source])),
+        ("journal-nonce", json!([wrong_nonce])),
+        ("journal-duplicate", json!([valid_batch.clone(), valid_batch])),
+    ] {
+        let mut damaged = original_metadata.clone();
+        damaged["humanForwardBatches"] = journal;
+        invalid_documents.push((label, damaged));
+    }
+    let mut wrong_kind = original_metadata.clone();
+    wrong_kind["conversationKind"] = json!("agent");
+    invalid_documents.push(("source-kind", wrong_kind));
+    let mut wrong_identity = original_metadata.clone();
+    wrong_identity["conversationId"] = json!("different-conversation");
+    invalid_documents.push(("source-identity", wrong_identity));
+    for cached_owner in [false, true] {
+        for (label, damaged) in &invalid_documents {
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+            let resumed = human_message_fixture_runtime(&root, &server.url);
+            if cached_owner {
+                resumed.open_human_conversation_db_owner(source)
+                    .expect("cache the authentic source before independent corruption");
+            }
+            let damaged_hex = damaged.to_string().as_bytes().iter()
+                .map(|byte| format!("{byte:02x}")).collect::<String>();
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&damaged_hex])
+                .expect("inject valid JSON but invalid source/journal");
+            let target = args["destinationConversationIds"][1].as_str().unwrap();
+            let error = resumed.sync_human_conversation(target)
+                .expect_err("damaged source or journal cannot resume dispatch");
+            assert!(!error.is_empty(), "{label}: fail closed for both cold/cached owner");
+            assert_eq!(server.post_count(), 1, "{label}: never retry an unverified forward");
+            assert_eq!(server.history_count(), 0, "{label}: no later history after a corrupt source");
+            let observed: String = db.query_row(
+                "SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)
+            ).unwrap();
+            assert_eq!(observed, damaged_hex, "{label}: recovery must not rewrite corrupt metadata");
+            resumed.shutdown();
+            drop(resumed);
+        }
+    }
     db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
     drop(db);
     let restored = human_message_fixture_runtime(&root, &server.url);
