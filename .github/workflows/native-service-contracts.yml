@@ -51,6 +51,7 @@ on:
       - '.github/workflows/native-service-contracts.yml'
       - '.github/workflows/release-macos-main.yml'
       - '.github/scripts/promote-miniapp-candidate*.mjs'
+      - '.github/scripts/resolve-package-acceptance-scope*.mjs'
   pull_request:
     paths:
       - 'source/host/src/extensions/auth/**'
@@ -724,13 +725,24 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
+      - name: Explicit artifact-only scope and side-effect admission contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/scripts/resolve-package-acceptance-scope.test.mjs 2>&1 | tee artifacts/native-message-electron/package-scope.log
+          grep -Fx '# tests 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# pass 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# todo 0' artifacts/native-message-electron/package-scope.log
       - name: Existing installer promotion consumer contracts
         shell: bash
         run: |
           set -euo pipefail
           node --test --test-reporter=tap .github/scripts/promote-miniapp-candidate.test.mjs 2>&1 | tee artifacts/native-message-electron/promotion-consumer.log
-          grep -Fx '# tests 6' artifacts/native-message-electron/promotion-consumer.log
-          grep -Fx '# pass 6' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# tests 7' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# pass 7' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# fail 0' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/promotion-consumer.log
@@ -874,5 +886,3 @@ jobs:
           name: windows-update-publisher-${{ github.sha }}
           path: artifacts/windows-update-publisher
           if-no-files-found: error
-
-

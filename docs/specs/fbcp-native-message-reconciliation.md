@@ -1391,8 +1391,55 @@ mismatch, not a fabricated release failure.
   generation, archive-member readback, installation and promotion acceptance
   remain mandatory before release.
 
-This batch performs no release dispatch, publication, backend mutation, merge
-or deployment.
+The initial receipt-placement correction above performed no release dispatch,
+publication, backend mutation, merge or deployment. The explicitly scoped
+follow-on below permits only nonpublishing artifact-only verification.
+
+### Round 18 package-only execution scope (NMR-PACKAGE-DELIVERY-01b / NMR-AC-PACKAGE-DELIVERY-01b)
+
+The existing exact-source macOS packaging owner gains an explicit
+`artifact_only` boolean, default false. Its default push/full behavior and
+immutable promotion acceptance remain unchanged. This mode supplies actual
+signed/notarized installer and installed-copy byte evidence while real account,
+Agent and Mini App service acceptance is still unavailable; it grants no
+product, release or independent ACCEPT.
+
+- Admit artifact-only only for an explicit workflow_dispatch with
+  publish_release, promote_existing_candidate and
+  iterate_existing_miniapp_candidate all false. A single preflight parses
+  only the canonical empty/true/false boolean input strings and rejects unknown
+  values or conflicting artifact-only routes before any packaging or
+  production-account work. Full-mode promotion plus publish remains valid
+  for the existing promotion owner to qualify.
+- All three existing route jobs depend on this preflight. Only its canonical
+  output controls execution. Artifact-only skips exactly the production CI
+  login, real packaged Agent acceptance and approved Mini App installed
+  service/lifecycle acceptance, together with their full-acceptance uploads.
+  Their original names and all existing full-mode acceptance commands remain.
+- Preserve complete source builds, pinned dependencies, runtime boundaries,
+  Developer ID signing, app/DMG notarization and ticket checks, installed
+  executable copy identity, packaged worker/Host sibling checks, final-byte
+  metadata, blockmaps and installer checksums. Do not launch the candidate
+  application, send production login requests or run models in artifact-only.
+- Use distinct fabushi-macos-artifact-only and artifact-verification evidence
+  names, bind the requested scope and exact source/workflow/run identities,
+  and explicitly record productAccepted=false and serviceAcceptance=not-run.
+  Keep the installer member whitelist and flat release paths unchanged.
+- Execute the preflight's behavioral and actual child-process IO tests and the
+  existing promotion consumer tests only in GitHub Actions. The real consumer
+  must reject dispatch-only candidate provenance, either skipped full
+  acceptance step and the artifact-only archive name. A green artifact-only
+  packaging job cannot satisfy immutable main/push/factory/full-step proof.
+- After the containing-H policy contracts succeed, dispatch only this
+  explicitly nonpublishing artifact-only route at the exact containing source
+  SHA. Read full logs and actual archive bytes before claiming any package
+  result. Missing signing/runner/build inputs remain explicit failures or
+  blockers; no full-mode or promotion gate is relaxed to obtain a result.
+
+This is a scoped CI/package-verification capability under the existing release
+owner, not a new product runtime, authority or migration-completion row.
+Backend PR137 stays read-only; merge, deployment and public publication remain
+outside this batch.
 
 ### Native resource upload service limit (NMR-51 / NMR-AC-42)
 
