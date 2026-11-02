@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { reconcileMacUpdateMetadata, verifyMacUpdateMetadata } from "./reconcile-macos-update-metadata.mjs";
 
 const require = createRequire(import.meta.url);
@@ -82,6 +83,10 @@ test("final ZIP and DMG metadata uses the locked generator and verify leaves all
 
 test("ticket append rejects pre-staple metadata then reconciles final hashes, sizes and maps without altering packages", async (t) => {
   const f = await setup(t);
+  const zipMapPath = path.join(f.directory, `${f.zip}.blockmap`);
+  const zipMap = gzipSync(gunzipSync(await readFile(zipMapPath)), { level: 1 });
+  zipMap[9] = 0x13; // The historical archive's macOS gzip OS byte.
+  await writeFile(zipMapPath, zipMap);
   const dmg = path.join(f.directory, f.dmg);
   const originalMap = await readFile(`${dmg}.blockmap`);
   const zip = await readFile(path.join(f.directory, f.zip));
@@ -104,6 +109,75 @@ test("ticket append rejects pre-staple metadata then reconciles final hashes, si
   assert.deepEqual(await readFile(dmg), finalDmg);
   assert.deepEqual(await readFile(path.join(f.directory, f.zip)), zip);
   assert.deepEqual(await verifyMacUpdateMetadata(f.options), receipt);
+});
+
+test("equivalent gzip envelopes verify read-only and receipts hash the actual accepted sidecars", async (t) => {
+  const f = await setup(t);
+  for (const [name, osByte] of [[f.zip, 0x13], [f.dmg, 0x03]]) {
+    const filename = path.join(f.directory, `${name}.blockmap`);
+    const original = await readFile(filename);
+    const equivalent = gzipSync(gunzipSync(original), { level: 1 });
+    equivalent[9] = osByte;
+    equivalent.writeUInt32LE(1700000000, 4); // Gzip timestamp is not map content.
+    assert.notDeepEqual(equivalent, original);
+    await writeFile(filename, equivalent);
+  }
+  const before = await snapshot(f.directory);
+  const receipt = await verifyMacUpdateMetadata(f.options);
+  assert.deepEqual(await snapshot(f.directory), before);
+  for (const asset of receipt.assets) {
+    const actual = await readFile(path.join(f.directory, asset.blockmap.name));
+    assert.equal(asset.blockmap.size, actual.length);
+    assert.equal(asset.blockmap.sha256, createHash("sha256").update(actual).digest("hex"));
+    assert.equal(asset.blockmap.sha512, createHash("sha512").update(actual).digest("base64"));
+  }
+  const packagesBefore = await Promise.all([f.zip, f.dmg].map((name) => readFile(path.join(f.directory, name))));
+  const reconciled = await reconcileMacUpdateMetadata(f.options);
+  assert.deepEqual(await verifyMacUpdateMetadata(f.options), reconciled);
+  assert.deepEqual(await Promise.all([f.zip, f.dmg].map((name) => readFile(path.join(f.directory, name)))), packagesBefore);
+});
+
+test("valid gzip cannot conceal changes to decoded blockmap checksums, sizes or structure", async (t) => {
+  const f = await setup(t);
+  const filename = path.join(f.directory, `${f.zip}.blockmap`);
+  const original = JSON.parse(gunzipSync(await readFile(filename)).toString("utf8"));
+  const mutations = [
+    (map) => { map.files[0].checksums[0] = Buffer.alloc(18).toString("base64"); },
+    (map) => { map.files[0].sizes[0] += 1; },
+    (map) => { map.files[0].offset = 1; },
+    (map) => { map.files[0].name = "other"; },
+    (map) => { map.version = "1"; },
+    (map) => { map.files.push(structuredClone(map.files[0])); },
+    (map) => { map.files[0].checksums.pop(); },
+  ];
+  for (const mutate of mutations) {
+    const changed = structuredClone(original);
+    mutate(changed);
+    await writeFile(filename, gzipSync(JSON.stringify(changed)));
+    const before = await snapshot(f.directory);
+    await assert.rejects(verifyMacUpdateMetadata(f.options), /MACOS_METADATA_BLOCKMAP_MISMATCH/);
+    assert.deepEqual(await snapshot(f.directory), before);
+  }
+  await reconcileMacUpdateMetadata(f.options);
+  await verifyMacUpdateMetadata(f.options);
+});
+
+test("malformed, truncated, CRC-corrupt and oversized decoded maps fail closed without candidate writes", async (t) => {
+  const f = await setup(t);
+  const filename = path.join(f.directory, `${f.zip}.blockmap`);
+  const original = await readFile(filename);
+  const corruptCrc = Buffer.from(original);
+  corruptCrc[corruptCrc.length - 8] ^= 0xff;
+  const invalidMaps = [Buffer.from("not a gzip map"), original.subarray(0, original.length - 4), corruptCrc,
+    gzipSync(Buffer.alloc(64 * 1024 * 1024 + 1, 0x61))];
+  for (const invalid of invalidMaps) {
+    await writeFile(filename, invalid);
+    const before = await snapshot(f.directory);
+    await assert.rejects(verifyMacUpdateMetadata(f.options), /MACOS_METADATA_BLOCKMAP_MISMATCH/);
+    assert.deepEqual(await snapshot(f.directory), before);
+  }
+  await reconcileMacUpdateMetadata(f.options);
+  await verifyMacUpdateMetadata(f.options);
 });
 
 test("a same-size byte change with manually refreshed hash still rejects its stale differential map", async (t) => {

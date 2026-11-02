@@ -394,9 +394,44 @@ fn peer_decision(response: &ServerRequestResponse) -> &'static str {
 mod tests {
     use super::*;
 
+    struct ApprovalFixture {
+        root: PathBuf,
+    }
+
+    impl ApprovalFixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "mahayana-gateway-approval-{}",
+                uuid::Uuid::new_v4(),
+            ));
+            std::fs::create_dir(&root).expect("create an exclusively owned approval fixture");
+            Self { root }
+        }
+
+        fn state_path(&self) -> PathBuf {
+            self.root.join("gateway-state-v1.json")
+        }
+
+        fn open(&self) -> Arc<Mutex<ServerRequestRegistry>> {
+            let registry = ServerRequestRegistry::new(Some(self.state_path()));
+            assert!(registry.durability_info()["lastError"].is_null());
+            Arc::new(Mutex::new(registry))
+        }
+    }
+
+    impl Drop for ApprovalFixture {
+        fn drop(&mut self) {
+            // Only this fixture's UUID directory is owned; never clean the
+            // production default store or alter global environment variables.
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
     #[test]
     fn approval_event_emits_peer_request_with_same_runtime_request_id() {
-        let peer = Arc::new(Mutex::new(ServerRequestRegistry::default()));
+        let fixture = ApprovalFixture::new();
+        let peer = fixture.open();
+        assert!(peer.lock().unwrap().is_empty());
         let event = GatewayEventEnvelope::new(
             "session-1",
             "turn-1",
@@ -413,6 +448,7 @@ mod tests {
         );
         let frames = issue_server_requests(&peer, &[event]);
         assert_eq!(frames.len(), 1);
+        assert!(peer.lock().unwrap().durability_info()["lastError"].is_null());
         assert_eq!(frames[0]["method"], "approval");
         assert_eq!(frames[0]["params"]["requestId"], "approval-1");
         assert!(frames[0]["id"].as_str().unwrap().starts_with("srq-"));
@@ -420,7 +456,9 @@ mod tests {
 
     #[test]
     fn repeated_approval_event_does_not_duplicate_peer_lock() {
-        let peer = Arc::new(Mutex::new(ServerRequestRegistry::default()));
+        let fixture = ApprovalFixture::new();
+        let peer = fixture.open();
+        assert!(peer.lock().unwrap().is_empty());
         let event = GatewayEventEnvelope::new(
             "session-1",
             "turn-1",
@@ -435,8 +473,38 @@ mod tests {
                 metadata: None,
             }),
         );
-        assert_eq!(issue_server_requests(&peer, &[event.clone()]).len(), 1);
-        assert!(issue_server_requests(&peer, &[event]).is_empty());
+        let first = issue_server_requests(&peer, &[event.clone()]);
+        assert_eq!(first.len(), 1);
+        assert!(peer.lock().unwrap().durability_info()["lastError"].is_null());
+        let original = peer.lock().unwrap().export_state();
+        assert_eq!(original.len(), 1);
+        assert_eq!(first[0]["id"], original[0].id);
+        let persisted = std::fs::read(fixture.state_path()).expect("persist the first approval");
+        assert!(issue_server_requests(&peer, &[event.clone()]).is_empty());
+        assert_eq!(peer.lock().unwrap().export_state(), original);
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
+        drop(peer);
+
+        let restored = fixture.open();
+        assert_eq!(restored.lock().unwrap().durability_info()["restoredRequests"], 1);
+        assert_eq!(restored.lock().unwrap().export_state(), original);
+        let pending = restored.lock().unwrap().open_requests("session-1");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0]["id"], first[0]["id"]);
+        assert!(issue_server_requests(&restored, &[event.clone()]).is_empty());
+        assert_eq!(restored.lock().unwrap().export_state(), original);
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
+
+        let independent_fixture = ApprovalFixture::new();
+        let independent = independent_fixture.open();
+        assert!(independent.lock().unwrap().is_empty());
+        let independent_frames = issue_server_requests(&independent, &[event]);
+        assert_eq!(independent_frames.len(), 1, "the same approval ID is isolated across fixture stores");
+        assert!(independent.lock().unwrap().durability_info()["lastError"].is_null());
+        assert_eq!(independent_frames[0]["params"]["requestId"], "approval-1");
+        assert_eq!(independent.lock().unwrap().len(), 1);
+        assert_eq!(restored.lock().unwrap().export_state(), original);
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
     }
 
     #[test]

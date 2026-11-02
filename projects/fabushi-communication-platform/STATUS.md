@@ -6,42 +6,48 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current bounded batch (round 16): AppHost dependency and package boundary
+## Current bounded batch (round 20): recover exact-H shipping validation
 
 Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected base
-`adf15caadac5775fdd8582227cad3bbf9c93cf0f` and live main
-`5528062177e3865eef60a073a066cca144f9e3e8`. Main and backend are unchanged.
-Run `41447812811` finished success: complete logs confirm Human33, Agent4,
-private credential3, AppHost composition11, Native6, FeatureHost7, Host6,
-C ABI7, Host direct-dependency negative, normalization6, future-salts2,
-protocol122, TCP9 including live, proxy4, Native credential1, UI16 and
-Electron carrier10/auth8. These qualify that exact base only.
+`151d3ffe6382219dab98fb317e59fe5faa8cea01` and live main
+`5528062177e3865eef60a073a066cca144f9e3e8`. Run41465224038 failed after passing
+Human33/Agent4/private3, AppHost12/Native6/FeatureHost7/Host6/ABI7/CLI3 and UI16.
+Gateway executable was4/5: a shared persistent test file suppressed the second
+test's first request. NMR-45 isolates real persistent fixtures and strengthens
+duplicate/restart oracles without changing production deduplication.
 
-NMR-38 removes the impossible AppHost Telegram lease and unreachable forwards,
-retaining all twelve explicit refusal routes, registration validation order,
-Native auth/Agent state and Settings persistence/publication semantics. The
-legacy proxy projection dependency is test-only; the independent shipping lock
-prunes only the eight packages made unreachable, with no version upgrades.
-NMR-39 restricts Electron `resources/bin` to its four canonical executable
-names and Windows forms, with nested-file exclusion. Staging files, original
-SQLite/sidecars/keys, retained FeatureHost files and rollback readers are kept.
-The CLI is a real generic C ABI consumer; FFI/direct Telegram exports are not
-deleted or declared globally retired.
+Electron carrier10/auth8/copy3/metadata15 passed, but the historical installer
+experiment rejected a valid cross-platform ZIP blockmap before reaching stale
+DMG metadata. NMR-43 now compares complete bounded decoded map content and
+records actual sidecar hashes;18 authored cases and the unchanged digest-pinned
+real package experiment require containing-H Actions. Gateway lib9, protocol122,
+TCP9 and actual-binary package-copy did not execute at the inspected base.
 
-Expanded Native6 behavior tests, three actual locked packager-copy cases and
-the shipping dependency/build/symbol gates are authored. Execution at the
-containing commit is pending at preparation; no local executable validation
-was performed. The single ledger row, owner inventory and RTM retain separate
-implementation, execution and final acceptance states. Preparation and prior-H
-results are in `projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
+The actual Human path remains existing Composer -> Session/Transcript ->
+FabushiNativeMessagingClient -> native HTTP -> the same SandAgentDb/events.
+Production+Electron refuses standalone MessagingService before locks/storage.
+CLI and gateway now use direct MahayanaHost; the old round16 C ABI consumer
+statement is superseded. Retained FFI exports, external callers, old data and
+rollback readers are not declared globally retired. No parallel owner or user
+data deletion is introduced. This batch changes the existing release verifier
+and test fixtures; it does not qualify a new signed installer or update service.
 
-Backend Draft PR #137 remains open/draft at
-`06047d3ea69313ec4cfec58bbee36a7afc9cf007`, without review or formal deployment
-authorization. Its handler29/SQLite10 CI passed, but current production Worker
-SHA/version and real authenticated afterId=0 pagination/empty/denial/recovery
-are unverified. Full source/legal, product scope, supported-platform packages,
-UI/a11y, Native proxy support, complete Bot regression, upgrade/rollback, soak
-and independent ACCEPT remain open. Complete remains false.
+Evidence, exact old-run logs/artifacts, source review and required new gates:
+`projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json`.
+No local executable validation ran. The canonical ledger/RTM keep implementation,
+authored tests, scoped execution and final acceptance separate; full source review
+and legal disposition remain open with fixed U and unchanged source acceptance.
+
+Backend PR #137 remains open/draft/unmerged at
+`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. Both exact-head handler29/SQLite10
+runs passed. Historical production artifact12542026010 was inspected and digest
+verified; it binds source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b to the recorded
+Worker version but only proves health/FDN enrollment checks at deployment time.
+Current Worker identity and authenticated afterId=0 pagination/empty/denial/
+recovery remain unverified; no backend merge or deployment is authorized.
+Full functionality, supported-platform packages, UI/a11y, Native proxy/update
+support, complete Bot regression, upgrade/rollback, soak and independent ACCEPT
+remain open. Complete remains false.
 
 ## Historical planning snapshot (2026-10-02)
 

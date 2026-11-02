@@ -5,18 +5,21 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 7  
 Updated: 2026-10-07
 
-## Round 19 bounded oracle/execution refresh
+## Round 20 bounded oracle/execution refresh
 
-Evidence: projects/telegram-desktop-rust/evidence/round19-gateway-settings-macos-metadata.json.
-Base5281/run41460570824 failed at gateway E0004. New containing-H execution and
-independent ACCEPT remain pending; old execution rows below are historical.
+Evidence: projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json.
+Base151d3ffe6382219dab98fb317e59fe5faa8cea01/run41465224038 completed failure.
+The four complete job logs separate passed, failed and unexecuted gates below.
+Containing-H execution of the two repairs and independent ACCEPT remain pending
+at preparation; historical execution does not qualify later changed code.
 
 | Requirement | Existing owner and oracle | Authored execution gate | Verdict |
 | --- | --- | --- | --- |
-| NMR-41 / AC-32 | ProductSettingsOwner endpoint identity/order, selected/mode, repeat stability |16 orders/48 deletions/48 repeats; all6 permutations within composition12 | Expanded matrix pending |
-| NMR-42 / AC-33 | Direct MahayanaHost and actual approval calls without ordinary dispatch | CLI3, executable5, full lib9;8 positive/9 negative approval inputs | Base compile failed; new execution pending |
-| NMR-43 / AC-34 | Release metadata after stapling agrees with bytes/hash/size/external blockmaps | Metadata15 plus digest-pinned artifact13093546572 copy experiment | Authored; signed candidate acceptance open |
-| NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 new lifecycle cases in full lib9 | E0004 repaired; execution pending |
+| NMR-41 / AC-32 | ProductSettingsOwner endpoint identity/order, selected/mode, repeat stability |16 ordered subsets/48 deletions/48 repeats; all6 permutations within AppHost12 | Passed exact151/job125344195252; not full Settings acceptance |
+| NMR-42 / AC-33 | Direct MahayanaHost and actual approval calls without ordinary dispatch | CLI3, executable5, full lib9;8 positive/9 negative approval inputs | CLI3 passed; executable4/5 TEST_FLAW; lib9 not run |
+| NMR-43 / AC-34 | Final package hashes/sizes plus complete decoded blockmap equality; receipt binds actual sidecar | Metadata18 and unchanged digest-pinned artifact13093546572 repair/immutable-byte experiment | Old15 passed, historical experiment failed compressed-byte comparison; fix authored; signed candidate acceptance open |
+| NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 lifecycle cases in full lib9 | Compiled at base; lib9 execution blocked by executable fixture failure |
+| NMR-45 / AC-36 | Real persistent request registry with UUID-owned fixture, lastError/restoredRequests and stable srq-ID | Keep executable5; first1/duplicate0, disk and memory unchanged, reopen retains request, independent store issues1 | TEST_FLAW repaired in tests; containing-H execution required |
 
 ## Rule
 
@@ -94,7 +97,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–32 | NMR-01–06,09,18–20,31–41 | Existing Session/Transcript Human admission, Native auth/refusal, Settings durability and resource-copy boundary | Existing Human33/Agent4/private3; composition12/Native6; FeatureHost7/Host6/ABI7; actual-copy4 | Real HTTP/Host/SQLite and subprocess restart; signed full packages remain open | Existing Composer/Settings UI; full visual/a11y acceptance pending | Permission/nonce/reaction/legacy refusal and persistence-failure negatives; performance/soak pending | REG-NMR-PROXY-REMOVE-ADJACENT-001 and all retained message/ABI controls | Round17 evidence; exact23/run41451598911 passed; containing-H new matrices/fix/copy execution pending at preparation | Independent static review required; final independent ACCEPT pending | IMPLEMENTED / TESTS-AUTHORED; exact-base bounded gates PASSED; full product acceptance PENDING |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–36 | NMR-01–06,09,18–20,31–45 | Existing Session/Transcript Human admission, Native auth/refusal, Settings durability, package metadata and persistent approval fixtures | Human33/Agent4/private3; AppHost12/Native6/FeatureHost7/Host6/ABI7/CLI3; executable5/lib9; metadata18/actual-copy4 | Real HTTP/Host/SQLite and subprocess restart; signed full packages remain open | Existing Composer/Settings UI; UI16 passed; full visual/a11y pending | Permission/nonce/reaction/legacy refusal, bounded blockmap decode and persistence/restart negatives; performance/soak pending | REG-NMR-PROXY-REMOVE-ADJACENT-001 and all retained message/ABI controls | Round20 receipt; exact151/run41465224038 scoped passes, executable4/5 and historical metadata failure; subsequent shipping gates unexecuted | Bounded independent source reviews; containing-H Actions and final independent ACCEPT pending | IMPLEMENTED / TESTS-AUTHORED; scoped old-H execution only; full product acceptance PENDING |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
 

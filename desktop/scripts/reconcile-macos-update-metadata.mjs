@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { gunzipSync } from "node:zlib";
 
 // NMR-43: use the same external blockmap producer as the locked packager.
 // Reviewed upstream source: electron-userland/electron-builder@
@@ -17,6 +18,7 @@ const yaml = require("js-yaml");
 const desktopRoot = fileURLToPath(new URL("../", import.meta.url));
 const expectedPackagerVersion = "26.15.3";
 const metadataName = "latest-mac.yml";
+const maximumDecodedBlockmapBytes = 64 * 1024 * 1024;
 
 function fail(code) { throw new Error(code); }
 function record(value) { return value !== null && typeof value === "object" && !Array.isArray(value); }
@@ -126,12 +128,22 @@ async function generateFinalMaps(input, temporary) {
   return results;
 }
 
+async function decodedBlockmap(filename) {
+  try {
+    return gunzipSync(await readFile(filename), { maxOutputLength: maximumDecodedBlockmapBytes });
+  } catch { fail("MACOS_METADATA_BLOCKMAP_MISMATCH"); }
+}
+
 async function verifyPrepared(input, temporary) {
   const results = await generateFinalMaps(input, temporary);
   for (const asset of results) {
     const entry = input.metadata.files.find((file) => file.url === asset.name);
     if (entry.size !== asset.identity.size || entry.sha512 !== asset.identity.sha512) fail("MACOS_METADATA_ASSET_MISMATCH");
-    if (!(await readFile(asset.sidecar)).equals(await readFile(asset.mapPath))) fail("MACOS_METADATA_BLOCKMAP_MISMATCH");
+    // The gzip envelope (including its OS byte) and compression level can
+    // differ across builders. Require identical bounded map content, while
+    // receipts identify the actual sidecar accepted by this read-only check.
+    if (!(await decodedBlockmap(asset.sidecar)).equals(await decodedBlockmap(asset.mapPath))) fail("MACOS_METADATA_BLOCKMAP_MISMATCH");
+    asset.blockmap = await hashes(asset.sidecar);
   }
   if (input.metadata.sha512 !== results[0].identity.sha512) fail("MACOS_METADATA_LEGACY_HASH_MISMATCH");
   if (Object.hasOwn(input.metadata, "size") && input.metadata.size !== results[0].identity.size) fail("MACOS_METADATA_LEGACY_SIZE_MISMATCH");

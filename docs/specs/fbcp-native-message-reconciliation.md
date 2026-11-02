@@ -771,6 +771,36 @@ ZIP/DMG SHA256 and sizes. Record the historical package source separately from
 the current checker H; never label historical bytes a newly built candidate.
 No installer execution, publication or signing occurs in this experiment.
 
+#### Round 20 cross-platform blockmap verification recovery
+
+Run `41465224038` at `151d3ffe6382219dab98fb317e59fe5faa8cea01`
+passed all 15 metadata cases but the historical-artifact experiment stopped
+at `MACOS_METADATA_BLOCKMAP_MISMATCH`, before reaching the stale DMG asset.
+The digest-verified historical ZIP sidecar has gzip OS byte `0x13` (macOS),
+while the verifier compared the complete compressed byte stream produced
+on its current platform. The archive and current candidate share the same
+locked app-builder-lib 26.15.3 dependency. Gzip envelope/compressor bytes
+are not the block-map content contract; this is an implementation/oracle
+gap in cross-platform verification, not permission to accept stale maps.
+
+NMR-43 recovery: compare the bounded decompressed content of each supplied
+sidecar with the locked generator's expected content. A different valid
+gzip envelope or compression level may represent the same map. Invalid,
+truncated, checksum-corrupt, oversized decoded or different map content
+must still fail closed. Limit each decoded map to 64 MiB. Preserve the
+read-only verify boundary and report hashes/sizes of the actual accepted
+sidecar bytes, not those of a temporary recompression. Reconciliation
+continues to replace sidecars with maps generated from final package bytes.
+
+NMR-AC-34 recovery adds cross-platform gzip/receipt regressions, content
+tampering and bounded decode negatives to the existing behavioral suite.
+The stapling case must retain an equivalent differently encoded ZIP map
+while the stale DMG still fails specifically with asset size/hash mismatch.
+The same digest-pinned historical experiment must then repair and verify
+both maps with unchanged ZIP/DMG hashes. Preserve the failed run/artifact;
+do not loosen its required stale-DMG rejection or infer installation,
+signature validity, update/rollback or release acceptance from this repair.
+
 ### Round 19 gateway lifecycle compilation recovery (NMR-44 / NMR-AC-35)
 
 Run `41460570824` at `5281b87d878c9223dc9cd1c100c0f56186c81173` failed
@@ -802,6 +832,38 @@ This is a compatibility recovery for the existing gateway wire contract.
 Exposing full native lifecycle state through a future versioned gateway
 contract remains separate unfinished work; no event-schema completeness,
 full Bot regression or independent ACCEPT is claimed here.
+
+### Round 20 persistent gateway approval fixture recovery (NMR-45 / NMR-AC-36)
+
+Run `41465224038` at `151d3ffe6382219dab98fb317e59fe5faa8cea01`
+passed CLI3, then gateway executable cases finished 4 passed / 1 failed.
+`repeated_approval_event_does_not_duplicate_peer_lock` failed on its first
+issuance (expected one, observed zero), before the duplicate assertion.
+Both approval fixtures construct the real PersistentServerRequestRegistry
+with Default; this loads the same default gateway-state-v1.json file.
+The earlier fixture leaves approval-1 pending, so the later fixture correctly
+recovers and suppresses it. This is TEST_FLAW, not a demonstrated defect in
+production duplicate-request handling. Full gateway library and later
+protocol/TCP/resource-copy steps did not execute in that failed job.
+
+- NMR-45: Give each gateway approval behavior test its own UUID-named
+  temporary directory and an explicit persistent registry file within it.
+  Retain the real persistence implementation, production Default path and
+  duplicate handling. Do not change global home/environment settings or
+  delete shared state. Cleanup removes only the fixture's own directory.
+- NMR-AC-36: Preserve both original approval tests and the five-case
+  executable gate. Prove initial issuance once, duplicate issuance zero
+  with unchanged persisted state, and reopen from the same explicit file
+  retaining the same server-request ID and suppressing a repeated event.
+  An independent fixture with the same approval ID must issue normally.
+  Run the direct CLI3, executable5 and full gateway library9 suites, the
+  normal/build dependency negatives and all previously unexecuted shipping
+  gates on the repaired exact H. No production approval semantics, public
+  schema or lockfile dependency change is authorized by this fixture repair.
+
+Keep the failing log and causal assertion. Tests and all executable checks
+remain Actions-only. This recovery does not qualify real approval-service,
+external FFI, complete Bot, signed-package or independent migration ACCEPT.
 
 
 

@@ -1,0 +1,1187 @@
+{
+  "format": "FBCP_TDRP_ROUND20_REPAIR_RECEIPT_V1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 20,
+  "state": "prepublication repair/source-review receipt; exact151 failure final; new containing-H verification not run at receipt creation",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixed_upstream_u": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "base_h": "151d3ffe6382219dab98fb317e59fe5faa8cea01",
+  "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "workspace": "No existing repository checkout or user edits were present in scratch. Only selected exact-base paths were materialized; Git tree publication must preserve every other base entry. Existing remote checkpoint is the sole writable branch; main and Backend remain unchanged.",
+  "policy_read": {
+    "sources": [
+      {
+        "path": "AGENTS.md",
+        "blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "blob": "da3455bff35978b41027d940213bf3fc6d9a496a"
+      },
+      {
+        "path": "docs/specs/fabushi-bot-communication-platform.md",
+        "blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42"
+      },
+      {
+        "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694"
+      },
+      {
+        "path": "docs/specs/fabushi-deferred-ci-migration.md",
+        "blob": "0d1e9555075599fe65f95872b37722198f8c06cd"
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "blob": "811df2d84469d5d510bfe802bf612562321ec0cc"
+      }
+    ],
+    "live_main_comparison": {
+      "tree": "5528062177e3865eef60a073a066cca144f9e3e8",
+      "tree_source": "Parent supplied freshly resolved main tree; this reviewer fetched these exact blobs.",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+          "drift": "No added lines versus checkpoint AGENTS; removes accumulated governance detail. Scope-relevant spec-first, review/evidence, FBCP Actions-only, source-review and complete-acceptance requirements retained."
+        },
+        {
+          "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+          "blob": "9c19b65b62ba42f7f22f530040f0bf4a555a8f15",
+          "drift": "Removes a checkpoint paragraph requiring historical dossier exact-blob/dependency/contract rebind and one trailing blank line. Main still requires current facts and risk-appropriate exact source disposition."
+        },
+        {
+          "path": "docs/specs/fabushi-deferred-ci-migration.md",
+          "blob": "359659cc3125d29ecb626cc74c5de40a9a1081a9",
+          "drift": "Only one trailing blank line differs."
+        }
+      ],
+      "scope_conflict_found": false,
+      "main_merge_performed": false
+    },
+    "read_depth": {
+      "governance": "AGENTS and the two SOTs, main FBCP/TDRP specs and deferred-CI spec read in full at checkpoint H. Supplied live-main changed policy blobs independently read in full.",
+      "source_code": "Targeted actual owner/composition functions, guards and selected callers/consumers inspected. Full fetched files are audit copies, not a claim that every source function was deeply reviewed.",
+      "source_inventory": "Current index/lock/ledger/schema/validator read. Inventory artifact identities and counts below are current canonical-record assertions; raw 16,381 artifact identity entries were not separately downloaded/reviewed in this subtask.",
+      "evidence_review": "No Actions test-pass claim produced by this subtask; parent separately reads complete run/job logs and exact-H metadata."
+    }
+  },
+  "prior_execution": {
+    "run_id": 41465224038,
+    "attempt": 1,
+    "head_sha": "151d3ffe6382219dab98fb317e59fe5faa8cea01",
+    "status": "completed",
+    "conclusion": "failure",
+    "reconciliation": {
+      "job_id": 125344195265,
+      "status": "success",
+      "full_log_utf8_bytes": 157325,
+      "full_log_sha256": "0532ae86d14561ae5446a0ee5fbc643e9ed014e9794c885831271cc2b31fb143",
+      "counts": {
+        "Human": {
+          "passed": 33,
+          "failed": 0,
+          "ignored": 0
+        },
+        "Agent": {
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        },
+        "private_credentials": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      "history_6400_32pages": "shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart passed; complete Human suite 72.06s"
+    },
+    "shipping": {
+      "job_id": 125344195252,
+      "status": "failure",
+      "full_log_utf8_bytes": 887015,
+      "full_log_sha256": "57f684c1260153fede795bf85c683c091c29380ce7f9c88b16deec7ed2be837e",
+      "counts": {
+        "AppHost": {
+          "passed": 12,
+          "failed": 0,
+          "ignored": 0
+        },
+        "proxy_removal_subcases": {
+          "passed": 48,
+          "repeated_no_ops": 48,
+          "complete_permutations": 6,
+          "complete_permutation_removals": 18
+        },
+        "Native": {
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        },
+        "FeatureHost": {
+          "passed": 7,
+          "failed": 0,
+          "ignored": 0
+        },
+        "Host": {
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        },
+        "C_ABI": {
+          "passed": 7,
+          "failed": 0,
+          "ignored": 0
+        },
+        "CLI": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "gateway_executable": {
+          "passed": 4,
+          "failed": 1,
+          "ignored": 0
+        }
+      },
+      "not_run": {
+        "gateway_library": 9,
+        "direct_Host_dependency_step": true,
+        "DNS_special_config": 6,
+        "future_salts": 2,
+        "protocol": 122,
+        "TCP": 9,
+        "runtime_proxy": 4,
+        "native_credential": 1,
+        "actual_package_copy": 4,
+        "actual_package_negative_controls": 2
+      },
+      "failure": {
+        "classification": "TEST_FLAW",
+        "test": "tests::repeated_approval_event_does_not_duplicate_peer_lock",
+        "source_path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+        "line": 438,
+        "assertion": "first issuance: left 0, right 1; duplicate assertion was not reached",
+        "cause": "Two approval tests use PersistentServerRequestRegistry::default(), which loads and writes the same default gateway-state-v1.json. First test leaves approval-1 pending; second test restores that pending request and production duplicate prevention correctly returns no new frame.",
+        "repair": "Explicit UUID-owned persisted fixture path per test, scoped cleanup, unchanged production Default and duplicate logic; retain five executable cases and strengthen duplicate/state/reopen/isolation assertions."
+      },
+      "expected_fixture_panic": "FeatureHost poison-state test deliberately catches its panic and passed; this is not a job failure.",
+      "diagnostic_lock_regeneration": "Post-failure diagnostic output is not causative and its unrelated upgrades must not be adopted."
+    },
+    "ui": {
+      "job_id": 125344195149,
+      "conclusion": "success",
+      "tests": {
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0
+      },
+      "production_renderer_build": "passed",
+      "bundle_boundary": "passed across45 emitted text assets"
+    },
+    "electron": {
+      "job_id": 125344194642,
+      "conclusion": "failure",
+      "passed_counts": {
+        "carrier": 10,
+        "native_auth_and_retention": 8,
+        "package_resource_copy": 3,
+        "metadata": 15
+      },
+      "failure": {
+        "classification": "IMPLEMENTATION_DEFECT",
+        "code": "MACOS_METADATA_BLOCKMAP_MISMATCH",
+        "expected_code": "MACOS_METADATA_ASSET_MISMATCH",
+        "cause": "Verifier compared gzip container bytes. Historical macOS ZIP map had equivalent decoded content but different compression envelope from Ubuntu regeneration, preventing the experiment from reaching the truly stale DMG metadata.",
+        "fix": "Compare the entire bounded decoded map buffer, preserve package hash/size equality and all map-content fields, record actual accepted sidecar identity."
+      },
+      "electron_build": "not-run after preceding experiment failure"
+    },
+    "complete_logs": [
+      {
+        "job_id": 125344195265,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038/job/125344195265",
+        "full_decoded_log_read": true,
+        "utf8_bytes": 157325,
+        "sha256": "0532ae86d14561ae5446a0ee5fbc643e9ed014e9794c885831271cc2b31fb143"
+      },
+      {
+        "job_id": 125344195252,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038/job/125344195252",
+        "full_decoded_log_read": true,
+        "utf8_bytes": 887015,
+        "sha256": "57f684c1260153fede795bf85c683c091c29380ce7f9c88b16deec7ed2be837e"
+      },
+      {
+        "job_id": 125344195149,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038/job/125344195149",
+        "full_decoded_log_read": true,
+        "utf8_bytes": 37496,
+        "sha256": "a03684fe4e4265e359755de7bd970e609260224b708236e0beb633ed0c7e4d20"
+      },
+      {
+        "job_id": 125344194642,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038/job/125344194642",
+        "full_decoded_log_read": true,
+        "utf8_bytes": 53790,
+        "sha256": "cba32c52c14642c4a315ebac657872a5527b22107fff70f0c3d49e68fd964c93"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13151766200,
+        "name": "native-message-shipping-compile-151d3ffe6382219dab98fb317e59fe5faa8cea01",
+        "bytes": 40666506,
+        "digest": "sha256:aa200932036f9699d0988ae9e86564ff9ce3e5fafe37af3c21130d3eea3ad13d",
+        "head_sha": "151d3ffe6382219dab98fb317e59fe5faa8cea01"
+      },
+      {
+        "id": 13151116327,
+        "name": "native-message-reconciliation-151d3ffe6382219dab98fb317e59fe5faa8cea01",
+        "bytes": 15157,
+        "digest": "sha256:acf551f1e73d269cd4561e9a27f13f4b30b3b099d251b6f8d74bde3c2bfec883",
+        "head_sha": "151d3ffe6382219dab98fb317e59fe5faa8cea01"
+      },
+      {
+        "id": 13149409736,
+        "name": "native-message-ui-151d3ffe6382219dab98fb317e59fe5faa8cea01",
+        "bytes": 3020,
+        "digest": "sha256:181468aeee41d2b20e97d538cabead38bbdeefc9e7e04036cf48aedebb70cb03",
+        "head_sha": "151d3ffe6382219dab98fb317e59fe5faa8cea01"
+      },
+      {
+        "id": 13149409727,
+        "name": "native-message-electron-151d3ffe6382219dab98fb317e59fe5faa8cea01",
+        "bytes": 5639,
+        "digest": "sha256:af4ffffd5899e6e5bb02c626f23e4e8988a501e4725e12350c344736230b83b7",
+        "head_sha": "151d3ffe6382219dab98fb317e59fe5faa8cea01"
+      }
+    ],
+    "downloaded_shipping_binary": {
+      "artifact_id": 13151766200,
+      "archive_size": 40666506,
+      "archive_sha256": "aa200932036f9699d0988ae9e86564ff9ce3e5fafe37af3c21130d3eea3ad13d",
+      "archive_digest_verified": true,
+      "target_sha_file": "151d3ffe6382219dab98fb317e59fe5faa8cea01",
+      "apphost": {
+        "bytes": 159740816,
+        "sha256": "684ccf0a0cfe3967278a6f6730f13cc156303884c419b888110bc9b203e339ca",
+        "hash_matches_build_receipt": true,
+        "file": "Mach-O 64-bit executable arm64",
+        "defined_symbol_count": 200935,
+        "forbidden_legacy_exports": [],
+        "forbidden_legacy_linked_libraries": [],
+        "system_linked_libraries": 8,
+        "forbidden_production_dependencies": []
+      },
+      "cli": {
+        "forbidden_normal_build_dependencies": [],
+        "manifest_blob_sha": "2307e12e714601c5e5c325aafce05fa9abce7a45",
+        "binary_paths": [
+          "src/main.rs",
+          "src/bin/mahayana-gateway.rs"
+        ],
+        "real_owner": "RuntimeHandle(MahayanaHost); HostCreateConfig -> MahayanaHost::create; execute/receive/resolve_approval/interrupt"
+      },
+      "gateway_library_entry": {
+        "manifest_blob_sha": "a784885099d9bf5cd29160285fd314a111b95ab0",
+        "lib_path": "src/lib_v2.rs",
+        "lib_v2_blob_sha": "6e8e361312c2d80ca1ac04dc492f22b80b567fa8",
+        "includes": "#[path = \"lib.rs\"] mod base; updated tests in lib.rs compile in full library target"
+      },
+      "artifact_actual_package_copy_absent": true,
+      "scope": "Downloaded immutable artifact via connector and inspected saved build logs/symbol/library text plus independently hashed binary bytes. No binary execution, local build/test, signing, installation or release."
+    }
+  },
+  "historical_package": {
+    "artifact_id": 13093546572,
+    "run_id": 41327420143,
+    "job_id": 124910185631,
+    "workflow_head": "9993ca8e107f7e019a8201e5ab74fa54e82159f2",
+    "actual_package_source": "9d16483f70df9af06db97b17bb02a24dc507e459",
+    "archive_bytes": 349512885,
+    "archive_sha256": "f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225",
+    "archive_digest_verified": true,
+    "members": 5,
+    "zip": {
+      "name": "fabushi-1.2.78-macos-arm64.zip",
+      "bytes": 174991227,
+      "sha256": "ab4631db376331e723411ebd3b0e4ccfdd7d904a396fff60946bf0a441958953"
+    },
+    "dmg": {
+      "name": "fabushi-1.2.78-macos-arm64.dmg",
+      "bytes": 174156394,
+      "sha256": "c59626591fefa2b7194961236cbbe00cb80fcc3fa78dded4f6c69cdf9053cd6b",
+      "metadata_bytes": 174154251,
+      "delta_bytes": 2143
+    },
+    "blockmaps": {
+      "version": "2",
+      "gzip_header_hex": "1f8b0800000000000213",
+      "zip": {
+        "compressed_bytes": 182060,
+        "decoded_bytes": 273323,
+        "blocks": 8306,
+        "sum_sizes": 174991227
+      },
+      "dmg": {
+        "compressed_bytes": 181899,
+        "decoded_bytes": 273090,
+        "blocks": 8300,
+        "sum_sizes": 174154251
+      }
+    },
+    "locked_generator": {
+      "package_lock_blob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+      "package": "app-builder-lib",
+      "version": "26.15.3",
+      "integrity": "sha512-2VnyWkqsP5v5XbBhL3tD5Syx8iNPBYsoU7kY4S2fz7wg8Rj/nztWKCUzGKaFRTv0Xwf3/H058CR1Kvtd/3lRow==",
+      "upstream_repository": "electron-userland/electron-builder",
+      "upstream_commit": "512a57ec9bcda593d3e0970bd2b9a33a63beeb57",
+      "source_path": "packages/app-builder-lib/src/targets/blockmap/blockmap.ts",
+      "source_blob": "14883d864890215b41e98526b863113343a88062"
+    },
+    "limits": "Archive and gzip contents inspected read-only; package bytes were not executed, installed, modified or uploaded as a release. Repair experiment must execute in Actions on a digest-verified temporary copy and preserve both package hashes and sizes."
+  },
+  "applied_repairs": [
+    {
+      "requirement": "NMR-43/NMR-AC-34",
+      "owner": "existing release metadata verifier after notarization/stapling",
+      "behavior": "Compare all decoded map bytes with64MiB maximum on both inputs; decoder/CRC/truncation/limit errors fail closed. Receipt hashes actual accepted sidecars. Existing immutable package checks, staging and metadata-last commit remain.",
+      "test_count": 18,
+      "new_tests": 3,
+      "historical_gate_weakened": false,
+      "production_caller": ".github/workflows/release-macos-main.yml: post-staple reconcile then verify before packaged acceptance/checksums; caller unchanged"
+    },
+    {
+      "requirement": "NMR-45/NMR-AC-36",
+      "owner": "existing gateway executable tests using real persistent peer registry",
+      "classification": "TEST_FLAW",
+      "behavior": "UUID-owned fixture per test; first issuance1, duplicate0 with memory/file equality, shutdown/reopen same srq and restoredRequests1, independent-store same approvalId1, lastError null. Keep five top-level cases.",
+      "test_count": 5,
+      "production_code_changed": false,
+      "global_environment_mutation": false
+    }
+  ],
+  "frozen_candidate_files": [
+    {
+      "path": "desktop/scripts/reconcile-macos-update-metadata.mjs",
+      "bytes": 12582,
+      "git_blob_sha": "a1c17193c5d32c1d9cec949142623b7788658723",
+      "sha256": "9eb123a5c0db9b1f16cd9db8c1ebe90594ad4f04289a6fca94a956660659f1a4"
+    },
+    {
+      "path": "desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs",
+      "bytes": 17069,
+      "git_blob_sha": "41a45aa38b51da2002706d416b998e004651974b",
+      "sha256": "bbf9d0531ffe32f00921b887e38c7aa3d3baa85c8f8c401d98a52ce71c9af781"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+      "bytes": 21610,
+      "git_blob_sha": "e8c93f3dff4f96a1ee25957700e0a261ddaa13e0",
+      "sha256": "d6862fb3017cdd89abe1c0275cf22d71af96b2bbe06d2becd9819816eaa6f0bf"
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "bytes": 35456,
+      "git_blob_sha": "00f2f842bcf72b16b32496ef084ea0f196f2f614",
+      "sha256": "9b1e3cbd3a28a41c5b221987473ce77850b436badbb534866675266033a931b3"
+    },
+    {
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "bytes": 74803,
+      "git_blob_sha": "fcfd25dc5a162db34d07c3b3630189e59b39b86e",
+      "sha256": "e51e62823874d6fe4243db5e0bb73777e301c4600e3b942d7239707819caf61f"
+    },
+    {
+      "path": "projects/telegram-desktop-rust/STATUS.md",
+      "bytes": 7145,
+      "git_blob_sha": "72cd910dbca9bac68ba50b7794402de5622da673",
+      "sha256": "aae146a1dded332a289b1d13f056dc36cd905003951d81dede2be886dd520db2"
+    },
+    {
+      "path": "projects/fabushi-communication-platform/STATUS.md",
+      "bytes": 4775,
+      "git_blob_sha": "128be8654d1274e962668c3db67a0ed6a5f8982a",
+      "sha256": "5e3aff4b9f1497ccfa5ca699d14e216f3ebdb4486748fd70587de7ee1a3c91bc"
+    },
+    {
+      "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "bytes": 29210,
+      "git_blob_sha": "c8c94abbf6f7103291a6dc3ebb5ac8120e94284d",
+      "sha256": "e32e071773f9e8dde7551d3eb27f2d26b1ed63c7b0dafd44ff7cf4395a7566d8"
+    },
+    {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "git_blob_sha": "d5de94ed9720f7fd407588868557bc46df943ebf"
+    }
+  ],
+  "independent_source_reviews": {
+    "metadata": {
+      "schema_version": 1,
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 20,
+      "review_kind": "independent bounded source review",
+      "reviewed_at_utc": "2026-11-02T14:55:51Z",
+      "repository": "bhrumom/fabushi-desktop",
+      "base_sha": "151d3ffe6382219dab98fb317e59fe5faa8cea01",
+      "reviewer": "independent child agent; not the author of this Desktop patch",
+      "scope": [
+        {
+          "path": "desktop/scripts/reconcile-macos-update-metadata.mjs",
+          "base_blob_sha": "5196c9820866bb8972a543ca4f2414f3d9fa63dc",
+          "reviewed_local_blob_sha": "a1c17193c5d32c1d9cec949142623b7788658723",
+          "sha256": "9eb123a5c0db9b1f16cd9db8c1ebe90594ad4f04289a6fca94a956660659f1a4",
+          "coverage": "complete source and complete diff"
+        },
+        {
+          "path": "desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs",
+          "base_blob_sha": "8cff9653a2a4bb93cfc025189c749f029de03daf",
+          "reviewed_local_blob_sha": "41a45aa38b51da2002706d416b998e004651974b",
+          "sha256": "bbf9d0531ffe32f00921b887e38c7aa3d3baa85c8f8c401d98a52ce71c9af781",
+          "coverage": "complete source and complete diff"
+        },
+        {
+          "path": ".github/workflows/native-service-contracts.yml",
+          "base_blob_sha": "9ed82f7c4c9735c6095c461fe898fead86c3d9c2",
+          "reviewed_local_blob_sha": "00f2f842bcf72b16b32496ef084ea0f196f2f614",
+          "sha256": "9b1e3cbd3a28a41c5b221987473ce77850b436badbb534866675266033a931b3",
+          "coverage": "complete diff; Electron job's metadata and historical-artifact flow"
+        },
+        {
+          "path": "docs/specs/fbcp-native-message-reconciliation.md",
+          "base_blob_sha": "811df2d84469d5d510bfe802bf612562321ec0cc",
+          "reviewed_local_blob_sha": "fcecb47708c82d67de46deb35ac551431b474052",
+          "sha256": "2c06d4c9d712bea567233f35f29daac3357561d020a14a728279499f25bdb599",
+          "coverage": "complete diff and NMR-43/NMR-AC-34 applicable specification"
+        },
+        {
+          "path": ".github/workflows/release-macos-main.yml",
+          "reviewed_local_blob_sha": "303e628fdcfa5c7d81baa40772384efb9a92efbf",
+          "sha256": "4a9e195de928f7ab1467f0cded757981a6f7447f4a53050ae0d51ebddbc94431",
+          "coverage": "adjacent package/staple/reconcile/verify/candidate/checksum/artifact callers"
+        }
+      ],
+      "identity_correction": {
+        "adjacent_release_caller": "Removed one hydration-added trailing newline; current local bytes have canonical base blob 303e628fdcfa5c7d81baa40772384efb9a92efbf. No semantic or remote file change.",
+        "three_metadata_files_unchanged": true,
+        "unchanged_paths": [
+          "desktop/scripts/reconcile-macos-update-metadata.mjs",
+          "desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs",
+          ".github/workflows/native-service-contracts.yml"
+        ],
+        "spec_scope": "The recorded Spec blob is the revision originally reviewed for the NMR-43 recovery delta. A later NMR-45 addition changes the current Spec to blob fcfd25dc5a162db34d07c3b3630189e59b39b86e and is assigned to a different reviewer; this review does not approve that addition."
+      },
+      "result": "no_blocking_findings_in_reviewed_diff",
+      "findings": [],
+      "review_observations": [
+        {
+          "subject": "comparison boundary",
+          "path": "desktop/scripts/reconcile-macos-update-metadata.mjs",
+          "lines": [
+            130,
+            146
+          ],
+          "observation": "Both supplied and freshly generated gzip sidecars are decoded with maxOutputLength=64MiB and their complete decoded byte buffers are compared. This admits equivalent envelopes/compression while retaining exact locked-generator map content; it does not normalize or ignore checksum/size/offset/name/version/structure fields."
+        },
+        {
+          "subject": "decode failure",
+          "path": "desktop/scripts/reconcile-macos-update-metadata.mjs",
+          "lines": [
+            130,
+            134
+          ],
+          "observation": "Any read/decode/CRC/truncation/output-limit error reaches MACOS_METADATA_BLOCKMAP_MISMATCH. Both sides use the same bound. Existing compressed-sidecar regular-file/64MiB preflight remains present."
+        },
+        {
+          "subject": "receipt identity",
+          "path": "desktop/scripts/reconcile-macos-update-metadata.mjs",
+          "lines": [
+            145,
+            159
+          ],
+          "observation": "After decoded equality, hashes(asset.sidecar) replaces the temporary generated map identity, so a differently encoded accepted sidecar is represented by its actual size/SHA256/SHA512 in the receipt. Existing final unchanged-input checks still precede the receipt."
+        },
+        {
+          "subject": "failure/writes",
+          "path": "desktop/scripts/reconcile-macos-update-metadata.mjs",
+          "lines": [
+            163,
+            197
+          ],
+          "observation": "Verification continues to generate only temporary expected maps outside candidate directory and makes no candidate writes. Reconciliation still stages regenerated sidecars and metadata, checks input stability, renames metadata last and re-verifies; the patch adds no package mutation path."
+        },
+        {
+          "subject": "cross-platform regression oracle",
+          "path": "desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs",
+          "lines": [
+            84,
+            137
+          ],
+          "observation": "The stapling regression now supplies a differently compressed ZIP sidecar with historical macOS OS byte, requiring that it pass comparison before stale DMG fails specifically at ASSET_MISMATCH. Separate positive test changes gzip OS and timestamp and independently checks receipt hashes against actual accepted sidecar bytes."
+        },
+        {
+          "subject": "negative coverage",
+          "path": "desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs",
+          "lines": [
+            140,
+            180
+          ],
+          "observation": "New valid-gzip negative matrix changes checksum, block size, offset, file name, map version, file structure and checksum cardinality. Malformed/truncated/CRC-corrupt/64MiB+1 decoded inputs are rejected; snapshots assert candidate bytes and modes unchanged, and repair remains callable afterward."
+        },
+        {
+          "subject": "CI count and immutable experiment",
+          "path": ".github/workflows/native-service-contracts.yml",
+          "lines": [
+            466,
+            551
+          ],
+          "observation": "There are 18 authored top-level test declarations and CI now requires tests18/pass18 with zero failures/cancelled/skipped. Historical experiment retains pinned artifact/run/head/digest admission, exact ASSET_MISMATCH rejection and before/after package SHA256+size equality; no assertion was loosened."
+        },
+        {
+          "subject": "production caller",
+          "path": ".github/workflows/release-macos-main.yml",
+          "lines": [
+            387,
+            432
+          ],
+          "observation": "Existing release flow invokes reconcile then verify after notarization/stapling and before packaged-candidate acceptance/checksum steps, passing the bound source SHA and version. The existing artifact upload retains final metadata receipt. This review does not establish execution of that release flow."
+        }
+      ],
+      "limitations": [
+        "No tests, builds, runtime, installer, signing or production requests were executed by this reviewer.",
+        "Authored test count is a source count only; exact-H GitHub Actions must establish actual pass/fail outcomes.",
+        "The historical failure/OS-byte/artifact characterization was supplied by the integrating agent; this source review did not independently reproduce the macOS blockmap generator or execute the historical repair.",
+        "Review applies only to the listed local blob identities relative to the frozen base; later changes require review of the changed scope.",
+        "Adjacent release workflow was inspected only at relevant callers, not audited as a complete release system.",
+        "This bounded independent review is not final FBCP/TDRP ACCEPT or signed package, installation, update/rollback, performance or full migration acceptance."
+      ],
+      "independent_product_acceptance": false,
+      "required_next_evidence": "Commit reviewed changes by nonforced expected-SHA update, read back remote blobs/SHA, then inspect exact-H Actions metadata18 and immutable historical-repair outcomes plus required affected Electron build gate."
+    },
+    "gateway_fixture": {
+      "format": "FBCP_NMR_ROUND20_GATEWAY_FIXTURE_REVIEW_V1",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 20,
+      "repository": "bhrumom/fabushi-desktop",
+      "base_h": "151d3ffe6382219dab98fb317e59fe5faa8cea01",
+      "reviewer_role": "Independent read-only reviewer of gateway fixture repair; not the fixture writer",
+      "phase": {
+        "classification": "Independent source review, persistent-state and cleanup ownership",
+        "effort": "Inherited session setting; no model/effort override applied by this phase",
+        "scope": "Complete applied gateway executable file/diff; NMR-45/NMR-AC-36 and adjacent NMR-44; actual persistent registry implementation, exported types and Cargo wiring."
+      },
+      "verdict": "NO_BLOCKING_FINDINGS_STATIC_REVIEW",
+      "findings": [],
+      "reviewed_files": [
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+          "git_blob": "e8c93f3dff4f96a1ee25957700e0a261ddaa13e0",
+          "sha256": "d6862fb3017cdd89abe1c0275cf22d71af96b2bbe06d2becd9819816eaa6f0bf",
+          "bytes": 21610,
+          "scope": "Complete applied file and exact-base diff",
+          "base_git_blob": "6b33a663a6d4639663258e8076a0d532b36e60f1",
+          "base_sha256": "70e3c1576a38a3deaac4d65c04960a4317dcc4b2fd22d7893871d3661b8f41e9"
+        },
+        {
+          "path": "docs/specs/fbcp-native-message-reconciliation.md",
+          "git_blob": "fcfd25dc5a162db34d07c3b3630189e59b39b86e",
+          "sha256": "e51e62823874d6fe4243db5e0bb73777e301c4600e3b942d7239707819caf61f",
+          "bytes": 74803,
+          "scope": "NMR-45/NMR-AC-36 lines836-866 plus adjacent NMR-44; prior base spec read under preceding audit. Other current metadata amendment is outside this focused review."
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+          "git_blob": "0371a98be4328c37b05398a1e6785b8daf89dfd5",
+          "sha256": "80c6624146ef7a2d60104acd9c26f389f7e177d21cba55bfb63dc4cf961346d3",
+          "bytes": 14088,
+          "scope": "Complete exact-H file; persistent registry, state fields, locking and default path"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+          "git_blob": "f3fd6ea1207aafca1461c5244672ecf222d3a367",
+          "sha256": "7d024ad9b3d2eb7cb9c4385656337246fc60acc456e66e82f127413021150571",
+          "bytes": 19326,
+          "scope": "PendingServerRequest type/traits, issuance, export/import and reconnect frame consumers"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/Cargo.toml",
+          "git_blob": "7c3a58464a76c0c2157fc115d8210f015d7837b1",
+          "sha256": "0a0f910835eb6aeeaa86c53e5384d24754f45f82b590f3141a6cf0e32271a3a2",
+          "bytes": 387,
+          "scope": "Complete exact-H manifest"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml",
+          "git_blob": "2307e12e714601c5e5c325aafce05fa9abce7a45",
+          "sha256": "29711666a83fab38062d4c917b523ca246a5f54d5ac5735cf82aa61053d9e063",
+          "bytes": 2226,
+          "scope": "Complete exact-H manifest"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/Cargo.toml",
+          "git_blob": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+          "sha256": "1277bf67395e1a1e5abb9136986e954c9e8fcd7c40ce1233b0f48f9c3f6135bc",
+          "bytes": 8038,
+          "scope": "Workspace edition and relevant dependencies"
+        }
+      ],
+      "supplied_diff": {
+        "path": "/workspace/scratch/b725a2794b30/audit-shipping/gateway-fixture-repair.diff",
+        "sha256": "8b7d052502f825f435c9ec79f0ff25f37c1b5690177fa6a58e35931c8b489171",
+        "bytes": 4807
+      },
+      "frozen_reviewed_copies": "/workspace/scratch/b725a2794b30/audit-gateway-review/reviewed/",
+      "checks": [
+        {
+          "id": "NMR-45-ISOLATION",
+          "status": "satisfied-by-source-inspection",
+          "evidence": "ApprovalFixture::new uses a v4 UUID suffix beneath std::env::temp_dir and std::fs::create_dir (exclusive creation). If path already exists construction fails before fixture Drop ownership exists. File path is inside that owned directory. No environment variable write or production default-store deletion."
+        },
+        {
+          "id": "NMR-45-RAII",
+          "status": "satisfied-by-source-inspection",
+          "evidence": "Drop removes only self.root. Each fixture variable outlives its registry variables by declaration/drop order, including reopened and independent registries. Registry operations release their synchronous StateFileLock before returning. Panic unwinding cleans owned fixture directories; no broad/shared path cleanup introduced."
+        },
+        {
+          "id": "NMR-45-REAL-REGISTRY",
+          "status": "satisfied-by-source-inspection",
+          "evidence": "mahayana-gateway-peer/Cargo.toml selects src/lib_v2.rs. Gateway alias binds PersistentServerRequestRegistry. open calls public new(Some(path)); persistence remains enabled. public durability_info reports exact lastError/restoredRequests keys. The wrapper calls update_requests synchronously after issuance."
+        },
+        {
+          "id": "NMR-AC-36-INITIAL",
+          "status": "authored-and-source-reviewed-not-executed",
+          "evidence": "Both original approval tests create a fresh explicit store, assert empty, issue exactly one frame, and assert lastError is null. Existing requestId/method/srq assertions retained."
+        },
+        {
+          "id": "NMR-AC-36-DUPLICATE",
+          "status": "authored-and-source-reviewed-not-executed",
+          "evidence": "Repeated-event case records full exported PendingServerRequest and actual persisted bytes; duplicate emits zero frames and both observations remain equal. Production issue_server_requests checks pending_approval_exists before peer.issue."
+        },
+        {
+          "id": "NMR-AC-36-REOPEN",
+          "status": "authored-and-source-reviewed-not-executed",
+          "evidence": "drop(peer) ends original registry. fixture.open reloads the same explicit file, asserts null lastError, then restoredRequests=1, full state equality, and open_requests(session-1) retaining original srq ID. Repeated event emits zero frames; state and file bytes remain unchanged."
+        },
+        {
+          "id": "NMR-AC-36-INDEPENDENT",
+          "status": "authored-and-source-reviewed-not-executed",
+          "evidence": "A second exclusively owned fixture uses same approval-1 and issues one frame normally; first restored registry/exported state and file bytes remain unchanged."
+        },
+        {
+          "id": "RUST-VISIBILITY-DEPENDENCIES",
+          "status": "source-compatible-pending-compile",
+          "evidence": "new, export_state, durability_info, open_requests, len/is_empty are public; PendingServerRequest derives PartialEq+Debug; parent PathBuf/Arc/Mutex available through use super::*; cli already depends on uuid.workspace and workspace enables v4. No dependency changes required."
+        },
+        {
+          "id": "TEST-COUNT-AND-SCOPE",
+          "status": "satisfied-by-source-inspection",
+          "evidence": "Exact same five named #[test] functions remain. All Rust changes are within cfg(test) module. Base and applied production prefix before cfg(test) have identical SHA256 f36826f7812a3837f5307c8f639fce9114a347d017bca3dcbfe855ac1f3aedbf."
+        },
+        {
+          "id": "PRODUCTION-DEFAULT",
+          "status": "satisfied-by-source-inspection",
+          "evidence": "run() still uses ServerRequestRegistry::default(); actual PersistentServerRequestRegistry Default/default_state_path are untouched. No production duplicate logic, public schema or Cargo/lockfile change is present in this repair."
+        },
+        {
+          "id": "SPEC-TRACE",
+          "status": "satisfied-by-source-inspection",
+          "evidence": "NMR-45/AC-36 explicitly classify shared persistent fixture contamination as TEST_FLAW, require isolated real persistence, unchanged duplicate and production defaults, retained five-case gate and exact repaired-H Actions. Fixture change implements those authored requirements without claiming execution."
+        }
+      ],
+      "preserved_test_names": [
+        "approval_event_emits_peer_request_with_same_runtime_request_id",
+        "repeated_approval_event_does_not_duplicate_peer_lock",
+        "peer_decision_maps_to_canonical_host_enum_and_declines_unknown",
+        "direct_gateway_host_status_and_ready_without_ffi",
+        "direct_gateway_host_rejects_legacy_telegram_handoff"
+      ],
+      "execution": {
+        "local_build": false,
+        "local_test": false,
+        "local_validator": false,
+        "local_rustfmt": false,
+        "review_methods": "Read-only GitHub exact-base fetch, source/diff inspection and file-identity hashing; no project code executed.",
+        "remaining": "Freeze the published containing H and obtain complete GitHub Actions results for CLI3, gateway executable5, gateway library9 and previously unexecuted shipping/protocol/TCP/resource-copy gates. A green source review does not prove compilation, runtime behavior or the full migration."
+      },
+      "independent_acceptance": false,
+      "product_acceptance": false,
+      "mutations": "Only audit copies and this review JSON were written by reviewer. Production source, specs, tracking ledger, schema, lock and RTM were not modified."
+    },
+    "final_ACCEPT": false
+  },
+  "containing_commit_validation": {
+    "status_at_receipt_creation": "not-run",
+    "location": "GitHub Actions only; inspect run head_sha and every selected job before claiming success",
+    "native_service_gates": {
+      "Human": 33,
+      "Agent": 4,
+      "private_credentials": 3,
+      "AppHost": 12,
+      "ordered_proxy_subsets": 16,
+      "proxy_removals": 48,
+      "proxy_repeat_noops": 48,
+      "proxy_complete_permutations": 6,
+      "Native": 6,
+      "FeatureHost": 7,
+      "Host": 6,
+      "C_ABI": 7,
+      "CLI": 3,
+      "gateway_executable": 5,
+      "gateway_library": 9,
+      "DNS_special_config": 6,
+      "future_salts": 2,
+      "protocol": 122,
+      "TCP": 9,
+      "runtime_proxy": 4,
+      "native_credential": 1,
+      "UI": 16,
+      "Electron_carrier": 10,
+      "Electron_auth": 8,
+      "Electron_synthetic_copy": 3,
+      "metadata": 18,
+      "shipping_actual_package_copy": 4,
+      "shipping_copy_negative_controls": 2
+    },
+    "additional_gates": [
+      "historical artifact admission/digest and exact stale-DMG ASSET_MISMATCH",
+      "repair then verify identical receipts with immutable ZIP/DMG hashes and sizes",
+      "actual Electron build",
+      "AppHost build/normal-build dependency/symbol/dylib boundary",
+      "source-review contracts/schema/current ledger shape/fixed-U candidate consistency/accepted-mode rejection"
+    ],
+    "local_test_build_validator_or_formatter_executed": false,
+    "rerun_policy": "Repair classified cause or environment evidence; never retry unchanged failures to select a green result."
+  },
+  "current_production_owners": {
+    "composition": [
+      {
+        "path": "source/electron-main/entry.ts",
+        "blob": "3c877893f5f6478251587a1130e08328c9cf15f7",
+        "symbols": [
+          "composeElectronProductionCoordinatorBindings",
+          "startElectronMainProduction"
+        ],
+        "finding": "Existing Electron coordinator and production services compose shipping host."
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+        "symbols": [
+          "main",
+          "UnifiedAppHost::new",
+          "PlatformRequestHost::new"
+        ],
+        "finding": "Host main creates existing unified app host; separate platform request lane avoids starving agent/feature events."
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "blob": "7343405aa1a0dca67bda7741dfc464732693fc58",
+        "symbols": [
+          "create_feature_host"
+        ],
+        "finding": "Shipping creation sets telegram_client_id=None and telegram_self_user_id=None; retained legacy login commands refuse activation."
+      }
+    ],
+    "domains": [
+      {
+        "domain": "identity",
+        "owner": "Existing Fabushi account/auth service with Electron private credential handoff and Rust fresh credential projection",
+        "evidence": "source/host/src/extensions/session/native_messaging.rs: credential_claim/verify_account_identity and stable credential checks before/after network and resource decode",
+        "boundary": "No identity from legacy Telegram login; live backend authorization remains separate acceptance."
+      },
+      {
+        "domain": "conversation",
+        "owner": "ProductionSessionWorkers and its canonical SandAgentDb for Human pair/conversation state",
+        "evidence": "source/host/src/extensions/session/production.rs: create_human_conversation/open_human_conversation_db_owner/sync_human_conversation",
+        "boundary": "Renderer conversation arrays are projections."
+      },
+      {
+        "domain": "message",
+        "owner": "Session/Transcript durable local intent and transcript; Fabushi native service owns remote message identity and service authorization",
+        "evidence": "ProductionRenderer.sendComposerPrompt -> sendHumanMessage -> ProductionSessionWorkers.append_human_message_with_context -> FabushiNativeMessagingClient.send_direct_message -> /api/social/messages -> same SandAgentDb settlement/events",
+        "boundary": "Selected call chain inspected; no assertion of complete remote service or migration acceptance."
+      },
+      {
+        "domain": "resource",
+        "owner": "Existing Session resource upload/materialization connected to native message-resource HTTP contract",
+        "evidence": "native_messaging.rs resource /api/social/message-resources methods plus production.rs append/sync materialization",
+        "boundary": "Identity, account and file/resource checks remain in same owner; no second resource store introduced."
+      },
+      {
+        "domain": "permission",
+        "owner": "Fresh bound credential, direct-pair Session admission and authenticated backend",
+        "evidence": "native_messaging credential stability; production per-row admission before persistence/resource work; FeatureHost production Electron guard",
+        "boundary": "External service production Worker and backend pagination evidence still require independent qualification."
+      },
+      {
+        "domain": "search",
+        "owner": "Existing Session authorized Human transcript query",
+        "evidence": "ProductionRenderer searchHumanMessages -> production.rs search_human_messages -> read_human_conversation_transcript",
+        "boundary": "Broader shared contextual/object/universal Search/pickers are not proven complete by this bounded path."
+      }
+    ],
+    "legacy_boundary": {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "blob": "c8ce673a23eb51d874b58e791435359572ead3b0",
+      "symbols": [
+        "ensure_desktop_messaging_owner",
+        "execute_messaging_sync",
+        "read_messaging_blob_range",
+        "issue_messaging_access"
+      ],
+      "finding": "Production + Electron refuses standalone MessagingService before parse/lock/account-root/file I/O. Other modes/platforms retain the service and are not desktop acceptance.",
+      "retirement": "Historical provider/runtime/data retained; no safe-deletion claim, no files or user data removed."
+    },
+    "source_blobs": {
+      "source/host/src/extensions/session/production.rs": "f254c169115a6f298e8eb8a11251b3377c5345ec",
+      "source/host/src/extensions/session/native_messaging.rs": "5e199fc884df8ee98e73323b71dff98c516c0148",
+      "frontend/src/production/ProductionRenderer.tsx": "d7d8daae62970872b2cd8999103511ed2880684d",
+      "projects/fabushi-communication-platform/current-owner-inventory.md": "82e0b4be24c20bcd968dd5f6abda1a7313c7ae66",
+      "projects/fabushi-communication-platform/owner-resolution-matrix.md": "79c72ae2ed178ef328b87f64b0fdfea68fc9a5de"
+    }
+  },
+  "source_accounting": {
+    "lock_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+    "index_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+    "ledger_blob": "d818129065b9e60390f85bbfb050b0732f76733a",
+    "format_version": 3,
+    "spec_revision": 9,
+    "global_target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
+    "global_target_qualification": "Historical scoped target marker, not this round H.",
+    "inventory": {
+      "root": 6895,
+      "recursive": 16381,
+      "repository_nodes": 41,
+      "edges": 40,
+      "unknown": null,
+      "unread": null,
+      "omitted_known": 0
+    },
+    "ledger": {
+      "rows": 183,
+      "implemented": 62,
+      "mapped": 121,
+      "coverage_pending": 183,
+      "release_pending": 182,
+      "release_blocked": 1,
+      "source_reviews_present": false,
+      "candidate_status": "unaccepted-inventory-open"
+    },
+    "inventory_evidence": {
+      "producer_h": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+      "run": 41397005716,
+      "job": 125120388601,
+      "artifact": 13118749668,
+      "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+    },
+    "build_observation_evidence": {
+      "producer_h": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "run": 41401970993,
+      "artifact": 13121721589,
+      "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+      "text_blobs": 203,
+      "explicit_unread_dlls": 2,
+      "lexical_candidate_lines": 333,
+      "contexts": 508,
+      "unresolved_ref_observations": 76
+    },
+    "remaining": "Full exact source reviews, recursive external/build acquisitions, generated/LFS/legal disposition and all applicable production/independent acceptance. Enumeration or lexical candidates do not close them.",
+    "cppgir": "Historical transport blocker is recorded resolved through Git evidence; this does not close semantic/legal/external-input/product gates.",
+    "new_round20_ledger_blob": "d5de94ed9720f7fd407588868557bc46df943ebf",
+    "ledger_blob_qualification": "source_accounting.ledger_blob is pre-update exact151 blob; new_round20_ledger_blob is proposed changed blob for containing commit"
+  },
+  "schema_and_validator": {
+    "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+    "validator_blob": "c5e55711fff258429256863b81ef6e4cf9efd7fd",
+    "accepted_entry_blob": "66743fbb9d83461c822e43b30966bc46e400996e",
+    "workflow_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+    "contract_present": true,
+    "inspection": "Schema source_reviews supports exact repository/commit/path/object, category/risk/depth/status/rationale/evidence/responsibility IDs, strict known fields, complete evidence and depth conditionals. validateSourceReviews rejects duplicate/missing/unknown/drifted identities, incomplete status, missing evidence, insufficient depth or missing/extraneous responsibility links.",
+    "accepted_mode": "scripts/validate-tdrp-revision9-authority.mjs line69 rejects open rebaseline candidates; lines721-730 require accepted lock flags, validateSourceReviews(recursiveInventory, ledger.source_reviews, ledger.rows), omitted/unmapped zero and exact H evidence.",
+    "workflow": "tdrp-source-review-contract checks positive/negative contract cases, schema and actual ledger shape, candidate consistency and required accepted-mode rejection. Read only: no validator executed here.",
+    "batch_schema_change_needed": false
+  },
+  "canonical_tracking_update": {
+    "inventory": "unchanged",
+    "ledger": "Existing FBCP-NMR-001 row only: scoped requirement, authored tests, failed exact151 run and unexecuted gates recorded; historic target_commit and source review counters preserved; no ACCEPT.",
+    "rtm": "NMR41-45 exact old-run outcomes, repaired requirements and new-H gates",
+    "locks": "unchanged",
+    "historical_targets": "Retained as explicitly scoped historical qualification, not the repair H"
+  },
+  "backend_read_only": {
+    "schema_version": 1,
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 20,
+    "observed_at_utc": "2026-11-02T14:51:11Z",
+    "repository": "bhrumom/fabushi-backend",
+    "scope": "read-only; no backend write, merge, deploy, dispatch or production request",
+    "pr": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_ref": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "base_ref": "main",
+      "base_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "main_live_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "reviews": 0,
+      "comments": 0,
+      "explicit_merge_or_deploy_authorization": false
+    },
+    "constraints": {
+      "agents_blob_sha": "3c730dbdcf2b3d874441bb784ba5f64a1b078a27",
+      "production_spec_blob_sha": "a56fa67ffe0c5fda8d9c1223e07ce0bf4425b60d",
+      "human_messaging_spec_blob_sha": "2d138228e62d9438c3b1f67ecb3f20789b66250b",
+      "source_of_truth_file_found": false,
+      "production_workflow_blob_sha": "54870db11c4e4d854fafe66c11d007ca5d0a2f5d",
+      "production_workflow_requires": "manual workflow_dispatch from canonical main, exact SHA checkout, security preflight, D1 recovery bookmark, migrations before deploy, health and provenance"
+    },
+    "exact_head_validation": {
+      "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "legacy_status_contexts": 0,
+      "check_runs": 2,
+      "runs": [
+        {
+          "run_id": 41427242843,
+          "job_id": 125216707135,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843",
+          "complete_job_log_fetched": true,
+          "log_utf8_file": "backend-round20-pr.log",
+          "log_utf8_sha256": "57b6be07459bec0528c0df83a77aa7959130f44f2b0544565953c342871c88d1",
+          "tests": {
+            "existing_mock_and_marker_contracts": 29,
+            "real_sqlite": 10,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "todo": 0
+          }
+        },
+        {
+          "run_id": 41427235133,
+          "job_id": 125216681052,
+          "event": "push",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427235133",
+          "complete_job_log_fetched": true,
+          "log_utf8_file": "backend-round20-push.log",
+          "log_utf8_sha256": "fbe14cddebfab85c17fde458b235854cdc33904bcc7a94f43d2e9dd83a9e450e",
+          "tests": {
+            "existing_mock_and_marker_contracts": 29,
+            "real_sqlite": 10,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "todo": 0
+          }
+        }
+      ],
+      "limits": "29 includes five source-marker mutation contracts; separate ten tests use real local SQLite behind a D1-shaped adapter on GitHub Actions. Neither run observes deployed Cloudflare D1 or establishes production acceptance."
+    },
+    "historical_production": {
+      "run_id": 40047409890,
+      "job_id": 120732189309,
+      "attempt": 1,
+      "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890",
+      "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "created_at_utc": "2026-10-24T00:56:05Z",
+      "completed_status": "success",
+      "worker": "fabushi-flutter-web-prod",
+      "logged_version_id": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "deploy_log_timestamp": "2026-10-24T00:56:43.3371948Z",
+      "complete_job_log_fetched": true,
+      "log_utf8_sha256": "e403c45e3c6a58c3dc5ca0562bbd46a3a2f66a9c24028d79ecaa443ad0c6666d",
+      "steps_succeeded": [
+        "main guard",
+        "exact SHA checkout",
+        "production security preflight",
+        "D1 recovery bookmark",
+        "D1 migrations",
+        "Worker deploy",
+        "public health",
+        "FDN unauthenticated enrollment rejection",
+        "provenance upload"
+      ],
+      "provenance_artifact": {
+        "id": 12542026010,
+        "size_in_bytes": 1062,
+        "digest": "sha256:ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+        "expired": false,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890/artifacts/12542026010",
+        "archive_payload_inspected": true,
+        "archive_inspected_at_utc": "2026-11-02T14:53:02Z",
+        "archive_bytes": 1062,
+        "archive_sha256_matches_github_digest": true,
+        "members": [
+          {
+            "path": "production-worker-delivery-provenance.json",
+            "size_in_bytes": 363,
+            "sha256": "f45d8037a9f2b5e06e733a4bce4a4b9a96a4dfa2eb103d978738130c607f0d19",
+            "content": {
+              "repository": "bhrumom/fabushi-backend",
+              "sourceSha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+              "runId": "40047409890",
+              "runAttempt": "1",
+              "worker": "fabushi-flutter-web-prod",
+              "database": "DB/fabushi-db",
+              "migrations": "success",
+              "deploy": "success",
+              "healthUrl": "https://api.ombhrum.com/health",
+              "completedAt": "2026-10-24T00:56:44Z"
+            }
+          },
+          {
+            "path": "production-health.json",
+            "size_in_bytes": 128,
+            "sha256": "e474bdf9c1a4b6a00a2bb52756357f9c7fd4e28466bbc33b890c3ef4a7c15eaf",
+            "content": {
+              "status": "ok",
+              "role": "legacy-compatibility-gateway",
+              "controlPlane": "mahayana-platform",
+              "timestamp": "2026-10-24T00:56:43.623Z"
+            }
+          },
+          {
+            "path": "fdn-public-gateway.json",
+            "size_in_bytes": 447,
+            "sha256": "8811d5e96da69c8f398b94b2407d92df4873799176332f04e5ea4d242d2450af",
+            "content": {
+              "sourceSha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+              "runId": "40047409890",
+              "checks": [
+                {
+                  "path": "/api/fdn/network-enrollment/start",
+                  "status": 401,
+                  "owner": "existing-account-api"
+                },
+                {
+                  "path": "/api/fdn/network-enrollment/complete",
+                  "status": 401,
+                  "owner": "existing-account-api"
+                }
+              ],
+              "result": "passed",
+              "claims": "public route ownership and unauthenticated denial only"
+            }
+          }
+        ]
+      },
+      "recovery_artifact": {
+        "id": 12542105783,
+        "size_in_bytes": 244,
+        "digest": "sha256:9b6e7cf63c49d7db8aed6120df9ee0cc3dcfdec33c5d03ae063a4861538799fb",
+        "expired": false
+      },
+      "newer_canonical_production_delivery_in_newest_100_main_runs": false,
+      "read_coverage": "GET actions/runs?branch=main&per_page=100; newest returned main run is 40104992740 at 2026-10-24T15:00:21Z. Production workflow scoped listing endpoint was unsupported by connector. No claim is made about out-of-band Cloudflare deployment.",
+      "current_active_worker_version_verified": false,
+      "limits": "This is a historical deploy observation; it is not proof that the same version is currently active. The successful smoke probes cover health and FDN enrollment 401s, not authenticated social-message pagination."
+    },
+    "implementation_authority": {
+      "path": "fabushi/web/src/handlers/friends.js",
+      "head_blob_sha": "fca0ed323b34fe767cad262af57cedcf0e71a79f",
+      "main_and_historical_deployment_blob_sha": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+      "single_owner_chain": "handleListDirectMessages -> requireStableAuth -> areFriends -> pair-scoped direct_messages D1 query -> reaction projection -> historyCursor/nextAfterId response; Desktop Session/Transcript remains downstream materialization",
+      "head_behavior": "Explicit decimal nonnegative safe afterId, including zero, selects ascending IDs for the authenticated friend pair with 200-message ceiling; empty pages echo historyCursor and retain nextAfterId.",
+      "main_and_historical_deployment_behavior": "afterRaw && (!Number.isSafeInteger(afterId) || afterId <= 0) returns HTTP 400; no historyCursor response field.",
+      "main_source_url": "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/fabushi/web/src/handlers/friends.js",
+      "head_source_url": "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/fabushi/web/src/handlers/friends.js",
+      "historical_deployment_source_url": "https://github.com/bhrumom/fabushi-backend/blob/33a26692ce2f74e3fdca3940dfc4cbfb3ede151b/fabushi/web/src/handlers/friends.js"
+    },
+    "production_acceptance": {
+      "accepted": false,
+      "authenticated_after_id_zero_multi_page": false,
+      "empty_cursor_behavior": false,
+      "unauthorized_peer_denials": false,
+      "remote_recovery": false,
+      "current_deployed_source_provenance": false
+    },
+    "remaining_blockers": [
+      "Explicit authorization and repository-compliant review/merge of PR #137 are absent.",
+      "Approved canonical-main production deployment and current active Worker/source binding are absent.",
+      "No authenticated real-service afterId=0 multi-page, terminal/empty cursor, unauthorized-peer denial or remote D1 recovery evidence was found in reviewed PR/CI/deployment records."
+    ],
+    "next_allowed_action": "Continue read-only observation of PR #137 and approved production evidence; do not merge/deploy. After separately authorized merge/deploy, inspect exact deployed SHA/version and authenticated pagination/denial/recovery artifacts."
+  },
+  "original_requirement_checklist": [
+    {
+      "id": "preflight-current-facts",
+      "result": "performed",
+      "evidence": "Current checkpoint/main refs; latest AGENTS/SOT/two main specs/deferred-CI; source lock, ledger and actual owner chain inspected; no remote work overwritten."
+    },
+    {
+      "id": "1-fixed-complete-source-accounting",
+      "result": "partial-unaccepted",
+      "evidence": "Fixed U retained; canonical root6895/recursive16381/41repos/40edges; recursive build/generated/resource/tool/legal closure remains open."
+    },
+    {
+      "id": "2-risk-based-understanding",
+      "result": "scoped-only",
+      "evidence": "Current metadata/fixtures and adjacent persistence/callers reviewed deeply; schema enforces risk/depth evidence; absent source_reviews and unknown/unread=null not disguised as complete."
+    },
+    {
+      "id": "3-single-authority-production-path",
+      "result": "scoped-current-chain-inspected",
+      "evidence": "Existing identity/Session/Transcript/native HTTP/resource/permission/search authorities recorded; legacy standalone desktop path refuses; full platform/caller/data retirement remains open."
+    },
+    {
+      "id": "4-user-behavior-batches",
+      "result": "repair-batch-authored",
+      "evidence": "Existing post-staple release operation and persistent approval test lifecycle, failures, restart and negative inputs addressed as one bounded batch; no source-file-count completion claim."
+    },
+    {
+      "id": "5-existing-owners-preserve-capabilities",
+      "result": "preserved-in-diff-not-full-regression",
+      "evidence": "No new owner, store, feature deletion or user data removal; existing Agent/Host and UI gates retained; full Bot/platform regression still required."
+    },
+    {
+      "id": "6-contract-and-parallel-scope",
+      "result": "performed-for-this-batch",
+      "evidence": "Root owns spec/CI/ledger/RTM; disjoint test writer plus independent frozen-blob reviews; no schema/composition/lock changes."
+    },
+    {
+      "id": "7-exact-H-Actions-only",
+      "result": "prior-H-read-new-H-required",
+      "evidence": "Four full logs and immutable artifacts audited; no local executable validation; containing repair H must complete selected gates."
+    },
+    {
+      "id": "8-failure-classification-and-independent-work",
+      "result": "performed",
+      "evidence": "Gateway shared persistent fixture TEST_FLAW and metadata compressed-byte IMPLEMENTATION_DEFECT isolated; Backend/source/owner audits progressed independently; no rerun-to-green."
+    },
+    {
+      "id": "9-unique-ledger-RTM-and-source-contract",
+      "result": "narrow-update-authored",
+      "evidence": "Existing canonical FBCP-NMR-001 row and RTM updated without source acceptance promotion; schema and candidate checker must execute on containing H."
+    },
+    {
+      "id": "10-full-final-acceptance",
+      "result": "not-satisfied",
+      "evidence": "Real current service provenance/pagination, full source/legal/features, signed supported packages, UI/visual/a11y, timing/security/perf/soak, upgrade/rollback, full Bot regression and independent ACCEPT remain open."
+    },
+    {
+      "id": "backend137-authorization",
+      "result": "read-only-complete-with-open-acceptance",
+      "evidence": "PR/current sources/exact-head logs/historical production provenance artifact actually read; no merge, deployment, comments or production mutation."
+    },
+    {
+      "id": "cloud-delivery",
+      "result": "required-after-this-receipt",
+      "evidence": "Create tree including verified ledger blob d5de94ed9720f7fd407588868557bc46df943ebf; nonforce expected-sha checkpoint CAS and remote readback, then exact-H Actions."
+    }
+  ],
+  "complete_migration": false,
+  "independent_ACCEPT": false
+}

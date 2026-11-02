@@ -5,43 +5,49 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch (round 19): gateway, proxy preferences and macOS metadata
+## Current bounded batch (round 20): blockmap verification and persistent approval fixtures
 
 Fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; inspected checkpoint
-H=5281b87d878c9223dc9cd1c100c0f56186c81173 and live main
+H=151d3ffe6382219dab98fb317e59fe5faa8cea01 and live main
 5528062177e3865eef60a073a066cca144f9e3e8. Main and backend are unchanged.
-Run41460570824 completed failure: reconciliation Human33/Agent4/private3,
-UI16, Electron carrier10/auth8/copy3, shipping composition12/Native6/
-FeatureHost7/Host6/ABI7 passed. Shipping then failed at gateway E0004 for
-RuntimeEvent::TurnStateChanged. CLI/gateway executable/approval tests and
-all subsequent shipping gates did not execute.
+Run41465224038 completed failure. Complete logs establish Human33/Agent4/
+private3, UI16, AppHost12, Native6, FeatureHost7, Host6, ABI7 and CLI3 passed.
+The proxy matrix actually exercised16 ordered subsets,48 deletions and48
+repeated no-ops, including all6 full permutations. Gateway executable ran5:
+4 passed and the first-issuance assertion in the repeated-approval case failed.
+Its two tests shared the production default persistent file (TEST_FLAW).
+Gateway lib9, protocol122, TCP9 and actual package-copy gates did not execute.
 
-NMR-44 fixes the exhaustive lifecycle match in the existing v1 projection,
-with3 behavioral cases in full gateway lib9. NMR-42 approval tests now
-record real calls:8 valid inputs/four canonical values,9 invalid inputs.
-The existing proxy test covers16 ordered subsets,48 deletions/48 repeated
-no-ops including all6 full permutations. NMR-43 reconciles final post-staple
-ZIP/DMG hashes, sizes and external blockmaps using the locked builder.
-Metadata15 behavior tests and a digest-pinned historical installer-copy
-experiment are authored. Containing-H Actions execution remains pending.
+Electron carrier10/auth8/copy3/metadata15 passed. The digest-pinned historical
+installer experiment failed because comparing compressed blockmap bytes rejected
+a valid ZIP sidecar before reaching the real stale-DMG metadata mismatch.
+NMR-43 now compares complete bounded decoded map bytes and receipts hash the
+actual retained sidecar. Three added cases cover equivalent gzip envelopes,
+content tampering and corrupt/oversized input; the required total is18.
+NMR-45 gives each approval test an explicit UUID-owned persistent store and
+checks duplicate stability, restart restoration and independent-store isolation.
+Production registry defaults and approval deduplication are unchanged.
 
-Historical package source9d16483f70df9af06db97b17bb02a24dc507e459 has a2143-byte
-DMG metadata size discrepancy and failed20-minute packaged acceptance.
-Current-H signed installer acceptance, production updater feed/consumer and
-external C ABI callers remain open. Full evidence and log digests:
-projects/telegram-desktop-rust/evidence/round19-gateway-settings-macos-metadata.json.
+Historical artifact13093546572 was downloaded and its full digest verified;
+its original DMG is174156394 bytes versus metadata174154251 (delta2143).
+Package bytes remain immutable inputs to the repair experiment. Containing-H
+Actions results must qualify both fixes; this preparation snapshot claims no
+new-H pass. The receipt records exact prior logs, artifacts, frozen source review
+and required gates at projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json.
 No local executable validation ran. Fixed-U inventory remains16381 identities/
 183 responsibilities, unknown/unread unestablished, source_reviews absent and
-acceptance false. Existing schema/validator enforces FMEP-SOURCE-01, including
-negative accepted mode.
+acceptance false. The existing FMEP-SOURCE-01 schema/validator was inspected;
+the narrow ledger refresh also requires its Actions contract/candidate gates.
 
-Backend PR137 remains open/draft/unmerged at
-06047d3ea69313ec4cfec58bbee36a7afc9cf007; handler29/SQLite10 CI passed.
-Latest observed formal deployment has historical source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b
-and Worker version3ad1a889-4c28-4344-8472-8c8adc225a3c, not proven live now.
-Live identity/authenticated afterId=0 behavior remain open; no merge/deploy.
-Full source/legal and functional closure, supported platforms, UI/a11y, Bot
-regression, upgrade/rollback, soak and independent ACCEPT remain incomplete.
+Backend PR137 remains open/draft/unmerged at06047d3ea69313ec4cfec58bbee36a7afc9cf007;
+both exact-head runs passed handler29/SQLite10. Downloaded production provenance
+artifact12542026010 binds historical source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b
+to Worker version3ad1a889-4c28-4344-8472-8c8adc225a3c. Its health/FDN401 checks do
+not prove a current active version or authenticated social-message pagination.
+No backend merge, deploy or mutation occurred. Current-H signed installer,
+Native update service, external ABI callers, full source/legal and functional
+closure, supported platforms, UI/a11y, Bot regression, upgrade/rollback, soak
+and independent ACCEPT remain open.
 
 ## Historical planning snapshot (2026-10-19)
 

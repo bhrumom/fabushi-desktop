@@ -469,8 +469,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap desktop/scripts/reconcile-macos-update-metadata.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/macos-metadata.log
-          grep -Fx '# tests 15' artifacts/native-message-electron/macos-metadata.log
-          grep -Fx '# pass 15' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# tests 18' artifacts/native-message-electron/macos-metadata.log
+          grep -Fx '# pass 18' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
