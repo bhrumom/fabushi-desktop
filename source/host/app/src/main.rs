@@ -15370,6 +15370,19 @@ fn main() {
             std::process::exit(1);
         }
     };
+    // Pairing receipts and device authentication require the durable authority.
+    // Refuse before daemon/network/Gateway admission if that store is unavailable.
+    let device_pairing_db_path = app_data_dir.join("device-pairing.db");
+    let device_pairing = match DevicePairingOwner::new(&device_pairing_db_path) {
+        Ok(owner) => Arc::new(owner),
+        Err(error) => {
+            eprintln!("failed to initialize durable device pairing store: {error}");
+            drop(platform_host);
+            drop(host);
+            drop(host_lock);
+            std::process::exit(1);
+        }
+    };
     let stdout = Arc::new(Mutex::new(io::stdout()));
 
     let mut box_exec_daemon =
@@ -16875,11 +16888,6 @@ fn main() {
     };
 
     let teach_recording_slot = Arc::new(Mutex::new(None::<TeachRecordingApi>));
-    let device_pairing_db_path = app_data_dir.join("device-pairing.db");
-    let device_pairing = Arc::new(
-        DevicePairingOwner::new(&device_pairing_db_path)
-            .unwrap_or_else(|_| DevicePairingOwner::in_memory().expect("in-memory device pairing db"))
-    );
     let node_host_runtime = Arc::new(NodeHostRuntimeState::new());
     let local_available_commands = [NODE_SYSTEM_RUN_COMMAND.to_string()]
         .into_iter()

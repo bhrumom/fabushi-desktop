@@ -674,6 +674,51 @@ jobs:
             admission_status=1
           fi
           run_recovery_check app-startup-admission cargo test --locked --manifest-path source/host/app/Cargo.toml --test startup_admission_contract || admission_status=1
+          python3 - <<'PY' || admission_status=1
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          path = root / "app-startup-admission.log"
+          raw = path.read_bytes() if path.is_file() else b""
+          output = raw.decode("utf-8", errors="replace")
+          required = [
+              "refused_normal_start_keeps_missing_app_root_absent",
+              "refused_normal_start_preserves_runtime_and_settings_then_admitted_start_recovers",
+              "admitted_startup_failures_retire_profile_guard",
+              "auxiliary_roles_reject_their_own_invalid_requests_without_normal_startup",
+              "pairing_store_failures_preserve_obstacles_and_release_profile_then_recover",
+              "missing_pairing_store_is_created_before_daemon_and_reopened_on_restart",
+              "durable_pairing_tokens_and_revision_survive_real_startup_and_storage_recovery",
+          ]
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", output, re.MULTILINE)
+          summaries = re.findall(r"^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;", output, re.MULTILINE)
+          exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
+                   if line.split("\t")[0] == "app-startup-admission"]
+          missing = [name for name in required if passed.count(name) != 1]
+          accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"] and exits == [["app-startup-admission", "0"]]
+              and not missing and len(summaries) == 1 and summaries[0][0] == "ok"
+              and int(summaries[0][1]) >= len(required) and summaries[0][2:] == ("0", "0"))
+          inputs = [".github/workflows/rust-desktop-runtime.yml", "projects/openclaw-rust/upstream.lock.json",
+              "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+              "source/host/Cargo.toml", "source/host/Cargo.lock", "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+              "source/host/app/src/main.rs", "source/host/app/tests/startup_admission_contract.rs",
+              "source/host/src/device_pairing_owner.rs", "source/host/src/host_lock.rs"]
+          receipt = {key: subject[key] for key in ("subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os")}
+          receipt.update({"contract": "HSA-v1/DPS-v1",
+              "command": (root / "app-startup-admission.command.txt").read_text().strip(),
+              "command_exit_records": exits, "required_tests": required, "observed_passed_test_names": passed,
+              "missing_or_nonunique_positive_results": missing, "summaries": summaries,
+              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in inputs},
+              "log_sha256": hashlib.sha256(raw).hexdigest(), "result": "passed" if accepted else "failed",
+              "scope": "Actual normal Host binary custody and durable pairing initialization before the existing daemon-admission stop; file-backed role-token/revision persistence and fixture-owned storage repair. No live Gateway/device transport, full startup, physical-device or packaged-platform acceptance."})
+          (root / "device-pairing-startup.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          PY
           exit "$admission_status"
       - name: Test native Runtime provider dispatch admission
         id: ocrm_native_runtime
@@ -2413,6 +2458,9 @@ jobs:
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
               "source/host/src/extensions/transcript/transcript_manager.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+              "source/host/app/tests/startup_admission_contract.rs",
+              "source/host/src/device_pairing_owner.rs", "source/host/src/host_lock.rs",
               "source/host/src/extensions/settings/settings_service.rs",
               "source/host/src/extensions/settings/public_projection.rs",
               "source/host/src/gateway_command_error.rs",
@@ -2426,7 +2474,7 @@ jobs:
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1",
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/HSA-v1/DPS-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -2438,7 +2486,7 @@ jobs:
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "commands": [], "cases": [], "result": "failed",
-              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. Actual normal Host startup additionally covers profile custody and durable pairing admission before its existing daemon stop, with file-backed token/revision persistence and fixture-owned storage repair. Full startup, linked production package, live Gateway/device transport, real external provider/backend/client, macOS and whole-platform acceptance remain open. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
           }
           def save():
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -2570,6 +2618,31 @@ jobs:
                   save()
               if len(receipt["cases"]) != len(required):
                   raise RuntimeError("missing actual App cases")
+              startup_required = [
+                  "refused_normal_start_keeps_missing_app_root_absent",
+                  "refused_normal_start_preserves_runtime_and_settings_then_admitted_start_recovers",
+                  "admitted_startup_failures_retire_profile_guard",
+                  "auxiliary_roles_reject_their_own_invalid_requests_without_normal_startup",
+                  "pairing_store_failures_preserve_obstacles_and_release_profile_then_recover",
+                  "missing_pairing_store_is_created_before_daemon_and_reopened_on_restart",
+                  "durable_pairing_tokens_and_revision_survive_real_startup_and_storage_recovery",
+              ]
+              startup_command = ["cargo", "test", "--locked", "--manifest-path", "source/host/app/Cargo.toml",
+                  "--test", "startup_admission_contract", "--", "--test-threads=1"]
+              startup_output = run(startup_command, "startup-admission")
+              startup_passed = re.findall(r"^test (\S+) \.\.\. ok$", startup_output, re.MULTILINE)
+              startup_summaries = re.findall(r"^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;", startup_output, re.MULTILINE)
+              startup_missing = [name for name in startup_required if startup_passed.count(name) != 1]
+              startup_accepted = (not startup_missing and len(startup_summaries) == 1
+                  and startup_summaries[0][0] == "ok" and int(startup_summaries[0][1]) >= len(startup_required)
+                  and startup_summaries[0][2:] == ("0", "0"))
+              receipt["startup_admission"] = {"contract": "HSA-v1/DPS-v1", "command": startup_command,
+                  "required_tests": startup_required, "observed_passed_test_names": startup_passed,
+                  "missing_or_nonunique_positive_results": startup_missing, "summaries": startup_summaries,
+                  "result": "passed" if startup_accepted else "failed"}
+              save()
+              if not startup_accepted:
+                  raise RuntimeError("actual shipping startup contract is missing required successful controls")
               receipt["result"] = "passed"
           except Exception:
               receipt["error"] = traceback.format_exc()

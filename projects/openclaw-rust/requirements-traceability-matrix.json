@@ -40,7 +40,10 @@
     {
       "acceptance_status": "not-started",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-R03",
       "kind": "requirement",
@@ -117,7 +120,9 @@
         "projects/openclaw-rust/dossiers/model-picker-scoped.md",
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
         "source/host/tests/memory_gateway_authorization_contract.rs",
-        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -726,7 +731,9 @@
         "source/host/src/extensions/memory/production_append_read_tests.rs",
         "source/host/tests/memory_synthesis_service_contract.rs",
         "source/host/tests/memory_gateway_authorization_contract.rs",
-        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -783,7 +790,9 @@
         "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R14",
@@ -1852,7 +1861,9 @@
         "source/node-agent-coordinator/tests/production_protocol.rs",
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
         "source/host/tests/memory_gateway_authorization_contract.rs",
-        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",
@@ -1963,7 +1974,9 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC14",
@@ -2090,7 +2103,9 @@
         "source/host/src/extensions/memory/production_append_read_tests.rs",
         "source/host/tests/memory_synthesis_service_contract.rs",
         "source/host/tests/memory_gateway_authorization_contract.rs",
-        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2142,7 +2157,9 @@
         "source/host/tests/memory_synthesis_store_contract.rs",
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/host/src/extensions/memory/production_append_read_tests.rs",
-        "source/host/tests/memory_synthesis_service_contract.rs"
+        "source/host/tests/memory_synthesis_service_contract.rs",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -2460,7 +2477,9 @@
         "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
         "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
         "source/host/tests/palette_message_gateway_contract.rs",
-        "frontend/src/production/command-palette-message-search.contract.test.ts"
+        "frontend/src/production/command-palette-message-search.contract.test.ts",
+        "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
+        "source/host/app/tests/startup_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

@@ -1,15 +1,18 @@
-//! HSA-04/HSA-05: exercise the shipping entrypoint, real profile custody and
-//! production RuntimeStore recovery. No test backend or entrypoint hook is used.
+//! HSA-04/HSA-05 and DPS-v1: exercise the shipping entrypoint, real profile
+//! custody and durable-store recovery. No test backend or entrypoint hook is used.
 //!
 //! The non-loopback daemon setting is an existing production rejection after
-//! both app constructors and before daemon/network startup. Its exact diagnostic
-//! is required: an earlier failure or a timeout cannot satisfy the control.
+//! both app constructors and durable pairing admission, before daemon/network
+//! startup. Its exact diagnostic is required: an earlier failure or a timeout
+//! cannot satisfy the control.
 
+use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use mahayana_host_runtime::host_lock::{
     HostLockHandle, HostLockOutcome, acquire_host_lock, default_is_process_alive,
     is_sand_host_process, read_lock_pid, read_process_command,
 };
 use rusqlite::{Connection, OpenFlags, params};
+use serde_json::json;
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read};
@@ -30,6 +33,9 @@ const TURN_ID: &str = "turn:startup-admission";
 const RUN_ID: &str = "run:startup-admission:1";
 const MESSAGE_ID: &str = "message:startup-admission";
 const CREATED_AT_MS: i64 = 1_700_000_000_000;
+const PAIRING_DEVICE_ID: &str = "device:startup-durability";
+const PAIRING_PUBLIC_KEY: &str = "startup-durability-public-key";
+const PAIRING_FAILURE_PREFIX: &str = "failed to initialize durable device pairing store:";
 
 struct ChildResult {
     pid: u32,
@@ -67,6 +73,17 @@ impl ChildResult {
             ),
         );
         assert!(!self.stderr.contains("failed to acquire Mahayana Host lock"));
+    }
+
+    fn assert_pairing_initialization_failure(&self) {
+        assert_eq!(self.status.code(), Some(1), "{}", self.details());
+        assert!(
+            self.stderr.lines().any(|line| line.strip_prefix(PAIRING_FAILURE_PREFIX)
+                .is_some_and(|error| !error.trim().is_empty())),
+            "missing pairing-specific initialization error; {}", self.details(),
+        );
+        assert!(!self.stderr.contains("failed to acquire Mahayana Host lock"), "{}", self.details());
+        assert!(!self.stderr.contains("failed to start managed Grok box exec-daemon"), "{}", self.details());
     }
 }
 
@@ -147,6 +164,10 @@ impl Fixture {
 
     fn settings_path(&self) -> PathBuf {
         self.app_root().join("feature-host/runtime/settings.json")
+    }
+
+    fn pairing_database_path(&self) -> PathBuf {
+        self.app_root().join("device-pairing.db")
     }
 
     fn hold_profile(&mut self) {
@@ -503,6 +524,55 @@ fn recovery_row(database: &Path) -> RecoveryRow {
     row
 }
 
+fn assert_shipping_pairing_schema(database: &Path) {
+    // READ_ONLY cannot create the file or repair a missing production schema.
+    let connection = Connection::open_with_flags(database, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .expect("observe pairing database created by the shipping binary");
+    connection.busy_timeout(Duration::from_secs(2)).expect("bound pairing observer lock wait");
+    let table_count: i64 = connection.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN (
+            'device_pairing_pending', 'device_pairing_paired', 'device_bootstrap_tokens',
+            'device_pairing_join_codes', 'device_pair_setup_completions', 'config_machine_state'
+        )",
+        [], |row| row.get(0),
+    ).expect("read actual pairing schema");
+    assert_eq!(table_count, 6, "shipping initializer must create the durable pairing schema");
+    connection.close().expect("close pairing observer before child startup");
+}
+
+fn assert_durable_pairing_identity(database: &Path) {
+    let connection = Connection::open_with_flags(database, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .expect("observe persisted pairing identity without creating it");
+    connection.busy_timeout(Duration::from_secs(2)).expect("bound identity observer lock wait");
+    let identity: (String, String, String) = connection.query_row(
+        "SELECT public_key, display_name, platform FROM device_pairing_paired WHERE device_id = ?1",
+        params![PAIRING_DEVICE_ID], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    ).expect("the original paired identity must survive startup");
+    assert_eq!(identity, (
+        PAIRING_PUBLIC_KEY.to_owned(), "Durable device".to_owned(), "test-platform".to_owned()
+    ));
+    connection.close().expect("close identity observer before child startup");
+}
+
+fn rotate_pairing_token(owner: &DevicePairingOwner, role: &str, revision: u64) -> String {
+    let rotated = owner.handle_pair_rotate_token(&json!({
+        "deviceId": PAIRING_DEVICE_ID, "role": role
+    })).expect("rotate the approved role through the durable owner");
+    assert_eq!(rotated["role"], role);
+    assert_eq!(rotated["revision"].as_u64(), Some(revision));
+    assert_eq!(rotated["tokenDelivery"], "in-band");
+    rotated["token"].as_str().expect("rotation returns the new role token").to_owned()
+}
+
+fn assert_pairing_token(owner: &DevicePairingOwner, token: &str, role: &str, scopes: &[&str]) {
+    let authorization = owner.authenticate_device_token(token)
+        .expect("read durable token authorization")
+        .expect("the issued role token must remain authorized");
+    assert_eq!(authorization.device_id, PAIRING_DEVICE_ID);
+    assert_eq!(authorization.role, role);
+    assert_eq!(authorization.scopes, scopes.iter().map(|scope| (*scope).to_owned()).collect::<Vec<_>>());
+}
+
 #[test]
 fn refused_normal_start_keeps_missing_app_root_absent() {
     let mut fixture = Fixture::new("missing-app");
@@ -624,5 +694,167 @@ fn auxiliary_roles_reject_their_own_invalid_requests_without_normal_startup() {
     assert_absent(&fixture.root.join("profile/box-store-sync.lock"));
     assert_absent(&fixture.app_root());
     fixture.assert_held_profile_unchanged();
+    fixture.finish();
+}
+
+#[test]
+fn pairing_store_failures_preserve_obstacles_and_release_profile_then_recover() {
+    for directory_obstacle in [false, true] {
+        let mut fixture = Fixture::new(if directory_obstacle { "pairing-directory" } else { "pairing-corrupt" });
+        fs::create_dir(fixture.app_root()).expect("create only the owned fixture app root");
+        let database = fixture.pairing_database_path();
+        if directory_obstacle {
+            fs::create_dir(&database).expect("create deterministic directory obstacle");
+            fs::create_dir(database.join("retained")).expect("create sentinel child directory");
+            fs::write(database.join("retained/sentinel.bin"), b"preserve sentinel\0\xff")
+                .expect("write original directory sentinel");
+        } else {
+            fs::write(&database, b"DPS-v1: not a SQLite database\0\xff\r\n")
+                .expect("write deterministic non-SQLite bytes");
+        }
+        // Only the pairing obstacle is compared after admitted startup. Basic
+        // Host constructors may legitimately recover their own durable state.
+        let obstacle = app_tree(&database);
+        fixture.hold_profile();
+        let refused = fixture.run("refused-profile", &[], &[]);
+        refused.assert_exit_with_line(0, &format!(
+            "failed to acquire Mahayana Host lock at {}: Host physical custody is still held for {}",
+            fixture.lock_path().display(), fixture.lock_path().display(),
+        ));
+        assert!(!refused.stderr.contains(PAIRING_FAILURE_PREFIX), "{}", refused.details());
+        assert_same_tree(&obstacle, &app_tree(&database));
+        fixture.assert_held_profile_unchanged();
+        fixture.release_profile();
+
+        let failed = fixture.run("pairing-failure", &[], &[]);
+        failed.assert_pairing_initialization_failure();
+        assert_same_tree(&obstacle, &app_tree(&database));
+        assert_absent(&fixture.root.join("profile/gateway.json"));
+        fixture.assert_retired_and_successor_can_acquire();
+
+        // Repair only this fixture's obstacle, preserving it for the oracle.
+        let preserved = fixture.root.join("preserved-pairing-obstacle");
+        fs::rename(&database, &preserved).expect("move only the owned pairing obstacle");
+        assert_same_tree(&obstacle, &app_tree(&preserved));
+        let recovered = fixture.run("pairing-recovered", &[], &[]);
+        recovered.assert_admitted_constructor_stop();
+        assert_shipping_pairing_schema(&database);
+        assert_same_tree(&obstacle, &app_tree(&preserved));
+        assert_absent(&fixture.root.join("profile/gateway.json"));
+        fixture.assert_retired_and_successor_can_acquire();
+        fixture.finish();
+    }
+}
+
+#[test]
+fn missing_pairing_store_is_created_before_daemon_and_reopened_on_restart() {
+    let mut fixture = Fixture::new("pairing-first-run");
+    let database = fixture.pairing_database_path();
+    assert_absent(&database);
+    let first = fixture.run("pairing-created", &[], &[]);
+    first.assert_admitted_constructor_stop();
+    assert_shipping_pairing_schema(&database);
+    fixture.assert_retired_and_successor_can_acquire();
+    {
+        let owner = DevicePairingOwner::new(&database).expect("open shipping-created pairing owner");
+        assert_eq!(owner.current_revision(), 0);
+        assert_eq!(owner.handle_pair_list(&json!({})).unwrap(), json!({ "pending": [], "paired": [] }));
+    }
+
+    let restarted = fixture.run("pairing-reopened", &[], &[]);
+    restarted.assert_admitted_constructor_stop();
+    assert_shipping_pairing_schema(&database);
+    assert_absent(&fixture.root.join("profile/gateway.json"));
+    fixture.assert_retired_and_successor_can_acquire();
+    fixture.finish();
+}
+
+#[test]
+fn durable_pairing_tokens_and_revision_survive_real_startup_and_storage_recovery() {
+    let mut fixture = Fixture::new("pairing-durable-tokens");
+    let database = fixture.pairing_database_path();
+    let first = fixture.run("create-pairing-schema", &[], &[]);
+    first.assert_admitted_constructor_stop();
+    assert_shipping_pairing_schema(&database);
+    fixture.assert_retired_and_successor_can_acquire();
+
+    let (operator_token, original_node_token) = {
+        let owner = DevicePairingOwner::new(&database).expect("open real pairing owner");
+        let pending = owner.handle_pair_request(&json!({
+            "deviceId": PAIRING_DEVICE_ID,
+            "publicKey": PAIRING_PUBLIC_KEY,
+            "displayName": "Durable device",
+            "platform": "test-platform",
+            "roles": ["operator", "node"],
+            "scopes": ["operator.read", "operator.write", "node.invoke"]
+        })).expect("request pairing through the canonical owner");
+        let approval = owner.handle_pair_approve(&json!({ "requestId": pending["requestId"] }))
+            .expect("approve the durable device");
+        assert_eq!(approval["revision"].as_u64(), Some(1));
+        (rotate_pairing_token(&owner, "operator", 2), rotate_pairing_token(&owner, "node", 3))
+    };
+    assert_durable_pairing_identity(&database);
+    let restarted = fixture.run("issued-tokens-restarted", &[], &[]);
+    restarted.assert_admitted_constructor_stop();
+    fixture.assert_retired_and_successor_can_acquire();
+    assert_durable_pairing_identity(&database);
+    let replacement_node_token = {
+        let owner = DevicePairingOwner::new(&database).expect("reopen after real startup");
+        assert_eq!(owner.current_revision(), 3);
+        assert_pairing_token(&owner, &operator_token, "operator", &["operator.read", "operator.write"]);
+        assert_pairing_token(&owner, &original_node_token, "node", &["node.invoke"]);
+        let replacement = rotate_pairing_token(&owner, "node", 4);
+        assert!(replacement != original_node_token, "node rotation must issue a different token");
+        assert!(owner.authenticate_device_token(&original_node_token).unwrap().is_none());
+        assert_pairing_token(&owner, &operator_token, "operator", &["operator.read", "operator.write"]);
+        replacement
+    };
+
+    // All connections are closed before moving the original durable database.
+    // Failure must preserve both its backup and the deterministic obstruction.
+    let backup = fixture.root.join("original-durable-pairing.db");
+    let durable_bytes = read_bounded(&database, MAX_TREE_BYTES).expect("retain original pairing bytes");
+    fs::rename(&database, &backup).expect("retain the owned original database");
+    let corrupt_bytes = b"DPS-v1 temporary storage obstacle\0\xfe";
+    fs::write(&database, corrupt_bytes).expect("install owned corrupt-file obstacle");
+    let failed = fixture.run("durable-storage-unavailable", &[], &[]);
+    failed.assert_pairing_initialization_failure();
+    assert_eq!(read_bounded(&database, 4096).unwrap().as_slice(), corrupt_bytes.as_slice());
+    assert!(read_bounded(&backup, MAX_TREE_BYTES).unwrap() == durable_bytes,
+        "failed startup must preserve the original durable database bytes");
+    assert_absent(&fixture.root.join("profile/gateway.json"));
+    fixture.assert_retired_and_successor_can_acquire();
+
+    fs::remove_file(&database).expect("remove only this fixture's corrupt obstacle");
+    fs::rename(&backup, &database).expect("restore the original owned database");
+    let restored = fixture.run("original-storage-restored", &[], &[]);
+    restored.assert_admitted_constructor_stop();
+    fixture.assert_retired_and_successor_can_acquire();
+    assert_durable_pairing_identity(&database);
+    {
+        let owner = DevicePairingOwner::new(&database).expect("reopen restored durable owner");
+        assert_eq!(owner.current_revision(), 4);
+        assert!(owner.authenticate_device_token(&original_node_token).unwrap().is_none());
+        assert_pairing_token(&owner, &operator_token, "operator", &["operator.read", "operator.write"]);
+        assert_pairing_token(&owner, &replacement_node_token, "node", &["node.invoke"]);
+        let revoked = owner.handle_pair_revoke(&json!({ "deviceId": PAIRING_DEVICE_ID }))
+            .expect("revoke the durable pairing");
+        assert_eq!(revoked["revision"].as_u64(), Some(5));
+    }
+
+    let revoked_restart = fixture.run("revoked-pairing-restarted", &[], &[]);
+    revoked_restart.assert_admitted_constructor_stop();
+    fixture.assert_retired_and_successor_can_acquire();
+    {
+        let owner = DevicePairingOwner::new(&database).expect("reopen revoked pairing owner");
+        assert_eq!(owner.current_revision(), 5);
+        for token in [&operator_token, &original_node_token, &replacement_node_token] {
+            assert!(owner.authenticate_device_token(token).unwrap().is_none(),
+                "rotation/revocation must remain effective after restart");
+        }
+        assert_eq!(owner.handle_pair_list(&json!({})).unwrap(), json!({ "pending": [], "paired": [] }));
+        assert_eq!(owner.handle_pair_status(&json!({ "deviceId": PAIRING_DEVICE_ID })).unwrap()["status"], "rejected");
+    }
+    assert_absent(&fixture.root.join("profile/gateway.json"));
     fixture.finish();
 }
