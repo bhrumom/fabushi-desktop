@@ -2905,6 +2905,46 @@ mod fabushi_credential_context_tests {
     const TOKEN_B: &str = "private-bound-transport-token-b";
     const BOUND: Duration = Duration::from_secs(20);
 
+    fn captured_output_observation(output: &std::io::Result<String>) -> Value {
+        match output {
+            Ok(value) => {
+                let panic_location = value.lines().find_map(|line| {
+                    let (_, location) = line.split_once(
+                        "panicked at src/extensions/inference/provider_session.rs:",
+                    )?;
+                    let mut numbers = location.split(':');
+                    let line = numbers.next()?.trim().parse::<u32>().ok()?;
+                    let column = numbers.next()?.trim().parse::<u32>().ok()?;
+                    Some(json!({"line": line, "column": column}))
+                });
+                json!({"bytes": value.len(), "panic": panic_location})
+            }
+            Err(error) => json!({
+                "errorKind": format!("{:?}", error.kind()),
+                "osError": error.raw_os_error(),
+            }),
+        }
+    }
+
+    #[test]
+    fn captured_output_diagnostics_preserve_status_without_credential_values() {
+        let output = format!("thread 'fixture' panicked at src/extensions/inference/provider_session.rs:7:11:\nAuthorization: Bearer {TOKEN_A}; body={ROTATED}; assertion={TOKEN_B}");
+        let observation = captured_output_observation(&Ok(output.clone()));
+        assert_eq!(observation["bytes"], output.len());
+        assert_eq!(observation["panic"]["line"], 7);
+        assert_eq!(observation["panic"]["column"], 11);
+        let failed_read = captured_output_observation(&Err(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied, output,
+        )));
+        assert_eq!(failed_read["errorKind"], "PermissionDenied");
+        for rendered in [observation.to_string(), failed_read.to_string()] {
+            for token in [TOKEN_A, ROTATED, TOKEN_B] {
+                assert!(!rendered.contains(token), "credential value escaped diagnostic projection");
+            }
+            assert!(!rendered.contains("Authorization"), "raw output escaped diagnostic projection");
+        }
+    }
+
     fn write_credential(path: &Path, issuer: &str, user: &str, token: &str) {
         let temporary = path.with_extension(format!("{}.tmp", Uuid::new_v4()));
         let mut options = fs::OpenOptions::new();
@@ -2953,6 +2993,33 @@ mod fabushi_credential_context_tests {
         (next_endpoint, request_line, authorization, body)
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn bound_transport_reader_clears_forced_nonblocking_and_preserves_request() {
+        use std::os::fd::AsRawFd;
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let mut client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+        client.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
+        let (mut stream, _) = listener.accept().unwrap();
+        stream.set_nonblocking(true).unwrap();
+        let before = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
+        assert!(before >= 0);
+        assert_ne!(before & libc::O_NONBLOCK, 0);
+        let body = br#"{"model":"Fixture/Case@Bound"}"#;
+        client.write_all(format!("POST /captured/v1/responses HTTP/1.1\r\nAuthorization: fixture-marker\r\nContent-Length: {}\r\n\r\n", body.len()).as_bytes()).unwrap();
+        client.write_all(body).unwrap();
+        let (next, line, authorization, actual_body) = read_request(&mut stream, true);
+        let after = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
+        assert!(after >= 0);
+        assert_eq!(after & libc::O_NONBLOCK, 0, "actual reader must restore blocking I/O");
+        assert_eq!(stream.read_timeout().unwrap(), Some(Duration::from_secs(5)));
+        assert_eq!(stream.write_timeout().unwrap(), Some(Duration::from_secs(5)));
+        assert!(next);
+        assert_eq!(line, "POST /captured/v1/responses HTTP/1.1");
+        assert_eq!(authorization, "fixture-marker");
+        assert_eq!(actual_body, body.to_vec());
+    }
+
     fn child(root: &Path) {
         // Capture through the actual configuration reader before changing the
         // environment. This exact-test child has not started any I/O workers;
@@ -2975,7 +3042,7 @@ mod fabushi_credential_context_tests {
             match &transport.credentials {
                 ResponsesHttpCredentials::Fabushi { credential, endpoint, .. } => {
                     assert_eq!(credential.context(), original_context);
-                    assert_eq!(credential.access_token(), ROTATED);
+                    assert!(credential.access_token() == ROTATED, "transport must retain its bound credential");
                     assert_eq!(endpoint, &original_endpoint);
                 }
                 _ => panic!("Native binding changed provider"),
@@ -3046,6 +3113,8 @@ mod fabushi_credential_context_tests {
         let stopped = Arc::clone(&stop);
         let capture = Arc::new(Mutex::new(Vec::<Request>::new()));
         let requests = Arc::clone(&capture);
+        let phase = Arc::new(Mutex::new("listen"));
+        let worker_phase = Arc::clone(&phase);
         let server_path = path.clone();
         let server = thread::spawn(move || {
             let deadline = Instant::now() + BOUND * 2;
@@ -3058,7 +3127,9 @@ mod fabushi_credential_context_tests {
                         Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => continue,
                         Err(error) => panic!("fixture accept: {error}"),
                     };
+                    *worker_phase.lock().unwrap() = "read-request";
                     requests.lock().unwrap().push(read_request(&mut stream, next));
+                    *worker_phase.lock().unwrap() = "install-image";
                     let unauthorized = !next && matches!(a_count, 0 | 2);
                     if !next {
                         if a_count == 0 { write_credential(&server_path, &origin_a, "user-a", ROTATED); }
@@ -3069,7 +3140,9 @@ mod fabushi_credential_context_tests {
                         ("200 OK", "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"bound-response\",\"output\":[]}}\n\n")
                     };
                     let response = format!("HTTP/1.1 {status}\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+                    *worker_phase.lock().unwrap() = "write-response";
                     stream.write_all(response.as_bytes()).unwrap();
+                    *worker_phase.lock().unwrap() = "response-complete";
                 }
                 thread::sleep(Duration::from_millis(2));
             }
@@ -3086,23 +3159,44 @@ mod fabushi_credential_context_tests {
             .stdout(fs::File::create(&stdout).unwrap()).stderr(fs::File::create(&stderr).unwrap())
             .spawn().unwrap());
         let deadline = Instant::now() + BOUND;
-        let status = loop {
-            if let Some(status) = fixture.child.as_mut().unwrap().try_wait().unwrap() { break status; }
-            assert!(Instant::now() < deadline, "owned transport child deadline");
+        let child_result = loop {
+            match fixture.child.as_mut().unwrap().try_wait() {
+                Ok(Some(status)) => break Ok(status),
+                Ok(None) => {}
+                Err(error) => break Err(format!("owned transport child wait error: {error}")),
+            }
+            if Instant::now() >= deadline {
+                break Err("owned transport child deadline".to_string());
+            }
             thread::sleep(Duration::from_millis(5));
         };
+        let child_cleanup = child_result.is_err().then(|| {
+            let child = fixture.child.as_mut().unwrap();
+            let kill = child.kill();
+            let reap = child.wait();
+            format!("kill={kill:?}, reap={reap:?}")
+        });
         fixture.stop.store(true, Ordering::Release);
-        fixture.server.take().unwrap().join().expect("observable HTTP server");
-        assert!(status.success(), "private transport child failed: {status}\n{}\n{}",
-            fs::read_to_string(stdout).unwrap(), fs::read_to_string(stderr).unwrap());
-        assert_eq!(fs::read_to_string(fixture.root.join("receipt")).unwrap(), nonce);
+        let server_result = fixture.server.take().unwrap().join();
+        let phase = phase.lock().map(|phase| *phase).unwrap_or("phase-lock-poisoned");
+        let captured_count = capture.lock().map(|requests| requests.len()).ok();
+        let stdout = fs::read_to_string(stdout);
+        let stderr = fs::read_to_string(stderr);
+        let receipt = fs::read_to_string(fixture.root.join("receipt"));
+        let receipt_bytes = receipt.as_ref().map(|value| value.len());
+        let receipt_matches = receipt.as_ref().is_ok_and(|value| value == &nonce);
+        assert!(child_result.as_ref().is_ok_and(|status| status.success()) && server_result.is_ok()
+            && stdout.is_ok() && stderr.is_ok(),
+            "captured-endpoint credential case: child={child_result:?}, cleanup={child_cleanup:?}, server_panicked={}, phase={phase}, captured_requests={captured_count:?}, receipt_bytes={receipt_bytes:?}, receipt_nonce_matches={receipt_matches}; stdout={}; stderr={}",
+            server_result.is_err(), captured_output_observation(&stdout), captured_output_observation(&stderr));
+        assert!(receipt_matches, "child execution receipt must match the owned nonce");
         let requests = capture.lock().unwrap();
         assert_eq!(requests.len(), 5, "two allowed refresh requests, one refused invocation, one callback refusal, one new transport");
         for (index, (next, line, authorization, body)) in requests.iter().enumerate() {
             assert_eq!(*next, index == 4, "only the new transport can use the changed endpoint");
-            assert_eq!(line, if *next { "POST /changed/v2/responses HTTP/1.1" } else { "POST /captured/v1/responses HTTP/1.1" });
-            assert_eq!(authorization, &format!("Bearer {}", match index { 0 => TOKEN_A, 4 => TOKEN_B, _ => ROTATED }));
-            assert_eq!(body, &requests[0].3, "request/model bytes remain unchanged");
+            assert!(line == if *next { "POST /changed/v2/responses HTTP/1.1" } else { "POST /captured/v1/responses HTTP/1.1" }, "request must use its bound endpoint");
+            assert!(authorization == &format!("Bearer {}", match index { 0 => TOKEN_A, 4 => TOKEN_B, _ => ROTATED }), "request must use its bound credential");
+            assert!(body == &requests[0].3, "request/model bytes remain unchanged");
         }
     }
 }

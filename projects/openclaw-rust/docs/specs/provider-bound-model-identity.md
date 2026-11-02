@@ -560,6 +560,33 @@ at H2c, whose Recovery/lib step did not execute. Re-freeze the complete six-file
 scope and independently review the fix delta plus its callers before delivery;
 the earlier five-file snapshot cannot approve the added path.
 
+### Credential fixture causal controls and capture — FC-HTTP-ORACLE-02
+
+Continuation of FC-04-HTTP-02/03, retaining the published blocking-I/O repair.
+Decision `FC-HTTP-ORACLE-02 — FIX / TEST_FLAW` preceded this implementation;
+the original failed run's exact transport cause remains unproven. Exercise
+both actual request readers with explicitly nonblocking accepted sockets and
+inspect the OS flag afterward, alongside request/body projection and bounded
+I/O settings. Removing normalization must fail independently of packet timing.
+
+Collect both owned terminal outcomes before a child failure assertion. A
+timeout or wait error must remain failure: terminate/reap only that owned child,
+retain its cleanup result, stop/join the server, and collect a credential-free
+case/phase/count, redirected output and available receipt before root cleanup.
+Do not retry a child or reinterpret Transport as Authentication. Preserve every
+typed refusal, request count/body/model, endpoint, nonce, cancellation, retry and
+redaction assertion. This changes test instruments only. Use fresh independent
+review and the existing exact-H Actions selectors; source review is not a pass.
+The separate 007c Automation directory error remains unresolved and is not
+explained by this socket repair.
+
+`F5-PRIVATE-CREDENTIAL-DIAGNOSTIC — FIX / TEST_FLAW`: the private transport
+fixture must also project redirected output to byte counts, parsed panic
+coordinates or I/O error classes, never raw child output. Preserve every token, body and nonce equality predicate
+without value-printing failure messages; a sensitive-output negative control
+must exercise the same diagnostic projection. Production behavior is unchanged.
+
+
 ### Frozen terminal tool-custody evidence — REC-11/12/13
 
 Contract: `OCRM-RUNNER-TERMINAL-CUSTODY-v1`, specified before code on

@@ -173,8 +173,11 @@ fn fixture_io_error(stage: &str, error: std::io::Error) -> String {
     format!("{stage}: kind={:?}, os_error={:?}", error.kind(), error.raw_os_error())
 }
 
-fn read_request(stream: &mut TcpStream) -> Result<CapturedRequest, String> {
-    read_request_with_progress(stream, |_, _| {})
+fn read_request(stream: &mut TcpStream, progress: &FixtureProgress) -> Result<CapturedRequest, String> {
+    *progress.phase.lock().map_err(|_| "phase lock")? = "configure-stream";
+    read_request_with_progress(stream, |_, phase| {
+        if let Ok(mut current) = progress.phase.lock() { *current = phase; }
+    })
 }
 
 fn read_request_with_progress(
@@ -302,6 +305,7 @@ struct FixtureProgress {
     accepted: AtomicUsize,
     parsed: AtomicUsize,
     responded: AtomicUsize,
+    phase: Mutex<&'static str>,
 }
 
 struct Loopback {
@@ -350,7 +354,9 @@ impl Loopback {
         let capture = Arc::clone(&requests);
         let stop = Arc::new(AtomicBool::new(false));
         let stopped = Arc::clone(&stop);
-        let progress = Arc::new(FixtureProgress::default());
+        let progress = Arc::new(FixtureProgress {
+            phase: Mutex::new("listen"), ..FixtureProgress::default()
+        });
         let worker_progress = Arc::clone(&progress);
         let worker = thread::spawn(move || {
             let deadline = Instant::now() + BOUND * 2;
@@ -368,8 +374,9 @@ impl Loopback {
                     Err(error) => return Err(fixture_io_error("accept request", error)),
                 };
                 worker_progress.accepted.fetch_add(1, Ordering::Relaxed);
-                let mut request = read_request(&mut stream)?;
+                let mut request = read_request(&mut stream, &worker_progress)?;
                 worker_progress.parsed.fetch_add(1, Ordering::Relaxed);
+                *worker_progress.phase.lock().map_err(|_| "phase lock")? = "install-image";
                 let first_401 = if let Some(image) = next.take() {
                     install_image(&path, image);
                     true
@@ -393,9 +400,11 @@ impl Loopback {
                 request.response_status = status.into();
                 capture.lock().map_err(|_| "capture lock")?.push(request);
                 let response = format!("HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+                *worker_progress.phase.lock().map_err(|_| "phase lock")? = "write-response";
                 stream.write_all(response.as_bytes())
                     .map_err(|error| fixture_io_error("write response", error))?;
                 worker_progress.responded.fetch_add(1, Ordering::Relaxed);
+                *worker_progress.phase.lock().map_err(|_| "phase lock")? = "response-complete";
             }
             Ok(())
         });
@@ -419,6 +428,7 @@ impl Loopback {
             "accepted": self.progress.accepted.load(Ordering::Relaxed),
             "parsed": self.progress.parsed.load(Ordering::Relaxed),
             "responded": self.progress.responded.load(Ordering::Relaxed),
+            "phase": self.progress.phase.lock().map(|phase| *phase).unwrap_or("phase-lock-poisoned"),
             "serverOutcome": match &self.outcome {
                 None => "running",
                 Some(Ok(())) => "ok",
@@ -458,6 +468,12 @@ impl OwnedChild {
             }
             thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    fn terminate_and_reap(&mut self) -> String {
+        let kill = self.0.kill();
+        let reap = self.0.wait();
+        format!("kill={kill:?}, reap={reap:?}")
     }
 }
 
@@ -745,15 +761,17 @@ fn run_child(
         .spawn().expect("spawn isolated provider invocation"));
     eprintln!("[credential-fixture] child_pid={} case={case} expected={expected} control={control:?} new_transport={new_transport}",
         child.0.id());
-    let status = child.wait();
-    // Reap a failed/timed-out child before stopping its observable server.
-    // Join before asserting so an HTTP worker error cannot be lost in Drop.
-    drop(child);
+    let child_result = child.wait();
+    let child_cleanup = child_result.is_err().then(|| child.terminate_and_reap());
+    // Collect both owned outcomes and available receipts before adjudication.
+    // A cleanup success cannot turn the original timeout/wait error into a pass.
     server.stop_and_join();
     let child_evidence = fs::read(root.join("child-evidence.json")).ok()
         .and_then(|raw| serde_json::from_slice::<Value>(&raw).ok())
         .unwrap_or_else(|| json!({"phase":"unavailable"}));
-    let child_panic = fs::read_to_string(&stderr).ok().and_then(|output| {
+    let stdout = fs::read_to_string(&stdout).map_err(|error| fixture_io_error("read child stdout", error));
+    let stderr = fs::read_to_string(&stderr).map_err(|error| fixture_io_error("read child stderr", error));
+    let child_panic = stderr.as_ref().ok().and_then(|output| {
         output.lines().find_map(|line| {
             let (_, location) = line.split_once("panicked at tests/fabushi_responses_credential_context_contract.rs:")?;
             let mut numbers = location.split(':');
@@ -762,15 +780,31 @@ fn run_child(
             Some(json!({"line": line, "column": column}))
         })
     });
+    let receipt = fs::read(root.join("receipt.json"))
+        .map_err(|error| fixture_io_error("read child receipt", error))
+        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).map_err(|error| format!(
+            "child receipt JSON: category={:?}, line={}, column={}",
+            error.classify(), error.line(), error.column(),
+        )));
     let evidence = json!({
         "case": case, "control": control, "expected": expected,
         "server": server.evidence(), "child": child_evidence, "childPanic": child_panic,
+        "childResult": format!("{child_result:?}"), "childCleanup": child_cleanup,
+        // Read both redirected outputs, but expose only lengths/errors and the
+        // safe panic location; assertion output may contain a reflected secret.
+        "stdout": stdout.as_ref().map(String::len), "stderr": stderr.as_ref().map(String::len),
+        "receipt": receipt.as_ref().map(|value| json!({
+            "nonceMatches": value["nonce"] == nonce,
+            "caseMatches": value["case"] == case,
+            "controlMatches": value["control"] == control,
+        })),
     });
     eprintln!("credential-context evidence: {evidence}");
-    let status = status.unwrap_or_else(|error| panic!("{error}; {evidence}"));
-    assert!(status.success(), "provider child failed: {status}; {evidence}");
-    assert!(server.outcome.as_ref().is_some_and(Result::is_ok), "fixture protocol: {evidence}");
-    let receipt: Value = serde_json::from_slice(&fs::read(root.join("receipt.json")).expect("child execution receipt")).unwrap();
+    assert!(child_result.as_ref().is_ok_and(|status| status.success())
+        && server.outcome.as_ref().is_some_and(Result::is_ok)
+        && stdout.is_ok() && stderr.is_ok() && receipt.is_ok(),
+        "credential child/server/receipt failed: {evidence}");
+    let receipt = receipt.expect("child execution receipt");
     assert_eq!(receipt["nonce"], nonce, "a zero-test child must not satisfy this oracle");
     assert_eq!(receipt["case"], case, "child receipt case");
     assert_eq!(receipt["control"], control, "child receipt control");

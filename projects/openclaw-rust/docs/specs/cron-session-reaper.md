@@ -414,6 +414,23 @@ then the previously unreached shared contracts. Do not rerun unchanged b3 or
 label queued/cancelled successor runs passing. A further repeated signature
 requires a fresh independent causal/exhaustion assessment under root AGENTS.
 
+### Real-owner fixture failure capture — ACK-FIXTURE-DIAGNOSTIC-01
+
+Exact `007c07f7a84f1dee106ae40734369b6259d8f201`, run `41439491960`,
+job `125258277125` failed while the background-history case created its Session,
+before injecting a history fault. The error identifies `AgentDbRecoveryError::Io`
+from `init_configured_db` creating the database parent directory (EINVAL), but
+the log omits the scenario and private fixture path/state. Cause remains unknown;
+neither a production defect nor an environment exemption is established.
+
+Decision `ACK-FIXTURE-DIAGNOSTIC-01 — FIX / TEST_FLAW` applies only to that
+insufficient evidence capture. Retain the exact real-owner creation and every
+history, cron, ownership, observation and independent-next-run assertion. On a
+setup failure report the selected trigger/fault and metadata/error classes for
+the owned fixture root and agents directory. Do not retry creation, change the
+storage location, substitute an in-memory owner, or classify a later pass as
+proof of the original failure's cause. Keep bounded child custody and cleanup.
+
 ## Automation deadline and terminal supervision — 2026-11-02
 
 Contract: `AUTOMATION-DEADLINE-TERMINAL-v1`. Exact target base:

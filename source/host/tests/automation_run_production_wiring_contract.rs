@@ -240,11 +240,28 @@ struct ShippingAutomation {
 }
 
 impl ShippingAutomation {
-    fn new() -> Self {
+    fn new(scenario: &str) -> Self {
         let root = root();
-        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let agents_root = root.join("agents");
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&agents_root, 500));
         let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
-        let agent = sessions.create_session(None, "user", None).expect("agent");
+        let agent = sessions.create_session(None, "user", None).unwrap_or_else(|error| {
+            // Inspect only this owned fixture, after the original failure. This
+            // is diagnostic evidence, never a retry or a substitute Session.
+            let metadata = [&root, &agents_root].map(|path| {
+                let state = match fs::symlink_metadata(path) {
+                    Ok(value) => format!(
+                        "directory={}, symlink={}",
+                        value.is_dir(), value.file_type().is_symlink(),
+                    ),
+                    Err(error) => format!(
+                        "kind={:?}, os={:?}", error.kind(), error.raw_os_error(),
+                    ),
+                };
+                format!("{path:?}: {state}")
+            });
+            panic!("agent setup failed for {scenario}: {error}; owned fixture metadata: {metadata:?}");
+        });
         let runtime = AutomationRuntime::new(Arc::clone(&workers));
         let (created, _) = runtime.create_agent_automation(&agent.id, &AutomationSpec {
             name: "History acknowledgment".into(),
@@ -374,7 +391,7 @@ fn history_failure_then_independent_run(
 ) {
     eprintln!("[automation-fixture] history scenario pid={} trigger={trigger:?} fault={fault:?}",
         std::process::id());
-    let fixture = ShippingAutomation::new();
+    let fixture = ShippingAutomation::new(&format!("history/{trigger:?}/{fault:?}"));
     let runs_path = fixture.store.runs_path(&fixture.automation_id);
     let config_path = fixture.store.config_path(&fixture.automation_id);
     let mut executed = 0;
@@ -554,7 +571,7 @@ fn real_background_execution_failures_and_interruptions_report_when_history_comm
             (AutomationRunTrigger::Event, Err("executor failed".to_string()),
              FireAutomationOutcome::Error, "executor failed", false),
         ] {
-            let fixture = ShippingAutomation::new();
+            let fixture = ShippingAutomation::new(&format!("terminal/{trigger:?}/{expected_outcome:?}"));
             let outcome = fixture.run(trigger, "terminal-run", |_| execution).expect("settled execution");
             assert_eq!(outcome, Some(expected_outcome));
             let runs = fixture.store.read_runs(&fixture.automation_id);
@@ -582,7 +599,7 @@ fn real_background_execution_failures_and_interruptions_report_when_history_comm
 #[test]
 fn real_cron_database_lifecycle_preserves_identity_terminal_and_admission_fences() {
     bounded_automation_case("real_cron_database_lifecycle_preserves_identity_terminal_and_admission_fences", || {
-        let fixture = ShippingAutomation::new();
+        let fixture = ShippingAutomation::new("cron database lifecycle");
         let workers = &fixture.workers;
         let agent = &fixture.agent_id;
         let automation = &fixture.automation_id;
