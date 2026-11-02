@@ -1263,14 +1263,35 @@
               },
               "invariant_ids": {
                 "minItems": 1
-              },
-              "property_state_case_ids": {
-                "minItems": 1
-              },
-              "fault_recovery_case_ids": {
-                "minItems": 1
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "implementation_status": {
+                      "enum": [
+                        "implemented",
+                        "verified"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "implementation_status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "property_state_case_ids": {
+                      "minItems": 1
+                    },
+                    "fault_recovery_case_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         {

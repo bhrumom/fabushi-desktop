@@ -103,6 +103,33 @@ class SourceReviewSchemaContractTests(unittest.TestCase):
     def candidate_validator(self):
         return self.property_validator(self.schema, "rebaseline_candidate")
 
+    def risk_case_validator(self):
+        """Project the real risk/stage rule; execution/ACCEPT gates stay separate."""
+        owner = self.schema["$defs"]["row"]
+        names = (
+            "quality_risk", "implementation_status", "oracle_ids", "invariant_ids",
+            "property_state_case_ids", "fault_recovery_case_ids",
+        )
+        risk_rules = [
+            rule for rule in owner["allOf"]
+            if "quality_risk" in rule.get("if", {}).get("properties", {})
+        ]
+        self.assertEqual(len(risk_rules), 1)
+        return self.validator({
+            "type": owner["type"],
+            "additionalProperties": owner["additionalProperties"],
+            "properties": {name: owner["properties"][name] for name in names},
+            "required": [name for name in owner["required"] if name in names],
+            "allOf": risk_rules,
+        })
+
+    def risk_case_fixture(self, stage="mapped", risk="high"):
+        return {
+            "quality_risk": risk, "implementation_status": stage,
+            "oracle_ids": ["FIXTURE-ORACLE"], "invariant_ids": ["FIXTURE-INVARIANT"],
+            "property_state_case_ids": [], "fault_recovery_case_ids": [],
+        }
+
     def assert_valid(self, validator, instance):
         errors = list(validator.iter_errors(instance))
         self.assertFalse(
@@ -118,6 +145,51 @@ class SourceReviewSchemaContractTests(unittest.TestCase):
 
     def test_full_schema_is_valid_draft_2020_12(self):
         Draft202012Validator.check_schema(self.schema)
+
+    def test_early_high_risk_stages_can_record_unauthored_case_gaps(self):
+        for risk in ("high", "critical"):
+            for stage in ("unreviewed", "understood", "mapped"):
+                with self.subTest(risk=risk, stage=stage):
+                    self.assert_valid(self.risk_case_validator(), self.risk_case_fixture(stage, risk))
+
+    def test_implemented_and_verified_high_risk_require_both_authored_case_kinds(self):
+        for risk in ("high", "critical"):
+            for stage in ("implemented", "verified"):
+                complete = self.risk_case_fixture(stage, risk)
+                complete["property_state_case_ids"] = ["FIXTURE-STATE-CASE"]
+                complete["fault_recovery_case_ids"] = ["FIXTURE-RECOVERY-CASE"]
+                with self.subTest(risk=risk, stage=stage, gap=None):
+                    self.assert_valid(self.risk_case_validator(), complete)
+                for missing in ("property_state_case_ids", "fault_recovery_case_ids"):
+                    candidate = deepcopy(complete)
+                    candidate[missing] = []
+                    with self.subTest(risk=risk, stage=stage, gap=missing):
+                        self.assert_invalid(self.risk_case_validator(), candidate)
+
+    def test_early_high_risk_stages_still_require_oracle_and_invariant(self):
+        for risk in ("high", "critical"):
+            for stage in ("unreviewed", "understood", "mapped"):
+                for missing in ("oracle_ids", "invariant_ids"):
+                    candidate = self.risk_case_fixture(stage, risk)
+                    candidate[missing] = []
+                    with self.subTest(risk=risk, stage=stage, gap=missing):
+                        self.assert_invalid(self.risk_case_validator(), candidate)
+
+    def test_risk_stage_projection_rejects_missing_unknown_or_malformed_fields(self):
+        validator = self.risk_case_validator()
+        for field in self.risk_case_fixture():
+            candidate = self.risk_case_fixture()
+            del candidate[field]
+            with self.subTest(missing=field):
+                self.assert_invalid(validator, candidate)
+        for field, value in (
+            ("quality_risk", "safe"), ("implementation_status", "accepted"),
+            ("property_state_case_ids", [" "]), ("fault_recovery_case_ids", None),
+        ):
+            candidate = self.risk_case_fixture()
+            candidate[field] = value
+            with self.subTest(field=field, value=value):
+                self.assert_invalid(validator, candidate)
 
     def test_source_reviews_remains_optional_for_historical_candidates(self):
         validator = self.property_validator(self.schema, "source_reviews")

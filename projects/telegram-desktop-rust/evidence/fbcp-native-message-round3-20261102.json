@@ -119,7 +119,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-plaintext-envelope-repair-actions",
+    "status": "pending-unit-import-and-canonical-ledger-actions",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked-until-all-NMR-required-jobs-and-tests-pass",
     "full_product_acceptance": false,
@@ -592,6 +592,98 @@
         "digest": "sha256:e71522b6683f978f98c79107c718f57306fe8ca1474fb79d8a1b25b9d106b509"
       },
       "diagnostic_generated_lock": "Not acceptance and not adopted; --locked AppHost compilation succeeded."
+    },
+    {
+      "id": 41399310908,
+      "attempt": 1,
+      "head_sha": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41399310908",
+      "jobs": [
+        {
+          "id": 125127432944,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "full_log_read": true,
+          "log_characters": 118137,
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125127432944/logs"
+        },
+        {
+          "id": 125127432555,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "response_normalization": "lib test compilation failed before selected tests",
+          "protocol": "skipped",
+          "tcp": "skipped",
+          "proxy_and_credential": "skipped",
+          "classification": "TEST_BUG",
+          "failure_signatures": [
+            "E0425: missing build_req_pq import in api::mtproto_service_builder_contract_tests at api.rs:1745,1754",
+            "E0425: missing REQ_PQ_CONSTRUCTOR import in same test module at api.rs:1747,1756"
+          ],
+          "full_log_read": true,
+          "log_characters": 188222,
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125127432555/logs"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13121065869,
+          "name": "native-message-shipping-compile-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+          "size_in_bytes": 13075,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121065869",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121065869/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:22:52Z",
+          "expires_at": "2027-01-31T06:20:39Z",
+          "updated_at": "2026-11-02T06:22:52Z",
+          "digest": "sha256:e9f851e8d161a0f0581ac7a72bf88fc625fb9ceace8c0c45ced2052b93e40466",
+          "workflow_run": {
+            "id": 41399310908,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70"
+          }
+        },
+        {
+          "id": 13121001027,
+          "name": "native-message-reconciliation-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+          "size_in_bytes": 10026,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121001027",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121001027/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:22:57Z",
+          "expires_at": "2027-01-31T06:20:39Z",
+          "updated_at": "2026-11-02T06:22:57Z",
+          "digest": "sha256:8a36d0a798e0dd065e78236b0078f2557fbf4c31ec0a7ad33af9f5dae410609e",
+          "workflow_run": {
+            "id": 41399310908,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70"
+          }
+        }
+      ]
     }
   ],
   "review": {
@@ -4556,8 +4648,18 @@
       "new_helper_blob": "0f2b07be4adb31d14838c1ff8a0cdb182041b4ef",
       "changes": "The concurrent fb4df3898ae31b04bc64adde1944067154ae3678 commit already updates the independently reviewed exact helper pin. Preserve it without a redundant collector change or additional acquisition run in this delivery. Each Actions checkout has fresh artifacts; future reusable-directory cleanup of retained LICENSE files is separate.",
       "review": "New metadata/records preserve existing method, entry and edge contracts. Original declared expected-lite URL and license blob mode/object/length/bytes are checked; source content is never executed.",
-      "status": "concurrent-fix-preserved-pending-its-exact-H-Actions",
-      "effective_fix_commit": "fb4df3898ae31b04bc64adde1944067154ae3678"
+      "status": "producer-terminal-success-artifact-metadata-observed",
+      "effective_fix_commit": "fb4df3898ae31b04bc64adde1944067154ae3678",
+      "execution": {
+        "head_sha": "fb4df3898ae31b04bc64adde1944067154ae3678",
+        "run_id": 41398061498,
+        "job_id": 125123621937,
+        "conclusion": "success",
+        "artifact_id": 13120685486,
+        "artifact_bytes": 4585041,
+        "artifact_digest": "sha256:f86a4d5c60e4938b3085305feb7ba71eb88a1b47fa283c4a9de2b16980150326",
+        "limits": "Job and artifact metadata read. Full fixed-U Git candidate bytes are verified through retained 9f77 producer/recovery evidence; this entry does not claim this new ZIP was separately downloaded or semantically reviewed."
+      }
     },
     "git_inventory_only": true,
     "root_non_directory_entries": 6895,
@@ -4606,6 +4708,14 @@
         "projects/telegram-desktop-rust/evidence/fbcp-native-message-round3-20261102.json"
       ],
       "action": "Re-read complete compare and full changed files; retain additional TCP bounds/directory request checks, reviewed helper pin, NMR-15/AC-09 and all appended evidence. Only add missing LICENSE cleanup and bounded retrieval of the existing inventory artifact."
+    },
+    {
+      "commit": "606ee80daf10743b79c6c1c43541584a8af2260d",
+      "base": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+      "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+      "blob": "d772c4cf01b7019b1dde6a5154401e4eef5ba0cc",
+      "change": "Existing req_pq lib-test imports restored; no production logic or assertions changed",
+      "readback": true
     }
   ],
   "tcp_fixture_repair": {
@@ -4838,8 +4948,20 @@
       "plaintext_envelope_budget_counts_declared_and_received_padding",
       "plaintext_envelope_tail_cannot_complete_or_replace_res_pq_nonce"
     ],
-    "execution_status": "authored-not-run",
-    "dependent_message_batch": "blocked"
+    "execution_status": "6cf9-AppHost-compiled; protocol-and-TCP-not-executed-because-lib-test-imports-failed",
+    "dependent_message_batch": "blocked",
+    "commit": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+    "remote_readback": {
+      "branch_sha": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+      "all_six_changed_files_exact_content": true,
+      "force": false,
+      "expected_sha": "a8c31a63ab09f3612b6e46118edbbf09995c5f9a"
+    },
+    "independent_static_review": {
+      "blocking_findings": [],
+      "reviewed_basis": "Fixed-U receive/send implementations, exact a8 code diff and all four new test bodies",
+      "local_execution": false
+    }
   },
   "response_normalization_oracle_repair": {
     "classification": "TEST_BUG",
@@ -4851,6 +4973,62 @@
     "workflow": ".github/workflows/native-service-contracts.yml",
     "selected_filter": "response_normalization::tests::",
     "required_cases": 6,
-    "execution_status": "authored-not-run"
+    "execution_status": "selected-tests-not-executed-lib-test-compilation-failed",
+    "commit": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70"
+  },
+  "ledger_contract_reconciliation": {
+    "base_commit": "2fd8d7623a1cfa00b09e90a2d81535c6550425df",
+    "base_blob": "bad0d6b64cead0a04354f9d8c95d8e19bc542cfd",
+    "applied_paths": [
+      "projects/telegram-desktop-rust/parity-ledger.json",
+      "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+      "scripts/tdrp-source-review-schema.test.py",
+      "projects/telegram-desktop-rust/evidence/ledger-contract-reconciliation-20261102.json",
+      "projects/telegram-desktop-rust/evidence/fixed-u-build-input-review-20261102.json"
+    ],
+    "receipt": "projects/telegram-desktop-rust/evidence/ledger-contract-reconciliation-20261102.json",
+    "purpose": "Repair the actual canonical ledger/schema mismatch and authored-case/owner-stage truth. Preserve all existing implementation evidence and unresolved product requirements; do not infer completion from structural validity.",
+    "changes": [
+      "Canonical schema vocabulary with exact displaced values retained in notes.",
+      "Reviewed canonical owner fields for the 22 historical rows; 21 whole responsibilities mapped until real host behavior exists; contribution policy remains implemented in its narrow policy scope.",
+      "Bind only inspected executable target state/property/fault symbols; otherwise retain explicit qualification gaps at mapped.",
+      "Correct the existing plaintext-envelope responsibility to the fixed-U declared-span rule and new authored negative cases.",
+      "Require both authored case kinds for high/critical implemented/verified while allowing explicit early-stage gaps; full verified/ADR/release gates unchanged."
+    ],
+    "local_executable_validation": false,
+    "actions_status": "pending-new-exact-H-source-review-contract",
+    "source_acceptance": false,
+    "product_acceptance": false,
+    "independent_static_review": {
+      "verdict": "no blocking findings",
+      "scope": "Entire edited canonical ledger, every original 868 error category, exact old evidence/history preservation, owner stages, schema and 31 authored test definitions",
+      "no_phase_promotions": true,
+      "original_production_and_test_evidence_retained": true,
+      "local_executable_validation": false
+    }
+  },
+  "fixed_upstream_build_input_review": {
+    "path": "projects/telegram-desktop-rust/evidence/fixed-u-build-input-review-20261102.json",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "scope": "Exact-U prepare.py, Dockerfile and snapcraft input audit and their actual generation/patch consumers; raw review records explicit read ranges and gaps.",
+    "findings": "Five changed input lines across three main files include patches 845a383f7abe8e44f92dfdcd566d603066ec2696, qt6_windows7_patches 9ce1ffe051161a22f7e78f715b042c773f868e59 and tg_angle 9fd174a91e6155d1006c5f427366b23006f5d899. Ten prior mutable authority records were already stale; existing 331/19/8 counts are not accepted for fixed U.",
+    "build_time_complete": false,
+    "generated_inputs_complete": false,
+    "legal_semantic_complete": false,
+    "source_acceptance": false
+  },
+  "unit_test_import_repair": {
+    "base": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70",
+    "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+    "base_blob": "e032f4dbba09c0a4d912566b4e1c51311b677002",
+    "classification": "TEST_BUG",
+    "change": "Import existing build_req_pq and REQ_PQ_CONSTRUCTOR from super in the existing cfg(test) mtproto_service_builder_contract_tests module.",
+    "production_code_changed": false,
+    "old_assertions_unchanged": true,
+    "diagnostic_lock_adopted": false,
+    "execution": "pending-new-H-Actions",
+    "effective_commit": "606ee80daf10743b79c6c1c43541584a8af2260d",
+    "effective_blob": "d772c4cf01b7019b1dde6a5154401e4eef5ba0cc",
+    "integrator_action": "Concurrent session delivered the same two required imports before root publication; root read the complete diff/content and preserved it unchanged, dropping its redundant local hunk."
   }
 }
