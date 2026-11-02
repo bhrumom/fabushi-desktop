@@ -6886,7 +6886,7 @@ fn shipping_human_reaction_restart_replays_already_applied_intent_without_retogg
         Some(json!({"afterId":4_000_777,"complete":true})));
     assert!(events.lock().expect("events").iter().all(|event| event["entries"] == json!([applied.clone()])),
         "recovery never publishes an inactive or partial intermediate row");
-    runtime.shutdown(); drop(owner); drop(restarted);
+    restarted.shutdown(); drop(owner); drop(restarted);
     let reopened = human_message_fixture_runtime(&root, &url);
     assert_eq!(reopened.read_human_conversation_transcript(&id).expect("pure reopen"), vec![applied]);
     subscription.unsubscribe();
