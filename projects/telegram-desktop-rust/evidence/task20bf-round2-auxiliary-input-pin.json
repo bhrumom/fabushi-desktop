@@ -1,0 +1,55 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 2,
+  "requirement": "FMEP-SOURCE-01 / Auxiliary packaged executable source locks",
+  "fixed_telegram_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "independent_of_message_consumer_batch": true,
+  "acquisition": {
+    "head_sha": "565a4639f1b7efbd15937aff93f4e14168322389",
+    "run_id": 41514329200,
+    "artifact_id": 13175461007,
+    "artifact_name": "staged-runtime-inputs-565a4639f1b7efbd15937aff93f4e14168322389",
+    "artifact_digest": "sha256:85488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b",
+    "input_mode": "capture",
+    "source": "Existing exact-H GitHub Actions acquisition; four input files copied from the artifact, not regenerated locally",
+    "limits": "Acquisition and checksum evidence only; no auxiliary executable, signed package, source or release acceptance"
+  },
+  "unchanged_direct_manifests": {
+    "source/node-agent-coordinator/Cargo.toml": "39cc53abc066a3e54da77fb3da10d8283a620d50ea4a47ad21a63a42d2f0a37d",
+    "source/box-exec-daemon/Cargo.toml": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01",
+    "go_module": "github.com/bhrumom/fabushi-desktop/source/fabushi-network-worker",
+    "go_version": "1.27.1",
+    "direct_go_requirement": "tailscale.com v1.104.1"
+  },
+  "captured_file_sha256": {
+    "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+    "source/box-exec-daemon/Cargo.lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+    "source/fabushi-network-worker/go.mod": "31a956329d877ddfc7261f19aeccfbf3e06c83e290b7472d1197e72139526c13",
+    "source/fabushi-network-worker/go.sum": "2e689a93f680062cbeeb8cb790bc7bcc09587e68a24c900d9b85a926319fa9a7"
+  },
+  "implementation": [
+    "Pin both previously untracked standalone Rust locks without modifying their direct manifests",
+    "Pin the captured Go indirect module requirements and checksums while preserving the existing direct Tailscale selection",
+    "Switch the existing staged-runtime workflow from capture to locked mode; existing normal-build dependency, binary and lifecycle gates now apply",
+    "Require --locked in normal desktop Host/Coordinator/box-exec build commands",
+    "Remove go mod tidy from the signed macOS worker build; require -mod=readonly and unchanged go.mod/go.sum"
+  ],
+  "execution": {
+    "current_input_and_binary_validation": "pending containing-H GitHub Actions",
+    "required_jobs": [
+      "Acquire or verify auxiliary dependency inputs",
+      "Source and binary / mahayana-node-agent-coordinator",
+      "Source and binary / box-exec-daemon",
+      "Source and binary / fabushi-network-worker"
+    ],
+    "local_or_htch_runtime_validation": "not performed",
+    "message_gate": "d78ba3c1f026130d2494ddce3c11adf610069aa1 run41516733700 Human/shipping pending at preparation; no dependent message batch started"
+  },
+  "remaining": [
+    "Exact containing-H locked-input verification, actual macOS auxiliary binaries and existing lifecycle tests",
+    "Detailed registry/Go source, generated-input and legal disposition; first pinning does not constitute semantic source review",
+    "Other legacy FDN/acceptance workflows retain separate acquisition paths and require their own pinned qualification",
+    "Signed supported-platform packages, real-service and full product regressions, upgrade/rollback and independent ACCEPT"
+  ],
+  "accepted": false
+}

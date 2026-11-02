@@ -20,9 +20,9 @@ permissions:
   contents: read
 
 env:
-  # One acquisition checkpoint only. Set false when the reviewed inputs are pinned.
-  # Capture success is not locked-input or release acceptance.
-  FBCP_CAPTURE_MISSING_INPUTS: 'true'
+  # Inputs were captured at 565a4639 and are now pinned in the same source tree.
+  # Missing or mutated inputs must fail; capture evidence was not acceptance.
+  FBCP_CAPTURE_MISSING_INPUTS: 'false'
   FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
