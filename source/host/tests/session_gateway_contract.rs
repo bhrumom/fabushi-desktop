@@ -448,7 +448,7 @@ fn session_key_send_prompt_rechecks_admission_at_transcript_write() {
         &json!({"accepted": true}),
     )
     .expect_err("archived session write must be rejected");
-    assert!(error.to_string().contains("not admitted"));
+    assert!(matches!(error, SessionGatewayError::Internal(message) if message.contains("not admitted")));
     assert!(runtime
         .read_agent_transcript_entries(&record.id)
         .expect("read transcript")
