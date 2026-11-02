@@ -3,7 +3,7 @@
 Status: active / fail-closed  
 Project: TDRP-001 Revision 10
 Parent: FBCP-001 Revision 8
-Execution: development first; executable validation only in final GitHub Actions phase.
+Execution: FMEP-001 Revision 2; focused batch verification and final acceptance in GitHub Actions only.
 
 ## Goal
 
@@ -30,7 +30,7 @@ Tree enumeration is not semantic reading. Directory citation is not responsibili
 5. `projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md` — requirement/oracle/invariant/test/evidence/reviewer chain.
 6. GitHub Actions evidence from the same exact Fabushi HEAD.
 
-第 1–5 项的来源枚举、责任分流、owner 映射、实现和测试合同在开发期先推进；第 6 项与机器 gate 只在全量开发闭包并冻结同一确切提交 H 后集中执行。开发期不触发、等待或重复迁移 CI，不推送实现分支/更新迁移 PR head；本地仅提交、静态与只读审查。accepted/verified 及所有执行证据保持 pending/not-run/false，不能因延后运行而提前退出 P0。
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## Bidirectional gate
 

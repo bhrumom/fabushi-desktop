@@ -5,7 +5,7 @@ Project ID: TDRP-001
 Revision: 10
 Date: 2026-10-31
 Parent: FBCP-001 Revision 8
-Execution addendum: FMEP-001 Revision 1 (2026-10-31)
+Execution addendum: FMEP-001 Revision 2 (2026-11-02)
 
 ## Role
 
@@ -16,7 +16,7 @@ Execution addendum: FMEP-001 Revision 1 (2026-10-31)
 ## Must read
 
 - root `AGENTS.md`
-- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 1；执行时机、批次协作、保存与集中验收的权威补充
+- `docs/specs/fabushi-deferred-ci-migration.md` — FMEP-001 Revision 2；执行时机、批次协作、保存与集中验收的权威补充
 - `projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md` Revision 8 with execution addendum
 - `docs/specs/fabushi-bot-communication-platform.md` Revision 8
 - `docs/specs/telegram-desktop-rust-equivalence-migration.md` Revision 10
@@ -28,11 +28,7 @@ Execution addendum: FMEP-001 Revision 1 (2026-10-31)
 
 ## Execution timing
 
-阶段 A 全量实现与融合期间不进行任何迁移 CI，也不跑本机验证。只做源码理解、责任映射、生产实现/接线、测试/oracle/fixture/workflow 编写、人工审查和安全保存。按目标 owner 成批工作、共享接口先定型、可分离路径并行、公共文件由唯一集成人合入，避免一文件一轮 CI 或反复重读同一内容。
-
-全范围实现与接线完成后冻结 H，阶段 B 才统一执行 GitHub Actions 验证/修复；最终独立接受属于阶段 C。“统一”不限制失败修复次数，禁止无理由重复执行同一失败手段。任何阶段都不能将 `not-run` 伪装成 pass。
-
-FMEP-001 优先解释旧任务/P0/ledger 对测试时机的表述：`implemented` 与 `verified` 分离；未运行测试不是继续实现下一个模块的障碍。正式基线校验、编译产物、部署和包体验证延期至阶段 B，不作为阶段 A 开工前置。
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## Baseline
 
@@ -86,9 +82,7 @@ FMEP-001 优先解释旧任务/P0/ledger 对测试时机的表述：`implemented
 
 ## Verification and preservation
 
-所有 FBCP/TDRP 可执行 build/test/lint/generator/schema/benchmark/fuzz/E2E/visual/a11y/performance/soak/fault/package/acceptance 只允许阶段 B 的 GitHub Actions。
-
-代码检查点按 FMEP-001 §5 安全保存在云端：未证明不会触发 CI 时，不更新实现 ref 或 PR；确认已隔离后可以沿既有分支保存。只靠 skip commit 文本或 draft PR 不足以证明所有触发已排除；不得在未获准时全库关闭 workflow 或移除最终保护。不把重要成果长期仅留用户本机，未安全备份不清理。
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 每个 responsibility 最终 Definition of Done 仍要求：
 - production implementation 已进入唯一 shipping composition；
@@ -103,7 +97,7 @@ FMEP-001 优先解释旧任务/P0/ledger 对测试时机的表述：`implemented
 
 本次为执行规范与提示词更新，不代表迁移、基线或验收完成。历史 lock / inventory / ledger / dossiers / STATUS / validators 仍须按本轮实际来源和职责逐项核对。
 
-继续沿用 `unreviewed -> understood -> mapped -> implemented -> verified`：阶段 A 到 implemented/未验证，阶段 B/C 才可 verified/ACCEPT。遇到 service/account/signing blocker，记录解除条件并继续无依赖任务。
+继续沿用 `unreviewed -> understood -> mapped -> implemented -> verified`：阶段 A 实现并取得批次验证证据，阶段 B/C 完成最终 verified/ACCEPT。遇到 service/account/signing blocker，记录解除条件并继续无依赖任务。
 
 完整提示词：`projects/fabushi-communication-platform/management/prompts/full-migration-deferred-ci.md`。
 
