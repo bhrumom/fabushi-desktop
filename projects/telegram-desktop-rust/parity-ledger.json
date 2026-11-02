@@ -49513,6 +49513,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository user-agent updater workflow evidence contract"
       ],
       "production_evidence": [
+        "governance-contract-preparation-commit:1a607cc15dd0d3fec3ebc694b8f1197d379ddce0",
         "dossier:projects/telegram-desktop-rust/dossiers/user-agent-updater-workflow-complete-read.md",
         "upstream-source:.github/workflows/user_agent_updater.yml@1e3dae8182aefc4e4c76df065f547a43a1e50437",
         "observed-action-master:0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
@@ -49577,7 +49578,7 @@
         "SEC-TDRP-USER-AGENT-WORKFLOW-NO-NETWORK-RUNTIME-AUTHORITY-001 authored, not run",
         "SEC-TDRP-USER-AGENT-WORKFLOW-NO-STAGE-A-EXECUTION-001 authored, not run"
       ],
-      "target_commit": null,
+      "target_commit": "1a607cc15dd0d3fec3ebc694b8f1197d379ddce0",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -49765,7 +49766,7 @@
       "release_gate_status": "not-run",
       "license_and_provenance": "Fixed-U workflow and observed action_code_updater master/tree recorded; observed Action tree has no LICENSE/package manifest/lock and runtime npm dependencies are unpinned. No Action code copied into Fabushi.",
       "reviewer": null,
-      "notes": "Task round177/source evidence round208. Full-read fixed-U tree index 133. One source entry closes: unknown 16101->16100, unread 16074->16073, responsibilities 177->178, omitted 0, unmapped 0.",
+      "notes": "Task round177/source evidence round208. Full-read fixed-U tree index 133. One source entry closes: unknown 16101->16100, unread 16074->16073, responsibilities 177->178, omitted 0, unmapped 0. Governance/contracts/dossier and closure preparation commit 1a607cc15dd0d3fec3ebc694b8f1197d379ddce0.",
       "validation_status": "not-run",
       "accepted": false,
       "source_paths": [
