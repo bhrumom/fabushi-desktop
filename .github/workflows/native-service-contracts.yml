@@ -122,6 +122,12 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
           grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+      - name: Diagnose locked Session dependency drift (no acceptance)
+        if: failure()
+        shell: bash
+        run: |
+          cargo generate-lockfile --manifest-path source/host/Cargo.toml || true
+          git diff -- source/host/Cargo.lock | head -n 260
       - name: Preserve exact batch evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,6 +165,12 @@ jobs:
         run: |
           set -euo pipefail
           cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-check.log
+      - name: Diagnose locked AppHost dependency drift (no acceptance)
+        if: failure()
+        shell: bash
+        run: |
+          cargo generate-lockfile --manifest-path source/host/app/Cargo.toml || true
+          git diff -- source/host/app/Cargo.lock | head -n 260
       - name: Preserve shipping compile evidence
         if: always()
         uses: actions/upload-artifact@v4
