@@ -264,4 +264,69 @@ mod tests {
         invalid.destinations[1].conversation_id = "b".into();
         assert!(invalid.validate("s").is_err());
     }
+    #[test]
+    fn stale_same_batch_snapshot_cannot_regress_completed_destination() {
+        let dir = std::env::temp_dir().join(format!("forward-stale-progress-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let db_path = dir.join("store.db");
+        let first = SandAgentDb::open(&db_path, 500).unwrap();
+        let second = SandAgentDb::open(&db_path, 500).unwrap();
+        let context = serde_json::json!({"batchVersion":1,"requestId":"r","sourceConversationId":"s","sourceEntryId":"e","privacy":{"dropSenderNames":false,"dropCaptions":false}});
+        let original = HumanForwardBatch::new("a".into(),"prod".into(),"r".into(),"s".into(),"e".into(),"text".into(),vec![],context,&["b".into(),"c".into()]);
+        store_forward_batch(&first, &original).unwrap();
+        let mut settled = original.clone();
+        settled.destinations[0].completed = true;
+        store_forward_batch(&second, &settled).unwrap();
+        let error = store_forward_batch(&first, &original).unwrap_err();
+        assert!(error.contains("stale"), "{error}");
+        assert_eq!(load_forward_batches(&first, "s").unwrap(), vec![settled.clone()]);
+        let mut fresh = load_forward_batches(&first, "s").unwrap().remove(0);
+        fresh.destinations[1].completed = true;
+        store_forward_batch(&first, &fresh).unwrap();
+        first.close(false);
+        second.close(false);
+        drop(first); drop(second);
+        let reopened = SandAgentDb::open(&db_path, 500).unwrap();
+        assert_eq!(load_forward_batches(&reopened, "s").unwrap(), vec![fresh]);
+        reopened.close(false); drop(reopened);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn concurrent_forward_metadata_writers_have_one_durable_winner_and_recover() {
+        use std::sync::{Arc, Barrier};
+        let dir = std::env::temp_dir().join(format!("forward-parallel-cas-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("store.db");
+        let seed = SandAgentDb::open(&path, 5000).unwrap();
+        assert!(seed.set_metadata("unrelated", serde_json::json!(19)).unwrap());
+        seed.close(false); drop(seed);
+        let barrier = Arc::new(Barrier::new(3));
+        let threads = (0..2).map(|index| {
+            let path = path.clone();
+            let barrier = Arc::clone(&barrier);
+            std::thread::spawn(move || {
+                let owner = SandAgentDb::open(&path, 5000).unwrap();
+                let observed = owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
+                assert!(observed.is_none());
+                barrier.wait();
+                let result = owner.set_metadata_if_unchanged(
+                    FORWARD_BATCHES_KEY, observed.as_ref(), serde_json::json!([{"winner":index}])
+                );
+                owner.close(false);
+                result
+            })
+        }).collect::<Vec<_>>();
+        barrier.wait();
+        let outcomes = threads.into_iter().map(|thread| thread.join().unwrap()).collect::<Vec<_>>();
+        assert!(outcomes.iter().all(Result::is_ok), "SQLite busy is not a CAS rejection: {outcomes:?}");
+        assert_eq!(outcomes.iter().filter(|item| *item.as_ref().unwrap()).count(), 1);
+        let reopened = SandAgentDb::open(&path, 5000).unwrap();
+        let winner = reopened.get_metadata(FORWARD_BATCHES_KEY).unwrap().unwrap();
+        assert!(winner == serde_json::json!([{"winner":0}]) || winner == serde_json::json!([{"winner":1}]));
+        assert_eq!(reopened.get_metadata("unrelated").unwrap(), Some(serde_json::json!(19)));
+        reopened.close(false); drop(reopened);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
 }

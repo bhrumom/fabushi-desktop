@@ -2994,17 +2994,30 @@ impl ProductionSessionWorkers {
     fn resume_human_forward_batches(&self) -> Result<(), String> {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
         let (account, issuer) = self.human_forward_scope()?;
-        for conversation in self.list_human_conversations()? {
-            let Some(source_id) = conversation.get("id").and_then(serde_json::Value::as_str) else { continue };
-            let owner = self.open_human_conversation_db_owner(source_id)?;
-            for batch in load_forward_batches(&owner, source_id)? {
+        // Unlike the visible roster, recovery cannot omit revoked sources or
+        // silently skip corrupt stored metadata. Reuse the strict source scan
+        // semantics of find_forward_request, without filtering by request ID.
+        let root = get_native_conversations_root(&self.agents_root);
+        let entries = match fs::read_dir(root) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error.to_string()),
+        };
+        for entry in entries {
+            let entry = entry.map_err(|error| error.to_string())?;
+            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
+                continue;
+            }
+            let source_id = entry.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
+            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            for batch in load_forward_batches(&owner, &source_id)? {
                 if batch.account_id != account || batch.issuer != issuer
                     || batch.destinations.iter().all(|target| target.completed)
                 { continue; }
-                // Do not erase or bypass an invalid source on recovery. An
-                // unavailable source retains the original intent, and no
-                // destination is sent without reauthorization.
-                self.deliver_forward_batch(source_id, &batch.request_id, None)?;
+                self.deliver_forward_batch(&source_id, &batch.request_id, None)?;
             }
         }
         Ok(())
