@@ -1,0 +1,136 @@
+{
+  "format_version": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "responsibility_id": "FBCP-NMR-001",
+  "expected_input_blob": "09ae58962a743d8010e94906190fc054f878c28f",
+  "append": {
+    "requirement_ids": [
+      "NMR-REG-TRM-01",
+      "NMR-CREATE-01d"
+    ],
+    "oracle_ids": [
+      "NMR-AC-CREATE-01"
+    ],
+    "fabushi_target_paths": [
+      "source/host/src/transcript_mirror/conversation_state_binary.rs",
+      "source/host/src/extensions/session/agent_db_recovery.rs",
+      "source/host/src/extensions/session/human_creation_tests.rs"
+    ],
+    "fabushi_target_symbols": [
+      "ProductionTranscriptCheckpoint::from_state_bytes",
+      "probe_human_conversation_store"
+    ],
+    "unit_case_ids": [
+      "source/host/src/transcript_mirror/conversation_state_binary.rs#tests::conversation_compaction_epoch_counts_external_and_self_summaries",
+      "source/host/src/transcript_mirror/conversation_state_binary.rs#tests::recovery_fields_decode_token_details_and_turn_timing",
+      "source/host/src/transcript_mirror/conversation_state_binary.rs#tests::stale_token_details_can_be_removed_without_reencoding_other_fields",
+      "source/host/src/extensions/session/human_creation_tests.rs#retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+      "source/host/src/extensions/session/human_creation_tests.rs#human_format_probe_preserves_posix_locks_against_an_external_writer"
+    ],
+    "fault_recovery_case_ids": [
+      "source/host/src/extensions/session/human_creation_tests.rs#retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+      "source/host/src/extensions/session/human_creation_tests.rs#human_format_probe_preserves_posix_locks_against_an_external_writer"
+    ],
+    "security_case_ids": [
+      "source/host/src/extensions/session/human_creation_tests.rs#human_format_probe_preserves_posix_locks_against_an_external_writer"
+    ],
+    "regression_ids": [
+      "NMR-REG-TRM-01"
+    ],
+    "test_fixture_ids": [
+      "Real retained WAL with NO_CKPT_ON_CLOSE and independent-process default SQLite/VFS lock controls, scoped to existing Human creation tests."
+    ],
+    "production_evidence": [
+      "exactd1b7ced237f108a22c1b166877a6d1c1bd62d301: existing Human probe674335fcf15deae2c1bb4c0afbaca08bc07cd68b refuses missing/zero main plus nonempty sidecars, uses default SQLite PRIVATE_CACHE immutable schema_version format read with strict error propagation, preserves existing WAL-aware owner and no-sidecar quick_check. No raw main-file descriptor or generic Agent recovery change; complete recovery/release not claimed.",
+      "projects/telegram-desktop-rust/evidence/round3-human-store-preservation-20261102.json: exact failure, upstream SQLite3.51.3/default-VFS contract, current owner and concurrent baseline review, CAS/API publication and authored tests.",
+      "projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json: four exact fixed-U whole primary text reads and configured generated-input/consumer binding; broader caller/media/cancellation/restart/legal mapping remains pending."
+    ],
+    "test_evidence": [
+      "be660661a4935a590cc6e5074ba3224074493401 restores three original Transcript tests by moving only a misplaced closing brace; production, assertions and fixtures unchanged. db6d7f427ba25d7f90d6470a3ff69574bab5c034 adds actual3/0/0 gate plus both formerly nested names. TEST_FLAW repair, not full Bot acceptance.",
+      "authored exactd1b7ced237f108a22c1b166877a6d1c1bd62d301: Human creation14, including retained WAL identity/transcript after reopen and independent-process lock busy-before/after-probe plus writable-after-rollback controls; preserve prior12 functions/10 corruption variants/zero-file positive, add missing/empty-main-with-sidecars within existing matrix. New execution pending at freeze.",
+      "projects/telegram-desktop-rust/evidence/round3-human-ui-retry-gap-20261102.json: historical gap observations retained; d1b7 static current owner recheck confirms concurrent identity-only Human retry/account/queue/failure projection is now present. Actual same-H tests remain separate."
+    ],
+    "test_execution_evidence": [
+      "exact63c59566aae7fa9b424a364df1429176c792d249 run41520507652 attempt1 reconciliation125535006727 succeeded actualHuman54/resource3/sharebox1/journal12/AgentNonce4/credential3/forwardHTTP1, zero failed/ignored; includes NMR51 oversized/restart/same-nonce and resource cases. Artifact13177247633 sha256:fa8b48faf174824b4b7a1fdd709955cb139b0c159571abb0c7499c9abfc450b6. Same-H UI58/Electron89/Windows11 passed; shipping125535006702 remained queued at observation. Historical only; no later-H or full-batch transfer.",
+      "exactdb6d7f427ba25d7f90d6470a3ff69574bab5c034 run41526479236 reconciliation125555409920 failed before selected tests: E0277 usize:FromSql in concurrent creation fixture. Full-log sha256:a8375ab2ec6dbda1b34fe309136383f4138412f10a0737075c21b8cc5f36013b retained; no zero-test pass claim.",
+      "exactf544e9b3161d758141e1b419bcdab22cc522952e run41526852400 reconciliation125556686433 actually passed Transcript3/Human63/resource3, then creation11passed/1failed: NOTADB refusal deleted retained sidecars. Storage/sharebox/journal/Agent/credential/HTTP steps not run. Full-log sha256:a37a592f0edb8f59036c63f261850d457cb6bc4fd4f1e42a872913b88e55183b, artifact13180716147 sha256:06e016a46c28af61d45f7bf1693526f054e34d75c58a5fa10bd908da206876ed. Production preservation failure remains distinct from the prior fixture compile failure.",
+      "exactf544/run41526852400 Social125556686458 actually executed10passed/0failed but strict name+ok grep failed on intentional caught-panic interleaving; SQLite9/HTTP6 skipped. Concurrent f2903f53ded5b07faea73e7f07d780eda0423283 corrects that TEST_ORACLE retaining Cargo success/count/named-start gates. Same-H FFI15passed/1explicit live-DC ignored, UI71TAPpassed then1browserpassed/10failed, Electron100/Windows11passed; no full-batch acceptance.",
+      "exacte4f91d1cae92ef32e6299c683248bf32ddafa073 run41527256827 UI125558078887 passed71TAP then2browserpassed/9failed (duplicate older-page dispatch), cache8notrun. Subsequent existing-owner reselect/single-flight repair is preserved; only new containing-H execution may qualify it.",
+      "exactd1b7ced237f108a22c1b166877a6d1c1bd62d301 run41530841386 attempt1 published and API read back. At initial observations jobs remain queued without runners/steps; not compiled/tested/passed. All applicable terminal-success/actual behavior gates remain required; current evidence is recorded in round3-human-store-preservation-20261102.json."
+    ]
+  },
+  "append_source_reviews": [
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/storage/storage_media_prepare.h",
+      "object": "d051ef46de00775215318acd122886f8a1eac139",
+      "category": "mixed-ui",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire fixed-U primary text read; Public drag classifications, image/video/audio editor inputs, URL/path admission, deferred preparation and mutation/preview interfaces. Public input structs retain editor and media state, not a generic byte-only upload contract. Remaining: Actual editor caller lifetimes and all PreparedList/album/slowmode/price consumers are not exhaustively reviewed. Whole-text reading does not close all applicable responsibility, dependency/legal or production acceptance obligations.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json"
+      ],
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/storage/storage_media_prepare.cpp",
+      "object": "11faf2a4e163fd01361c01f4e1ab4f9cd7fcd485",
+      "category": "mixed-ui",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire fixed-U primary text read; All local functions and branches were read, including filtering, decode dispatch, parallel preview preparation, animated composition and cover modifications. Admission and media transformation are separate from permission and network settlement. Remaining: Decoder libraries, geometry/paint/sticker internals, remote-content caller preconditions and all UI lifetime guards still require direct contract review. Whole-text reading does not close all applicable responsibility, dependency/legal or production acceptance obligations.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json"
+      ],
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/storage/file_upload.h",
+      "object": "5173ce47758f12e3cad87bcc1467e6399e590491",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire fixed-U primary text read; Uploader owns queued items and MTProto part requests within one Main::Session, preparation queues, progress/failure/ready event families and cover join maps. Secure and secondary upload users are distinct from ordinary messages. Remaining: All public pause/cancel/secure/secondary callers, Session destruction ordering and generated request ownership are not exhaustively reviewed. Whole-text reading does not close all applicable responsibility, dependency/legal or production acceptance obligations.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json"
+      ],
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/storage/file_upload.cpp",
+      "object": "a19470a24b6a62b58c63d8cc21d831641d970260",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire fixed-U primary text read; All functions and branches read: media cache setup, transcode/archive workers, bounded chunks, adaptive sessions, retries after session removal, cancellation/failure, ordered completion and video cover's second RPC stage. Remaining: Complete MTP request retry/cancel callback semantics, secure/secondary consumers, archive/transcode safety and application-level restart recovery are still open. Whole-text reading does not close all applicable responsibility, dependency/legal or production acceptance obligations.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json"
+      ],
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
+    }
+  ],
+  "note": "\nNMR-51 / NMR-AC-42: Task20bf round3 followup preserves the immutable upstream, all concurrent rows/reviews and existing scalar execution pointers. Record actual H63 bounded NMR51 success and distinct db6 fixture / f544 retained-store production failures without transferring acceptance. TRM registration is repaired and actual3 cases at f544 are separately proved. d1b7 publishes the existing-owner default-VFS/private-cache format guard and two real storage/lock cases; all current-H job execution remains pending at freeze. Four exact resource primary whole-text reads enter source_reviews as pending deep records, with all broader calls/media/generated/dependency/legal obligations open. Existing unknown/unread counters, complete review entries, implementation/coverage/release/independent acceptance fields are unchanged. Current concurrent Human retry is present in static production wiring; older UI gap evidence is historical, not current absence. Full artifacts and per-head limitations are in the four round3 evidence files.",
+  "expected_output_blob": "846f32eaf56155316ca435fc9889d3db464f1aaa"
+}

@@ -1,0 +1,120 @@
+name: NMR51 TRM and retained-store reviewed ledger object transport
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/workflows/nmr51-ledger-object.yml'
+      - '.github/checkpoint-ledger-ops-nmr51.json'
+permissions:
+  contents: read
+jobs:
+  store-reviewed-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Create only the exact ledger blob without committing or moving refs
+        env:
+          TRANSFER_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PYTHON'
+          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          repo = 'bhrumom/fabushi-desktop'
+          path = 'projects/telegram-desktop-rust/parity-ledger.json'
+          allowed = {'requirement_ids', 'oracle_ids', 'invariant_ids', 'fabushi_target_symbols',
+                     'fabushi_target_paths', 'unit_case_ids', 'integration_case_ids',
+                     'fault_recovery_case_ids', 'security_case_ids', 'regression_ids',
+                     'test_fixture_ids', 'production_evidence', 'test_evidence', 'test_execution_evidence'}
+          payload_bytes = pathlib.Path('.github/checkpoint-ledger-ops-nmr51.json').read_bytes()
+          op = json.loads(payload_bytes)
+          assert op['format_version'] == 2
+          assert op['repository'] == repo and op['path'] == path
+          assert op['branch'] == 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          assert op['responsibility_id'] == 'FBCP-NMR-001'
+          assert set(op['append']) <= allowed
+          assert os.environ['GITHUB_REPOSITORY'] == repo
+          assert os.environ['GITHUB_REF'] == 'refs/heads/' + op['branch']
+          assert os.environ['GITHUB_EVENT_NAME'] == 'push'
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == os.environ['GITHUB_SHA']
+          def blob(data):
+              return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          original = pathlib.Path(path).read_bytes()
+          assert blob(original) == op['expected_input_blob'], 'ledger advanced; reconcile before transport'
+          before = json.loads(original)
+          after = copy.deepcopy(before)
+          indexes = [i for i, row in enumerate(after['rows']) if row.get('responsibility_id') == op['responsibility_id']]
+          assert len(indexes) == 1
+          index = indexes[0]
+          row = after['rows'][index]
+          for key, values in op['append'].items():
+              assert isinstance(row[key], list) and isinstance(values, list)
+              assert all(isinstance(value, str) and value for value in values)
+              for value in values:
+                  if value not in row[key]: row[key].append(value)
+              assert row[key][:len(before['rows'][index][key])] == before['rows'][index][key]
+          assert isinstance(op['note'], str) and op['note'].startswith('\nNMR-51 / NMR-AC-42:')
+          assert op['note'] not in row['notes'], 'append already recorded; reconcile first'
+          row['notes'] += op['note']
+          for key in before['rows'][index]:
+              if key not in allowed | {'notes'}: assert row[key] == before['rows'][index][key]
+          assert set(row) == set(before['rows'][index])
+          review_objects = {
+              'Telegram/SourceFiles/storage/storage_media_prepare.h': 'd051ef46de00775215318acd122886f8a1eac139',
+              'Telegram/SourceFiles/storage/storage_media_prepare.cpp': '11faf2a4e163fd01361c01f4e1ab4f9cd7fcd485',
+              'Telegram/SourceFiles/storage/file_upload.h': '5173ce47758f12e3cad87bcc1467e6399e590491',
+              'Telegram/SourceFiles/storage/file_upload.cpp': 'a19470a24b6a62b58c63d8cc21d831641d970260',
+          }
+          original_reviews = copy.deepcopy(before['source_reviews'])
+          for review in op['append_source_reviews']:
+              assert set(review) == {'repository', 'commit', 'path', 'object', 'category',
+                                    'risk', 'review_depth', 'status', 'rationale', 'evidence', 'responsibility_ids'}
+              assert review['repository'] == 'telegramdesktop/tdesktop'
+              assert review['commit'] == 'f985723b552b30fe1c17d377d57f44e61a15a8c4'
+              assert review['path'] in review_objects and review['object'] == review_objects[review['path']]
+              assert review['category'] == ('mixed-ui' if 'storage_media_prepare.' in review['path'] else 'product')
+              assert review['risk'] == 'high' and review['review_depth'] == 'deep' and review['status'] == 'pending'
+              assert review['responsibility_ids'] == ['FBCP-NMR-001']
+              assert review['evidence'] == ['projects/telegram-desktop-rust/evidence/round3-resource-source-review-20261102.json']
+              assert isinstance(review['rationale'], str) and review['rationale']
+              assert not any(all(existing[k] == review[k] for k in ('repository', 'commit', 'path'))
+                             for existing in after['source_reviews']), 'source identity already exists; reconcile first'
+              after['source_reviews'].append(copy.deepcopy(review))
+          assert after['source_reviews'][:len(original_reviews)] == original_reviews
+          assert sum(r['status'] == 'complete' for r in after['source_reviews']) == sum(r['status'] == 'complete' for r in original_reviews)
+          expected = copy.deepcopy(before)
+          expected['rows'][index] = row
+          expected['source_reviews'] = after['source_reviews']
+          assert expected == after
+          encoded = (json.dumps(after, ensure_ascii=False, indent=2) + '\n').encode()
+          target = blob(encoded)
+          assert target == op['expected_output_blob'], 'output differs from reviewed bytes'
+          request = urllib.request.Request(
+              'https://api.github.com/repos/' + repo + '/git/blobs',
+              data=json.dumps({'content': encoded.decode(), 'encoding': 'utf-8'}).encode(),
+              headers={'Authorization': 'Bearer ' + os.environ['TRANSFER_TOKEN'],
+                       'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
+                       'X-GitHub-Api-Version': '2022-11-28'}, method='POST')
+          with urllib.request.urlopen(request, timeout=60) as response:
+              result = json.load(response)
+          assert result.get('sha') == target
+          receipt = {'checkout': head, 'input_blob': op['expected_input_blob'], 'created_blob': target,
+                     'bytes': len(encoded), 'operations_sha256': hashlib.sha256(payload_bytes).hexdigest(),
+                     'source_reviews_before': len(original_reviews), 'source_reviews_after': len(after['source_reviews']),
+                     'source_complete_unchanged': sum(r['status'] == 'complete' for r in original_reviews),
+                     'refs_updated': False, 'product_validation': False, 'acceptance': False}
+          pathlib.Path('nmr51-ledger-object-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('NMR51_LEDGER_OBJECT ' + json.dumps(receipt))
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nmr51-ledger-object-${{ github.sha }}
+          path: nmr51-ledger-object-receipt.json
+          if-no-files-found: error
