@@ -9,7 +9,7 @@ use mahayana_host_runtime::extensions::session::agent_db::{
     PendingProfileMutation, ProfileFileSnapshot,
     ProviderReviewContinuationOutcome, SandAgentDb,
     SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
-    SessionWorkResultCommitOutcome,
+    SessionWorkResultCommitOutcome, SessionWorkResultReceipt,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
@@ -1831,7 +1831,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
     let agent_dir = root.join("agent-work");
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
-    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    let owner = Arc::new(SandAgentDb::open(&db_path, 50).expect("owner"));
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
         session_id: "agent-work".into(),
@@ -1853,19 +1853,74 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         .compare_and_set_session_work_admission(None, &admission)
         .expect("create admission"));
 
-    let committed = owner
-        .commit_session_work_result(
-            &admission.session_key,
-            &admission.lifecycle_revision,
-            "work-1",
-            "idem-1",
-            "background output",
-            2,
-        )
+    let notifications = Arc::new(AtomicUsize::new(0));
+    let callback_notifications = Arc::clone(&notifications);
+    let weak_owner = Arc::downgrade(&owner);
+    let (callback_sender, callback_receiver) = mpsc::channel();
+    let subscription = owner.subscribe_metadata("sessionWorkAdmission", Arc::new(move || {
+        callback_notifications.fetch_add(1, Ordering::SeqCst);
+        let observed = (|| -> Result<_, String> {
+            let owner = weak_owner.upgrade()
+                .ok_or_else(|| "committing owner was dropped".to_string())?;
+            let settled = owner.read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "committed admission is missing".to_string())?;
+            let receipt = owner.get_transcript_entry_by_id("background-result:idem-1")
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "committed receipt is missing".to_string())?;
+            Ok((settled, receipt))
+        })();
+        let _ = callback_sender.send(observed);
+    }));
+    let (commit_sender, commit_receiver) = mpsc::channel();
+    let committing_owner = Arc::clone(&owner);
+    let committing_admission = admission.clone();
+    let worker = std::thread::spawn(move || {
+        let outcome = committing_owner.commit_session_work_result(
+            &committing_admission.session_key,
+            &committing_admission.lifecycle_revision,
+            "work-1", "idem-1", "background output", 2,
+        ).map_err(|error| error.to_string());
+        let _ = commit_sender.send(outcome);
+    });
+    // Wait before joining: a callback that reenters the old connection lock
+    // must fail within the deadline instead of hanging the entire test target.
+    let committed = commit_receiver.recv_timeout(Duration::from_secs(5))
+        .expect("result commit and same-owner callback must return before the deadline")
         .expect("commit receipt");
+    let (observed_admission, observed_receipt) = callback_receiver
+        .recv_timeout(Duration::from_secs(5))
+        .expect("same-owner callback must finish its durable reads")
+        .expect("callback reads committed state");
+    worker.join().expect("result commit worker returned");
     assert!(matches!(committed, SessionWorkResultCommitOutcome::Committed(_)));
+    assert_eq!(committed, SessionWorkResultCommitOutcome::Committed(SessionWorkResultReceipt {
+        session_key: admission.session_key.clone(),
+        lifecycle_revision: admission.lifecycle_revision.clone(),
+        work_id: "work-1".into(),
+        idempotency_key: "idem-1".into(),
+        content: "background output".into(),
+        sent_message_count: 2,
+    }));
+    let mut expected_settled = admission.clone();
+    expected_settled.admitted_work_id = None;
+    expected_settled.terminal_result_idempotency_key = Some("idem-1".into());
+    assert_eq!(observed_admission, expected_settled);
+    assert_eq!(observed_receipt, serde_json::json!({
+        "id": "background-result:idem-1",
+        "kind": "background-result-receipt",
+        "sessionKey": admission.session_key,
+        "lifecycleRevision": admission.lifecycle_revision,
+        "workId": "work-1",
+        "idempotencyKey": "idem-1",
+        "content": "background output",
+        "sentMessageCount": 2,
+    }));
+    assert_eq!(notifications.load(Ordering::SeqCst), 1);
+    drop(subscription);
 
     owner.close(false);
+    drop(owner);
     let owner = SandAgentDb::open(&db_path, 50).expect("reopened background-result owner");
     let receipt_id = "background-result:idem-1";
     let receipt = owner
@@ -1875,6 +1930,13 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
     let settled = owner.read_session_work_admission().unwrap().unwrap();
     assert_eq!(settled.admitted_work_id, None);
     assert_eq!(settled.terminal_result_idempotency_key.as_deref(), Some("idem-1"));
+    assert_eq!(settled, expected_settled);
+    assert_eq!(receipt, observed_receipt);
+    let rejected_notifications = Arc::new(AtomicUsize::new(0));
+    let callback_rejected_notifications = Arc::clone(&rejected_notifications);
+    let _rejected_subscription = owner.subscribe_metadata("sessionWorkAdmission", Arc::new(move || {
+        callback_rejected_notifications.fetch_add(1, Ordering::SeqCst);
+    }));
 
     let duplicate = owner
         .commit_session_work_result(
@@ -1890,6 +1952,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         duplicate,
         SessionWorkResultCommitOutcome::AlreadyCommitted(_)
     ));
+    assert_eq!(rejected_notifications.load(Ordering::SeqCst), 0);
 
     let conflict = owner
         .commit_session_work_result(
@@ -1902,6 +1965,14 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         )
         .expect("conflicting receipt");
     assert_eq!(conflict, SessionWorkResultCommitOutcome::ConflictingResult);
+    assert_eq!(rejected_notifications.load(Ordering::SeqCst), 0);
+    assert_eq!(owner.commit_session_work_result(
+        &admission.session_key, "stale-revision", "work-1", "idem-1", "background output", 2,
+    ).expect("stale result"), SessionWorkResultCommitOutcome::RejectedStale);
+    assert!(matches!(owner.commit_session_work_result(
+        &admission.session_key, &admission.lifecycle_revision, "", "idem-1", "background output", 2,
+    ), Err(AgentDbProjectionError::WorkAdmissionInvalid(_))));
+    assert_eq!(rejected_notifications.load(Ordering::SeqCst), 0);
 
     for (field, value) in [
         ("id", "background-result:other"),
@@ -1927,6 +1998,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
             SessionWorkResultCommitOutcome::ConflictingResult
         );
         assert_eq!(owner.read_session_work_admission().unwrap(), Some(settled.clone()));
+        assert_eq!(rejected_notifications.load(Ordering::SeqCst), 0);
     }
     let mut malformed_receipt = receipt.clone();
     malformed_receipt.as_object_mut().unwrap().remove("workId");
@@ -1945,6 +2017,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
     ));
     owner.update_transcript_entry(receipt_id, &receipt).unwrap();
     assert_eq!(owner.get_transcript_entries().unwrap(), vec![receipt]);
+    assert_eq!(rejected_notifications.load(Ordering::SeqCst), 0);
 
     let mut fenced = owner
         .read_session_work_admission()
@@ -1954,6 +2027,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
     assert!(owner
         .transition_session_deletion_pending(Some("revision-1"), false, &fenced)
         .expect("publish deletion fence"));
+    assert_eq!(rejected_notifications.load(Ordering::SeqCst), 1);
     let fenced_replay = owner
         .commit_session_work_result(
             &admission.session_key,
@@ -1965,6 +2039,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         )
         .expect("fenced background replay");
     assert_eq!(fenced_replay, SessionWorkResultCommitOutcome::RejectedStale);
+    assert_eq!(rejected_notifications.load(Ordering::SeqCst), 1);
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);
@@ -1997,6 +2072,11 @@ fn stale_background_result_cas_rolls_back_receipt_insert() {
     assert!(owner
         .compare_and_set_session_work_admission(None, &admission)
         .expect("create admission"));
+    let notifications = Arc::new(AtomicUsize::new(0));
+    let callback_notifications = Arc::clone(&notifications);
+    let _subscription = owner.subscribe_metadata("sessionWorkAdmission", Arc::new(move || {
+        callback_notifications.fetch_add(1, Ordering::SeqCst);
+    }));
 
     // Force the owner CAS to lose its lifecycle race after the receipt INSERT
     // but before the compare-and-set. The surrounding transaction must roll
@@ -2039,12 +2119,92 @@ fn stale_background_result_cas_rolls_back_receipt_insert() {
         .expect("admission remains");
     assert_eq!(retained.lifecycle_revision, "revision-1");
     assert_eq!(retained.admitted_work_id.as_deref(), Some("work-stale"));
+    assert_eq!(notifications.load(Ordering::SeqCst), 0);
 
     trigger
         .execute_batch("DROP TRIGGER stale_work_admission_after_receipt")
         .expect("remove stale-race trigger");
+    assert!(matches!(owner.commit_session_work_result(
+        &admission.session_key, &admission.lifecycle_revision,
+        "work-stale", "idem-stale", "stale output", 0,
+    ).expect("commit after removing CAS loss"), SessionWorkResultCommitOutcome::Committed(_)));
+    assert_eq!(notifications.load(Ordering::SeqCst), 1);
     owner.close(false);
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn background_result_sql_failures_preserve_error_and_notification_boundaries() {
+    for failure in ["insert", "post-commit-read"] {
+        let root = temp_root(failure);
+        let agent_dir = root.join("agent-result-error");
+        fs::create_dir_all(&agent_dir).expect("agent dir");
+        let db_path = agent_dir.join("store.db");
+        let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+        let admission = SessionWorkAdmissionRecord {
+            session_key: "agent:agent-result-error:main".into(),
+            session_id: "agent-result-error".into(),
+            lifecycle_revision: "revision-1".into(),
+            deletion_pending: false,
+            archived_at_ms: None,
+            archived_by: None,
+            archive_reason: None,
+            admitted_work_id: Some("work-error".into()),
+            admitted_media_work_id: None,
+            admitted_media_paths: Vec::new(),
+            terminal_result_idempotency_key: None,
+            provider_review_id: None,
+            provider_review_phase: None,
+            provider_review_continuation_run_id: None,
+            provider_review: None,
+        };
+        assert!(owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+        let notifications = Arc::new(AtomicUsize::new(0));
+        let callback_notifications = Arc::clone(&notifications);
+        let subscription = owner.subscribe_metadata("sessionWorkAdmission", Arc::new(move || {
+            callback_notifications.fetch_add(1, Ordering::SeqCst);
+        }));
+        let trigger = rusqlite::Connection::open(&db_path).expect("failure injection connection");
+        trigger.execute_batch(if failure == "insert" {
+            "CREATE TRIGGER fail_result_insert BEFORE INSERT ON transcript_entries
+             WHEN NEW.id = 'background-result:error-result'
+             BEGIN SELECT RAISE(ABORT, 'receipt write blocked'); END;"
+        } else {
+            // The admission transaction still commits, but the required
+            // existing post-COMMIT query cannot find its receipt. Do not
+            // replace that error with a fabricated successful publication.
+            "CREATE TRIGGER remove_result_before_read AFTER INSERT ON transcript_entries
+             WHEN NEW.id = 'background-result:error-result'
+             BEGIN DELETE FROM transcript_entries WHERE id = NEW.id; END;"
+        }).expect("install real SQLite failure condition");
+        let error = owner.commit_session_work_result(
+            &admission.session_key, &admission.lifecycle_revision,
+            "work-error", "error-result", "unconfirmed output", 0,
+        ).expect_err("result error must propagate without publication");
+        let mut expected = admission.clone();
+        if failure == "insert" {
+            assert!(matches!(error, AgentDbProjectionError::Sqlite(
+                rusqlite::Error::SqliteFailure(_, Some(message))
+            ) if message == "receipt write blocked"));
+        } else {
+            assert!(matches!(error, AgentDbProjectionError::Sqlite(
+                rusqlite::Error::QueryReturnedNoRows
+            )));
+            expected.admitted_work_id = None;
+            expected.terminal_result_idempotency_key = Some("error-result".into());
+        }
+        assert_eq!(notifications.load(Ordering::SeqCst), 0);
+        assert_eq!(owner.read_session_work_admission().unwrap(), Some(expected.clone()));
+        assert!(owner.get_transcript_entry_by_id("background-result:error-result").unwrap().is_none());
+        drop(subscription);
+        drop(trigger);
+        owner.close(false);
+        let reopened = SandAgentDb::open(&db_path, 50).expect("reopen after result error");
+        assert_eq!(reopened.read_session_work_admission().unwrap(), Some(expected));
+        assert!(reopened.get_transcript_entry_by_id("background-result:error-result").unwrap().is_none());
+        reopened.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
 }
 
 #[test]

@@ -314,6 +314,32 @@ pub enum SessionWorkResultCommitOutcome {
     ConflictingResult,
 }
 
+/// A committed result and its existing synchronous notifications. The Session
+/// facade carries this out of its filesystem/deletion boundary before publishing.
+/// Only the result transaction constructs it; it is neither durable state nor
+/// an independently writable notification queue.
+#[must_use = "publish the result after releasing the caller's owner locks"]
+pub(crate) struct SessionWorkResultPublication {
+    outcome: SessionWorkResultCommitOutcome,
+    db_path: PathBuf,
+    committed_entry: Option<serde_json::Value>,
+}
+
+impl SessionWorkResultPublication {
+    pub(crate) fn publish(self) -> SessionWorkResultCommitOutcome {
+        if matches!(&self.outcome, SessionWorkResultCommitOutcome::Committed(_)) {
+            if let Some(entry) = self.committed_entry {
+                publish_entries_upserted(&self.db_path, vec![entry]);
+            }
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+            );
+        }
+        self.outcome
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum CompactionCommitOutcome {
     Committed(serde_json::Value),
@@ -1293,6 +1319,26 @@ impl SandAgentDb {
         content: &str,
         sent_message_count: usize,
     ) -> Result<SessionWorkResultCommitOutcome, AgentDbProjectionError> {
+        self.commit_session_work_result_deferred(
+            session_key,
+            expected_lifecycle_revision,
+            work_id,
+            idempotency_key,
+            content,
+            sent_message_count,
+        )
+        .map(SessionWorkResultPublication::publish)
+    }
+
+    pub(crate) fn commit_session_work_result_deferred(
+        &self,
+        session_key: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+        idempotency_key: &str,
+        content: &str,
+        sent_message_count: usize,
+    ) -> Result<SessionWorkResultPublication, AgentDbProjectionError> {
         let session_key = session_key.trim();
         let expected_lifecycle_revision = expected_lifecycle_revision.trim();
         let work_id = work_id.trim();
@@ -1406,41 +1452,46 @@ impl SandAgentDb {
             Ok(SessionWorkResultCommitOutcome::Committed(receipt))
         })();
 
-        match result {
+        let (outcome, committed_entry) = match result {
             // A stale CAS after the receipt insert must roll back the whole
             // transaction. Committing here would leave an orphan receipt
             // while the admission marker still owns the work, causing a
             // later retry to be misreported as AlreadyCommitted.
             Ok(SessionWorkResultCommitOutcome::RejectedStale) => {
                 let _ = db.execute_batch("ROLLBACK");
-                Ok(SessionWorkResultCommitOutcome::RejectedStale)
+                Ok((SessionWorkResultCommitOutcome::RejectedStale, None))
             }
             Ok(outcome) => {
                 if let Err(error) = db.execute_batch("COMMIT") {
                     let _ = db.execute_batch("ROLLBACK");
                     return Err(error.into());
                 }
-                if let SessionWorkResultCommitOutcome::Committed(receipt) = &outcome {
-                    let entry_id = format!("background-result:{}", receipt.idempotency_key);
-                    let entry = db
-                        .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
-                            row.get::<_, String>(0)
-                        })?;
-                    if let Some(entry) = parse_transcript_entry(&entry) {
-                        publish_entries_upserted(&self.db_path, vec![entry]);
-                    }
-                    notify_agent_db_listeners(
-                        &self.db_path,
-                        AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
-                    );
-                }
-                Ok(outcome)
+                let committed_entry =
+                    if let SessionWorkResultCommitOutcome::Committed(receipt) = &outcome {
+                        let entry_id = format!("background-result:{}", receipt.idempotency_key);
+                        let entry = db
+                            .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                                row.get::<_, String>(0)
+                            })?;
+                        // Preserve the existing post-COMMIT read/error and hidden
+                        // receipt projection; only notification timing changes.
+                        parse_transcript_entry(&entry)
+                    } else {
+                        None
+                    };
+                Ok((outcome, committed_entry))
             }
             Err(error) => {
                 let _ = db.execute_batch("ROLLBACK");
                 Err(error)
             }
-        }
+        }?;
+        drop(guard);
+        Ok(SessionWorkResultPublication {
+            outcome,
+            db_path: self.db_path.clone(),
+            committed_entry,
+        })
     }
 
     pub fn read_metadata(&self) -> Result<serde_json::Value, AgentDbProjectionError> {

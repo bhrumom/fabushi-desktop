@@ -1250,6 +1250,46 @@ restart/claim/settlement, real provider/channel/device behavior and all final
 OCRM gates remain open. No global flag or responsibility status is promoted by
 authored tests or this target-source correction.
 
+## Background result notification ordering — SWA-RESULT-NOTIFY-v1
+
+Decision `RESULT-NOTIFY-01 — FIX / IMPL_BUG`, specified before implementation
+on `430fe8f0601b83aa032a8a46a314a0a2bdf3be55`; fixed U is unchanged. The
+background-revival producer commits through `ProductionSessionWorkers` and
+`SandAgentDb`. The DB currently invokes its synchronous admission listeners
+while holding the connection mutex, and the facade holds its filesystem/
+deletion mutex around that call. A listener reading through either same owner
+can deadlock after the durable receipt commits, preventing terminal return.
+
+- `RN-01`: preserve public DB/Session signatures, transaction-bound admission,
+  generation, archive/deletion, receipt identity/payload, stale-CAS rollback,
+  duplicate/conflict outcomes, hidden receipt and work-marker transition.
+- `RN-02`: the DB may return an owned crate-private deferred publication value
+  from its commit entrypoint. Only that owner constructs it; its fields are
+  private and it is neither cloned nor serialized. Its consuming publication
+  method returns the actual outcome after the existing synchronous notifications.
+  No new queue, thread, scheduler, durable format or state owner is introduced.
+- `RN-03`: the public DB wrapper publishes after its connection guard is gone.
+  The actual Session facade carries the value out of its admitted filesystem
+  mutation closure, then publishes after that outer lock is released. Listeners
+  may read the committed receipt and admission through either actual API.
+- `RN-04`: retain the existing post-COMMIT query/projection and error behavior;
+  capture its optional notification payload before unlocking. The normal hidden
+  receipt must not become a visible transcript event. Only a newly committed
+  result emits its existing notification once. Duplicate, conflict, stale or
+  failed results emit no new committed-result notification. Preserve listener
+  exception isolation; notification never establishes an external effect result.
+
+Actions controls must use real DB and Session facades, real admission, receipt
+and synchronous metadata subscriptions. Bound commit/callback completion with
+channels before joining the worker; observe the exact settled receipt and released
+work marker. Cover both reentry paths, one notification, duplicate/conflict/stale/
+rollback silence, database reopen and exclusion from actual presentation. Retain
+all existing receipt and deletion assertions and the existing whole owner/Session
+contract selections. No local executable validation. Independent frozen-scope
+review and exact-H shipping/shared contracts are required. This repair does not
+close unknown COMMIT recovery, durable external effects, original-turn recovery,
+all Automation settlement states or full OCRM acceptance.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

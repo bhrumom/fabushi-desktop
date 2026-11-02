@@ -3164,9 +3164,9 @@ impl ProductionSessionWorkers {
         content: &str,
         sent_message_count: usize,
     ) -> Result<SessionWorkResultCommitOutcome, String> {
-        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+        let publication = self.with_agent_admitted_filesystem_mutation(agent_id, || {
             self.open_agent_db_owner_locked(agent_id)?
-                .commit_session_work_result(
+                .commit_session_work_result_deferred(
                     session_key,
                     expected_lifecycle_revision,
                     work_id,
@@ -3175,7 +3175,10 @@ impl ProductionSessionWorkers {
                     sent_message_count,
                 )
                 .map_err(|error| error.to_string())
-        })
+        })?;
+        // Listeners may read through this same Session facade. Its non-reentrant
+        // filesystem/deletion boundary and the DB connection are both released.
+        Ok(publication.publish())
     }
 
     pub fn release_session_work_admission(
