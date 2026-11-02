@@ -1,0 +1,859 @@
+{
+  "format": "FBCP-ROUND20-EXACT-SOURCE-CI-READONLY-AUDIT-V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 20,
+  "repository": "bhrumom/fabushi-desktop",
+  "checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "H": "5c285452de88dcfba78bd5085f9833712eb3a459",
+  "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "observed_at": "2026-11-02 21:42:52 UTC",
+  "run": {
+    "id": 41529547932,
+    "head_sha": "5c285452de88dcfba78bd5085f9833712eb3a459",
+    "status": "completed",
+    "conclusion": "success",
+    "event": "push",
+    "run_attempt": 1,
+    "created_at": "2026-11-02T21:34:19Z",
+    "updated_at": "2026-11-02T21:42:49Z",
+    "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41529547932",
+    "path": ".github/workflows/tdrp-source-review-contract.yml"
+  },
+  "jobs": [
+    {
+      "id": 125565901982,
+      "run_id": 41529547932,
+      "workflow_name": "TDRP source review contract",
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41529547932",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUfmb_c8AAAAdPE-cng",
+      "head_sha": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125565901982",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41529547932/job/125565901982",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-02T21:34:19Z",
+      "started_at": "2026-11-02T21:37:35Z",
+      "completed_at": "2026-11-02T21:37:49Z",
+      "name": "contract",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-02T21:37:36Z",
+          "completed_at": "2026-11-02T21:37:37Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-02T21:37:37Z",
+          "completed_at": "2026-11-02T21:37:40Z"
+        },
+        {
+          "name": "Bind exact source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-02T21:37:40Z",
+          "completed_at": "2026-11-02T21:37:40Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-02T21:37:40Z",
+          "completed_at": "2026-11-02T21:37:41Z"
+        },
+        {
+          "name": "Exact source relation and frozen upstream contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-02T21:37:41Z",
+          "completed_at": "2026-11-02T21:37:41Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-02T21:37:41Z",
+          "completed_at": "2026-11-02T21:37:42Z"
+        },
+        {
+          "name": "Validate schema behavior with pinned validator",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-02T21:37:42Z",
+          "completed_at": "2026-11-02T21:37:44Z"
+        },
+        {
+          "name": "Check current ledger shape without granting source acceptance",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-02T21:37:44Z",
+          "completed_at": "2026-11-02T21:37:45Z"
+        },
+        {
+          "name": "Run node --check scripts/validate-tdrp-revision9-authority.mjs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-02T21:37:45Z",
+          "completed_at": "2026-11-02T21:37:45Z"
+        },
+        {
+          "name": "Preserve exact checker evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-02T21:37:45Z",
+          "completed_at": "2026-11-02T21:37:46Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-02T21:37:46Z",
+          "completed_at": "2026-11-02T21:37:47Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-02T21:37:47Z",
+          "completed_at": "2026-11-02T21:37:47Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-02T21:37:47Z",
+          "completed_at": "2026-11-02T21:37:47Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-02T21:37:47Z",
+          "completed_at": "2026-11-02T21:37:47Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125565901982",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_id": 1000260244,
+      "runner_name": "GitHub Actions 1000260244",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 125567729672,
+      "run_id": 41529547932,
+      "workflow_name": "TDRP source review contract",
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41529547932",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUfmb_c8AAAAdPGuACA",
+      "head_sha": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125567729672",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41529547932/job/125567729672",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-02T21:37:50Z",
+      "started_at": "2026-11-02T21:42:12Z",
+      "completed_at": "2026-11-02T21:42:49Z",
+      "name": "fixed-source-candidate",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-02T21:42:12Z",
+          "completed_at": "2026-11-02T21:42:18Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-02T21:42:18Z",
+          "completed_at": "2026-11-02T21:42:22Z"
+        },
+        {
+          "name": "Bind exact candidate source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-02T21:42:22Z",
+          "completed_at": "2026-11-02T21:42:22Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-02T21:42:22Z",
+          "completed_at": "2026-11-02T21:42:23Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-02T21:42:23Z",
+          "completed_at": "2026-11-02T21:42:23Z"
+        },
+        {
+          "name": "Read the two immutable evidence artifacts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-02T21:42:23Z",
+          "completed_at": "2026-11-02T21:42:26Z"
+        },
+        {
+          "name": "Recover complete pinned Git evidence at this H",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-02T21:42:26Z",
+          "completed_at": "2026-11-02T21:42:32Z"
+        },
+        {
+          "name": "Recover complete pinned build-input observations at this H",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-02T21:42:32Z",
+          "completed_at": "2026-11-02T21:42:43Z"
+        },
+        {
+          "name": "Check actual complete inventory and current candidate records",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-02T21:42:43Z",
+          "completed_at": "2026-11-02T21:42:43Z"
+        },
+        {
+          "name": "Prove open candidates cannot enter accepted mode",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-02T21:42:43Z",
+          "completed_at": "2026-11-02T21:42:43Z"
+        },
+        {
+          "name": "Preserve candidate consistency and rejection evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-02T21:42:43Z",
+          "completed_at": "2026-11-02T21:42:45Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-02T21:42:45Z",
+          "completed_at": "2026-11-02T21:42:45Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-02T21:42:45Z",
+          "completed_at": "2026-11-02T21:42:45Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 22,
+          "started_at": "2026-11-02T21:42:45Z",
+          "completed_at": "2026-11-02T21:42:46Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23,
+          "started_at": "2026-11-02T21:42:46Z",
+          "completed_at": "2026-11-02T21:42:46Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125567729672",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_id": 1000260286,
+      "runner_name": "GitHub Actions 1000260286",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13182085901,
+      "name": "tdrp-source-review-contract-5c285452de88dcfba78bd5085f9833712eb3a459",
+      "size_in_bytes": 6825,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182085901",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182085901/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:37:46Z",
+      "expires_at": "2027-01-31T21:34:19Z",
+      "updated_at": "2026-11-02T21:37:46Z",
+      "digest": "sha256:75a5153d96502f32f30d35e2d740daf183c0bca537739528db14c0d40d6d9e8f",
+      "workflow_run": {
+        "id": 41529547932,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "5c285452de88dcfba78bd5085f9833712eb3a459"
+      }
+    },
+    {
+      "id": 13181946734,
+      "name": "tdrp-source-candidate-5c285452de88dcfba78bd5085f9833712eb3a459",
+      "size_in_bytes": 79140,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181946734",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181946734/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:42:45Z",
+      "expires_at": "2027-01-31T21:34:19Z",
+      "updated_at": "2026-11-02T21:42:45Z",
+      "digest": "sha256:7684ba52bf237504a69838bb50afe1652e4f1c82ec0b1bac76ffa38b7a8f0f85",
+      "workflow_run": {
+        "id": 41529547932,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "5c285452de88dcfba78bd5085f9833712eb3a459"
+      }
+    }
+  ],
+  "source_input_blobs": [
+    {
+      "path": "projects/telegram-desktop-rust/upstream.lock.json",
+      "sha": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+      "size": 33202
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/index.json",
+      "sha": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+      "size": 9098
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+      "sha": "d37247e17c2e965e3116ce3721f79d81da50dd6c",
+      "size": 92726
+    },
+    {
+      "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+      "sha": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "size": 34792
+    },
+    {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "sha": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+      "size": 3671837
+    },
+    {
+      "path": "scripts/tdrp-source-review.test.mjs",
+      "sha": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "size": 60914
+    },
+    {
+      "path": "scripts/tdrp-source-review-schema.test.py",
+      "sha": "bbe2384b30c294a44d1f41e581201f5342101936",
+      "size": 25153
+    },
+    {
+      "path": "scripts/validate-tdrp-source-candidate.mjs",
+      "sha": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+      "size": 11203
+    },
+    {
+      "path": "scripts/validate-tdrp-revision9-authority.mjs",
+      "sha": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "size": 59519
+    },
+    {
+      "path": "scripts/tdrp-summarize-protocol-artifact.py",
+      "sha": "0ec50cd95f324c5f2682d936a7b96253c552922c",
+      "size": 23062
+    }
+  ],
+  "workflow": {
+    "path": ".github/workflows/tdrp-source-review-contract.yml",
+    "blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5"
+  },
+  "contract": {
+    "job_id": 125565901982,
+    "full_job_log": {
+      "path": "/workspace/scratch/b725a2794b30/phase2-source-5c28545-audit/job-125565901982.log",
+      "bytes": 90246,
+      "sha256": "c8b18b48dd260a5b220a72fa2555364dce2310a7fde27abdb439fcadcdeeb1da",
+      "git_blob": "4915bfd9ba8237a6bc1114c50bb81655de208dae"
+    },
+    "artifact_review_file": "/workspace/scratch/b725a2794b30/phase2-source-5c28545-audit/contract-artifact-review.json",
+    "artifact_review_sha256": "f69adeacc02f92ab00676a936710ca7d34027df4dde6f938d2b5df8c0ad0d00a",
+    "node": {
+      "tests": 158,
+      "passed": 158,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "python_schema": {
+      "tests": 37,
+      "result": "OK",
+      "jsonschema": "4.25.1"
+    },
+    "canonical_ledger_schema": {
+      "valid": true,
+      "errors": [],
+      "source_accepted": false
+    },
+    "complete_artifact_review": {
+      "archive": {
+        "path": "/workspace/scratch/b725a2794b30/phase2-source-5c28545-audit/contract-artifact.zip",
+        "bytes": 6825,
+        "sha256": "75a5153d96502f32f30d35e2d740daf183c0bca537739528db14c0d40d6d9e8f",
+        "api_digest_matches": true
+      },
+      "members": [
+        {
+          "member": "contracts.log",
+          "bytes": 30651,
+          "sha256": "7db8461fc0eb440afb7c782d9c5119c12f628adedee59bc66b91bd77177c6b8a",
+          "git_blob": "e5f502d016896b2cf75aae703d6086206a0b7c9a"
+        },
+        {
+          "member": "ledger-schema.json",
+          "bytes": 64,
+          "sha256": "f885fcb8b17eb7861dd54188036229950d796e15db2c82e5a088f06264fd1093",
+          "git_blob": "045044264bf26bc171d47403b80fa5445cd66588"
+        },
+        {
+          "member": "python-dependencies.txt",
+          "bytes": 133,
+          "sha256": "e1a9ff0400f49d71158bb0657d7a7263c847f464a317c0d4fe1bb73311925462",
+          "git_blob": "19d84620e474c9ac9a0adb0ee6f279ef15eb1418"
+        },
+        {
+          "member": "schema.log",
+          "bytes": 6469,
+          "sha256": "c36c4ab83f1b292a3e799fb8ad84a4db0ca069772a662b01b086ab53df92dfec",
+          "git_blob": "1d45e1f13a25cabd7576a55e05e166291768466f"
+        },
+        {
+          "member": "target-sha.txt",
+          "bytes": 41,
+          "sha256": "3b0b8a9d28d5270a9ae19aad66e3503d5012125068d7cfa7c8d8cfc03649dfb1",
+          "git_blob": "55fa15bcc78bfac9c8d08d7d0a611301cd7ceb24"
+        }
+      ],
+      "target_sha": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "node_actual_summary": [
+        "# tests 158",
+        "# pass 158",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# todo 0"
+      ],
+      "schema_actual_summary": [
+        "Ran 37 tests in 0.225s",
+        "OK"
+      ],
+      "ledger_schema": {
+        "valid": true,
+        "source_accepted": false,
+        "errors": []
+      },
+      "jsonschema_dependency": [
+        "jsonschema==4.25.1"
+      ],
+      "local_project_or_validator_execution": false
+    }
+  },
+  "candidate": {
+    "job_id": 125567729672,
+    "full_job_log": {
+      "path": "/workspace/scratch/b725a2794b30/phase2-source-5c28545-audit/job-125567729672.log",
+      "bytes": 146046,
+      "sha256": "e380c31e196b6a141aa82c2e4f576720f2d8205b033893cfd26817791c67db75",
+      "git_blob": "2c565dd0b6b714f8970072f65cc32d6a2c5af37b"
+    },
+    "artifact_review_file": "/workspace/scratch/b725a2794b30/phase2-source-5c28545-audit/candidate-artifact-review.json",
+    "artifact_review_sha256": "b2c87599edc762362f548dd7ea28357c0b571a9aa1d60245a9e5dbf757256507",
+    "report": {
+      "status": "unaccepted-candidate-consistent",
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_entries_total": 16381,
+      "root_source_entries_total": 6895,
+      "responsibility_rows": 184,
+      "authored_source_review_records": 14,
+      "completed_source_review_records": 2,
+      "unknown": null,
+      "unread": null,
+      "lexical_observations": 333,
+      "counts_by_scope": {
+        "pinned-cmake-component": 2,
+        "legacy-root-paths": 331
+      },
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "unresolved_ref_observations": 76,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "target_commit": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "reused_git_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "artifact_id": 13118749668,
+        "run_id": 41397005716,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      },
+      "reused_build_input_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+        "artifact_id": 13121721589,
+        "run_id": 41401970993,
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+      }
+    },
+    "accepted_mode": {
+      "command": "node scripts/validate-tdrp-revision9-authority.mjs --require-accepted",
+      "result": "rejected",
+      "expected_error": "Error: accepted source accounting cannot contain a rebaseline candidate",
+      "negative_test_step_success": true,
+      "exact_H_evidence": true
+    },
+    "complete_artifact_review": {
+      "archive": {
+        "path": "/workspace/scratch/b725a2794b30/phase2-source-5c28545-audit/candidate-artifact.zip",
+        "bytes": 79140,
+        "sha256": "7684ba52bf237504a69838bb50afe1652e4f1c82ec0b1bac76ffa38b7a8f0f85",
+        "api_digest_matches": true
+      },
+      "members": [
+        {
+          "member": "source-candidate/accepted.log",
+          "bytes": 526,
+          "sha256": "b953b2e603c9bc680407ad3febfed7c56a4009b089b4c3191c4f552fef2469c9",
+          "git_blob": "43f29955f3eb0f486b43dc7e65960b27fc631cec"
+        },
+        {
+          "member": "source-candidate/export-recovery.log",
+          "bytes": 47122,
+          "sha256": "b486b64dc4d9dbf12e592b144c5a9943b473b7510a92eb5b7e3aa489648025c8",
+          "git_blob": "750d90012394a22364eeac687f1730eeb124d184"
+        },
+        {
+          "member": "source-candidate/candidate.log",
+          "bytes": 1145,
+          "sha256": "28749de412ef0d101abedc959f9acfc29da8d21ca1c2068d00cd370dfd60e28d",
+          "git_blob": "a89369c3c34d72dce58cba549e153fdcb57b6c0c"
+        },
+        {
+          "member": "source-candidate/git-recovery.log",
+          "bytes": 47140,
+          "sha256": "66547069262ce6821a386f9d860395b3b488a596ac2ce7692348177917a02ace",
+          "git_blob": "b2f5382e1dfd7521c6d321fc9ba228767fb32195"
+        },
+        {
+          "member": "source-candidate/report.json",
+          "bytes": 1311,
+          "sha256": "b88eec9e35a1b7e2cce8c75e87d23a82f7af3196d10ab02bce6e97fbf80b781d",
+          "git_blob": "2f286f84521fe0881fd8e9b668f24d74c6358dc7"
+        },
+        {
+          "member": "source-candidate/target-sha.txt",
+          "bytes": 41,
+          "sha256": "3b0b8a9d28d5270a9ae19aad66e3503d5012125068d7cfa7c8d8cfc03649dfb1",
+          "git_blob": "55fa15bcc78bfac9c8d08d7d0a611301cd7ceb24"
+        },
+        {
+          "member": "candidate-git/index.json",
+          "bytes": 101312,
+          "sha256": "c7e793814ff0243afe911adb973ad9c9023c0db0d584103e2a8739302fd51f7b",
+          "git_blob": "c254b1b062165e7d93b8dd83c73f5042f451ac68"
+        },
+        {
+          "member": "candidate-git/metadata.json",
+          "bytes": 784,
+          "sha256": "af0482f1b1d5b07afb2b5891be8dda876b936ec84cff0a2c94ca2757e3d73875",
+          "git_blob": "07dd32fd74d153c51296c224d29e252e474bff24"
+        },
+        {
+          "member": "candidate-export/index.json",
+          "bytes": 401968,
+          "sha256": "3ddb1325d9f7d93784f65609fe472560f08dca82be9a17d3a15c028677f54fc9",
+          "git_blob": "fe04fc4fbc97b3572cbe85b1cda8af4d9fa58ad3"
+        },
+        {
+          "member": "candidate-export/metadata.json",
+          "bytes": 784,
+          "sha256": "94dadccda9452b11905bbad665b08662b0ef4552eab833efca682c0d77e76159",
+          "git_blob": "1bda785e95198f4a04eeb4764bccfc2b3fa865ab"
+        }
+      ],
+      "target_sha": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "report": {
+        "status": "unaccepted-candidate-consistent",
+        "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 14,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "counts_by_scope": {
+          "pinned-cmake-component": 2,
+          "legacy-root-paths": 331
+        },
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "target_commit": "5c285452de88dcfba78bd5085f9833712eb3a459",
+        "reused_git_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "artifact_id": 13118749668,
+          "run_id": 41397005716,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+        },
+        "reused_build_input_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "artifact_id": 13121721589,
+          "run_id": 41401970993,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+        }
+      },
+      "actual_candidate_log": "{\"status\":\"unaccepted-candidate-consistent\",\"upstream_commit\":\"f985723b552b30fe1c17d377d57f44e61a15a8c4\",\"source_entries_total\":16381,\"root_source_entries_total\":6895,\"responsibility_rows\":184,\"authored_source_review_records\":14,\"completed_source_review_records\":2,\"unknown\":null,\"unread\":null,\"lexical_observations\":333,\"counts_by_scope\":{\"pinned-cmake-component\":2,\"legacy-root-paths\":331},\"text_files_read\":203,\"opaque_inputs_unread\":2,\"unresolved_ref_observations\":76,\"baseline_accepted\":false,\"source_closure_ready\":false,\"product_accepted\":false,\"independent_acceptance\":false,\"target_commit\":\"5c285452de88dcfba78bd5085f9833712eb3a459\",\"reused_git_artifact\":{\"repository\":\"bhrumom/fabushi-desktop\",\"head_sha\":\"9f77bb2389cba6a65d589eb309d1392501ed308d\",\"artifact_id\":13118749668,\"run_id\":41397005716,\"digest\":\"sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60\"},\"reused_build_input_artifact\":{\"repository\":\"bhrumom/fabushi-desktop\",\"head_sha\":\"1cd59bb01513624d26e12f77bfab66729ab72694\",\"artifact_id\":13121721589,\"run_id\":41401970993,\"digest\":\"sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc\"}}\n",
+      "actual_accepted_log": "file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31\n    throw Error('accepted source accounting cannot contain a rebaseline candidate');\n          ^\n\nError: accepted source accounting cannot contain a rebaseline candidate\n    at assertNoOpenSourceCandidate (file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/tdrp-source-review.mjs:31:11)\n    at file:///home/runner/work/fabushi-desktop/fabushi-desktop/scripts/validate-tdrp-revision9-authority.mjs:69:22\n\nNode.js v22.23.4\n",
+      "accepted_error_line_present": true,
+      "recovery_metadata": {
+        "git": {
+          "index_keys": [
+            "archive",
+            "complete",
+            "completed_members",
+            "declared_uncompressed_bytes",
+            "expected",
+            "limits",
+            "members",
+            "metadata",
+            "purpose",
+            "recovery_execution",
+            "schema",
+            "uncompressed_bytes_read"
+          ],
+          "metadata": {
+            "id": 13118749668,
+            "node_id": "MDg6QXJ0aWZhY3QxMzExODc0OTY2OA==",
+            "name": "tdrp-fixed-upstream-git-9f77bb2389cba6a65d589eb309d1392501ed308d",
+            "size_in_bytes": 4582365,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118749668/zip",
+            "expired": false,
+            "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+            "created_at": "2026-11-02T05:57:59Z",
+            "updated_at": "2026-11-02T05:57:59Z",
+            "expires_at": "2027-01-31T05:57:36Z",
+            "workflow_run": {
+              "id": 41397005716,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+              "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d"
+            }
+          }
+        },
+        "export": {
+          "index_keys": [
+            "archive",
+            "complete",
+            "completed_members",
+            "declared_uncompressed_bytes",
+            "expected",
+            "limits",
+            "members",
+            "metadata",
+            "purpose",
+            "recovery_execution",
+            "schema",
+            "uncompressed_bytes_read"
+          ],
+          "metadata": {
+            "id": 13121721589,
+            "node_id": "MDg6QXJ0aWZhY3QxMzEyMTcyMTU4OQ==",
+            "name": "tdrp-fixed-build-inputs-1cd59bb01513624d26e12f77bfab66729ab72694",
+            "size_in_bytes": 9756692,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589/zip",
+            "expired": false,
+            "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+            "created_at": "2026-11-02T06:46:49Z",
+            "updated_at": "2026-11-02T06:46:49Z",
+            "expires_at": "2027-01-31T06:45:50Z",
+            "workflow_run": {
+              "id": 41401970993,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+              "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694"
+            }
+          }
+        }
+      },
+      "qualification": "Current exact-H checker recovered pinned immutable older input artifacts; this does not relabel those older artifact producers as current-H product tests.",
+      "local_project_or_validator_execution": false
+    },
+    "recovery_indexes": {
+      "git": {
+        "archive": {
+          "bytes": 4582365,
+          "complete": true,
+          "path": "artifact.zip",
+          "sha256": "77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+          "verified": true
+        },
+        "complete": true,
+        "completed_members": 137,
+        "declared_uncompressed_bytes": 29681262,
+        "expected": {
+          "artifact_id": 13118749668,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "repository": "bhrumom/fabushi-desktop",
+          "run_id": 41397005716
+        },
+        "limits": {
+          "archive_bytes": 268435456,
+          "members": 1024,
+          "stdout_bytes": 49152,
+          "uncompressed_bytes": 2147483648
+        },
+        "metadata": {
+          "artifact_name": "tdrp-fixed-upstream-git-9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "bytes": 784,
+          "path": "metadata.json",
+          "sha256": "af0482f1b1d5b07afb2b5891be8dda876b936ec84cff0a2c94ca2757e3d73875",
+          "verified": true
+        },
+        "purpose": "diagnostic recovery, not test execution or acceptance",
+        "recovery_execution": {
+          "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+          "GITHUB_RUN_ATTEMPT": "1",
+          "GITHUB_RUN_ID": "41529547932",
+          "GITHUB_SHA": "5c285452de88dcfba78bd5085f9833712eb3a459"
+        },
+        "schema": "tdrp-protocol-artifact-recovery/v1",
+        "uncompressed_bytes_read": 29681262,
+        "members_count": 137
+      },
+      "export": {
+        "archive": {
+          "bytes": 9756692,
+          "complete": true,
+          "path": "artifact.zip",
+          "sha256": "7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+          "verified": true
+        },
+        "complete": true,
+        "completed_members": 486,
+        "declared_uncompressed_bytes": 37553682,
+        "expected": {
+          "artifact_id": 13121721589,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "repository": "bhrumom/fabushi-desktop",
+          "run_id": 41401970993
+        },
+        "limits": {
+          "archive_bytes": 268435456,
+          "members": 1024,
+          "stdout_bytes": 49152,
+          "uncompressed_bytes": 2147483648
+        },
+        "metadata": {
+          "artifact_name": "tdrp-fixed-build-inputs-1cd59bb01513624d26e12f77bfab66729ab72694",
+          "bytes": 784,
+          "path": "metadata.json",
+          "sha256": "94dadccda9452b11905bbad665b08662b0ef4552eab833efca682c0d77e76159",
+          "verified": true
+        },
+        "purpose": "diagnostic recovery, not test execution or acceptance",
+        "recovery_execution": {
+          "GITHUB_REPOSITORY": "bhrumom/fabushi-desktop",
+          "GITHUB_RUN_ATTEMPT": "1",
+          "GITHUB_RUN_ID": "41529547932",
+          "GITHUB_SHA": "5c285452de88dcfba78bd5085f9833712eb3a459"
+        },
+        "schema": "tdrp-protocol-artifact-recovery/v1",
+        "uncompressed_bytes_read": 37553682,
+        "members_count": 486
+      }
+    }
+  },
+  "staged_runtime": {
+    "path": ".github/workflows/staged-runtime-source-contracts.yml",
+    "workflow_blob": "53a36b3b72aed8eb929f1c87876c58fdde3b105d",
+    "exact_H_runs": [],
+    "status": "not_triggered",
+    "reason": "Phase2 changed ledger, publication receipt and removed three owned peer helper files. No staged-runtime push path matched.",
+    "dispatch_or_rerun_by_auditor": false,
+    "qualification": "No staged-runtime exact-H pass is asserted."
+  },
+  "qualification": {
+    "source_run_success_only": true,
+    "production_native_workflow_success_not_asserted": true,
+    "source_inventory_accounted_entries_do_not_mean_all_sources_read": true,
+    "source_reviews_authored": 14,
+    "source_reviews_completed": 2,
+    "unknown": null,
+    "unread": null,
+    "source_acceptance": false,
+    "product_acceptance": false,
+    "independent_ACCEPT": false,
+    "legacy_immutable_artifact_producers_not_relabelled_as_current_H": true
+  },
+  "auditor_actions": {
+    "remote_writes": false,
+    "reruns": false,
+    "dispatch": false,
+    "local_project_execution": false,
+    "local_validator_execution": false,
+    "local_operations": "Read API metadata and full logs; download and hash ZIPs; read every member; parse JSON/TOML as data only."
+  }
+}

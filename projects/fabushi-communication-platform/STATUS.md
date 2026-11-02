@@ -17,10 +17,28 @@ Same-file approval deduplication and stale-instance merges use the locked latest
 state. Both existing writers retain one advisory lock inode and the only backup;
 no new store, owner, wire format or user-data migration is introduced.
 
-These are authored changes pending containing-H GitHub Actions: complete peer23
-on macOS/Linux/Windows, executable gateway9 and full gateway-library13. All current
-Human/Transcript gates, CLI Native Host features, actual executable/process,
-retained C-wrapper, protocol/TCP, UI/Electron/Windows and package gates remain.
+Production was published at9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a;
+the canonical ledger append and temporary-helper removal were published at
+5c285452de88dcfba78bd5085f9833712eb3a459. Both non-forced expected-head CAS
+updates and complete remote file contents were verified. Exact9bb/run41528207637
+passed peer23 on each of Linux and Windows, retained C15 with one explicitly
+ignored live-DC case, Social10/9/6, Electron metadata18/build/historical-DMG repair
+and Windows publisher11. Its shipping job125561310442 remains queued, so macOS
+peer23, gateway executable9/library13 and subsequent shipping checks are not-run.
+The same9bb has actual renderer2/11 and damaged-store creation11/12 failures.
+Concurrent9b9 repairs subsequently passed reconciliation105 total (Human63,
+creation12 and storage3 included) and renderer10/11; the last renderer timeout
+was an anchor-hover TEST_FLAW. The newer SQLite probe and expanded corrupt-file
+tests actually passed creation12/storage3 and all105 reconciliation cases at
+52f6bf6f07580fd7a8967c8ab018d386428df723/run41529735914. Hover-fix221d then
+stopped before Chromium at a distinct TS2741 production telemetry-map defect;
+34/19/40 precompile checks passed, browser gates did not run. Concurrent7201
+adds only the missing retryHumanMessage mapping; exact UI125570311430 remains
+pending. Neither those failures nor pending gates grant overall native approval.
+Exact5c/run41529547932 passed Node158/schema37, candidate consistency and the
+expected accepted-mode rejection:184 rows/14 source reviews, only2 complete,
+unknown/unread null and every source/product/independent acceptance false. All
+current Human/Transcript, CLI Native Host, protocol/TCP and package gates remain.
 No local executable validation has run. The original NMR48 attachment contract
 and all concurrent source reviews and responsibility records are preserved.
 
@@ -42,6 +60,7 @@ soak/upgrade/rollback and independent ACCEPT are still required.
 
 Spec: `docs/specs/fbcp-gateway-peer-durability.md`.
 Evidence: `projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json`.
+Execution: `projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json`.
 
 
 ## Round31 — canonical reply identity recovery

@@ -1,0 +1,922 @@
+{
+  "format": "FBCP_ROUND20_SCOPED_VERIFICATION_REFRESH_V1",
+  "shipping_scheduler_readonly": {
+    "format": "FBCP-ROUND20-MACOS-SHIPPING-QUEUE-READONLY-AUDIT-V1",
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 20,
+    "observed_at": "2026-11-02 21:46:30 UTC",
+    "repository": "bhrumom/fabushi-desktop",
+    "H": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+    "run_id": 41528207637,
+    "workflow_id": 394718488,
+    "workflow_path": ".github/workflows/native-service-contracts.yml",
+    "workflow_blob": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+    "event": "push",
+    "current_job": {
+      "id": 125561310442,
+      "run_id": 41528207637,
+      "workflow_name": "Native service contracts",
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528207637",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUfmb_c8AAAAdPAmM6g",
+      "head_sha": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125561310442",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528207637/job/125561310442",
+      "status": "queued",
+      "conclusion": null,
+      "created_at": "2026-11-02T21:25:29Z",
+      "started_at": "2026-11-02T21:25:29Z",
+      "completed_at": null,
+      "name": "native-message-shipping-compile",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125561310442",
+      "labels": [
+        "macos-15"
+      ],
+      "runner_id": 0,
+      "runner_name": "",
+      "runner_group_id": 0,
+      "runner_group_name": ""
+    },
+    "workflow_requirements": {
+      "runs_on": "macos-15",
+      "if": "github.event_name == 'push' || inputs.message_batch",
+      "push_condition_satisfied": true,
+      "timeout_minutes": 60,
+      "needs": [],
+      "environment": null,
+      "concurrency": null,
+      "additional_runner_labels_or_group": null,
+      "checkout_ref": "github.sha",
+      "toolchain": "Rust 1.97.1",
+      "note": "The timeout setting is recorded; elapsed queue time is not treated as proof that execution started or a timeout happened."
+    },
+    "classification": "QUEUED_NOT_STARTED",
+    "environment_unreachable_established": false,
+    "scheduler_cause": "not established by current workflow/API evidence",
+    "pending_gate_evidence": [
+      {
+        "gate": "macOS peer library",
+        "expected_tests": 23,
+        "status": "NOT_EXECUTED",
+        "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1"
+      },
+      {
+        "gate": "CLI gateway executable",
+        "expected_tests": 9,
+        "status": "NOT_EXECUTED",
+        "command": "cargo test --locked --manifest-path \"$manifest\" -p mahayana-cli --bin mahayana-gateway -- --nocapture --test-threads=1"
+      },
+      {
+        "gate": "gateway library",
+        "expected_tests": 13,
+        "status": "NOT_EXECUTED",
+        "command": "cargo test --locked --manifest-path \"$manifest\" -p mahayana-gateway --lib -- --nocapture --test-threads=1"
+      },
+      {
+        "gate": "direct CLI Host",
+        "expected_tests": 3,
+        "status": "NOT_EXECUTED"
+      }
+    ],
+    "recent_actual_macos_examples": [
+      {
+        "run_id": 41513767498,
+        "H": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "workflow_id": 394718488,
+        "workflow_path": ".github/workflows/native-service-contracts.yml",
+        "workflow_blob": "2c5063d6971c266a004ff86f818c8fb81a94dc74",
+        "job_id": 125511939405,
+        "status": "completed",
+        "conclusion": "success",
+        "labels": [
+          "macos-15"
+        ],
+        "runner_id": 1000259376,
+        "runner_name": "GitHub Actions 1000259376",
+        "runner_group_name": "GitHub Actions",
+        "started_at": "2026-11-02T19:53:10Z",
+        "completed_at": "2026-11-02T20:04:09Z",
+        "steps_total": 25,
+        "steps_success": 24,
+        "steps_skipped": 1,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939405"
+      },
+      {
+        "run_id": 41508537631,
+        "H": "59f5fa24827812f78336c464995d161f403dedfb",
+        "workflow_id": 394718488,
+        "workflow_path": ".github/workflows/native-service-contracts.yml",
+        "workflow_blob": "1a467ad8c641c844d5cd5e23d0abc4dfe530ba54",
+        "job_id": 125494011097,
+        "status": "completed",
+        "conclusion": "success",
+        "labels": [
+          "macos-15"
+        ],
+        "runner_id": 1000259326,
+        "runner_name": "GitHub Actions 1000259326",
+        "runner_group_name": "GitHub Actions",
+        "started_at": "2026-11-02T19:17:25Z",
+        "completed_at": "2026-11-02T19:31:06Z",
+        "steps_total": 25,
+        "steps_success": 24,
+        "steps_skipped": 1,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631/job/125494011097"
+      }
+    ],
+    "qualification": {
+      "historical_examples_prove_recent_actual_runner_use_only": true,
+      "historical_examples_do_not_prove_current_scheduler_capacity_or_explain_queue": true,
+      "old_H_results_not_reused_for_new_23_9_13_gates": true,
+      "elapsed_time_does_not_establish_BLOCKED": true,
+      "queue_is_not_implementation_or_test_assertion_failure": true,
+      "whole_native_workflow_success": false,
+      "other_current_failures": [
+        {
+          "id": 125561310455,
+          "name": "native-message-ui",
+          "conclusion": "failure"
+        },
+        {
+          "id": 125561310648,
+          "name": "native-message-reconciliation",
+          "conclusion": "failure"
+        }
+      ],
+      "source_acceptance": false,
+      "product_acceptance": false,
+      "independent_ACCEPT": false
+    },
+    "actions": {
+      "remote_writes": false,
+      "rerun": false,
+      "dispatch": false,
+      "cancel": false,
+      "local_project_or_validator_execution": false
+    },
+    "workflow_readback": {
+      "path": "/workspace/scratch/b725a2794b30/mac-shipping-9bb-native-service-contracts.yml",
+      "bytes": 74289,
+      "sha256": "c7060534bc0fcb163d68a9144d4df3d3a14fecb6329bea06c1a7973bbadab6f9",
+      "git_blob": "f467018b45c9dc699dfacdf64c58f182d142d8f9"
+    },
+    "api_snapshots": {
+      "path": "/workspace/scratch/b725a2794b30/mac-shipping-9bb-api-snapshots.json",
+      "bytes": 104802,
+      "sha256": "c957322e3617602fb7216c7f08b88bc69a5b0faa34402561ac7562cf808481e5",
+      "git_blob": "64ae9bb2c207ccad78dc20f4125b41cc9664faea"
+    }
+  },
+  "backend_readonly": {
+    "format": "FABUSHI_ROUND20_BACKEND_READONLY_FINAL_APPEND_V1",
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 20,
+    "repository": "bhrumom/fabushi-backend",
+    "observed_at": "2026-11-02 21:47:14 UTC",
+    "prior_observation": "2026-11-02T21:21:59Z",
+    "PR": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "base": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "merged_at": null,
+      "updated_at": "2026-11-02T19:32:19Z",
+      "comments": 0,
+      "review_comments": 0,
+      "reviews_count": 0
+    },
+    "main": "687718ce9e0083aa124d29005bcce4051d357919",
+    "runs_scope": {
+      "all": {
+        "endpoint": "/actions/runs?per_page=100",
+        "total": 990,
+        "returned": 100,
+        "latest_created": "2026-11-02T19:32:24Z",
+        "latest_updated": "2026-11-02T19:32:36Z",
+        "any_created_or_updated_since_prior": false
+      },
+      "main": {
+        "endpoint": "/actions/runs?branch=main&per_page=100",
+        "total": 302,
+        "returned": 100,
+        "latest_created": "2026-10-24T15:00:21Z",
+        "latest_updated": "2026-10-24T15:01:04Z",
+        "any_created_or_updated_since_prior": false
+      }
+    },
+    "latest_exact_head_runs": [
+      {
+        "id": 41510861859,
+        "name": "Human Messaging CI",
+        "path": ".github/workflows/human-messaging-ci.yml",
+        "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "status": "completed",
+        "conclusion": "success",
+        "event": "pull_request",
+        "created_at": "2026-11-02T19:32:24Z",
+        "updated_at": "2026-11-02T19:32:36Z"
+      },
+      {
+        "id": 41510852280,
+        "name": "Human Messaging CI",
+        "path": ".github/workflows/human-messaging-ci.yml",
+        "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "status": "completed",
+        "conclusion": "success",
+        "event": "push",
+        "created_at": "2026-11-02T19:32:20Z",
+        "updated_at": "2026-11-02T19:32:34Z"
+      }
+    ],
+    "visible_relevant_main_runs": [
+      {
+        "id": 40061536514,
+        "name": "Canonical Account Worker Runtime",
+        "path": ".github/workflows/ci-account-factory-runtime.yml",
+        "head_sha": "c58b553f5951e8f856ab292f691ad564ab42b873",
+        "status": "completed",
+        "conclusion": "success",
+        "event": "push",
+        "created_at": "2026-10-24T04:14:08Z",
+        "updated_at": "2026-10-24T04:20:00Z"
+      },
+      {
+        "id": 40047409890,
+        "name": "Production Worker Delivery",
+        "path": ".github/workflows/production-worker-delivery.yml",
+        "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+        "status": "completed",
+        "conclusion": "success",
+        "event": "workflow_dispatch",
+        "created_at": "2026-10-24T00:56:05Z",
+        "updated_at": "2026-10-24T00:56:50Z"
+      },
+      {
+        "id": 39247104972,
+        "name": "Production Worker Delivery",
+        "path": ".github/workflows/production-worker-delivery.yml",
+        "head_sha": "4cf514023b6c12a5f60ed88d64594118685f801b",
+        "status": "completed",
+        "conclusion": "success",
+        "event": "workflow_dispatch",
+        "created_at": "2026-10-19T11:46:45Z",
+        "updated_at": "2026-10-19T11:47:21Z"
+      },
+      {
+        "id": 39181308321,
+        "name": "Canonical Account Worker Runtime",
+        "path": ".github/workflows/ci-account-factory-runtime.yml",
+        "head_sha": "631d34e7692e86385e006ce3c7ce61a0e4b8b9b5",
+        "status": "completed",
+        "conclusion": "success",
+        "event": "push",
+        "created_at": "2026-10-19T00:33:29Z",
+        "updated_at": "2026-10-19T00:35:44Z"
+      }
+    ],
+    "conclusion": "PR/main/reviews and visible run frontier unchanged. No new current-production Worker source or authorized afterId=0 live pagination evidence in this read-only scope. Previously read fixture logs/artifacts are reused; historical deployment success is not current active Worker proof.",
+    "reuse": {
+      "prior_short_append": "/workspace/scratch/b725a2794b30/backend-round20-212159-readonly-append.json",
+      "prior_complete": "/workspace/scratch/b725a2794b30/backend-later-round20-audit.json",
+      "exact_head_fixture_counts": [
+        29,
+        10,
+        24
+      ],
+      "each_run_passed": 63,
+      "live_readiness": "skipped in both exact-head fixture runs",
+      "historical_Worker_run": 40047409890,
+      "historical_deployed_source": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "historical_Worker_version": "3ad1a889-4c28-4344-8472-8c8adc225a3c"
+    },
+    "missing": [
+      "current active Worker source/identity",
+      "authorized afterId=0 multipage, empty, denial and recovery evidence",
+      "real D1 restore/recovery"
+    ],
+    "remote_writes": false,
+    "production_HTTP": false,
+    "merge": false,
+    "deploy": false,
+    "dispatch": false,
+    "local_project_execution": false,
+    "independent_ACCEPT": false
+  },
+  "pre_refresh_independent_review": {
+    "format": "FBCP-ROUND20-EXECUTION-CANDIDATE-READONLY-REVIEW-V1",
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 20,
+    "reviewed_at_utc": "2026-11-02 21:49:01 UTC",
+    "candidate_root": "/workspace/scratch/b725a2794b30/round20-execution-final/publish",
+    "candidate_prepared_at_utc": "2026-11-02 21:44:15 UTC",
+    "review_scope": [
+      "projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json",
+      "projects/telegram-desktop-rust/evidence/round20-peer-execution/source-contract.json",
+      "projects/telegram-desktop-rust/evidence/round20-peer-execution/publication.json",
+      "Peer heading only in TDRP STATUS, FBCP STATUS and FBCP RTM"
+    ],
+    "primary_candidate_sha256": "fe03b8129b4158a2525877c7b60ba2120d5e25711e83f7a9452a734b49e8a7b3",
+    "primary_candidate_git_blob": "cd488ab29195ea9f7601e69c71ef6fa72b1e235e",
+    "conclusion": "Count/head/skip/acceptance claims in the inspected snapshot are consistent with their scoped receipts. New API observations require the two pending-state updates below; later candidate versions require their own hash binding.",
+    "confirmed": [
+      {
+        "check": "Source exact-H content",
+        "evidence": "Published source-contract.json is byte-identical to independently read exact5c audit, SHA2567780d600817ca4eec60d9c68accf97f83c1a421bd4f49d133eb88abc3958fdf0; 158 Node/37 Python,184 rows,14 authored/2 completed,unknown/unread null,actual accepted-mode rejection."
+      },
+      {
+        "check": "Publication provenance",
+        "evidence": "Nested independent_ledger_readback equals the complete independent5c readback. Production9bb and ledger5c identities, parents, trees, force=false expected_sha, ledger714a and14 source_reviews agree. The historical first-phase ledgerPhaseComplete=false is explicitly contextualized."
+      },
+      {
+        "check": "9b9 reconciliation scope",
+        "evidence": "Supporting exact9b9 receipt has ten suite counts4+12+1+1+3+12+3+63+3+3=105. Human gateway itself is63. Main execution JSON and both STATUS peer sections preserve that distinction."
+      },
+      {
+        "check": "Skipped and unexecuted gates",
+        "evidence": "9bb retainedC15+1ignored, native-auth skipped, failed creation11/12 followed by storage3/later groups unexecuted, UI2/11 followed by Transcript8 unexecuted are scoped honestly. macOS peer23/gateway executable9/library13 remain not-run."
+      },
+      {
+        "check": "Acceptance",
+        "evidence": "Main acceptance flags, STATUS Complete:false, RTM scoped evidence, source unaccepted candidate, and requirement closure flags do not claim full migration or independent ACCEPT."
+      },
+      {
+        "check": "Current production failures",
+        "evidence": "API confirms9bb UI125561310455 and reconciliation125561310648 failure; main whole_workflow_approved=false agrees."
+      }
+    ],
+    "findings": [
+      {
+        "id": "R20-REVIEW-STATUS-01",
+        "severity": "update-current-observation",
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json#/published_recovery/expanded_SQLite_probe",
+        "snapshot_text": "execution pending; earlier9b9 pass does not qualify changed probe/test bytes",
+        "new_fact": {
+          "H": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+          "run": 41529507254,
+          "job": 125565761246,
+          "status": "completed",
+          "conclusion": "success",
+          "source_bindings": [
+            {
+              "H": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+              "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+              "sha": "4c80574a53edc876891527514c8f3c2fd3d00908"
+            },
+            {
+              "H": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+              "path": "source/host/src/extensions/session/human_creation_tests.rs",
+              "sha": "cebca2cf871cab6dc8693a9f241c190041359490"
+            }
+          ]
+        },
+        "minimal_update": "Record current completed/success metadata and attach the owning agent full exact286 execution audit before reporting counts. Test blob at286 is cebca2cf871cab6dc8693a9f241c190041359490; retain later8675da19 test bytes as separate and unqualified by286."
+      },
+      {
+        "id": "R20-REVIEW-STATUS-02",
+        "severity": "update-current-observation",
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json#/published_recovery/actual_hover_fix",
+        "snapshot_text": "queued at last observation",
+        "new_fact": {
+          "H": "221d7097f5603a6be06c8c51763047e03420090a",
+          "run": 41530131373,
+          "job": 125567864141,
+          "status": "completed",
+          "conclusion": "failure",
+          "failed_step": "Compile actual production renderer",
+          "following_chromium_UI_steps": "skipped"
+        },
+        "minimal_update": "Replace stale queue metadata with actual compile failure; do not imply hover was exercised. Full cause and followup repair remain with the assigned UI auditor."
+      }
+    ],
+    "fresh_followup_metadata": [
+      {
+        "run": 41529507254,
+        "job": 125565761246,
+        "label": "expanded_SQLite_probe",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260285,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install existing Linux Host native dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Transcript compaction and recovery registration contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human resource upload size and bounded-read contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Concurrent Human creation and non-destructive initialization recovery",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "run": 41530131373,
+        "job": 125567864141,
+        "label": "actual_hover_fix",
+        "status": "completed",
+        "conclusion": "failure",
+        "runner_id": 1000260323,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Durable Human cursor and canonical pagination consumers",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human durable retry UI and actual Coordinator port boundaries",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Actual ProductionRenderer history, account and restart projection behaviors",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "run": 41530401510,
+        "job": 125568803608,
+        "label": "pointer_precondition_followup",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "steps": []
+      }
+    ],
+    "macOS_queue_audit": {
+      "path": "/workspace/scratch/b725a2794b30/mac-shipping-9bb-queue-audit.json",
+      "bytes": 6259,
+      "sha256": "c5995a7e16bea2138d95066b0bfc53130f4a080af17be821453705992ae26aa9",
+      "git_blob": "236e7a7ca52f795ca0f5614744aa6381457b6aa4"
+    },
+    "guardrails": {
+      "root_acknowledged_updates": true,
+      "source_or_product_acceptance_granted": false,
+      "raw_full_UI_or_reconciliation_logs_requeried": false,
+      "production_files_modified": false,
+      "remote_writes": false,
+      "rerun": false,
+      "dispatch": false,
+      "cancel": false,
+      "local_project_or_validator_execution": false
+    },
+    "manifest_snapshot": {
+      "sha256": "42b08afcc08f2425e823d6cd7d6d747e6fc1b6f513a365fdf0e11f833367f2fc",
+      "bytes": 3149
+    },
+    "manifest_comparison": [
+      {
+        "path": "projects/fabushi-communication-platform/STATUS.md",
+        "bytes": 22087,
+        "sha256": "5cf4ef0df65c0a7bbfe2a3a7a20ed370e4b43b178d383681f8f58fefb01f1adf",
+        "git_blob": "95987398bad20cceba6c6dc00fb71c62cfb926bc",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "bytes": 79984,
+        "sha256": "39cb2bc8d8e304a7259ed37329c8bb702a36b2edde1a8412e5598de4ae05320e",
+        "git_blob": "7dc7b1ee3a0f19d9e99d28a562cda81bd2bfb645",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "bytes": 30130,
+        "sha256": "d77478886893537d96510fde197705e4e4c5e41232635d4430e72d8270519c06",
+        "git_blob": "80dc00b9ea4c4ba14115f3ea717450896cf95b99",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json",
+        "bytes": 16621,
+        "sha256": "fe03b8129b4158a2525877c7b60ba2120d5e25711e83f7a9452a734b49e8a7b3",
+        "git_blob": "cd488ab29195ea9f7601e69c71ef6fa72b1e235e",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json",
+        "bytes": 115937,
+        "sha256": "d8b7bc78920284fd521ba31028c0344b46b93365c42ce499e693b9e6482cbeab",
+        "git_blob": "ab1d438f7aaa2df6f2538e56902646940312d96f",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/peer-platforms.json",
+        "bytes": 32197,
+        "sha256": "951c85264f630e79e1f986ba19b7a8bc9acb2d1fb196597330ad248958c76383",
+        "git_blob": "2463f22f50647ad8b62ec5fd52bd10959d9226e3",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/publication.json",
+        "bytes": 47577,
+        "sha256": "784c39f6e1adc6bfc3ee06ce75806a6ac6d11398cb0397a8c585be9068529041",
+        "git_blob": "7bfa18b81db155e9f3fdf007b895c9df7a05f997",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/reconciliation-repair-9b9.json",
+        "bytes": 53859,
+        "sha256": "4c01133359dcbab082f64c5f965ad2e2d4beb3232419de191395f687d0f8eb66",
+        "git_blob": "e70dce9aa95bb91306fdd048a6b2fad4cdbc7f9a",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/reconciliation-social.json",
+        "bytes": 58888,
+        "sha256": "1b874842982fccc6486642dca3095f52bd874b8ddceddffc584c69e3b24199b9",
+        "git_blob": "532dee90f8dcb08b8ba13b8748ecd760a131a6f2",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/renderer-packaging.json",
+        "bytes": 80238,
+        "sha256": "d63e43218110f0670754ca15a734c60ff66211bfa4c9e707bf77f641665ac984",
+        "git_blob": "de344af5584fc90d8386721a639ab8a33eb3378d",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/retained-ffi.json",
+        "bytes": 7943,
+        "sha256": "5b9ad852975868d0e96a026d1f0ce6711e1a141c1190f6ef933727218e982c90",
+        "git_blob": "19ca42b2b76af3f5212ba70dcc63ed130a3d27b1",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/source-contract.json",
+        "bytes": 33921,
+        "sha256": "7780d600817ca4eec60d9c68accf97f83c1a421bd4f49d133eb88abc3958fdf0",
+        "git_blob": "b64dee35f86a13454035e80785b56979baba4ca8",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true
+      }
+    ],
+    "reviewed_file_snapshots": [
+      {
+        "path": "projects/fabushi-communication-platform/STATUS.md",
+        "bytes": 22087,
+        "sha256": "5cf4ef0df65c0a7bbfe2a3a7a20ed370e4b43b178d383681f8f58fefb01f1adf",
+        "git_blob": "95987398bad20cceba6c6dc00fb71c62cfb926bc",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true,
+        "snapshot_path": "/workspace/scratch/b725a2794b30/round20-execution-review-214901/snapshot/projects/fabushi-communication-platform/STATUS.md"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "bytes": 79984,
+        "sha256": "39cb2bc8d8e304a7259ed37329c8bb702a36b2edde1a8412e5598de4ae05320e",
+        "git_blob": "7dc7b1ee3a0f19d9e99d28a562cda81bd2bfb645",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true,
+        "snapshot_path": "/workspace/scratch/b725a2794b30/round20-execution-review-214901/snapshot/projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "bytes": 30130,
+        "sha256": "d77478886893537d96510fde197705e4e4c5e41232635d4430e72d8270519c06",
+        "git_blob": "80dc00b9ea4c4ba14115f3ea717450896cf95b99",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true,
+        "snapshot_path": "/workspace/scratch/b725a2794b30/round20-execution-review-214901/snapshot/projects/telegram-desktop-rust/STATUS.md"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json",
+        "bytes": 16621,
+        "sha256": "fe03b8129b4158a2525877c7b60ba2120d5e25711e83f7a9452a734b49e8a7b3",
+        "git_blob": "cd488ab29195ea9f7601e69c71ef6fa72b1e235e",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true,
+        "snapshot_path": "/workspace/scratch/b725a2794b30/round20-execution-review-214901/snapshot/projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/publication.json",
+        "bytes": 47577,
+        "sha256": "784c39f6e1adc6bfc3ee06ce75806a6ac6d11398cb0397a8c585be9068529041",
+        "git_blob": "7bfa18b81db155e9f3fdf007b895c9df7a05f997",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true,
+        "snapshot_path": "/workspace/scratch/b725a2794b30/round20-execution-review-214901/snapshot/projects/telegram-desktop-rust/evidence/round20-peer-execution/publication.json"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/round20-peer-execution/source-contract.json",
+        "bytes": 33921,
+        "sha256": "7780d600817ca4eec60d9c68accf97f83c1a421bd4f49d133eb88abc3958fdf0",
+        "git_blob": "b64dee35f86a13454035e80785b56979baba4ca8",
+        "manifest_bytes_match": true,
+        "manifest_sha256_match": true,
+        "manifest_blob_match": true,
+        "snapshot_path": "/workspace/scratch/b725a2794b30/round20-execution-review-214901/snapshot/projects/telegram-desktop-rust/evidence/round20-peer-execution/source-contract.json"
+      }
+    ]
+  },
+  "pre_refresh_UI_review": {
+    "format": "FABUSHI_ROUND20_EXECUTION_PUBLICATION_READONLY_REVIEW_V1",
+    "observed_at_utc": "2026-11-02T21:46:50Z",
+    "files": [
+      {
+        "path": "/workspace/scratch/b725a2794b30/round20-execution-final/publish/projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json",
+        "bytes": 16621,
+        "sha256": "fe03b8129b4158a2525877c7b60ba2120d5e25711e83f7a9452a734b49e8a7b3",
+        "blob": "cd488ab29195ea9f7601e69c71ef6fa72b1e235e"
+      },
+      {
+        "path": "/workspace/scratch/b725a2794b30/round20-execution-final/publish/projects/telegram-desktop-rust/STATUS.md",
+        "bytes": 30130,
+        "sha256": "d77478886893537d96510fde197705e4e4c5e41232635d4430e72d8270519c06",
+        "blob": "80dc00b9ea4c4ba14115f3ea717450896cf95b99"
+      },
+      {
+        "path": "/workspace/scratch/b725a2794b30/round20-execution-final/publish/projects/fabushi-communication-platform/STATUS.md",
+        "bytes": 22087,
+        "sha256": "5cf4ef0df65c0a7bbfe2a3a7a20ed370e4b43b178d383681f8f58fefb01f1adf",
+        "blob": "95987398bad20cceba6c6dc00fb71c62cfb926bc"
+      },
+      {
+        "path": "/workspace/scratch/b725a2794b30/round20-execution-final/publish/projects/telegram-desktop-rust/evidence/round20-peer-execution/renderer-packaging.json",
+        "bytes": 80238,
+        "sha256": "d63e43218110f0670754ca15a734c60ff66211bfa4c9e707bf77f641665ac984",
+        "blob": "de344af5584fc90d8386721a639ab8a33eb3378d"
+      },
+      {
+        "path": "/workspace/scratch/b725a2794b30/round20-execution-final/publish/projects/telegram-desktop-rust/evidence/round20-peer-execution/retained-ffi.json",
+        "bytes": 7943,
+        "sha256": "5b9ad852975868d0e96a026d1f0ce6711e1a141c1190f6ef933727218e982c90",
+        "blob": "19ca42b2b76af3f5212ba70dcc63ed130a3d27b1"
+      }
+    ],
+    "allowed_review_scope": [
+      "production_execution.UI",
+      "production_execution.Electron",
+      "production_execution.Windows",
+      "published_recovery UI/pointer fields",
+      "two STATUS first peer sections",
+      "retained C15+1 ignored consistency against provided retained-ffi receipt"
+    ],
+    "renderer_component_identical_to_independently_audited_V2": true,
+    "findings": [],
+    "checked_facts": {
+      "9bb_renderer_passed": 2,
+      "9bb_renderer_failed": 9,
+      "9bb_downstream_Transcript8_executed": 0,
+      "9b9_renderer_passed": 10,
+      "9b9_renderer_failed": 1,
+      "initial_classification": "IMPL_BUG",
+      "later_pointer_classification": "TEST_FLAW",
+      "Electron": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
+      ],
+      "Electron_build": "success",
+      "Windows": 11,
+      "historical_DMG_immutable": true,
+      "new_H_package_installation_accepted": false,
+      "221d_run": 41530131373,
+      "221d_UI_job": 125567864141,
+      "18fa_run": 41530401510,
+      "18fa_UI_job": 125568803608,
+      "both_new_UI_jobs_last_observed_214501": "queued; no pass claim",
+      "retained_C_passed": 15,
+      "retained_C_ignored": 1,
+      "retained_C_live_DC_qualified": false,
+      "whole_native_or_migration_acceptance": false
+    },
+    "limitations": [
+      "This reviewer did not re-execute or independently audit peer/SQLite/source-gate implementation; their other frozen component receipts remain the source of those claims.",
+      "Retained C15+1 is cross-checked from supplied complete decoded TAP receipt, not a repeated remote ZIP download.",
+      "Queued statuses are observation-scoped and require final refresh after actual execution."
+    ],
+    "recommended_changes": [],
+    "root_files_modified_by_reviewer": false,
+    "local_project_execution": false,
+    "remote_write": false,
+    "independent_ACCEPT": false
+  },
+  "interpretation": "Independent reviews bind the hashes and timestamps recorded inside them. The following current SQLite and UI compile receipts update their pending-status observations; no review grants independent product ACCEPT.",
+  "newer_execution_receipts": [
+    "projects/telegram-desktop-rust/evidence/round20-peer-execution/reconciliation-current-tests.json",
+    "projects/telegram-desktop-rust/evidence/round20-peer-execution/renderer-compile-repair.json"
+  ],
+  "intermediate_286": {
+    "head": "286ea020a28e6ea46b0cbe56cdae9f00483c74bb",
+    "run": 41529507254,
+    "reconciliation_job": 125565761246,
+    "reconciliation_passed": 105,
+    "creation_passed": 12,
+    "storage_passed": 3,
+    "probe_blob": "4c80574a53edc876891527514c8f3c2fd3d00908",
+    "creation_test_blob": "cebca2cf871cab6dc8693a9f241c190041359490",
+    "full_log_bytes": 457643,
+    "full_log_sha256": "e2182c7a579698cc92f345292f242af0cb1c18ac4af7f735004e120ca6e048dc",
+    "artifact": 13182427004,
+    "artifact_bytes": 48231,
+    "artifact_sha256": "a4f862d8e2b6677f9da42e656abafa14f926a7a3ea29e70cc45a18f963208194",
+    "full_audit_sha256": "850d2f0c783f4a89e1f71805f271da8a8d04844ae8d62373e66a78d837f3db60",
+    "boundary": "The later8675 test bytes are independently qualified by52f, not by this286 result."
+  },
+  "independent_ACCEPT": false
+}

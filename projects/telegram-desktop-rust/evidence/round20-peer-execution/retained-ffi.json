@@ -1,0 +1,64 @@
+{
+  "format": "peer-production-9bb-retained-c-evidence-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "head": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+  "run": 41528207637,
+  "job": 125561309973,
+  "artifact": 13180238851,
+  "conclusion": "success",
+  "archive_bytes": 2545,
+  "archive_sha256": "5a44f680338c44fc2163de80ff0fafb74588917ed53a9b32be35a8f349352160",
+  "metadata_digest_match": true,
+  "full_log": {
+    "bytes": 67323,
+    "sha256": "36d1874ecc46e19ed93a225e2faeda7a8f1eca623f1341027c0f9370ae7e1797"
+  },
+  "members": [
+    {
+      "name": "command.txt",
+      "bytes": 154,
+      "sha256": "cf2ff1b097c4614fcc72722ed09da91045c1f3c6779a283a866de43305440a4d",
+      "text": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1\n"
+    },
+    {
+      "name": "input-sha256.txt",
+      "bytes": 247,
+      "sha256": "df899dd8c40c7d0be07ed936bd26a1b9398e2002b9013db751173de9bb259f2d",
+      "text": "c6aa705678efab0841897dd58ecc30378aab565ff9b9c5dec2ad9c2bd27fb3da  source/mahayana/mahayana-rs/Cargo.lock\n18756da019a239327dc272d7b03053b31b0c335976c283667b90cddb708411d0  source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs\n"
+    },
+    {
+      "name": "runtime-ffi.log",
+      "bytes": 4290,
+      "sha256": "c819b9232cfc29edb263e1c5c4820a498f670399e7eea2f4dcf94e988d5f941d",
+      "text": "\u001b[1m\u001b[92m    Updating\u001b[0m crates.io index\n\u001b[1m\u001b[92m   Compiling\u001b[0m fabushi-telegram-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-core)\n\u001b[1m\u001b[92m   Compiling\u001b[0m fabushi-telegram-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-protocol)\n\u001b[1m\u001b[92m   Compiling\u001b[0m fabushi-telegram-storage v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-storage)\n\u001b[1m\u001b[92m   Compiling\u001b[0m fabushi-telegram-network v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-network)\n\u001b[1m\u001b[33mwarning\u001b[0m\u001b[1m: function `read_i32_at` is never used\u001b[0m\n    \u001b[1m\u001b[94m--> \u001b[0mproviders/telegram-network/src/lib.rs:2413:4\n     \u001b[1m\u001b[94m|\u001b[0m\n\u001b[1m\u001b[94m2413\u001b[0m \u001b[1m\u001b[94m|\u001b[0m fn read_i32_at(input: &[u8], offset: usize) -> Result<i32, NetworkError> {\n     \u001b[1m\u001b[94m|\u001b[0m    \u001b[1m\u001b[33m^^^^^^^^^^^\u001b[0m\n     \u001b[1m\u001b[94m|\u001b[0m\n     \u001b[1m\u001b[94m= \u001b[0m\u001b[1mnote\u001b[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\n\u001b[1m\u001b[33mwarning\u001b[0m\u001b[1m: function `read_i64_at` is never used\u001b[0m\n    \u001b[1m\u001b[94m--> \u001b[0mproviders/telegram-network/src/lib.rs:2423:4\n     \u001b[1m\u001b[94m|\u001b[0m\n\u001b[1m\u001b[94m2423\u001b[0m \u001b[1m\u001b[94m|\u001b[0m fn read_i64_at(input: &[u8], offset: usize) -> Result<i64, NetworkError> {\n     \u001b[1m\u001b[94m|\u001b[0m    \u001b[1m\u001b[33m^^^^^^^^^^^\u001b[0m\n\n\u001b[1m\u001b[92m   Compiling\u001b[0m fabushi-telegram-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-runtime)\n\u001b[1m\u001b[33mwarning\u001b[0m: `fabushi-telegram-network` (lib) generated 2 warnings\n\u001b[1m\u001b[33mwarning\u001b[0m\u001b[1m: field `route` is never read\u001b[0m\n   \u001b[1m\u001b[94m--> \u001b[0mproviders/telegram-runtime/src/runtime.rs:152:5\n    \u001b[1m\u001b[94m|\u001b[0m\n\u001b[1m\u001b[94m151\u001b[0m \u001b[1m\u001b[94m|\u001b[0m struct OwnedSession {\n    \u001b[1m\u001b[94m|\u001b[0m        \u001b[1m\u001b[94m------------\u001b[0m \u001b[1m\u001b[94mfield in this struct\u001b[0m\n\u001b[1m\u001b[94m152\u001b[0m \u001b[1m\u001b[94m|\u001b[0m     route: SessionRoute,\n    \u001b[1m\u001b[94m|\u001b[0m     \u001b[1m\u001b[33m^^^^^\u001b[0m\n    \u001b[1m\u001b[94m|\u001b[0m\n    \u001b[1m\u001b[94m= \u001b[0m\u001b[1mnote\u001b[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\n\u001b[1m\u001b[33mwarning\u001b[0m\u001b[1m: method `route` is never used\u001b[0m\n   \u001b[1m\u001b[94m--> \u001b[0mproviders/telegram-runtime/src/runtime.rs:302:8\n    \u001b[1m\u001b[94m|\u001b[0m\n\u001b[1m\u001b[94m179\u001b[0m \u001b[1m\u001b[94m|\u001b[0m impl SessionOwner {\n    \u001b[1m\u001b[94m|\u001b[0m \u001b[1m\u001b[94m-----------------\u001b[0m \u001b[1m\u001b[94mmethod in this implementation\u001b[0m\n\u001b[1m\u001b[94m...\u001b[0m\n\u001b[1m\u001b[94m302\u001b[0m \u001b[1m\u001b[94m|\u001b[0m     fn route(&self, logical_dc_id: i32) -> Option<SessionRoute> {\n    \u001b[1m\u001b[94m|\u001b[0m        \u001b[1m\u001b[33m^^^^^\u001b[0m\n\n\u001b[1m\u001b[33mwarning\u001b[0m: `fabushi-telegram-runtime` (lib) generated 2 warnings\n\u001b[1m\u001b[92m    Finished\u001b[0m `test` profile [unoptimized] target(s) in 5.96s\n\u001b[1m\u001b[92m     Running\u001b[0m tests/runtime_ffi.rs (source/mahayana/mahayana-rs/target/debug/deps/runtime_ffi-cdd2fd86858e6c9a)\n\nrunning 16 tests\ntest api_connection_initialization_requires_product_configuration_and_transport ... ok\ntest authorization_projection_exposes_canonical_self_identity_field ... ok\ntest closed_or_unknown_clients_return_structured_errors ... ok\ntest each_client_has_isolated_core_and_authorization_state ... ok\ntest exported_c_execute_rejects_null_non_utf8_and_invalid_json ... ok\ntest exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles ... ok\ntest exported_c_persistent_client_restores_committed_state_after_close ... ok\ntest exported_c_persistent_create_rejects_invalid_key_lengths_before_storage ... ok\ntest exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage ... ok\ntest ffi_boundary_returns_owned_json_and_handles_null_input ... ok\ntest flutter_friend_chat_payload_is_accepted_without_shape_translation ... ok\ntest lifecycle_commands_share_the_same_runtime_identity_projection ... ok\ntest live_runtime_bootstrap_keeps_an_encrypted_transport_session ... ignored, requires a live Telegram production data center\ntest persistent_authorization_machine_state_is_restored_without_running_network ... ok\ntest persistent_client_restores_committed_core_state ... ok\ntest recovery_and_challenge_commands_do_not_fabricate_ready_without_required_state ... ok\n\ntest result: ok. 15 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s\n\n"
+    },
+    {
+      "name": "scope.txt",
+      "bytes": 219,
+      "sha256": "09ba53164c534942ef973e46759d655374c1dfcc9040ccf66854bb44b00e2b37",
+      "text": "NMR-39 compatibility retention: direct C wrappers and test-owned temporary encrypted-store reopen only; live DC remains ignored; no final shared/static library, installed consumer, real user data or service acceptance.\n"
+    },
+    {
+      "name": "target-sha.txt",
+      "bytes": 41,
+      "sha256": "d4304e0e96a72a32e7d1ded996bed04c9d6c60ad6ca9e6607eda91c73bc3ca9d",
+      "text": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a\n"
+    },
+    {
+      "name": "toolchain.txt",
+      "bytes": 72,
+      "sha256": "cdd372f49763b7ad6faf8210706bc4f7212e18ebbd1abee8ab874ebbd588c4a3",
+      "text": "rustc 1.97.1 (8bab26f4f 2026-07-14)\ncargo 1.97.1 (c980f4866 2026-06-30)\n"
+    }
+  ],
+  "qualified_result": {
+    "passed": 15,
+    "failed": 0,
+    "ignored": 1,
+    "filtered": 0,
+    "ignored_case": "live_runtime_bootstrap_keeps_an_encrypted_transport_session; requires a live Telegram production data center"
+  },
+  "scope": "Actual exported-C lifecycle/owned JSON/malformed input/isolated encrypted fixture/reopen. Not installed external caller, live DC, full migration or ACCEPT.",
+  "local_execution": false,
+  "independent_ACCEPT": false
+}

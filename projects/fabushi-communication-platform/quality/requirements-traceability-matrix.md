@@ -11,14 +11,15 @@ Updated: 2026-11-02
 Spec: `docs/specs/fbcp-gateway-peer-durability.md`.
 Evidence: `projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json`.
 Unique peer IDs preserve the concurrent NMR48 forwarding-attachment contract.
-The following are authored checks; containing-H Actions must establish execution.
+Execution is scoped to exact9bb/run41528207637 below. Evidence: `projects/telegram-desktop-rust/evidence/round20-peer-durable-execution.json`.
+No whole native-workflow or independent acceptance is granted.
 
 | Requirement | Existing production owner and observation | Required execution / remaining boundary |
 | --- | --- | --- |
-| NMR-PEER-DURABILITY-01a/b | PersistentServerRequestRegistry uses latest-disk temporary import/mutation, commit then live publication; approval identity admission is in the same transaction | Complete peer23: real-file failure/repair/reopen, malformed/duplicate IDs, stale-instance merge and non-resurrection. |
-| NMR-PEER-DURABILITY-01c | Existing peer and replay file writers share stable fs2 0.4.3 lock inode, private file handles, owned temp cleanup and only-backup retention | Peer23 on Linux/Windows and macOS shipping; no mixed-version or power-loss acceptance. |
-| NMR-PEER-DURABILITY-01d | Actual stdio event pump and direct/compatibility Host approval adapters fence storage errors; original canonical parser and Native Host features retained | Gateway executable9 and full library13; independent file/Host-call observations, zero-call failure controls and repaired retry. |
-| NMR-AC-PEER-DURABILITY-01 | Containing exact-H focused peer suites plus every existing Human/Agent/CLI/shipping/UI/Electron/Windows gate | Source review and object transport are not execution. Peer/Host crash handoff, replay transaction/epoch semantics and full migration ACCEPT remain open. |
+| NMR-PEER-DURABILITY-01a/b | PersistentServerRequestRegistry uses latest-disk temporary import/mutation, commit then live publication; approval identity admission is in the same transaction | Exact9bb Linux23 and Windows23 passed, zero failed/ignored/filtered: real-file failure/repair/reopen, malformed/duplicate IDs, stale-instance merge and non-resurrection. |
+| NMR-PEER-DURABILITY-01c | Existing peer and replay file writers share stable fs2 0.4.3 lock inode, private file handles, owned temp cleanup and only-backup retention | Exact9bb Linux/Windows peer23 passed. macOS shipping125561310442 queued; no mixed-version or power-loss acceptance. |
+| NMR-PEER-DURABILITY-01d | Actual stdio event pump and direct/compatibility Host approval adapters fence storage errors; original canonical parser and Native Host features retained | Gateway executable9 and full library13 remain authored/not-run while exact9bb shipping is queued; independent file/Host-call and zero-call failure oracles remain required. |
+| NMR-AC-PEER-DURABILITY-01 | Containing exact-H focused peer suites plus every existing Human/Agent/CLI/shipping/UI/Electron/Windows gate | Exact9bb peer/platform, Social, retained-C and package checks have scoped evidence, while UI and creation failures have separate containing-H repairs. Exact5c source158/schema37/candidate passed without source acceptance. Peer/Host crash handoff, replay transaction/epoch semantics and full migration ACCEPT remain open. |
 
 The canonical ledger is changed only by an append to its existing NMR row;
 all current source_reviews, source/legal identities, other rows and acceptance
