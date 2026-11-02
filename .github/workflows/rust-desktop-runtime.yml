@@ -149,9 +149,16 @@ jobs:
         shell: bash
         run: cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
       - name: Test independent Mahayana Coordinator contract
+        id: coordinator_full
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
-        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
+        run: |
+          set -euo pipefail
+          coordinator_command=(cargo test --manifest-path source/node-agent-coordinator/Cargo.toml)
+          coordinator_status=0
+          "${coordinator_command[@]}" || coordinator_status=$?
+          printf 'command=%s\nexit_code=%s\n' "${coordinator_command[*]}" "$coordinator_status" >> "$GITHUB_OUTPUT"
+          exit "$coordinator_status"
       - name: Test independent Grok box exec daemon contract
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -367,9 +374,118 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Test scoped Coordinator control retirement and relay correlation
+        id: coordinator_scoped
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
-        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract
+        run: |
+          set -euo pipefail
+          coordinator_command=(cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract)
+          coordinator_status=0
+          "${coordinator_command[@]}" || coordinator_status=$?
+          printf 'command=%s\nexit_code=%s\n' "${coordinator_command[*]}" "$coordinator_status" >> "$GITHUB_OUTPUT"
+          exit "$coordinator_status"
+      - name: Capture exact Coordinator dependency inputs
+        id: coordinator_inputs
+        if: ${{ always() && (steps.coordinator_full.outcome == 'success' || steps.coordinator_full.outcome == 'failure' || steps.coordinator_scoped.outcome == 'success' || steps.coordinator_scoped.outcome == 'failure') }}
+        shell: bash
+        env:
+          COORDINATOR_FULL_OUTCOME: ${{ steps.coordinator_full.outcome }}
+          COORDINATOR_FULL_COMMAND: ${{ steps.coordinator_full.outputs.command }}
+          COORDINATOR_FULL_EXIT_CODE: ${{ steps.coordinator_full.outputs.exit_code }}
+          COORDINATOR_SCOPED_OUTCOME: ${{ steps.coordinator_scoped.outcome }}
+          COORDINATOR_SCOPED_COMMAND: ${{ steps.coordinator_scoped.outputs.command }}
+          COORDINATOR_SCOPED_EXIT_CODE: ${{ steps.coordinator_scoped.outputs.exit_code }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+
+          def require(condition, detail):
+              if not condition:
+                  raise SystemExit(detail)
+
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          selected = [mode for mode in ("FULL", "SCOPED")
+                      if os.environ[f"COORDINATOR_{mode}_OUTCOME"] in ("success", "failure")]
+          require(len(selected) == 1, "Exactly one Coordinator command must have executed")
+          mode = selected[0]
+          outcome = os.environ[f"COORDINATOR_{mode}_OUTCOME"]
+          exit_text = os.environ[f"COORDINATOR_{mode}_EXIT_CODE"]
+          require(re.fullmatch(r"[0-9]{1,3}", exit_text) is not None,
+                  "Coordinator command exit status is missing or invalid")
+          exit_code = int(exit_text)
+          require(exit_code <= 255 and (exit_code == 0) == (outcome == "success"),
+                  "Coordinator command exit status and outcome disagree")
+          command = os.environ[f"COORDINATOR_{mode}_COMMAND"]
+          require(command.startswith("cargo test ") and "--manifest-path source/node-agent-coordinator/Cargo.toml" in command
+                  and "\n" not in command, "Coordinator command identity is missing or invalid")
+          head = git("rev-parse", "HEAD")
+          require(re.fullmatch(r"[0-9a-f]{40}", head) is not None and head == os.environ["FABUSHI_TARGET_SHA"],
+                  "Coordinator input capture subject mismatch")
+          manifest = Path("source/node-agent-coordinator/Cargo.toml")
+          require(manifest.is_file() and not manifest.is_symlink(), "Coordinator manifest is not a regular file")
+          manifest_blob = git("rev-parse", f"HEAD:{manifest.as_posix()}")
+          require(git("hash-object", str(manifest)) == manifest_blob,
+                  "Coordinator manifest changed during the command")
+          lock = Path("source/node-agent-coordinator/Cargo.lock")
+          require(lock.is_file() and not lock.is_symlink(), "Coordinator command produced no regular lock file")
+          lock_bytes = lock.read_bytes()
+          require(bool(lock_bytes), "Coordinator command produced an empty lock file")
+          lock_blob = hashlib.sha1(b"blob " + str(len(lock_bytes)).encode("ascii") + b"\0" + lock_bytes).hexdigest()
+          tracked_lock = git("ls-tree", "HEAD", "--", lock.as_posix())
+          committed_lock_blob = None
+          if tracked_lock:
+              fields = tracked_lock.split(None, 3)
+              require(len(fields) == 4 and fields[1] == "blob" and fields[3] == lock.as_posix(),
+                      "Committed Coordinator lock identity is invalid")
+              committed_lock_blob = fields[2]
+              require(lock_blob == committed_lock_blob, "Coordinator command changed its committed lock input")
+          for name in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT"):
+              require(re.fullmatch(r"[1-9][0-9]*", os.environ[name]) is not None,
+                      "Coordinator capture run identity is missing or invalid")
+          for name in ("GITHUB_JOB", "RUNNER_OS", "RUNNER_ARCH"):
+              require(bool(os.environ[name]), "Coordinator capture execution identity is missing")
+          receipt = {
+              "contract": "COORDINATOR-LOCK-01",
+              "capture_result": "captured",
+              "acceptance": "Capture alone does not approve tests, a committed dependency graph, or full OCRM acceptance.",
+              "subject_commit": head,
+              "subject_tree": git("rev-parse", "HEAD^{tree}"),
+              "manifest": {"path": manifest.as_posix(), "git_blob": manifest_blob},
+              "lock": {"path": lock.as_posix(), "artifact_file": "coordinator-Cargo.lock",
+                       "git_blob": lock_blob, "sha256": hashlib.sha256(lock_bytes).hexdigest(),
+                       "byte_length": len(lock_bytes), "committed_git_blob": committed_lock_blob,
+                       "provenance": "committed-input" if committed_lock_blob else "newly-observed-resolution"},
+              "command": {"step": f"coordinator_{mode.lower()}", "argv": command.split(),
+                          "exit_code": exit_code, "outcome": outcome},
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True).strip(),
+              "cargo": subprocess.check_output(["cargo", "--version"], text=True).strip(),
+          }
+          evidence = Path(".evidence")
+          evidence.mkdir(exist_ok=True)
+          with (evidence / "coordinator-Cargo.lock").open("xb") as target:
+              target.write(lock_bytes)
+          with (evidence / "coordinator-inputs.json").open("x", encoding="utf-8") as target:
+              target.write(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
+          PY
+      - name: Upload exact Coordinator dependency inputs
+        if: ${{ always() && steps.coordinator_inputs.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-coordinator-inputs-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .evidence/coordinator-Cargo.lock
+            .evidence/coordinator-inputs.json
+          if-no-files-found: error
+          retention-days: 90
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |

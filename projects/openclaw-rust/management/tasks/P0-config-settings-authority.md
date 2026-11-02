@@ -254,6 +254,65 @@ data changes. Windows runtime, all-platform packaging, license/SBOM closure,
 recursive upstream source closure and full OCRM acceptance remain separate,
 unmet obligations; no global completion flag changes with this repair.
 
+### Coordinator dependency provenance — COORDINATOR-LOCK-01 (2026-11-02)
+
+Decision: **FIX / IMPL_BUG (missing build-input authority)**. At
+`1501be999f195e7204da8b095a0ab64d5bc3a5aa`, the standalone
+`source/node-agent-coordinator/Cargo.toml` has no committed adjacent lock.
+The existing full and scoped Coordinator commands can resolve a different
+graph while their source H remains unchanged. Successful assertions remain
+valid for their observed execution; they do not establish frozen dependencies.
+The Host/app/Mahayana locks have different root, dev-dependency and Rustls
+feature graphs and cannot supply an invented Coordinator lock. Fixed upstream
+U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+
+- CL-01: keep the existing standalone package, manifest/features, toolchain,
+  cache and both workflow target selections. Use the already-selected Actions
+  Coordinator command to obtain the actual resolution; no local Cargo,
+  additional resolver job, dependency update or donor-lock synthesis.
+- CL-02: retain that command's real exit code and outcome. A subsequent
+  always-conditioned capture may preserve an actual produced lock even when
+  the command or a later audit fails; it must never turn failure into success.
+  Skipped/unstarted commands provide no resolution evidence. Missing lock,
+  missing exit status, changed manifest or wrong subject is capture failure.
+- CL-03: preserve exact lock bytes and a JSON provenance receipt in the
+  existing workflow. Bind full source H, manifest path/Git blob, lock Git blob,
+  SHA-256/byte length, run ID/attempt/job, actual selected command and exit,
+  command outcome, Rust/Cargo versions and runner platform. Distinguish a
+  committed lock from an uncommitted observed resolution. Upload this bounded
+  input artifact independently of later successful-test receipt generation;
+  no credentials, caches, target binaries or unrelated workspace data belong
+  in it. Capture introduces no permission or write-token expansion.
+- CL-04: retrieve one exact Actions artifact and verify its immutable subject,
+  manifest, digests, selected command and archive membership before using it.
+  Review its complete package identities/checksums/dependency edges, then
+  commit those exact bytes as `source/node-agent-coordinator/Cargo.lock`.
+  This is a newly observed resolution, not reconstruction of an older run.
+  It does not change the fixed upstream version or claim dependency/license
+  closure for other workspaces.
+- CL-05: after that lock is committed, add `--locked` to both existing
+  Coordinator test invocations, preserving their selectors and real exits.
+  The capture receipt continues to compare the executed lock against the
+  committed input. A missing/drifted graph is a failed gate; never remove
+  `--locked`, change production features or choose newer dependencies to make
+  it pass. Exact final-H Actions must run the affected Coordinator controls
+  and the existing shared gates with those committed inputs.
+
+Architecture: Cargo owns resolution for this existing standalone package;
+Git owns the accepted lock input; the existing Actions job is the execution
+and capture carrier. The receipt is evidence, not a runtime store, product
+owner, scheduler or dependency resolver. Source-only snapshot/archive identity
+operations are permitted; builds and executable validation remain Actions-only.
+
+Acceptance requires independent review of the narrow task/workflow/lock delta,
+literal artifact-to-commit identity, and final exact-H locked execution. The
+capture-only phase is an explicit prerequisite and cannot be called frozen-graph
+acceptance. Preserve earlier failure and successful-test records; classify
+capture/oracle, graph/implementation and runner/environment failures causally.
+Rollback restores this bounded input/enforcement change without editing user
+data. No global acceptance flags change. Recursive sources, legal records,
+real nodes/devices/platform packages and full OCRM acceptance remain open.
+
 ### Active shared-gate recovery — RUNNER-WIRING-ORACLE-01 (2026-11-02)
 
 Decision: **FIX / TEST_FLAW**, recorded before the oracle repair. Exact H
