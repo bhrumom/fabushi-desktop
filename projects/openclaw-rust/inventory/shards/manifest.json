@@ -399,7 +399,7 @@
       "uncompressed_sha256": "1d5167e06246d62b48d2a0a96218f3079d5461da2f1ff4e4a63b03dc26c4601a"
     },
     {
-      "compressed_sha256": "3fcf7a69cd44cbe373ac9a0f6977d054e097dcc1645824e8274b9e78fa967a4d",
+      "compressed_sha256": "40ba7c3cfffefcf57dcc63181624408214a510757d1726e1b8976ca400a55f4c",
       "count": 1024,
       "first_path": "src/skills/lifecycle/skill-tree-digest.test.ts",
       "last_path": "src/state/user-profile-github-identity.ts",
