@@ -714,7 +714,7 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for corruption in ["notadb", "schema", "data-page-delete-mode"] {
+    for corruption in ["notadb", "short-header", "schema", "data-page-delete-mode"] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -733,7 +733,7 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         let path = get_native_conversation_db_path(&root, &id).unwrap();
         let directory = path.parent().unwrap();
         fs::create_dir_all(directory).unwrap();
-        if corruption != "notadb" {
+        if matches!(corruption, "schema" | "data-page-delete-mode") {
             let previous = SandAgentDb::open_conversation_store(&path, 25).unwrap();
             seed_entries(&previous);
             previous.close(true);
@@ -761,7 +761,12 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
             bytes[damage_offset] = 0; // Invalid B-tree type, with a valid SQLite header.
             fs::write(&path, bytes).unwrap();
         } else {
-            fs::write(&path, b"retained NOTADB bytes; never quarantine or replace").unwrap();
+            let retained_bytes: &[u8] = if corruption == "short-header" {
+                b"SQLite"
+            } else {
+                b"retained NOTADB bytes; never quarantine or replace"
+            };
+            fs::write(&path, retained_bytes).unwrap();
             for suffix in ["-wal", "-shm", "-journal"] {
                 fs::write(PathBuf::from(format!("{}{suffix}", path.display())),
                     format!("retained original {suffix} bytes")).unwrap();
