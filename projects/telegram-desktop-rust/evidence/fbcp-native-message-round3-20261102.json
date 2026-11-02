@@ -112,7 +112,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-followup-repair-commit",
+    "status": "pending-protocol-test-import-repair",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked",
     "full_product_acceptance": false,
@@ -206,6 +206,99 @@
         "rust": "1.97.1",
         "cargo_locked": true
       }
+    },
+    {
+      "id": 41393480856,
+      "attempt": 1,
+      "head_sha": "9f678dd5d8824d52d9713a730eb73ffce01a3400",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41393480856",
+      "jobs": [
+        {
+          "id": 125109688123,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125109688123/logs"
+        },
+        {
+          "id": 125109688355,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "protocol": "test-target-compilation-failed",
+          "tcp": "skipped",
+          "proxy_and_credential": "skipped",
+          "classification": "TEST_BUG",
+          "failure_signatures": [
+            "protocol_contract.rs omitted the public FactoredPq import (E0422 at two references)",
+            "protocol_contract.rs omitted the public SERVER_DH_PARAMS_FAIL_CONSTRUCTOR import (E0425 at four references)"
+          ],
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125109688355/logs"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13118810157,
+          "name": "native-message-shipping-compile-9f678dd5d8824d52d9713a730eb73ffce01a3400",
+          "size_in_bytes": 13086,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118810157",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118810157/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:23:15Z",
+          "expires_at": "2027-01-31T05:20:49Z",
+          "updated_at": "2026-11-02T05:23:15Z",
+          "digest": "sha256:cca412eb7138a4ebc17fede921eb6ea825891f0f60b470fb575bb821df395514",
+          "workflow_run": {
+            "id": 41393480856,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "9f678dd5d8824d52d9713a730eb73ffce01a3400"
+          }
+        },
+        {
+          "id": 13117774258,
+          "name": "native-message-reconciliation-9f678dd5d8824d52d9713a730eb73ffce01a3400",
+          "size_in_bytes": 10028,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13117774258",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13117774258/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:23:38Z",
+          "expires_at": "2027-01-31T05:20:49Z",
+          "updated_at": "2026-11-02T05:23:38Z",
+          "digest": "sha256:638b52bde938255d116c6dd88bfb3f078122c4484cd8776a6eab09486c9b24e2",
+          "workflow_run": {
+            "id": 41393480856,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "9f678dd5d8824d52d9713a730eb73ffce01a3400"
+          }
+        }
+      ],
+      "environment": {
+        "runner": "macos-15 / macos-15-arm64",
+        "image_version": "20261028.0489.1",
+        "rust": "1.97.1",
+        "cargo_locked": true
+      }
     }
   ],
   "review": {
@@ -267,12 +360,60 @@
     ],
     "method": "Independent read-only diff, behavior-oracle and actual schema semantics review. No local executable validation.",
     "limit": "Qualifies checker behavior only; does not reconcile the actual old-U source lock/index with fixed-U ledger or establish source closure or ACCEPT.",
-    "validation": "pending-exact-commit-actions",
+    "validation": {
+      "status": "passed-focused-checker-behavior",
+      "head_sha": "9f678dd5d8824d52d9713a730eb73ffce01a3400",
+      "run_id": 41393480824,
+      "job_id": 125109688347,
+      "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41393480824",
+      "js_tests": {
+        "passed": 63,
+        "failed": 0,
+        "skipped": 0
+      },
+      "schema_tests": {
+        "passed": 27,
+        "failed": 0
+      },
+      "full_authority_acceptance": "not-executed; canonical source disagreement remains blocked",
+      "artifacts": [
+        {
+          "id": 13118362021,
+          "name": "tdrp-source-review-contract-9f678dd5d8824d52d9713a730eb73ffce01a3400",
+          "size_in_bytes": 3504,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118362021",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118362021/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:21:02Z",
+          "expires_at": "2027-01-31T05:20:49Z",
+          "updated_at": "2026-11-02T05:21:02Z",
+          "digest": "sha256:5c020b7b2ffd597b90a1546f1ff543358c4c30b430f251e5cbd3f60e01423682",
+          "workflow_run": {
+            "id": 41393480824,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "9f678dd5d8824d52d9713a730eb73ffce01a3400"
+          }
+        }
+      ]
+    },
     "changes": [
       "Join every source review to the exact responsibility primary or additional repository/commit/path/object identity.",
       "Enforce source review depth/evidence and additional-identity semantics in the strict schema with actual JSON Schema behavior tests.",
       "Read only the chosen frozen U and tree; retain all canonical inventory/acceptance gates and reject any open candidate at acceptance."
     ],
     "source_closure": false
+  },
+  "protocol_test_repair": {
+    "base": "9f678dd5d8824d52d9713a730eb73ffce01a3400",
+    "classification": "TEST_BUG",
+    "rationale": "Import the existing public factoring type and DH failure constructor; keep every negative oracle unchanged. Include the exact selected protocol/network/runtime/product input paths in the native workflow push filter. Explicitly execute the TCP suite's existing ignored live production-DC handshake/ping/service-RPC case with --include-ignored; retain the zero-ignored success gate and do not treat absence of live evidence as success.",
+    "validation": "pending-exact-followup-commit",
+    "live_probe": {
+      "test": "live_session_exchanges_encrypted_ping_and_service_rpc",
+      "scope": "Anonymous Telegram compatibility AuthKey exchange, encrypted ping and service RPC; no user sign-in or message send; not Fabushi deployed-service acceptance.",
+      "blocked_if": "GitHub runner cannot reach the configured Telegram production DC or protocol exchange fails; retain the exact failure classification and do not bypass the gate."
+    }
   }
 }

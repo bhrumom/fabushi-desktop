@@ -10,7 +10,7 @@ use fabushi_telegram_protocol::{
     wire_constructor_by_name, wire_constructors_by_id, AuthCommand, AuthError, AuthKey,
     AuthKeyHandshake, AuthKeyHandshakeState, AuthorizationMachine, AuthorizationState,
     CodeDeliveryType, CryptoDirection, CryptoError, DeclarationKind, DhGenAction, DhGenResult,
-    EncryptedEnvelope, HandshakeError, MessageIdError, MessageIdGuard, PasswordSrpParameters,
+    EncryptedEnvelope, FactoredPq, HandshakeError, MessageIdError, MessageIdGuard, PasswordSrpParameters,
     PlainMessage, PlaintextEnvelope, RequestSequencer, ResPq, RsaPublicKey, SchemaParseError,
     SchemaStats, ServerDhInnerData, ServerDhParams, SessionSequence, TlError, TlReader, TlWriter,
     TransportError, TransportFrameCodec, TransportMode, WireSchema, DH_GEN_FAIL_CONSTRUCTOR,
@@ -19,7 +19,7 @@ use fabushi_telegram_protocol::{
     P_Q_INNER_DATA_TEMP_DC_CONSTRUCTOR, REQ_DH_PARAMS_CONSTRUCTOR, REQ_PQ_MULTI_CONSTRUCTOR,
     RES_PQ_CONSTRUCTOR,
     SERVER_DH_INNER_DATA_CONSTRUCTOR,
-    SERVER_DH_PARAMS_OK_CONSTRUCTOR, SET_CLIENT_DH_PARAMS_CONSTRUCTOR, WIRE_CONSTRUCTORS,
+    SERVER_DH_PARAMS_FAIL_CONSTRUCTOR, SERVER_DH_PARAMS_OK_CONSTRUCTOR, SET_CLIENT_DH_PARAMS_CONSTRUCTOR, WIRE_CONSTRUCTORS,
 };
 use fabushi_telegram_protocol::{
     build_account_get_password, build_account_send_verify_email_code, build_account_verify_email,
