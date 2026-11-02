@@ -1288,10 +1288,77 @@ pending. No final source, real-service, supported-platform, UI/accessibility,
 soak, upgrade/rollback or shipping acceptance is implied. Rollback is an ordinary
 code revert; no user data or journal migration/deletion is required.
 
+### Resumed round 18 live-head correction — CLI/gateway production features (NMR-CLI-HOST-01 / NMR-AC-CLI-HOST-01)
 
+The resumed read binds to `59f5fa24827812f78336c464995d161f403dedfb`,
+preserving all intervening migration work. Run41508537631 passes the current
+CLI3/gateway-executable5/library11 suites, but those commands build test
+targets. The CLI manifest removed its normal FFI edge without retaining
+the Host `desktop-full` and `local-only` features previously supplied by
+FFI defaults. Workspace and FeatureHost edges disable Host defaults.
 
+This is a production composition defect. Host's feature-gated native
+construction installs NativeEngine/ResponsesModelRuntime and its routing/
+Agent-control backend. Without the feature, the fallback still advertises
+`mahayana-ai` and `miniapp`, but uses UnavailableAgentBackend. Merely checking
+provider names, status, Ready, a test-support backend or a workspace-wide
+feature-unified test build cannot establish working native Agent behavior.
 
+- NMR-CLI-HOST-01: Explicitly enable the two existing Host features on the CLI's
+  normal dependency. Preserve direct Host ownership, existing CLI/gateway
+  configuration, approvals, lifecycle and storage. Do not restore FFI as a
+  normal/dev dependency, change any external C ABI, introduce a new provider,
+  alter public RPC/model policy or upgrade dependencies.
+- NMR-AC-CLI-HOST-01: In the existing shipping job, separately record the CLI-root
+  normal/build package and feature graph and build both actual executables
+  with the locked ci profile and a single CLI package root. Require both
+  Host features and absence of the legacy FFI/Telegram production graph.
+  Save both real executables, SHA256/format/defined-symbol/linked-library
+  inventories and an exact-source receipt in the same immutable artifact.
+- Run each built executable through its existing entrypoint in a bounded
+  child process using a synthetic MAHAYANA_HOME and workspace. A managed
+  model configured with a plain-HTTP endpoint must be rejected by the native
+  model HTTPS policy before any request; the unavailable fallback skips that
+  construction and would incorrectly succeed. Also retain successful ordinary
+  CLI status/gateway session-list and clean shutdown controls. This is an
+  actual production-binary branch oracle, not external model acceptance.
+- Strengthen each existing private RuntimeHandle status/Ready control with
+  the real `mahayana.mcp.servers` command in its isolated synthetic root.
+  NativeAgentBackend returns the empty local server list for a fresh root;
+  UnavailableAgentBackend returns an error. This existing capability gives a
+  local positive control for the actual native Agent-control backend without
+  accounts, remote model calls or an injected EngineBackend. Provider names
+  alone remain insufficient. Keep the current3/5/11 cases, durable state/reopen
+  checks and all legacy refusal, retained-data and AppHost/Session gates.
 
+All execution remains in GitHub Actions. The initial99 run and the completed59
+run remain separate exact-input evidence. External FFI clients, authenticated
+model services, full Bot/installed application acceptance and final ACCEPT
+remain open; a successful compiler or binary-identity check alone closes none
+of those broader gates.
 
+### Resumed round 18 installer receipt placement (NMR-PACKAGE-DELIVERY-01 / NMR-AC-PACKAGE-DELIVERY-01)
 
+The same59 source writes final-byte macOS metadata to RUNNER_TEMP, then adds
+that receipt to the installer artifact beside desktop/release patterns.
+upload-artifact uses the least common ancestor of input paths. This changes
+the installer ZIP member paths, and the JSON receipt is itself outside the
+existing promotion owner's exact allowed installer member set. The current
+promotion consumer rejects either condition. No new59 signed installer has
+been observed, so this finding is a deterministic producer/consumer source
+mismatch, not a fabricated release failure.
 
+- NMR-PACKAGE-DELIVERY-01: Keep the installer artifact's existing release-directory ZIP/DMG,
+  blockmaps, latest-mac.yml and SHA256SUMS.txt paths. Put the final-byte receipt
+  in the existing packaged-acceptance evidence artifact, where mixed evidence
+  paths are already expected. Preserve the receipt, its exact source binding,
+  all metadata verification and signing/installation gates.
+- NMR-AC-PACKAGE-DELIVERY-01: Keep promotion's member whitelist unchanged. Reuse its existing
+  six contract tests in the focused Electron job and review both producer
+  upload path lists against the consumer. These tests do not execute the
+  upload action or qualify a signed installer; final exact-source package
+  generation, archive-member readback, installation and promotion acceptance
+  remain mandatory before release.
+
+This batch performs no release dispatch, publication, backend mutation, merge
+or deployment.
