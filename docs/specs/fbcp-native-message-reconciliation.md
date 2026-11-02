@@ -2162,3 +2162,95 @@ UI-NMR-RETIRED-FORWARD-NAMES-001 (delayed reply after A-B-A); dialog coverage in
 hidden selections, rename/retry, callback Map mutation and lifetime replacement.
 Authored cases are not execution evidence. Use the existing canonical
 `TDRP-R9-SHARE-FORWARD-PRIVACY-001` ledger responsibility and the Round30 receipt.
+
+
+## NMR-ELECTRON-01 — Actual Human IPC and process restart qualification
+
+Extend the existing Electron e2e owner and production startup chain after the
+renderer contract fixes. Keep the existing Plugins Close pointer cases and
+native-message-electron Node/carrier/auth/update contracts. The browser-only
+external-port fixture is not an Electron IPC substitute.
+
+- Start the real desktop entry, production renderer/preload, MessageChannelMain,
+  utility-process carrier, Rust Coordinator and AppHost/Session Native client.
+  Control only a loopback auth/social HTTP service and test-owned user directory.
+  Return the current bounded, explicit-zero historyCursor contract and canonical
+  author/recipient/clientRequestId identities; unexpected requests fail visibly.
+- A canonical Human send must remain unique and display its full persisted row
+  after closing and reopening Electron with the same test user directory while
+  remote history is unavailable. Assert actual IPC requests, user-visible state,
+  persisted local recovery, and a new positive operation after service recovery.
+- A remote-committed send whose response is withheld must recover after the old
+  Electron lifetime ends and the same directory is reopened. Reuse the original
+  nonce, settle one canonical row, preserve newer draft state and reject any late
+  old-lifetime UI mutation. Record the actual shutdown mode; graceful reopen is
+  not a process-kill claim. The fixture's idempotent server state is not another
+  product message owner.
+- Capture exact H, full Electron/Host output, HTTP request/response/release order,
+  page errors and console, DOM and screenshots, trace/video and exact two-case
+  results with zero retries/skips. No local executable validation. These are
+  controlled Electron/HTTP/SQLite process tests, not deployed-service, complete
+  visual/a11y, OS keychain, signed-package or independent product acceptance.
+
+The actual production behavior, persistence owner and public schema stay in the
+existing Session/Transcript path. If the tests expose a production defect, fix
+that owner in a separately reviewed narrow delta before claiming a pass.
+
+
+## NMR-DRAFT-01 — Persist original Human submission draft ownership
+
+Keep the existing account-scoped composer-drafts V1 owner. Persist optional
+per-conversation submission identity only: nonce, local Human author, original
+draftId and original recoveryId. Session/Transcript remains the message,
+canonical state, retry and outbox authority. Equal text or resources never
+establish ownership.
+
+Existing V1 draft/recovery content remains readable without a binding and cannot
+be retired by matching canonical text. Malformed or duplicate new binding
+metadata must preserve otherwise valid content. A recovery draft has a stable
+identity; pending bindings remain durable when visible text is cleared or replaced.
+
+The existing draft store adds identifyRecovery, bindHumanSubmission,
+settleHumanSubmission and forgetHumanSubmissions. A repeated nonce retains its
+first draft/recovery IDs. The awaited binding write completes before the existing
+Human send/retry owner can post; failure reaches the recoverable send error with
+zero message RPC. Failure and cancellation recover the complete original Composer
+input, including richText, replyToId and isFork, rather than rebuilding it from
+the Transcript projection.
+
+Canonical local-author settlement compares scoped account/conversation/author/
+nonce and current IDs, retires only matching draft/recovery values and removes
+the binding. Initial/history/feed/receipt observations are idempotent. Failure to
+persist a settlement retains a safe retry binding without restoring old A over
+new B. Conversation clear forgets bindings without claiming Host cancellation.
+
+Restore merges edits by conversation and field while preserving untouched disk
+records and forget tombstones. Account ABA and disposal fence asynchronous effects.
+A disposed owner cannot clear or write a snapshot after its delayed read returns;
+not-yet-entered writes are suppressed. Writes already admitted to the existing
+main-process SandClientPersistenceStore follow its single read/write/remove chain,
+so a replacement renderer's read is ordered after that write. Do not introduce
+another storage owner or claim that dispose retracts an already-issued IPC.
+
+An indexed persistence file read may return absent only for ENOENT. Other read
+errors must reject through the existing persistence IPC so draft restore can
+block writes to unknown state; EIO/EACCES must not become an empty account and
+overwrite recoverable content. Directory enumeration and indexed-file stat
+follow the same rule: do not cache an empty or partial index after an I/O refusal.
+Delete the in-memory key only after its backing remove succeeds, so a failed
+remove remains retryable. Preserve valid-file and genuine-missing behavior.
+
+ProductionRenderer uses the common canonical observer, re-observes cached rows
+after draft restore, and clears Composer only in the current lifetime when no
+newer draft or recovery exists. Preserve current Human original-nonce retry,
+partial attachment commit progress, Agent approval lifecycle and all existing
+projection, pagination and forwarding owners.
+
+Actions must execute the actual-store cases for failed/held binding writes,
+complete restart, malformed metadata, field merge, duplicate settlement, account
+ABA/disposal and same-text replacement IDs; exercise the real persistence owner
+for read failures and admitted-operation ordering. Actual Chromium exercises the
+production root and bridge; the Electron held-receipt case must assert original
+A retirement before any new edit, create a new B identity through real
+A-to-other-to-A editing, and retain B across the next real process reopen.
+Authored/static evidence is not execution, deployed-service or independent ACCEPT.

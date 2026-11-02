@@ -43,7 +43,9 @@
           "desktop/e2e/agent-network-responsive.spec.ts",
           ".github/workflows/plugins-window-close.yml",
           "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
-          "frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts"
+          "frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts",
+          "source/shared/client-persistence-store.ts",
+          "source/shared/client-persistence-store.contract.test.ts"
         ],
         "fabushi_target_symbols": [
           "projectTranscriptEntry",
@@ -56,12 +58,17 @@
           "bindHumanSubmission",
           "settleHumanSubmission",
           "forgetHumanSubmissions",
-          "settlePersistedHumanDraft"
+          "settlePersistedHumanDraft",
+          "SandClientPersistenceStore.read",
+          "SandClientPersistenceStore.ledger",
+          "SandClientPersistenceStore.remove",
+          "SandClientPersistenceStore.run"
         ],
         "command_event_contracts": [
           "NMR-UI-01: retain explicit Human author identity through canonical projection, same-author nonce correlation, queue phases, feed acknowledgement and send receipt. Peer, assistant and unscoped Human rows cannot acknowledge the local submission.",
           "NMR-UI-01: reuse existing opaque-page/current-reaction generations and add missing send/queue lifetime and draft-identity fences. Old account, clear and disposal callbacks cannot refill new cache or draft. Send pending state belongs to its originating conversation and cannot alter unrelated busy operations.",
-          "NMR-DRAFT-01: existing account composer-drafts V1 persists local-author/nonce and original draft/recovery IDs before Human RPC admission; canonical settlement clears only those IDs. Restore merges field edits, malformed new metadata preserves valid draft content, and disposed late reads or not-yet-started writes cannot overwrite a replacement owner."
+          "NMR-DRAFT-01: existing account composer-drafts V1 persists local-author/nonce and original draft/recovery IDs before Human RPC admission; canonical settlement clears only those IDs. Restore merges field edits, malformed new metadata preserves valid draft content, and disposed late reads or not-yet-started writes cannot overwrite a replacement owner.",
+          "NMR-DRAFT-01 persistence: the existing process-owned SandClientPersistenceStore serializes read/write/remove. Only ENOENT is absent; other I/O failures reject without caching empty/partial index or deleting a failed-remove key."
         ],
         "production_entrypoints": [
           "NMR-UI-01 existing ProductionRenderer Human Composer -> existing coordinator sendHumanMessage/Session owner -> canonical feed or direct receipt -> same root transcript cache and original draft identity; no second message database or service writer."
@@ -72,7 +79,8 @@
         "test_evidence": [
           "NMR-AC-UI-01: existing frontend/src/production/transcript-projection.contract.test.ts and actual ProductionRenderer desktop/e2e/native-message-author-recovery.spec.ts; required executed counts are pinned in the containing native-service-contracts.yml. Authored cases/transport object creation do not prove execution.",
           "NMR-ELECTRON-01: two actual Electron Human IPC cases in desktop/e2e/agent-network-responsive.spec.ts; same-H assembled JS/Rust Coordinator/AppHost, real SQLite readonly diagnostics and controlled HTTP; exact execution remains pending in round8-electron-recovery-20261102.json.",
-          "NMR-DRAFT-01: fourteen real draft-store/persistence contract cases, plus two of twenty actual ProductionRenderer author/recovery cases and the strengthened two-case Electron process suite; authored counts are not execution. Exact-H required counts live in native-service-contracts.yml and plugins-window-close.yml."
+          "NMR-DRAFT-01: fourteen real draft-store/persistence contract cases, plus two of twenty actual ProductionRenderer author/recovery cases and the strengthened two-case Electron process suite; authored counts are not execution. Exact-H required counts live in native-service-contracts.yml and plugins-window-close.yml.",
+          "NMR-DRAFT-01: focused real SandClientPersistenceStore cases require genuine absent-file compatibility, non-ENOENT read/enumeration/stat failure propagation, failed remove retry, and serialized admitted write/new reader ordering; execute through native-service-contracts.yml at the containing H."
         ],
         "ui_functional_case_ids": [
           "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)",
@@ -130,7 +138,7 @@
           "NMR-DRAFT-01 frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts: fourteen actual-store contract cases"
         ]
       },
-      "note": "\nNMR-UI-01 / task20bf round8: reuse the current renderer and Session owners; reconcile the earlier unpublished candidate with current opaque walks, pending reply recovery and reaction settlement instead of restoring old whole files. Add only the still-missing author/nonce, send/queue/draft, Human empty-value and originating busy/lifetime behavior. Existing source/legal identities, all source review records, scalar execution pointers, historical evidence and acceptance flags remain unchanged. Exact current input and final frozen blobs, independent scoped static review and executed Actions belong to round8-renderer-author-receipt-20261102.json. Temporary object transport is not product verification or ACCEPT; root must match its input to the current canonical ledger before force=false expected-head CAS.\nNMR-DRAFT-01 continuation: retain all current retry/cursor/attachment/forwarding owners from 6e2f1c3728ac29cae3b460e2a4ec7deb7719d01b. The author manifest now names twenty cases and the existing draft owner has fourteen authored persistence cases. No scalar source-review, execution or acceptance status is promoted by this append."
+      "note": "\nNMR-UI-01 / task20bf round8: reuse the current renderer and Session owners; reconcile the earlier unpublished candidate with current opaque walks, pending reply recovery and reaction settlement instead of restoring old whole files. Add only the still-missing author/nonce, send/queue/draft, Human empty-value and originating busy/lifetime behavior. Existing source/legal identities, all source review records, scalar execution pointers, historical evidence and acceptance flags remain unchanged. Exact current input and final frozen blobs, independent scoped static review and executed Actions belong to round8-renderer-author-receipt-20261102.json. Temporary object transport is not product verification or ACCEPT; root must match its input to the current canonical ledger before force=false expected-head CAS.\nNMR-DRAFT-01 continuation: retain all current retry/cursor/attachment/forwarding owners from 6e2f1c3728ac29cae3b460e2a4ec7deb7719d01b. The author manifest now names twenty cases and the existing draft owner has fourteen authored persistence cases. No scalar source-review, execution or acceptance status is promoted by this append.\nThe same draft-recovery batch fixes the existing process-owned persistence error boundary; it does not add an owner. Critical read failures must remain observable so unknown durable state is not replaced with an empty account."
     }
   ]
 }
