@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test, { type TestContext } from "node:test";
 
 import {
@@ -210,6 +210,38 @@ test("Host captures enabled IDs before the real SDK omits inline content or name
   assert.deepEqual(result.authBlocked, []);
   assert.deepEqual(result.publisherFacts["41"], { publisherUserId: 8, marketplaceTeamId: 5 });
   assert.equal(result.publisherFacts["disabled"], undefined);
+});
+
+test("Host returns the actual SDK install path for a zero-skill plugin with dotted cache keys", async (t) => {
+  const commandBytes = "Review the current request without changing unrelated files.";
+  const entry = effectivePlugin("db-zero-skill", "review.tools", JSON.stringify({
+    commands: [{ name: "review", content: commandBytes, isActive: true }],
+  }));
+  entry.plugin.marketplace.name = "market.place";
+  const host = await fixture(t, async () => ({ plugins: [entry] }));
+  const result = await host.load();
+
+  assert.deepEqual(result.listedPluginIds, ["db-zero-skill"]);
+  assert.deepEqual(result.listedCacheKeys, [
+    { marketplaceSlug: "market.place", pluginId: "review.tools" },
+  ]);
+  assert.deepEqual(result.authBlocked, []);
+  assert.equal(result.plugins.length, 1);
+  const installed = result.plugins[0]!;
+  assert.equal(installed.identifier.pluginDbId, "db-zero-skill");
+  assert.ok(installed.identifier.version);
+  assert.equal(installed.loadError, undefined);
+  assert.deepEqual(installed.skills, []);
+  assert.equal(
+    dirname(installed.installPath),
+    join(host.cache.cacheRoot, "market_place", "review_tools"),
+    "the materializer's real directories differ from raw listing keys",
+  );
+  assert.equal(installed.installPath, host.cache.getCacheDir({
+    marketplaceSlug: "market.place", pluginId: "review.tools", version: installed.identifier.version,
+  }));
+  assert.equal(await readFile(join(installed.installPath, "commands", "review.md"), "utf8"), commandBytes);
+  assert.equal(await readFile(join(installed.installPath, ".cache-complete"), "utf8"), "");
 });
 
 test("Host preserves opaque strings and bigint IDs above the safe-number range exactly", async (t) => {

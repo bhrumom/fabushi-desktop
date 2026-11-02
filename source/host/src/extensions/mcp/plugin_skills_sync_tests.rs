@@ -531,6 +531,84 @@ fn successful_zero_skill_materialization_replaces_old_records_and_clears_denial(
 }
 
 #[test]
+fn zero_skill_success_retains_actual_install_path_until_authoritative_empty() {
+    let h = Harness::new();
+    let mut loaded = h.root.loaded("v1");
+    loaded.listed_plugin_ids = vec!["db-zero-skill".into()];
+    loaded.listed_cache_keys = vec![ListedCacheKey {
+        marketplace_slug: "market.place".into(),
+        plugin_id: "review.tools".into(),
+    }];
+    let plugin = &mut loaded.plugins[0];
+    plugin.identifier.name = "review.tools".into();
+    plugin.identifier.plugin_db_id = Some("db-zero-skill".into());
+    // The actual SDK producer oracle supplies these sanitized directory names;
+    // this service fixture passes its returned path without normalizing keys.
+    plugin.install_path = h
+        .root
+        .0
+        .join("plugins/cache/market_place/review_tools/v1");
+    plugin.skills.clear();
+    let install_path = plugin.install_path.clone();
+    let command_path = install_path.join("commands/review.md");
+    let command_bytes = b"Review the current request without changing unrelated files.";
+    fs::create_dir_all(command_path.parent().unwrap()).unwrap();
+    fs::write(&command_path, command_bytes).unwrap();
+    let sentinel_path = install_path.join(".cache-complete");
+    fs::write(&sentinel_path, b"").unwrap();
+
+    let unlisted = h
+        .root
+        .0
+        .join("plugins/cache/market_place/unlisted/v1/commands/old.md");
+    fs::create_dir_all(unlisted.parent().unwrap()).unwrap();
+    fs::write(&unlisted, b"uninstalled command").unwrap();
+    // An ignored source with the same ID as the successful canonical plugin
+    // cannot borrow that plugin's authority to retain another install path.
+    let mut unknown = plugin.clone();
+    unknown.identifier.source = "unknown-source".into();
+    unknown.install_path = h
+        .root
+        .0
+        .join("plugins/cache/market_place/unknown_source/v1");
+    let unknown_path = unknown.install_path.clone();
+    fs::create_dir_all(&unknown_path).unwrap();
+    fs::write(unknown_path.join("unowned.txt"), b"unowned bytes").unwrap();
+    loaded.plugins.push(unknown);
+
+    assert_empty(h.step("zero-skill-success", LoadStep::Loaded(loaded)));
+    let committed = h.service.current_index().unwrap();
+    assert!(committed.skills.is_empty());
+    assert!(committed.auth_blocked.is_empty());
+    assert!(h.service.current().is_empty());
+    let published: Value =
+        serde_json::from_slice(&fs::read(h.root.cache_path()).unwrap()).unwrap();
+    assert_eq!(published["cacheFormatVersion"], json!(1));
+    assert_eq!(fs::read(&command_path).unwrap(), command_bytes);
+    assert_eq!(fs::read(&sentinel_path).unwrap(), b"");
+    assert!(!unlisted.exists());
+    assert!(!unknown_path.exists());
+
+    let mut empty = unmaterialized(&h.root);
+    empty.listed_plugin_ids.clear();
+    empty.listed_cache_keys.clear();
+    assert_empty(h.step("authoritative-empty", LoadStep::Loaded(empty)));
+    assert!(h.service.current_index().unwrap().skills.is_empty());
+    assert!(!install_path.parent().unwrap().exists());
+    assert!(!command_path.exists());
+    let events = h.events.lock().unwrap();
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[0].trigger, "zero-skill-success");
+    assert_eq!(events[1].trigger, "authoritative-empty");
+    assert!(
+        events
+            .iter()
+            .all(|event| event.outcome == "ok" && event.skill_count == 0),
+    );
+    h.assert_calls(2);
+}
+
+#[test]
 fn current_denial_wins_over_success_and_absent_denial_retires_without_hiding_other_plugins() {
     let h = Harness::new();
     let sentinel = h.root.sentinel();

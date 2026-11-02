@@ -676,13 +676,27 @@ impl SandPluginSkillsService {
         // A partial materialization may still publish denials or safe fallback,
         // but cannot prove that old materialized directories are uninstalled.
         if listed.is_subset(&loaded_ids) && denied.is_empty() {
+            // SDK cache directory names may differ from raw listing keys. A
+            // successful plugin with no skills still owns its actual install path.
+            let retained_paths = records
+                .iter()
+                .map(|record| record.file_path.clone())
+                .chain(
+                    loaded
+                        .plugins
+                        .iter()
+                        .filter(|plugin| {
+                            plugin_db_id(&plugin.identifier).is_some_and(|id| {
+                                listed.contains(id) && loaded_ids.contains(id)
+                            })
+                        })
+                        .map(|plugin| plugin.install_path.to_string_lossy().into_owned()),
+                )
+                .collect::<Vec<_>>();
             prune_uninstalled_plugin_dirs(
                 &get_plugins_root_dir(&self.sand_root_dir).join("cache"),
                 &loaded.listed_cache_keys,
-                &records
-                    .iter()
-                    .map(|record| record.file_path.clone())
-                    .collect::<Vec<_>>(),
+                &retained_paths,
             );
         }
         if let Some(report) = &self.report_sync {

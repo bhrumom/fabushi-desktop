@@ -3,7 +3,7 @@
 Contract: `OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1`  
 Status: implementation in progress; exact-H evidence and ecosystem acceptance pending  
 Discovery base: `3aa679586d76e446f76a1c94700ff7abab623d42`  
-Current integration base: `ecb6f6bd6f618975feca1a7b7b992255fb38fdb3`  
+Current integration base: `2391dc04cd118f9aa5e809c8198690182b21b6ec`  
 Fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`
 
 ## Problem, flow and ownership
@@ -139,6 +139,21 @@ the same committed-snapshot admission helper.
   only network/secret-storage I/O for this local oracle, not the identity or
   authorization decision. Other `currentSession` consumers, Host credential-file
   publication races and full account revocation remain separate open work.
+- PS-CACHE-RETENTION-01: a complete successful refresh must retain the actual
+  install directory of every freshly materialized, canonically listed plugin,
+  including a plugin with zero skills. The SDK's existing cache owner sanitizes
+  marketplace and plugin directory names; raw listing keys such as `review.tools`
+  do not identify the resulting `review_tools` directory. Reuse each successful
+  plugin's returned `installPath` alongside committed skill paths when the
+  existing Rust owner prunes uninstalled directories. Do not duplicate SDK name
+  normalization, add a cache index, or treat a directory name as a permission ID.
+  Only the existing canonical successful-materialization set may supply these
+  extra retention paths. Keep the complete-pass/no-denial/publication gates;
+  partial, denied, failed and disposed passes retain their current safeguards.
+  Unlisted sibling directories must still be removed after a complete commit,
+  and a subsequent authoritative empty commit must retire the formerly listed
+  zero-skill plugin. This is the separate production follow-up to deferred
+  `PS-N1`, not a change to publisher identity or install/update authorization.
 
 ### PS-IDENTITY-01 scope and existing account bridge
 
@@ -205,6 +220,16 @@ skill bytes unchanged, both before and after reopening the committed store;
 unknown identity has the same refusal, and the current publisher can still
 edit. Preserve the existing own/foreign and snapshot-denial controls. Exact-H
 Actions and independent permission/currentness review remain required.
+
+PS-CACHE-RETENTION-01 uses the actual Host/SDK loader to demonstrate that a
+dotted marketplace/plugin name returns a sanitized install path and zero skills.
+A real Rust service refresh must commit that zero-skill snapshot, retain the
+materialized file bytes, remove an unlisted sibling, and retire the same install
+directory after a later authoritative empty refresh. Keep the existing empty,
+denial, partial-load and failed-publication controls. Reuse their existing Node
+and Rust Actions selectors; no new workflow, persistence format or migration.
+Rollback of this bounded pruning repair reintroduces the deletion risk and is
+not lifecycle acceptance. Exact-H execution remains required before approval.
 
 Freeze the complete candidate and perform independent general and permission/
 lifecycle/oracle review. Record any finding decision before repairs. Acceptance
