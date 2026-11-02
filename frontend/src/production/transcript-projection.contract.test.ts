@@ -16,6 +16,7 @@ import {
   reconcileTranscriptFeedBaseline,
   reconcileTranscriptRefresh,
   reconcileTranscriptTail,
+  transcriptEntriesCorrelate,
   type TranscriptReadUpdateBuffer,
 } from "./transcript-projection.ts";
 
@@ -425,3 +426,81 @@ test("NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
   assert.equal(controller.onEntriesCommitted(), false);
   assert.equal(controller.installInitialPage({ entries: [message("late")] }), false);
 });
+
+test("Human transcript correlation isolates authors while retaining Host and optimistic send settlement", () => {
+  const pending: TranscriptMessage = {
+    ...message("human-message:shared", "local draft"), authorKind: "human", authorId: "local",
+    clientNonce: "shared", delivery: "pending", attachments: [{ path: "/local", name: "local attachment" }],
+  };
+  const peer: TranscriptMessage = {
+    ...message("human-server-message:52", "peer text"), authorKind: "human", authorId: "peer",
+    clientNonce: "shared", remoteMessageId: "52", delivery: "sent",
+  };
+  const accepted: TranscriptMessage = {
+    ...message("human-server-message:51", "accepted local"), authorKind: "human", authorId: "local",
+    clientNonce: "shared", remoteMessageId: "51", delivery: "sent",
+  };
+  assert.equal(transcriptEntriesCorrelate(pending, peer), false);
+  assert.equal(transcriptEntriesCorrelate(pending, accepted), true);
+  assert.equal(transcriptEntriesCorrelate({ ...pending, authorId: "" }, accepted), false);
+  assert.equal(transcriptEntriesCorrelate({ ...message("unrelated-agent"), clientNonce: "shared" }, accepted), false);
+  const optimistic: TranscriptMessage = { ...message("pending-shared"), clientNonce: "shared", delivery: "pending" };
+  assert.equal(transcriptEntriesCorrelate(optimistic, accepted), true);
+  const baseline = reconcileAuthoritativeTranscriptBaseline([pending], [peer, accepted]);
+  assert.deepEqual(ids(baseline), [peer.id, accepted.id]);
+  assert.equal(row(baseline, peer.id).text, peer.text);
+  assert.equal(row(baseline, peer.id).attachments, undefined);
+  assert.deepEqual(row(baseline, accepted.id).attachments, pending.attachments);
+  assert.deepEqual(ids(reconcileLateInitialTranscriptPage([optimistic], [accepted])), [accepted.id]);
+  assert.deepEqual(ids(reconcileLateInitialTranscriptPage([pending], [accepted])), [accepted.id]);
+  const stale = reconcileAuthoritativeTranscriptBaseline([accepted], [pending, accepted]);
+  assert.deepEqual(ids(stale), [accepted.id]);
+  assert.equal(row(stale, accepted.id).delivery, "sent");
+  assert.equal(row(stale, accepted.id).text, accepted.text);
+  const agentPending = { ...message("pending-agent"), clientNonce: "agent" };
+  const agentAccepted = { ...message("agent-accepted"), clientNonce: "agent" };
+  assert.equal(transcriptEntriesCorrelate(agentPending, agentAccepted), true);
+});
+
+test("Human older pages cannot resurrect a settled pending row in the root cache", async () => {
+  const pending: TranscriptMessage = {
+    ...message("human-message:shared"), authorKind: "human", authorId: "local",
+    clientNonce: "shared", delivery: "pending",
+  };
+  const accepted: TranscriptMessage = {
+    ...message("human-server-message:51"), authorKind: "human", authorId: "local",
+    clientNonce: "shared", remoteMessageId: "51", delivery: "sent",
+  };
+  const peer: TranscriptMessage = {
+    ...message("human-server-message:52"), authorKind: "human", authorId: "peer",
+    clientNonce: "shared", remoteMessageId: "52", delivery: "sent",
+  };
+  const unrelatedPending: TranscriptMessage = {
+    ...pending, id: "human-message:unmatched", clientNonce: "unmatched",
+  };
+  const agentPending = { ...message("pending-shared"), clientNonce: "shared", delivery: "pending" as const };
+  const agentAccepted = { ...message("agent-accepted"), clientNonce: "shared", delivery: "sent" as const };
+  let cached: readonly ConversationTranscriptEntry[] = [accepted, agentAccepted];
+  let cachedCursor: string | undefined;
+  const controller = createTranscriptPaginationController({
+    accountSlot: "account", agentId: "human-room",
+    fetchPage: async () => ({
+      entries: [peer, pending, unrelatedPending, agentPending],
+      nextBeforeSeq: 2, nextBeforeCursor: "opaque-walk:2",
+    }),
+    onPageApplied: (_scope, page) => {
+      cached = mergeOlderTranscriptEntries(cached, page.entries);
+      cachedCursor = page.nextBeforeCursor;
+    },
+  });
+  controller.installInitialPage({ entries: [], nextBeforeSeq: 10, nextBeforeCursor: "opaque-walk:10" });
+  await controller.loadOlder();
+  const expected = [peer.id, unrelatedPending.id, agentPending.id, accepted.id, agentAccepted.id];
+  assert.deepEqual(ids(cached), expected);
+  assert.deepEqual(ids(mergeOlderTranscriptEntries(cached, controller.getSnapshot().entries)), expected);
+  assert.equal(cached.some((entry) => entry.id === pending.id), false);
+  assert.equal(cachedCursor, "opaque-walk:2");
+  assert.deepEqual(controller.getSnapshot().cursor, { kind: "more", beforeSeq: 2, beforeCursor: "opaque-walk:2" });
+  controller.dispose();
+});
+

@@ -203,3 +203,52 @@ The fixed-U implementation has that defect too; this correction is explicit
 rather than claimed as literal upstream parity. Existing lost preferences are
 not reconstructed or guessed. The same Actions batch exercises public dispatch,
 complete snapshots, write-failure recovery and process restart.
+
+## 14. Desktop proxy preference settlement (task20bf round1)
+
+At reviewed desktop `222371af3d0c2241697c5a57b0160ecb336edbab`, the
+existing Settings adapter drops `publication` and the rotation-timeout input
+uses `defaultValue`. A persisted normalized value can therefore disagree with
+the visible input, while the UI implies that a saved preference enables proxy
+routing even though the Native publication is explicitly unavailable. This
+batch repairs that existing Settings behavior; it does not add a carrier,
+restore a Telegram provider, or claim native message/call proxy support.
+
+- **PS-UI-01 — Canonical settlement.** The existing Settings surface and desktop
+  adapter consume the complete existing mutation result. Only the returned
+  canonical `settings.network.proxy` becomes committed presentation state.
+  Every successful timeout edit displays the returned value, including a
+  normalization to the same previous value. Failed edits retain the committed
+  snapshot and an editable draft; a retry must not duplicate a completed save.
+- **PS-UI-02 — Honest availability.** Persisted preference success is distinct
+  from connection availability. A publication with `available: false` shows a
+  fixed, accessible unavailable status. Null, absent or unknown publication
+  never means active routing, and even `available: true` is not a connectivity
+  test. Do not echo opaque publication objects, reasons, endpoint credentials or
+  raw transport errors into notices. Use the existing Settings notice/status
+  surface and product language without internal owner/carrier terminology.
+- **PS-UI-03 — Mutation ordering.** Prevent overlapping proxy edits and rapid
+  duplicate submission at the existing Settings mutation boundary. All proxy
+  controls expose pending state and are disabled for the active write. Reads on
+  close/reopen must wait for an already dispatched write to settle and then
+  reread the canonical owner; transient coordination may live in the existing
+  desktop adapter but must not become a persisted settings store or a second
+  mutation authority. No automatic retry of an uncertain write.
+- **PS-UI-04 — Lifetime and recovery.** Close, unmount or bridge replacement
+  retires presentation callbacks. Late success/error cannot alter a new surface
+  or publish a stale notice. Closing does not undo an accepted Host write;
+  reopening reloads persisted settings through the same bridge. Failed saves
+  must not produce unhandled promise rejections, erase an endpoint draft or
+  disable unrelated Account, Agent, Tools, Computer or other Settings controls.
+  A failed canonical proxy read also uses a fixed error message, displays no
+  fabricated default snapshot, and retries only through the existing Settings
+  load Retry action; no mutation is replayed by that action.
+- **PS-UI-05 — Direct evidence.** Mount the production Settings surface in the
+  existing Chromium/Vite test setup with controlled bridge responses. Exercise
+  normalized same-value timeout, unavailable/unknown publication, pending and
+  duplicate interactions, save failure and retry, close/unmount/bridge change,
+  reopen after a pending accepted write, and ordinary Settings coexistence.
+  Retain the actual Rust Settings persistence/restart contracts and all original
+  source/product/final gates. Run the affected contracts and renderer compilation
+  only in GitHub Actions at the frozen containing H; authored tests, controlled
+  bridge evidence and source review are not native connectivity or release ACCEPT.

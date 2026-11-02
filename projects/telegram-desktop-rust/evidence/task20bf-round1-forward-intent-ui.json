@@ -1,8 +1,8 @@
 {
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
-  "batch": "immutable shipping forward intent and persisted privacy recovery",
-  "status_at_authoring": "implemented-partial-Actions-evidence-architecture-repair-authored-final-acceptance-open",
+  "batch": "immutable shipping forward intent, persisted privacy recovery and canonical Settings proxy settlement",
+  "status_at_authoring": "forward-reconciliation-and-renderer-gates-passed-settings-extension-frozen-Actions-pending-final-acceptance-open",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
@@ -101,14 +101,14 @@
     "scope": "Remote run/jobs reread; predecessor evidence only, not execution of this extension."
   },
   "execution": {
-    "status": "H531-UI-Electron-Windows-passed-H124-source-candidate-passed-recovery-queued-shipping-in-progress-architecture-repair-pending",
+    "status": "H531-reconciliation74-UI39-Electron89-Windows11-passed-shipping-cleanup-in-progress-Hbeb-renderer127-and-strict-architecture-passed-Settings18-new-H-pending",
     "runner": "GitHub Actions only",
     "target_identity": "Exact containing github.sha asserted by workflow and stored in artifact target-sha.txt; no self-referential future SHA is invented.",
     "workflows": [
       ".github/workflows/native-service-contracts.yml",
       ".github/workflows/tdrp-source-review-contract.yml"
     ],
-    "minimum_new_assertions": "Human49 and journal13 including the two named privacy cases; preserve sharebox1/Agent4/credential3/Gateway1, Chromium16/settlement5/Transcript18 and shipping/Electron/Windows gates. Source157/schema37/candidate rerun only through the existing affected workflow.",
+    "minimum_new_assertions": "Containing-H integrated Human55 plus existing resource/sharebox/journal13/Agent4/credential3/Gateway1 and shipping/Electron/Windows gates; UI Transcript20/cursor17/settlement5/ForwardChromium16/SettingsChromium18. Source contract/candidate and original renderer strict architecture remain required. Previous exact-H results are scoped evidence only.",
     "local_or_htch_validation_run": false
   },
   "rollback": "Revert this picker/checker extension normally while preserving all existing Host journals, databases, resources and credentials. Reverting restores known UI limitations; it does not delete or cancel accepted sends and does not constitute complete upgrade/rollback acceptance.",
@@ -130,7 +130,7 @@
     },
     {
       "id": 4,
-      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives. NMR-48d now closes persisted privacy consistency at the existing recovery ingress with authored cold/cached/repaired intent cases.",
+      "done": "Existing forwarding entry through durable owner is extended with retry/error/cancel presentation behavior and corresponding negatives. NMR-48d now closes persisted privacy consistency at the existing recovery ingress with authored cold/cached/repaired intent cases. PS-UI-01..05 now implements canonical proxy preference settlement, failure/lifetime/read-after-write handling in the existing Settings production path with 18 authored actual-surface browser cases.",
       "open": "Current-H execution plus remote provenance, eligibility, precise feedback and remaining options."
     },
     {
@@ -145,8 +145,8 @@
     },
     {
       "id": 7,
-      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed.",
-      "open": "H531Human49/journal13 recovery job remains queued and shipping is in progress at readback; repaired architecture overlay needs exact containing-H renderer gates. All full-product gates remain."
+      "done": "Authored tests with implementation, updated exact-H Actions case oracle/path coverage; no local verification. H73 source157/schema37/candidate and UI16/Transcript16/settlement5/Electron83/Windows11 succeeded; six UI screenshots actually reviewed. H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/credential3/Gateway1. H531UI39/Electron89/Windows11 and H124source157/schema37/candidate now passed with API-read job/artifact identities. No local or htch validation was executed. H531 reconciliation74 now passed including Human49/journal13; Hbeb original renderer127 and both strict architecture checks passed. Settings18 remains unexecuted at its freeze.",
+      "open": "Exact containing-H Settings18/renderer and current integrated Human55/shipping gates; H531 shipping was still in cleanup at 20:59:03 UTC. Full-product gates remain open."
     },
     {
       "id": 8,
@@ -155,7 +155,7 @@
     },
     {
       "id": 9,
-      "done": "Updated unique ledger/dossier/RTM and active checker, kept source review/implementation/authoring/execution/acceptance separate. Existing architecture overlay now records reviewed semantic changes and separates production consumers from test evidence in touched records; current execution evidence stays in this existing task receipt.",
+      "done": "Updated unique ledger/dossier/RTM and active checker, kept source review/implementation/authoring/execution/acceptance separate. Existing architecture overlay now records reviewed semantic changes and separates production consumers from test evidence in touched records; current execution evidence stays in this existing task receipt. Unique existing proxy responsibility and RTM now bind PS-UI-01..05, authored tests and exact production entry; source counts and acceptance remain unchanged.",
       "open": "Complete source disposition, production responsibility and independent acceptance."
     },
     {
@@ -776,5 +776,165 @@
     "local_or_htch_validation_run": false,
     "all_original_requirements_complete": false,
     "independent_acceptance": false
+  },
+  "settings_proxy_settlement_extension": {
+    "requirements": [
+      "PS-UI-01",
+      "PS-UI-02",
+      "PS-UI-03",
+      "PS-UI-04",
+      "PS-UI-05"
+    ],
+    "spec": "docs/specs/fabushi-product-settings-owner.md#14-desktop-proxy-preference-settlement-task20bf-round1",
+    "responsibility_id": "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001",
+    "input": {
+      "own_head": "beb72d82e8bc74751e1667fa7a4cfd1f7c651f67",
+      "concurrent_migration_parent": "222371af3d0c2241697c5a57b0160ecb336edbab",
+      "live_main_readback": "5528062177e3865eef60a073a066cca144f9e3e8"
+    },
+    "production_chain": "ProductionRenderer Settings entry -> SettingsDesktopSurface -> GeneralSettingsPanel -> NetworkProxySettingsPanel -> existing desktop adapter -> DesktopBridge.networkProxy -> Main RPC -> Coordinator MainData -> Native AppHost ProductSettingsOwner -> product-settings.json",
+    "unique_authority": "ProductSettingsOwner v2 remains the sole durable proxy settings owner. Renderer drafts and per-bridge in-flight promises are transient; no new transport, provider, storage schema or credentials owner.",
+    "implemented": [
+      "Complete existing mutation result and canonical same-value timeout normalization",
+      "Fixed unavailable/unconfirmed publication status without claiming active routing or exposing opaque data",
+      "Single proxy mutation and disabled pending controls while unrelated Settings remain usable",
+      "Failed drafts retained for explicit retry; fixed read/write failure messages and no automatic replay",
+      "Close/unmount/bridge ABA retire callbacks; reopened reads wait for dispatched writes then get canonical owner state"
+    ],
+    "blobs": {
+      "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx": "a514cefecb2dfbbdd04ad711b75ed72a2601bf56",
+      "frontend/src/recovered/features/settings/overlay/desktop.ts": "1263d86c1837cd62b85f5ef4d6ef559332b3b139",
+      "frontend/src/recovered/features/settings/overlay/panels.tsx": "3d078e6a197074e49ab9aff2f63393b07fdf974b",
+      "frontend/src/recovered/features/settings/overlay/network-proxy.tsx": "98b37966844e7609dd23fc021e4afbbbedba4d85",
+      "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs": "92029534c2be2057c3bf6193b6c3a32a285ce8f6",
+      "desktop/network-proxy-settings-test.html": "afe909831c182cb5e689122583550168464f0e89",
+      "desktop/network-proxy-settings-test.tsx": "0843401ecdbd44f90a9aeb6fa94a51e7c764a146"
+    },
+    "tests_authored": {
+      "path": "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs",
+      "cases": 18,
+      "fixture": "Actual SettingsDesktopSurface through production GeneralSettingsPanel and adapter, controlled DesktopBridge outcomes only; no duplicate normalization or lifecycle reducer",
+      "dimensions": [
+        "same-value canonical normalization",
+        "five publication descriptor cases",
+        "no-op blur and rapid duplicate/pending controls with independent Theme",
+        "endpoint and timeout failed retry",
+        "close and unmount times success and error",
+        "bridge A-B-A times success and error with independent B write",
+        "pending success before reopen or remount",
+        "pending failure before reopen and explicit save",
+        "read failure with safe Retry and zero mutation"
+      ],
+      "workflow": ".github/workflows/native-service-contracts.yml#native-message-ui"
+    },
+    "independent_static_review": {
+      "reviewer": "actions_audit",
+      "scope": "Four changed production Settings files, true ProductionRenderer caller, spec and 18 authored fixture cases at the listed identities",
+      "result": "No identified P1/P2 within bounded static scope; callback lifetime, write ordering, read barrier, draft retention, publication and error privacy reviewed",
+      "accepted": false
+    },
+    "execution": {
+      "status": "not-run-at-freeze",
+      "required_head": "Exact containing github.sha; bind commit, logs, artifacts and case totals after push",
+      "local_or_htch_validation": false
+    },
+    "source_accounting": "Current-owner defect repair only. Existing fixed-U proxy responsibility/source identities retained; no new upstream full-read, source count or acceptance claim.",
+    "rollback": "Revert the scoped renderer/adapter extension normally without touching product-settings.json or cancelling an accepted Host write. Existing canonical Settings owner remains available; full upgrade/rollback qualification is open.",
+    "remaining": [
+      "Containing-H 18 Chromium cases and production renderer compilation",
+      "Current integrated Host55 and shipping gates after concurrent222 changes",
+      "Native proxy/rotation transport; controlled UI persistence results do not prove routing",
+      "Full supported-platform, real-service, visual/accessibility, security/secret-at-rest, migration/rollback and independent ACCEPT"
+    ]
+  },
+  "current_222_integration": {
+    "base": "222371af3d0c2241697c5a57b0160ecb336edbab",
+    "preserved": "Concurrent native call scope admission, stable Human history cursor/pagination, author-scoped nonce projection, pending forward ownership, plugin overlay changes, locked dependency inputs and their original evidence remain intact.",
+    "conflicts_resolved": "Both full sets of session_gateway_contract tests retained. Native reconciliation oracle is Human55: concurrent54 plus this round persisted-privacy recovery case. No test gate removed.",
+    "architecture": "Six incoming semantic target mappings were source-reviewed and registered; three changed Settings mappings now bind actual new blobs and mounted behavior tests. Frozen manifest/reference identities and strict validator are unchanged.",
+    "untracked_files": "Pre-existing evidence transport files left untouched and excluded from staging; no broad git add or destructive reset.",
+    "ledger_transport": {
+      "head": "b71a9de69ac4baa8e30700694e5939948c747f36",
+      "run": 41523987813,
+      "job": 125546879566,
+      "conclusion": "success",
+      "input_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+      "output_blob": "6cf30e86c00e8ef5a780d389003b883384d24331",
+      "artifact": 13178753182,
+      "artifact_digest": "sha256:b1b7f3e14a8ee3c52ad0833694129613f6739600c4f064b4ad2bc875fd144860",
+      "api_full_blob_readback": true,
+      "scope": "Git object upload only, no test/source/product acceptance and no branch promotion. Helper files remain outside the product tree."
+    }
+  },
+  "checkpoint_beb_renderer_execution": {
+    "head": "beb72d82e8bc74751e1667fa7a4cfd1f7c651f67",
+    "run": 41521929161,
+    "attempt": 1,
+    "job": 125539867866,
+    "conclusion": "success",
+    "selected_cases": {
+      "electron_boundary": 56,
+      "product_policy": 14,
+      "recovered_window_chrome": 57,
+      "total": 127
+    },
+    "architecture": "Both inventory and strict final checks passed modules=2002; module count is not product progress. Actual renderer build, co-staged runtime and emitted bundle boundary passed.",
+    "artifact": "Original job has no artifact upload; API artifacts=[]; evidence is exact-H terminal job log and steps.",
+    "skipped": [
+      "rust-host",
+      "platform-worker",
+      "pressure matrix"
+    ],
+    "scope": "23 reviewed semantic mapping repairs validated; unrelated skipped jobs are not passes and this does not execute the new Settings/222 integration."
+  },
+  "checkpoint_531_reconciliation_execution": {
+    "head": "531232948312d7bf94cf5b8aa8e73ccdaf559f9a",
+    "run": 41518713768,
+    "attempt": 1,
+    "job": 125528856286,
+    "conclusion": "success",
+    "selected_cases": {
+      "Human": 49,
+      "resource": 3,
+      "sharebox": 1,
+      "journal": 13,
+      "Agent_nonce": 4,
+      "credential": 3,
+      "authenticated_gateway": 1,
+      "total": 74
+    },
+    "artifact_id": 13178876245,
+    "artifact_digest": "sha256:505f576290e33e9980a80c8d56e1c9ae65e459199f448c7799efd79e9fee38be",
+    "artifact_bytes": 37562,
+    "api_job_and_artifact_readback": true,
+    "log_readback": "Complete terminal log read by independent read-only agent; each selected group 0 failed/ignored, filtered-out tests not counted.",
+    "shipping_status_at_2026_11_02_205903_UTC": "in_progress; post-cache cleanup remained. Artifact13178163829 exists, but no completed shipping pass is claimed at this observation."
+  },
+  "checkpoint_8778_source_execution": {
+    "head": "8778c9eb7ca6ac9ab7c670f277b156aea2908015",
+    "run": 41521465672,
+    "attempt": 1,
+    "conclusion": "success",
+    "contract_job": 125538275334,
+    "candidate_job": 125538544730,
+    "executed": [
+      "Node157",
+      "Python37",
+      "ledger schema errors0",
+      "candidate consistency; accepted-mode rejects incomplete/rebaseline candidate"
+    ],
+    "artifacts": [
+      {
+        "id": 13176744798,
+        "bytes": 6801,
+        "digest": "sha256:a8d2be5c9cbabbaab5de1c9d43a0a4c20cc89f51540a8f6c42c0223fe0e9b00a"
+      },
+      {
+        "id": 13176564644,
+        "bytes": 79138,
+        "digest": "sha256:a908d066bc61c58d873894dafb1d657e9d0b4cd781ed2b2bf1a92c1b12aa11e2"
+      }
+    ],
+    "scope": "Two actual jobs, no skip. Fixed inputs reused with their originating SHA. Git-only entries16381/rows184/reviews6/complete2, unknown/unread null and all acceptance false. Python top-level jsonschema pin does not establish locked transitive packages. No source or product acceptance."
   }
 }

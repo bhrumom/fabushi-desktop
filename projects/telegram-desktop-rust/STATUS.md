@@ -5,6 +5,62 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Round 18 scoped result — native CLI Host and installer artifact boundary
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+Production H=`1b0e674b3e39292ae715a3eb50435d83e2cb8577` restores the existing CLI Host's
+desktop-full/local-only features after its FFI dependency was removed. Both real
+CLI/gateway adapters now require native MCP inventory in their existing private
+tests. The shipping workflow separately builds the two real executables, records
+normal/build features, bytes, symbols and linked libraries, and requires four
+isolated process controls. The existing release workflow keeps final-byte metadata
+in its acceptance artifact so installer members retain their flat promotion
+contract. No new owner, public schema or data migration was introduced.
+
+Run41517540804 at exact H has completed UI18/settlement5/Chromium16,
+Electron10/8/fixture-copy3/update16/Windows-policy28/metadata18/promotion6, and
+native Windows11. Full logs and all three actual ZIP digests/target-sha receipts
+were inspected. As of the recorded20:24 UTC observation, reconciliation125524808072
+and shipping125524807567 were queued with no runner or steps. Human47/journal12,
+native MCP, actual CLI/gateway binaries and process4 are not yet executed at H;
+queued work is neither an implementation failure nor a pass.
+
+The requested original99c49cebfcb76aee5731da78b12e88e09d7baff8 run41456371872
+completed successfully. It actually exercised composition12, Native6,125 auth
+requests (119 known-method refusals plus6 unknown-method refusals),17 typed
+Settings calls covering15 variants with persistence failure/recovery and a fresh
+process restart,30 proxy deletion scenarios, actual AppHost copy4 and2 expected
+rejecting controls. Later qualified59/run41508537631 extended proxy coverage to
+48 deletions plus48 repeated no-ops/all6 full permutations and3 copy negatives.
+These older results remain separate source-qualified evidence.
+
+Ledger commit `1a2b864aee290db21548262c983033d184cab356` updates two existing rows and
+retains every concurrent NMR49/50/51 record, all184 rows,6 source_reviews and
+fixed-source/legal identities; its temporary transport files were removed.
+Source-contract run41518863601 at that exact ledger H passed Node157/Python37
+and fixed-source-candidate checks. Both actual ZIP digests and target SHAs were
+verified; accepted-mode correctly rejected the unaccepted candidate. All source,
+product and independent acceptance flags remain false.
+
+Exact-H FFI audit read1780 selected non-Rust executable-path instances/
+1769 unique blobs with zero failed reads; target ABI strings only occur in two
+workflow guards and one negative fixture. Actual desktop transport is Electron
+utilityProcess -> JS carrier -> Coordinator -> AppHost through MessagePorts/
+stdio/HTTP. This is bounded lexical coverage plus reviewed entrypoints, not
+deep reading of every source or proof of zero external FFI consumers. Keep all
+legacy ABI, credentials, SQLite and rollback readers.
+
+The current signed-package workflow's nonpublishing mode still logs into
+production and executes real Agent/MiniApp acceptance; no current-H signed
+installer or artifact-only route was observed. No such dispatch was performed.
+Backend PR137 remains read-only; current deployed Worker provenance and real
+authenticated afterId=0 acceptance remain open. Full source/legal closure,
+supported signed/installed platforms, external clients, full Bot/UI/a11y/timing/
+security/performance/soak, upgrade/rollback and independent ACCEPT remain open.
+
+Evidence: `projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json`;
+caller index: `projects/telegram-desktop-rust/evidence/round18-ffi-caller-reference-index.json`.
+
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
 Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
@@ -239,7 +295,33 @@ Report separately:
 
 Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
 
+## Resumed round 6 checkpoint (2026-11-02)
 
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. NMR-PAGING-01/NMR-ACTIVITY-01 extend the existing Human responsibility and actual owner path; concurrent recursive acquisition, six source reviews and all acceptance fields are preserved. The unpushed earlier candidate is superseded by the current-branch integration. New exact-H tests remain required; bounded evidence is in `evidence/task20bf-round6-resumed-stable-pagination.json`. No source coverage or full-migration completion is promoted.
 
+## Round27 resumed: source-owned forwarding pending recovery
 
+At exact936115b0aa578c340c74dd6aa7c71c362572bd72, renderer/Transcript18/
+settlement5/Chromium16, Electron, Windows11 and source157/schema37 passed;
+Human47 and shipping were still queued at the recorded audit. Exact59's five
+message jobs passed earlier; those results do not qualify later attachment,
+reply or upload-limit code. Original2a/run41500770749 remains a failed fixture
+run with cancelled shipping. Full log identities are retained in
+`projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json`.
+
+NMR-47g now keeps damaged/missing forwarding context under the original
+source journal owner. An independent pending marker is stored before effects;
+strict request/target-nonce lookup prevents generic replay after source denial.
+One actual child-kill/SQLite/HTTP matrix preserves the current reply and pinned
+attachment paths, with a prefixed legacy positive. New containing-H execution
+is not-run at preparation; the current gate adds one Human case (53 after the
+52-case pagination base). Concurrent NMR-50 work is retained.
+
+The canonical ledger receives only the two reviewed existing-row changes and
+current shipping-owner correction. Actions prepares the large blob with an
+exact-base guard and no ref writes; integration uses non-forced expected-head
+CAS. Six source reviews/two complete at936 are scoped historical counts; later
+source records remain preserved. Complete source/legal/product/platform/Bot/
+real-service and independent ACCEPT/release remain blocked. Backend PR137 is
+not modified, merged or deployed.
 

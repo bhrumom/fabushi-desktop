@@ -5,6 +5,44 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Updated: 2026-11-02
 
+
+## Round 18 — native CLI composition and installer members
+
+Production changes are frozen at `1b0e674b3e39292ae715a3eb50435d83e2cb8577`; ledger binding
+is `1a2b864aee290db21548262c983033d184cab356`. Fixed U and all concurrent numeric message
+requirements are retained. These named IDs avoid redefining those requirements.
+
+| Requirement / acceptance | Existing production chain | Observed execution | Remaining gate |
+| --- | --- | --- | --- |
+| NMR-CLI-HOST-01 / NMR-AC-CLI-HOST-01 | CLI/gateway RuntimeHandle -> MahayanaHost with desktop-full/local-only -> NativeEngine/NativeAgentBackend and real local MCP | Three source files and the workflow were API-read back at exact1b0; prior59 CLI3/gateway5/library11 are prerequisite only | Exact1b0 queued shipping must execute new MCP assertions, single-root production graph/build, both binary hash/symbol/library inventories and process4; complete external model/Bot and external FFI remain open |
+| NMR-PACKAGE-DELIVERY-01 / NMR-AC-PACKAGE-DELIVERY-01 | Existing release artifact uploader -> unchanged installer promotion member allowlist | Exact1b0 Electron job125524808067 passed promotion6 (5 behavioral +1 source-shape), metadata18 and immutable historical ZIP/DMG control; three current contract artifacts were digest/target verified | Current source signed archive membership, complete installed runtime and immutable promotion acceptance remain unqualified; historical package bytes are not a new-H installer |
+
+Original exact99 run41456371872 completed with composition12/Native6,125 auth
+parameter requests (not125 Rust test cases),17 typed Settings calls/15 variants
+plus real restart, proxy30, actual AppHost copy4 and2 required rejecting controls.
+The complete logs and artifact byte identities are retained in the round18
+receipt. Later exact59 proxy48/48/all6 permutations are separate evidence.
+At exact1b0, UI18/settlement5/Chromium16, Electron10/8/3/16/28/18/6 and Windows11
+passed; the two macOS Rust jobs had no runner/steps at the recorded observation.
+Source-contract41518863601 at exact ledger1a2 passed Node157/Python37 and
+candidate consistency; two actual ZIPs matched their digest and target SHA.
+Accepted-mode rejected the candidate, with no source/product/release promotion. Required full service,
+supported-platform, Bot, visual/a11y, security, performance, soak, upgrade/rollback
+and independent ACCEPT gates remain open.
+
+Evidence: `projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json`;
+`projects/telegram-desktop-rust/evidence/round18-ffi-caller-reference-index.json`.
+
+## NMR-47g pending forward ownership
+
+Exact source/oracle/old-failure/execution boundary: `projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json`.
+
+| Requirement | Existing owner and behavior | Case / qualification |
+| --- | --- | --- |
+| NMR-47g / NMR-AC-38 | Session strict source journal plus existing destination Transcript; persistent marker before upload/POST; actual request/target nonce proves ownership even after context loss | One actual process/SQLite/HTTP case with revoked source, six damaged-marker/context variants, malformed/unavailable store and readable prefixed legacy positive; containing-H execution pending |
+| Existing reply/resource behavior | NMR-49 current-row reply recovery and NMR-48 pinned-byte preflight retained; arbitrary ordinary reply metadata is not a forwarding identity | Retain all existing Human/Agent/credential/resource/journal gates; add exactly one selected Human case |
+| Evidence/acceptance | Original2a failed;59 message jobs passed;936 UI18/5/16 and source157/schema37 passed while two Native jobs queued | Source counters/reviews/ACCEPT unchanged; temporary ledger transport is not product validation |
+
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
 Fixed U unchanged; integration base `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`.
@@ -410,3 +448,30 @@ Exact `73cc6e1cc9fa871e5f80931979606ac9ee810551`, run `41514576570`: Electron jo
 Exact `94dcf7a2213808a8ded6baddaf069562d365c6d7`, run `41513767498`, completed all five selected jobs successfully. Reconciliation passed Human44/sharebox1/journal12/Agent4/private3/HTTP1. Shipping job `125511939405` passed gateway executable5/library11, protocol122, TCP9 and all declared supporting suites. Copy4 means3 fixtures plus1 actual160158128-byte AppHost, mode0755, matching source/destination SHA-256 `708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b`. Missing-input, invalid-hash and unequal-hash negatives all refused; inner TAP counts for the first two were not printed and are not invented. Original `8ce0a9a` shipping remains cancelled/unexecuted. Later Human recovery inputs need their own CI and do not inherit94dc as execution.
 
 Source run `41514576605` at73cc passed157 source contracts and37 schema cases with zero ledger-shape errors; candidate remained unaccepted with16381 inventory identities/184 responsibilities, six review records, unknown/unread null. The final containing ledger commit requires its own source gates. Backend PR137 remains read-only, open/draft/unmerged at audited52fb; actual online version/authenticated pagination, formal feed/publisher approval, signed platform install/upgrade/rollback, full product/source/legal closure and independent ACCEPT remain open.
+
+### NMR-PAGING-01 / NMR-ACTIVITY-01 — resumed round 6
+
+The actual production path is the existing Human workspace -> Coordinator `getHumanConversationTranscriptTail` -> Session gateway -> `ProductionSessionWorkers` -> `SandAgentDb` / `agent_db_transcript_pages`, returning through the existing pagination/projection and root cache. The SQLite owner stores a bounded sequence index; it does not copy message payloads into another store. Human full reads and new walks use the canonical timestamp/remote-ID/sequence order; continuations preserve membership while returning current payloads.
+
+| Requirement | Behavioral oracle | Authored test / execution boundary |
+|---|---|---|
+| NMR-PAGING-01a/b | Same-time and late inserts, settlement and timestamp changes cannot skip/repeat a saved walk; corrupted/expired/scoped indices fail; restart/retry is exact | `shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_time_inserts`; `shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_anchor_refresh` |
+| NMR-PAGING-01c | Opaque token survives the existing cache/reopen chain; failed pagination keeps committed updates; Human nonce correlation respects author; Agent shape/merge unchanged | Existing `transcript-projection.contract.test.ts` plus `recovered-conversation-infra.contract.test.ts` and shared RPC behavior cases |
+| NMR-ACTIVITY-01 | History and Agent handoff serialize at the existing lane; older timestamps cannot regress activity; failed metadata commits report failure and replay repairs the durable row/metadata gap | `shipping_human_agent_handoff_and_history_download_keep_activity_monotonic`; `shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart` |
+
+The existing exact-H Actions job retains every current message, credential, reply/forward, upload, AppHost/shipping, UI/Chromium/Electron and Windows gate. At the integrated freeze the authored selected counts are Human52, projection20 and cursor/RPC17; execution remains pending until the containing-H logs show the actual results. Two concurrent NMR49 cases retain their complete physical-row/atomic/permission assertions and separately assert the new public canonical ordering. Existing prerequisite results are provenance only; see `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. Full source/legal, deployed Worker, supported signed packages, UI/a11y/temporal/Bot/soak and independent ACCEPT remain open.
+
+## PS-UI-01..05 canonical proxy preference settlement
+
+Spec: `docs/specs/fabushi-product-settings-owner.md` §14. Responsibility remains
+`TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` in the unique TDRP ledger.
+
+| Requirement | Actual production owner/path | Authored evidence and remaining gate |
+| --- | --- | --- |
+| PS-UI-01 / PS-UI-02 | Existing SettingsDesktopSurface → GeneralSettingsPanel → networkProxy adapter → DesktopBridge → Main RPC → Coordinator MainData → Native ProductSettingsOwner; full result preserves canonical settings and separate publication | Actual-surface timeout same-value normalization and five publication cases; unavailable/unconfirmed never claims connected routing |
+| PS-UI-03 / PS-UI-04 | Surface lifetime/write tokens plus adapter in-flight promise barrier; accepted Host write continues after close, reopened read waits then gets canonical state | Duplicate/pending controls with independent Theme, failed endpoint/timeout drafts, close/unmount/bridge ABA, pending success/error reopening and fixed read-error Retry; 18 authored Chromium cases total |
+| PS-UI-05 | Existing native-message-ui Actions job, production Settings fixture and unchanged Native Settings persistence/restart contracts | Containing-H execution pending at freeze; complete Native proxy transport, supported packages, visual/a11y/security/upgrade/rollback and independent ACCEPT remain open |
+
+Test: `frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs`.
+Current-H results stay in `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`;
+no source-review count, historical Rust execution or independent acceptance is promoted.

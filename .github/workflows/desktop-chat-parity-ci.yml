@@ -180,8 +180,8 @@ jobs:
           set -euo pipefail
           mkdir -p source/fabushi-network-worker/target/ci
           cd source/fabushi-network-worker
-          go mod tidy
-          go build -trimpath -ldflags='-s -w' -o target/ci/fabushi-network-worker .
+          go build -mod=readonly -trimpath -ldflags='-s -w' -o target/ci/fabushi-network-worker .
+          git diff --exit-code -- go.mod go.sum
           test -x target/ci/fabushi-network-worker
       - name: Build deterministic Mahayana test host
         run: npm run build:host:ci

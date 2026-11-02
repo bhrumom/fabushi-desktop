@@ -1,0 +1,99 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 2,
+  "requirement": "FMEP-SOURCE-01 / Auxiliary packaged executable source locks",
+  "fixed_telegram_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "independent_of_message_consumer_batch": true,
+  "acquisition": {
+    "head_sha": "565a4639f1b7efbd15937aff93f4e14168322389",
+    "run_id": 41514329200,
+    "artifact_id": 13175461007,
+    "artifact_name": "staged-runtime-inputs-565a4639f1b7efbd15937aff93f4e14168322389",
+    "artifact_digest": "sha256:85488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b",
+    "input_mode": "capture",
+    "source": "Existing exact-H GitHub Actions acquisition; four input files copied from the artifact, not regenerated locally",
+    "limits": "Acquisition and checksum evidence only; no auxiliary executable, signed package, source or release acceptance"
+  },
+  "unchanged_direct_manifests": {
+    "source/node-agent-coordinator/Cargo.toml": "39cc53abc066a3e54da77fb3da10d8283a620d50ea4a47ad21a63a42d2f0a37d",
+    "source/box-exec-daemon/Cargo.toml": "7511a97ad45e71f7931285804ef77e36cd7f2b3c39b2973798ce2adde1814a01",
+    "go_module": "github.com/bhrumom/fabushi-desktop/source/fabushi-network-worker",
+    "go_version": "1.27.1",
+    "direct_go_requirement": "tailscale.com v1.104.1"
+  },
+  "captured_file_sha256": {
+    "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+    "source/box-exec-daemon/Cargo.lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+    "source/fabushi-network-worker/go.mod": "31a956329d877ddfc7261f19aeccfbf3e06c83e290b7472d1197e72139526c13",
+    "source/fabushi-network-worker/go.sum": "2e689a93f680062cbeeb8cb790bc7bcc09587e68a24c900d9b85a926319fa9a7"
+  },
+  "implementation": [
+    "Pin both previously untracked standalone Rust locks without modifying their direct manifests",
+    "Pin the captured Go indirect module requirements and checksums while preserving the existing direct Tailscale selection",
+    "Switch the existing staged-runtime workflow from capture to locked mode; existing normal-build dependency, binary and lifecycle gates now apply",
+    "Require --locked in normal desktop Host/Coordinator/box-exec build commands",
+    "Remove go mod tidy from the signed macOS worker build; require -mod=readonly and unchanged go.mod/go.sum"
+  ],
+  "execution": {
+    "pinned_head": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "run_id": 41519264825,
+    "locked_inputs": {
+      "job_id": 125530755143,
+      "status": "completed",
+      "conclusion": "success",
+      "artifact_id": 13177840609,
+      "artifact_digest": "sha256:a19d5633945506439041c9ea3f659891c8df84265fb49bdef7e2a15a81635072"
+    },
+    "coordinator": {
+      "job_id": 125531715469,
+      "status": "completed",
+      "conclusion": "success",
+      "binary": "Actual Mach-O arm64 executable built with --locked and the ci profile",
+      "tests": "production_protocol 1, gateway_https 1, host_supervisor_health 4; all executed, zero failures or ignored tests",
+      "artifact_id": 13177226856,
+      "artifact_digest": "sha256:b0dee188f06143492fa236aff749e8b0f9d96fb7ecd6accbaa7b75554fc2260d",
+      "boundary": "Real Coordinator process with controlled Host/gateway fixtures; not real-service or installed-package acceptance"
+    },
+    "other_pinned_head_jobs": "Box daemon 125531715363 and Go worker 125531715570 were queued at the last observed API snapshot; no execution success is claimed",
+    "followup_workflow_validation": "Pending containing-H Actions; the pin-head results do not qualify changed workflow contexts or native tool inventory",
+    "required_jobs": [
+      "Acquire or verify auxiliary dependency inputs",
+      "Source and binary / mahayana-node-agent-coordinator",
+      "Source and binary / box-exec-daemon",
+      "Source and binary / fabushi-network-worker"
+    ],
+    "local_or_htch_runtime_validation": "not performed",
+    "message_gate": {
+      "head_sha": "d78ba3c1f026130d2494ddce3c11adf610069aa1",
+      "run_id": 41516733700,
+      "human_job_id": 125522093366,
+      "human_conclusion": "success",
+      "actual_passed_counts": "Human 44; sharebox 1; forward journal 12; Agent nonce 4; settlement credential 3; authenticated forward HTTP 1; zero failed or ignored",
+      "artifact_id": 13175737455,
+      "artifact_digest": "sha256:824eb82a9dab6fed36210a8251cb4e6861f20801ad84dd21df38cc2a6568a4f0",
+      "shipping_job_id": 125522093157,
+      "shipping_status": "queued at the last observed API snapshot; public-message prerequisite remains unqualified",
+      "dependent_message_batch_started_by_this_round": false
+    }
+  },
+  "normal_build_followup": {
+    "release_required_checks": [
+      "desktop-chat-parity-ci: remove Go tidy, build readonly and refuse changed tracked module inputs",
+      "rust-desktop-runtime: lock the existing Coordinator and box test/build commands"
+    ],
+    "independent_fdn_checks": [
+      "fdn-tsnet-worker: readonly module inspection/test/vet/build and tracked input preservation",
+      "fdn-g11-real-browser: use the tracked Host and box locks without regenerating Host input",
+      "fdn-g15-host-resource-privacy: consume exact-H tracked Go/Host inputs and retain their SHA256 receipt; never delete tracked locks after building"
+    ],
+    "native_tools": "The staged Rust job records visible Xcode, clang, SDK and optional CMake identities. This is runner inventory, not proof of every build-script invocation or generated/legal closure",
+    "preserved": "All existing behavior tests, real browser/resource/privacy probes, budgets, lifecycle owners, direct versions, dependency locks, permissions and release acceptance requirements"
+  },
+  "remaining": [
+    "Exact containing-H locked-input verification, actual macOS auxiliary binaries and existing lifecycle tests",
+    "Detailed registry/Go source, generated-input and legal disposition; first pinning does not constitute semantic source review",
+    "Changed release-required and independent FDN workflow contexts require their own exact-H execution; source-contract results do not substitute for full Electron, cross-platform, real-browser or resource/privacy acceptance",
+    "Signed supported-platform packages, real-service and full product regressions, upgrade/rollback and independent ACCEPT"
+  ],
+  "accepted": false
+}

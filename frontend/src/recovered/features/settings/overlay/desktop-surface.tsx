@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#byteOffset=36041 (released Settings Retry copy)
 import type { ProductionCoordinatorClient } from "../../../../production/coordinator-client";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
-import type { DesktopBridge, DesktopUpdateStatus, ThemePreference } from "../../../contracts/desktop-bridge";
+import type { DesktopBridge, DesktopUpdateStatus, ProductNetworkProxyMutation, ThemePreference } from "../../../contracts/desktop-bridge";
 import {
   accountStateFromCursorStatus,
   cursorAuthErrorMessage,
@@ -10,6 +10,7 @@ import {
   loadSettingsDesktopSnapshot,
   loadUsageState,
   mutateNetworkProxySettings,
+  networkProxyPublicationAvailability,
   cancelUsageTrial,
   checkForUpdatesWithRecovery,
   runAccountAction,
@@ -63,16 +64,35 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
   const [cancelTrialDialogOpen, setCancelTrialDialogOpen] = useState(false);
   const [routerProvider, setRouterProvider] = useState<RouterProviderId>(DEFAULT_ROUTER_PROVIDER);
   const [routerPending, setRouterPending] = useState(false);
+  const [networkProxyPending, setNetworkProxyPending] = useState(false);
+  const [networkProxyAvailability, setNetworkProxyAvailability] = useState<"unavailable" | "unconfirmed">("unconfirmed");
+  // A bridge/open lifetime owns presentation only. Accepted Host writes continue
+  // after it retires; the adapter's read barrier supplies the next canonical view.
+  const proxyLifetime = useMemo(() => ({ bridge, isOpen, active: false }), [bridge, isOpen]);
+  const proxyLifetimeRef = useRef(proxyLifetime);
+  const proxySnapshotLifetimeRef = useRef<typeof proxyLifetime | null>(null);
+  const proxyWriteRef = useRef<object | null>(null);
   const handleCancelTrialDialogOpen = useCallback((open: boolean) => setCancelTrialDialogOpen(open), []);
   const handleNotice = useCallback((event: SettingsNoticeEvent) => {
     setSurfaceNotice(settingsNoticeFromEvent(event));
     onNotice?.(event);
   }, [onNotice]);
 
+  useLayoutEffect(() => {
+    proxyLifetime.active = isOpen;
+    proxyLifetimeRef.current = proxyLifetime;
+    proxySnapshotLifetimeRef.current = null;
+    proxyWriteRef.current = null;
+    setNetworkProxyPending(false);
+    setNetworkProxyAvailability("unconfirmed");
+    return () => { proxyLifetime.active = false; };
+  }, [isOpen, proxyLifetime]);
+
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
     let unsubscribe = () => {};
+    proxySnapshotLifetimeRef.current = null;
     setSnapshot(null);
     setError(null);
     const refreshEgressAvailability = () => {
@@ -85,7 +105,8 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
       });
     };
     void loadSettingsDesktopSnapshot(bridge, coordinatorClient ?? undefined).then((value) => {
-      if (!active) return;
+      if (!active || !proxyLifetime.active || proxyLifetimeRef.current !== proxyLifetime) return;
+      proxySnapshotLifetimeRef.current = proxyLifetime;
       setSnapshot(value);
       unsubscribe = subscribeToSettingsDesktop(bridge, {
         account: (status) => {
@@ -126,7 +147,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
         unsubscribeCoordinator?.();
       };
     }).catch((reason: unknown) => {
-      if (!active) return;
+      if (!active || !proxyLifetime.active || proxyLifetimeRef.current !== proxyLifetime) return;
       const message = reason instanceof Error ? reason.message : String(reason);
       setError(message);
       publishSurfaceNotice({ kind: "error", operation: "settings-load", message }, handleNotice, onStatus);
@@ -135,7 +156,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
       active = false;
       unsubscribe();
     };
-  }, [bridge, coordinatorClient, handleNotice, isOpen, onStatus, reload]);
+  }, [bridge, coordinatorClient, handleNotice, isOpen, onStatus, proxyLifetime, reload]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -175,7 +196,36 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
     localToolPermission: { ...current.localToolPermission, permission }
   });
   const updateSecurityKey = (securityKeyEnabled: boolean) => setSnapshot((current) => current == null ? current : { ...current, securityKeyEnabled });
-  const updateNetworkProxy = (networkProxy: SettingsDesktopSnapshot["networkProxy"]) => setSnapshot((current) => current == null ? current : { ...current, networkProxy });
+  const mutateNetworkProxy = async (mutation: ProductNetworkProxyMutation): Promise<SettingsDesktopSnapshot["networkProxy"] | null> => {
+    const isCurrentView = () => proxyLifetime.active
+      && proxyLifetimeRef.current === proxyLifetime
+      && proxySnapshotLifetimeRef.current === proxyLifetime;
+    if (!isCurrentView() || proxyWriteRef.current != null) return null;
+    const write = {};
+    proxyWriteRef.current = write;
+    setNetworkProxyPending(true);
+    try {
+      const result = await mutateNetworkProxySettings(bridge, mutation);
+      if (!isCurrentView() || proxyWriteRef.current !== write) return null;
+      const networkProxy = result.settings.network.proxy;
+      setSnapshot((current) => current == null ? current : { ...current, networkProxy });
+      setNetworkProxyAvailability(networkProxyPublicationAvailability(result.publication));
+      publishSurfaceNotice({ kind: "success", operation: "settings-network-proxy", message: "Proxy preferences saved." }, handleNotice, onStatus);
+      return networkProxy;
+    } catch {
+      if (isCurrentView() && proxyWriteRef.current === write) {
+        // Transport errors may contain endpoints or credentials. Keep the draft
+        // for explicit retry without publishing raw payloads or retrying a write.
+        publishSurfaceNotice({ kind: "error", operation: "settings-network-proxy", message: "Could not save proxy preferences. Your changes are ready to retry." }, handleNotice, onStatus);
+      }
+      return null;
+    } finally {
+      if (proxyWriteRef.current === write) {
+        proxyWriteRef.current = null;
+        if (proxyLifetime.active && proxyLifetimeRef.current === proxyLifetime) setNetworkProxyPending(false);
+      }
+    }
+  };
   const updateAutoReview = (autoReview: AutoReviewSettings) => setSnapshot((current) => current == null ? current : { ...current, autoReview });
   const refreshUsage = async () => {
     const previous = snapshot?.usage;
@@ -253,7 +303,7 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
               onRequestPermissions: () => bridge.callMedia.requestPermissions({ audio: true, video: true })
             }}
             privacyModeEnabled={snapshot.privacyModeEnabled}
-            networkProxy={{ state: snapshot.networkProxy, onMutate: (mutation) => mutate(() => mutateNetworkProxySettings(bridge, mutation), "settings-network-proxy", updateNetworkProxy) }}
+            networkProxy={{ state: snapshot.networkProxy, pending: networkProxyPending, availability: networkProxyAvailability, onMutate: mutateNetworkProxy }}
             theme={snapshot.theme}
           />
         );

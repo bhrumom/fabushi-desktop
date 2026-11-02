@@ -1,5 +1,6 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
+  parseCoordinatorHumanTranscriptPageRequest,
   validateCoordinatorReply,
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
@@ -32,7 +33,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateReply(method: string, value: unknown): unknown {
-  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread") {
+  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread" || method === "getHumanConversationTranscriptTail") {
     return validateCoordinatorReply(method, value);
   }
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
@@ -170,6 +171,9 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   claim.request();
 
   const call = async (method: string, args: unknown = {}) => {
+    if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageRequest(args) == null) {
+      throw new Error("getHumanConversationTranscriptTail requires a valid Human transcript cursor");
+    }
     await currentReady;
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
     const requestId = `r-${++nextRequestId}`;
@@ -223,3 +227,4 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     }
   };
 }
+
