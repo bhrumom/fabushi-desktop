@@ -47,7 +47,8 @@ function Remove-FixtureCertificate([string]$Thumbprint, [string]$ExpectedSubject
   }
   $removed = @()
   foreach ($storeName in @('TrustedPublisher', 'Root', 'My')) {
-    $certificatePath = 'Cert:\CurrentUser\' + $storeName + '\' + $Thumbprint
+    $location = if ($storeName -eq 'My') { 'CurrentUser' } else { 'LocalMachine' }
+    $certificatePath = 'Cert:\' + $location + '\' + $storeName + '\' + $Thumbprint
     if (Test-Path -LiteralPath $certificatePath) {
       $owned = Get-Item -LiteralPath $certificatePath -ErrorAction Stop
       if ($owned.Subject -cne $ExpectedSubject -or (Get-FixtureCertificateSha256 $owned) -cne $ExpectedSha256) {
@@ -125,22 +126,34 @@ try {
   # Persist only nonsecret cleanup identity immediately after creation. No
   # private key, PFX, certificate bytes or trust-store export is written.
   [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Compress), [System.Text.UTF8Encoding]::new($false))
-  # X509Store.Add(CurrentUser\Root) may block behind interactive root-trust
-  # confirmation on hosted runners. Use the documented certutil user-store
-  # command instead, explicitly scoped to this ephemeral GitHub Actions job.
-  # Never install a test identity in LocalMachine or treat it as a release pin.
-  $publicCertificatePath = Join-Path $fixtureDirectory 'public-fixture.cer'
-  [System.IO.File]::WriteAllBytes($publicCertificatePath, [byte[]]$cert.RawData)
-  foreach ($storeName in @('Root', 'TrustedPublisher')) {
-    [System.IO.File]::WriteAllText($stagePath, ('import:' + $storeName), [System.Text.UTF8Encoding]::new($false))
-    & certutil.exe -f -user -addstore $storeName $publicCertificatePath 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-      throw ('CI-only certificate import failed for ' + $storeName + ' (exit ' + $LASTEXITCODE + ')')
+  # CurrentUser Root imports trigger an interactive confirmation on hosted
+  # Windows, even with -NonInteractive. Only on an ephemeral administrative
+  # GitHub-hosted runner, install the PUBLIC certificate via X509Store into
+  # LocalMachine Root/TrustedPublisher; keep private key in CurrentUser My.
+  $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$cert.RawData)
+  try {
+    foreach ($storeName in @('Root', 'TrustedPublisher')) {
+      [System.IO.File]::WriteAllText($stagePath, ('import:' + $storeName), [System.Text.UTF8Encoding]::new($false))
+      $certificatePath = 'Cert:\LocalMachine\' + $storeName + '\' + $cert.Thumbprint
+      if (Test-Path -LiteralPath $certificatePath) {
+        throw 'CI fixture certificate already exists in the machine trust store'
+      }
+      $store = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+        $storeName, [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine
+      )
+      try {
+        $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+        $store.Add($publicCertificate)
+      } finally {
+        $store.Close()
+      }
+      $imported = Get-Item -LiteralPath $certificatePath -ErrorAction Stop
+      if ($imported.Subject -cne $manifest.subject -or (Get-FixtureCertificateSha256 $imported) -cne $manifest.certificateSha256) {
+        throw 'Machine trust-store import did not preserve the exact CI-only public certificate'
+      }
     }
-    $imported = Get-Item -LiteralPath ('Cert:\CurrentUser\' + $storeName + '\' + $cert.Thumbprint) -ErrorAction Stop
-    if ($imported.Subject -cne $manifest.subject -or (Get-FixtureCertificateSha256 $imported) -cne $manifest.certificateSha256) {
-      throw 'Trust-store import did not preserve the exact CI-only certificate'
-    }
+  } finally {
+    $publicCertificate.Dispose()
   }
   [System.IO.File]::WriteAllText($stagePath, 'trusted', [System.Text.UTF8Encoding]::new($false))
   $source = 'internal static class FabushiCiInertFixture { public static int Main() { return 0; } }'
@@ -172,6 +185,7 @@ before(async () => {
   assert.equal(process.platform, "win32", "native publisher contracts require a Windows Actions runner; do not skip");
   assert.equal(process.env.GITHUB_ACTIONS, "true", "native fixture execution is restricted to GitHub Actions");
   assert.equal(process.env.RUNNER_OS, "Windows", "native fixture requires the Windows runner boundary");
+  assert.equal(process.env.RUNNER_ENVIRONMENT, "github-hosted", "native fixture must never alter a self-hosted machine trust store");
   fixtureRoot = await mkdtemp(join(tmpdir(), "fabushi-ci-only-authenticode-"));
   const desktopRequire = createRequire(new URL("../../../desktop/package.json", import.meta.url));
   const { build } = desktopRequire("esbuild");

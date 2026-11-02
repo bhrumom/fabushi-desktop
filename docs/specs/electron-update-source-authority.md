@@ -75,3 +75,8 @@ Operational enablement requires the release owner to provide the approved policy
 
 Native API references: [Get-AuthenticodeSignature](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-authenticodesignature?view=powershell-5.1), [SignatureType](https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.signaturetype?view=powershellsdk-7.4.0), [X509Certificate2.RawData](https://learn.microsoft.com/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.rawdata). Catalog signatures are intentionally not accepted by this embedded-installer contract. This specification does not claim that any particular company or certificate is authorized for Fabushi.
 
+
+
+### Round 25 native CI-only trust fixture
+
+On an ephemeral GitHub-hosted Windows runner only, the code signing test retains the private key in CurrentUser/My and installs the public certificate in LocalMachine/Root and LocalMachine/TrustedPublisher with X509Store, avoiding interactive CurrentUser root-consent prompts. Entry checks GITHUB_ACTIONS, RUNNER_OS and RUNNER_ENVIRONMENT. Cleanup matches the unique fixture subject and DER SHA-256 before deletion in all three exact stores; cleanup failures remain fatal. This is not publisher approval, a signed application, an install/rollback result, or ACCEPT. All eleven native Authenticode contracts remain required at the containing H.

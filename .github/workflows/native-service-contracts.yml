@@ -161,6 +161,12 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
           grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
+      - name: Authenticated forward recipient gateway HTTP contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test gateway_server_contract gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed -- --nocapture 2>&1 | tee artifacts/native-message/forward-http.log
+          grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-http.log
       - name: Diagnose locked Session dependency drift (no acceptance)
         if: failure()
         shell: bash
