@@ -2,7 +2,7 @@
   "format_version": 2,
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "reviewed_delta_base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
+  "reviewed_delta_base_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
   "operations": [
     {
       "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
@@ -98,21 +98,30 @@
       },
       "append": {
         "fabushi_target_paths": [
-          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs"
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs",
+          "desktop/e2e/native-message-projection.spec.ts",
+          "desktop/e2e/fixtures/native-message-projection.tsx",
+          "desktop/native-message-projection.html"
         ],
         "test_evidence": [
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close",
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_execute_rejects_null_non_utf8_and_invalid_json",
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
-          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage"
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage",
+          "authored-not-run-at-preparation:shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page; preserve all current62 Human cases including6400/32 and short/empty32, total63 after the single new legacy-upgrade case.",
+          "authored-not-run-at-preparation:actual ProductionRenderer Chromium10 through existing Coordinator client/feed; current29 projection cases retained plus remaining overlay/author/composition cases. No retry/skipped allowance; exact containing-H Actions and complete artifacts required."
         ],
         "requirement_ids": [
           "NMR-38",
           "NMR-39",
           "NMR-AC-28",
           "NMR-AC-29",
-          "NMR-AC-30"
+          "NMR-AC-30",
+          "NMR-23a",
+          "NMR-26a",
+          "NMR-26b",
+          "FMEP-SOURCE-01"
         ],
         "unit_case_ids": [
           "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
@@ -123,7 +132,8 @@
         ],
         "fault_recovery_case_ids": [
           "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
-          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close"
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close",
+          "source/host/tests/session_gateway_contract.rs#shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page"
         ],
         "security_case_ids": [
           "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_execute_rejects_null_non_utf8_and_invalid_json",
@@ -145,15 +155,22 @@
           "exact:23f737faba69b4f60eecb6ec1a031602f87f60dc:run41451598911:attempt1:completed/success:actual AppHost build/graph/symbol/library and fixture-copy3 passed. Original Native6 passed, but the local twelve-route/seven-parameter matrix was NOT in this commit. Full delivery reconciliation and all artifact ZIP hashes are in round16-apphost-package-boundary.json.",
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1:reconciliation125494011040 success Human38/sharebox1/journal3/Agent4/private3/authenticated-forward-HTTP1; artifact13173116303 sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22.",
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:shipping125494011097 success AppHost actual build/composition12/Native7/FeatureHost7/Social9/HTTP6/Host6/ABI7/CLI3/gateway-executable5/library11/DNS6/future-salts2/protocol122/TCP9/proxy4/native-credential1/actual-copy4; missing-input/invalid-hash/unequal-valid-hash controls each rejected. Artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f; built and copied AppHost sha256:5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb.",
-          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 success transcript16/settlement5/Chromium12; Electron125494011030 success carrier10/auth8/fixture-copy3/update-source16/publisher28/metadata18 and actual Electron compile; Windows125494011118 native Authenticode11 temporary inert fixtures, not production publisher acceptance. Native-auth-and-journal was conditionally skipped."
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 success transcript16/settlement5/Chromium12; Electron125494011030 success carrier10/auth8/fixture-copy3/update-source16/publisher28/metadata18 and actual Electron compile; Windows125494011118 native Authenticode11 temporary inert fixtures, not production publisher acceptance. Native-auth-and-journal was conditionally skipped.",
+          "exact:afb34b49c5964524a887088f1095070b75cfdf8b:run41522324008:job125541192099:failure E0382 in session_gateway_contract.rs:6889, shutdown of runtime after drop; Human cases not executed. Repair only shutdown receiver to restarted; qualify at new exact-H.",
+          "exact:afb34b49c5964524a887088f1095070b75cfdf8b:source run41522324060 success Node157/schema37; existing UI pass projection29/cursor17/settlement5/dialog16 and renderer build, Electron/carrier and Windows passed. These are prerequisite evidence only; new-H results are not inherited."
         ],
         "blockers": [
           "The latest independently read qualified message H is59f5fa24827812f78336c464995d161f403dedfb. Later concurrent 4f1070/06fb24/94dcf7 forwarding changes and their new Human/journal cases require their own exact-H gates; these results are not inherited from59.",
           "Original round16 local frozen Native matrix, ledger and owner-matrix changes were not all delivered at23f737f. Use the actual twelve-file commit/artifact reconciliation; do not call the eight-file local review an exact-byte review of that commit. Later Native7 execution is separately bound to59.",
-          "Round16 direct legacy C wrapper cases are authored and require containing-H Actions; the original live-DC case remains unexecuted. Wrapper tests do not prove a final staticlib/cdylib producer, installed external caller, external mobile ABI, original user data migration or final retirement."
+          "Round16 direct legacy C wrapper cases are authored and require containing-H Actions; the original live-DC case remains unexecuted. Wrapper tests do not prove a final staticlib/cdylib producer, installed external caller, external mobile ABI, original user data migration or final retirement.",
+          "Request round9 resumed remaining delta is authored, not executed at preparation: version1 coverage/legacy upgrade, full ProductionRenderer10 and actual authority CLI acquisition negative require exact containing-H Actions. Preserve current qualified59 execution pointers until new results are read.",
+          "Backend52fb/PR137 tests29 handler+10 realSQLite+24 injected readiness pass, but readiness jobs are skipped; canonical main6877 rejects explicit afterId0/no historyCursor. Current active Worker and real authenticated production multi-page/empty-page/denial/restart evidence remain unverified. Historical source33a26692/version3ad1a889 is not current deployment proof."
+        ],
+        "production_evidence": [
+          "Request round9 resumed: existing Session/Transcript/native client/ProductionRenderer/cache owners only; strict version1 durable history coverage upgrades legacy checkpoints after qualified historyCursor pages. Current native_messaging afterId0 contract is retained; no parallel owner/store/endpoint or data deletion."
         ]
       },
-      "note": "\n\nRound16 delivery reconciliation and later live-state read: the row's primary execution pointers now identify the verified59f5fa reconciliation, not the old95 snapshot. Prior pointers retained here: {\"target_commit\":\"95b29df688f718a35574fa36ef4ca75df437ed30\",\"workflow_run\":41403643662,\"run_attempt\":1,\"job\":125140696528,\"artifact_id\":13122423309,\"artifact_digest\":\"sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d\"}. Superseded historical blocker observations, preserved as history rather than current failures: [\"NMR-34/35 bounded production boundary passed 98e51b31b5a296065190f665696b2ffe11a3efe1/run41443460672; NMR-36 Host/FFI explicit legacy-handoff refusal and tests are authored but require exact containing-H Actions with Host6/ABI7 and all retained gates.\",\"Round20 exact151 run41465224038 is terminal failure in persistent gateway approval fixture (TEST_FLAW) and cross-platform compressed blockmap comparison (IMPLEMENTATION_DEFECT). Gateway lib9, protocol122, TCP9, actual AppHost resource copy4 and Electron build were skipped; cannot count as verified.\",\"NMR-43/45 repaired existing owner/test fixtures and authored metadata18/gateway executable5; containing-H GitHub Actions and historical DMG immutable-byte repair required before bounded acceptance. Signed installation, update/rollback, full source/legal and independent ACCEPT still open.\",\"Round21 exact H8ce/run41471743677 shipping job125366805190 unassigned/cancelled; lib11/protocol122/TCP9/real AppHost copy4 and two negative controls not executed. See round21-update-source-authority.json.\"]. The full old23f737f and later59 artifacts were read and hash-matched; exact counts and deliberately failing negative controls are distinguished in round16-apphost-package-boundary.json. Subsequent Session production changes and the auxiliary lock batch remain unqualified until their own containing-H Actions. No implementation/source/independent release acceptance is promoted, no data or rollback reader is removed, and Backend PR137 remains read-only.\nResumed round16 retained-wrapper scope: Desktop CLI/gateway now directly use MahayanaHost; separate legacy RuntimeClient/CLIENTS ownership and its C exports remain explicit compatibility only. Add five actual C wrapper tests using allocated caller buffers, owned response freeing and temporary encrypted close/reopen, while preserving the original11 including1 ignored live-DC case. New target15-pass/1-ignore oracle is authored, not executed at preparation. Source-observed external installer library-producer and Android JNI argument mismatches are separate unqualified consumers, not Desktop shipping proof and not an observed crash. No external repository, user database/key/sidecar or rollback reader changed; no final source/service/release ACCEPT."
+      "note": "\n\nRequest round9 resumed at afb34b49c5964524a887088f1095070b75cfdf8b: rebase only remaining coverage and full-renderer behaviors over all concurrent reply/forwarding/resource/opaque-paging/reaction owners. Reuse the current short/empty32 case; add only one legacy upgrade Host case (Human63). Actual afb E0382 shutdown receiver repair is a test defect, not a changed production lifecycle. This append records authored work and prerequisite failures, not new execution acceptance. Preserve all184 responsibilities, six current source reviews, unknown/unread null, fixed U and every source/product/release/independent acceptance state. Source CLI entrypoint regression is governance verification, not product progress. Complete source/legal, real Worker, signed platforms, Bot/visual/a11y/security/performance/soak/upgrade/rollback and independent ACCEPT remain open."
     }
   ],
   "purpose": "Merge only frozen reviewed two-row delta into the exact Actions checkout; fail on scalar/source conflict. Create an unattached Git blob only. Root must API-read input/output and require fresh current canonical input equality before force=false expected-head CAS."

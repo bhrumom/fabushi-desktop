@@ -454,6 +454,59 @@ The actual production path is the existing Human workspace -> Coordinator `getHu
 
 The existing exact-H Actions job retains every current message, credential, reply/forward, upload, AppHost/shipping, UI/Chromium/Electron and Windows gate. At the integrated freeze the authored selected counts are Human52, projection20 and cursor/RPC17; execution remains pending until the containing-H logs show the actual results. Two concurrent NMR49 cases retain their complete physical-row/atomic/permission assertions and separately assert the new public canonical ordering. Existing prerequisite results are provenance only; see `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. Full source/legal, deployed Worker, supported signed packages, UI/a11y/temporal/Bot/soak and independent ACCEPT remain open.
 
+### Round7 resumed NMR-22/24/26 boundary evidence
+
+Current additions retain the existing FBCP-NMR-001 row and production route.
+Eight new `shipping_human_` cases in `session_gateway_contract.rs` cover short/empty
+32nd pages, durable partial-page replay, stable equal-timestamp beforeSeq,
+applied-row/uncleared-intention restart, malformed persisted target admission,
+post-HTTP target changes, and actual gateway pre-staging refusal with a numeric-ID
+positive control, plus canonical message-ID and strict page-order rejection with
+checkpoint-preserving restart recovery. All prior Human/forward/Agent/credential/shipping cases remain.
+Nine new cases in `transcript-projection.contract.test.ts` exercise the actual
+completion fence and intermediate-render viewport anchor. Existing tail merge,
+read buffers, cursor cache, immutable forward UI and one Transcript remain.
+
+The round7 evidence receipt separates original failed63da, passed fixture30b4,
+qualified later predecessor94dc, unpublished superseded preparation and the new
+containing-H candidate. Authored source counts must include all concurrent Human
+and Transcript additions; actual results require the final exact-H Actions logs.
+No mounted reaction/visual/a11y, source or full independent acceptance is claimed.
+
+### Resumed round16: exact delivery correction, auxiliary inputs and retained C wrappers
+
+This annotation preserves the dated snapshots above. Actual round16 delivery
+was `23f737faba69b4f60eecb6ec1a031602f87f60dc`: its run `41451598911`
+passed the built AppHost dependency/symbol/library checks and three synthetic
+package-copy cases, but did **not** contain the locally prepared twelve-route
+account matrix or the original ledger/owner-matrix edits. The later verified
+`59f5fa24827812f78336c464995d161f403dedfb` run `41508537631` includes
+the actual AppHost resource copy, Human38 and the separately recorded later
+composition/CLI/gateway checks. Neither result qualifies subsequent Session,
+UI or source-review changes. The old thirteen-Human paragraph above is the
+exact95 historical gate; containing-H workflow requirements remain authoritative.
+
+| Requirement / owner | Actual input or executable case | Evidence and remaining gate |
+| --- | --- | --- |
+| FMEP-SOURCE-01 / existing desktop package builders | Coordinator and box Cargo.lock; network worker go.mod/go.sum; existing npm, Rust CI and macOS release commands require locked/readonly inputs | Capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389, job125513870853, artifact13175461007 SHA25685488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b. Four input files match the original artifact bytes. Capture Mac jobs skipped; pinned-H actual binary/owner verification remains required. |
+| NMR-AC-30 / same Coordinator, Box and network-worker owners | `staged-runtime-source-contracts.yml`: required tracked inputs; actual macOS executables; normal/build dependencies and symbol/library refusals; Coordinator1+1+4, Box13+Host supervisor3, Go13 | Authored containing-H gates, not executed at preparation. No fabricated substitute binaries; actual Box path is supplied to the Host lifecycle fixture. Full signed package, other platforms and dependency source/legal acceptance remain open. |
+| NMR-39 compatibility retention / existing legacy C exports | `providers/telegram-runtime/tests/runtime_ffi.rs`: five direct create/persistent-create/execute/close/free cases, persistent close/reopen, owned response frees, null/UTF-8/key-length/closed-handle refusal | Fifteen non-live tests plus the original one explicitly ignored live-DC test are required by `retained-direct-ffi-compatibility`; authored, not run at preparation. Invalid-length buffers are allocated; all stores/keys are synthetic. This does not qualify a final shared/static library or installed external consumer. |
+
+Concurrent commit `e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e` already
+integrated the identical four inputs, desktop locked builders, capture=false and
+release readonly build. This batch preserves that delivery, adds the remaining
+CI/release input guards and the retained C-wrapper target; it does not replay
+or claim authorship of the concurrent pin commit.
+
+The authoritative receipt remains
+`projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
+The unique ledger's two existing responsibility rows retain source identities,
+review depths, all concurrent source reviews and unaccepted release states.
+Original SQLite/sidecars/keys/readers are preserved. Backend PR137 remains
+open/draft and read-only; its skipped production readiness job is not service
+acceptance. External mobile/installer producer-consumer mismatches remain
+separately recorded gaps, with no external repository mutation.
+
 ## 2026-11-02 — FBCP-CALL-SCOPE-001 canonical Native call admission
 
 Spec: `docs/specs/fbcp-native-call-scope-admission.md`. Source responsibility: the single canonical ledger row `FBCP-CALL-SCOPE-001`; bounded dossier `projects/telegram-desktop-rust/dossiers/native-call-scope-admission.md`. Production chain: mounted `HumanCallControls` → Session gateway → `ProductionSessionWorkers::create_call_session` → existing Native client → existing CallSessionStore. No new participant or call authority.
@@ -466,3 +519,17 @@ Spec: `docs/specs/fbcp-native-call-scope-admission.md`. Source responsibility: t
 | CALL-SCOPE-03/04; AC-CALL-SCOPE-02/03 | Preserve no-Native participant/lifecycle behavior and exact current-owner traceability | `native_call_scope_contract::native_call_scope_leaves_non_native_participant_and_lifecycle_contract_unchanged`; `session_gateway_contract::call_session_owner_fences_lifecycle_signaling_reconnect_and_restart` | Source review is separate from execution and independent product ACCEPT |
 
 All five new symbols are in `source/host/tests/native_call_scope_contract.rs`; the exact test commands, expected 5+3+1 counts, actual run/jobs/artifacts and result are in `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`. Independent frozen source review and root FIX dispositions are in the adjacent `task20bf-round1-call-scope-review.md`. This batch does not complete whole-file source reviews, full CALL-REALTIME or full migration acceptance.
+
+### CALL-CRED-01–06 refinement of the same account/peer responsibility
+
+Spec: `docs/specs/fbcp-native-call-credential-lifetime.md`. Test file: `source/host/tests/native_call_credential_contract.rs`. Existing Session/Native credential/CallSession owners remain authoritative. The following six cases are authored and independently source-reviewed; the new containing-H receipt must establish execution. Prior8bcfd scope results do not qualify these cases.
+
+| Requirement / oracle | Actual production boundary and test | Execution status |
+| --- | --- | --- |
+| CALL-CRED-01; AC-CALL-CRED-01 | Five fixed-Human Native APIs reject wrong account before transport; `native_call_credentials_bind_all_http_families_before_transport` | Authored, source-reviewed; containing-H Actions pending |
+| CALL-CRED-06; AC-CALL-CRED-01/03 | Signal sender equals the exact credential device used for POST; `native_call_signal_binds_sender_to_dispatch_credential` includes zero-HTTP negatives and matching-device positive | Same pending receipt |
+| CALL-CRED-02/03/05; AC-CALL-CRED-02 | Full-body fence across user/device/token/session/expiry/issuer; no follow-on lifecycle POST, complete SQLite equality, restore/replay/retry; `native_call_credentials_fence_every_held_get_field_before_lifecycle_post` | Same pending receipt |
+| CALL-CRED-02/04; AC-CALL-CRED-02/03 | ICE/discovery reject stale bodies and recover normally; `native_call_credentials_reject_stale_ice_and_discovery_bodies` | Same pending receipt |
+| CALL-CRED-04/05; AC-CALL-CRED-02/03 | Admitted create/event may already affect service; existing discovery/GET replay recovers without duplicate mutation; `native_call_credentials_recover_admitted_create_after_rejected_response` and `native_call_credentials_recover_admitted_event_after_rejected_response` | Same pending receipt |
+
+Current reconciled workflow retains credential6 + scope5 + shipping-call3 + local-lifecycle1, plus all current shared message/Agent/forward/direct-FFI and UI/package gates. Exact-U source read, frozen code review, execution and full independent acceptance are distinct in the existing task receipt. No epoch/ABA, deployed-service/media, complete platform or migration ACCEPT is claimed.

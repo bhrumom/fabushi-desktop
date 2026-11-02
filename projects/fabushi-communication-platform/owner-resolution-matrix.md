@@ -113,8 +113,24 @@ packaged/real-service/full Bot/independent ACCEPT are not claimed.
 
 The current Session/Transcript owner remains the only Human row writer. The added persisted pagination state is an index over its immutable physical sequence identities in the same conversation KV, scoped to existing conversation/participant metadata; message payloads remain in Transcript. The existing unified projection/pagination/root cache consumes the opaque cursor and current events. Activity reconciliation and Agent handoff share the existing message lane. This preserves the current afterId coverage, desired-reaction recovery, full-credential fences, reply repair and forward journal CAS. It does not establish an older-message changefeed or live backend/platform/full-migration acceptance; execution is bound to the containing-H Actions receipt.
 
+### Round7 resumed reaction/history consumer qualification
+
+`MSG-REACTION` keeps Session/SandAgentDb as the durable owner. Its existing gateway
+passes exact emoji identity; replay and new toggles admit only the selected Human
+pair and canonical safe remote IDs before HTTP/intention writes. Settlement rereads
+the current target and retains unrelated current fields. `MSG-HISTORY-ORDER-GAP`
+keeps local beforeSeq and remote afterId distinct; new terminal-budget, partial-page
+and reopen cases qualify the existing traversal. Canonical message-ID admission
+and strict page progression prevent alias rows and false coverage. Existing `transcript-projection.ts`
+and pagination consume reaction events/RPC results with account/mutation/event
+fences and a page-ready viewport anchor. No new durable owner or UI root is added.
+The round7 receipt and containing-H Actions are the evidence boundary; broader
+remote-window continuation, real-service, package/visual/a11y and ACCEPT remain open.
+
 ## 2026-11-02 — CALL-SCOPE-001 selected-conversation call admission
 
 The mounted `HumanCallControls` sends the selected conversation ID and member IDs through the Session gateway. Existing `ProductionSessionWorkers::create_call_session` now reads that conversation's canonical stored pair and compares it with the normalized requested pair before Native HTTP or call insertion. The backend request contains only call ID and target user ID, so Session is the existing boundary that can bind the local scope. `CallSessionStore` persists admitted call state; it does not own conversation membership.
 
 Wrong-scope/malformed admission produces zero HTTP and preserves metadata, transcripts and existing calls. Backend refusal after an admitted POST produces no local phantom call. Valid creation retains lifecycle, discovery and reopen; the no-Native path retains its prior participant contract. Five actual gateway/HTTP/SQLite cases are authored, alongside the three existing shipping-call cases and one exact local lifecycle case. Execution and its exact H are recorded separately in `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; authored/source-reviewed is not runtime acceptance. Full call/media, historical inconsistent-row recovery and migration ACCEPT remain open. No public schema, new owner, data deletion or legacy runtime change occurs.
+
+CALL-CRED-01–06 extends that same account/peer responsibility: fixed Session Human reaches all five Native call HTTP families at eight existing call sites; existing private credential admission and six-field response checks fence settlement, and signal sender matches the dispatch device. Existing discovery/replay recovers an admitted remote effect after a rejected stale acknowledgment. Six new gateway/HTTP/SQLite cases are authored and independently source-reviewed; execution is recorded at their containing H. No new UI, data, credential or lifecycle owner; renderer/media and full service/platform acceptance remain open.

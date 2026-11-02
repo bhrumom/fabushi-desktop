@@ -6,6 +6,7 @@ on:
       - 'source/host/src/extensions/session/**'
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/tests/native_call_scope_contract.rs'
+      - 'source/host/tests/native_call_credential_contract.rs'
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
@@ -52,6 +53,7 @@ on:
       - '.github/workflows/native-service-contracts.yml'
       - '.github/workflows/release-macos-main.yml'
       - '.github/scripts/promote-miniapp-candidate*.mjs'
+      - '.github/scripts/resolve-package-acceptance-scope*.mjs'
   pull_request:
     paths:
       - 'source/host/src/extensions/auth/**'
@@ -133,6 +135,58 @@ jobs:
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
           echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
+  retained-direct-ffi-compatibility:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind retained direct C wrapper scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/retained-direct-ffi
+          git rev-parse HEAD > artifacts/retained-direct-ffi/target-sha.txt
+          sha256sum source/mahayana/mahayana-rs/Cargo.lock source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs > artifacts/retained-direct-ffi/input-sha256.txt
+          printf '%s\n' 'NMR-39 compatibility retention: direct C wrappers and test-owned temporary encrypted-store reopen only; live DC remains ignored; no final shared/static library, installed consumer, real user data or service acceptance.' > artifacts/retained-direct-ffi/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: retained-direct-ffi-ubuntu-1.97.1
+      - name: Execute retained direct C lifecycle and rollback-reader contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version > artifacts/retained-direct-ffi/toolchain.txt
+          cargo --version >> artifacts/retained-direct-ffi/toolchain.txt
+          printf '%s\n' 'cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1' > artifacts/retained-direct-ffi/command.txt
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1 2>&1 | tee artifacts/retained-direct-ffi/runtime-ffi.log
+          grep -Eq '^test result: ok\. 15 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' artifacts/retained-direct-ffi/runtime-ffi.log
+          for case_name in \
+            exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles \
+            exported_c_persistent_client_restores_committed_state_after_close \
+            exported_c_execute_rejects_null_non_utf8_and_invalid_json \
+            exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage \
+            exported_c_persistent_create_rejects_invalid_key_lengths_before_storage; do
+            grep -Fx "test $case_name ... ok" artifacts/retained-direct-ffi/runtime-ffi.log
+          done
+          grep -Fx 'test live_runtime_bootstrap_keeps_an_encrypted_transport_session ... ignored, requires a live Telegram production data center' artifacts/retained-direct-ffi/runtime-ffi.log
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Preserve retained C wrapper evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retained-direct-ffi-compatibility-${{ github.sha }}
+          path: artifacts/retained-direct-ffi
+          if-no-files-found: error
+
   native-message-reconciliation:
     if: github.event_name == 'push' || inputs.message_batch
     runs-on: ubuntu-24.04
@@ -163,6 +217,12 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Native call fixed Human, credential body fence and remote-effect recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --test native_call_credential_contract -- --nocapture 2>&1 | tee artifacts/native-message/call-credential.log
+          grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message/call-credential.log
       - name: Canonical Native call scope admission, refusal and reopen
         shell: bash
         run: |
@@ -186,7 +246,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 54 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 62 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -595,8 +655,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 20' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 20' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 29' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 29' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -743,13 +803,24 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
+      - name: Explicit artifact-only scope and side-effect admission contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/scripts/resolve-package-acceptance-scope.test.mjs 2>&1 | tee artifacts/native-message-electron/package-scope.log
+          grep -Fx '# tests 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# pass 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# todo 0' artifacts/native-message-electron/package-scope.log
       - name: Existing installer promotion consumer contracts
         shell: bash
         run: |
           set -euo pipefail
           node --test --test-reporter=tap .github/scripts/promote-miniapp-candidate.test.mjs 2>&1 | tee artifacts/native-message-electron/promotion-consumer.log
-          grep -Fx '# tests 6' artifacts/native-message-electron/promotion-consumer.log
-          grep -Fx '# pass 6' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# tests 7' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# pass 7' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# fail 0' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/promotion-consumer.log
@@ -893,5 +964,3 @@ jobs:
           name: windows-update-publisher-${{ github.sha }}
           path: artifacts/windows-update-publisher
           if-no-files-found: error
-
-

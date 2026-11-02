@@ -1047,13 +1047,22 @@ read the referenced source journal directly; a matching request or destination
 nonce remains owned even after membership removal. Missing or corrupt source
 storage cannot prove legacy ownership. A forwarding-shaped nonce without
 usable context must also be checked against the stored source journals; ordinary
-reply metadata alone is not a forwarding identity. Preserve genuine readable
-pre-journal replay, existing pinned-byte guarantees and NMR-49 reply repair.
+reply metadata alone is not a forwarding identity. If no journal matches, require
+a strict readable referenced source plus the actual pre-journal nonce contract
+`SHA256(request UTF-8 || NUL || destination UTF-8)` before generic replay. Old
+and v1 nonces share the same external format, so the prefix alone proves neither
+ownership nor legacy compatibility. Missing/replaced-unrelated context plus an
+unavailable source remains pending with an explicit unresolved-ownership error.
+Preserve genuine readable pre-journal replay, existing pinned-byte guarantees
+and NMR-49 reply repair. This compatibility claim binds to the actual 2a007088
+legacy path; it does not promise automatic repair of arbitrary lost provenance.
 
 NMR-AC-38 ownership continuation adds one actual killed-process/SQLite/HTTP
 case: durable marker before first POST; revoked-source pending rows with future
 or missing context version, changed request marker, missing context and retained
-nonce; unavailable/corrupt source refusal; and a readable genuine legacy control.
+nonce; unavailable source combined with missing/replaced-unrelated context;
+corrupt source refusal; and a readable genuine legacy control using the real
+pre-journal nonce algorithm.
 The complete original intent and pending payload must remain retained. Tests
 execute only at exact-H GitHub Actions. NMR-50 retains nonblocking batch recovery;
 this extension does not replace that work or change public commands/service APIs.
@@ -1382,8 +1391,55 @@ mismatch, not a fabricated release failure.
   generation, archive-member readback, installation and promotion acceptance
   remain mandatory before release.
 
-This batch performs no release dispatch, publication, backend mutation, merge
-or deployment.
+The initial receipt-placement correction above performed no release dispatch,
+publication, backend mutation, merge or deployment. The explicitly scoped
+follow-on below permits only nonpublishing artifact-only verification.
+
+### Round 18 package-only execution scope (NMR-PACKAGE-DELIVERY-01b / NMR-AC-PACKAGE-DELIVERY-01b)
+
+The existing exact-source macOS packaging owner gains an explicit
+`artifact_only` boolean, default false. Its default push/full behavior and
+immutable promotion acceptance remain unchanged. This mode supplies actual
+signed/notarized installer and installed-copy byte evidence while real account,
+Agent and Mini App service acceptance is still unavailable; it grants no
+product, release or independent ACCEPT.
+
+- Admit artifact-only only for an explicit workflow_dispatch with
+  publish_release, promote_existing_candidate and
+  iterate_existing_miniapp_candidate all false. A single preflight parses
+  only the canonical empty/true/false boolean input strings and rejects unknown
+  values or conflicting artifact-only routes before any packaging or
+  production-account work. Full-mode promotion plus publish remains valid
+  for the existing promotion owner to qualify.
+- All three existing route jobs depend on this preflight. Only its canonical
+  output controls execution. Artifact-only skips exactly the production CI
+  login, real packaged Agent acceptance and approved Mini App installed
+  service/lifecycle acceptance, together with their full-acceptance uploads.
+  Their original names and all existing full-mode acceptance commands remain.
+- Preserve complete source builds, pinned dependencies, runtime boundaries,
+  Developer ID signing, app/DMG notarization and ticket checks, installed
+  executable copy identity, packaged worker/Host sibling checks, final-byte
+  metadata, blockmaps and installer checksums. Do not launch the candidate
+  application, send production login requests or run models in artifact-only.
+- Use distinct fabushi-macos-artifact-only and artifact-verification evidence
+  names, bind the requested scope and exact source/workflow/run identities,
+  and explicitly record productAccepted=false and serviceAcceptance=not-run.
+  Keep the installer member whitelist and flat release paths unchanged.
+- Execute the preflight's behavioral and actual child-process IO tests and the
+  existing promotion consumer tests only in GitHub Actions. The real consumer
+  must reject dispatch-only candidate provenance, either skipped full
+  acceptance step and the artifact-only archive name. A green artifact-only
+  packaging job cannot satisfy immutable main/push/factory/full-step proof.
+- After the containing-H policy contracts succeed, dispatch only this
+  explicitly nonpublishing artifact-only route at the exact containing source
+  SHA. Read full logs and actual archive bytes before claiming any package
+  result. Missing signing/runner/build inputs remain explicit failures or
+  blockers; no full-mode or promotion gate is relaxed to obtain a result.
+
+This is a scoped CI/package-verification capability under the existing release
+owner, not a new product runtime, authority or migration-completion row.
+Backend PR137 stays read-only; merge, deployment and public publication remain
+outside this batch.
 
 ### Native resource upload service limit (NMR-51 / NMR-AC-42)
 
@@ -1495,3 +1551,163 @@ identity before it is exposed. This batch does not claim a changefeed for older
 remote edits/reactions, multi-device or cancellation completeness, real Worker
 deployment, full source/legal closure, signed platforms, full UI/a11y/Bot/soak,
 upgrade/rollback acceptance, or independent ACCEPT.
+
+### Round 7 resumed qualification — existing NMR-22/24/26 boundaries
+
+Resume base: `3c9995a97c59d89824b2f6e0e49e72cef4825439`; retain all later
+NMR-25 through NMR-50 contracts and the fixed U. Earlier unpublished preparation
+is not authority to restore blocking sends or replace current projection owners.
+
+Before replaying a durable Human reaction intention, require a message whose
+`authorKind` is Human and whose author is the authenticated local Human or the
+selected peer. Require a canonical positive safe-integer remote ID and exact
+untrimmed emoji identity. Reject malformed/foreign/missing/changed targets before
+HTTP, preserve the complete row and intention, and publish no mutation. Recheck
+the current target and remote identity after HTTP before replacing reaction
+fields; retain unrelated current metadata. New toggles use the same admission
+before staging an intention. Existing credential/session response fences remain.
+
+Qualify the actual short and empty 32nd pages without a 33rd list GET, partial-page
+resource failure followed by checkpoint replay, equal-timestamp `beforeSeq`
+stability, and crash recovery when the row was committed but the desired intent
+was not yet cleared. Use the existing real Host/HTTP/SQLite/reopen harness.
+Remote message identities must be canonical positive safe-integer strings or
+equivalent integer JSON numbers before canonical-row lookup or materialization.
+Do not normalize padded, signed or leading-zero text into a second identity.
+An ascending history page must advance strictly from the requested cursor, even
+when its cursor echo and numeric nextAfterId are otherwise valid. Reject malformed,
+duplicate, backward and nonadvancing pages before resource access, row publication
+or coverage advancement; retain the checkpoint and recover from it after restart.
+
+The existing pagination anchor must remain pending through intermediate React
+commits caused by row updates while an older page is in flight. Consume it only
+after that page is installed. Human reaction RPC projection must reject obsolete
+account generations, superseded mutations and authoritative transcript events,
+including deferred React updaters; current failures use the existing notice.
+Reuse `transcript-projection.ts`, the current read buffers/cursor cache, and one
+Transcript. Preserve all existing tests and validate only in exact-H Actions.
+No full source, backend deployment, package, visual/a11y or independent ACCEPT
+is implied by these bounded cases.
+
+### Request round 9 resumed qualification — durable coverage and full renderer
+
+Current reviewed base is `afb34b49c5964524a887088f1095070b75cfdf8b`;
+later independent commits remain part of the integration base. Fixed U and every
+existing NMR contract remain unchanged.
+
+- **NMR-23a:** Persist new `humanHistoryCoverage` values with `version: 1`.
+  A structurally valid legacy value without a version is unqualified and starts
+  again at `afterId=0`; retain its original metadata and transcript until a
+  matching `historyCursor` page has been durably applied. Reject unknown,
+  nonnumeric, null or malformed versions and unsafe/noninteger cursor values.
+  Validate coverage after the current identity/credential check and before
+  replaying that conversation's reaction or pending-send intentions. Preserve
+  independent forwarding recovery. A denied old Worker response must leave
+  legacy state intact across reopen; a qualified page upgrades the checkpoint,
+  and the next reopen resumes from that qualified cursor. Retain the existing
+  6,400-row/32-full-page and short/empty-32nd-page tests without duplicate cases.
+- **NMR-26a:** Exercise the actual existing `ProductionRenderer` through its
+  Coordinator client and feed. Preserve `HumanReactionSettlement`, opaque
+  history cursors, failed-page overlays and viewport-anchor ownership. Canonical
+  Human empty text or explicit empty attachments clear that field; an omitted
+  field retains it. Composed updates and identity remaps must stay consistent
+  in root, loaded older-page and in-flight caches. Nonces are qualified by Human
+  author/domain; peer or authorless rows cannot remove local pending sends.
+  Retain original Agent incremental and authorless echo behavior.
+- **NMR-26b:** Delayed send and reaction results may only update their original
+  account lifetime and conversation, and cannot overwrite a newer canonical
+  feed result. An initial clear starts a fresh read while fencing the old one.
+  An offline queued send drains exactly once only after the existing transport
+  state becomes connected; repeated connected events do not redispatch it.
+  Retain all current dialog, pagination, Electron and shipping gates. Add ten
+  real Chromium renderer scenarios, with no retries or skipped cases, complete
+  JSON result assertions and inspectable screenshots/traces. Controlled
+  browser/service fixtures do not constitute deployed-service, signed-package,
+  visual/a11y or independent acceptance.
+
+All new and retained behavior is qualified only by GitHub Actions at the exact
+containing commit. Preserve the observed afb reconciliation compile failure
+(run41522324008/job125541192099, E0382) and repair only the incorrect shutdown
+receiver in its restart test before executing the new candidate.
+
+### Retained direct FFI wrapper qualification
+
+The standalone legacy Telegram C wrappers remain a compatibility surface.
+They do not regain an AppHost or CLI production registration. Extend the
+existing `providers/telegram-runtime/tests/runtime_ffi.rs` target to call the
+actual exported C create, persistent-create, execute, close and free functions.
+Exercise owned response allocation/free, ordinary and persistent close/reopen,
+and the existing null/UTF-8/key-length/closed-handle rejection contracts. Use
+only correctly allocated caller buffers and synthetic temporary stores/keys;
+never fabricate dangling pointers or open original user stores for a probe.
+
+Run these integration cases only at the containing-H Actions. Preserve the
+explicitly ignored live-DC case as unexecuted service coverage; require exact
+pass/ignored counts for the non-live target. This qualifies the C wrappers and
+rollback fixture, not a final staticlib/cdylib producer, export table or external
+installed consumer. Preserve all original data, readers, public ABI signatures,
+the generic Host C ABI7 gate and complete release/independent-ACCEPT blockers.
+
+## NMR-UI-01 — Existing renderer author and asynchronous settlement
+
+Integration authority is the live checkpoint, including
+`afb34b49c5964524a887088f1095070b75cfdf8b` and later concurrent work.
+The earlier unpublished round8 files are a candidate delta, never a replacement
+for newer opaque history walks, pending reply recovery, current reaction
+settlement, source reviews, Host gates or other product capabilities.
+The original exact5d/run41413368942 and exact59f/run41508537631 message gates
+succeeded; they do not execute this UI extension.
+
+- **NMR-UI-01a:** Preserve explicit Human author identity from canonical Host
+  rows through the existing renderer model, cache, page/event merge and
+  acknowledgement/queue/cancel/retry paths. Distinct Human message IDs may
+  correlate by nonce only for the same explicit Human author and user role.
+  Peer, assistant and unscoped Human rows cannot settle a local intent.
+  Bind optimistic Human rows to the authenticated native identity. Preserve
+  the existing Agent fragment, attachment echo and tool-turn behavior.
+- **NMR-UI-01b:** Reuse the current account/conversation generation and mutation
+  fences. Keep per-operation read/receipt overlays where needed so a delayed
+  successful send/reaction result cannot undo a newer canonical feed update.
+  A late semantic error after canonical send remains an error without
+  demoting sent delivery or restoring an unsent draft. Clear only the original
+  submitted draft identity. Logout, A-to-B-to-A, transcript clear and root
+  disposal cannot permit an old callback to change cache, delivery, draft,
+  roster or a new lifetime's busy state. Switching conversations in one valid
+  account settles the originating cache; its pending send must not disable
+  another conversation or release that conversation's non-send busy operation.
+- **NMR-UI-01c:** Apply canonical Human empty text, resources, rich text and
+  reactions as authoritative values through initial/older/full snapshots and
+  mutation overlays. Retain existing opaque cursor/current-payload behavior,
+  failed-page retry overlays and commit-time viewport anchoring. Do not use
+  Agent attachment-fragment fallback to restore removed Human content.
+- **NMR-AC-UI-01:** Preserve every current projection/Host/cursor/RPC/Forward/
+  Electron/shipping gate and extend only the missing behavior tests. Execute
+  the actual ProductionRenderer with controlled external coordinator/Desktop
+  boundaries in Chromium: source-author negatives, late success/refusal,
+  canonical empty fields, overlapping reads, inactive cached rows, account
+  replacement/return, clear/disposal, Bob composer/draft positive control
+  while Alice waits, and retained Agent tools/attachment controls. Capture
+  complete logs, request/error diagnostics, DOM and screenshots at frozen H.
+  Authored counts are not execution evidence. No local executable validation.
+
+Use the existing Session/Transcript durable owner and renderer projection.
+No new message database, command schema, native edit/delete service, user-data
+deletion, backend PR mutation or deployment is introduced. Full source/legal,
+real-service/current-active deployment, signed packages, full visual/a11y/Bot/
+performance/soak and independent ACCEPT remain open.
+
+### Round8 ledger object transport
+
+Large full-ledger connector writes were interrupted and the proposed object
+was not available by its Git SHA. Reuse the repository's exact-checkout
+unattached-blob transport pattern for this batch's single existing
+`FBCP-NMR-001` row. A temporary Actions job may append only the explicit
+reviewed arrays and note from a frozen manifest, while proving all old array
+items, scalar/source/legal/acceptance fields, other rows and top-level source
+review data are unchanged. It records the exact input, operations and output
+blob identities. It cannot create commits or move refs, and grants no test,
+source or product acceptance. Root independently reads the complete input and
+output, reconciles the latest canonical ledger and publishes with
+`force=false` plus `expected_sha` CAS. Remove only this batch's temporary
+job/manifest after integration. This transport does not replace the sole ledger
+or alter the product validation requirements above.

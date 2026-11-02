@@ -3,7 +3,7 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "CALL-SCOPE bounded loopback and retained reconciliation contracts passed at exact8bcfd; shipping compile and shared-line integration remain pending",
+  "status": "call-scope-subset-qualified; credential-batch-source-reviewed-awaiting-containing-H",
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
@@ -26,7 +26,7 @@
       "auxiliary runtime dependency locks"
     ],
     "integration_parent": "81024616de4ddd503020aff423305f76c22bcacf",
-    "concurrent_reconciliation": "Reapplied only approved call guard/workflow additions onto 2d03120fe107b94f389409ac4f6890947940af4e, preserving new forward ownership recovery and Human53/Chromium22 gates. Publication payloads are constructed from exact fetched contents, without the extra final newline present only in scratch review copies. A later expected-head publication did not land after a GitHub GraphQL error; remote reread proved concurrent branch advance. The unreferenced67e483 commit is not claimed delivered. Current publication rebases to 63c59566aae7fa9b424a364df1429176c792d249 and preserves the newer canonical ledger. Current810246 advance adds only atomic-creation preparation files; exact code/workflow/ledger inputs remain unchanged and are reused by immutable blob.",
+    "concurrent_reconciliation": "Reapplied only approved call guard/workflow additions onto 2d03120fe107b94f389409ac4f6890947940af4e, preserving new forward ownership recovery and then-current Human and forwarding gates (the unsupported Chromium22 wording is corrected below to the actual8bcfd sixteen-case result). Publication payloads are constructed from exact fetched contents, without the extra final newline present only in scratch review copies. A later expected-head publication did not land after a GitHub GraphQL error; remote reread proved concurrent branch advance. The unreferenced67e483 commit is not claimed delivered. Current publication rebases to 63c59566aae7fa9b424a364df1429176c792d249 and preserves the newer canonical ledger. Current810246 advance adds only atomic-creation preparation files; exact code/workflow/ledger inputs remain unchanged and are reused by immutable blob.",
     "publication_retries": [
       {
         "commit": "67e48310256b1cc19f765cec659584f00c6279e3",
@@ -134,7 +134,13 @@
         "id": 125537148138,
         "name": "native-message-ui",
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "success",
+        "counts": {
+          "transcript": 20,
+          "human_cursor": 17,
+          "forward_settlement": 5,
+          "forward_dialog_chromium": 16
+        }
       },
       {
         "id": 125537148185,
@@ -276,7 +282,7 @@
       "verdict": "Direct positive evidence supports bounded AC-CALL-SCOPE-01/02; no discrepancy in exact head, counts, artifact identity or job status. Full batch/product ACCEPT not granted.",
       "method": "Independent reread of full job logs, run/job/artifact metadata, exact-H spec and executed fixture. Upload/server digest agreement checked; ZIP not independently downloaded/rehashed.",
       "limitations": [
-        "Controlled loopback backend on macOS, not deployed service or media/device authorization.",
+        "Controlled loopback backend on Ubuntu24.04, not deployed service or media/device authorization.",
         "Logical SQLite metadata/transcript/table snapshots; reopen reconstructs owners in-process, not process-kill or power-loss durability.",
         "Malformed metadata rejection exercised through cached owners; reopen verifies preservation rather than repeating every negative cold.",
         "Shipping compile queued; overall native workflow has no success conclusion."
@@ -305,7 +311,7 @@
     {
       "id": 4,
       "condition": "User-behavior batches include ingress/rules/permissions/persistence/service/events/UI/failure/cancel/restart and tests",
-      "evidence": "Call creation wrong-scope defect repaired in the existing owner; five gateway/HTTP/SQLite cases authored, existing lifecycle/discovery regressions selected. Exact-H execution pending; full call/media batch remains open.",
+      "evidence": "Call canonical-pair production guard and5+3+1 gateway/HTTP/SQLite cases passed exact8bcfd. The following account-lifetime batch adds five Native family fences/eight production bindings and six independently source-reviewed recovery contracts; their containing-H execution is pending. Full call/media lifetime remains open.",
       "complete": false
     },
     {
@@ -317,7 +323,7 @@
     {
       "id": 6,
       "condition": "Stable common contracts and disjoint scoped parallel work; root integrates public contracts/locks/ledger",
-      "evidence": "Implementation limited to create_call_session and a new test file; independent source review separated. Root owns workflow/spec/canonical row/RTM integration. No public schema mutation.",
+      "evidence": "Disjoint Native-call/test author and root-owned eight production bindings; distinct frozen code/test and merge reviewers. Root integrates workflows, canonical existing row, owner/RTM and evidence on pinned shared00036927. No new public schema or owner.",
       "complete": true
     },
     {
@@ -329,13 +335,13 @@
     {
       "id": 8,
       "condition": "Continue independent work during CI, repair common contracts first, distinguish test/code/environment defects",
-      "evidence": "R1 accepted socket mode classified TEST_FLAW and fixed after durable root decision; source-only rereview passed. No rerun-to-green or invented remote-service evidence.",
+      "evidence": "While8bcfd macOS shipping remains queued, the independent call credential batch was authored/reviewed and concurrent shared00036927 changes reconciled. Earlier socket TEST_FLAW fixed after root decision; evidence-only runner/UI count errors explicitly corrected. No rerun-to-green or invented service evidence.",
       "complete": false
     },
     {
       "id": 9,
       "condition": "Unique inventory/ledger/RTM separates source, implementation, wiring, authored tests, execution and independent acceptance; schema/validator aligned",
-      "evidence": "Canonical185-row ledger and six source reviews passed current schema/candidate gates at8bcfd; source acceptancefalse and unknown/unreadnull. Actual bounded execution/independent evidence verdict recorded here; row execution update/new credential scope still require integration.",
+      "evidence": "Prepared single canonical185-row ledger5b69d6e preserves exact shared184 rows/sixreviews and passes unchanged schemae52 in Actions41524317837; old8bc scope execution versus new six authored credential cases is explicit. Full candidate/product/ACCEPT remains false; final containing-H source gate still required.",
       "complete": false
     },
     {
@@ -365,7 +371,7 @@
     "Complete source review dispositions and generated/build/external/LFS/legal closure remain unaccepted.",
     "Independent CALL-CRED-01–06 account/device credential-lifetime repair is being authored. No execution proof for that new delta yet."
   ],
-  "next_action": "Complete and freeze CALL-CRED-01–06 native credential fences, eight Session call-site bindings and six response-barrier/recovery cases, then run exact-H Actions; retain original queued shipping job without retry.",
+  "next_action": "Run the containing-H credential6 + scope5 + shipping3 + local1 contracts with current shared gates; inspect exact failures before any retry.",
   "github_delivery": {
     "preparation_commit": "9e959272d40c0dbceb396fb894151114575b1512",
     "preparation_full_sha_and_five_files_readback": true,
@@ -382,5 +388,121 @@
       "target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
     }
   },
-  "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
+  "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "corrections": [
+    {
+      "kind": "evidence-count-correction",
+      "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+      "statement": "Earlier rebinding prose mentioned Chromium22; the executed UI job at8bcfd actually contains16 forward-dialog cases.",
+      "proof": {
+        "job": 125537148138,
+        "run": 41521134666,
+        "counts": {
+          "transcript": 20,
+          "human_cursor": 17,
+          "forward_settlement": 5,
+          "forward_dialog_chromium": 16
+        },
+        "failed": 0,
+        "skipped": 0,
+        "coordinator_client_blob": "b35d5899c8de48bbeff8c5ba55c017371c905308",
+        "forward_dialog_test_blob": "da87497e6fcb12e3c306e137467f837eff63c4ba"
+      },
+      "disposition": "Correct current-head evidence; no gate or test is deleted and no older22-case implementation is imported. Latest shared-line dispatch contract must be reconciled before dependent UI work."
+    },
+    {
+      "id": "call-runtime-os",
+      "statement": "The prior exact8bcfd reconciliation job125537147556 ran on Ubuntu24.04. The earlier macOS loopback description was incorrect; macOS belongs to separate still-queued shipping compilation.",
+      "source": "run41521134666 job125537147556 full log Operating System / Runner Image and exact checkout8bcfd",
+      "corrected_fields": [
+        "independent_evidence_review.limits",
+        "CALL-SCOPE ledger platform_delta/test_environment_ids"
+      ],
+      "gate_changes": false
+    }
+  ],
+  "credential_batch": {
+    "spec": "docs/specs/fbcp-native-call-credential-lifetime.md",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "authored_base": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+    "shared_reconciliation_input": "00036927d789913f08062cd303475fc5c55d57f2",
+    "status": "authored-and-independent-source-reviewed; containing-H Actions pending",
+    "production_change": "Five Native call HTTP families bind fixed Session Human before transport and compare existing six fields after response body; signal sender device uses the exact outgoing credential. Eight shipping Session call sites use explicit bound APIs. Existing selected-pair guard retained.",
+    "source_owner_reviewer": "/root/call_credential_source_review",
+    "frozen_code_reviewer": "/root/current_gap_read/call_credential_frozen_review",
+    "frozen_source_verdict": "No concrete implementation or fixture defect found; no review-driven fix proposed or applied. This is not runtime acceptance.",
+    "original_frozen_blobs": {
+      "native": "20a9d5a1cbe2ac4a8f18671beb9b2fc99adb569d",
+      "production": "9ca5209c8eed190a718b39a4fafb07c2d92a789f",
+      "tests": "9ef2ce91a0ad29dd6515e3cb986a7748c4415da0"
+    },
+    "authored_cases": [
+      "native_call_credentials_bind_all_http_families_before_transport",
+      "native_call_signal_binds_sender_to_dispatch_credential",
+      "native_call_credentials_fence_every_held_get_field_before_lifecycle_post",
+      "native_call_credentials_reject_stale_ice_and_discovery_bodies",
+      "native_call_credentials_recover_admitted_create_after_rejected_response",
+      "native_call_credentials_recover_admitted_event_after_rejected_response"
+    ],
+    "expected_count": 6,
+    "execution": {
+      "head": null,
+      "run": null,
+      "job": null,
+      "conclusion": null
+    },
+    "recovery_boundary": "Rejected post-body acknowledgments do not undo an admitted remote mutation; existing discovery/replay must recover it without another POST.",
+    "limits": [
+      "No epoch/ABA history or atomic revocation guarantee",
+      "Full renderer/media/lease/device lifetime remains open",
+      "Loopback contracts do not establish deployed service authorization, supported packages or independent migration ACCEPT"
+    ],
+    "reconciled_blobs": {
+      "native": "e654932a7cb572b5f66a7842888049f2bb3c4b36",
+      "production": "b2daaab48b10f11580534b11b5b423e0a5016f4d",
+      "workflow": "3bf0dd3b35b8672095595cc76a2b78c646b7bd87",
+      "tests": "9ef2ce91a0ad29dd6515e3cb986a7748c4415da0"
+    }
+  },
+  "integration_reconciliation": {
+    "input": "00036927d789913f08062cd303475fc5c55d57f2",
+    "reviewed_production_blobs": {
+      "native": "2c86ddf9c9432334e862a062d72a2de8903368dc",
+      "production": "7b2fd1bd349d6e810fe4af76875af49982d007ef",
+      "workflow": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d"
+    },
+    "preserved": "Shared reaction/history/forward recovery, retained-direct-ffi job, Human62/Transcript29/package-scope10/promotion7 gate sources and shared184 ledger rows; only call regions and declared workflow additions changed.",
+    "ledger_input": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+    "schema": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+    "qualification": "New combined H required; no prior runtime result is attributed to the credential implementation.",
+    "independent_verdict": "APPROVED source-only by /root/call_credential_source_review: only declared call regions/workflow additions differ from pinned shared input; all message/recovery/direct-FFI and gates preserved; no concrete merge defect. Runtime qualification pending.",
+    "ledger_preparation": {
+      "acceptance_changed": false,
+      "base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+      "bytes": 3639488,
+      "new_responsibility": "FBCP-CALL-SCOPE-001",
+      "pinned_shared_input_head": "00036927d789913f08062cd303475fc5c55d57f2",
+      "preparation_head": "446d42e1305e02b3b3985ccd0f9b0b4b1d6c5f1f",
+      "prepared_blob": "5b69d6e9103396f8de7d157e38fe7c1607afbf72",
+      "refs_written": false,
+      "responsibilities": 185,
+      "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "source_reviews_preserved": true,
+      "run": 41524317837,
+      "job": 125548026844,
+      "result": "success",
+      "artifact": 13177999607,
+      "digest": "sha256:763f00b26cc208569e9105d8bbe1fbeb70aed53754c48a9d02c3cab6813f2a98",
+      "remote_blob_readback": true,
+      "shared_184_rows_exact": true,
+      "source_reviews_exact": true
+    },
+    "source_workflow_review": {
+      "finding": "CRED-MERGE-01 missing isolated push selector",
+      "root_disposition": "FIX before publication",
+      "verified_blob": "3f6adb6a405dd545944f0ac7d3e9584e3d93ad8b",
+      "reviewer": "/root/call_credential_source_review",
+      "verdict": "focused source-only rereview approved; only authorized two selector changes"
+    }
+  }
 }

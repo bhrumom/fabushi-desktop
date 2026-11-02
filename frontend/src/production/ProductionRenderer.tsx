@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -99,7 +99,7 @@ import { WindowStatusBadge } from "../recovered/features/window-chrome/status-ba
 import { RootShellNotificationHost } from "../recovered/features/window-chrome/notification-host";
 import { AppAlertHost } from "../recovered/features/window-chrome/app-alert/view";
 import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspace-indicator";
-import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus } from "../recovered/features/window-chrome/model";
+import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus, WINDOW_CHROME_METRICS } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
@@ -356,6 +356,17 @@ const OVERLAY_FRAME_STYLE = {
   placeItems: "center",
   position: "fixed",
   zIndex: 100
+} as const;
+
+// Plugins must escape the workspace stacking context while leaving the native
+// 52px window-control band reachable. Its old z=100 frame put Close underneath
+// WindowChrome's drag carrier (4999) and the chat header (5000) in short windows.
+const PLUGINS_OVERLAY_FRAME_STYLE = {
+  ...OVERLAY_FRAME_STYLE,
+  inset: `${WINDOW_CHROME_METRICS.controlsBlock}px 0 0`,
+  zIndex: 5002,
+  WebkitAppRegion: "no-drag",
+  "--fabushi-plugins-chrome-block": `${WINDOW_CHROME_METRICS.controlsBlock}px`
 } as const;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2726844-2728320 (Nmt info-pane header)
@@ -1313,26 +1324,49 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     scope: { accountSlot: null, agentId: null },
     ...reactionRootCallbacks
   }));
+  const [humanReactionSettlement] = useState(() => createHumanReactionSettlement(() => accountScopeGenerationRef.current));
+  useStrictModeSafeDisposal(humanReactionSettlement);
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
-      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
-      if (conversation == null) throw new Error("Human reaction conversation is unavailable");
-      const value = await client.call("reactHumanMessage", {
-        conversationId: input.agentId,
-        entryId: input.entryId,
-        emoji: input.emoji
-      });
-      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
-      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
-      setEntriesByAgent((current) => {
-        const entries = current[input.agentId];
-        if (entries == null) return current;
-        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
-        return { ...current, [input.agentId]: next };
-      });
+      const currentAccount = accountRef.current;
+      if (currentAccount?.kind !== "logged-in") return;
+      const accountSlot = currentAccount.authId ?? currentAccount.email ?? "account";
+      await humanReactionSettlement.run(
+        { conversationId: input.agentId, entryId: input.entryId },
+        async () => {
+          const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+          if (conversation == null) throw new Error("Human reaction conversation is unavailable");
+          const value = await client.call("reactHumanMessage", {
+            conversationId: input.agentId,
+            entryId: input.entryId,
+            emoji: input.emoji
+          });
+          const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+          if (projected == null || projected.id !== input.entryId) throw new Error("Human reaction settlement returned an invalid transcript entry");
+          return projected;
+        },
+        (projected, isCurrent) => {
+          transcriptPaginationController.ingestEntryUpdate(accountSlot, input.agentId, projected);
+          setEntriesByAgent((current) => {
+            if (!isCurrent()) return current;
+            const entries = current[input.agentId];
+            if (entries == null || !entries.some((entry) => entry.id === input.entryId)) return current;
+            return {
+              ...current,
+              [input.agentId]: entries.map((entry) => entry.id !== input.entryId ? entry
+                : entry.kind === "message" && projected.kind === "message"
+                  ? mergeAuthoritativeTranscriptMessage(entry, projected)
+                  : projected)
+            };
+          });
+        },
+        (error, isCurrent) => setNotice((current) => isCurrent()
+          ? error instanceof Error ? `Human reaction unavailable: ${error.message}` : `Human reaction unavailable: ${String(error)}`
+          : current),
+      );
     }
-  } : undefined, [activeIsHuman, client]);
+  } : undefined, [activeIsHuman, client, humanReactionSettlement, transcriptPaginationController]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
@@ -2856,6 +2890,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
         }
         for (const entry of projectedEntries) {
+          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
           if (entry.kind !== "message" || entry.clientNonce == null) continue;
           acknowledgementController.ingestTranscriptEvent({
             accountSlot: acknowledgementScopeRef.current.accountSlot,
@@ -2880,6 +2915,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
         if (projected == null || !ownerId) return;
+        humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
         rememberPreBaselineFeedEntry(ownerId, projected.id);
         for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
           read.updates.set(projected.id, projected);
@@ -2900,6 +2936,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       },
       onCleared: (ownerId) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+        humanReactionSettlement.clearConversation(ownerId);
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
         transcriptHistoryCursorsRef.current.delete(ownerId);
@@ -2924,6 +2961,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const owner = agentsRef.current.find((agent) => agent.id === ownerId);
       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
       if (projected == null || !ownerId) return;
+      humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
       rememberPreBaselineFeedEntry(ownerId, projected.id);
       for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
         read.updates.set(projected.id, projected);
@@ -2976,7 +3014,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -3731,6 +3769,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountScopeGeneration = accountScopeGenerationRef.current;
     await client.call("deleteAgents", { ids: [agentId] });
     if (accountScopeGenerationRef.current !== accountScopeGeneration) return;
+    humanReactionSettlement.clearConversation(agentId);
     transcriptHistoryCursorsRef.current.delete(agentId);
     for (const read of pendingTranscriptReadsRef.current) {
       if (read.agentId === agentId) pendingTranscriptReadsRef.current.delete(read);
@@ -4391,7 +4430,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
       {overlay === "hidden-chats" ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={null}><HiddenChatsDialog hiddenAgents={hiddenAgents} isOpen onClose={() => setOverlay(null)} onOpenAgent={(id) => void openAgent(id)} onUnhide={(id) => void unhide(id)} /></Suspense></div> : null}
       {overlay === "settings" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.settings)}><SettingsOverlayErrorBoundary onClose={() => setOverlay(null)}><SettingsDesktopSurface bridge={bridge} computer={settingsComputerMount} coordinatorClient={client} initialSection={settingsSection} isOpen onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} /></SettingsOverlayErrorBoundary></Suspense></div> : null}
-      {overlay === "plugins" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
+      {overlay === "plugins" && bridge != null ? <div style={PLUGINS_OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
       {overlay === "about" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><RecoveredAboutDialog
         bridge={bridge}
         labels={{ copied: UI_TEXT.copied, copyVersionInfo: UI_TEXT.copyVersionInfo, copyright: UI_TEXT.copyright, title: UI_TEXT.title }}

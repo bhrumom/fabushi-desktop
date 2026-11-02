@@ -151,7 +151,21 @@ jobs:
           evidence="artifacts/staged-runtime/$RUNTIME_BINARY"
           mkdir -p "$evidence"
           printf '%s\n' "$FABUSHI_TARGET_SHA" > "$evidence/target-sha.txt"
-          { rustc -Vv; cargo -V; uname -a; } > "$evidence/toolchain.txt"
+          {
+            rustc -Vv
+            cargo -V
+            uname -a
+            xcodebuild -version
+            xcrun --find clang
+            xcrun clang --version
+            xcrun --show-sdk-path
+            xcrun --show-sdk-version
+            if command -v cmake; then
+              cmake --version
+            else
+              printf '%s\n' 'cmake=unavailable (optional runner inventory)'
+            fi
+          } > "$evidence/toolchain.txt"
           if git ls-files --error-unmatch "$RUNTIME_ROOT/Cargo.lock" > /dev/null 2>&1; then
             printf '%s\n' locked > "$evidence/input-mode.txt"
           else
@@ -318,9 +332,9 @@ jobs:
           events = [json.loads(line) for line in open(sys.argv[1]) if line.startswith("{")]
           passed = [event for event in events if event.get("Action") == "pass" and event.get("Test") and "/" not in event["Test"]]
           failed_or_skipped = [event for event in events if event.get("Action") in ("fail", "skip")]
-          assert len(passed) == 13, (len(passed), passed)
+          assert len(passed) == 18, (len(passed), passed)
           assert not failed_or_skipped, failed_or_skipped
-          print("network-worker owner contracts: 13 top-level passed; 0 failed/skipped")
+          print("network-worker owner contracts: 18 top-level passed; 0 failed/skipped")
           PY
           git diff --exit-code -- go.mod go.sum
       - name: Preserve source and actual binary evidence

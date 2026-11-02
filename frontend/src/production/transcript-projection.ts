@@ -288,3 +288,88 @@ export function reconcileTranscriptRefresh(
   return reconcileTranscriptFeedBaseline(current, incoming, changedIds);
 }
 
+export interface HumanReactionTarget {
+  readonly conversationId: string;
+  readonly entryId: string;
+}
+
+interface HumanReactionCompletion {
+  readonly accountGeneration: number;
+  invalidated: boolean;
+}
+
+export interface HumanReactionSettlement {
+  run<T>(
+    target: HumanReactionTarget,
+    request: () => Promise<T>,
+    apply: (value: T, isCurrent: () => boolean) => void,
+    onError: (error: unknown, isCurrent: () => boolean) => void,
+  ): Promise<void>;
+  observeEntry(target: HumanReactionTarget): void;
+  clearConversation(conversationId: string): void;
+  dispose(): void;
+}
+
+/** Projection lifetime only; Session still owns reaction intent and settlement. */
+export function createHumanReactionSettlement(readAccountGeneration: () => number): HumanReactionSettlement {
+  let accountGeneration = readAccountGeneration();
+  let disposed = false;
+  // Retain settled tokens so deferred React updaters can reject later events.
+  const completions = new Map<string, Map<string, HumanReactionCompletion>>();
+
+  const enterAccount = (): number => {
+    const current = readAccountGeneration();
+    if (current !== accountGeneration) {
+      for (const entries of completions.values()) {
+        for (const completion of entries.values()) completion.invalidated = true;
+      }
+      completions.clear();
+      accountGeneration = current;
+    }
+    return current;
+  };
+
+  return {
+    async run(target, request, apply, onError) {
+      if (disposed) return;
+      const generation = enterAccount();
+      const entries = completions.get(target.conversationId) ?? new Map<string, HumanReactionCompletion>();
+      const previous = entries.get(target.entryId);
+      if (previous != null) previous.invalidated = true;
+      const completion: HumanReactionCompletion = { accountGeneration: generation, invalidated: false };
+      entries.set(target.entryId, completion);
+      completions.set(target.conversationId, entries);
+      const isCurrent = (): boolean => !disposed
+        && !completion.invalidated
+        && readAccountGeneration() === completion.accountGeneration;
+      try {
+        const value = await request();
+        if (isCurrent()) apply(value, isCurrent);
+      } catch (error) {
+        if (isCurrent()) onError(error, isCurrent);
+      }
+    },
+
+    observeEntry(target) {
+      if (disposed) return;
+      enterAccount();
+      const completion = completions.get(target.conversationId)?.get(target.entryId);
+      if (completion != null) completion.invalidated = true;
+    },
+
+    clearConversation(conversationId) {
+      if (disposed) return;
+      enterAccount();
+      const entries = completions.get(conversationId);
+      if (entries != null) {
+        for (const completion of entries.values()) completion.invalidated = true;
+        completions.delete(conversationId);
+      }
+    },
+
+    dispose() {
+      disposed = true;
+      completions.clear();
+    },
+  };
+}

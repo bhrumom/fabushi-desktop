@@ -1,17 +1,25 @@
 # FBCP Native Communication Absorption — Status
 
-## 2026-11-02 — CALL-SCOPE-001 bounded production batch
-
-The existing Native call-creation owner binds the requested participant pair to the selected canonical Human conversation before remote creation. This closes the A↔B-scope / A↔C-call mismatch for newly admitted calls without adding an owner or changing public schemas. Five actual gateway/HTTP/SQLite cases cover rejection, corrupted metadata, lifecycle/discovery/reopen, backend refusal/retry and no-Native compatibility; existing 3+1 call regressions remain selected. Exact implementation H, execution status and artifacts are in `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; source review is recorded separately. Do not infer passing execution from test authorship.
-
-U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The existing Git inventory remains 6895 root / 16381 recursive identities; the single ledger adds only `FBCP-CALL-SCOPE-001` (185 responsibility rows). Its six source review records, unknown/unread nulls and unaccepted source/product state are preserved. Full source/build/generated/external/LFS/legal disposition, historical mismatched-call data recovery, real call service/media/device/platform/UI/security/soak/upgrade/Bot and independent ACCEPT remain open. No user data is deleted and no release is authorized.
-
-
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
+
+## Round7 resumed NMR-22/24/26 qualification
+
+The existing Session/gateway now refuses malformed reaction targets and emoji
+before staging or HTTP, preserves current row fields at delayed settlement,
+and keeps durable rejected intentions diagnosable. Existing Transcript projection
+fences obsolete reaction responses, and pagination waits for the accepted page
+before consuming its viewport anchor. Later reply/upload/forward/credential/CLI
+changes remain intact. Eight Host and nine production-helper cases are added,
+including canonical message-ID and strictly advancing page refusal/recovery;
+containing-H Actions execution is required. Initial run41409695104 executed16
+Human cases:14passed/2failed; fixture repair30b4/run41410242810 passed16Human/4Agent
+and shipping gates.
+See `projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json`.
+Full migration, real service, source/legal, packages/UI/a11y/Bot and ACCEPT remain open.
 
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
@@ -210,3 +218,9 @@ source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
 
+
+## 2026-11-02 — task20bf round1 Native call account/peer batch
+
+Fixed U remains f985723b552b30fe1c17d377d57f44e61a15a8c4. Existing HumanCallControls → Session gateway → ProductionSessionWorkers → Native call HTTP → CallSessionStore now binds the selected canonical pair and the fixed Session Human. Exact8bcfd/run41521134666/job125537147556 passed scope5 + shipping-call3 + local-lifecycle1 on Ubuntu24.04; source run41521134644 passed157 source/37 schema and an unaccepted185-row candidate. These results remain bounded; macOS shippingjob125537147935 was queued at the last inspection.
+
+The six-case credential refinement adds expected-Human admission, six-field response-body checks and same-snapshot signal sender at existing owners, with discovery/replay recovery for already admitted mutations. It is frozen and independently source-reviewed; the reconciled containing-H Actions remains required. Shared00036927 message/recovery changes, ledger rows, owner/RTM appendices and gate sources are preserved. Canonical ledger records prior executed scope evidence separately from authored credential tests. Existing task evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; review: adjacent `task20bf-round1-call-scope-review.md`. No whole source, service/media/platform/Bot or independent ACCEPT/release closure.

@@ -140,8 +140,9 @@
   "resumption": {
     "unpublished_preparation_base": "30b4b3952d7e5dab154548b2f5a3a6fef2545c26",
     "remote_rediscovered": "3c9995a97c59d89824b2f6e0e49e72cef4825439",
-    "integration_base": "1a2b864aee290db21548262c983033d184cab356",
-    "disposition": "Preserved old preparation separately. Did not publish its blocking-send implementation, duplicate UI merger, stale ledger or old gate counts. Reconciled later reply, upload-limit, credential, forward, CLI, source-review and lock-diagnostic changes before this narrow delta."
+    "integration_base": "78c375cef3f27e4a355cb8c206681c2b7edc9c66",
+    "disposition": "Preserved old preparation separately. Did not publish its blocking-send implementation, duplicate UI merger, stale ledger or old gate counts. Reconciled later reply, upload-limit, credential, forward, CLI, source-review and lock-diagnostic changes before this narrow delta.",
+    "later_preserved": "06de stable opaque history/activity plus977 canonical RPC converter,2d forward pending ownership and auxiliary captured locks retained during integration. Current63c direct reply-parent17 negative variants and Ubuntu focused reconciliation dependencies are retained; actual macOS AppHost shipping gate remains. Plugins overlay frame positioning from682aea is retained in the same renderer. d261 legacy-forward source/context-loss refusal and real legacy nonce oracle are retained."
   },
   "qualified_predecessor": {
     "head": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
@@ -159,24 +160,41 @@
     "boundary": "Full logs read; shipping expected digest-mismatch subprocess failure was the negative oracle, and its job passed. This predecessor does not qualify the new candidate."
   },
   "candidate": {
-    "base": "1a2b864aee290db21548262c983033d184cab356",
+    "base": "78c375cef3f27e4a355cb8c206681c2b7edc9c66",
     "production_blobs": {
-      "source/host/src/extensions/session/production.rs": "c48cbb088b47b62c2916e2bc9f2d499d2a685348",
-      "source/host/src/extensions/session/native_messaging.rs": "ac7a6367e5098ec98e5f39e45c5cde77c75e41b4",
-      "source/host/src/extensions/session/gateway.rs": "05435f95ad94242d1e81defdda148baca40bf86e",
-      "source/host/tests/session_gateway_contract.rs": "33a3299876a40afa7a00746c9292240fd75b721e",
-      "frontend/src/production/ProductionRenderer.tsx": "54b7b0b46a92029836031801cdc4905ed57c14e4",
-      "frontend/src/production/transcript-projection.ts": "f9bdb88ed2decc489d429ffeb7d1f07eeeeca310",
-      "frontend/src/production/transcript-projection.contract.test.ts": "ce484f8737e1857984254892211feb5ae315b33a",
-      "frontend/src/recovered/features/conversation/workspace/pagination.ts": "e629cfa5232a37ca734a9c8d8e26498eb001d390"
+      "frontend/src/production/ProductionRenderer.tsx": "d82aaad7b2a4cc7c92d4ef7bcfbe85c96f464b45",
+      "frontend/src/production/transcript-projection.contract.test.ts": "6dc12986661b5dfe75db5240c1819b1e6253dd0b",
+      "frontend/src/production/transcript-projection.ts": "24370228baeaac7818b5996ea435585dd9fadb70",
+      "frontend/src/recovered/features/conversation/workspace/pagination.ts": "ad5eba81aef6131cb3f0158d4155acd26e619cbf",
+      "source/host/src/extensions/session/gateway.rs": "9e4f1ebc675e7ab3bd0d57b3833448dc72ad979f",
+      "source/host/src/extensions/session/native_messaging.rs": "2c86ddf9c9432334e862a062d72a2de8903368dc",
+      "source/host/src/extensions/session/production.rs": "7b2fd1bd349d6e810fe4af76875af49982d007ef",
+      "source/host/tests/session_gateway_contract.rs": "b84f6a3eec2994a8be84006823366a7f29f082d7"
     },
-    "human_authored": 55,
-    "human_new": 7,
-    "transcript_authored": 27,
+    "human_authored": 62,
+    "human_new": 8,
+    "transcript_authored": 29,
     "transcript_new": 9,
     "execution_at_freeze": "not-run; use only containing exact-H GitHub Actions results",
     "required_workflow": ".github/workflows/native-service-contracts.yml",
-    "execution_binding": "The commit containing the actual changes and canonical ledger is H. Existing jobs record github.sha and SHA-named artifacts; source/object transport is not execution or acceptance."
+    "execution_binding": "The commit containing the actual changes and canonical ledger is H. Existing jobs record github.sha and SHA-named artifacts; source/object transport is not execution or acceptance.",
+    "new_history_contract": "Existing full6400/32-page continuation plus short/empty32nd, resource-prefix failure, opaque stable walk with fresh payload/reopen, and malformed/canonical identity page recovery. Source mapping is not execution.",
+    "source_review_base": "2d03120fe107b94f389409ac4f6890947940af4e",
+    "ledger_base_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+    "ledger_target_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+    "workflow_blob": "963e16e7fbade71fbe4869096b87b6e62abb3bee",
+    "retained_cases": {
+      "human": 62,
+      "transcript": 29,
+      "cursor_rpc": 17,
+      "forward_journal": 12,
+      "resource_bound": 3,
+      "agent_nonce": 4,
+      "forward_settlement": 5,
+      "chromium_forward": 16,
+      "package_scope": 10,
+      "installer_promotion": 7
+    }
   },
   "review": [
     {
@@ -191,11 +209,24 @@
     },
     {
       "scope": "Static scope limitation",
-      "result": "Review is not runtime validation. No local executable validation; no new mounted reaction/visual/a11y acceptance is claimed. Seven Host cases and nine actual production helper cases are authored; current-H Actions still required."
+      "result": "Review is not runtime validation. No local executable validation; no new mounted reaction/visual/a11y acceptance is claimed. Eight Host cases and nine actual production helper cases are authored; current-H Actions still required."
     },
     {
       "scope": "Final independent read-only review against76a84, retained unchanged source blobs after0e8c41c document/ledger integration",
       "result": "No open blocking source/test-design findings. All592 added Host-test lines, gateway/raw identity admission, HTTP barriers, persistence/events, renderer completion and pagination anchors reviewed. Seven Host and nine Transcript cases authored; no execution or release acceptance claim."
+    },
+    {
+      "scope": "Full bounded-history condition audit after initial object transfer",
+      "finding": "A legal historyCursor/nextAfterId could carry a raw leading-zero message ID and materialize a second canonical row. Duplicate/backward/nonadvancing ordering was implemented but lacked its direct rejection/reopen oracle.",
+      "decision": "FIX via one message-specific canonical positive-safe-integer parser in native next-boundary, whole-page preflight, shared message admission/materialization and latest lookup. Generic user identity stays unchanged. Add one real table with twelve malformed/order variants, zero resource/write/event effects and same-checkpoint restart recovery including MAX_SAFE integer/string identity."
+    },
+    {
+      "scope": "Final integrated source and test review at63c59566",
+      "result": "No concrete source/test-design blocker; all eight Host cases and nine UI cases read, including12 malformed-history variants/MAX_SAFE and paired opaque cursor reopen. All current direct-parent negatives, stable walks/activity, forward ownership, Ubuntu reconciliation and macOS shipping preserved. Review is not execution or independent release acceptance."
+    },
+    {
+      "scope": "Later inherited682/d261 compatibility",
+      "result": "Independent read-only review found no blocker in preserved Plugins frame changes, strict legacy-forward recovery and the combined source/context-loss and real legacy nonce oracle. R7 code/cases unchanged; no local validation or acceptance."
     }
   ],
   "actual_route": "Existing Human reaction control / transcript -> Coordinator -> Session gateway -> ProductionSessionWorkers -> issuer/account-bound Native client -> existing SandAgentDb and durable intent -> transcript events -> same cached/older-page projection and single Transcript.",
@@ -215,5 +246,35 @@
   },
   "full_product_acceptance": false,
   "independent_release_acceptance": false,
-  "local_executable_validation": "not-run"
+  "local_executable_validation": "not-run",
+  "transport_preparations": [
+    {
+      "commit": "95d145345ab78b052c4892c666068bfdbd702c18",
+      "parent": "1a2b864aee290db21548262c983033d184cab356",
+      "run": 41519038759,
+      "job": 125529982087,
+      "conclusion": "success",
+      "objects": 14,
+      "artifact": 13176811886,
+      "artifact_digest": "sha256:39e120fdb899a7b618e9f99bb58eea36010a9a4d2aa10b0686ca50b74a7bd46e",
+      "remote_commit_and_four_file_contents_verified": true,
+      "refs_updated_by_job": false,
+      "product_validation": false,
+      "disposition": "Superseded before production publication after the canonical-ID audit and concurrent stable paging/forward changes. Do not install the earlier whole objects over current source/ledger."
+    },
+    {
+      "commit": "0328c8649437ca93daaab74921fa2726b20b3999",
+      "parent": "222371af3d0c2241697c5a57b0160ecb336edbab",
+      "run": 41521723113,
+      "job": 125539160597,
+      "conclusion": "success",
+      "objects": 14,
+      "artifact": 13178226154,
+      "artifact_digest": "sha256:78f30403c47a972486665411d11f286545ddec9843673efa12bc2f1f6c374c44",
+      "remote_commit_and_payload_patch_receipt_verified": true,
+      "refs_updated_by_job": false,
+      "product_validation": false,
+      "disposition": "Real owner objects transferred and receipt read back. Preserve later78c artifact-only package policy in workflow/spec before root CAS; no gate or full service acceptance removed."
+    }
+  ]
 }

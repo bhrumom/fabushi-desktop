@@ -725,11 +725,12 @@ impl FabushiNativeMessagingClient {
         active: bool,
         expected_user_id: Option<&str>,
     ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
-        let message_id = required_trimmed(message_id, "message id")?;
+        let canonical_message_id = required_trimmed(message_id, "message id")?;
         if message_id
             .parse::<u64>()
             .ok()
-            .filter(|value| *value > 0)
+            .filter(|value| *value > 0 && *value <= 9_007_199_254_740_991
+                && value.to_string() == message_id && canonical_message_id == message_id)
             .is_none()
         {
             return Err("Fabushi Human reaction requires a positive canonical message id".into());
@@ -928,7 +929,7 @@ impl FabushiNativeMessagingClient {
             let next = data.next_after_id.as_ref().and_then(Value::as_u64)
                 .ok_or_else(|| "Fabushi Human history response omitted a valid nextAfterId".to_string())?;
             let expected_next = data.messages.last().map(|message| {
-                fabushi_identity_text(&message.id)?.parse::<u64>()
+                fabushi_message_identity_text(&message.id)?.parse::<u64>()
                     .map_err(|_| "Fabushi Human history nextAfterId is not a numeric message id".to_string())
             }).transpose()?.unwrap_or(requested_after_id);
             if next != expected_next || next > 9_007_199_254_740_991 {
@@ -941,7 +942,22 @@ impl FabushiNativeMessagingClient {
     pub fn get_human_call_ice_servers(
         &self,
     ) -> Result<(Vec<FabushiCallIceServer>, u64), String> {
+        self.get_human_call_ice_servers_bound(None)
+    }
+
+    pub fn get_human_call_ice_servers_for_user(
+        &self,
+        expected_user_id: &str,
+    ) -> Result<(Vec<FabushiCallIceServer>, u64), String> {
+        self.get_human_call_ice_servers_bound(Some(expected_user_id))
+    }
+
+    fn get_human_call_ice_servers_bound(
+        &self,
+        expected_user_id: Option<&str>,
+    ) -> Result<(Vec<FabushiCallIceServer>, u64), String> {
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let response = self
             .client
             .get(self.endpoint("/api/social/calls/ice")?)
@@ -957,6 +973,7 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call ICE response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallIceEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call ICE response was invalid JSON (HTTP {}): {error}",
@@ -989,7 +1006,24 @@ impl FabushiNativeMessagingClient {
     }
 
     pub fn list_human_calls(&self, limit: usize) -> Result<Vec<FabushiRemoteHumanCall>, String> {
+        self.list_human_calls_bound(limit, None)
+    }
+
+    pub fn list_human_calls_for_user(
+        &self,
+        limit: usize,
+        expected_user_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanCall>, String> {
+        self.list_human_calls_bound(limit, Some(expected_user_id))
+    }
+
+    fn list_human_calls_bound(
+        &self,
+        limit: usize,
+        expected_user_id: Option<&str>,
+    ) -> Result<Vec<FabushiRemoteHumanCall>, String> {
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let mut url = self.endpoint("/api/social/calls")?;
         url.query_pairs_mut()
             .append_pair("limit", &limit.clamp(1, 200).to_string());
@@ -1008,6 +1042,7 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call discovery response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call discovery response was invalid JSON (HTTP {}): {error}",
@@ -1029,9 +1064,28 @@ impl FabushiNativeMessagingClient {
         call_id: &str,
         peer_human_id: &str,
     ) -> Result<FabushiRemoteHumanCall, String> {
+        self.create_human_call_bound(call_id, peer_human_id, None)
+    }
+
+    pub fn create_human_call_for_user(
+        &self,
+        call_id: &str,
+        peer_human_id: &str,
+        expected_user_id: &str,
+    ) -> Result<FabushiRemoteHumanCall, String> {
+        self.create_human_call_bound(call_id, peer_human_id, Some(expected_user_id))
+    }
+
+    fn create_human_call_bound(
+        &self,
+        call_id: &str,
+        peer_human_id: &str,
+        expected_user_id: Option<&str>,
+    ) -> Result<FabushiRemoteHumanCall, String> {
         let call_id = required_trimmed(call_id, "call id")?;
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let response = self
             .client
             .post(self.endpoint("/api/social/calls")?)
@@ -1051,6 +1105,7 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call creation response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call creation response was invalid JSON (HTTP {}): {error}",
@@ -1079,10 +1134,31 @@ impl FabushiNativeMessagingClient {
         after_seq: u64,
         limit: usize,
     ) -> Result<(FabushiRemoteHumanCall, Vec<FabushiRemoteHumanCallEvent>, u64), String> {
+        self.get_human_call_bound(call_id, after_seq, limit, None)
+    }
+
+    pub fn get_human_call_for_user(
+        &self,
+        call_id: &str,
+        after_seq: u64,
+        limit: usize,
+        expected_user_id: &str,
+    ) -> Result<(FabushiRemoteHumanCall, Vec<FabushiRemoteHumanCallEvent>, u64), String> {
+        self.get_human_call_bound(call_id, after_seq, limit, Some(expected_user_id))
+    }
+
+    fn get_human_call_bound(
+        &self,
+        call_id: &str,
+        after_seq: u64,
+        limit: usize,
+        expected_user_id: Option<&str>,
+    ) -> Result<(FabushiRemoteHumanCall, Vec<FabushiRemoteHumanCallEvent>, u64), String> {
         let call_id = required_trimmed(call_id, "call id")?;
         let encoded_call_id: String =
             url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let mut url = self.endpoint(&format!("/api/social/calls/{encoded_call_id}"))?;
         {
             let mut query = url.query_pairs_mut();
@@ -1104,6 +1180,7 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call sync response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call sync response was invalid JSON (HTTP {}): {error}",
@@ -1137,6 +1214,32 @@ impl FabushiNativeMessagingClient {
         kind: &str,
         payload: &Value,
     ) -> Result<(FabushiRemoteHumanCall, FabushiRemoteHumanCallEvent), String> {
+        self.append_human_call_event_bound(call_id, client_event_id, generation, kind, payload, None)
+    }
+
+    pub fn append_human_call_event_for_user(
+        &self,
+        call_id: &str,
+        client_event_id: &str,
+        generation: u64,
+        kind: &str,
+        payload: &Value,
+        expected_user_id: &str,
+    ) -> Result<(FabushiRemoteHumanCall, FabushiRemoteHumanCallEvent), String> {
+        self.append_human_call_event_bound(
+            call_id, client_event_id, generation, kind, payload, Some(expected_user_id),
+        )
+    }
+
+    fn append_human_call_event_bound(
+        &self,
+        call_id: &str,
+        client_event_id: &str,
+        generation: u64,
+        kind: &str,
+        payload: &Value,
+        expected_user_id: Option<&str>,
+    ) -> Result<(FabushiRemoteHumanCall, FabushiRemoteHumanCallEvent), String> {
         let call_id = required_trimmed(call_id, "call id")?;
         let client_event_id = required_trimmed(client_event_id, "call event id")?;
         let kind = required_trimmed(kind, "call event kind")?;
@@ -1146,6 +1249,13 @@ impl FabushiNativeMessagingClient {
         let encoded_call_id: String =
             url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
+        if kind == "signal"
+            && payload.get("senderDeviceId").and_then(Value::as_str)
+                != Some(required_trimmed(&credentials.device_id, "deviceId")?)
+        {
+            return Err("call signal senderDeviceId must match the authenticated Host device".into());
+        }
         let response = self
             .client
             .post(self.endpoint(&format!(
@@ -1169,6 +1279,7 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human call event response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: CallEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human call event response was invalid JSON (HTTP {}): {error}",
@@ -1416,6 +1527,20 @@ pub fn fabushi_identity_text(value: &Value) -> Result<String, String> {
         Value::Number(value) => Ok(value.to_string()),
         _ => Err("Fabushi messaging userId is invalid.".into()),
     }
+}
+
+// Message primary keys share the service's positive JavaScript-safe integer
+// domain. Unlike display/user identities, their raw text must be canonical:
+// accepting "01" or padded input would create a second local transcript key.
+pub(super) fn fabushi_message_identity_text(value: &Value) -> Result<String, String> {
+    let parsed = match value {
+        Value::String(raw) => raw.parse::<u64>().ok().filter(|id| id.to_string() == *raw),
+        Value::Number(number) => number.as_u64(),
+        _ => None,
+    };
+    parsed.filter(|id| *id > 0 && *id <= 9_007_199_254_740_991)
+        .map(|id| id.to_string())
+        .ok_or_else(|| "Fabushi Human message identity is not a canonical positive safe integer".to_string())
 }
 
 fn classify_identity_http_status(

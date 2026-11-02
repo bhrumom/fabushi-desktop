@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 22,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+  "expected_input_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+  "append": {
+    "additional_source_identities": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/core/update_verify.cpp",
+        "object": "5d970cf882ec3870fa36d079ff94bd50eb703a37"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/_other/updater_win.cpp",
+        "object": "bf935373b2577570c0268de1c151ba479206569d"
+      }
+    ],
+    "test_execution_evidence": [
+      "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011030:success source16/publisher28/carrier10/auth8/fixture-copy3/metadata18 and actual Electron build; artifact13172586742 sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1. Historical component proof only, not later-H execution.",
+      "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011118:success native Windows11 failed0 skipped0 cancelled0; actual CP437/UTF8, Valid/Authenticode, same-entry subject/DER pin, owned-certificate cleanup remaining0, fixture executions0; artifact13171043513 sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25. Fixture-only, no formal publisher or install acceptance.",
+      "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:success gateway-library11/protocol122/TCP9/resource-copy4; artifact13173112803 ZIP digest a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f independently read. Real Darwin AppHost160061040 bytes sha256:5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb equals archived source/destination; missing binary, invalid format and valid64hex unequal digest rejected. Three fixtures plus one real binary, no full package acceptance."
+    ],
+    "test_evidence": [
+      "recovered-execution:round22-windows-publisher-authority.json#interruption_recovery; preserves original8f cancellation/recovery, initial44f Windows fixture failure and exact59f complete logs/artifact evidence separately from subsequent qualified73cc component records"
+    ]
+  },
+  "note": "Round22 resumption: preserve every later updater/source, Social, forward, reply, resource and packaging change. The two fixed-U updater source records added here are product/high/deep-required/pending selected-section reviews, not complete reads; all six prior source_reviews remain unchanged. Historical exact59f run41508537631 is terminal success, with actual publisher28/native11 and the real AppHost well-formed unequal64hex negative. This append does not supersede the later73cc target/evidence already in this row or qualify newer message/package heads. Formal publisher approval, real signed installation/upgrade/rollback, complete source/legal and independent ACCEPT stay blocked. Full audit at the same round22 receipt.",
+  "source_reviews": [
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/core/update_verify.cpp",
+      "object": "5d970cf882ec3870fa36d079ff94bd50eb703a37",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Deep review required, incomplete: only527–605 and741–940 semantically inspected (manifest/key/channel authorization); full parser, key inputs/consumers and revocation lifetime remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json#source_review"
+      ],
+      "responsibility_ids": [
+        "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+      ]
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/_other/updater_win.cpp",
+      "object": "bf935373b2577570c0268de1c151ba479206569d",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Deep review required, incomplete: only102–210 and241–399 semantically inspected (PID creation-time fencing/apply/copy/retry); full callers, atomic recovery and rollback remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json#source_review"
+      ],
+      "responsibility_ids": [
+        "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+      ]
+    }
+  ],
+  "expected_output_blob": "0f0eb1d319cc98a21c83cf1241776ce2f644555f",
+  "review_summary": {
+    "before": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six source review records comprise two complete option contracts and four pending draft/feedback mappings; global review counts remain undetermined and acceptance is false.",
+    "after": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Eight source review records comprise two complete option contracts, four pending draft/feedback mappings and two pending updater selected-section reviews; global review counts remain undetermined and acceptance is false."
+  }
+}

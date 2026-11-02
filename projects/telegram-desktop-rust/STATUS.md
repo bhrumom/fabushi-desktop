@@ -1,16 +1,29 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-## 2026-11-02 — CALL-SCOPE-001 bounded production batch
-
-The existing Native call-creation owner binds the requested participant pair to the selected canonical Human conversation before remote creation. This closes the A↔B-scope / A↔C-call mismatch for newly admitted calls without adding an owner or changing public schemas. Five actual gateway/HTTP/SQLite cases cover rejection, corrupted metadata, lifecycle/discovery/reopen, backend refusal/retry and no-Native compatibility; existing 3+1 call regressions remain selected. Exact implementation H, execution status and artifacts are in `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; source review is recorded separately. Do not infer passing execution from test authorship.
-
-U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The existing Git inventory remains 6895 root / 16381 recursive identities; the single ledger adds only `FBCP-CALL-SCOPE-001` (185 responsibility rows). Its six source review records, unknown/unread nulls and unaccepted source/product state are preserved. Full source/build/generated/external/LFS/legal disposition, historical mismatched-call data recovery, real call service/media/device/platform/UI/security/soak/upgrade/Bot and independent ACCEPT remain open. No user data is deleted and no release is authorized.
-
-
 Date: 2026-11-02  
 Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Parent: FBCP-001 Revision 8  
 Complete: false
+
+## Concurrent round16 — pinned package inputs and retained C wrapper qualification
+
+The original requested run41447812811 passed at exact
+`adf15caadac5775fdd8582227cad3bbf9c93cf0f`; actual round16 NMR38/39
+delivery and all artifact bytes were reconciled at23f737f and its successful
+run41451598911. Later59f5fa/run41508537631 supplies separately scoped actual
+AppHost resource-copy and owner evidence; it does not qualify later changes.
+
+Input capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389
+succeeded. The two independent Cargo locks and Go manifest/checksums match
+artifact13175461007 exactly; capture Mac jobs skipped. Concurrent e13c34a5 already committed those
+inputs, disabled capture and locked the normal builders. This batch preserves
+that work, completes the remaining CI/release input guards and adds five
+direct C wrapper/temporary-store recovery cases while retaining the original
+ignored live-DC case. Pinned-H actual Mac binaries/owner tests and the Ubuntu
+C-wrapper gate are **not run at preparation**. Original data/readers, concurrent
+Session/UI work, the fixed U and all source/release acceptance blockers remain.
+Receipt: `evidence/round16-apphost-package-boundary.json`.
+
 
 ## Round 18 scoped result — native CLI Host and installer artifact boundary
 
@@ -316,3 +329,9 @@ source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
 
+
+## 2026-11-02 — task20bf round1 Native call account/peer batch
+
+Fixed U remains f985723b552b30fe1c17d377d57f44e61a15a8c4. Existing HumanCallControls → Session gateway → ProductionSessionWorkers → Native call HTTP → CallSessionStore now binds the selected canonical pair and the fixed Session Human. Exact8bcfd/run41521134666/job125537147556 passed scope5 + shipping-call3 + local-lifecycle1 on Ubuntu24.04; source run41521134644 passed157 source/37 schema and an unaccepted185-row candidate. These results remain bounded; macOS shippingjob125537147935 was queued at the last inspection.
+
+The six-case credential refinement adds expected-Human admission, six-field response-body checks and same-snapshot signal sender at existing owners, with discovery/replay recovery for already admitted mutations. It is frozen and independently source-reviewed; the reconciled containing-H Actions remains required. Shared00036927 message/recovery changes, ledger rows, owner/RTM appendices and gate sources are preserved. Canonical ledger records prior executed scope evidence separately from authored credential tests. Existing task evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; review: adjacent `task20bf-round1-call-scope-review.md`. No whole source, service/media/platform/Bot or independent ACCEPT/release closure.
