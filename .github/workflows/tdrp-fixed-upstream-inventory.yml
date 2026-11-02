@@ -1,0 +1,37 @@
+name: TDRP fixed upstream Git inventory
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - scripts/tdrp-collect-fixed-upstream.py
+      - scripts/tdrp-acquire-cppgir.py
+      - .github/workflows/tdrp-fixed-upstream-inventory.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixed-upstream-git-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect exact fixed-U root and recursive Git tree identities
+        env:
+          TDRP_TARGET_SHA: ${{ github.sha }}
+          GIT_TERMINAL_PROMPT: '0'
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python scripts/tdrp-collect-fixed-upstream.py
+      - name: Preserve unaccepted Git inventory candidate and raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-fixed-upstream-git-${{ github.sha }}
+          path: artifacts/tdrp-authority
+          if-no-files-found: error

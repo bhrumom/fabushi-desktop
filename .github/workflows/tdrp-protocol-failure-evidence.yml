@@ -1,4 +1,4 @@
-name: TDRP exact failed protocol evidence
+name: TDRP pinned failure evidence
 on:
   push:
     branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
@@ -18,6 +18,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
+          persist-credentials: false
       - name: Bind exact diagnostic source
         shell: bash
         run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
@@ -30,24 +31,52 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p artifacts/protocol-log-download
-          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118478143 > artifacts/protocol-log-download/metadata.json
-          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118478143/zip > artifacts/protocol-log-download/artifact.zip
+          mkdir -p artifacts/ledger-log-download
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13119840883 > artifacts/ledger-log-download/metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13119840883/zip > artifacts/ledger-log-download/artifact.zip
       - name: Read and hash full logs with bounded diagnostic output
         run: >-
           python3 scripts/tdrp-summarize-protocol-artifact.py
-          --metadata artifacts/protocol-log-download/metadata.json
-          --archive artifacts/protocol-log-download/artifact.zip
-          --output-dir artifacts/protocol-log-recovery
+          --metadata artifacts/ledger-log-download/metadata.json
+          --archive artifacts/ledger-log-download/artifact.zip
+          --output-dir artifacts/ledger-log-recovery
           --repository bhrumom/fabushi-desktop
-          --head-sha 93b5977f99115bd41a9ff30441e0b22696797364
-          --artifact-id 13118478143
-          --run-id 41394020435
-          --expected-digest sha256:2e824d9acf5582db3780ffe5311a8aa4147b13a43d97711b804818a4d07bd080
+          --head-sha 2fd8d7623a1cfa00b09e90a2d81535c6550425df
+          --artifact-id 13119840883
+          --run-id 41396376863
+          --expected-digest sha256:c8a929586a03bcdb70e353eb92a7262ab86868232c6dc1df61492d46787c9211
+      - name: Return the complete ledger error JSON without rerunning validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json
+          from pathlib import Path
+          root = Path('artifacts/ledger-log-recovery')
+          index = json.loads((root / 'index.json').read_text())
+          if index.get('complete') is not True:
+              raise SystemExit('Incomplete pinned artifact recovery')
+          if (root / 'raw/target-sha.txt').read_text().strip() != '2fd8d7623a1cfa00b09e90a2d81535c6550425df':
+              raise SystemExit('Unexpected source ledger H')
+          data = (root / 'raw/ledger-schema.json').read_bytes()
+          if len(data) > 8 * 1024 * 1024:
+              raise SystemExit('Ledger error JSON exceeds the explicit recovery bound')
+          report = json.loads(data)
+          if report.get('valid') is not False or len(report.get('errors', [])) != 868:
+              raise SystemExit('Unexpected pinned ledger error result')
+          packed = gzip.compress(data, mtime=0)
+          digest = hashlib.sha256(data).hexdigest()
+          print('TDRP_LEDGER_JSON ' + json.dumps({'record': 'header', 'bytes': len(data), 'sha256': digest,
+                'gzip_bytes': len(packed), 'errors': len(report['errors']), 'tests_rerun': False}))
+          for offset in range(0, len(packed), 3072):
+              print('TDRP_LEDGER_JSON ' + json.dumps({'record': 'chunk', 'offset': offset,
+                    'base64': base64.b64encode(packed[offset:offset + 3072]).decode('ascii')}))
+          print('TDRP_LEDGER_JSON ' + json.dumps({'record': 'end', 'complete': True, 'sha256': digest}))
+          PY
       - name: Preserve complete failure evidence and byte inventory
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-protocol-failure-41394020435-${{ github.sha }}
-          path: artifacts/protocol-log-recovery
+          name: tdrp-ledger-failure-41396376863-${{ github.sha }}
+          path: artifacts/ledger-log-recovery
           if-no-files-found: error
