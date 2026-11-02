@@ -3138,6 +3138,7 @@ impl ProductionSessionWorkers {
                 // Release before the message POST so sync can discover an
                 // accepted send while this request is still in flight.
                 drop(staging_guard.take());
+                let request_credential_fingerprint = client.request_credential_fingerprint()?;
                 let response = client.send_direct_message_for_settlement(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, sender_id);
                 // The POST may outlive a sync/reaction that already settled the
                 // same nonce. Rejoin the existing conversation mutation lane
@@ -3150,6 +3151,12 @@ impl ProductionSessionWorkers {
                 } else {
                     None
                 };
+                // The transport checked credential stability at send/body read.
+                // Recheck after regaining the Session lock: credentials may
+                // change while an old response waits behind sync/reaction.
+                if client.request_credential_fingerprint()? != request_credential_fingerprint {
+                    return Err("Fabushi native messaging credential changed before Human settlement".into());
+                }
                 let durable = owner.get_transcript_entries().map_err(|error| error.to_string())?;
                 let settled = durable.iter().find(|entry| {
                     let remote_id = entry.get("remoteMessageId").and_then(serde_json::Value::as_str);

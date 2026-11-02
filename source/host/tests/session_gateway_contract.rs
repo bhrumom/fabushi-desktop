@@ -4225,4 +4225,101 @@ fn shipping_human_reaction_rejects_credential_change_while_response_body_is_stre
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_http() {
+    for (label, first_reply) in [
+        ("accepted", HumanMessageFixtureReply::Json(201, json!({
+            "success":true,"message":fixture_remote_human_message(
+                96, 1, 2, "post-lock lease", Some("post-lock-lease"), json!([])
+            )
+        }))),
+        ("disconnected", HumanMessageFixtureReply::Disconnect),
+    ] {
+        let root = temp_root(&format!("human-post-lock-credential-{label}"));
+        let (send_seen, send_wait) = std::sync::mpsc::channel();
+        let (send_release, send_resume) = std::sync::mpsc::channel();
+        let (retry_seen, retry_wait) = std::sync::mpsc::channel();
+        let (retry_release, retry_resume) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Deferred(Box::new(first_reply), send_seen, send_resume),
+            // Sync owns the Session mutation lock during this pending-send retry.
+            HumanMessageFixtureReply::Deferred(
+                Box::new(HumanMessageFixtureReply::Json(503, json!({
+                    "success":false,"error":"temporary backend failure"
+                }))),
+                retry_seen, retry_resume,
+            ),
+            HumanMessageFixtureReply::Json(200, json!({
+                "success":true,"data":{"messages":[]}
+            })),
+            HumanMessageFixtureReply::Json(201, json!({
+                "success":true,"message":fixture_remote_human_message(
+                    96, 1, 2, "post-lock lease", Some("post-lock-lease"), json!([])
+                )
+            })),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let conversation_id = runtime.create_human_conversation("2", "Peer")
+            .expect("conversation")["id"].as_str().expect("id").to_string();
+        let sending = {
+            let runtime = Arc::clone(&runtime);
+            let id = conversation_id.clone();
+            thread::spawn(move || runtime.append_human_message(
+                &id, "post-lock lease", "post-lock-lease", Some(1000.0), None, &[]
+            ))
+        };
+        send_wait.recv_timeout(std::time::Duration::from_secs(15))
+            .expect("original HTTP request accepted");
+        let syncing = {
+            let runtime = Arc::clone(&runtime);
+            let id = conversation_id.clone();
+            thread::spawn(move || runtime.sync_human_conversation(&id))
+        };
+        retry_wait.recv_timeout(std::time::Duration::from_secs(15))
+            .expect("sync holds the Session lock for retry");
+        send_release.send(()).expect("release older HTTP response");
+        // Sync still holds the lock: even a completed old HTTP response
+        // cannot gain authority to settle after this credential rotation.
+        thread::sleep(std::time::Duration::from_millis(150));
+        let path = root.join("host-credential.json");
+        let mut credential: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(&path).expect("private credential")
+        ).expect("credential JSON");
+        credential["accessToken"] = json!("rotated-after-http");
+        fs::write(&path, credential.to_string()).expect("rotate same-user bearer");
+        retry_release.send(()).expect("release sync lock");
+        syncing.join().expect("sync thread").expect("independent empty coverage");
+        let error = sending.join().expect("original send")
+            .expect_err("obsolete response cannot settle");
+        assert!(error.contains("credential changed"), "{label}: {error}");
+        let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("owner");
+        let entries = owner.get_transcript_entries().expect("durable outbox");
+        assert_eq!(entries.len(), 1, "{label}");
+        assert_eq!(entries[0]["id"], "human-message:post-lock-lease", "{label}");
+        assert_eq!(entries[0]["delivery"], "pending", "{label}");
+        assert!(entries[0].get("remoteMessageId").is_none(), "{label}");
+        runtime.shutdown(); drop(owner); drop(runtime);
 
+        // A fresh Host restores its original account fixture and retries the
+        // persisted client nonce, never reusing the stale response.
+        let resumed = human_message_fixture_runtime(&root, &url);
+        let settled = resumed.append_human_message(
+            &conversation_id, "post-lock lease", "post-lock-lease", Some(1000.0), None, &[]
+        ).expect("replay from stable account");
+        assert_eq!(settled["id"], "human-server-message:96", "{label}");
+        let requests = server.join().expect("scripted fixture");
+        assert_eq!(requests.len(), 4, "{label}");
+        assert!(requests[0].starts_with("POST /api/social/messages "), "{label}");
+        assert!(requests[1].starts_with("POST /api/social/messages "), "{label}");
+        assert!(requests[2].contains("&afterId=0"), "{label}");
+        assert!(requests[3].starts_with("POST /api/social/messages "), "{label}");
+        for index in [0, 1, 3] {
+            assert_eq!(
+                fixture_request_json(&requests[index])["clientRequestId"],
+                "post-lock-lease", "{label}"
+            );
+        }
+        resumed.shutdown(); drop(resumed);
+        let _ = fs::remove_dir_all(root);
+    }
+}

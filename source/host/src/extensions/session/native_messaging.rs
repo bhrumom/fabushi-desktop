@@ -1177,6 +1177,23 @@ impl FabushiNativeMessagingClient {
             .map_err(|error| format!("Fabushi messaging endpoint is invalid: {error}"))
     }
 
+    // An HTTP response may wait behind a later Session mutation. Bind its
+    // settlement to every credential field, including token-only rotations.
+    // The raw bearer and session identifier never leave this private owner.
+    pub(super) fn request_credential_fingerprint(&self) -> Result<String, String> {
+        let credentials = self.read_bound_credentials()?;
+        let snapshot = serde_json::json!([
+            "fabushi-human-request-credential-v1",
+            credentials.access_token,
+            credentials.device_id,
+            credentials.user_id,
+            credentials.session_id,
+            credentials.expires_at_ms,
+            credentials.issuer,
+        ]);
+        Ok(sha256_hex(snapshot.to_string().as_bytes()))
+    }
+
     fn ensure_request_credential_stable(&self, original: &CredentialFile) -> Result<(), String> {
         let current = self.read_bound_credentials()?;
         if current.user_id != original.user_id
