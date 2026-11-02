@@ -535,11 +535,18 @@ mod tests {
         let host = RuntimeHandle::create_with_config(json!({
             "hostPlatform": "cli",
             "cwd": root, "workspaceRoots": [root], "dataDir": root,
+            "productSessionPath": root.join("session.json"),
+            "productSurfaceStatePath": root.join("surfaces.json"),
             "inheritInstalledPlugins": false
         }))
         .expect("direct Host starts");
         let status = host.execute_value(json!({"@type": "mahayana.runtime.status"})).unwrap();
         assert_eq!(status["runtimeAbiVersion"], 1);
+        // Status/Ready alone also succeed with UnavailableAgentBackend.
+        // A fresh native backend owns an empty, locally queried MCP inventory.
+        let servers = host.execute_value(json!({"@type": "mahayana.mcp.servers"}))
+            .expect("native Agent backend exposes its local MCP inventory");
+        assert_eq!(servers, json!({"@type": "mahayana.mcp.servers", "data": []}));
         let ready = host.receive(100).unwrap().expect("initial ready event");
         assert_eq!(ready["@type"], "mahayana.runtime.ready");
         drop(host);

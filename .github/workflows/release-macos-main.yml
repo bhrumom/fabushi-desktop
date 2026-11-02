@@ -646,6 +646,7 @@ jobs:
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
             ${{ runner.temp }}/fabushi-packaged-network-worker.json
             ${{ runner.temp }}/fabushi-packaged-executable-copy-identity.json
+            ${{ runner.temp }}/fabushi-final-macos-metadata.json
             desktop/playwright-report
             desktop/test-results
           if-no-files-found: warn
@@ -670,7 +671,6 @@ jobs:
             desktop/release/*.zip
             desktop/release/*.blockmap
             desktop/release/latest-mac.yml
-            ${{ runner.temp }}/fabushi-final-macos-metadata.json
             desktop/release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 90

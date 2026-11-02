@@ -45,6 +45,8 @@ on:
       - 'source/mahayana/mahayana-rs/Cargo.lock'
       - 'projects/telegram-desktop-rust/upstream.lock.json'
       - '.github/workflows/native-service-contracts.yml'
+      - '.github/workflows/release-macos-main.yml'
+      - '.github/scripts/promote-miniapp-candidate*.mjs'
   pull_request:
     paths:
       - 'source/host/src/extensions/auth/**'
@@ -291,6 +293,105 @@ jobs:
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/host-legacy-handoff.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-ffi --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/ffi-legacy-handoff.log
           grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/ffi-legacy-handoff.log
+      - name: Build and inspect actual CLI and gateway production binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=source/mahayana/mahayana-rs/Cargo.toml
+          cargo tree --locked --manifest-path "$manifest" -p mahayana-cli --edges normal,build,features --format '{p} features=[{f}]' 2>&1 | tee artifacts/native-message-shipping/cli-production-features.log
+          grep -F 'mahayana-host feature "desktop-full"' artifacts/native-message-shipping/cli-production-features.log
+          grep -F 'mahayana-host feature "local-only"' artifacts/native-message-shipping/cli-production-features.log
+          if grep -F 'mahayana-host feature "test-support"' artifacts/native-message-shipping/cli-production-features.log; then
+            echo 'CLI production graph must not use the test-support Host backend' >&2
+            exit 1
+          fi
+          # One package root: workspace/dev feature unification must not conceal
+          # a missing production Agent backend.
+          cargo build --locked --profile ci --manifest-path "$manifest" -p mahayana-cli --bin mahayana --bin mahayana-gateway 2>&1 | tee artifacts/native-message-shipping/cli-production-build.log
+          mkdir -p artifacts/native-message-shipping/cli-binaries
+          for name in mahayana mahayana-gateway; do
+            binary="source/mahayana/mahayana-rs/target/ci/$name"
+            test -x "$binary"
+            shasum -a 256 "$binary" > "artifacts/native-message-shipping/$name-sha256.txt"
+            file "$binary" > "artifacts/native-message-shipping/$name-file.txt"
+            nm -gUj "$binary" > "artifacts/native-message-shipping/$name-defined-symbols.txt"
+            otool -L "$binary" > "artifacts/native-message-shipping/$name-linked-libraries.txt"
+            if grep -Eq '^_?(fabushi_telegram_[[:alnum:]_]+|mahayana_runtime_[[:alnum:]_]+|mahayana_product_execute)$' "artifacts/native-message-shipping/$name-defined-symbols.txt"; then
+              echo "$name contains a retained FFI entrypoint" >&2
+              exit 1
+            fi
+            if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' "artifacts/native-message-shipping/$name-linked-libraries.txt"; then
+              echo "$name links a legacy runtime library" >&2
+              exit 1
+            fi
+            cp "$binary" "artifacts/native-message-shipping/cli-binaries/$name"
+          done
+      - name: Actual CLI and gateway native model construction controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, tempfile
+          evidence = pathlib.Path("artifacts/native-message-shipping").resolve()
+          binaries = pathlib.Path("source/mahayana/mahayana-rs/target/ci").resolve()
+          cases = []
+          identities = []
+          for name in ("mahayana", "mahayana-gateway"):
+              binary = binaries / name
+              raw = binary.read_bytes()
+              identities.append({"name": name, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()})
+              for native_https in (True, False):
+                  label = name + ("-native-https" if native_https else "-native-http-refusal")
+                  with tempfile.TemporaryDirectory(prefix="fabushi-cli-production-") as scratch:
+                      owned = pathlib.Path(scratch)
+                      workspace = owned / "workspace"
+                      workspace.mkdir()
+                      env = os.environ.copy()
+                      env.update({
+                          "MAHAYANA_HOME": str(owned / "mahayana"),
+                          "MAHAYANA_GATEWAY_STATE": str(owned / "gateway-state.json"),
+                          "MAHAYANA_USE_CODEX_ACCOUNT": "0",
+                          "MAHAYANA_RESPONSES_BASE_URL": ("https" if native_https else "http") + "://127.0.0.1:1/v1",
+                      })
+                      command = [str(binary)] + (["status"] if name == "mahayana" else [])
+                      frames = (
+                          '{"jsonrpc":"2.0","id":1,"method":"session.list","params":{}}\n'
+                          '{"jsonrpc":"2.0","id":2,"method":"gateway.shutdown","params":{}}\n'
+                      ) if name == "mahayana-gateway" else ""
+                      try:
+                          result = subprocess.run(command, input=frames, text=True, capture_output=True,
+                                                  cwd=workspace, env=env, timeout=30)
+                      except subprocess.TimeoutExpired as error:
+                          for stream, value in (("stdout", error.stdout), ("stderr", error.stderr)):
+                              if isinstance(value, bytes):
+                                  value = value.decode("utf-8", errors="replace")
+                              (evidence / (label + "." + stream + ".log")).write_text(value or "")
+                          raise
+                      (evidence / (label + ".stdout.log")).write_text(result.stdout)
+                      (evidence / (label + ".stderr.log")).write_text(result.stderr)
+                      if native_https:
+                          assert result.returncode == 0, (label, result.returncode, result.stderr)
+                          if name == "mahayana":
+                              status = json.loads(result.stdout)
+                              assert status["@type"] == "mahayana.runtime.status", status
+                              assert "mahayana-ai" in status["providers"] and "miniapp" in status["providers"], status
+                          else:
+                              observed = [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+                              replies = {frame["id"]: frame for frame in observed if "id" in frame}
+                              assert "result" in replies[1] and "error" not in replies[1], replies
+                              assert replies[2]["result"]["shuttingDown"] is True, replies
+                      else:
+                          assert result.returncode != 0, (label, "unavailable fallback unexpectedly succeeded")
+                          assert "remote model endpoints must use HTTPS" in result.stderr, (label, result.stderr)
+                      cases.append({"case": label, "exit_code": result.returncode, "passed": True})
+          assert len(cases) == 4
+          receipt = {"source_sha": os.environ["GITHUB_SHA"], "build_profile": "ci",
+                     "build_root": "mahayana-cli only; normal/build features",
+                     "binaries": identities, "cases": cases,
+                     "limits": "Production process construction only; no remote inference, full Bot, signed installer or external FFI acceptance"}
+          (evidence / "cli-production-processes.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print("NMR-CLI-HOST-01 actual production process controls: 4 passed")
+          PY
       - name: Native CLI/gateway direct Host and approval boundary
         shell: bash
         run: |
@@ -591,6 +692,16 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
+      - name: Existing installer promotion consumer contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/scripts/promote-miniapp-candidate.test.mjs 2>&1 | tee artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# tests 6' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# pass 6' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/promotion-consumer.log
       - name: Reconcile immutable historical installer metadata without changing package bytes
         shell: bash
         env:
