@@ -13,62 +13,36 @@
   },
   "append": {
     "requirement_ids": [
-      "FBCP-HUMAN-CREATE-01",
-      "FBCP-HUMAN-CREATE-02",
-      "FBCP-HUMAN-CREATE-03",
-      "FBCP-HUMAN-CREATE-04",
       "NMR-DATA-ADMISSION-01",
       "NMR-AC-DATA-ADMISSION-01"
     ],
     "fabushi_target_paths": [
       "source/host/src/extensions/session/production.rs",
-      "source/host/src/extensions/session/agent_db.rs",
-      "source/host/src/extensions/session/agent_db_schema.rs",
       "source/host/tests/session_gateway_contract.rs"
     ],
     "fabushi_target_symbols": [
-      "ProductionSessionWorkers::create_human_conversation",
-      "SandAgentDb::initialize_metadata_if_missing",
-      "read_existing_conversation_metadata",
       "ProductionSessionWorkers::find_forward_request",
-      "ProductionSessionWorkers::resume_human_forward_batches"
+      "ProductionSessionWorkers::resume_human_forward_batches",
+      "ProductionSessionWorkers::open_human_conversation_db_owner"
     ],
     "production_entrypoints": [
-      "Existing Session gateway createHumanConversation and native friend refresh -> ProductionSessionWorkers -> existing SandAgentDb creation/admission, no alternative owner",
-      "Existing forward staging/recovery -> strict retained-source discovery before requestId reuse or network dispatch"
+      "Existing Session forward staging and ordinary sync -> complete retained-source discovery before requestId reuse or network dispatch; same SandAgentDb source journals and native HTTP owner"
     ],
     "production_evidence": [
-      "Recovery round15 authored data-admission extension uses the existing source/host Session and SQLite owners. Complete target Blob identities and containing-H evidence belong to projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json. No local product execution or independent ACCEPT is claimed."
+      "Recovery round15 strict retained-source discovery extends the existing Session production owner. Current concurrent FBCP-HUMAN-CREATE implementation and creation12/storage3 remain owned by their original batch. Exact target Blobs and containing-H results belong to projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json; no local execution or independent ACCEPT."
     ],
     "test_evidence": [
-      "source/host/tests/session_gateway_contract.rs#shipping_human_concurrent_admission_preserves_wal_journal_outbox_and_agent_data",
-      "source/host/tests/session_gateway_contract.rs#shipping_human_metadata_initialization_has_one_atomic_winner_across_connections",
-      "source/host/tests/session_gateway_contract.rs#shipping_human_admission_rejects_foreign_incomplete_and_corrupt_metadata_without_writes",
-      "source/host/tests/session_gateway_contract.rs#shipping_human_admission_preserves_corrupt_sqlite_pages_and_original_sidecars",
-      "source/host/tests/session_gateway_contract.rs#shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
-      "source/host/tests/session_gateway_contract.rs#shipping_human_empty_creation_recovers_across_workers_busy_and_restart",
-      "source/host/tests/session_gateway_contract.rs#shipping_human_schema_only_admission_rejects_durable_data_and_resource_orphans"
+      "source/host/tests/session_gateway_contract.rs#shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
     ],
     "fault_recovery_case_ids": [
-      "shipping_human_admission_preserves_corrupt_sqlite_pages_and_original_sidecars",
-      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
-      "shipping_human_empty_creation_recovers_across_workers_busy_and_restart",
-      "shipping_human_schema_only_admission_rejects_durable_data_and_resource_orphans"
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
     ],
     "security_case_ids": [
-      "shipping_human_admission_rejects_foreign_incomplete_and_corrupt_metadata_without_writes",
-      "shipping_human_admission_preserves_corrupt_sqlite_pages_and_original_sidecars",
       "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
     ],
     "regression_ids": [
-      "shipping_human_concurrent_admission_preserves_wal_journal_outbox_and_agent_data",
-      "shipping_human_metadata_initialization_has_one_atomic_winner_across_connections",
-      "shipping_human_admission_rejects_foreign_incomplete_and_corrupt_metadata_without_writes",
-      "shipping_human_admission_preserves_corrupt_sqlite_pages_and_original_sidecars",
-      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy",
-      "shipping_human_empty_creation_recovers_across_workers_busy_and_restart",
-      "shipping_human_schema_only_admission_rejects_durable_data_and_resource_orphans"
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
     ]
   },
-  "note": "\nRecovery round15 retained-store admission: implement the existing FBCP-HUMAN-CREATE-01..04 contract in the same Session/SandAgentDb. Serialize same-instance creation, use atomic first-writer metadata, resume an actually empty directory/schema-only store only after empty durable-state proof at the SQLite write boundary, validate the actual canonical winner, and never compensate by deleting retained files. Ordinary read-only fixed-header admission precedes SQLite to avoid zero-page WAL cleanup; Human corruption/foreign metadata is rejected without reset/quarantine while Agent recovery defaults remain. Known external blob/snapshot resources prevent orphan adoption. Strict forward initial/recovery discovery cannot silently release a retained request identity on missing/corrupt source data. Seven real gateway/SQLite/process/cross-worker/busy/reopen cases are authored, not executed at preparation. Preserve all concurrent reply, pagination, forwarding, resource25MiB, reaction/UI and source-review work. Old draft NMR48/49 labels for this unpublished preparation are superseded; NMR48 attachment and NMR49 reply contracts remain owned by their existing batches. All containing-H Actions gates and full source/service/package/Bot/upgrade/rollback/independent ACCEPT still apply; acceptance fields and historical execution pointers are untouched."
+  "note": "\nRecovery round15 strict retained-source discovery: initial request lookup and ordinary forwarding recovery must inspect retained source journals before dispatch and propagate missing/unreadable state; unavailable data cannot free a request identity for a different source. Preserve own revoked-source durable denial, other-account isolation, compatible roster behavior, existing canonical metadata/journal and all concurrent CREATE01..04 creation12/storage3, reply/history/resource/UI work. The broader unpublished seven-case admission draft and its readonly_shm/raw-header approach are withdrawn from this integration after pinned SQLite3.51.3 corrupt-WAL risk was confirmed; no unsafe preflight, duplicate initializer, generic Agent recovery change or dependency upgrade is introduced. Those authored-only draft cases and exact source rationale remain reconstructable in the round15 receipt; they are not executed or accepted. Current selected case counts are frozen in the containing workflow; all current gates must execute at the exact containing H. Arbitrary corrupt WAL/hot-journal/zero-main preservation, multi-AppHost forward uniqueness, all source/legal/service/package/Bot/upgrade/rollback and independent ACCEPT remain unqualified. Acceptance fields and historical execution pointers are untouched."
 }
