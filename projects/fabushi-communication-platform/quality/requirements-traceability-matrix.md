@@ -681,3 +681,21 @@ Later shared SQLite initialization, Session permissions/history and actual rende
 The message POST releases the conversation mutation lane; existing resource staging and automatic source-batch recovery serialization are not claimed as new nonblocking behavior. No source inventory, source-review completion or release-acceptance counter changes.
 
 HRR-07 integration: failed pre-frame Human submissions resume the original existing Composer queue input with per-attachment commit progress; possibly posted frames switch to identity-only retry. No projected payload, fresh nonce or current-draft mutation is used. Actual authored gates at the current source freeze: Human67; Transcript34; retry helper28 + port4 + pre-Host queue8 =40; shared cursor/RPC19; retained actual Renderer Chromium11. These totals retain concurrent work and remain unexecuted at preparation. Full containing-H evidence is recorded in the same task receipt.
+
+## Native authenticated response completion
+
+Requirement: `NMR-NATIVE-RESPONSE-01` / `AC-NATIVE-RESPONSE-01`.
+Existing ProductClient keeps the actual NativeCredential from dispatch through bounded
+response reading, then compares the existing full same_binding authority before returning
+success or error. Platform, JSON GET/POST and multipart publication share this boundary;
+anonymous/legacy behavior and Session/Transcript ownership remain unchanged. There is no
+network retry or reversal of a server operation already dispatched.
+
+Five real parent tests with 69 subprocess/HTTP scenarios are authored in
+`native_desktop_session.rs` (`native_response_completion_` filter). They exercise account,
+issuer, same-token session/device/expiry and secret binding changes, logout/invalid files,
+anonymous/current positives, all platform methods, multipart and body/error barriers.
+The exact containing-H Actions gate requires5/5 plus69 successful scenario markers,
+HTTP owner6, native handoff7 and actual AppHost compilation; authoring is not execution.
+Receipt: `projects/telegram-desktop-rust/evidence/round25-native-response-binding.json`.
+All independent/source/service/publisher/signed-package/full product ACCEPT gates remain open.

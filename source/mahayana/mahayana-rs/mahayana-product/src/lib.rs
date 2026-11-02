@@ -1098,7 +1098,9 @@ impl MahayanaProductClient {
             let response = client.post(&target)
                 .header("Accept", "application/json").bearer_auth(&token).multipart(form).send()
                 .map_err(|_| ProductError::Transport("Native product request failed".into()))?;
-            return decode_native_response(response, Some(&token));
+            return self.complete_native_response(Some(&current), || {
+                decode_native_response(response, Some(&token))
+            });
         }
         let client = http_client()?;
         decode_response(
@@ -2463,20 +2465,22 @@ impl MahayanaProductClient {
                     }
                 }
             }
-            let response = self.native_send(method, url, body, token.as_deref())?;
-            let status = response.status().as_u16();
-            let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
-                .and_then(|value| value.to_str().ok())
-                .map(|value| native_desktop_session::redact(&Value::String(value.into()), token.as_deref()));
-            let text = native_response_text(response)?;
-            let decoded = serde_json::from_str::<Value>(&text).unwrap_or(Value::String(text));
-            let data = native_desktop_session::redact(&decoded, token.as_deref());
-            let body_text = match &data {
-                Value::String(text) => text.clone(),
-                _ => data.to_string(),
-            };
-            return Ok(json!({"@type":"mahayana.platform.response", "ok":(200..300).contains(&status),
-                "statusCode":status, "contentType":content_type, "bodyText":body_text, "data":data}));
+            let (response, credential) = self.native_send(method, url, body, token.as_deref())?;
+            return self.complete_native_response(credential.as_ref(), || {
+                let status = response.status().as_u16();
+                let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
+                    .and_then(|value| value.to_str().ok())
+                    .map(|value| native_desktop_session::redact(&Value::String(value.into()), token.as_deref()));
+                let text = native_response_text(response)?;
+                let decoded = serde_json::from_str::<Value>(&text).unwrap_or(Value::String(text));
+                let data = native_desktop_session::redact(&decoded, token.as_deref());
+                let body_text = match &data {
+                    Value::String(text) => text.clone(),
+                    _ => data.to_string(),
+                };
+                Ok(json!({"@type":"mahayana.platform.response", "ok":(200..300).contains(&status),
+                    "statusCode":status, "contentType":content_type, "bodyText":body_text, "data":data}))
+            });
         }
         let client = if session_owned { session_owned_http_client()? } else { http_client()? };
 
@@ -2564,7 +2568,10 @@ impl MahayanaProductClient {
         url: url::Url,
         body: Option<&Value>,
         token: Option<&str>,
-    ) -> Result<reqwest::blocking::Response, ProductError> {
+    ) -> Result<
+        (reqwest::blocking::Response, Option<native_desktop_session::NativeCredential>),
+        ProductError,
+    > {
         let target = self.effective_api_base_url()?;
         if url.origin().ascii_serialization() != target || !url.username().is_empty()
             || url.password().is_some() || url.fragment().is_some() {
@@ -2574,12 +2581,37 @@ impl MahayanaProductClient {
         let client = native_http_client()?;
         let mut builder = client.request(method, url.clone()).header("Accept", "application/json");
         if let Some(body) = body { builder = builder.json(body); }
-        if let Some(token) = token {
+        let credential = if let Some(token) = token {
             let current = self.native_credential()?.ok_or(ProductError::NotLoggedIn)?;
             current.guard_request(url.as_str(), token)?;
             builder = builder.bearer_auth(current.token());
+            Some(current)
+        } else {
+            None
+        };
+        let response = builder.send()
+            .map_err(|_| ProductError::Transport("NATIVE_REQUEST_FAILED".into()))?;
+        Ok((response, credential))
+    }
+
+    /// A Native response belongs to the complete credential used for dispatch,
+    /// including requests whose headers arrived before a logout or rotation.
+    /// Read/decode first, then fence both success and error publication. An
+    /// anonymous request stays anonymous and never reads the credential owner.
+    fn complete_native_response<T>(
+        &self,
+        dispatched: Option<&native_desktop_session::NativeCredential>,
+        read_and_decode: impl FnOnce() -> Result<T, ProductError>,
+    ) -> Result<T, ProductError> {
+        let result = read_and_decode();
+        if let Some(dispatched) = dispatched {
+            let unchanged = self.native_credential().ok().flatten()
+                .is_some_and(|current| dispatched.same_binding(&current));
+            if !unchanged {
+                return Err(ProductError::Session("NATIVE_CREDENTIAL_CHANGED".into()));
+            }
         }
-        builder.send().map_err(|_| ProductError::Transport("NATIVE_REQUEST_FAILED".into()))
+        result
     }
 
     fn authorized_get(
@@ -2653,8 +2685,10 @@ impl MahayanaProductClient {
             let mut url = url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
                 .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?;
             url.query_pairs_mut().extend_pairs(query.iter().copied());
-            let response = self.native_send(reqwest::Method::GET, url, None, token)?;
-            return decode_native_response(response, token);
+            let (response, credential) = self.native_send(reqwest::Method::GET, url, None, token)?;
+            return self.complete_native_response(credential.as_ref(), || {
+                decode_native_response(response, token)
+            });
         }
         let mut url = url::Url::parse(&format!("{}{}", self.api_base_url, path))
             .map_err(|error| ProductError::Configuration(error.to_string()))?;
@@ -2679,8 +2713,10 @@ impl MahayanaProductClient {
             native_desktop_session::reject_auth_mutation(path, "POST")?;
             let url = url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
                 .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?;
-            let response = self.native_send(reqwest::Method::POST, url, Some(&body), token)?;
-            return decode_native_response(response, token);
+            let (response, credential) = self.native_send(reqwest::Method::POST, url, Some(&body), token)?;
+            return self.complete_native_response(credential.as_ref(), || {
+                decode_native_response(response, token)
+            });
         }
         let url = format!("{}{}", self.api_base_url, path);
         let response = send_with_ipv4_fallback(|client| {
@@ -3440,10 +3476,13 @@ fn native_response_text(response: reqwest::blocking::Response) -> Result<String,
 
 fn decode_native_response(response: reqwest::blocking::Response, token: Option<&str>) -> Result<Value, ProductError> {
     let status = response.status();
+    // Even rejected responses must complete their bounded body read before the
+    // caller checks the dispatch credential. Never return a server error body.
+    let text = native_response_text(response);
     if !status.is_success() {
         return Err(ProductError::HttpStatus { status: status.as_u16(), message: "Native request rejected".into() });
     }
-    let text = native_response_text(response)?;
+    let text = text?;
     let value = serde_json::from_str(&text)
         .map_err(|_| ProductError::Response("NATIVE_RESPONSE_JSON".into()))?;
     Ok(native_desktop_session::redact(&value, token))

@@ -296,3 +296,16 @@ The existing Retry action now requests only conversationId + original clientNonc
 Authored gates: four new real HTTP/SQLite/restart cases (Human total67, including64 admission variants),28 UI/controller cases,4 actual Coordinator port cases,8 original queue/pre-Host cases and2 shared contract cases. Execution is not-run at this preparation; the containing-H Actions result must be recorded in `projects/telegram-desktop-rust/evidence/task20bf-round1-human-message-retry.json`. Resource staging retains its existing serialized boundary; only message POST releases the conversation lane. Existing automatic forward recovery may still wait on a batch HTTP lock; concurrent NMR-50 work must be integrated without overwrite. Full source/legal/service/signed packages/UI/a11y/performance/soak/upgrade/rollback/Bot/independent ACCEPT remains open.
 
 HRR-07 integration: failed pre-frame Human submissions resume the original existing Composer queue input with per-attachment commit progress; possibly posted frames switch to identity-only retry. No projected payload, fresh nonce or current-draft mutation is used. Actual authored gates at the current source freeze: Human67; Transcript34; retry helper28 + port4 + pre-Host queue8 =40; shared cursor/RPC19; retained actual Renderer Chromium11. These totals retain concurrent work and remain unexecuted at preparation. Full containing-H evidence is recorded in the same task receipt.
+
+## Native response completion — bounded authoring snapshot
+
+The current checkpoint's earlier forwarding, source-review, renderer and SQLite repairs
+are preserved. The actual Native ProductClient transport now retains its dispatch binding
+through bounded platform/JSON/multipart response completion and rejects obsolete results
+through the existing private credential owner. The change adds no writer, retry or identity
+store. Five parent tests/69 real subprocess HTTP scenarios are authored; the containing-H
+GitHub Actions result is still required at this snapshot. Original run41493248135 and
+qualified exact59f5fa/run41508537631 are recorded separately in
+`projects/telegram-desktop-rust/evidence/round25-native-response-binding.json`.
+This batch does not merge/deploy Backend PR137, qualify a formal publisher or signed
+installation, close complete source/legal review, or grant independent ACCEPT.

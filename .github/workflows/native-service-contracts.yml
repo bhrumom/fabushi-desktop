@@ -489,6 +489,14 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-gateway-peer --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/peer-contracts.log
           grep -Eq 'test result: ok\. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/peer-contracts.log
+      - name: Native authenticated response completion and no replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_response_completion_ -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-response-completion.log
+          grep -Eq 'test result: ok\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-response-completion.log
+          test "$(grep -c 'NATIVE_RESPONSE_COMPLETION_CASE ' artifacts/native-message-shipping/native-response-completion.log)" -eq 69
+
       - name: Build actual desktop AppHost entry and inspect its legacy boundary
         shell: bash
         run: |

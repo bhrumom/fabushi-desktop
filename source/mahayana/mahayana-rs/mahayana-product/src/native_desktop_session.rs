@@ -966,6 +966,450 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    /// Keep process-wide Native configuration inside an exact child test. The
+    /// parent owns a real HTTP server, private credential changes and all waits.
+    #[cfg(all(unix, debug_assertions))]
+    mod native_http_completion_contracts {
+        use super::*;
+        use std::io::{Read, Write};
+        use std::net::{TcpListener, TcpStream};
+        use std::process::{Child, Command, ExitStatus};
+        use std::time::{Duration, Instant};
+
+        const CHILD_TEST: &str =
+            "native_desktop_session::tests::native_http_completion_contracts::native_http_completion_child";
+        const MARKER: &str = "bound-response-marker";
+        const OBSOLETE_DATA: &str = "obsolete-account-payload";
+
+        #[derive(Clone, Copy, Debug)]
+        enum BodyKind {
+            Json,
+            InvalidJson,
+            InvalidUtf8,
+            Truncated,
+            Oversized,
+        }
+
+        impl BodyKind {
+            fn name(self) -> &'static str {
+                match self {
+                    Self::Json => "json",
+                    Self::InvalidJson => "invalid-json",
+                    Self::InvalidUtf8 => "invalid-utf8",
+                    Self::Truncated => "truncated",
+                    Self::Oversized => "oversized",
+                }
+            }
+
+            fn bytes(self) -> Vec<u8> {
+                match self {
+                    Self::Json | Self::Truncated => json!({
+                        "marker": MARKER,
+                        "ownerData": OBSOLETE_DATA,
+                        "accessToken": TOKEN,
+                        "data": {"user": {"id": 42}},
+                    }).to_string().into_bytes(),
+                    Self::InvalidJson => b"{not-valid-json".to_vec(),
+                    Self::InvalidUtf8 => vec![0xff, 0xfe, b'x'],
+                    Self::Oversized => vec![b'x'; 1024 * 1024 + 1],
+                }
+            }
+        }
+
+        struct CompletionChild(Child);
+
+        impl CompletionChild {
+            fn wait_bounded(&mut self) -> ExitStatus {
+                let deadline = Instant::now() + Duration::from_secs(20);
+                loop {
+                    if let Some(status) = self.0.try_wait().expect("poll completion child") {
+                        return status;
+                    }
+                    assert!(Instant::now() < deadline, "Native completion child exceeded its deadline");
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+            }
+        }
+
+        impl Drop for CompletionChild {
+            fn drop(&mut self) {
+                if self.0.try_wait().ok().flatten().is_none() {
+                    let _ = self.0.kill();
+                }
+                let _ = self.0.wait();
+            }
+        }
+
+        fn request_bytes(stream: &mut TcpStream) -> Vec<u8> {
+            stream.set_nonblocking(false).expect("blocking accepted Native stream");
+            stream.set_read_timeout(Some(Duration::from_secs(10))).expect("request read deadline");
+            stream.set_write_timeout(Some(Duration::from_secs(10))).expect("response write deadline");
+            let mut bytes = Vec::new();
+            let mut buffer = [0_u8; 4096];
+            let header_end = loop {
+                let read = stream.read(&mut buffer).expect("read Native request");
+                assert_ne!(read, 0, "Native request ended before its headers");
+                bytes.extend_from_slice(&buffer[..read]);
+                assert!(bytes.len() <= 256 * 1024, "bounded request fixture");
+                if let Some(offset) = bytes.windows(4).position(|window| window == b"\r\n\r\n") {
+                    break offset + 4;
+                }
+            };
+            let headers = std::str::from_utf8(&bytes[..header_end]).expect("HTTP request headers");
+            let content_length = headers.lines().find_map(|line| {
+                let (key, value) = line.split_once(':')?;
+                key.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().expect("request body length"))
+            }).unwrap_or(0);
+            assert!(!headers.to_ascii_lowercase().contains("transfer-encoding:"),
+                "this bounded multipart fixture must declare its complete length");
+            assert!(content_length <= 128 * 1024, "bounded request body fixture");
+            while bytes.len() < header_end + content_length {
+                let read = stream.read(&mut buffer).expect("read Native request body");
+                assert_ne!(read, 0, "Native request body was truncated");
+                bytes.extend_from_slice(&buffer[..read]);
+            }
+            assert_eq!(bytes.len(), header_end + content_length, "one complete request");
+            bytes
+        }
+
+        fn replace_binding(root: &Path, issuer: &str, change: &str) {
+            let path = root.join("native");
+            if matches!(change, "logout" | "anonymous-logout") {
+                std::fs::remove_file(path).expect("remove Native credential");
+                return;
+            }
+            if change == "unchanged" {
+                return;
+            }
+            let mut next = fixture(issuer);
+            next["expiresAtMs"] = json!(MAX_SAFE_INTEGER);
+            match change {
+                "account" => next["userId"] = json!(43),
+                "token" => next["accessToken"] = json!("synthetic-rotated-native-token-for-contract"),
+                "device" => next["deviceId"] = json!("rotated-device"),
+                "session" => next["sessionId"] = json!("rotated-session"),
+                "issuer" => next["issuer"] = json!(ISOLATED_ISSUER),
+                "expiry" => next["expiresAtMs"] = json!(MAX_SAFE_INTEGER - 1),
+                "telegram-key" => next["telegramStorageKey"] = json!(URL_SAFE_NO_PAD.encode([8_u8; 32])),
+                "telegram-application" => {
+                    next["telegramApiId"] = json!(123456);
+                    next["telegramApiHash"] = json!("abcdef0123456789abcdef0123456789");
+                }
+                "invalid" | "anonymous-invalid" => next = json!({"version":999}),
+                "anonymous-login" => next["userId"] = json!(43),
+                _ => panic!("unexpected credential mutation: {change}"),
+            }
+            private_file(&root.join("replacement"), &next);
+            std::fs::rename(root.join("replacement"), path).expect("atomically replace Native owner file");
+        }
+
+        fn run_contract(entry: &str, change: &str, status: u16, kind: BodyKind) {
+            let root = temporary_root();
+            let listener = TcpListener::bind("127.0.0.1:0").expect("Native completion listener");
+            listener.set_nonblocking(true).expect("nonblocking Native listener");
+            let origin = format!("http://{}", listener.local_addr().unwrap());
+            let path = root.join("native");
+            if change != "anonymous-login" {
+                let mut value = fixture(&origin);
+                value["expiresAtMs"] = json!(MAX_SAFE_INTEGER);
+                if change == "anonymous-invalid" {
+                    value = json!({"version":999});
+                }
+                private_file(&path, &value);
+            }
+            let mut child = CompletionChild(Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", CHILD_TEST, "--nocapture"])
+                .env("NATIVE_HTTP_COMPLETION_CHILD", "1")
+                .env("NATIVE_HTTP_COMPLETION_ROOT", &root)
+                .env("NATIVE_HTTP_COMPLETION_ENTRY", entry)
+                .env("NATIVE_HTTP_COMPLETION_CHANGE", change)
+                .env("NATIVE_HTTP_COMPLETION_STATUS", status.to_string())
+                .env("NATIVE_HTTP_COMPLETION_KIND", kind.name())
+                .env("FABUSHI_PRODUCT_MODE", "1")
+                .env("FABUSHI_API_BASE_URL", &origin)
+                .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &path)
+                .env("GITHUB_ACTIONS", "true")
+                .env("FABUSHI_E2E", "1")
+                .env("FABUSHI_FEATURE_HOST_MODE", "test")
+                .env_remove("MAHAYANA_API_BASE_URL")
+                .env_remove("FABUSHI_CI_ACCOUNT_SESSION_FILE")
+                .env_remove("MAHAYANA_TEST_ACCOUNT_TOKEN")
+                .spawn().expect("spawn isolated Native completion child"));
+
+            let deadline = Instant::now() + Duration::from_secs(15);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        assert!(child.0.try_wait().expect("poll before request").is_none(),
+                            "child exited before making the Native request");
+                        assert!(Instant::now() < deadline, "Native request did not arrive");
+                        std::thread::sleep(Duration::from_millis(10));
+                    }
+                    Err(error) => panic!("accept Native request: {error}"),
+                }
+            };
+            let request = request_bytes(&mut stream);
+            let header_end = request.windows(4).position(|window| window == b"\r\n\r\n").unwrap() + 4;
+            let headers = std::str::from_utf8(&request[..header_end]).unwrap().to_ascii_lowercase();
+            let anonymous = entry.ends_with("-anonymous");
+            if anonymous {
+                assert!(!headers.contains("authorization:"), "anonymous request acquired a bearer");
+            } else {
+                assert!(headers.contains(&format!("authorization: bearer {TOKEN}")),
+                    "dispatch must use the original credential");
+            }
+            let expected_start = match entry {
+                "platform-get" | "platform-anonymous" => "GET /api/social/friends",
+                "platform-post" => "POST /api/social/friends",
+                "platform-put" => "PUT /api/social/friends",
+                "platform-patch" => "PATCH /api/social/friends",
+                "platform-delete" => "DELETE /api/social/friends",
+                "get" | "get-anonymous" => "GET /v1/wallet/balance",
+                "post" | "post-anonymous" => "POST /v1/purchases/restore",
+                "auth-status" => "GET /api/auth/user-info",
+                "multipart" => "POST /v1/marketplace/releases",
+                "body-barrier" => "GET /v1/wallet/balance",
+                _ => panic!("unexpected Native entry: {entry}"),
+            };
+            assert!(std::str::from_utf8(&request).unwrap().starts_with(expected_start),
+                "actual Native route: {entry}");
+            if entry == "multipart" {
+                assert!(headers.contains("content-type: multipart/form-data;"));
+                assert!(std::str::from_utf8(&request[header_end..]).unwrap()
+                    .contains("completion-package-bytes"), "actual multipart package bytes");
+            }
+            let body = kind.bytes();
+            let declared_length = body.len() + if matches!(kind, BodyKind::Truncated) { 10 } else { 0 };
+            write!(stream,
+                "HTTP/1.1 {status} Native fixture\r\nContent-Type: application/json\r\nContent-Length: {declared_length}\r\nConnection: close\r\n\r\n"
+            ).expect("response headers");
+            stream.write_all(&body[..1]).expect("partial response body");
+            stream.flush().expect("flush headers before credential replacement");
+
+            if entry == "body-barrier" {
+                // The child obtained a real reqwest Response and enters the
+                // shared completion callback before releasing this barrier.
+                // Checking only before that callback would see the old binding.
+                let deadline = Instant::now() + Duration::from_secs(10);
+                while !root.join("release-body").exists() {
+                    assert!(child.0.try_wait().expect("poll body barrier").is_none(),
+                        "child returned before releasing the response body");
+                    assert!(Instant::now() < deadline, "body completion callback did not release the barrier");
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+            }
+            replace_binding(&root, &origin, change);
+            stream.write_all(&body[1..]).expect("finish response after owner change");
+            stream.flush().expect("complete Native response");
+            drop(stream);
+            let exit = child.wait_bounded();
+            assert!(exit.success(), "completion contract failed: {entry}/{change}/{status}/{}", kind.name());
+
+            // Keep the listener alive until the request has completed. A retry
+            // cannot be hidden by a refused connection or a closed fixture.
+            assert!(matches!(listener.accept(), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock),
+                "Native completion must not replay a dispatched request");
+            assert!(!root.join("session.json").exists(), "completion must not persist a second identity owner");
+            println!("NATIVE_RESPONSE_COMPLETION_CASE {}", json!({
+                "entry": entry, "change": change, "status": status, "body": kind.name(), "requests": 1,
+            }));
+            drop(child);
+            drop(listener);
+            std::fs::remove_dir_all(root).expect("remove completion fixture");
+        }
+
+        #[test]
+        fn native_response_completion_platform_bindings() {
+            for (entry, change) in [
+                ("platform-get", "account"),
+                ("platform-post", "token"),
+                ("platform-put", "device"),
+                ("platform-patch", "session"),
+                ("platform-delete", "issuer"),
+                ("platform-get", "logout"),
+                ("platform-post", "invalid"),
+                ("platform-get", "expiry"),
+            ] {
+                run_contract(entry, change, 200, BodyKind::Json);
+            }
+        }
+
+        #[test]
+        fn native_response_completion_json_bindings() {
+            for entry in ["get", "post"] {
+                for change in [
+                    "account", "logout", "token", "device", "session", "issuer",
+                    "expiry", "invalid", "telegram-key", "telegram-application",
+                ] {
+                    run_contract(entry, change, 200, BodyKind::Json);
+                }
+            }
+        }
+
+        #[test]
+        fn native_response_completion_multipart_bindings() {
+            for change in ["account", "logout", "token", "device", "session", "issuer", "invalid"] {
+                run_contract("multipart", change, 200, BodyKind::Json);
+            }
+        }
+
+        #[test]
+        fn native_response_completion_unchanged_and_anonymous() {
+            for entry in [
+                "platform-get", "platform-post", "platform-put", "platform-patch", "platform-delete",
+                "get", "post", "multipart", "body-barrier",
+            ] {
+                run_contract(entry, "unchanged", 200, BodyKind::Json);
+            }
+            for entry in ["platform-anonymous", "get-anonymous", "post-anonymous"] {
+                for change in ["anonymous-login", "anonymous-invalid", "anonymous-logout"] {
+                    run_contract(entry, change, 200, BodyKind::Json);
+                }
+            }
+        }
+
+        #[test]
+        fn native_response_completion_body_boundary_and_errors() {
+            for (change, status, kind) in [
+                ("logout", 200, BodyKind::Json),
+                ("account", 403, BodyKind::Json),
+                ("token", 200, BodyKind::InvalidJson),
+                ("session", 200, BodyKind::InvalidUtf8),
+                ("device", 200, BodyKind::Truncated),
+                ("expiry", 200, BodyKind::Oversized),
+                ("unchanged", 403, BodyKind::Json),
+                ("unchanged", 200, BodyKind::InvalidJson),
+                ("unchanged", 200, BodyKind::InvalidUtf8),
+                ("unchanged", 200, BodyKind::Truncated),
+                ("unchanged", 200, BodyKind::Oversized),
+            ] {
+                run_contract("body-barrier", change, status, kind);
+            }
+            for (entry, change, status) in [
+                ("platform-get", "account", 403),
+                ("get", "logout", 403),
+                ("post", "token", 403),
+                ("multipart", "session", 403),
+                ("auth-status", "account", 401),
+            ] {
+                run_contract(entry, change, status, BodyKind::Json);
+            }
+        }
+
+        // Deliberately excluded from the native_response_completion_ filter:
+        // every selected parent test must really spawn and observe this child.
+        #[test]
+        fn native_http_completion_child() {
+            if std::env::var("NATIVE_HTTP_COMPLETION_CHILD").ok().as_deref() != Some("1") {
+                return;
+            }
+            let root = std::path::PathBuf::from(
+                std::env::var_os("NATIVE_HTTP_COMPLETION_ROOT").expect("completion root"),
+            );
+            let entry = std::env::var("NATIVE_HTTP_COMPLETION_ENTRY").unwrap();
+            let change = std::env::var("NATIVE_HTTP_COMPLETION_CHANGE").unwrap();
+            let status: u16 = std::env::var("NATIVE_HTTP_COMPLETION_STATUS").unwrap().parse().unwrap();
+            let kind = std::env::var("NATIVE_HTTP_COMPLETION_KIND").unwrap();
+            let client = crate::MahayanaProductClient::new_with_default_api_base_url(
+                root.join("session.json"), root.join("surface.json"),
+            );
+            assert!(enabled());
+            let result = match entry.as_str() {
+                name if name.starts_with("platform-") => {
+                    let method = match name {
+                        "platform-post" => "POST",
+                        "platform-put" => "PUT",
+                        "platform-patch" => "PATCH",
+                        "platform-delete" => "DELETE",
+                        _ => "GET",
+                    };
+                    client.execute_session_owned_platform_request(&json!({
+                        "method": method, "path": "/api/social/friends",
+                        "authenticated": name != "platform-anonymous",
+                        "body": if method == "GET" { Value::Null } else { json!({"fixture":true}) },
+                    }))
+                }
+                "get" | "get-anonymous" => client.get_json(
+                    "/v1/wallet/balance", &[],
+                    (entry == "get").then_some(TOKEN),
+                ),
+                "post" | "post-anonymous" => client.post_json(
+                    "/v1/purchases/restore", json!({"fixture":true}),
+                    (entry == "post").then_some(TOKEN),
+                ),
+                "auth-status" => client.auth_status(&json!({})),
+                "multipart" => {
+                    let package = b"completion-package-bytes";
+                    let digest = format!("{:x}", Sha256::digest(package));
+                    client.publish_plugin(
+                        "completion-contract", "1.0.0",
+                        "https://native-completion-contract.workers.dev", &digest,
+                        package.len() as u64, &["desktop".into()], package,
+                        &json!({"fixture":true}), &json!({"fixture":true}),
+                    )
+                }
+                "body-barrier" => {
+                    let url = url::Url::parse(&format!("{}/v1/wallet/balance",
+                        client.effective_api_base_url().unwrap())).unwrap();
+                    let (response, credential) = client.native_send(
+                        reqwest::Method::GET, url, None, Some(TOKEN),
+                    ).expect("obtain actual HTTP headers before body release");
+                    assert_eq!(response.status().as_u16(), status);
+                    assert!(credential.is_some());
+                    client.complete_native_response(credential.as_ref(), || {
+                        std::fs::write(root.join("release-body"), b"ready")
+                            .expect("release body from inside the actual completion callback");
+                        crate::decode_native_response(response, Some(TOKEN))
+                    })
+                }
+                other => panic!("unexpected child entry: {other}"),
+            };
+            let stale = change != "unchanged" && !entry.ends_with("-anonymous");
+            if stale {
+                let error = result.expect_err("obsolete response must not escape its dispatch binding");
+                assert!(matches!(&error, ProductError::Session(code) if code == "NATIVE_CREDENTIAL_CHANGED"),
+                    "fixed credential-completion failure: {error:?}");
+                let rendered = format!("{error:?} {error}");
+                assert!(!rendered.contains(OBSOLETE_DATA));
+                assert!(!rendered.contains(TOKEN));
+                assert!(!rendered.contains("127.0.0.1"));
+                return;
+            }
+            if status >= 300 {
+                let error = result.expect_err("JSON endpoints retain their fixed HTTP failure");
+                assert!(matches!(&error,
+                    ProductError::HttpStatus { status: actual, message }
+                    if *actual == status && message == "Native request rejected"
+                ));
+                assert!(!format!("{error:?}").contains(OBSOLETE_DATA));
+                return;
+            }
+            if kind != "json" {
+                let error = result.expect_err("unchanged binding preserves bounded decode failure");
+                match kind.as_str() {
+                    "invalid-json" => assert!(matches!(error, ProductError::Response(code) if code == "NATIVE_RESPONSE_JSON")),
+                    "invalid-utf8" => assert!(matches!(error, ProductError::Response(code) if code == "NATIVE_RESPONSE_ENCODING")),
+                    "oversized" => assert!(matches!(error, ProductError::Response(code) if code == "NATIVE_RESPONSE_SIZE")),
+                    "truncated" => assert!(matches!(error, ProductError::Transport(code) if code == "NATIVE_RESPONSE_READ")),
+                    other => panic!("unexpected body kind: {other}"),
+                }
+                return;
+            }
+            let value = result.expect("current or anonymous response remains usable");
+            let data = if entry.starts_with("platform-") {
+                assert_eq!(value["statusCode"], 200);
+                assert_eq!(value["ok"], true);
+                &value["data"]
+            } else {
+                &value
+            };
+            assert_eq!(data["marker"], MARKER);
+            assert!(!value.to_string().contains(TOKEN), "existing token redaction remains active");
+        }
+    }
+
     #[cfg(unix)]
     #[test]
     fn native_client_child() {

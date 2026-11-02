@@ -1934,3 +1934,45 @@ Keep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and
 all current message gates intact. Store exact run/job/artifact identities;
 retain all final service, package, migration and independent-ACCEPT gaps.
 The one-purpose workflow may be removed after its immutable evidence is saved.
+
+### Native platform response binding (NMR-NATIVE-RESPONSE-01 / AC-NATIVE-RESPONSE-01)
+
+At exact `19df1199779fa7fd66547ba095c277e0306d4c93`, the existing
+ProductClient native transport checks the active credential before dispatch,
+but returns a bare HTTP response. Generic platform requests and get_json/
+post_json publish a completed body without comparing that dispatch binding to
+the current credential. Native plugin multipart publication has the same
+completion gap. A response delayed across logout, account/issuer replacement
+or credential rotation can therefore publish data or an error from an obsolete
+session. The existing auth_status method already uses NativeCredential's
+complete same_binding comparison; this batch reuses that authority.
+
+- NMR-NATIVE-RESPONSE-01: Retain the exact NativeCredential used for authenticated dispatch
+  until the bounded response body has finished. Immediately before returning
+  success data or a decoded HTTP error, reload the existing credential owner
+  and require the complete same_binding predicate. Logout, changed token,
+  account, issuer, device/session binding or invalid credentials must reject
+  the stale result with a fixed nonsecret error. Use the same completion check
+  for platform requests, get_json, post_json and native multipart publication.
+  Do not add a credential store, cache, refresh/retry loop, alternate identity
+  owner or new public schema. An anonymous request must remain anonymous and
+  must not acquire an unrelated active credential. Legacy non-native behavior,
+  path/owner/origin checks, redirect refusal and body limits remain intact.
+- AC-NATIVE-RESPONSE-01: Add GitHub-Actions-only behavior contracts using real loopback HTTP
+  and existing private native credential files. Hold the body after headers,
+  mutate or remove the credential, release the body and require rejection
+  without exposing the obsolete response/token in the returned data or error.
+  Cover account/issuer replacement, logout, token and session/device rotation,
+  success and HTTP-error bodies; include unchanged-credential and anonymous
+  positive controls, plus real multipart publication. Prove a single request
+  and no replay of a potentially side-effecting POST. Preserve the six desktop
+  HTTP-owner cases and existing native handoff cases, and run the affected
+  crate/actual shipping compilation at the containing exact H.
+
+This completion fence suppresses obsolete local results; it cannot undo a
+server operation already dispatched. Existing Session/Transcript message
+settlement and the new forwarding journal remain separate existing owners,
+unchanged by this transport repair. Backend PR #137 remains read-only.
+Official publisher, real signed platform packages, complete fixed-U source/
+legal coverage, real-service acceptance and independent ACCEPT remain blocked.
+
