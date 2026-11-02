@@ -163,6 +163,7 @@ struct SendEnvelope {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ListData {
     messages: Vec<FabushiRemoteHumanMessage>,
     #[serde(default)]
