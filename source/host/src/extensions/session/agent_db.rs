@@ -1884,10 +1884,12 @@ impl SandAgentDb {
             let bytes =
                 decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?;
             let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
-            let current_root = metadata
+            let Some(current_root) = metadata
                 .get("latestRootBlobId")
                 .and_then(serde_json::Value::as_str)
-                .unwrap_or_default();
+            else {
+                return Ok(None);
+            };
             if current_root != encode_hex(expected_root) {
                 return Ok(None);
             }
@@ -1993,10 +1995,12 @@ impl SandAgentDb {
         };
         let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
         let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
-        let current = metadata
+        let Some(current) = metadata
             .get("latestRootBlobId")
             .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
+        else {
+            return Ok(false);
+        };
         if current != encode_hex(expected_root) {
             return Ok(false);
         }

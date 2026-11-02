@@ -3196,6 +3196,78 @@ fn owner_rejects_compaction_when_deletion_fence_wins_inside_commit_transaction()
 
 
 #[test]
+fn checkpoint_root_cas_requires_an_explicit_string_root_before_any_commit() {
+    for (label, malformed_root) in [
+        ("missing", None),
+        ("null", Some(serde_json::Value::Null)),
+        ("number", Some(serde_json::json!(17))),
+        ("boolean", Some(serde_json::json!(false))),
+        ("array", Some(serde_json::json!([]))),
+        ("object", Some(serde_json::json!({}))),
+    ] {
+        let root = temp_root(&format!("strict-checkpoint-cas-{label}"));
+        let agent_dir = root.join("agent-checkpoint-cas");
+        fs::create_dir_all(&agent_dir).expect("agent dir");
+        let db_path = agent_dir.join("store.db");
+        let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+        owner.append_transcript_entry(&serde_json::json!({
+            "id": "pending-checkpoint-user", "kind": "message", "role": "user",
+            "content": "must remain pending on refusal", "confirmed": false,
+        })).expect("pending user");
+        let valid_raw = owner.read_kv("metadata").expect("metadata read").expect("metadata");
+        let mut metadata = owner.read_metadata().expect("metadata object");
+        match malformed_root {
+            Some(value) => { metadata["latestRootBlobId"] = value; }
+            None => { metadata.as_object_mut().expect("metadata object").remove("latestRootBlobId"); }
+        }
+        let malformed_raw: String = serde_json::to_vec(&metadata).expect("metadata bytes")
+            .iter().map(|byte| format!("{byte:02x}")).collect();
+        let writer = rusqlite::Connection::open(&db_path).expect("external metadata writer");
+        writer.execute(
+            "UPDATE kv SET value = ?1 WHERE key = 'metadata'",
+            rusqlite::params![malformed_raw],
+        ).expect("publish malformed root after admission");
+        let transcript_before = owner.get_transcript_entries().expect("pending transcript");
+        let generation = get_sand_agent_db_write_generation(&db_path);
+        let root_hits = Arc::new(AtomicUsize::new(0));
+        let _root_sub = owner.subscribe_metadata("latestRootBlobId", {
+            let hits = Arc::clone(&root_hits);
+            Arc::new(move || { hits.fetch_add(1, Ordering::SeqCst); })
+        });
+
+        assert!(owner.commit_checkpoint_root_and_confirm_user_message(
+            &[], &[0xaa, 0xbb], "pending-checkpoint-user",
+        ).expect("invalid root refuses confirmation").is_none(), "{label}");
+        assert!(!owner.compare_and_set_latest_root_blob_id(&[], &[0xcc])
+            .expect("invalid root refuses CAS"), "{label}");
+        assert_eq!(owner.read_kv("metadata").expect("unchanged raw metadata"), Some(malformed_raw));
+        assert_eq!(owner.get_transcript_entries().expect("unchanged transcript"), transcript_before);
+        assert_eq!(get_sand_agent_db_write_generation(&db_path), generation);
+        assert_eq!(root_hits.load(Ordering::SeqCst), 0);
+
+        // Repair is explicit. A real empty string is still an initialized
+        // root; both commit variants continue to accept legacy fixed IDs.
+        writer.execute(
+            "UPDATE kv SET value = ?1 WHERE key = 'metadata'",
+            rusqlite::params![valid_raw],
+        ).expect("repair explicit empty root");
+        let confirmed = owner.commit_checkpoint_root_and_confirm_user_message(
+            &[], &[0xaa, 0xbb], "pending-checkpoint-user",
+        ).expect("valid confirmation").expect("committed user");
+        assert_eq!(confirmed["confirmed"], serde_json::json!(true));
+        assert_eq!(owner.get_latest_root_blob_id().expect("first root"), vec![0xaa, 0xbb]);
+        assert!(owner.compare_and_set_latest_root_blob_id(&[0xaa, 0xbb], &[0xcc])
+            .expect("valid fixed-root CAS"));
+        assert_eq!(owner.get_latest_root_blob_id().expect("successor root"), vec![0xcc]);
+        assert_eq!(get_sand_agent_db_write_generation(&db_path), generation + 2);
+        assert_eq!(root_hits.load(Ordering::SeqCst), 2);
+        drop(writer);
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
 fn owner_closes_generic_metadata_versions_and_legacy_blob_surface() {
     let root = temp_root("metadata-surface");
     let agent_dir = root.join("agent-metadata");

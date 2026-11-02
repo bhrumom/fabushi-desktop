@@ -337,7 +337,14 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })?;
-        let live_prior = self.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        self.agent_store
+            .validate_cached_checkpoint_checked()
+            .map_err(ProviderSessionError::Protocol)?;
+        let live_prior = self
+            .agent_store
+            .latest_checkpoint_bytes_checked()
+            .map_err(ProviderSessionError::Protocol)?
+            .unwrap_or_default();
         if live_prior != *prior {
             return Err(ProviderSessionError::Protocol(
                 "Runner Agent checkpoint root changed while this turn was active".into(),
@@ -385,7 +392,14 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })?;
-        let live_prior = self.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        self.agent_store
+            .validate_cached_checkpoint_checked()
+            .map_err(ProviderSessionError::Protocol)?;
+        let live_prior = self
+            .agent_store
+            .latest_checkpoint_bytes_checked()
+            .map_err(ProviderSessionError::Protocol)?
+            .unwrap_or_default();
         if live_prior != *prior || artifacts.prior_state_bytes != *prior {
             return Err(ProviderSessionError::Protocol(
                 "Runner Agent checkpoint root changed while this turn was active".into(),
@@ -436,26 +450,26 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     &checkpoint.state_bytes,
                     confirmed_message_id,
                 )
-                .map(|_| ())
         } else {
             self.agent_store
                 .handle_checkpoint_bytes_blocking(&checkpoint.state_bytes)
-                .map(|_| ())
         };
 
-        if let Err(error) = durable {
-            if mirror_prepared {
-                let _ = self.transcript_mirror.abort_checkpoint(&self.agent_id);
+        let committed_root = match durable {
+            Ok(root) => root,
+            Err(error) => {
+                if mirror_prepared {
+                    let _ = self.transcript_mirror.abort_checkpoint(&self.agent_id);
+                }
+                return Err(ProviderSessionError::Protocol(format!(
+                    "Runner Agent checkpoint transaction failed: durable Agent checkpoint failed: {error}"
+                )));
             }
-            return Err(ProviderSessionError::Protocol(format!(
-                "Runner Agent checkpoint transaction failed: durable Agent checkpoint failed: {error}"
-            )));
-        }
+        };
 
         if mirror_prepared {
-            let root = self.agent_store.latest_root_blob_id();
             self.transcript_mirror
-                .commit_checkpoint(&self.agent_id, &root)
+                .commit_checkpoint(&self.agent_id, &committed_root)
                 .map_err(|error| {
                     ProviderSessionError::Protocol(format!(
                         "Runner Agent checkpoint transaction failed: transcript mirror commit failed after durable checkpoint: {error}"

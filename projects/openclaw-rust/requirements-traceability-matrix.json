@@ -63,7 +63,10 @@
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs",
         "source/host/tests/network_enrollment_owner_contract.rs",
-        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -263,7 +266,10 @@
         "source/host/tests/openclaw_crash_guard_media_contract.rs",
         "source/host/tests/openclaw_memory_contract.rs",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -1265,7 +1271,10 @@
         "source/host/tests/openclaw_crash_guard_media_contract.rs",
         "source/host/tests/openclaw_memory_contract.rs",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",

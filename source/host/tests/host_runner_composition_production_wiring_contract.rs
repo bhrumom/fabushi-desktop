@@ -353,7 +353,7 @@ fn shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_wa
     assert!(forever_box.contains("agent_id: self.agent_id.clone()"));
     assert!(forever_box.contains("SandLocalToolRequest::simple(\"read-file\", output_path.clone())"));
     assert!(host.contains("confirmed_user_turn_watermark("));
-    assert!(composition.contains("latest_checkpoint_bytes()"));
+    assert!(composition.contains("latest_checkpoint_bytes_checked()?"));
     assert!(composition.contains("create_agent_blob_store(agent_id)"));
     assert!(composition.contains("decode_conversation_turn_structure_fields"));
     assert!(composition.contains("decode_user_message_identity_fields"));

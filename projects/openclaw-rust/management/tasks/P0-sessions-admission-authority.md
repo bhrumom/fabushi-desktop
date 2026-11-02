@@ -8,6 +8,26 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Current discovery subject: `projects/openclaw-rust/upstream.lock.json::live_candidate` (discovery-only; do not reuse this unit's historical inventory or provenance without rebaseline).
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+## 2026-11-02 bounded production checkpoint-root recovery
+
+`SWA-ROOT-RECOVERY-v1` repairs the existing Session/AgentDb/AgentStore recovery
+boundary on integration base `74073f19037a6eaec5f34331b27dfe9fd8c0b334`, retaining
+fixed U `1440bb1771372334bea23d7642bb52deb7db1845`. Production opens validate
+raw metadata identity and the referenced protobuf before recovery or caching;
+checked reload preserves the previous snapshot on failure, and Runner
+watermark, prompt epoch and checkpoint sinks propagate refusal. The underlying
+root CAS requires an explicit string so a missing field cannot match empty.
+Valid initialized empty state, zero-byte protobuf and legacy fixed roots remain
+supported. Real Session/SQLite/blob cases cover corruption, explicit repair,
+cache mismatch, pending recovery custody and unchanged failed-write state.
+
+These are authored bounded implementation/consumer changes awaiting independent
+immutable review and their exact-H Actions. Existing historical source-read
+records are unchanged. The Session responsibility is `implementing`; complete
+wiring, scoped source authority/coverage, original-turn checkpoint claim/settle,
+provider/device/package recovery and final acceptance remain pending. No global
+completion flag is promoted and no local executable validation is used.
+
 ## Atomic closed behavior
 
 Session requests enter through canonical Fabushi session API → classify session key kind and enforce harness namespace reservation → check peer-to-peer communication admission policy → track conversation turn correlations and pending turn settlements → apply scoped model overrides → admit work and manage archive/restore lifecycle under single SQLite agent store.

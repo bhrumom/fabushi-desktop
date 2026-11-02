@@ -164,6 +164,12 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
     assert_eq!(read.as_deref(), Some(b"hello".as_slice()));
     assert_eq!(runtime.active_worker_count(), 1);
 
+    // The persisted fixed root must name a valid checkpoint. An empty
+    // ConversationStateStructure is valid protobuf, even under a legacy
+    // caller-supplied root ID; a missing root is a separate recovery refusal.
+    futures::executor::block_on(store.set_blob(&(), &persisted_root, &[]))
+        .expect("persist the declared empty checkpoint root");
+
     let prepared = runtime
         .prepare_existing_agent("agent-live")
         .expect("prepare existing agent")

@@ -803,6 +803,71 @@ it is not an archive bypass: generic transcript and compaction wrappers reject
 writes when the owner-local admission record is archived. This is incomplete
 evidence, not acceptance.
 
+## Checked production checkpoint-root recovery — SWA-ROOT-RECOVERY-v1
+
+At base `81d48636b06d20f8bec551cdc334fe40f31e614b`, production AgentStore
+opening ignores the legacy boolean reset outcome. That compatibility reset
+turns a missing or damaged persisted root into empty in-memory state; Runner
+watermark, prompt-epoch and checkpoint consumers can then mistake an unknown
+durable history for a new session. This is a target recovery defect under
+SWA-01/06/07 and OCRM-C02/C10, not a claim that the fixed upstream or all
+cross-process recovery is accepted.
+
+The existing Session/AgentDb/AgentStore owners retain their boundaries:
+
+- Existing production agent databases open without seeding absent metadata.
+  New-session materialization already writes initialized metadata. A checked
+  recovery read must consume one durable metadata image, require its object
+  and canonical agent identity, and distinguish its explicit empty root string
+  from absent, null, wrong-typed or malformed metadata/root state. Invalid
+  metadata is rejected before profile/settings repair, maintenance or caching.
+  The referenced checkpoint is also validated before pending media, profile
+  or memory recovery can mutate files, journals or admission state.
+- An explicit empty root is a valid initialized session without a checkpoint.
+  A nonempty hexadecimal root must resolve to readable protobuf bytes. Missing
+  blobs, malformed protobuf, read failures and poisoned owner state fail
+  closed. The canonical zero-byte protobuf is a valid *present* checkpoint,
+  distinct from no root. Legacy fixed root IDs remain readable: this slice
+  does not impose a new digest/ID-length rule on retained data.
+- Checked reset publishes a replacement in-memory snapshot only after all
+  reads and decoding succeed. Failure preserves the prior valid snapshot and
+  durable metadata/blob/transcript state, returns an error and cannot install
+  an empty production AgentStore. Explicit repair can be followed by another
+  open; failure is not cached as permanent absence.
+- Production re-entry validates an already-cached root and its bytes against
+  durable state. Corruption or a changed durable checkpoint refuses re-entry;
+  it must not reuse a stale empty snapshot or implicitly overwrite a competing
+  checkpoint publication. Explicit checked reload establishes the new cached
+  snapshot; ordinary matching-root reuse keeps the same owner.
+- The existing legacy boolean reset and lenient display APIs retain their
+  contracts. Production owner open and Runner watermark, compaction epoch,
+  checkpoint composition, staging and settlement use checked state reads.
+  Unknown state cannot become a no-user-turn watermark or successful empty
+  checkpoint; the existing turn lease/error path receives the refusal.
+  Checkpoint publication validates the durable root against its cached base
+  before writing blobs. The existing database root/confirmation CAS must
+  require an explicit string root in its compared metadata image, so missing
+  or wrong-typed fields cannot race that check and match an empty base.
+- Valid empty-root legacy recovery continues through the existing maintenance
+  owner and root CAS. If that owner recovers a root, any already-cached
+  AgentStore is refreshed through the same checked reset before consumption.
+  Archive/deletion serialization and existing generation/root fences remain.
+
+Actions oracles use real Session workers, SQLite and blob owners: initialized
+empty state and valid empty checkpoints; absent/malformed metadata and root
+fields; missing/corrupt blobs; refused open with unchanged durable state and
+no cached AgentStore; explicit repair and reopen; checked reset preserving a
+prior snapshot; pending file journals preserved until valid-root recovery;
+refused publication without a new blob or user confirmation; and actual
+HostRunnerComposition watermark/epoch/sink refusal and recovery. Retain
+legacy reset, materialization, maintenance and checkpoint
+regression coverage. All executable validation remains in GitHub Actions.
+
+This bounded contract does not add a Runner checkpoint load/claim/settle API,
+bind upgrade markers to the original stream/model/generation, or authorize
+replaying effects with unknown results. Those process-restart responsibilities
+and the full OCRM G01–G12/AC01–AC24 matrix remain open.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

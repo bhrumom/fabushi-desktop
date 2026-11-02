@@ -329,7 +329,7 @@ impl HostRunnerComposition {
         }
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
         let blob_store = Arc::new(sessions.create_agent_blob_store(agent_id)?);
-        let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let prior_state_bytes = agent_store.latest_checkpoint_bytes_checked()?.unwrap_or_default();
         let transcripts_dir = data_dir.join("transcripts");
         let transcript_provider = {
             let mut providers = self
@@ -377,7 +377,7 @@ impl HostRunnerComposition {
         agent_id: &str,
     ) -> Result<WatermarkResult, String> {
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
-        let state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let state_bytes = agent_store.latest_checkpoint_bytes_checked()?.unwrap_or_default();
         if state_bytes.is_empty() {
             return Ok(WatermarkResult {
                 last_user_message_id: None,
@@ -441,7 +441,7 @@ impl HostRunnerComposition {
         agent_id: &str,
     ) -> Result<u64, String> {
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
-        let state = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let state = agent_store.latest_checkpoint_bytes_checked()?.unwrap_or_default();
         conversation_compaction_epoch(&state).map_err(|error| {
             format!("could not decode production conversation compaction epoch for {agent_id}: {error}")
         })

@@ -298,6 +298,110 @@ impl ProductionAgentStore {
         }
     }
 
+    /// Recover production state without treating unreadable durable history as
+    /// a new conversation. The legacy boolean reset above remains available
+    /// for callers whose contract deliberately clears state on failure.
+    pub fn reset_from_db_checked(&self) -> Result<bool, String> {
+        let previous = self
+            .state
+            .lock()
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?
+            .clone();
+        let checkpoint = Self::read_persisted_checkpoint_checked(
+            &self.db,
+            &self.blob_store,
+        )?;
+        let present = checkpoint.checkpoint_bytes.is_some();
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
+        if *state != previous {
+            return Err("production AgentStore checkpoint changed during checked reload".into());
+        }
+        *state = checkpoint;
+        Ok(present)
+    }
+
+    /// Read one raw metadata image. SandAgentDb's legacy metadata projection
+    /// supplies defaults for absent rows, so it cannot establish recovery
+    /// authority for the shipping owner.
+    fn persisted_root_blob_id_checked(
+        db: &SandAgentDb,
+        agent_id: &str,
+    ) -> Result<Vec<u8>, String> {
+        let raw = db
+            .read_kv("metadata")
+            .map_err(|error| format!("could not read production AgentStore metadata: {error}"))?
+            .ok_or_else(|| "production AgentStore metadata is missing".to_string())?;
+        let bytes = decode_checkpoint_hex(&raw)
+            .ok_or_else(|| "production AgentStore metadata is not valid hexadecimal".to_string())?;
+        let metadata: Value = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("production AgentStore metadata is not valid JSON: {error}"))?;
+        let metadata = metadata
+            .as_object()
+            .ok_or_else(|| "production AgentStore metadata is not an object".to_string())?;
+        if metadata.get("agentId").and_then(Value::as_str).map(str::trim) != Some(agent_id) {
+            return Err("production AgentStore metadata agent identity is missing or rebound".into());
+        }
+        let root = metadata
+            .get("latestRootBlobId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "production AgentStore latestRootBlobId is missing or not a string".to_string())?;
+        if root.is_empty() {
+            return Ok(Vec::new());
+        }
+        let root = decode_checkpoint_hex(root)
+            .filter(|root| !root.is_empty())
+            .ok_or_else(|| "production AgentStore latestRootBlobId is not valid nonempty hexadecimal".to_string())?;
+        Ok(root)
+    }
+
+    pub(super) fn validate_persisted_checkpoint_checked(
+        db: &SandAgentDb,
+        blob_store: &ProductionWorkerBlobStore,
+    ) -> Result<(), String> {
+        Self::read_persisted_checkpoint_checked(db, blob_store).map(|_| ())
+    }
+
+    /// Production re-entry may reuse a cache only while its durable root and
+    /// bytes still agree. Do not reload here: a competing commit may be
+    /// publishing its snapshot, and recovery must not overwrite that state.
+    pub(crate) fn validate_cached_checkpoint_checked(&self) -> Result<(), String> {
+        let persisted = Self::read_persisted_checkpoint_checked(&self.db, &self.blob_store)?;
+        let cached = self
+            .state
+            .lock()
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
+        if *cached != persisted {
+            return Err(
+                "production AgentStore durable checkpoint changed; checked reload is required"
+                    .into(),
+            );
+        }
+        Ok(())
+    }
+
+    fn read_persisted_checkpoint_checked(
+        db: &SandAgentDb,
+        blob_store: &ProductionWorkerBlobStore,
+    ) -> Result<ProductionAgentCheckpointState, String> {
+        let root = Self::persisted_root_blob_id_checked(db, &blob_store.agent_id)?;
+        if root.is_empty() {
+            return Ok(ProductionAgentCheckpointState::default());
+        }
+        let bytes = blob_store
+            .get_blob_blocking(&root)
+            .map_err(|error| format!("could not read production AgentStore checkpoint: {error}"))?
+            .ok_or_else(|| "production AgentStore checkpoint root blob is missing".to_string())?;
+        decode_conversation_state_recovery_fields(&bytes)
+            .map_err(|error| format!("invalid production AgentStore checkpoint: {error}"))?;
+        Ok(ProductionAgentCheckpointState {
+            latest_root_blob_id: root,
+            checkpoint_bytes: Some(bytes),
+        })
+    }
+
     /// Frozen AgentStore2.handleCheckpoint semantics:
     /// protobuf bytes -> SHA-256 blob id -> blob write -> metadata root update.
     ///
@@ -316,12 +420,13 @@ impl ProductionAgentStore {
         decode_conversation_state_recovery_fields(checkpoint)
             .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
 
+        let expected_root = self.latest_root_blob_id_checked()?;
+        self.validate_cached_checkpoint_checked()?;
         let root_blob_id = Sha256::digest(checkpoint).to_vec();
         self.blob_store
             .set_blob_blocking(&root_blob_id, checkpoint)
             .map_err(|error| error.to_string())?;
 
-        let expected_root = self.latest_root_blob_id();
         let confirmed = self
             .db
             .commit_checkpoint_root_and_confirm_user_message(
@@ -364,12 +469,13 @@ impl ProductionAgentStore {
         decode_conversation_state_recovery_fields(checkpoint)
             .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
 
+        let expected_root = self.latest_root_blob_id_checked()?;
+        self.validate_cached_checkpoint_checked()?;
         let root_blob_id = Sha256::digest(checkpoint).to_vec();
         self.blob_store
             .set_blob_blocking(&root_blob_id, checkpoint)
             .map_err(|error| error.to_string())?;
 
-        let expected_root = self.latest_root_blob_id();
         let advanced = self
             .db
             .compare_and_set_latest_root_blob_id(&expected_root, &root_blob_id)
@@ -410,11 +516,25 @@ impl ProductionAgentStore {
             .unwrap_or_default()
     }
 
+    pub fn latest_root_blob_id_checked(&self) -> Result<Vec<u8>, String> {
+        self.state
+            .lock()
+            .map(|state| state.latest_root_blob_id.clone())
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())
+    }
+
     pub fn latest_checkpoint_bytes(&self) -> Option<Vec<u8>> {
         self.state
             .lock()
             .ok()
             .and_then(|state| state.checkpoint_bytes.clone())
+    }
+
+    pub fn latest_checkpoint_bytes_checked(&self) -> Result<Option<Vec<u8>>, String> {
+        self.state
+            .lock()
+            .map(|state| state.checkpoint_bytes.clone())
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())
     }
 
     pub fn get_blob(
@@ -439,4 +559,62 @@ impl ProductionAgentStore {
 
 fn encode_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn decode_checkpoint_hex(value: &str) -> Option<Vec<u8>> {
+    let bytes = value.trim().as_bytes();
+    if bytes.len() % 2 != 0 {
+        return None;
+    }
+    bytes
+        .chunks_exact(2)
+        .map(|pair| {
+            let high = (pair[0] as char).to_digit(16)?;
+            let low = (pair[1] as char).to_digit(16)?;
+            Some(((high << 4) | low) as u8)
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod checked_state_tests {
+    use super::*;
+    use crate::extensions::session::production::ProductionSessionWorkers;
+
+    #[test]
+    fn poisoned_state_cannot_be_read_or_written_as_an_empty_checkpoint() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-agent-store-poison-{}", uuid::Uuid::new_v4(),
+        ));
+        let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+        let session = workers
+            .materialize_session_with_active(None, "user", None, None)
+            .expect("session");
+        let original_root = session.agent_store.handle_checkpoint_bytes(&[]).expect("checkpoint");
+        let metadata = session.db.read_kv("metadata").expect("original metadata");
+        let poisoned_store = Arc::clone(&session.agent_store);
+        assert!(std::thread::spawn(move || {
+            let _state = poisoned_store.state.lock().expect("initial checkpoint state");
+            panic!("poison checkpoint state for the refusal oracle");
+        }).join().is_err());
+
+        assert!(session.agent_store.latest_checkpoint_bytes_checked().is_err());
+        assert!(session.agent_store.latest_root_blob_id_checked().is_err());
+        assert!(session.agent_store.reset_from_db_checked().is_err());
+        assert!(workers.open_agent_store_owner(&session.record.id).is_err());
+        let next = vec![0x9a, 0x06, 0x03, b'n', b'e', b'w'];
+        assert!(session.agent_store.handle_checkpoint_bytes(&next).is_err());
+        assert!(session.agent_store
+            .handle_checkpoint_bytes_and_confirm_user_message_blocking(&next, "pending-message")
+            .is_err());
+        assert_eq!(session.db.read_kv("metadata").expect("unchanged metadata"), metadata);
+        assert_eq!(session.db.get_latest_root_blob_id().expect("unchanged root"), original_root);
+        assert_eq!(session.agent_store.get_blob(&Sha256::digest(&next)).expect("no failed-write blob"), None);
+        // Compatibility projections still keep their old return types; the
+        // production reads above must not use their empty fallback.
+        assert_eq!(session.agent_store.latest_checkpoint_bytes(), None);
+        assert!(session.agent_store.latest_root_blob_id().is_empty());
+        workers.shutdown();
+        let _ = std::fs::remove_dir_all(root);
+    }
 }

@@ -15906,7 +15906,12 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/tests/agent_db_owner_contract.rs",
-        "source/host/tests/agent_session_contract.rs"
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/src/host_runner_composition.rs",
+        "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -15945,13 +15950,14 @@
       ],
       "id": "OCRM-RESP-SESSION-WORK-ADMISSION-001",
       "integration": {
-        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable",
+        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable; SWA-ROOT-RECOVERY-v1 also wires checked root/blob recovery into Host Runner watermark, prompt epoch and checkpoint sinks, while original-turn restart claim/settlement remains open",
         "entrypoint": "source/host/app/src/main.rs::UnifiedGatewayApi::call_with_context -> call_openclaw_sessions_patch -> source/host/src/extensions/session/production.rs",
-        "owner": "source/host/src/extensions/session/production.rs and source/host/src/extensions/session/agent_db.rs (deletion fence, generation CAS, archive/receipt/media-recovery slices, and typed provider-review admission; full detached lifecycle owner pending)",
+        "owner": "source/host/src/extensions/session/production.rs and source/host/src/extensions/session/agent_db.rs (deletion fence, generation CAS, archive/receipt/media-recovery slices, and typed provider-review admission; full detached lifecycle owner pending); ProductionAgentStore under the same Session owner validates persisted/cached checkpoint identity before recovery and publication",
         "producer": "source/host/app/src/main.rs::call_openclaw_sessions_patch is an authenticated canonical-main archive/restore producer with expected identity/revision and active-foreground-stream guards; local background-revival remains a separate bounded producer"
       },
       "invariants": [
-        "Archived sessions cannot admit new work until explicitly restored"
+        "Archived sessions cannot admit new work until explicitly restored",
+        "Unknown or damaged persisted checkpoint state cannot become an empty production session or an implicit empty-root CAS match"
       ],
       "migration_rollback": "Standard session archive state flag in agent database",
       "oracle_ids": [
@@ -15980,7 +15986,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; ensures work is only performed on active unarchived sessions",
+      "risk": "High; admission generations, checkpoint recovery and durable custody gate replay, side effects and lifecycle settlement",
       "selected_owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb (canonical partial owner; full lifecycle pending)",
       "source_refs": [
         {
@@ -16040,7 +16046,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
@@ -16049,16 +16055,20 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb",
-        "symbol": "deletion fence, generation CAS, archive/receipt/media recovery, and typed provider-review admission; full detached lifecycle owner pending"
+        "symbol": "deletion fence, generation CAS, archive/receipt/media recovery, and typed provider-review admission; full detached lifecycle owner pending; bounded checked checkpoint-root recovery and explicit-string root CAS"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o06_work_admission_and_archive",
         "source/host/tests/agent_db_owner_contract.rs::background_result_receipt_is_idempotent_and_conflicts_fail_closed",
         "source/host/tests/agent_session_contract.rs::background_work_generation_recheck_rejects_stale_terminal_result",
-        "source/host/tests/agent_session_contract.rs::background_result_receipt_is_hidden_from_production_transcript_projection"
+        "source/host/tests/agent_session_contract.rs::background_result_receipt_is_hidden_from_production_transcript_projection",
+        "source/host/tests/production_agent_store_recovery_contract.rs::malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_be_repaired",
+        "source/host/tests/production_agent_store_recovery_contract.rs::production_consumers_refuse_missing_or_corrupt_checkpoint_and_recover_after_repair",
+        "source/host/tests/agent_db_owner_contract.rs::checkpoint_root_cas_requires_an_explicit_string_root_before_any_commit"
       ],
       "typed_contracts": [
-        "Session work admission and archive lifecycle"
+        "Session work admission and archive lifecycle",
+        "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },

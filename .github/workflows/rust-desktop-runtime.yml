@@ -213,6 +213,10 @@ jobs:
           cargo test --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \
             --test production_turn_agent_owner_contract \
+            --test production_agent_store_contract \
+            --test production_agent_store_recovery_contract \
+            --test production_agent_checkpoint_contract \
+            --test session_production_contract \
             --test runner_routed_provider_contract \
             --test production_turn_run_shell_adapter_contract \
             --test host_runner_composition_production_wiring_contract \
@@ -243,6 +247,7 @@ jobs:
           if cargo test --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               extensions::session::typed_replay::tests \
+              extensions::session::production_agent_store::checked_state_tests \
               extensions::inference::typed_replay_serialization::tests \
               runner::compaction_planning::tests \
               runner::production_turn_run_shell_adapter::tests \
@@ -314,13 +319,15 @@ jobs:
               "shipping_channel_handoff_tests": ["tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership", "tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order"],
               "channel_idle_handoff_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "runner_routed_provider_contract", "production_turn_run_shell_adapter_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "host_upgrade_production_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract"],
-              "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "production_turn_run_shell_adapter_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "host_upgrade_production_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract"],
+              "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests"],
               "integration_recovery_result": "passed",
+              "checkpoint_root_recovery_contract": "SWA-ROOT-RECOVERY-v1",
+              "checkpoint_root_recovery_result": "passed",
               "automation_history_contract": "OCRM-AUTOMATION-HISTORY-ACK-v1",
               "automation_history_result": "passed",
               "committed_source_integrity": "passed",
-              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, shipping lease refusal, and truthful Automation history settlement through existing owners. Automation coverage includes bounded background/spend-guard execution and guarded cron SQL lifecycle. Channel coverage binds atomic idle release to the actual shipping drain control in one live manager lifetime; append ambiguity, deferred rearm and restart remain open. History refusal suppresses run observations but does not undo terminal cron rows or imply no backend ACK. Loopback protocol evidence is not real provider compatibility or process-restart execution. Platform packaging and final acceptance remain pending.",
+              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, shipping lease refusal, and truthful Automation history settlement through existing owners. Checkpoint recovery checks durable metadata/root/blob state before owner recovery or publication and preserves refusal custody; original-turn load/claim/settle remains open. Automation coverage includes bounded background/spend-guard execution and guarded cron SQL lifecycle. Channel coverage binds atomic idle release to the actual shipping drain control in one live manager lifetime; append ambiguity, deferred rearm and restart remain open. History refusal suppresses run observations but does not undo terminal cron rows or imply no backend ACK. Loopback protocol evidence is not real provider compatibility or process-restart execution. Platform packaging and final acceptance remain pending.",
               "independent_acceptance": "pending",
           }
           Path(".evidence/ocrm-config.json").write_text(json.dumps(evidence, sort_keys=True, indent=2)+"\n")

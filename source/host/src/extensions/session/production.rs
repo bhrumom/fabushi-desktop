@@ -1506,20 +1506,23 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
+        let blob_store = self.create_agent_blob_store(agent_id)?;
         let mut owners = self
             .db_owners
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
         if let Some(owner) = owners.get(agent_id) {
+            ProductionAgentStore::validate_persisted_checkpoint_checked(owner, &blob_store)?;
             self.validate_owner_session_identity(agent_id, owner)?;
             self.recover_pending_profile_mutation(agent_id, owner)?;
             self.recover_pending_memory_mutation(agent_id, owner)?;
             return Ok(Arc::clone(owner));
         }
         let owner = Arc::new(
-            SandAgentDb::open(&db_path, self.busy_timeout_ms)
+            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
+        ProductionAgentStore::validate_persisted_checkpoint_checked(&owner, &blob_store)?;
         self.validate_owner_session_identity(agent_id, &owner)?;
         self.recover_pending_media_custody(agent_id, &owner)?;
         self.recover_pending_profile_mutation(agent_id, &owner)?;
@@ -1875,20 +1878,22 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
-        if let Some(owner) = self
+        let cached_owner = self
             .agent_store_owners
             .lock()
             .map_err(|_| "agent store owner map poisoned".to_string())?
             .get(agent_id)
-            .cloned()
-        {
+            .cloned();
+        if let Some(owner) = cached_owner {
+            owner.validate_cached_checkpoint_checked()?;
+            let _ = self.open_agent_db_owner_locked(agent_id)?;
             return Ok(owner);
         }
 
         let db = self.open_agent_db_owner_locked(agent_id)?;
         let blob_store = self.create_agent_blob_store(agent_id)?;
         let candidate = Arc::new(ProductionAgentStore::new(db, blob_store));
-        let _ = candidate.try_reset_from_db();
+        candidate.reset_from_db_checked()?;
 
         let mut owners = self
             .agent_store_owners
@@ -5735,6 +5740,13 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
+        if !self.session_db_path(agent_id)?.is_file() {
+            return Ok(None);
+        }
+        let db_owner = self.open_agent_db_owner_locked(agent_id)?;
+        let store = self.create_agent_blob_store(agent_id)?;
+        // Owner open validates durable metadata and checkpoint bytes before
+        // materialization repairs or maintenance may act on this session.
         let Some(materialized) = open_existing_session(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -5744,8 +5756,6 @@ impl ProductionSessionWorkers {
         else {
             return Ok(None);
         };
-        let db_owner = self.open_agent_db_owner_locked(agent_id)?;
-        let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
         let recovered_root = recover_conversation_root_if_missing(
@@ -5757,6 +5767,15 @@ impl ProductionSessionWorkers {
             db_owner.as_ref(),
         )?;
         if recovered_root {
+            let cached_store = self
+                .agent_store_owners
+                .lock()
+                .map_err(|_| "agent store owner map poisoned".to_string())?
+                .get(agent_id)
+                .cloned();
+            if let Some(cached_store) = cached_store {
+                cached_store.reset_from_db_checked()?;
+            }
             let _ = sync_recovered_profile_name(
                 &session_db_path,
                 self.busy_timeout_ms,
