@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "72c936652facdc6844c1685c56363ba3b605079ebf3b0b8564056cbddf89bfbd",
+  "canonical_inventory_sha256": "e20da0542bc424b3c943d81a03444c823a0a0f91faee257f5b8b1c028ba1cfc4",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -151,20 +151,20 @@
       "uncompressed_sha256": "9635775dea0326ddea737c9e31d456ddf2df5958899d99c5ab156aafb8f55e3c"
     },
     {
-      "compressed_sha256": "7ebe5771492ae2629673faac79b4ef6c16271294a08660bea2f289a86c513c64",
+      "compressed_sha256": "01915e227532cd12fccbce99f13d691c053d86b51ab5bd6ce44ee371957789d7",
       "count": 1024,
       "first_path": "extensions/zalouser/src/zalo-js.lifecycle.test.ts",
       "last_path": "packages/llm-core/src/utils/stream.test-support.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0018.jsonl.gz",
-      "uncompressed_sha256": "173d617658c6b689b762da480fe9a7141aeb1a28a593292832e96c804e8d6255"
+      "uncompressed_sha256": "2506398a071e6b31247e69b42762af908afecf4b9c77d701c5ea529a29d7d2e5"
     },
     {
-      "compressed_sha256": "8fd737939c8249a55d4bc19fc85e65db353d1bd38c216210e658764615f218a4",
+      "compressed_sha256": "9c2a0bbe8ca7e0bfd93e730bda4471e1c62711f357e4a7ac9648c25351e261e4",
       "count": 1024,
       "first_path": "packages/llm-core/src/validation.test.ts",
       "last_path": "qa/scenarios/runtime/gateway-node-control-plane.yaml",
       "path": "projects/openclaw-rust/inventory/shards/part-0019.jsonl.gz",
-      "uncompressed_sha256": "eb385890daa3a67cedd37393c13d3abd7ffa122b50b2a983befa5fa8f238892c"
+      "uncompressed_sha256": "2837cbbd7a2d612898d7b7f8210cf52cdf21db9ecde7c5eb7aa29486b2ffec7e"
     },
     {
       "compressed_sha256": "7a0695b5d729fab95883719031b1f18612bcc1c28f992405e77a095865a22ae7",
@@ -199,12 +199,12 @@
       "uncompressed_sha256": "270486d7505d0971488173ace9137fc7a83fbc29439e421512495fe41b3c7c46"
     },
     {
-      "compressed_sha256": "c93126e1be9e3967763f19cb0a8e859c7976218cd5215d6da1e8dbec848d8827",
+      "compressed_sha256": "1a1600e7322c068c27339b562e7709a4d7c759772ae1b580c3e58d014bc0f491",
       "count": 1024,
       "first_path": "src/agents/bootstrap-files.ts",
       "last_path": "src/agents/embedded-agent-runner/run/attempt-tool-call-stream-normalization.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0024.jsonl.gz",
-      "uncompressed_sha256": "4b2e167660d7837a3ed6d5817cb112dbe8f6dae7f3bcdf578be02ab0c3d76c5e"
+      "uncompressed_sha256": "cdb48fceb7d6c8ac86829335e4e5c4764162281d3b2d5e88174bb859cfac1904"
     },
     {
       "compressed_sha256": "2ac326ce01fd7b5c3399c4701a90d9e18d2ce45fdaa56ef27b13f1b226819808",
@@ -215,12 +215,12 @@
       "uncompressed_sha256": "53de9ba584b367ae8588f5333edb9a655e76cf979cb625e9fe382dd13273b0d8"
     },
     {
-      "compressed_sha256": "e0d196ebc38cd7082772f54b40313477a86f9d965511f187ca4870fc08f4bdc6",
+      "compressed_sha256": "18a34a4c55a46a4e3ccf33b74471ce8d4a2bba1c0939ff791b3e405bfa884977",
       "count": 1024,
       "first_path": "src/agents/media-generation-task-status-shared.test.ts",
       "last_path": "src/agents/sessions/session-manager-async-message-custody.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0026.jsonl.gz",
-      "uncompressed_sha256": "8e7af6c2cc8c316575b17563c70a708799aa6a3531728faba27dd234089416bc"
+      "uncompressed_sha256": "f575149134ba5b9e384255f7116cec3f92a8adfc1353ee7beea5d1374de7ea13"
     },
     {
       "compressed_sha256": "359f6064449d8b8cdba4b304410083873edf86cd85d3caab1cce6de71490d28c",
@@ -271,12 +271,12 @@
       "uncompressed_sha256": "01619f28785fde190a4e331c1a2ce2767839af98d8eb311e31c75e95ff22d625"
     },
     {
-      "compressed_sha256": "fc101ce4372beeed396d60450b754f64e4bf5a8b0ebd8c0b8e6f97c47e94789b",
+      "compressed_sha256": "25644246b12441aa274a177a9406ed4eea9b23f7c5df26dfb153ddde186064a2",
       "count": 1024,
       "first_path": "src/commands/status.summary-heartbeat-roster.test.ts",
       "last_path": "src/config/sessions/session-actor-memory-fork.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0033.jsonl.gz",
-      "uncompressed_sha256": "b1994e335b7fe7aeb867e353bacd9f8b8c378d44efafde8b5bddc5ba39275877"
+      "uncompressed_sha256": "d74fec17fc589398a9a30318c9845730da28cb9ef4d84db3aa41f1ad8f14acfb"
     },
     {
       "compressed_sha256": "3c9be76cc5987d5187ddd0bae5583ba1b3f5bd03fe2da36437bf9215048cec6e",
