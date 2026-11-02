@@ -305,6 +305,7 @@ jobs:
               "source/host/tests/automations_backend_contract.rs",
               "source/host/tests/automation_runtime_contract.rs",
               "source/host/tests/automation_run_path_contract.rs",
+              "source/host/tests/automation_spend_guard_runtime_contract.rs",
               "source/host/tests/agent_session_contract.rs",
               "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
@@ -367,6 +368,19 @@ jobs:
               "source/electron-main/attachments/attachments.ts",
               "source/electron-main/coordinator/coordinator-main-port-client.ts",
               "source/shared/rpc/coordinator-main.ts",
+              "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+              "source/host/src/extensions/transcript/background_wakes.rs",
+              "source/host/tests/background_wakes_production_contract.rs",
+              "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+              "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+              "source/host/app/src/tests/channel_host_lane_tests.rs",
+              "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+              "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+              "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+              "source/host/src/extensions/transcript/production_runtime.rs",
+              "source/host/tests/pending_wake_rearm_contract.rs",
+              "source/host/tests/durable_recovery_stores_contract.rs",
+              "source/host/tests/transcript_manager_contract.rs",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -575,11 +589,27 @@ jobs:
               tests::channel_inbound_readiness_tests::failed_launch_keeps_exact_head_and_stale_error_cannot_release_successor \
               tests::channel_inbound_readiness_tests::dispose_refuses_snapshotted_settings_callback_and_reserved_ticket \
               tests::channel_inbound_readiness_tests::disposal_after_real_append_prevents_late_handoff_without_replaying_rows \
+              tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker \
+              tests::channel_failure_readiness_tests::channel_failure_rejected_settings_do_not_launch \
+              tests::channel_failure_readiness_tests::channel_failure_failed_settings_persistence_does_not_launch \
+              tests::channel_failure_readiness_tests::channel_failure_active_signals_coalesce_and_resume_without_spin \
+              tests::channel_failure_readiness_tests::channel_failure_pause_preserves_latest_filtered_head_before_tail \
+              tests::channel_failure_readiness_tests::channel_failure_entered_nonsuccess_retains_under_all_later_signals \
+              tests::channel_failure_readiness_tests::channel_failure_success_settles_exact_marker_before_next_head \
+              tests::channel_failure_readiness_tests::channel_failure_spawn_error_cannot_release_successor \
+              tests::channel_failure_readiness_tests::channel_failure_committed_settings_survives_launch_failure \
+              tests::channel_failure_readiness_tests::channel_failure_dispose_refuses_snapshotted_callback_and_reserved_ticket \
+              tests::channel_failure_readiness_tests::channel_failure_close_after_gate_blocks_late_admission_and_cleanup \
+              tests::channel_failure_readiness_tests::channel_failure_readiness_preserves_other_agent_and_inbound_custody \
+              tests::channel_failure_readiness_tests::channel_failure_remote_room_preserves_existing_policy \
+              tests::channel_failure_readiness_tests::channel_failure_exact_recovery_deduplicates_retained_head_and_tail_only \
               tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once \
               tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake \
               tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner \
               tests::channel_host_lane_tests::channel_send_host_lane_returns_before_transport_and_preserves_fallback \
               tests::channel_host_lane_tests::channel_send_host_lane_preserves_projection_noop_and_no_retry \
+              tests::channel_host_lane_tests::channel_send_host_lane_retains_exact_head_before_new_failure_tail \
+              tests::channel_host_lane_tests::channel_send_host_lane_failure_after_manager_close_preserves_durable_marker \
               tests::channel_host_lane_tests::channel_send_host_lane_persistence_refusal_retains_live_failure_without_overwriting_store \
               tests::channel_host_lane_tests::channel_recovery_reopens_actual_owners_and_retains_exact_failure_without_provider \
               tests::channel_host_lane_tests::channel_recovery_quiescence_retains_original_marker_and_queue \
@@ -1275,8 +1305,12 @@ jobs:
               "channel_failure_idle_handoff_contract": "OCRM-CHANNEL-FAILURE-IDLE-HANDOFF-v1",
               "shipping_channel_failure_handoff_tests": ["tests::channel_failure_handoff_tests::channel_failure_idle_predecessor_preserves_successor_and_exact_batch", "tests::channel_failure_handoff_tests::channel_failure_nonempty_pause_preserves_order_and_releases_once"],
               "channel_failure_idle_handoff_scope": "Existing BackgroundWakes and common shipping drain atomically release empty failure queues, retain successor custody, and preserve nonempty pause order. No blind transport retry, restart reconciliation, joined shutdown or real channel acceptance is claimed.",
+              "channel_failure_live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
+              "channel_failure_live_custody_tests": ["tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker", "tests::channel_failure_readiness_tests::channel_failure_rejected_settings_do_not_launch", "tests::channel_failure_readiness_tests::channel_failure_failed_settings_persistence_does_not_launch", "tests::channel_failure_readiness_tests::channel_failure_active_signals_coalesce_and_resume_without_spin", "tests::channel_failure_readiness_tests::channel_failure_pause_preserves_latest_filtered_head_before_tail", "tests::channel_failure_readiness_tests::channel_failure_entered_nonsuccess_retains_under_all_later_signals", "tests::channel_failure_readiness_tests::channel_failure_success_settles_exact_marker_before_next_head", "tests::channel_failure_readiness_tests::channel_failure_spawn_error_cannot_release_successor", "tests::channel_failure_readiness_tests::channel_failure_committed_settings_survives_launch_failure", "tests::channel_failure_readiness_tests::channel_failure_dispose_refuses_snapshotted_callback_and_reserved_ticket", "tests::channel_failure_readiness_tests::channel_failure_close_after_gate_blocks_late_admission_and_cleanup", "tests::channel_failure_readiness_tests::channel_failure_readiness_preserves_other_agent_and_inbound_custody", "tests::channel_failure_readiness_tests::channel_failure_remote_room_preserves_existing_policy", "tests::channel_failure_readiness_tests::channel_failure_exact_recovery_deduplicates_retained_head_and_tail_only"],
+              "channel_failure_live_custody_result": "passed",
+              "channel_failure_live_custody_scope": "Existing BackgroundWakes, real Settings/Session/TranscriptManager and shipping processing/admission retain exact ordered failure heads, rearm only pre-dispatch work, and refuse replay after admitted non-success. Controlled final Runner callbacks prove ordering and no duplicate admission, not real service effects. Durable restart settlement, retained-work reconciliation, joined shutdown and real channel/provider acceptance remain open.",
               "channel_host_lane_delivery_contract": "OCRM-CHANNEL-HOST-LANE-DELIVERY-v1",
-              "channel_host_lane_delivery_tests": ["tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once", "tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake", "tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner", "tests::channel_host_lane_tests::channel_send_host_lane_returns_before_transport_and_preserves_fallback", "tests::channel_host_lane_tests::channel_send_host_lane_preserves_projection_noop_and_no_retry"],
+              "channel_host_lane_delivery_tests": ["tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once", "tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake", "tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner", "tests::channel_host_lane_tests::channel_send_host_lane_returns_before_transport_and_preserves_fallback", "tests::channel_host_lane_tests::channel_send_host_lane_preserves_projection_noop_and_no_retry", "tests::channel_host_lane_tests::channel_send_host_lane_retains_exact_head_before_new_failure_tail", "tests::channel_host_lane_tests::channel_send_host_lane_failure_after_manager_close_preserves_durable_marker"],
               "channel_host_lane_delivery_result": "passed",
               "channel_pending_failure_recovery_contract": "CWR-v1",
               "channel_pending_failure_recovery_tests": ["tests::channel_host_lane_tests::channel_send_host_lane_persistence_refusal_retains_live_failure_without_overwriting_store", "tests::channel_host_lane_tests::channel_recovery_reopens_actual_owners_and_retains_exact_failure_without_provider", "tests::channel_host_lane_tests::channel_recovery_quiescence_retains_original_marker_and_queue", "tests::channel_host_lane_tests::channel_recovery_repeated_enqueue_coalesces_and_preserves_batch_order", "tests::channel_host_lane_tests::channel_recovery_cleared_or_replaced_snapshot_cannot_resurrect", "tests::channel_host_lane_tests::channel_recovery_refuses_incomplete_context_without_mutating_durable_bytes", "tests::channel_host_lane_tests::channel_recovery_corrupt_or_unreadable_store_refuses_enqueue", "tests::channel_host_lane_tests::channel_recovery_closed_wakes_refuses_admission_without_retiring_marker", "tests::channel_host_lane_tests::channel_recovery_worker_suppresses_cleared_or_replaced_queued_snapshots", "tests::channel_host_lane_tests::channel_recovery_worker_read_error_retains_original_queued_marker", "tests::channel_host_lane_tests::channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata"],
@@ -1859,6 +1893,7 @@ jobs:
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+              "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
               "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
               "source/host/src/extensions/content_search/agent_content_search.rs",
@@ -1896,13 +1931,15 @@ jobs:
               "source/host/src/transcript_mutation_events.rs",
               "source/host/tests/openclaw_sessions_and_config_contract.rs",
               "source/host/tests/agent_to_agent_messaging_contract.rs",
+              "source/host/tests/background_wakes_production_contract.rs",
           ]
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
           for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
                          "transcript_manager_contract", "cloud_agent_pending_wake_rearm_production_contract",
                          "agent_content_search_contract", "roster_search_contract",
-                         "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract"):
+                         "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract",
+                         "background_wakes_production_contract"):
               integration += ["--test", target]
           required_integration = [
               "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
@@ -1955,6 +1992,19 @@ jobs:
               "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
               "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
               "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run",
+              "channel_failure_readiness_on_either_side_of_pause_retries_latest_filtered_head_once",
+              "channel_failure_targeted_readiness_preserves_other_tickets_paused_heads_and_raw_tails",
+              "channel_failure_live_head_preserves_filtered_order_ahead_of_tail_until_definite_finish",
+              "channel_failure_launch_error_and_delayed_callbacks_cannot_clear_a_successor",
+              "channel_failure_entered_and_retained_heads_refuse_all_replay_and_phase_confusion",
+              "channel_failure_live_take_requires_revival_and_releases_stored_empty_input",
+              "channel_failure_live_enqueue_before_idle_uses_current_drain_and_claims_ordered_head_once",
+              "channel_failure_live_idle_before_enqueue_admits_one_successor_without_late_release",
+              "channel_failure_close_during_a_gate_revokes_all_phases_and_late_tickets_without_reopening",
+              "channel_failure_retained_head_does_not_block_other_agents_or_wake_families",
+              "channel_failure_wiring_oracle_rejects_cleanup_after_idle_return",
+              "channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
           ]
           store_filter = "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests"
           required_store = [store_filter + "::" + name for name in (
@@ -1996,6 +2046,7 @@ jobs:
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/RSU-v1/MWR-v1", "subject_commit": head,
               "additional_contracts": ["SCP-CLAIM-v1"],
+              "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -2004,7 +2055,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks remain source-wiring only. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -2165,7 +2216,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
           PY
-      - name: Check and execute the actual Automation and Settings App owners on Linux
+      - name: Check and execute the actual Automation, Settings and channel App owners on Linux
         id: automation_app
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         env:
@@ -2190,6 +2241,16 @@ jobs:
               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
               "source/host/app/src/tests/config_secret_boundary_tests.rs",
+              "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+              "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+              "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+              "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+              "source/host/app/src/tests/channel_host_lane_tests.rs",
+              "source/host/src/extensions/transcript/background_wakes.rs",
+              "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+              "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+              "source/host/src/extensions/transcript/production_runtime.rs",
+              "source/host/src/extensions/transcript/transcript_manager.rs",
               "source/host/src/extensions/settings/settings_service.rs",
               "source/host/src/extensions/settings/public_projection.rs",
               "source/host/src/gateway_command_error.rs",
@@ -2204,6 +2265,7 @@ jobs:
           ]
           receipt = {
               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1",
+              "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -2214,7 +2276,7 @@ jobs:
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "commands": [], "cases": [], "result": "failed",
-              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
           }
           def save():
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -2291,6 +2353,46 @@ jobs:
                   "public_key_refusal_precedes_all_four_routes_and_read_normalization",
                   "public_config_set_rejects_malformed_base_hash_before_owner_effects",
                   "public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
+              ]]
+              required += ["tests::channel_failure_readiness_tests::" + name for name in [
+                  "channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+                  "channel_failure_rejected_settings_do_not_launch",
+                  "channel_failure_failed_settings_persistence_does_not_launch",
+                  "channel_failure_active_signals_coalesce_and_resume_without_spin",
+                  "channel_failure_pause_preserves_latest_filtered_head_before_tail",
+                  "channel_failure_entered_nonsuccess_retains_under_all_later_signals",
+                  "channel_failure_success_settles_exact_marker_before_next_head",
+                  "channel_failure_spawn_error_cannot_release_successor",
+                  "channel_failure_committed_settings_survives_launch_failure",
+                  "channel_failure_dispose_refuses_snapshotted_callback_and_reserved_ticket",
+                  "channel_failure_close_after_gate_blocks_late_admission_and_cleanup",
+                  "channel_failure_readiness_preserves_other_agent_and_inbound_custody",
+                  "channel_failure_remote_room_preserves_existing_policy",
+                  "channel_failure_exact_recovery_deduplicates_retained_head_and_tail_only",
+              ]]
+              required += ["tests::channel_failure_handoff_tests::" + name for name in [
+                  "channel_failure_idle_predecessor_preserves_successor_and_exact_batch",
+                  "channel_failure_nonempty_pause_preserves_order_and_releases_once",
+              ]]
+              required += ["tests::channel_host_lane_tests::" + name for name in [
+                  "channel_send_host_lane_reaches_existing_delivery_owner_once",
+                  "channel_send_host_lane_failure_reaches_tray_and_pending_wake",
+                  "channel_send_host_lane_unregistered_provider_uses_existing_failure_owner",
+                  "channel_send_host_lane_returns_before_transport_and_preserves_fallback",
+                  "channel_send_host_lane_preserves_projection_noop_and_no_retry",
+                  "channel_send_host_lane_retains_exact_head_before_new_failure_tail",
+                  "channel_send_host_lane_failure_after_manager_close_preserves_durable_marker",
+                  "channel_send_host_lane_persistence_refusal_retains_live_failure_without_overwriting_store",
+                  "channel_recovery_reopens_actual_owners_and_retains_exact_failure_without_provider",
+                  "channel_recovery_quiescence_retains_original_marker_and_queue",
+                  "channel_recovery_repeated_enqueue_coalesces_and_preserves_batch_order",
+                  "channel_recovery_cleared_or_replaced_snapshot_cannot_resurrect",
+                  "channel_recovery_refuses_incomplete_context_without_mutating_durable_bytes",
+                  "channel_recovery_corrupt_or_unreadable_store_refuses_enqueue",
+                  "channel_recovery_closed_wakes_refuses_admission_without_retiring_marker",
+                  "channel_recovery_worker_suppresses_cleared_or_replaced_queued_snapshots",
+                  "channel_recovery_worker_read_error_retains_original_queued_marker",
+                  "channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata",
               ]]
               receipt["required_tests"] = required
               save()

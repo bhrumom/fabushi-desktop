@@ -78,6 +78,19 @@ provider compatibility. Root integrates workflow
 and RTM changes serially. Preserve MGS-v1 selector controls and every inherited
 shared contract.
 
+Decision **MWR-FIXTURE-01 — FIX / TEST_FLAW**: Runtime `41537633075`, Linux
+job `125593431475`, at `c6be0cbc7bd47ac3392d02bec5b3ee8aa75a61bb` reached
+`bound_synthesis_gate_rejects_a_noncanonical_store_path` but its canonical
+positive used an ID without materializing a Session DB. The production gate
+correctly returns Invalid when Session work admission fails. Create a real
+Session through the existing owner for this positive and its foreign-path
+negative; retain Committed for the canonical admitted store and Invalid for
+the foreign store. Also retain an explicit canonical-but-missing-Session
+Invalid control. Do not relax production admission or replace the positive
+with a refusal expectation. Reuse the already-selected complete contract
+target; downstream missing receipts from this failure are not compilation
+or compatibility evidence.
+
 Freeze the complete implementation/tests/CI candidate and obtain independent
 source review. Extend the existing Linux portable Host command and macOS
 recovery command with the affected targets and named positives, bind receipts

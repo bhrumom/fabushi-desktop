@@ -393,6 +393,41 @@ struct InboundAppendClaim<T> {
     readiness_requested: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChannelFailureState {
+    ActiveBeforeDispatch,
+    PausedBeforeDispatch,
+    EnteredRunner,
+    RetainedAfterDispatch,
+}
+
+/// A snapshot of the queue-owned failure head, never dispatch authority by
+/// itself. The last Runner admission compares both identities and the phase.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ChannelFailureWork<T> {
+    pub claim_id: String,
+    pub worker_token: String,
+    pub failures: Vec<T>,
+}
+
+/// Finished permits the current drain to continue; it is not a delivery receipt.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ChannelFailureAction<T> {
+    Finished,
+    Retry(ChannelFailureWork<T>),
+    Held,
+    Stale,
+}
+
+#[derive(Debug)]
+struct ChannelFailureClaim<T> {
+    claim_id: String,
+    worker_token: Option<String>,
+    failures: Vec<T>,
+    state: ChannelFailureState,
+    readiness_requested: bool,
+}
+
 #[derive(Debug, Default)]
 pub struct BackgroundWakes<T> {
     closed: bool,
@@ -401,6 +436,7 @@ pub struct BackgroundWakes<T> {
     inbound_append_claims: HashMap<String, InboundAppendClaim<T>>,
     pub pending_channel_failures: HashMap<String, Vec<T>>,
     pub reviving_channel_failure_agent_ids: HashSet<String>,
+    channel_failure_claims: HashMap<String, ChannelFailureClaim<T>>,
     pub pending_event_wakes: HashMap<String, Vec<T>>,
     pub reviving_event_agent_ids: HashSet<String>,
     pub dm_preempted_wake_agent_ids: HashSet<String>,
@@ -419,9 +455,93 @@ impl<T> BackgroundWakes<T> {
         self.inbound_append_claims.clear();
         self.pending_channel_failures.clear();
         self.reviving_channel_failure_agent_ids.clear();
+        self.channel_failure_claims.clear();
         self.pending_event_wakes.clear();
         self.reviving_event_agent_ids.clear();
         self.dm_preempted_wake_agent_ids.clear();
+    }
+
+    pub fn owns_channel_failure_work(&self, agent_id: &str, work: &ChannelFailureWork<T>) -> bool {
+        !self.closed && self.channel_failure_claims.get(agent_id).is_some_and(|claim| {
+            claim.claim_id == work.claim_id
+                && claim.worker_token.as_deref() == Some(work.worker_token.as_str())
+                && matches!(claim.state,
+                    ChannelFailureState::ActiveBeforeDispatch | ChannelFailureState::EnteredRunner)
+        })
+    }
+
+    pub fn channel_failure_state(&self, agent_id: &str) -> Option<ChannelFailureState> {
+        self.channel_failure_claims.get(agent_id).map(|claim| claim.state)
+    }
+
+    pub fn retained_channel_failures(&self, agent_id: &str) -> Option<&[T]> {
+        self.channel_failure_claims.get(agent_id).map(|claim| claim.failures.as_slice())
+    }
+
+    /// Thread creation failed before this ticket entered Runner. Retain the
+    /// exact head for a later signal; even a latched hint cannot retry a launch.
+    pub fn release_channel_failure_launch(&mut self, agent_id: &str, work: &ChannelFailureWork<T>) -> bool {
+        if !self.owns_channel_failure_work(agent_id, work)
+            || self.channel_failure_state(agent_id) != Some(ChannelFailureState::ActiveBeforeDispatch)
+        {
+            return false;
+        }
+        let claim = self.channel_failure_claims.get_mut(agent_id).expect("owned channel failure claim");
+        claim.state = ChannelFailureState::PausedBeforeDispatch;
+        claim.worker_token = None;
+        claim.readiness_requested = false;
+        self.reviving_channel_failure_agent_ids.remove(agent_id);
+        true
+    }
+
+    /// The final live-custody check before the caller invokes Runner. No
+    /// readiness signal can make an entered ticket eligible for another call.
+    pub fn begin_channel_failure_followup(
+        &mut self,
+        agent_id: &str,
+        work: &ChannelFailureWork<T>,
+        retained_failures: Vec<T>,
+    ) -> bool {
+        if !self.owns_channel_failure_work(agent_id, work)
+            || self.channel_failure_state(agent_id) != Some(ChannelFailureState::ActiveBeforeDispatch)
+        {
+            return false;
+        }
+        let claim = self.channel_failure_claims.get_mut(agent_id).expect("owned channel failure claim");
+        claim.failures = retained_failures;
+        claim.state = ChannelFailureState::EnteredRunner;
+        claim.readiness_requested = false;
+        true
+    }
+
+    /// An unsuccessful notification does not prove that Runner had no effects.
+    /// Retain the head separately from raw input without any automatic replay.
+    pub fn retain_channel_failure_after_dispatch(
+        &mut self,
+        agent_id: &str,
+        work: &ChannelFailureWork<T>,
+    ) -> bool {
+        if !self.owns_channel_failure_work(agent_id, work)
+            || self.channel_failure_state(agent_id) != Some(ChannelFailureState::EnteredRunner)
+        {
+            return false;
+        }
+        let claim = self.channel_failure_claims.get_mut(agent_id).expect("owned channel failure claim");
+        claim.state = ChannelFailureState::RetainedAfterDispatch;
+        claim.worker_token = None;
+        claim.readiness_requested = false;
+        self.reviving_channel_failure_agent_ids.remove(agent_id);
+        true
+    }
+
+    /// The caller owns the definite no-work or successful-notification decision.
+    /// Keep revival until the same drain makes its next atomic take/idle check.
+    pub fn finish_channel_failure_work(&mut self, agent_id: &str, work: &ChannelFailureWork<T>) -> bool {
+        if !self.owns_channel_failure_work(agent_id, work) {
+            return false;
+        }
+        self.channel_failure_claims.remove(agent_id);
+        true
     }
 
     pub fn owns_inbound_append(&self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
@@ -546,6 +666,11 @@ impl<T> BackgroundWakes<T> {
         &mut self,
         agent_id: &str,
     ) -> Option<Vec<T>> {
+        // This raw-batch compatibility helper cannot bypass a retained head or
+        // clear the revival bit belonging to its active ticket.
+        if self.channel_failure_claims.contains_key(agent_id) {
+            return None;
+        }
         Self::take_pending_or_end_revival(
             self.closed,
             &mut self.pending_channel_failures,
@@ -574,6 +699,122 @@ impl<T> BackgroundWakes<T> {
 }
 
 impl<T: Clone> BackgroundWakes<T> {
+    /// Reserve the real failure head before launch. New failures signal only a
+    /// pre-dispatch head and always remain behind an existing retained head.
+    pub fn enqueue_channel_failure_and_claim(
+        &mut self,
+        agent_id: &str,
+        failure: T,
+    ) -> Result<Option<ChannelFailureWork<T>>, String> {
+        if self.closed {
+            return Err("Background wakes are closed".to_string());
+        }
+        Self::enqueue(&mut self.pending_channel_failures, agent_id, failure);
+        Ok(self.request_channel_failure_readiness_for_agent(agent_id))
+    }
+
+    pub fn request_channel_failure_readiness(&mut self) -> Vec<(String, ChannelFailureWork<T>)> {
+        if self.closed {
+            return Vec::new();
+        }
+        let agent_ids = self.channel_failure_claims.keys()
+            .chain(self.pending_channel_failures.keys()).cloned().collect::<HashSet<_>>();
+        agent_ids.into_iter().filter_map(|agent_id| {
+            self.request_channel_failure_readiness_for_agent(&agent_id).map(|work| (agent_id, work))
+        }).collect()
+    }
+
+    pub fn request_channel_failure_readiness_for_agent(&mut self, agent_id: &str) -> Option<ChannelFailureWork<T>> {
+        if self.closed {
+            return None;
+        }
+        if let Some(claim) = self.channel_failure_claims.get_mut(agent_id) {
+            match claim.state {
+                ChannelFailureState::ActiveBeforeDispatch => {
+                    claim.readiness_requested = true;
+                    return None;
+                }
+                ChannelFailureState::EnteredRunner | ChannelFailureState::RetainedAfterDispatch => return None,
+                ChannelFailureState::PausedBeforeDispatch => {}
+            }
+        }
+        // A finishing worker retains its drain through the finish-to-take gap.
+        if !Self::begin_revival(&mut self.reviving_channel_failure_agent_ids, agent_id) {
+            return None;
+        }
+        self.take_channel_failure_work_or_end_revival(agent_id)
+    }
+
+    /// Save the latest provenance-filtered failures before consuming the one
+    /// coalesced hint or atomically releasing this pre-dispatch acquisition.
+    pub fn pause_channel_failure_before_dispatch(
+        &mut self,
+        agent_id: &str,
+        work: &ChannelFailureWork<T>,
+        retained_failures: Vec<T>,
+    ) -> ChannelFailureAction<T> {
+        if !self.owns_channel_failure_work(agent_id, work)
+            || self.channel_failure_state(agent_id) != Some(ChannelFailureState::ActiveBeforeDispatch)
+        {
+            return ChannelFailureAction::Stale;
+        }
+        let claim = self.channel_failure_claims.get_mut(agent_id).expect("owned channel failure claim");
+        claim.failures = retained_failures;
+        if claim.readiness_requested {
+            claim.readiness_requested = false;
+            let worker_token = uuid::Uuid::new_v4().to_string();
+            claim.worker_token = Some(worker_token.clone());
+            ChannelFailureAction::Retry(ChannelFailureWork {
+                claim_id: claim.claim_id.clone(),
+                worker_token,
+                failures: claim.failures.clone(),
+            })
+        } else {
+            claim.state = ChannelFailureState::PausedBeforeDispatch;
+            claim.worker_token = None;
+            self.reviving_channel_failure_agent_ids.remove(agent_id);
+            ChannelFailureAction::Held
+        }
+    }
+
+    /// Acquire one failure head or atomically release an idle drain. A duplicate
+    /// take never clears another ticket, and entered/retained heads never retry.
+    pub fn take_channel_failure_work_or_end_revival(&mut self, agent_id: &str) -> Option<ChannelFailureWork<T>> {
+        if self.closed || !self.reviving_channel_failure_agent_ids.contains(agent_id) {
+            return None;
+        }
+        if let Some(claim) = self.channel_failure_claims.get_mut(agent_id) {
+            if claim.worker_token.is_some() {
+                return None;
+            }
+            if claim.state != ChannelFailureState::PausedBeforeDispatch {
+                self.reviving_channel_failure_agent_ids.remove(agent_id);
+                return None;
+            }
+            claim.worker_token = Some(uuid::Uuid::new_v4().to_string());
+            claim.state = ChannelFailureState::ActiveBeforeDispatch;
+            claim.readiness_requested = false;
+        } else {
+            let Some(failures) = self.pending_channel_failures.remove(agent_id).filter(|items| !items.is_empty()) else {
+                self.reviving_channel_failure_agent_ids.remove(agent_id);
+                return None;
+            };
+            self.channel_failure_claims.insert(agent_id.to_string(), ChannelFailureClaim {
+                claim_id: uuid::Uuid::new_v4().to_string(),
+                worker_token: Some(uuid::Uuid::new_v4().to_string()),
+                failures,
+                state: ChannelFailureState::ActiveBeforeDispatch,
+                readiness_requested: false,
+            });
+        }
+        let claim = self.channel_failure_claims.get(agent_id)?;
+        Some(ChannelFailureWork {
+            claim_id: claim.claim_id.clone(),
+            worker_token: claim.worker_token.clone()?,
+            failures: claim.failures.clone(),
+        })
+    }
+
     /// Reserve the real head/token before the caller attempts to spawn. New
     /// input is also a readiness hint, but can never bypass an Unknown head.
     pub fn enqueue_inbound_and_claim(

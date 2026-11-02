@@ -190,6 +190,28 @@ ACK-05. The same batch therefore also repairs these existing owner boundaries:
   listeners, so a listener can read that same committed owner. A bounded real
   Runtime oracle covers both legacy/bound collision refusal and bound callback
   reads; no cross-store rollback of earlier routine disablement is implied.
+  **ACK-06-FIXTURE-01 — FIX / TEST_FLAW (2026-11-02):** exact
+  `09df841142a378436c490c38b375ac842ac3f419`, Runtime `41513854566`,
+  Host job `125512243925` failed while `prepare_away_agent` marked unread
+  activity, before the card assertions, because the expected Agent DB path
+  was not recognized as a regular file. The preserved command artifact contains
+  no fixture-root identity; the actual cause of that unavailable path is not
+  established. Source inspection does
+  establish that the two bounded parent tests can choose the same PID/timestamp
+  path, accept it through non-exclusive `create_dir_all`, and each later remove
+  the shared tree. Repair this invalid ownership assumption without changing
+  any Spend Guard, Session, insertion, rollback or listener assertion. An owned
+  child root is acquired only by successful exclusive directory creation;
+  collision chooses another candidate and never adopts, writes or deletes the
+  existing candidate. A deterministic same-candidate control must keep a live
+  sibling's contents intact through the other fixture's cleanup. Keep the exact
+  child exit/kill-and-wait boundary before cleanup and the completion receipt;
+  a child selecting no test remains failure. Include case, parent/child and root
+  identities in diagnostics, retain failed owned roots under the existing
+  `FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT` when configured, and clean successful
+  owned fixtures. Reuse the already-selected whole contract target in Actions.
+  The later successful `3c4bf6963cb30ecf01eb34b905315074886e1972` run does not
+  erase this earlier failure or prove its hypothesized collision occurred.
 - ACK-07: cron registration, plain and fenced terminal settlement, fence
   publication and projection must reach valid SQL in the existing `SandAgentDb`
   owner. Preserve all identity/lifecycle/running-state predicates, admission

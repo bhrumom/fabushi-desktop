@@ -6205,10 +6205,15 @@
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
         "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+        "source/host/src/extensions/transcript/background_wakes.rs",
+        "source/host/app/src/main.rs",
+        "source/host/tests/background_wakes_production_contract.rs",
+        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+        "source/host/app/src/tests/channel_host_lane_tests.rs",
         "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
         "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
-        "source/host/app/src/tests/channel_host_lane_tests.rs",
         "source/host/tests/pending_wake_rearm_contract.rs",
         "source/host/tests/durable_recovery_stores_contract.rs",
         "source/host/tests/transcript_manager_contract.rs"
@@ -6293,6 +6298,7 @@
       "typed_contracts": [
         "HostChannelDelivery::deliver",
         "HostChannelDelivery::set_port",
+        "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1 shipping dispatch failures reach the existing ordered BackgroundWakes head and precise marker owner; only pre-dispatch heads rearm, admitted non-success blocks replay and tail overtaking; exact-H execution, durable restart settlement and real registered-provider delivery remain pending",
         "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open"
       ],
       "unit_id": "OCRM-UNIT-CHANNELS-001"
@@ -16718,6 +16724,8 @@
         "source/host/tests/background_wakes_production_contract.rs",
         "source/host/tests/transcript_manager_contract.rs",
         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
+        "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+        "source/host/app/src/tests/channel_failure_handoff_tests.rs",
         "source/host/src/host_lock.rs",
         "source/host/tests/bootstrap_contract.rs",
         "source/host/app/src/tests/original_turn_recovery_tests.rs",
@@ -16896,6 +16904,8 @@
         "source/host/tests/production_agent_store_recovery_contract.rs::malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_be_repaired",
         "source/host/tests/production_agent_store_recovery_contract.rs::production_consumers_refuse_missing_or_corrupt_checkpoint_and_recover_after_repair",
         "source/host/tests/agent_db_owner_contract.rs::checkpoint_root_cas_requires_an_explicit_string_root_before_any_commit",
+        "source/host/app/src/tests/channel_failure_readiness_tests.rs::channel_failure_entered_nonsuccess_retains_under_all_later_signals",
+        "source/host/app/src/tests/channel_host_lane_tests.rs::channel_send_host_lane_retains_exact_head_before_new_failure_tail",
         "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work",
         "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases",
         "source/host/tests/production_checkpoint_restart_contract.rs",
@@ -16919,6 +16929,7 @@
         "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery",
         "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication",
         "OCRM-CHANNEL-INBOUND-REARM-v1 retained unappended head readiness, exact launch custody, coalesced retry and permanent disposal fence",
+        "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1 keeps one ordered failure head in the existing BackgroundWakes owner; committed Settings and successful resume recheck only pre-dispatch work, while admitted non-success remains retained without replay; durable restart settlement and real channel/provider acceptance remain open, and exact-H execution is pending",
         "OCRM-HOST-PHYSICAL-CUSTODY-v1 existing Host startup guard prerequisite; original-turn durable claim/reconciliation and full restart acceptance remain open",
         "ORT-v1 completed ordinary Native Journal turn: accepted original identity/model, private committed checkpoint observations and frozen terminal custody, bounded strict Session slot, whole-image marker v2 migration, guarded completed-marker acknowledgment and automatic ACK containment; newly declared implementation/tests require exact-H execution, unfinished and Legacy turn restoration remain open",
         "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open",

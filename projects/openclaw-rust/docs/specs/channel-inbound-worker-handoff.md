@@ -763,3 +763,210 @@ and retained channel/Session contracts only in Actions on the final exact H.
 The fixed-U ingress-monitor source identities and bounded read extents already
 recorded in the channel dossier provide the final-repump/active-owner invariant;
 this native race repair does not promote historical reading or scoped authority.
+
+## Failure-notice live custody — `OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1`
+
+Authoring base: `09df841142a378436c490c38b375ac842ac3f419`; fixed U
+remains `1440bb1771372334bea23d7642bb52deb7db1845`. Decision **CFL-01 —
+FIX / IMPL_BUG**, before implementation: the existing failure worker puts both
+gate-paused batches and batches that already invoked Runner back into one raw
+queue. Settings and successful upgrade resume wake only inbound work. Simply
+adding failure readiness would also replay possibly executed work. Close can
+clear the queue while its old static enqueue/requeue callbacks populate it again.
+Keep the existing failure producer, BackgroundWakes mutex, common drain,
+Session/provenance checks, Runner, trays and precise pending-marker owner.
+
+Integration base: `3c4bf6963cb30ecf01eb34b905315074886e1972`, a direct
+descendant of the authoring base, adds the existing-owner CWR-v1 exact pending
+marker recovery contract. Preserve that complete incoming change. Decision
+**CFL-CWR-01 — FIX / IMPL_BUG**, before integration: raw-tail-only recovery
+deduplication and token-free worker launch cannot safely compose with a retained
+live head. Adapt those entry points to the same claim/token owner, retaining
+checked whole-image reads, exact marker metadata/currentness, age retention,
+unpersisted live-failure fallback and every valid CWR assertion.
+
+- **CFL-01 — one retained head.** Keep later input in the existing
+  `pending_channel_failures`; add only a private head claim in BackgroundWakes,
+  containing the original ordered failures, opaque claim ID, per-acquisition
+  worker token, phase and one readiness latch. Phases are
+  `ActiveBeforeDispatch`, `PausedBeforeDispatch`, `EnteredRunner` and
+  `RetainedAfterDispatch`. Claims are live custody in this manager lifetime,
+  not another queue service, durable ledger or scheduler.
+- **CFL-02 — exact acquisition.** Enqueue and readiness reserve the real head
+  and token under the existing mutex before thread creation. An active
+  pre-dispatch head coalesces a signal; a paused head gets a fresh token. A
+  failed launch releases only its matching pre-dispatch ticket and retains the
+  batch for a later supported signal. It does not recursively retry. Idle
+  release stays atomic; no returning predecessor clears a successor's revival.
+- **CFL-03 — atomic pause.** A pre-dispatch pause records the latest retained
+  failure list after existing provenance filtering. Under one lock, either
+  consume the latch and return `Retry` with that same head and a fresh token,
+  or mark it paused and release revival. A closed gate without a new signal
+  stops after this one recheck. Later input cannot overtake the retained head.
+- **CFL-04 — one follow-up admission.** Immediately before the actual background
+  Runner invocation, compare claim/token/phase and the closed flag under the
+  queue lock, store the filtered batch and enter `EnteredRunner`. A mismatch
+  makes zero Runner calls. No Session query, marker I/O, provider, callback or
+  thread operation runs while holding this lock. Close cannot retract work
+  that already crossed this last admission boundary.
+- **CFL-05 — no replay inference.** After invoking Runner, all non-successful
+  notification outcomes remain `RetainedAfterDispatch`: errors, cancellation,
+  quiescence and zero sent messages. Do not parse String errors or infer no
+  effects from them. Settings, resume and new failures cannot re-enter this
+  head, clear it, combine it with later input or erase its marker. This batch
+  introduces no automatic release of retained post-dispatch custody.
+- **CFL-06 — preserve precise completion.** Preserve the existing notification
+  completion condition: not aborted, not quiesced, and sent-message count above
+  zero. Only that branch clears the same exact durable markers and emits the
+  existing roster update before finishing the matching head. Existing definite
+  no-work decisions (missing/group Session or completely stale provenance)
+  may finish a pre-dispatch head with their existing marker handling. Finished
+  means this queue head may drain onward; it does not prove external delivery
+  or that all additional tool effects physically stopped.
+- **CFL-07 — existing readiness signals.** Extend the current single Settings
+  subscription and successful `resume_channel_inbound_after_recreate` callback
+  to request both inbound and failure readiness. Keep the same committed keys
+  `inferenceProvider`, `inference_provider` and `router`, weak shipping Gateway
+  capture, and resume-before-later-fallible-restoration ordering. Failed writes,
+  failed CAS/resume and unrelated keys request no readiness. Each worker
+  re-reads its real provider, upgrade and Session/provenance gates. Preserve
+  failure policy; do not adopt inbound's additional remote-room exclusion.
+- **CFL-08 — permanent close.** The existing close operation also clears these
+  claims/latches. Instance enqueue, take, pause, admission, finish, late launch
+  cleanup and snapshotted readiness reject a closed owner or stale token and
+  cannot populate executable work. A fresh manager remains a separate object.
+  This does not join old workers or grant cancellation of admitted effects.
+  Integration decision **CFL-CLOSE-MARKER-01 — FIX / IMPL_BUG**, before the
+  correction: an already admitted transport can return failure after this
+  manager closes. Reject its executable enqueue, but preserve the CWR-v1
+  fresh-failure marker publication before that refusal so the next manager
+  can recover the actual delivery failure. An early closed check before marker
+  publication would silently discard durable custody. Keep marker I/O outside
+  the queue lock and prove the late failure creates no old-owner follow-up.
+- **CFL-09 — shared implementation and observations.** Reuse
+  `drain_channel_revival_batches<B>` and existing owner constructors. Production
+  must use the token transitions, with no generic stop callback that clears a
+  possibly newer revival bit. Expose only read-only claim phase/failure views
+  needed by existing status/tests; raw mutable state is not dispatch authority.
+  The legacy raw failure take refuses while a live head exists, without
+  changing that head, its tail or revival; otherwise retain its CFH behavior.
+  Keep all existing inbound, CFH, Session and Host-lane behavior assertions.
+- **CFL-10 — exact recovery joins live custody.** Keep CWR-v1 marker decoding
+  and equality in shipping composition. Recovery deduplicates against both the
+  retained head and raw tail; an exact duplicate signals only that agent's
+  existing pre-dispatch head, while entered/retained work remains non-replayable.
+  Different marker metadata remains distinct ordered input. Preserve the
+  checked store-then-wakes lock order, reserve the ticket inside that admission,
+  and launch after both guards are released. Each processing pass applies the
+  existing checked marker-currentness filter before Session/provenance gates;
+  read refusal pauses the original head, and fully stale input finishes without
+  Runner. Repeated recovery never re-inserts the same marker behind a held head.
+
+### Frozen shared interface
+
+The existing BackgroundWakes owner adds `ChannelFailureWork<T>` with
+`claim_id: String`, `worker_token: String` and `failures: Vec<T>`,
+`ChannelFailureState` with the four phases above, and
+`ChannelFailureAction<T>` with `Finished`, `Retry(ChannelFailureWork<T>)`,
+`Held` and `Stale`. `Finished` permits the existing drain to continue; it is
+not a delivery receipt. Use these instance methods:
+
+- `enqueue_channel_failure_and_claim(&mut self, agent_id: &str, failure: T)`
+  returns `Result<Option<ChannelFailureWork<T>>, String>`.
+- `request_channel_failure_readiness(&mut self)` returns
+  `Vec<(String, ChannelFailureWork<T>)>`.
+- `request_channel_failure_readiness_for_agent(&mut self, agent_id: &str)`
+  returns `Option<ChannelFailureWork<T>>`, checks permanent close, and requests
+  only that agent's existing head/tail. Composition uses this for a duplicate
+  exact marker already retained by the owner.
+- `owns_channel_failure_work(&self, agent_id, &work)` checks a live matching
+  active or entered ticket; phase-specific transitions check their own phase.
+- `release_channel_failure_launch(&mut self, agent_id, &work)` returns bool
+  and only retires a matching pre-dispatch ticket.
+- `pause_channel_failure_before_dispatch(&mut self, agent_id, &work,
+  retained_failures: Vec<T>)` returns `ChannelFailureAction<T>`.
+- `begin_channel_failure_followup(&mut self, agent_id, &work,
+  retained_failures: Vec<T>)` returns bool and only admits pre-dispatch work.
+- `retain_channel_failure_after_dispatch(&mut self, agent_id, &work)` returns
+  bool and only retains an entered ticket.
+- `finish_channel_failure_work(&mut self, agent_id, &work)` returns bool for a
+  matching pre-dispatch or entered ticket; callers own the definite completion
+  decision. Preserve revival for the next atomic take/idle operation.
+- `take_channel_failure_work_or_end_revival(&mut self, agent_id)` returns
+  `Option<ChannelFailureWork<T>>`, never acquires an entered/retained head and
+  never clears another active ticket.
+- `channel_failure_state(&self, agent_id)` returns the optional phase;
+  `retained_channel_failures(&self, agent_id)` returns `Option<&[T]>`.
+
+### Actions oracles, scope and limits
+
+Use the real BackgroundWakes owner and production-used launch, readiness,
+pause/admission/outcome adapters with actual Settings, Session/SQLite,
+TranscriptManager and pending-marker fixtures. Only the final provider/follow-up
+I/O may be controlled. A counted callback proves one invocation and control
+ordering, not real provider or channel acceptance. Required cases cover signals
+on both sides of pause, one coalesced recheck without spin, latest filtered head
+and tail ordering, successful resume and failed Settings/CAS/unrelated changes,
+entered error/cancellation/zero-message retention under every later signal,
+successful completion followed by a new head, failed launch versus successor,
+close during a gate and late cleanup, fresh-owner independence and wake-family
+isolation. Retain the real Host-lane append/operation/marker/no-transport-retry
+assertions. Migrate the old worker-shape AST supplement to the new token
+delegation, preserving the negative control for cleanup after idle release and
+all actual CFH concurrency controls; changed spelling is not a reason to drop
+the oracle. Add app selectors and matching receipt labels in the existing
+workflow; only exact-H Actions can establish execution evidence.
+The CFH app controls now acquire tickets before launch: a second arrival stays
+in the tail instead of joining an already reserved head. Preserve exact ordered
+payloads and one acquisition per head. In the nonempty pause control that second
+arrival is one supported signal, so require exactly one additional gate check,
+then a held original head ahead of the tail; do not weaken its no-spin assertion.
+
+Also select the complete `background_wakes_production_contract` target in the
+existing Linux pending-failure recovery step/cache. Keep every CWR command and
+positive control, and require the ten live-custody owner controls plus both
+token-wiring mutation controls exactly once. Bind the CFL spec and test inputs
+in that same exact-H receipt. This provides portable queue/state-machine
+evidence and explicitly identified source-wiring supplements. Also reuse the
+existing Linux shipping-App check and linked test harness to execute all
+fourteen failure-readiness, two handoff and eighteen Host-lane/CWR cases by
+exact name, retaining their real Settings/Session/marker and controlled final
+I/O boundaries. Keep its existing executable identity, exact-list and positive
+completion checks. Linux execution does not replace the macOS shipping gate,
+real-channel acceptance or any other supported platform's acceptance.
+
+Keep the actual shipping Session/provenance/provider/quiesce/marker/telemetry
+decisions in one private `process_channel_failure_work` adapter taking existing
+runner deps, roster, wakes, agent and work, plus a final
+`FnOnce(RoutedProvider, &[Value]) -> Result<RevivalExecution, String>` delegate.
+The worker supplies its real prompt/widget/Runner call; app tests supply only
+that final controlled I/O. Both use the same admission/outcome handoff helper.
+No test may copy the gate or outcome state machine as its own oracle.
+
+Production changes are limited to existing `background_wakes.rs` and shipping
+Host `main.rs`. Tests may extend `background_wakes_production_contract.rs`,
+existing private channel readiness/Host-lane fixtures and a private
+`channel_failure_readiness_tests.rs`; shared fixture exposure is test-only.
+Root integrates this existing spec, composition, workflow and narrow existing
+OCRM responsibility references serially. Add no dependency, lock, persistent
+schema, permission authority, transport registration or runtime module.
+
+If connector transport cannot carry the large reviewed Host/ledger blobs,
+reuse the repository's temporary `ocrm-stage-reviewed-objects.yml` delivery
+carrier. Bind its exact parent, fixed changed-path allowlist, before/after blob
+identities, patch digest and candidate tree; it may upload only those immutable
+Git objects, without committing source, changing refs or claiming validation.
+The formal implementation commit removes the carrier and must reproduce the
+reviewed candidate tree. Product verification runs against that formal H.
+
+Do not call `PendingWakeRearm::rearm_pending_wakes` as a readiness mechanism.
+Incoming CWR-v1 now preserves exact marker identity through bounded restart
+enqueue and retains it until the existing settlement path; keep that production
+implementation and its tests while integrating the live claims. These claims do
+not survive process loss. Original-turn reconciliation, post-dispatch custody
+across restart, unknown remote effects, failed marker publication, real services/platforms and
+all final G01–G12/AC01–AC24 gates remain open. Background terminal custody is not
+upgraded by this change. Rollback loses this live retention fence without
+deleting durable user data. Reuse only the existing fixed-U channel dossier's
+recorded coalescing/final-repump and no-blind-replay review extents; no historical
+full-read fact, scoped verification or global completion flag is promoted.
