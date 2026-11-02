@@ -124,11 +124,22 @@ fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
             [],
             |row| row.get(0),
         )
-        .ok();
-    let current_rev: u64 = current_val
-        .and_then(|v| v.trim_matches('"').parse().ok())
-        .unwrap_or(0);
-    let next_rev = current_rev + 1;
+        .optional()?;
+    let current_rev = match current_val {
+        None => 0,
+        Some(value) => value.trim_matches('"').parse::<u64>().map_err(|error| {
+            rusqlite::Error::FromSqlConversionFailure(
+                0,
+                rusqlite::types::Type::Text,
+                Box::new(error),
+            )
+        })?,
+    };
+    let next_rev = current_rev.checked_add(1).ok_or_else(|| {
+        rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::other(
+            "device pairing revision exhausted",
+        )))
+    })?;
     conn.execute(
         "INSERT INTO config_machine_state (state_key, value_json, updated_at_ms)
          VALUES ('devicePairing.revision', ?1, ?2)

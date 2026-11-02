@@ -867,6 +867,7 @@ jobs:
             --test cloud_workers_extension_contract \
             --test gateway_protocol_contract \
             --test gateway_server_contract \
+            --test device_pairing_contract \
             --test shared_rooms_production_contract \
             --test agent_session_contract \
             --test agent_db_owner_contract \
@@ -1938,7 +1939,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
           PY
-      - name: Test portable recovery, Memory, palette search and Session claim controls on the existing Linux Host cache
+      - name: Test portable recovery, Memory, pairing, palette search and Session claim controls on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         timeout-minutes: 15
@@ -1962,6 +1963,8 @@ jobs:
               ".github/workflows/rust-desktop-runtime.yml",
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+              "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
+              "source/host/tests/device_pairing_contract.rs",
               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
               "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
@@ -2125,6 +2128,14 @@ jobs:
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
               ("checked-store", base + ["--lib", store_filter, "--", "--test-threads=1"], required_store),
               ("paired-device-sse", base + ["--lib", sse_filter, "--", "--exact", "--test-threads=1"], [sse_filter]),
+              ("device-pairing-revision", base + ["--test", "device_pairing_contract", "--", "--test-threads=1"], [
+                  "revision_admission::pairing_revision_refuses_corrupt_counters_without_committing_mutations",
+                  "revision_admission::pairing_revision_last_increment_is_durable_and_exhaustion_retains_authority",
+                  "revision_admission::pairing_revision_missing_and_legacy_decimal_counters_keep_monotonic_receipts",
+                  "test_ocrm_pair_o05_and_o06_pair_approve",
+                  "test_ocrm_pair_o09_and_o10_pair_revoke",
+                  "test_ocrm_pair_o11_rotate_token_in_band_and_cross_device",
+              ]),
               ("production-memory-synthesis", base + ["--lib", "extensions::memory::production::append_read_tests::", "--", "--test-threads=1"], [
                   "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
                   "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
@@ -2134,7 +2145,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1"],
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -2144,7 +2155,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DPR-v1 executes the complete public pairing contract, requiring file-backed approve/revoke/rotate refusal for invalid or exhausted counters, unchanged raw revision/target rows and token authority, reopen/repair, last valid increment and legacy-decimal controls. It does not establish actual Gateway/device transport or crash/unknown-commit recovery. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label

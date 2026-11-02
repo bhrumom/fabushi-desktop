@@ -612,3 +612,470 @@ fn test_ocrm_pair_o18_join_code_expiry_and_payload_bounds_fail_closed() {
             .is_err()
     );
 }
+
+mod revision_admission {
+    //! DPR-v1: projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md.
+    //! Discovery base: 8a4612e2042eefa32f12763c17141daabfd452e3.
+    //! Real owner dispatch and independent SQL observations; no HTTP/device claim.
+
+    use std::collections::BTreeMap;
+    use std::fs;
+    use std::path::PathBuf;
+
+    use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
+    use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
+    use rusqlite::{Connection, OpenFlags, params, types::Value as SqlValue};
+    use serde_json::{Value, json};
+
+    const DEVICE_ID: &str = "dpr-durable-device";
+    const ORIGINAL_KEY: &str = "dpr-original-public-key";
+    const REPAIR_KEY: &str = "dpr-replacement-public-key";
+    const REVISION_KEY: &str = "devicePairing.revision";
+    const KNOWN_REVISION: u64 = 3;
+    type StoredRow = BTreeMap<String, SqlValue>;
+
+    #[derive(Debug, PartialEq)]
+    struct StoredState {
+        revision: Vec<StoredRow>,
+        pending: Vec<StoredRow>,
+        paired: Vec<StoredRow>,
+    }
+
+    fn read_rows(conn: &Connection, sql: &str, key: &str) -> Vec<StoredRow> {
+        let mut statement = conn.prepare(sql).expect("prepare independent SQL observation");
+        let columns: Vec<String> = statement
+            .column_names()
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
+        let rows = statement
+            .query_map([key], |row| {
+                columns
+                    .iter()
+                    .enumerate()
+                    .map(|(index, name)| Ok((name.clone(), row.get::<_, SqlValue>(index)?)))
+                    .collect::<rusqlite::Result<StoredRow>>()
+            })
+            .expect("query target rows")
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .expect("retain raw SQL values");
+        rows
+    }
+
+    fn text<'a>(row: &'a StoredRow, column: &str) -> &'a str {
+        match row.get(column) {
+            Some(SqlValue::Text(value)) => value,
+            _ => panic!("expected SQL TEXT in {column}"),
+        }
+    }
+
+    fn stored_tokens(state: &StoredState) -> Value {
+        assert_eq!(state.paired.len(), 1);
+        serde_json::from_str(text(&state.paired[0], "tokens_json"))
+            .expect("actual durable role token map")
+    }
+
+    fn assert_revision(state: &StoredState, expected: u64) {
+        assert_eq!(state.revision.len(), 1);
+        assert_eq!(text(&state.revision[0], "sql_type"), "text");
+        assert_eq!(
+            text(&state.revision[0], "value_json"),
+            format!("\"{expected}\"")
+        );
+    }
+
+    struct Fixture {
+        root: PathBuf,
+        db_path: PathBuf,
+        owner: Option<DevicePairingOwner>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-pairing-revision-{label}-{}",
+                uuid::Uuid::new_v4(),
+            ));
+            fs::create_dir(&root).expect("exclusively create UUID fixture directory");
+            let mut fixture = Self {
+                db_path: root.join("device-pairing.db"),
+                root,
+                owner: None,
+            };
+            fixture.reopen();
+            fixture
+        }
+
+        fn owner(&self) -> &DevicePairingOwner {
+            self.owner.as_ref().expect("open file-backed pairing owner")
+        }
+
+        fn reopen(&mut self) {
+            drop(self.owner.take());
+            self.owner = Some(DevicePairingOwner::new(&self.db_path).expect("reopen durable owner"));
+        }
+
+        fn observe(&self) -> StoredState {
+            let conn = Connection::open_with_flags(&self.db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+                .expect("open independent read-only observer");
+            let state = StoredState {
+                revision: read_rows(
+                    &conn,
+                    "SELECT typeof(value_json) AS sql_type, value_json, updated_at_ms
+                     FROM config_machine_state WHERE state_key = ?1",
+                    REVISION_KEY,
+                ),
+                pending: read_rows(
+                    &conn,
+                    "SELECT * FROM device_pairing_pending WHERE device_id = ?1 ORDER BY request_id",
+                    DEVICE_ID,
+                ),
+                paired: read_rows(
+                    &conn,
+                    "SELECT * FROM device_pairing_paired WHERE device_id = ?1",
+                    DEVICE_ID,
+                ),
+            };
+            conn.close().expect("close independent observer before any reopen/cleanup");
+            state
+        }
+
+        fn set_revision(&self, value: &SqlValue) {
+            let conn = Connection::open_with_flags(&self.db_path, OpenFlags::SQLITE_OPEN_READ_WRITE)
+                .expect("open existing fixture for explicit counter fault or repair");
+            assert_eq!(
+                conn.execute(
+                    "UPDATE config_machine_state SET value_json = ?1, updated_at_ms = 1234
+                     WHERE state_key = ?2",
+                    params![value, REVISION_KEY],
+                )
+                .expect("replace only the fixture's existing revision"),
+                1,
+            );
+            conn.close().expect("close counter fixture writer");
+        }
+
+        fn seed_surfaces(&self) {
+            let conn = Connection::open_with_flags(&self.db_path, OpenFlags::SQLITE_OPEN_READ_WRITE)
+                .expect("open existing fixture for retained surfaces");
+            assert_eq!(
+                conn.execute(
+                    "UPDATE device_pairing_paired
+                     SET node_surface_json = ?1, pending_node_surface_json = ?2
+                     WHERE device_id = ?3",
+                    params![
+                        "{\"generation\":7,\"commands\":[\"system.run\"]}",
+                        "{\"generation\":8,\"commands\":[\"system.notify\"]}",
+                        DEVICE_ID,
+                    ],
+                )
+                .expect("seed both retained node surfaces"),
+                1,
+            );
+            conn.close().expect("close retained-surface fixture writer");
+        }
+
+        fn request(&self, public_key: &str) -> Value {
+            let response = self.owner().handle_pairing_command(
+                "device.pair.request",
+                &json!({
+                    "deviceId": DEVICE_ID,
+                    "publicKey": public_key,
+                    "displayName": "DPR durable device",
+                    "platform": "linux",
+                    "roles": ["operator", "node"],
+                    "scopes": ["operator.read", "operator.write", "node.invoke"]
+                }),
+            ).expect("create fresh pending request through public dispatch");
+            assert_eq!(response["status"], "pending");
+            assert_eq!(response["created"], true);
+            response
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            drop(self.owner.take());
+            if std::thread::panicking() {
+                eprintln!("DPR fixture retained for Actions capture: {}", self.root.display());
+            } else {
+                fs::remove_dir_all(&self.root).expect("remove only the owned UUID fixture directory");
+            }
+        }
+    }
+
+    struct Authority {
+        operator_token: String,
+        node_token: String,
+        request_id: String,
+    }
+
+    fn assert_authorized(owner: &DevicePairingOwner, token: &str, role: &str) {
+        let authorization = owner.authenticate_device_token(token)
+            .expect("read durable token authority")
+            .expect("prior or replacement token remains authorized");
+        assert_eq!(authorization.device_id, DEVICE_ID);
+        assert_eq!(authorization.role, role);
+        let expected_scopes = if role == "operator" {
+            vec!["operator.read", "operator.write"]
+        } else {
+            vec!["node.invoke"]
+        };
+        assert_eq!(authorization.scopes, expected_scopes);
+    }
+
+    fn assert_invalid(owner: &DevicePairingOwner, token: &str) {
+        assert!(owner.authenticate_device_token(token)
+            .expect("read replaced or revoked token authority").is_none());
+    }
+
+    fn seeded_fixture(label: &str) -> (Fixture, Authority) {
+        let fixture = Fixture::new(label);
+        assert!(fixture.observe().revision.is_empty());
+        let initial = fixture.request(ORIGINAL_KEY);
+        let approval = fixture.owner().handle_pairing_command(
+            "device.pair.approve", &json!({ "requestId": initial["requestId"] }),
+        ).expect("establish durable paired device");
+        assert_eq!(approval["revision"].as_u64(), Some(1));
+        for (role, expected) in [("operator", 2), ("node", KNOWN_REVISION)] {
+            let rotation = fixture.owner().handle_pairing_command(
+                "device.pair.rotateToken", &json!({ "deviceId": DEVICE_ID, "role": role }),
+            ).expect("establish known durable role tokens and revision history");
+            assert_eq!(rotation["revision"].as_u64(), Some(expected));
+        }
+        fixture.seed_surfaces();
+        let repair = fixture.request(REPAIR_KEY);
+        assert_eq!(repair["isRepair"], true);
+        let state = fixture.observe();
+        assert_revision(&state, KNOWN_REVISION);
+        assert_eq!(state.pending.len(), 1);
+        assert_eq!(text(&state.pending[0], "public_key"), REPAIR_KEY);
+        assert_eq!(text(&state.paired[0], "public_key"), ORIGINAL_KEY);
+        assert!(matches!(state.paired[0].get("node_surface_json"), Some(SqlValue::Text(_))));
+        assert!(matches!(state.paired[0].get("pending_node_surface_json"), Some(SqlValue::Text(_))));
+        let tokens = stored_tokens(&state);
+        let authority = Authority {
+            operator_token: tokens["operator"]["token"].as_str().expect("operator token").to_owned(),
+            node_token: tokens["node"]["token"].as_str().expect("node token").to_owned(),
+            request_id: repair["requestId"].as_str().expect("fresh repair request id").to_owned(),
+        };
+        assert_authorized(fixture.owner(), &authority.operator_token, "operator");
+        assert_authorized(fixture.owner(), &authority.node_token, "node");
+        (fixture, authority)
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    enum Mutation {
+        Approve,
+        Revoke,
+        Rotate,
+    }
+
+    impl Mutation {
+        fn invoke(self, fixture: &Fixture, request_id: &str) -> Result<Value, GatewayCommandError> {
+            let (method, args) = match self {
+                Self::Approve => ("device.pair.approve", json!({ "requestId": request_id })),
+                Self::Revoke => ("device.pair.revoke", json!({ "deviceId": DEVICE_ID })),
+                Self::Rotate => ("device.pair.rotateToken", json!({
+                    "deviceId": DEVICE_ID, "role": "node", "crossDevice": false
+                })),
+            };
+            fixture.owner().handle_pairing_command(method, &args)
+        }
+    }
+
+    fn assert_refusal(
+        fixture: &Fixture,
+        mutation: Mutation,
+        authority: &Authority,
+        before: &StoredState,
+    ) {
+        // An Err cannot carry a success receipt or replacement token. A panic
+        // fails the test normally; it is never caught and accepted as refusal.
+        let error = mutation.invoke(fixture, &authority.request_id)
+            .expect_err("invalid existing revision must refuse the mutation");
+        assert!(matches!(&error, GatewayCommandError::Internal(_)));
+        assert_eq!(error.status(), 500); // Existing Gateway projection, not an HTTP execution claim.
+        let diagnostic = error.to_string();
+        assert!(!diagnostic.contains(&authority.operator_token));
+        assert!(!diagnostic.contains(&authority.node_token));
+        if let Some(SqlValue::Text(raw)) = before.revision[0].get("value_json") {
+            assert!(!diagnostic.contains(raw), "diagnostic must not expose persisted revision text");
+        }
+        assert_eq!(&fixture.observe(), before, "{mutation:?} must retain raw counter and target rows");
+        assert_authorized(fixture.owner(), &authority.operator_token, "operator");
+        assert_authorized(fixture.owner(), &authority.node_token, "node");
+    }
+
+    fn assert_healthy_mutation(
+        fixture: &Fixture,
+        mutation: Mutation,
+        authority: &Authority,
+        before: &StoredState,
+        receipt: &Value,
+        expected_revision: u64,
+    ) {
+        assert_eq!(receipt["deviceId"], DEVICE_ID);
+        assert_eq!(receipt["revision"].as_u64(), Some(expected_revision));
+        let after = fixture.observe();
+        assert_revision(&after, expected_revision);
+        match mutation {
+            Mutation::Approve => {
+                assert_eq!(receipt["decision"], "approved");
+                assert!(receipt.get("token").is_none());
+                assert!(after.pending.is_empty());
+                assert_eq!(text(&after.paired[0], "public_key"), REPAIR_KEY);
+                assert_invalid(fixture.owner(), &authority.operator_token);
+                assert_invalid(fixture.owner(), &authority.node_token);
+            }
+            Mutation::Revoke => {
+                assert!(receipt.get("token").is_none());
+                assert!(after.paired.is_empty());
+                assert_eq!(after.pending, before.pending);
+                assert_invalid(fixture.owner(), &authority.operator_token);
+                assert_invalid(fixture.owner(), &authority.node_token);
+                return;
+            }
+            Mutation::Rotate => {
+                assert_eq!(receipt["role"], "node");
+                assert_eq!(receipt["tokenDelivery"], "in-band");
+                assert_eq!(after.pending, before.pending);
+                let tokens_before = stored_tokens(before);
+                let tokens_after = stored_tokens(&after);
+                assert_eq!(tokens_after["operator"], tokens_before["operator"]);
+                assert_eq!(tokens_after["node"]["token"], receipt["token"]);
+                assert_ne!(receipt["token"].as_str(), Some(authority.node_token.as_str()));
+                assert_invalid(fixture.owner(), &authority.node_token);
+                let mut identity_before = before.paired[0].clone();
+                let mut identity_after = after.paired[0].clone();
+                for column in ["tokens_json", "node_surface_json", "pending_node_surface_json"] {
+                    identity_before.remove(column);
+                    identity_after.remove(column);
+                }
+                assert_eq!(identity_after, identity_before);
+            }
+        }
+        assert_eq!(after.paired[0].get("node_surface_json"), Some(&SqlValue::Null));
+        assert_eq!(after.paired[0].get("pending_node_surface_json"), Some(&SqlValue::Null));
+        let tokens = stored_tokens(&after);
+        for role in ["operator", "node"] {
+            assert_authorized(fixture.owner(), tokens[role]["token"].as_str().expect("durable token"), role);
+        }
+    }
+
+    #[test]
+    fn pairing_revision_refuses_corrupt_counters_without_committing_mutations() {
+        for mutation in [Mutation::Approve, Mutation::Revoke, Mutation::Rotate] {
+            for (fault, raw) in [
+                ("nonnumeric", SqlValue::Text("DPR-invalid-persisted-counter".into())),
+                ("out-of-range", SqlValue::Text("18446744073709551616".into())),
+                ("blob", SqlValue::Blob(vec![0xff, 0x00, 0x31])),
+                ("exhausted", SqlValue::Text(format!("\"{}\"", u64::MAX))),
+            ] {
+                let (mut fixture, authority) = seeded_fixture(&format!("{mutation:?}-{fault}"));
+                fixture.set_revision(&raw);
+                let before = fixture.observe();
+                assert_eq!(before.revision[0].get("value_json"), Some(&raw));
+                assert_eq!(text(&before.revision[0], "sql_type"), if fault == "blob" { "blob" } else { "text" });
+                assert_refusal(&fixture, mutation, &authority, &before);
+                assert_refusal(&fixture, mutation, &authority, &before);
+                fixture.reopen();
+                assert_eq!(fixture.observe(), before);
+                assert_refusal(&fixture, mutation, &authority, &before);
+
+                // Explicit restoration of the fixture's last known good counter;
+                // the product must never perform this repair itself.
+                fixture.set_revision(&SqlValue::Text(format!("\"{KNOWN_REVISION}\"")));
+                let repaired = fixture.observe();
+                assert_revision(&repaired, KNOWN_REVISION);
+                assert_eq!(repaired.pending, before.pending);
+                assert_eq!(repaired.paired, before.paired);
+                let receipt = mutation.invoke(&fixture, &authority.request_id)
+                    .expect("known counter repair admits the same operation");
+                assert_healthy_mutation(&fixture, mutation, &authority, &before, &receipt, KNOWN_REVISION + 1);
+                let committed = fixture.observe();
+                fixture.reopen();
+                assert_eq!(fixture.observe(), committed);
+                assert_healthy_mutation(&fixture, mutation, &authority, &before, &receipt, KNOWN_REVISION + 1);
+            }
+        }
+    }
+
+    #[test]
+    fn pairing_revision_last_increment_is_durable_and_exhaustion_retains_authority() {
+        let (mut fixture, authority) = seeded_fixture("last-increment");
+        fixture.set_revision(&SqlValue::Text(format!("\"{}\"", u64::MAX - 1)));
+        let before = fixture.observe();
+        let receipt = Mutation::Rotate.invoke(&fixture, &authority.request_id)
+            .expect("the final representable increment remains writable");
+        assert_healthy_mutation(&fixture, Mutation::Rotate, &authority, &before, &receipt, u64::MAX);
+        let committed = fixture.observe();
+        fixture.reopen();
+        assert_eq!(fixture.observe(), committed);
+        assert_healthy_mutation(&fixture, Mutation::Rotate, &authority, &before, &receipt, u64::MAX);
+        let current_authority = Authority {
+            operator_token: authority.operator_token,
+            node_token: receipt["token"].as_str().expect("last successful replacement token").to_owned(),
+            request_id: authority.request_id,
+        };
+        assert_refusal(&fixture, Mutation::Rotate, &current_authority, &committed);
+        assert_refusal(&fixture, Mutation::Revoke, &current_authority, &committed);
+        fixture.reopen();
+        assert_eq!(fixture.observe(), committed);
+        assert_refusal(&fixture, Mutation::Approve, &current_authority, &committed);
+    }
+
+    #[test]
+    fn pairing_revision_missing_and_legacy_decimal_counters_keep_monotonic_receipts() {
+        {
+            let mut fixture = Fixture::new("missing-revision");
+            assert!(fixture.observe().revision.is_empty());
+            let request = fixture.request(ORIGINAL_KEY);
+            assert!(fixture.observe().revision.is_empty());
+            let approval = fixture.owner().handle_pairing_command(
+                "device.pair.approve", &json!({ "requestId": request["requestId"] }),
+            ).expect("absent revision initializes on first successful mutation");
+            assert_eq!(approval["revision"].as_u64(), Some(1));
+            let first = fixture.observe();
+            assert_revision(&first, 1);
+            assert!(first.pending.is_empty());
+            assert_eq!(text(&first.paired[0], "public_key"), ORIGINAL_KEY);
+            let tokens = stored_tokens(&first);
+            let authority = Authority {
+                operator_token: tokens["operator"]["token"].as_str().unwrap().to_owned(),
+                node_token: tokens["node"]["token"].as_str().unwrap().to_owned(),
+                request_id: request["requestId"].as_str().unwrap().to_owned(),
+            };
+            fixture.reopen();
+            assert_eq!(fixture.observe(), first);
+            assert_authorized(fixture.owner(), &authority.operator_token, "operator");
+            assert_authorized(fixture.owner(), &authority.node_token, "node");
+            let rotation = Mutation::Rotate.invoke(&fixture, &authority.request_id)
+                .expect("next fresh-store mutation advances to two");
+            assert_healthy_mutation(&fixture, Mutation::Rotate, &authority, &first, &rotation, 2);
+            let second = fixture.observe();
+            fixture.reopen();
+            assert_eq!(fixture.observe(), second);
+            assert_healthy_mutation(&fixture, Mutation::Rotate, &authority, &first, &rotation, 2);
+        }
+        for (label, raw) in [
+            ("raw-decimal", "41"),
+            ("quoted-decimal", "\"41\""),
+            ("legacy-quote-trim", "\"\"41\"\""),
+        ] {
+            let (mut fixture, authority) = seeded_fixture(label);
+            fixture.set_revision(&SqlValue::Text(raw.to_owned()));
+            let before = fixture.observe();
+            assert_eq!(text(&before.revision[0], "value_json"), raw);
+            fixture.reopen();
+            assert_eq!(fixture.observe(), before);
+            let receipt = Mutation::Rotate.invoke(&fixture, &authority.request_id)
+                .expect("legacy decimal interpretation remains writable");
+            assert_healthy_mutation(&fixture, Mutation::Rotate, &authority, &before, &receipt, 42);
+            let committed = fixture.observe();
+            fixture.reopen();
+            assert_eq!(fixture.observe(), committed);
+            assert_healthy_mutation(&fixture, Mutation::Rotate, &authority, &before, &receipt, 42);
+        }
+    }
+}
