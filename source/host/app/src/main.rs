@@ -6360,6 +6360,32 @@ fn run_local_background_revival_turn(
     )
 }
 
+fn background_revival_admission_args(
+    agent_id: &str,
+    session_key: &str,
+    source: &str,
+    prompt: &str,
+    client_nonce: &str,
+    stream_id: &str,
+    ack_token: Option<&str>,
+) -> serde_json::Value {
+    let mut args = serde_json::json!({
+        "agentId": agent_id,
+        "sessionKey": session_key,
+        "prompt": prompt,
+        "clientNonce": client_nonce,
+        "streamId": stream_id,
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": source,
+        "skipAckObligation": true,
+    });
+    if let Some(ack_token) = ack_token {
+        args["ackToken"] = serde_json::Value::String(ack_token.to_string());
+    }
+    args
+}
+
 fn run_local_background_revival_turn_with_context(
     deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
@@ -6401,20 +6427,15 @@ fn run_local_background_revival_turn_with_context(
     let admitted_lifecycle_revision = deps
         .session_workers
         .capture_session_work_admission(agent_id, &session_key, &stream_id)?;
-    let mut admission_args = serde_json::json!({
-        "agentId": agent_id,
-        "sessionKey": session_key,
-        "prompt": prompt,
-        "clientNonce": client_nonce,
-        "streamId": stream_id,
-        "appendUserMessage": false,
-        "hidden": true,
-        "requestSource": source,
-        "skipAckObligation": true,
-    });
-    if let Some(ack_token) = ack_token.as_deref() {
-        admission_args["ackToken"] = serde_json::Value::String(ack_token.to_string());
-    }
+    let admission_args = background_revival_admission_args(
+        agent_id,
+        &session_key,
+        source,
+        prompt,
+        &client_nonce,
+        &stream_id,
+        ack_token.as_deref(),
+    );
     if let Err(error) = deps.session_workers.assert_session_work_admission(
         agent_id,
         admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
@@ -16921,7 +16942,8 @@ mod tests {
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
         AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
-        listener_connect_resume_args, starts_new_local_tool_direction,
+        background_revival_admission_args, listener_connect_resume_prompt,
+        starts_new_local_tool_direction,
         project_forever_box_status, reaction_gateway_args,
         ProductionSessionWorkers, TranscriptRunnerRegistry,
         listener_connection_state_or_disconnected, RUNNER_INFERENCE_EVENT_CHANNEL,
@@ -17132,18 +17154,42 @@ mod tests {
 
     #[test]
     fn listener_connect_resume_is_hidden_handoff_with_stable_nonce() {
-        let args = listener_connect_resume_args("agent-1", "slack", "nonce-123");
+        let prompt = listener_connect_resume_prompt("slack");
+        let args = background_revival_admission_args(
+            "agent-1",
+            "agent:agent-1:main",
+            "handoff-resume",
+            &prompt,
+            "nonce-123",
+            "stream-123",
+            Some("ack-123"),
+        );
         assert_eq!(args["agentId"], "agent-1");
+        assert_eq!(args["sessionKey"], "agent:agent-1:main");
         assert_eq!(args["clientNonce"], "nonce-123");
+        assert_eq!(args["streamId"], "stream-123");
+        assert_eq!(args["ackToken"], "ack-123");
         assert_eq!(args["requestSource"], "handoff-resume");
         assert_eq!(args["appendUserMessage"], false);
         assert_eq!(args["hidden"], true);
+        assert_eq!(args["skipAckObligation"], true);
         assert!(
             args["prompt"]
                 .as_str()
                 .expect("resume prompt")
-                .contains("bot is invited")
+                .contains("bot must be in the channel (/invite @Cursor)")
         );
+        let without_ack = background_revival_admission_args(
+            "agent-1",
+            "agent:agent-1:main",
+            "handoff-resume",
+            &prompt,
+            "nonce-123",
+            "stream-123",
+            None,
+        );
+        assert!(without_ack.get("ackToken").is_none());
+        assert_eq!(without_ack["clientNonce"], args["clientNonce"]);
     }
 
     #[test]

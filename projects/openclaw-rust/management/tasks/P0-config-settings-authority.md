@@ -425,3 +425,31 @@ spelling already normalizes to `ask`, so that assertion does not independently
 prove permission clearing. Existing coverage uses `SandLocalToolPermission::Always`
 and checks clearing; this batch's model clearing/replacement assertions remain
 discriminating. No standalone fix round or permission-behavior claim follows.
+
+### H9 model evidence and app-test recovery
+
+H9 `76095c27539c2be57e3c1ba0e6b33b8158d92766`, tree
+`a5945fc67abac4c1a6da411503c7e45411a88371`, was pushed and all 17 changed
+files were read back by full content and blob identity through GitHub. Fresh
+focused xhigh review converged on the fixture fix and complete frozen scope.
+Source run `41404775846` passed (artifact `13123176112`, digest
+`sha256:91a5edde3ab2235c95fff4754f93f379306bf3d4d6bf50d525fb358e5bef70b8`).
+Runtime `41404775725`, job `125144212143`, passed shipping compilation and
+114 tests across the 11 Settings/inference/Runner integration targets. The
+loopback child reports the same test a second time; it is not counted twice.
+The app test build failed with E0432 at the obsolete
+`super::listener_connect_resume_args` import. The model admission test and
+later recovery/library/audit steps therefore did not execute on H9.
+
+Decision before recovery: `M3 FIX / TEST_FLAW`. The import and its test predate
+H9, but the newly selected app test exposed them. Current listener resume
+calls `listener_connect_resume_prompt` → `resume_with_hidden_handoff` →
+`run_local_background_revival_turn_with_context`; its admission JSON is inline
+in the last function. Extract that exact value producer without changing its
+fields or nonce generation, and bind the old test to it. Retain agent/nonce,
+hidden/no-user-append, request-source and Slack invitation assertions; use the
+current invitation wording. Execute both the model admission and repaired
+listener contract in Actions. This is a test/production-seam correction, not
+an environment fault or evidence to reintroduce a retired listener helper.
+Preserve H9 positives as H9 evidence; the repair needs fresh immutable focused
+review and its own exact-H checks. No migration flags or acceptance advance.

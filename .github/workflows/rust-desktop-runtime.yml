@@ -188,10 +188,20 @@ jobs:
       - name: Test shipping model admission and lease recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
-        run: >-
-          cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host
-          tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects
-          -- --exact
+        run: |
+          set -euo pipefail
+          admission_status=0
+          if cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host --no-run; then
+            for admission_test in \
+              tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects \
+              tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce; do
+              cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
+                "$admission_test" -- --exact || admission_status=1
+            done
+          else
+            admission_status=1
+          fi
+          exit "$admission_status"
       - name: Test affected Session Transcript and Runner integration recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -289,6 +299,8 @@ jobs:
               "model_identity_contract": "OCRM-MODEL-IDENTITY-v1",
               "shipping_model_admission_test": "tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects",
               "shipping_model_admission_result": "passed",
+              "shipping_listener_resume_test": "tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce",
+              "shipping_listener_resume_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
               "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "host_upgrade_production_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract"],
               "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests"],
