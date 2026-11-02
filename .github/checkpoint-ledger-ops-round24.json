@@ -1,25 +1,14 @@
 {
   "format_version": 1,
   "repository": "bhrumom/fabushi-desktop",
-  "parent_sha": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+  "parent_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
   "expected_input_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
-  "expected_output_blob": "b7b44ba54307958cbbdb7bcbf6937d2f6afb2874",
+  "expected_output_blob": "d3dc765536a4e9fb2790310a3450d265758e0a8f",
   "operations": [
     {
       "id": "FBCP-NMR-001",
-      "set": {
-        "state_machine": "Canonical pair discovery enters the existing per-conversation mutation lane; absent metadata initializes, valid metadata reuses the saved identity, and failed initialization preserves a retryable store. Existing Human pending/dispatching outbox settles through validated Native HTTP and the same transcript; history coverage persists ordered progress. Whole forwarding intent is stored in source metadata before destination work, and ordinary sync resumes it with expected-value CAS and source-policy fencing. New creation behavior requires containing-H execution; full service and product acceptance remains open.",
-        "persistence_and_restart": "Existing SandAgentDb owns metadata, transcript, pending dispatch, history coverage and forwarding journal. Same-pair create/repeat/restart preserves saved rows and unrelated files; failed empty initialization can retry without deletion. Native send/resource recovery and forwarding retain their existing durable identities. New creation/refusal cases are authored, not-run at preparation; base59 has separately scoped successful process/HTTP/SQLite evidence.",
-        "concurrency_and_cancellation": "Existing Session human_message_locks serialize each canonical pair. NMR-49 extends that lane before first path/open/metadata decisions through owner publication; independent pairs progress, and a read-side published Arc is retained. Existing send/sync/forwarding locking and credential settlement fencing are preserved. Multiple independent AppHost processes, external deletion behind a cached owner and post-shutdown reuse are not qualified by this batch.",
-        "blockers": [
-          "New NMR-49 creation7 and expanded NMR-50 HTTP6/Native7 are authored; containing-H Actions execution is required. Base59 results cannot qualify these edits. Preserve concurrent Human44/journal12/Chromium16 expectations.",
-          "Current exact59f5fa/run41508537631 resolves the older bounded shipping, Windows fixture, forwarding and UI count failures; earlier failure strings and historical target/run fields remain provenance, not current failures.",
-          "Backend PR137 exact013c546 is open/draft/unmerged with zero reviews. Handler29/SQLite10/readiness injected-fetch24 pass; live production readiness jobs are skipped and current deployed source/afterId=0 authentication-pagination remains unqualified.",
-          "Formal publisher authorization, full signed supported-platform application install/upgrade/rollback, complete source/external/generated/legal closure, full Bot/UI/a11y/temporal/performance/soak and independent ACCEPT remain open.",
-          "Remote-forward provenance/policy, pinned-attachment power-loss/filesystem qualification, simultaneous independent AppHost cross-source uniqueness, full multi-device/cancellation/permission and read-receipt UI coverage remain open."
-        ]
-      },
+      "set": {},
       "append": {
         "fabushi_target_paths": [
           "source/host/src/extensions/session/human_creation_tests.rs",
@@ -40,14 +29,14 @@
           "NMR-47d",
           "NMR-47e",
           "NMR-47f",
-          "NMR-49",
-          "NMR-49a",
-          "NMR-49b",
-          "NMR-50",
+          "NMR-CREATE-01",
+          "NMR-CREATE-01a",
+          "NMR-CREATE-01b",
+          "NMR-HTTP-OWNER-01",
           "NMR-AC-37",
           "NMR-AC-38",
-          "NMR-AC-40",
-          "NMR-AC-41",
+          "NMR-AC-CREATE-01",
+          "NMR-AC-HTTP-OWNER-01",
           "NMR-48",
           "NMR-48a",
           "NMR-48b",
@@ -57,8 +46,8 @@
         "release_gate_ids": [
           "NMR-AC-37",
           "NMR-AC-38",
-          "NMR-AC-40",
-          "NMR-AC-41",
+          "NMR-AC-CREATE-01",
+          "NMR-AC-HTTP-OWNER-01",
           "NMR-AC-39"
         ],
         "unit_case_ids": [
@@ -123,9 +112,14 @@
           "exact:efc58a55cca018ea66c96004ded4291781f2764c:run41489716798:attempt1:failure:shipping125429227384 Social9 passed then regex TEST_FLAW, HTTP6/later-shipping not run; Windows125429227032 11 common-before-hook failures before assertions; reconciliation125429227086 Human33/Agent4/private3 passed; complete logs and decoded hashes in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1:completed/success:reconciliation125494011040 Human38/sharebox1/journal3/Agent4/private3/gateway1 all passed; shipping125494011097 composition12/Native7/FeatureHost7/Social9/HTTP6/Host6/ABI7/CLI3/gateway5/library11/DNS6/salts2/protocol122/TCP9/proxy4/credential1/copy4 passed; actual AppHost160061040bytes sha2565681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb; three copy refusal controls; artifact13173112803 sha256a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f; projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 renderer/Transcript16/settlement5/Chromium12 pass; Electron125494011030 carrier10/account8/copy3/update-source16/publisher28/metadata18/build pass; immutable historical installer experiment is not a current-source package; complete logs/artifact bindings in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
+        ],
+        "blockers": [
+          "New NMR-CREATE-01 creation7 and expanded NMR-HTTP-OWNER-01 HTTP6/Native7 are authored; containing-H Actions execution is required. Base59 results cannot qualify these edits. Preserve concurrent Human44/journal12/Chromium16 expectations.",
+          "Formal publisher authorization, full signed supported-platform application install/upgrade/rollback, complete source/external/generated/legal closure, full Bot/UI/a11y/temporal/performance/soak and independent ACCEPT remain open.",
+          "Remote-forward provenance/policy, pinned-attachment power-loss/filesystem qualification, simultaneous independent AppHost cross-source uniqueness, full multi-device/cancellation/permission and read-receipt UI coverage remain open."
         ]
       },
-      "note": "\nResumed round24: after interruption, remote had advanced to59f5fa and then59308 source guard. Preserve all later forwarding/UI/source work; do not replay the old working tree. New NMR-49 creation safety and NMR-50 expanded resource/account recovery tests are authored with7creation/HTTP6/Native7 selected; containing-H Actions is required. Initial efc58 failure and full subsequent59f5fa success are recorded separately. Old target_commit/workflow/job fields remain historical exact95 evidence; no relabeling as a new execution. Current source accounting remains fixed U, six source_reviews preserved (two complete, four pending), unknown/unread null, no final acceptance. Historical blocker text is recoverable at59308; current blockers above supersede resolved fixture/count failures. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json Later73cc6 preserves pinned attachment snapshots, Human44/journal12 and immutable-picker Chromium16; creation/resource identifiers were reconciled to NMR-49/50 and AC-40/41 without changing their reviewed behavior."
+      "note": "\nResumed round24: after interruption, remote had advanced to59f5fa and then59308 source guard. Preserve all later forwarding/UI/source work; do not replay the old working tree. New NMR-CREATE-01 creation safety and NMR-HTTP-OWNER-01 expanded resource/account recovery tests are authored with7creation/HTTP6/Native7 selected; containing-H Actions is required. Initial efc58 failure and full subsequent59f5fa success are recorded separately. Old target_commit/workflow/job fields remain historical exact95 evidence; no relabeling as a new execution. Current source accounting remains fixed U, six source_reviews preserved (two complete, four pending), unknown/unread null, no final acceptance. Historical blocker text is recoverable at59308; current blockers above supersede resolved fixture/count failures. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json Later73cc6 preserves pinned attachment snapshots, Human44/journal12 and immutable-picker Chromium16; creation/resource identifiers were reconciled to NMR-CREATE-01/50 and AC-40/41 without changing their reviewed behavior. Canonical pair discovery enters the existing per-conversation mutation lane; absent metadata initializes, valid metadata reuses the saved identity, and failed initialization preserves a retryable store. Existing Human pending/dispatching outbox settles through validated Native HTTP and the same transcript; history coverage persists ordered progress. Whole forwarding intent is stored in source metadata before destination work, and ordinary sync resumes it with expected-value CAS and source-policy fencing. New creation behavior requires containing-H execution; full service and product acceptance remains open. Existing Session human_message_locks serialize each canonical pair. NMR-CREATE-01 extends that lane before first path/open/metadata decisions through owner publication; independent pairs progress, and a read-side published Arc is retained. Existing send/sync/forwarding locking and credential settlement fencing are preserved. Multiple independent AppHost processes, external deletion behind a cached owner and post-shutdown reuse are not qualified by this batch. Stable named creation/resource requirement IDs avoid concurrent numeric reservations; the existing NMR-49/AC-40 reply contract remains untouched."
     },
     {
       "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
@@ -135,7 +129,7 @@
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:windows125494011118:success:native11 zero failed/cancelled/skipped/todo; actual Valid Authenticode and CP437 Unicode identity checks, zero fixture executables run, remainingOwnedCertificates0; artifact13171043513 sha256fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25. Current hosted-only fixture blobc95b2a474405f52438b45e3b6abdc16c4e9e7de7 is qualified, not the unpublished old round24 fixture patch. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
         ]
       },
-      "note": "\nResumed round24 readonly native evidence: initialefc58 Windows11 failed the common setup hook without reaching assertions. Subsequent59f5fa fixture11 passes real Windows APIs with exact owned-certificate cleanup; the private key stays in CurrentUser/My and the public trust copies are restricted to ephemeral GitHub-hosted LocalMachine Root/TrustedPublisher. This does not authorize any Fabushi production publisher, prove a signed supported-platform application or install/upgrade/rollback, or grant independent ACCEPT. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
+      "note": "\nResumed round24 readonly native evidence: initialefc58 Windows11 failed the common setup hook without reaching assertions. Subsequent59f5fa fixture11 passes real Windows APIs with exact owned-certificate cleanup; the private key stays in CurrentUser/My and the public trust copies are restricted to ephemeral GitHub-hosted LocalMachine Root/TrustedPublisher. This does not authorize any Fabushi production publisher, prove a signed supported-platform application or install/upgrade/rollback, or grant independent ACCEPT. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json Stable named creation/resource requirement IDs avoid concurrent numeric reservations; the existing NMR-49/AC-40 reply contract remains untouched."
     }
   ]
 }
