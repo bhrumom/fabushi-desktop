@@ -1654,7 +1654,14 @@ existing NMR contract remain unchanged.
   cannot turn that send into a failure or restore its draft.
   Retain all current dialog, pagination, Electron and shipping gates. Add eleven
   real Chromium renderer scenarios, with no retries or skipped cases, complete
-  JSON result assertions and inspectable screenshots/traces. Controlled
+  JSON result assertions and inspectable screenshots/traces. Reaction pointer
+  scenarios must hover the actual message action anchor and require visible,
+  pointer-enabled controls before an ordinary click. Keep the pointer path from
+  bubble to toolbar continuous across its visual spacing, including a real mouse
+  traversal assertion; retain keyboard focus, request counts and late-response
+  oracles. Shared run41528369271/job125561860003 observed a hidden-target input
+  failure before any reaction RPC; this repair must not replace it with a forced
+  click or direct event dispatch. Controlled
   browser/service fixtures do not constitute deployed-service, signed-package,
   visual/a11y or independent acceptance.
 
@@ -1784,24 +1791,31 @@ claim of an observed production data-loss incident.
   a successful owner, and retain valid WAL-backed committed identity. Use the
   current SandAgentDb and recovery options without changing general Agent
   recovery consumers. This binds the current FBCP-HUMAN-CREATE-04 amendment.
-  The implementation candidate disables automatic corruption recovery on the
-  existing configured opener. With no nonempty WAL or rollback journal, first
-  check the existing main DB through immutable read-only SQLite before any
-  journal-mode/schema writes. Sidecar-backed snapshots remain with the existing
-  WAL-aware owner. Exact-H byte-preservation tests must decide this boundary
-  before qualification, including a corrupt data page with a readable schema
-  in DELETE journal mode. Arbitrary hot/corrupt-sidecar recovery remains open. The unpublished readonly_shm probe is withdrawn:
-  the locked SQLite3.51.3 has a known corrupt-WAL read-overrun in that path.
-  No dependency upgrade or full arbitrary-WAL/crash acceptance is claimed.
-  Exact94b/run41529254382 exposed a NOTADB refusal that nevertheless deleted
-  the original WAL/SHM/journal: nonempty sidecars bypassed the immutable probe
-  and reached the writable opener. Before that delegation, read the existing
-  main-file header with ordinary read-only file IO. Reject a missing/empty main
-  with retained nonempty sidecars, a truncated SQLite header, or a wrong SQLite
-  signature without opening SQLite on the original path. This is only a
-  necessary-format admission, not validation of an arbitrary sidecar snapshot.
-  Preserve the existing full no-sidecar quick_check and real live-WAL identity
-  positive control; retain byte-for-byte refusal/retry/restart assertions.
+  Keep automatic corruption recovery disabled on the existing Human opener.
+  Before writable SQLite work, reject missing/empty main files accompanied by
+  any nonempty retained `-wal`, `-shm` or `-journal` without changing files;
+  their dedicated recovery remains open. A genuinely empty main without
+  nonempty sidecars remains creatable. Reject a retained main shorter than the
+  full 100-byte SQLite header before opening it.
+  Perform format admission through SQLite's private-cache, immutable read-only
+  connection and header-only `PRAGMA schema_version`, discarding its value
+  and propagating every query error. Do not open/read/close a raw database
+  file: that can release another connection's process-wide POSIX locks. Keep
+  SQLite's default VFS and inode/FD lifecycle; do not add `nolock` or
+  `unix-none`. This probe is not the current schema, WAL, authorization or
+  migration-version authority. After format admission, a nonempty WAL/rollback
+  journal remains with the existing WAL-aware owner; otherwise retain immutable
+  `quick_check` before journal-mode/schema writes, including the readable-schema
+  but corrupt-data-page DELETE-journal case. Keep all retained corruption
+  variants, the isolated SHM refusal, byte-preservation/repeat/reopen checks and
+  zero-length positive.
+  Add missing/empty-main-with-sidecar refusal, actual retained-WAL/reopen and
+  external-process lock-contention controls. These controls qualify the default
+  SQLite/VFS owner path, not arbitrary custom VFS or metadata/open races.
+  Arbitrary hot/corrupt-sidecar recovery remains separately unqualified. The
+  unpublished readonly_shm probe stays withdrawn: locked SQLite 3.51.3 has a
+  known corrupt-WAL read-overrun in that path. No dependency upgrade or complete
+  WAL/crash acceptance is claimed.
 - NMR-AC-CREATE-01: Add focused real-SQLite behavioral cases in the existing Host
   owner tests, selected explicitly by the Actions reconciliation job. Force
   the same-pair scheduling interleaving with owned barriers/channels, exercise
@@ -1815,14 +1829,17 @@ claim of an observed production data-loss incident.
   exact selected/executed counts, with zero ignored or skipped cases, at the
   containing H. Add distinct-worker/SQLite-handle first-writer controls and
   missing-metadata KV/transcript/blob refusal cases with unchanged durable rows.
-  Retain current Human62/resource3, sharebox1, journal12, Agent4, credential3 and
+  Retain current Human71/resource3, sharebox1, journal12, Agent4, credential5 and
   gateway1 contracts and all applicable shipping/UI/Windows evidence.
   The existing selected ambiguous-dispatch/restart contract must enter through
   the shipping `createHumanConversation` gateway command, then retain its actual
   Native HTTP, SQLite, pending/settled event and single-message recovery oracles.
   The current upstream reconciliation job already uses Ubuntu at the same H.
-  Add creation12 and atomic-storage3 to that existing job, retaining its Human62
-  selected gateway and all other checks; no duplicate Linux job is needed.
+  Select creation14 and atomic-storage3 in that existing job, retaining Human71
+  and all other checks. Require actual retained-WAL and independent-process lock
+  case success; child probes do not increase the outer count. The existing Ubuntu
+  Social owner job may also execute the unchanged Production AppHost account
+  handoff7 integration-test child processes with its native tool prerequisites.
   macOS shipping and full supported-platform acceptance remain independent gates.
   Preserve concurrent106bb95b's E0382 fixture repair: cleanup shuts down the
   restarted runtime after the original was dropped. That exact H passed

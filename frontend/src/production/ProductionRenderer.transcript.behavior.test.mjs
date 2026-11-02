@@ -175,6 +175,14 @@ test("UI-NMR-OLDER-RETRY-001 failure pauses automatic pages; keyboard and single
   await f.rejectRequest(first);
   await f.error().waitFor();
   await f.call("event", "transcript", { type: "updated", agentId: A, entry: message("m22", "LATEST_UNLOADED_UPDATE") });
+  // Reselecting the current chat must keep its failed cursor and the pending
+  // unloaded-row overlay; the existing m22 assertion after Retry verifies it.
+  const initialReadsBeforeReselect = await f.count(TAIL, { conversationId: A, beforeSeq: null });
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+  await f.frames();
+  assert.equal(await f.error().isVisible(), true, "same-chat reselection must retain the explicit older-page error");
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 1, "same-chat reselection must not automatically retry the failed cursor");
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: null }), initialReadsBeforeReselect, "same-chat reselection must not restart its cached initial read");
   assert.equal(await f.page.getByText("PRIVATE_UPSTREAM_TRACE", { exact: false }).count(), 0);
   for (let attempt = 0; attempt < 3; attempt++) {
     await f.scroll(attempt % 2 === 0 ? 0 : 700);

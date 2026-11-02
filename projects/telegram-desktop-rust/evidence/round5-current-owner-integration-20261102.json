@@ -3,7 +3,7 @@
   "round": 5,
   "repository": "bhrumom/fabushi-desktop",
   "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-  "status": "implementation candidate; exact94b exposed two implementation defects; focused recovery authored; containing-head execution pending; no full acceptance",
+  "status": "implementation candidate; exact94b defects repaired; c2 raw-file header probe superseded for POSIX lock safety; SQLite-owner recovery candidate requires containing-H Actions; no full acceptance",
   "publication_scope": {
     "reviewed_current_base": "1c0bd07f85c4f17ee465509c766eead878879185",
     "initial_concurrent_snapshot": "c83039f9da8330560680a3efccc5ae83bf2db419",
@@ -552,7 +552,7 @@
   "required_containing_head_gates": {
     "human": 71,
     "private_credential": 5,
-    "human_creation": 12,
+    "human_creation": 14,
     "human_creation_storage": 3,
     "resource": 3,
     "sharebox": 1,
@@ -567,7 +567,8 @@
     "production_renderer": 11,
     "production_transcript": 8,
     "transcript_projection": 33,
-    "cursor_pagination": 17
+    "cursor_pagination": 17,
+    "linux_apphost_integration": 7
   },
   "static_review": {
     "verdict": "no source-review blocker at frozen blobs; not execution or independent ACCEPT",
@@ -1115,7 +1116,8 @@
         "data-page-delete-mode"
       ],
       "counts": "Existing twelve outer creation cases; eight inputs remain one case. Original NOTADB bytes and all first/repeated/restarted directory byte comparisons retained.",
-      "scope_limit": "Necessary main-file format admission only. Arbitrary hot/corrupt sidecar recovery and cross-process atomic snapshot preservation remain open. No immutable-main substitution for WAL identity, custom VFS, dependency change, quarantine or file restoration."
+      "scope_limit": "Necessary main-file format admission only. Arbitrary hot/corrupt sidecar recovery and cross-process atomic snapshot preservation remain open. No immutable-main substitution for WAL identity, custom VFS, dependency change, quarantine or file restoration.",
+      "superseded": true
     },
     "static_review": "Root reviewed complete UI diff and existing pagination/refresh owners. Independent source review covered header guard types/errors, health-WAL compatibility and refusal matrix. Static review does not grant execution.",
     "verification": "Publish force=false/expected_sha CAS from94b, read back full SHA/tree/parent and all changed file contents, then require exact containing-H Actions. No local or htch executable validation.",
@@ -1123,6 +1125,90 @@
       "https://www.sqlite.org/fileformat.html",
       "https://www.sqlite.org/uri.html",
       "https://www.sqlite.org/walformat.html"
-    ]
+    ],
+    "status": "Historical c2 publication; renderer changes retained, raw File header probe superseded by sqlite_owner_lock_safe_recovery below."
+  },
+  "sqlite_owner_lock_safe_recovery": {
+    "parent_sha": "c2f2f3f623dfc949cb1575dc9c5b7a62c9e143d7",
+    "reviewed_shared_snapshot": "7d57aa4393c4f6c13bc6129255e2bec8173ed5ed",
+    "source_commit": "d1b7ced237f108a22c1b166877a6d1c1bd62d301",
+    "scope": "Adopt existing creation probe/tests and matching Spec/workflow portions plus the bounded reaction pointer and failed-page-reselection controls described below. Other shared retry/peer/schema changes are not integrated or claimed here.",
+    "c2_publication": {
+      "force": false,
+      "expected_sha": "94b3768b7767d96c09be0207f710aab98b0bf9fc",
+      "remote_commit_tree_parent_and_six_full_files_verified": true,
+      "tree_sha": "15551550bd96790636e8be91cafae223b8a9003b",
+      "native_run_id": 41531180878,
+      "attempt": 1,
+      "last_observation": "2026-11-02 21:48:50 UTC",
+      "jobs": "All seven selected execution jobs queued; native-auth-and-journal conditionally skipped. No actual pass assigned.",
+      "qualification": "Not a lock-safe candidate regardless of later incomplete-scope test success."
+    },
+    "failed_assumption": "Direct read-only File open/read/close was treated as side-effect-free. SQLite documentation identifies that close can release POSIX locks held by another connection in the same process.",
+    "classification": "New source-proven implementation risk discovered by current-owner review, not a repeated failed CI rerun or changed pass oracle.",
+    "fix": "Use metadata for missing/empty/short-file rejection, then default SQLite VFS with READ_ONLY|URI|PRIVATE_CACHE and immutable=1 for schema_version format admission. Discard its value; it is not current WAL identity or migration state. Retain the ordinary WAL-aware owner for nonempty snapshot sidecars, and no-sidecar quick_check. No raw database descriptor, nolock, unix-none, new VFS, dependency upgrade, quarantine, file copy or data restoration.",
+    "adopted_probe_blob": "674335fcf15deae2c1bb4c0afbaca08bc07cd68b",
+    "current_tests": "Fourteen outer creation tests. Existing corruption case retains twelve shared variants plus isolated-SHM refusal; zero-length main without sidecars remains a positive. New retained-WAL test proves WAL-only committed identity and transcript through repeated reopen. Unix child-process test proves blocked before probe, blocked after probe, then writable after rollback; child checks do not inflate the outer count.",
+    "retained_round5_behavior": [
+      "Atomic reaction row/intent settlement and post-SQLite-lock credential admission",
+      "Separate version1 coverage and bounded fixed-ceiling old-history refresh, safe legacy upgrade",
+      "Same-scope existing pagination and complete-refresh generation/buffer preservation with exact-one request checks",
+      "All 71 Human and five private credential cases; no replacement with the shared branch's 67/three counts"
+    ],
+    "linux_apphost_gate": "Add the shared unchanged native_desktop_account_handoff7 integration-test child processes to the existing Ubuntu Social job with native openssl/mkfifo prerequisites and input hashes. This is not an installed AppHost binary or a replacement for macOS shipping.",
+    "mandatory_validation": "New containing-H GitHub Actions reconciliation must actually execute creation14/storage3 plus all 71 Human, Transcript recovery3/resource3/sharebox1/journal12/Agent4/private5/HTTP1. Retain UI33/17/5/19/11/8, all original macOS AppHost/DNS6/parser2/protocol122/TCP9 live/proxy4/credential1 and the other current gates.",
+    "review": "Independent source review covers shared SQLite default-VFS inode/descriptor handling and actual child-lock/retained-WAL test controls. Static evidence is not execution.",
+    "primary_reference": "https://www.sqlite.org/howtocorrupt.html",
+    "local_executable_validation": false,
+    "remaining": [
+      "Containing-head actual execution",
+      "Arbitrary hot/corrupt-sidecar recovery",
+      "Custom VFS and metadata/open races",
+      "Final full source/legal/product/real-service/platform/Bot and independent ACCEPT"
+    ],
+    "primary_section": "2.2: Posix advisory locks canceled by a separate thread doing close()",
+    "independent_review_sha256": "40fe80edf1b13e385efca0a4199eaec5642787b0fd25db92578780e9e77b151b"
+  },
+  "reaction_pointer_recovery": {
+    "source_snapshot": "7d57aa4393c4f6c13bc6129255e2bec8173ed5ed",
+    "actual_failed_source": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "run_id": 41528369271,
+    "job_id": 125561860003,
+    "attempt": 1,
+    "job_conclusion": "failure",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528369271/job/125561860003",
+    "actual_renderer_results": {
+      "passed": 10,
+      "failed": 1,
+      "subsequent_transcript8": "skipped"
+    },
+    "full_log": {
+      "bytes": 100195,
+      "sha256": "05f415da1390002d732dd576c048407535d034a1d9d437aa3df3c07f4b73b121",
+      "complete_raw_log_read": true
+    },
+    "artifact": {
+      "id": 13181266771,
+      "bytes": 33891656,
+      "digest": "sha256:24f914a7b5b9c22ed59eac35dd1d5757d1d8d41082705230ad7d981bf87a8157",
+      "target_sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "archive_reopened_in_this_review": false,
+      "prior_trace_review_source_blob": "aba53d67f5e07de0dd603ce07661a0d2f8c5c4dd"
+    },
+    "identical_inputs_at_c2_and_failed_source": {
+      "frontend/src/recovered/features/conversation/workspace/view.css": "9e45e4ffdbd1669817bbdd1def33c25c8312b644",
+      "transcript.tsx": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+      "production.css": "6a3738d98a07a7b2a81194c6666a2fe868ace80a"
+    },
+    "test_flaw": "Whole-row hover landed outside the message action anchor; the hidden Add reaction target could not receive the ordinary pointer click and no reaction RPC was dispatched. Hover the real anchor and require opacity1/pointer-events auto before an ordinary click. Do not force click or dispatch synthetic mutation events.",
+    "separate_source_observed_ui_defect": "The previous bottom:-30px layout left a two-pixel non-hoverable gap to the toolbar. Retain button visual spacing with top:100% plus transparent padding-top:2px so the pointer path remains within the descendant hover area. Add real ten-step mouse traversal and keep opacity/pointer assertions. The old failed log does not prove this separate CSS repair has executed.",
+    "preserved_behavior": [
+      "Same-scope full-refresh generation/event overlays and single pending page",
+      "C2 double-selection unique request IDs and both refresh/older response orders",
+      "All reaction request counts, current settlement, late empty-row events and account fencing",
+      "Existing failed-page Retry case now also reselects active Alpha without losing visible failure, overlays or issuing initial/older reads",
+      "Renderer11 and Transcript8 outer counts unchanged"
+    ],
+    "execution": "Requires containing-head Actions; no local validation or execution success assigned."
   }
 }
