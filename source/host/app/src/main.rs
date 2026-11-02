@@ -15042,12 +15042,28 @@ fn main() {
             "sand-host",
             None,
         );
+
+    // Constructors already recover durable turns and persist configuration.
+    // Establish the existing profile's custody before entering those owners.
+    let host_lock_path = get_host_lock_path();
+    let host_lock = match acquire_host_lock(&host_lock_path, std::process::id()) {
+        Ok(acquisition) => acquisition.lock,
+        Err(error) => {
+            eprintln!(
+                "failed to acquire Mahayana Host lock at {}: {error}",
+                host_lock_path.display()
+            );
+            return;
+        }
+    };
+
     let app_data_dir = default_unified_app_data_dir();
     if let Err(error) = ensure_managed_runtime_layout(&app_data_dir) {
         eprintln!(
             "failed to initialize managed Mahayana runtime layout at {}: {error}",
             app_data_dir.display()
         );
+        drop(host_lock);
         std::process::exit(1);
     }
 
@@ -15055,6 +15071,7 @@ fn main() {
         Ok(host) => host,
         Err(error) => {
             eprintln!("failed to initialize unified Mahayana app host: {error}");
+            drop(host_lock);
             std::process::exit(1);
         }
     };
@@ -15069,22 +15086,12 @@ fn main() {
         Ok(host) => host,
         Err(error) => {
             eprintln!("failed to initialize Mahayana platform request lane: {error}");
+            drop(host);
+            drop(host_lock);
             std::process::exit(1);
         }
     };
     let stdout = Arc::new(Mutex::new(io::stdout()));
-
-    let host_lock_path = get_host_lock_path();
-    let host_lock = match acquire_host_lock(&host_lock_path, std::process::id()) {
-        Ok(acquisition) => acquisition.lock,
-        Err(error) => {
-            eprintln!(
-                "failed to acquire Mahayana Host lock at {}: {error}",
-                host_lock_path.display()
-            );
-            return;
-        }
-    };
 
     let mut box_exec_daemon =
         match start_managed_box_exec_daemon_from_process_env(&app_data_dir) {
