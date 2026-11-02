@@ -55,8 +55,8 @@ jobs:
           const op = ops.operations[0];
           assert.deepEqual(Object.keys(op).sort(), ['id', 'source_identity', 'append', 'note'].sort());
           assert.equal(op.id, 'FBCP-NMR-001');
-          assert.equal(op.append.ui_functional_case_ids.length, 20, 'the reviewed renderer manifest has twenty distinct cases');
-          assert.equal(new Set(op.append.ui_functional_case_ids).size, 20);
+          assert.equal(op.append.ui_functional_case_ids.length, 21, 'the reviewed renderer manifest has twenty-one distinct cases');
+          assert.equal(new Set(op.append.ui_functional_case_ids).size, 21);
           assert.deepEqual(Object.keys(op.source_identity).sort(), [...identityFields].sort());
           const input = fs.readFileSync(ops.path);
           const inputBlob = gitHash(input);

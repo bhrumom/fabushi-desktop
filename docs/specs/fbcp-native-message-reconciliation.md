@@ -2217,6 +2217,13 @@ Human send/retry owner can post; failure reaches the recoverable send error with
 zero message RPC. Failure and cancellation recover the complete original Composer
 input, including richText, replyToId and isFork, rather than rebuilding it from
 the Transcript projection.
+Restored reply consumption requires an explicit current account/conversation
+scope before either a selected target or draft fallback is used. Its visible
+reply target and posted request agree; explicit Cancel reply clears the stored
+recoverable target without discarding the other input. Agent fresh-nonce retry
+uses its original queue input and confirmed per-file commit progress in the
+existing scope; Human posted-frame retry keeps its original nonce. These local
+progress checks do not qualify cross-process partial upload resume.
 
 Canonical local-author settlement compares scoped account/conversation/author/
 nonce and current IDs, retires only matching draft/recovery values and removes
