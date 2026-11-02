@@ -5,7 +5,47 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current batch — task20bf round1 resumed, immutable forward intent
+## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
+
+Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+Integration base is `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`;
+concurrent immutable forward UI, source acquisition, candidate-review and
+recursive-membership changes are retained.
+Runtime prerequisite `59f5fa24827812f78336c464995d161f403dedfb`,
+run41508537631, completed/success: Human38, Agent4, settlement-credential3,
+sharebox1/journal3/forward-HTTP1, Transcript16/forward5/Chromium12 and the
+selected shipping/Electron/Windows jobs. Full logs and five actual artifact
+archives were read; no complete installer or independent ACCEPT is implied.
+
+The actual path remains Composer/Reply → Session command →
+ProductionSessionWorkers → SandAgentDb/native HTTP → transcript mutations →
+production model projection. This batch maps dispatching to existing UI pending,
+atomically rekeys a settled local parent and its unsent same-author child reply
+references, and recovers older dangling aliases only through a unique canonical
+local-author nonce in the same conversation. Replay reloads each durable child.
+SQLite rollback, peer/foreign/ambiguous identities and immutable fields are
+covered by three new real Host/SQLite/HTTP cases and two real projection cases.
+
+At preparation, new containing-H execution is not-run: require Human47 and
+Transcript18, journal12, forward projection5 and Chromium16, plus the retained
+credential, Agent and shipping gates in GitHub Actions. This reply batch does
+not change the inventory or source-review completion counters. Backend Draft PR #137 at
+`52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23` has exact-head contract runs
+41510852280/41510861859 with 29+10+24 passes each; production readiness was
+skipped; no formal merge/deployment authorization was observed in the PR or
+current-run records. Source/legal closure,
+authorized live afterId=0 history and durable service recovery, signed packages,
+full Bot regression, performance/soak and independent ACCEPT remain open.
+
+The inherited94 attachment snapshots, strict forwarding source scan,
+completion monotonicity and metadata-object checks are retained. Require its
+twelve journal cases and five attachment cases, the concurrent73 immutable
+forward UI and current source acquisition/candidate-review gates. No journal
+implementation or source/release acceptance is added by this reply batch.
+
+Evidence: `projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-recovery.json`.
+
+## Retained concurrent batch — task20bf round1 resumed, immutable forward intent
 
 Inspected migration H=`94dcf7a2213808a8ded6baddaf069562d365c6d7` and main
 `5528062177e3865eef60a073a066cca144f9e3e8`; fixed U remains
@@ -16,8 +56,9 @@ account lifetime, Native/legacy isolation, source acquisition and checker work
 is preserved, including the later accepted acquisition-closure and recursive
 responsibility-membership guards, subsequent immutable attachment snapshots,
 stale-completion fences, complete journal scans and runtime source acquisition.
-Human44 and journal12 expectations are retained. The interrupted old local
-snapshot was not published over it.
+This concurrent base authors Human44 and journal12; the combined reply batch
+requires Human47 and retains journal12. The interrupted old local snapshot was
+not published over it.
 
 The existing shipping ForwardMessageDialog now freezes original nonce/targets/
 normalized privacy, retries only unconfirmed targets, rejects ambiguous
@@ -181,6 +222,7 @@ Report separately:
 - independent release acceptance.
 
 Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
+
 
 
 
