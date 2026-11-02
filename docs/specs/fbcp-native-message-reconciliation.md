@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-03
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–27
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–28
 
 ## Context and goal
 
@@ -982,6 +982,58 @@ never-submitted destination, so rollback is not full batch-recovery acceptance.
 Remote provenance fidelity, full source/legal closure, real production
 service/pagination, supported signed packages, Bot regression and independent
 ACCEPT/release gates remain open. Backend PR #137 is not modified or deployed.
+
+### Round 28 forwarding crash and persistence qualification
+
+At `65253740c033508ab08a4b500449a5b56727e940`, run41504939510
+executes Human33 successfully. The following owner step selects only the one
+`sharebox_shipping_tests` case while asserting three; the two journal-format
+tests were never selected. Chromium executes twelve cases with eleven passing;
+its positive control fails when the fixture calls the absent `setTheme` method.
+Shipping compiles the actual AppHost and passes composition12, Native7,
+FeatureHost7, Social9, HTTP-owner6, Host6, C ABI7 and CLI3. Its gateway executable
+passes all five cases but the workflow asserts three, preventing gateway
+library/protocol/TCP/package-copy execution. Correct that stale count to five;
+these later checks remain unexecuted at the base, not passing evidence.
+These are `TEST_FLAW` outcomes. Preserve all three failures, select the owner and
+journal suites explicitly, and install the existing runtime theme owner in the
+fixture so the four declared theme/viewport screenshots test actual palettes.
+
+Source review also identifies two NMR-47 implementation defects. Different
+batches can load the same source-journal array before `set_metadata` rereads the
+metadata row, then overwrite another batch with a stale merged array. A pending
+batch with a deleted/protected source currently aborts unrelated ordinary sync.
+
+- NMR-47e: Journal read/merge/write must compare the exact observed key value
+  and atomically compare-and-set the containing SQLite metadata row. An absent
+  key differs from null or malformed data. A conflict or storage error stops
+  later dispatch without overwriting another batch; recovery reloads durable
+  state. Preserve existing unconditional metadata callers and notification
+  semantics. Test the stale-observation interleaving with independent handles
+  to the same real SQLite file, including no-change and unrelated-key controls.
+- NMR-47f: Distinguish source policy denial from storage/decoding failure.
+  Initial admission still rejects an ineligible source. For an existing batch,
+  persist the denial on every unfinished target, preserve completed targets and
+  original intent, and continue independent ordinary synchronization without
+  sending denied content. Reauthorization after recovery may resume that same
+  identity. Storage/corruption failures and failed denial persistence remain
+  errors; they cannot be swallowed as policy refusal.
+- NMR-AC-38 qualification: Add five `shipping_human_forward_` integration cases
+  in the existing Session gateway target. Use parent-owned HTTP barriers and
+  an actual child process killed and reaped by the parent, independent SQLite
+  reads, nonce-deduplicating accepted-but-unacknowledged requests, ordinary sync
+  restart, immutable payload and replay/conflict checks, account/issuer/source
+  permission negatives, and SQLite trigger failures at staging and progress.
+  No sleep-only or source-string oracle substitutes for these behaviors.
+  Require all 38 Human cases, the existing sharebox owner case, the two existing
+  journal cases and the new stale-write regression, Agent4, credential3,
+  Gateway1, Chromium12 and the affected shipping/Electron/Windows gates in
+  exact-H Actions. Authored tests remain `not-run` until execution evidence is
+  recorded; no historical statement that the five tests already existed is
+  accepted as evidence.
+
+The data format, command/service schema, unique Session/Transcript owner,
+Backend PR #137 read-only boundary and all final acceptance blockers remain.
 
 
 

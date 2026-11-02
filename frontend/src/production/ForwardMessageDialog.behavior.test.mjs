@@ -88,8 +88,16 @@ test("current forward closes and settles exactly once", async (t) => {
   assert.equal(await f.page.getByRole("listbox").evaluate((node) => node === document.activeElement), true);
   await f.page.keyboard.press("Space");
   assert.equal(await f.page.getByRole("option", { name: "human:b" }).getAttribute("aria-selected"), "true");
+  const themeColors = [];
   for (const mode of ["light", "dark"]) {
     await f.call("setTheme", mode);
+    assert.equal(await f.page.locator("html").getAttribute("data-theme"), `cursor-${mode}`);
+    const colors = await f.page.getByRole("dialog", { name: "Forward message" }).evaluate((node) => {
+      const style = getComputedStyle(node);
+      return { foreground: style.color, background: style.backgroundColor };
+    });
+    assert.notEqual(colors.background, "rgba(0, 0, 0, 0)");
+    themeColors.push(colors);
     for (const [size, width, height] of [["wide", 1280, 800], ["narrow", 390, 844]]) {
       await f.page.setViewportSize({ width, height });
       const bounds = await f.page.getByRole("dialog", { name: "Forward message" }).boundingBox();
@@ -97,6 +105,8 @@ test("current forward closes and settles exactly once", async (t) => {
       await f.page.screenshot({ path: resolve(artifacts, `forward-${mode}-${size}.png`), fullPage: true });
     }
   }
+  assert.notEqual(themeColors[0].foreground, themeColors[1].foreground);
+  assert.notEqual(themeColors[0].background, themeColors[1].background);
   await f.page.getByRole("listbox").focus();
   await f.page.keyboard.press("Control+Enter");
   const sent = await f.request("forward"); await f.call("resolve", sent.id, [{ conversationId: "human:b", status: "sent" }]);

@@ -138,9 +138,15 @@ impl HumanForwardBatch {
 }
 
 pub(super) fn load_forward_batches(owner: &SandAgentDb, source: &str) -> Result<Vec<HumanForwardBatch>, String> {
-    let Some(value) = owner.get_metadata(FORWARD_BATCHES_KEY).map_err(|error| error.to_string())? else {
-        return Ok(Vec::new());
-    };
+    let observed = owner.get_metadata(FORWARD_BATCHES_KEY).map_err(|error| error.to_string())?;
+    decode_forward_batches(observed, source)
+}
+
+fn decode_forward_batches(
+    observed: Option<Value>,
+    source: &str,
+) -> Result<Vec<HumanForwardBatch>, String> {
+    let Some(value) = observed else { return Ok(Vec::new()); };
     let batches: Vec<HumanForwardBatch> = serde_json::from_value(value)
         .map_err(|error| format!("persisted Human forward batches are invalid: {error}"))?;
     let mut seen = std::collections::BTreeSet::new();
@@ -155,7 +161,11 @@ pub(super) fn load_forward_batches(owner: &SandAgentDb, source: &str) -> Result<
 
 pub(super) fn store_forward_batch(owner: &SandAgentDb, batch: &HumanForwardBatch) -> Result<(), String> {
     batch.validate(&batch.source_conversation_id)?;
-    let mut batches = load_forward_batches(owner, &batch.source_conversation_id)?;
+    // Read the exact key value once. A second writer may commit between
+    // observation and this merge; the SandAgentDb conditional CAS detects
+    // that interleaving instead of erasing another batch's journal.
+    let observed = owner.get_metadata(FORWARD_BATCHES_KEY).map_err(|error| error.to_string())?;
+    let mut batches = decode_forward_batches(observed.clone(), &batch.source_conversation_id)?;
     if let Some(existing) = batches.iter_mut().find(|prior|
         prior.account_id == batch.account_id && prior.issuer == batch.issuer && prior.request_id == batch.request_id
     ) {
@@ -173,7 +183,9 @@ pub(super) fn store_forward_batch(owner: &SandAgentDb, batch: &HumanForwardBatch
         batches.push(batch.clone());
     }
     let value = serde_json::to_value(batches).map_err(|error| error.to_string())?;
-    if !owner.set_metadata(FORWARD_BATCHES_KEY, value).map_err(|error| error.to_string())? {
+    if !owner.set_metadata_if_unchanged(FORWARD_BATCHES_KEY, observed.as_ref(), value)
+        .map_err(|error| error.to_string())?
+    {
         return Err("Human forward batch progress could not be durably stored".into());
     }
     Ok(())
@@ -191,6 +203,52 @@ mod tests {
         assert_ne!(a, forward_destination_nonce("a", "prod", "request", "c"));
     }
 
+
+    #[test]
+    fn stale_forward_metadata_observation_cannot_erase_other_batch() {
+        let dir = std::env::temp_dir().join(format!(
+            "forward-metadata-cas-{}", uuid::Uuid::new_v4()
+        ));
+        std::fs::create_dir_all(&dir).expect("cas fixture dir");
+        let db_path = dir.join("store.db");
+        let first = SandAgentDb::open(&db_path, 500).expect("first owner");
+        let second = SandAgentDb::open(&db_path, 500).expect("independent owner");
+        let first_observed = second.get_metadata(FORWARD_BATCHES_KEY).expect("observe absence");
+        assert!(first_observed.is_none(), "absence is not JSON null");
+        let first_value = serde_json::json!([{"requestId": "first"}]);
+        assert!(first.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, first_observed.as_ref(), first_value.clone()
+        ).expect("commit first value"));
+        let stale_second = serde_json::json!([{"requestId": "second"}]);
+        assert!(!second.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, first_observed.as_ref(), stale_second
+        ).expect("reject stale merge"));
+        assert_eq!(first.get_metadata(FORWARD_BATCHES_KEY).unwrap(), Some(first_value.clone()));
+
+        // An unrelated metadata update must not invalidate a journal writer
+        // that has observed the same journal value.
+        assert!(first.set_metadata("unrelated", serde_json::json!(5)).unwrap());
+        let second_value = serde_json::json!([{"requestId": "first"}, {"requestId": "second"}]);
+        assert!(second.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, Some(&first_value), second_value.clone()
+        ).expect("retry from fresh journal"));
+        assert_eq!(first.get_metadata(FORWARD_BATCHES_KEY).unwrap(), Some(second_value.clone()));
+        assert!(!first.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, None, serde_json::Value::Null
+        ).expect("absent differs from present"));
+        assert!(!first.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, Some(&serde_json::Value::Null), serde_json::Value::Null
+        ).expect("null differs from journal"));
+        assert!(first.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, Some(&second_value), second_value.clone()
+        ).expect("idempotent no-change journal"));
+        assert_eq!(first.get_metadata("unrelated").unwrap(), Some(serde_json::json!(5)));
+        first.close(false);
+        second.close(false);
+        drop(first);
+        drop(second);
+        std::fs::remove_dir_all(&dir).expect("cleanup fixture");
+    }
     #[test]
     fn bad_forward_journal_versions_and_destinations_fail_closed() {
         let context = serde_json::json!({"batchVersion":1,"requestId":"r","sourceConversationId":"s","sourceEntryId":"e","privacy":{"dropSenderNames":false,"dropCaptions":false}});

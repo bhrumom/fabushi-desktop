@@ -1,0 +1,48 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 28,
+  "baseline": "65253740c033508ab08a4b500449a5b56727e940",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "previousRun": 41504939510,
+  "previousConclusion": "failure",
+  "priorEvidence": {
+    "human": "33 passed",
+    "sharebox": "1 passed; workflow falsely expected 3",
+    "journal": "2 not selected",
+    "chromium": "11 of 12 passed; missing fixture setTheme",
+    "shipping": "AppHost compiled; gateway executable 5 passed, workflow expected 3; later shipping checks not run",
+    "electron": "success",
+    "windows": "success"
+  },
+  "scope": {
+    "production": [
+      "source/host/src/extensions/session/agent_db.rs",
+      "source/host/src/extensions/session/forward_batch_journal.rs",
+      "source/host/src/extensions/session/production.rs"
+    ],
+    "tests": [
+      "source/host/tests/session_gateway_contract.rs",
+      "frontend/src/production/ForwardMessageDialog.fixture.tsx",
+      "frontend/src/production/ForwardMessageDialog.behavior.test.mjs"
+    ],
+    "workflow": ".github/workflows/native-service-contracts.yml",
+    "expectedHuman": 38,
+    "sharebox": 1,
+    "journal": 3,
+    "chromium": 12
+  },
+  "execution": {
+    "status": "not-run",
+    "reason": "awaiting exact new commit GitHub Actions"
+  },
+  "remaining": [
+    "exact-H CI",
+    "production Worker authentication/pagination",
+    "remote-forward provenance",
+    "source/legal closure",
+    "real signed installation and rollback",
+    "Bot full regression",
+    "independent ACCEPT"
+  ],
+  "backendPR137": "read-only; no merge or deployment"
+}

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
+import { createRuntimeThemeInstaller, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import "./production.css";
 
@@ -41,6 +42,7 @@ type Controls = {
   readonly refreshCredential: () => void;
 };
 let controls: Controls | null = null;
+const themeInstaller = createRuntimeThemeInstaller(document as unknown as ThemeDocument, "light");
 const root = createRoot(document.getElementById("root")!);
 function Fixture() {
   const [account, setAccount] = useState<string | null>("A");
@@ -108,9 +110,11 @@ Object.assign(window, {
     close: () => controls?.close(),
     replaceSource: (id: string) => controls?.replaceSource(id),
     refreshCredential: () => controls?.refreshCredential(),
+    setTheme: (mode: "light" | "dark") => themeInstaller.update(mode),
     unmount: () => {
       const before = controls?.scope.current ?? -1;
       root.unmount();
+      themeInstaller.dispose();
       return { before, after: controls?.scope.current ?? -1 };
     },
   },

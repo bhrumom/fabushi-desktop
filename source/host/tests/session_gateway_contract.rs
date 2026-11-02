@@ -4336,3 +4336,500 @@ fn shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_
     }
 }
 
+// NMR-47: these integration cases use the shipping gateway, an independently
+// opened file-backed SQLite database and an actual child test process. The
+// server accepts the first POST before releasing its response, making process
+// termination and durable-progress failure deterministic rather than timed.
+#[derive(Default)]
+struct ForwardHttpState {
+    requests: Vec<String>,
+    accepted: std::collections::BTreeMap<String, serde_json::Value>,
+}
+
+struct ForwardHttpFixture {
+    url: String,
+    state: Arc<std::sync::Mutex<ForwardHttpState>>,
+    stop: Arc<std::sync::atomic::AtomicBool>,
+    first_post: std::sync::mpsc::Receiver<()>,
+    release: Option<std::sync::mpsc::Sender<()>>,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl ForwardHttpFixture {
+    fn start(hold_first_post: bool) -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("forward listener");
+        listener.set_nonblocking(true).expect("bounded forward listener");
+        let url = format!("http://{}", listener.local_addr().expect("forward address"));
+        let state = Arc::new(std::sync::Mutex::new(ForwardHttpState::default()));
+        let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let (seen, first_post) = std::sync::mpsc::channel();
+        let (release, released) = std::sync::mpsc::channel();
+        let thread_state = Arc::clone(&state);
+        let thread_stop = Arc::clone(&stop);
+        let worker = thread::spawn(move || {
+            let mut post_count = 0;
+            while !thread_stop.load(std::sync::atomic::Ordering::Acquire) {
+                let mut stream = match listener.accept() {
+                    Ok((stream, _)) => stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        // Accept polling is bounded by the fixture's owned stop
+                        // flag; every behavior boundary uses a channel or return.
+                        thread::sleep(std::time::Duration::from_millis(2));
+                        continue;
+                    }
+                    Err(error) => panic!("forward accept: {error}"),
+                };
+                stream.set_nonblocking(false).expect("blocking forward stream");
+                stream.set_write_timeout(Some(std::time::Duration::from_secs(5)))
+                    .expect("bounded forward write");
+                let request = read_fixture_http_request_before(&mut stream, Some(
+                    std::time::Instant::now() + std::time::Duration::from_secs(15)
+                ));
+                assert!(request.to_ascii_lowercase().contains("authorization: bearer fixture-token"));
+                let is_post = request.starts_with("POST /api/social/messages ");
+                let body = {
+                    let mut state = thread_state.lock().expect("forward HTTP state");
+                    state.requests.push(request.clone());
+                    if is_post {
+                        post_count += 1;
+                        let submitted = fixture_request_json(&request);
+                        let nonce = submitted["clientRequestId"].as_str().expect("forward nonce");
+                        let peer = submitted["targetUserId"].as_str().expect("forward target")
+                            .parse::<u64>().expect("numeric forward target");
+                        let text = submitted["text"].as_str().expect("forward text");
+                        let existing = state.accepted.get(nonce).cloned();
+                        let deduplicated = existing.is_some();
+                        let message = existing.unwrap_or_else(|| fixture_remote_human_message(
+                            70 + state.accepted.len() as u64, 1, peer, text, Some(nonce), json!([])
+                        ));
+                        assert_eq!(message["recipientUserId"], peer, "nonce cannot rebind recipient");
+                        assert_eq!(message["text"], text, "nonce cannot rebind submitted snapshot");
+                        state.accepted.insert(nonce.to_string(), message.clone());
+                        json!({"success":true,"deduplicated":deduplicated,"message":message})
+                    } else {
+                        assert!(request.starts_with("GET /api/social/messages?"), "{request}");
+                        let after = request.split("afterId=").nth(1)
+                            .and_then(|tail| tail.split(|c: char| !c.is_ascii_digit()).next())
+                            .and_then(|value| value.parse::<u64>().ok()).expect("coverage cursor");
+                        json!({"success":true,"data":{
+                            "messages":[],"historyCursor":{"mode":"after-id","afterId":after},
+                            "nextAfterId":after
+                        }})
+                    }
+                };
+                if is_post && post_count == 1 {
+                    seen.send(()).expect("first POST observation");
+                    if hold_first_post {
+                        released.recv_timeout(std::time::Duration::from_secs(30))
+                            .expect("first POST must be explicitly released");
+                    }
+                }
+                let body = body.to_string();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(), body
+                );
+                let result = stream.write_all(response.as_bytes());
+                // The killed child deliberately cannot receive the first ack.
+                // All subsequent response writes must still be successful.
+                if !(hold_first_post && is_post && post_count == 1) {
+                    result.expect("forward response write");
+                }
+            }
+        });
+        Self { url, state, stop, first_post, release: Some(release), thread: Some(worker) }
+    }
+
+    fn wait_for_first_post(&self) {
+        self.first_post.recv_timeout(std::time::Duration::from_secs(20))
+            .expect("shipping process reached first POST");
+    }
+
+    fn release_first_post(&mut self) {
+        if let Some(release) = self.release.take() {
+            let _ = release.send(());
+        }
+    }
+
+    fn post_count(&self) -> usize {
+        self.state.lock().expect("forward requests").requests.iter()
+            .filter(|request| request.starts_with("POST /api/social/messages ")).count()
+    }
+
+    fn history_count(&self) -> usize {
+        self.state.lock().expect("forward history requests").requests.iter()
+            .filter(|request| request.starts_with("GET /api/social/messages?")).count()
+    }
+
+    fn finish(mut self) {
+        self.stop.store(true, std::sync::atomic::Ordering::Release);
+        self.release_first_post();
+        self.thread.take().expect("owned fixture thread").join().expect("forward fixture");
+    }
+}
+
+impl Drop for ForwardHttpFixture {
+    fn drop(&mut self) {
+        self.stop.store(true, std::sync::atomic::Ordering::Release);
+        self.release_first_post();
+        if let Some(worker) = self.thread.take() { let _ = worker.join(); }
+    }
+}
+
+struct ForwardProcess(std::process::Child);
+
+impl ForwardProcess {
+    fn start(root: &std::path::Path, url: &str) -> Self {
+        Self(std::process::Command::new(std::env::current_exe().expect("integration executable"))
+            .args(["--exact", "forward_process_child_entry", "--nocapture"])
+            .env("FABUSHI_FORWARD_PROCESS_ROOT", root)
+            .env("FABUSHI_FORWARD_PROCESS_URL", url)
+            .spawn().expect("actual forward child process"))
+    }
+
+    fn terminate(&mut self) {
+        assert!(self.0.try_wait().expect("inspect forward child").is_none(),
+            "child must still be in the held HTTP request");
+        self.0.kill().expect("terminate exact owned forward process");
+        let status = self.0.wait().expect("reap terminated forward process");
+        assert!(!status.success(), "termination cannot be normal Session shutdown");
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::ExitStatusExt;
+            assert_eq!(status.signal(), Some(9), "require actual SIGKILL");
+        }
+    }
+}
+
+impl Drop for ForwardProcess {
+    fn drop(&mut self) {
+        if self.0.try_wait().ok().flatten().is_none() {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+}
+
+// A helper entry, not an extra selected shipping_human_ case. It has no
+// side effects under an ordinary unfiltered test invocation.
+#[test]
+fn forward_process_child_entry() {
+    let Some(root) = std::env::var_os("FABUSHI_FORWARD_PROCESS_ROOT") else { return; };
+    let root = std::path::PathBuf::from(root);
+    let url = std::env::var("FABUSHI_FORWARD_PROCESS_URL").expect("child fixture issuer");
+    let args: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("forward-input.json")).expect("child input")
+    ).expect("forward input JSON");
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let _ = dispatch(&runtime, "forwardHumanMessage", args);
+    panic!("parent must terminate the child before releasing the first response");
+}
+
+fn prepare_forward_process(root: &std::path::Path, url: &str) -> serde_json::Value {
+    let runtime = human_message_fixture_runtime(root, url);
+    let source = runtime.create_human_conversation("2", "Source").expect("source")["id"]
+        .as_str().expect("source id").to_string();
+    let first = runtime.create_human_conversation("3", "First").expect("first target")["id"]
+        .as_str().expect("first id").to_string();
+    let second = runtime.create_human_conversation("4", "Second").expect("second target")["id"]
+        .as_str().expect("second id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&source).expect("source owner");
+    assert!(owner.append_transcript_entry(&json!({
+        "id":"human-server-message:51","kind":"message","role":"user",
+        "authorKind":"human","authorId":"2","authorName":"Source author",
+        "content":"immutable forwarded snapshot","timestampMs":1000.0,"delivery":"sent",
+        "remoteMessageId":"51","remoteCreatedAt":"1970-01-01T00:00:01Z"
+    })).expect("canonical source row"));
+    let args = json!({
+        "sourceConversationId":source,"sourceEntryId":"human-server-message:51",
+        "destinationConversationIds":[first,second],"clientNonce":"durable-process-forward",
+        "dropSenderNames":false,"dropCaptions":false
+    });
+    fs::write(root.join("forward-input.json"), args.to_string()).expect("persist child arguments");
+    runtime.shutdown();
+    drop(owner); drop(runtime);
+    args
+}
+
+fn forward_db_path(root: &std::path::Path, conversation: &str) -> std::path::PathBuf {
+    root.join("agents").join(".conversations").join(conversation).join("store.db")
+}
+
+fn read_forward_metadata_from_disk(root: &std::path::Path, conversation: &str) -> serde_json::Value {
+    let db = rusqlite::Connection::open_with_flags(
+        forward_db_path(root, conversation), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
+    ).expect("independent read-only SQLite connection");
+    let hex: String = db.query_row("SELECT value FROM kv WHERE key = 'metadata'", [],
+        |row| row.get(0)).expect("committed metadata row");
+    assert_eq!(hex.len() % 2, 0);
+    let bytes = (0..hex.len()).step_by(2).map(|offset|
+        u8::from_str_radix(&hex[offset..offset + 2], 16).expect("metadata hex")
+    ).collect::<Vec<_>>();
+    serde_json::from_slice(&bytes).expect("committed metadata JSON")
+}
+
+fn forward_gateway_result(runtime: &Arc<ProductionSessionWorkers>, args: &serde_json::Value)
+    -> Result<serde_json::Value, SessionGatewayError>
+{
+    dispatch_production_session_gateway_call(runtime, "forwardHumanMessage", args)
+        .expect("registered forward gateway")
+}
+
+fn assert_forward_settled(runtime: &Arc<ProductionSessionWorkers>, args: &serde_json::Value) {
+    let source = args["sourceConversationId"].as_str().expect("source id");
+    let owner = runtime.open_human_conversation_db_owner(source).expect("source owner");
+    let batch = owner.get_metadata("humanForwardBatches").expect("journal").expect("persisted batch");
+    assert_eq!(batch.as_array().expect("batches").len(), 1);
+    for (index, destination) in args["destinationConversationIds"].as_array().unwrap().iter().enumerate() {
+        assert_eq!(batch[0]["destinations"][index]["completed"], true);
+        let entries = runtime.read_human_conversation_transcript(destination.as_str().unwrap())
+            .expect("settled destination");
+        assert_eq!(entries.len(), 1, "one canonical row per target");
+        assert_eq!(entries[0]["delivery"], "sent");
+        assert_eq!(entries[0]["content"], "immutable forwarded snapshot");
+        assert_eq!(entries[0]["clientNonce"], batch[0]["destinations"][index]["clientNonce"]);
+        assert_eq!(entries[0]["forwardContext"]["requestId"], args["clientNonce"]);
+        assert!(entries[0]["remoteMessageId"].is_string());
+    }
+}
+
+#[test]
+fn shipping_human_forward_process_kill_preserves_complete_intent_before_first_post() {
+    let root = temp_root("forward-process-kill");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    // Read from another connection while the child is alive in its first POST.
+    let metadata = read_forward_metadata_from_disk(&root, args["sourceConversationId"].as_str().unwrap());
+    let batch = &metadata["humanForwardBatches"][0];
+    assert_eq!(batch["version"], 1);
+    assert_eq!(batch["accountId"], "1");
+    assert_eq!(batch["issuer"], server.url);
+    assert_eq!(batch["requestId"], args["clientNonce"]);
+    assert_eq!(batch["text"], "immutable forwarded snapshot");
+    assert!(!batch.to_string().contains("fixture-token"), "bearer must not enter the journal");
+    assert_eq!(batch["destinations"].as_array().unwrap().len(), 2);
+    for index in 0..2 {
+        assert_eq!(batch["destinations"][index]["conversationId"], args["destinationConversationIds"][index]);
+        assert_eq!(batch["destinations"][index]["completed"], false);
+    }
+    let first_request = {
+        let state = server.state.lock().unwrap();
+        assert_eq!(state.accepted.len(), 1, "backend accepted the first request before termination");
+        fixture_request_json(&state.requests[0])
+    };
+    assert_eq!(first_request["clientRequestId"], batch["destinations"][0]["clientNonce"]);
+    assert_eq!(first_request["targetUserId"], "3");
+    child.terminate();
+    server.release_first_post();
+    let resumed = human_message_fixture_runtime(&root, &server.url);
+    assert!(resumed.read_human_conversation_transcript(args["destinationConversationIds"][1].as_str().unwrap())
+        .expect("unsubmitted second target").is_empty());
+    assert_eq!(read_forward_metadata_from_disk(&root, args["sourceConversationId"].as_str().unwrap()), metadata);
+    assert_eq!(server.post_count(), 1);
+    resumed.shutdown(); drop(resumed); drop(child);
+    server.finish();
+    fs::remove_dir_all(root).expect("remove process-kill fixture");
+}
+
+#[test]
+fn shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot() {
+    let root = temp_root("forward-process-resume");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    child.terminate();
+    server.release_first_post();
+    let resumed = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let owner = resumed.open_human_conversation_db_owner(source).expect("reopened source");
+    let mut edited = owner.get_transcript_entries().expect("source entry")[0].clone();
+    edited["content"] = json!("edited after accepted whole-batch intent");
+    owner.update_transcript_entry(args["sourceEntryId"].as_str().unwrap(), &edited)
+        .expect("source edited after crash").expect("updated source");
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    assert!(resumed.read_human_conversation_transcript(second).expect("never dispatched target").is_empty());
+    let transcript = dispatch(&resumed, "syncHumanConversation", json!({"conversationId":second}));
+    assert_eq!(transcript.as_array().expect("gateway transcript").len(), 1);
+    assert_forward_settled(&resumed, &args);
+    assert_eq!(server.post_count(), 3, "accepted first POST must replay once and second target dispatch once");
+    assert_eq!(server.state.lock().unwrap().accepted.len(), 2, "server nonce dedupe creates only two messages");
+    resumed.shutdown(); drop(owner); drop(resumed); drop(child);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_forward_settled(&reopened, &args);
+    assert_eq!(forward_gateway_result(&reopened, &args).expect("completed retry")["destinations"][1]["status"], "sent");
+    assert_eq!(server.post_count(), 3, "completed journal must not POST on another restart");
+    reopened.shutdown(); drop(reopened);
+    server.finish(); fs::remove_dir_all(root).expect("remove process-resume fixture");
+}
+
+#[test]
+fn shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations() {
+    let root = temp_root("forward-idempotent-replay");
+    let server = ForwardHttpFixture::start(false);
+    let args = prepare_forward_process(&root, &server.url);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let first = forward_gateway_result(&runtime, &args).expect("first complete batch");
+    assert_eq!(first["destinations"][0]["status"], "sent");
+    assert_eq!(first["destinations"][1]["status"], "sent");
+    let mut subset = args.clone();
+    subset["destinationConversationIds"] = json!([args["destinationConversationIds"][1]]);
+    let replay = forward_gateway_result(&runtime, &subset).expect("original subset retry");
+    assert_eq!(replay["destinations"][0]["clientNonce"], first["destinations"][1]["clientNonce"]);
+    let concurrent = (0..2).map(|_| {
+        let runtime = Arc::clone(&runtime);
+        let args = args.clone();
+        thread::spawn(move || forward_gateway_result(&runtime, &args).expect("concurrent identical retry"))
+    }).collect::<Vec<_>>();
+    for replay in concurrent { assert_eq!(replay.join().expect("replay thread"), first); }
+    for changed in ["sourceEntryId", "sourceConversationId", "privacy", "destinations"] {
+        let mut invalid = args.clone();
+        match changed {
+            "sourceEntryId" => invalid["sourceEntryId"] = json!("another-entry"),
+            "sourceConversationId" => invalid["sourceConversationId"] = args["destinationConversationIds"][0].clone(),
+            "privacy" => invalid["dropSenderNames"] = json!(true),
+            _ => invalid["destinationConversationIds"].as_array_mut().unwrap().push(json!("human-extra-target")),
+        }
+        assert!(forward_gateway_result(&runtime, &invalid).is_err(), "reject changed {changed}");
+    }
+    assert_forward_settled(&runtime, &args);
+    assert_eq!(server.post_count(), 2, "repeated, concurrent and invalid calls must not dispatch");
+    runtime.shutdown(); drop(runtime);
+    server.finish(); fs::remove_dir_all(root).expect("remove idempotent fixture");
+}
+
+#[test]
+fn shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope() {
+    let root = temp_root("forward-permission-recovery");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post(); child.terminate(); server.release_first_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    let owner = runtime.open_human_conversation_db_owner(source).expect("source owner");
+    let original = owner.get_transcript_entries().unwrap()[0].clone();
+    let journal = owner.get_metadata("humanForwardBatches").unwrap();
+    let mut protected = original.clone(); protected["protectedContent"] = json!(true);
+    owner.update_transcript_entry(args["sourceEntryId"].as_str().unwrap(), &protected).unwrap().unwrap();
+    runtime.sync_human_conversation(second).expect("protected source cannot starve unrelated history");
+    assert_eq!(server.history_count(), 1, "protected source still permits real history HTTP");
+    let protected_result = forward_gateway_result(&runtime, &args).expect("durable policy-denial envelope");
+    for destination in protected_result["destinations"].as_array().unwrap() {
+        assert_eq!(destination["status"], "failed");
+        assert!(destination["error"].as_str().unwrap().contains("protected"));
+    }
+    owner.delete_transcript_entry(args["sourceEntryId"].as_str().unwrap()).unwrap();
+    runtime.sync_human_conversation(second).expect("deleted source cannot starve unrelated history");
+    assert_eq!(server.history_count(), 2, "missing source still permits real history HTTP");
+    let missing_result = forward_gateway_result(&runtime, &args).expect("deleted source failure envelope");
+    assert!(missing_result["destinations"][0]["error"].as_str().unwrap().contains("missing"));
+    assert!(owner.append_transcript_entry(&original).unwrap());
+    assert!(owner.set_metadata("participantIds", json!(["2", "9"])).unwrap());
+    // The source is excluded from the authorized conversation list, and the
+    // first target has a real dispatching outbox row from the killed POST.
+    // Its generic pending-send recovery must not bypass the source journal.
+    let pending_before = runtime.read_human_conversation_transcript(first).unwrap();
+    assert_eq!(pending_before.len(), 1);
+    assert_eq!(pending_before[0]["delivery"], "dispatching");
+    assert!(pending_before[0].get("remoteMessageId").is_none());
+    runtime.sync_human_conversation(first).expect("authorized target can sync without bypassing source");
+    assert_eq!(server.history_count(), 3, "removed membership cannot starve target history");
+    assert_eq!(server.post_count(), 1, "generic outbox must not resend the revoked-source forward");
+    assert_eq!(runtime.read_human_conversation_transcript(first).unwrap(), pending_before);
+    let removed_result = forward_gateway_result(&runtime, &args).expect("removed membership failure envelope");
+    assert_eq!(removed_result["destinations"][0]["status"], "failed");
+    assert!(removed_result["destinations"][0]["error"].as_str().unwrap().contains("participant"));
+    assert!(owner.set_metadata("participantIds", json!(["1", "2"])).unwrap());
+    let credential_path = root.join("host-credential.json");
+    let credential = fs::read_to_string(&credential_path).unwrap();
+    for (key, value) in [("userId", json!(9)), ("issuer", json!("http://127.0.0.1:1"))] {
+        let mut changed: serde_json::Value = serde_json::from_str(&credential).unwrap();
+        changed[key] = value;
+        fs::write(&credential_path, changed.to_string()).unwrap();
+        assert!(runtime.sync_human_conversation(second).is_err(), "changed {key} cannot resume old intent");
+    }
+    fs::remove_file(&credential_path).unwrap();
+    assert!(runtime.sync_human_conversation(second).is_err(), "missing private credentials cannot resume");
+    assert_eq!(server.post_count(), 1, "all permission and credential negatives prevent further sends");
+    let blocked = owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    let original_journal = journal.unwrap();
+    for key in ["version", "accountId", "issuer", "requestId", "sourceConversationId", "sourceEntryId", "text", "attachments", "context"] {
+        assert_eq!(blocked[0][key], original_journal[0][key], "retain immutable blocked {key}");
+    }
+    for index in 0..2 {
+        assert_eq!(blocked[0]["destinations"][index]["conversationId"], original_journal[0]["destinations"][index]["conversationId"]);
+        assert_eq!(blocked[0]["destinations"][index]["clientNonce"], original_journal[0]["destinations"][index]["clientNonce"]);
+        assert_eq!(blocked[0]["destinations"][index]["completed"], false);
+        assert!(blocked[0]["destinations"][index]["error"].is_string(), "policy denial is durable");
+    }
+    assert!(runtime.read_human_conversation_transcript(second).unwrap().is_empty());
+    runtime.shutdown(); drop(owner); drop(runtime); drop(child);
+    let recovered = human_message_fixture_runtime(&root, &server.url);
+    dispatch(&recovered, "syncHumanConversation", json!({"conversationId":second}));
+    assert_forward_settled(&recovered, &args);
+    assert_eq!(server.post_count(), 3);
+    recovered.shutdown(); drop(recovered);
+    server.finish(); fs::remove_dir_all(root).expect("remove permission fixture");
+}
+
+#[test]
+fn shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch() {
+    for fail_progress in [false, true] {
+        let root = temp_root(if fail_progress { "forward-sqlite-progress" } else { "forward-sqlite-staging" });
+        let mut server = ForwardHttpFixture::start(fail_progress);
+        let args = prepare_forward_process(&root, &server.url);
+        let runtime = human_message_fixture_runtime(&root, &server.url);
+        let source = args["sourceConversationId"].as_str().unwrap();
+        let db = rusqlite::Connection::open(forward_db_path(&root, source)).expect("SQLite fault injector");
+        db.busy_timeout(std::time::Duration::from_secs(5)).unwrap();
+        let running = if fail_progress {
+            let runtime = Arc::clone(&runtime); let args = args.clone();
+            let running = thread::spawn(move || forward_gateway_result(&runtime, &args));
+            server.wait_for_first_post();
+            Some(running)
+        } else { None };
+        let before = read_forward_metadata_from_disk(&root, source);
+        db.execute_batch("CREATE TRIGGER reject_forward_metadata BEFORE UPDATE OF value ON kv
+            WHEN NEW.key = 'metadata' BEGIN SELECT RAISE(ABORT, 'NMR-47 injected SQLite persistence failure'); END;")
+            .expect("install real SQLite write rejection");
+        if let Some(running) = running {
+            server.release_first_post();
+            assert!(running.join().expect("forward after ack").is_err(), "progress commit must fail");
+        } else {
+            for _ in 0..2 {
+                assert!(forward_gateway_result(&runtime, &args).is_err(), "failed staging must not leak in-memory success");
+            }
+        }
+        assert_eq!(server.post_count(), usize::from(fail_progress));
+        assert_eq!(read_forward_metadata_from_disk(&root, source), before, "failed transaction preserves durable record");
+        assert!(runtime.read_human_conversation_transcript(args["destinationConversationIds"][1].as_str().unwrap())
+            .unwrap().is_empty(), "never dispatch second target after failed durability");
+        if fail_progress {
+            let first = runtime.read_human_conversation_transcript(args["destinationConversationIds"][0].as_str().unwrap()).unwrap();
+            assert_eq!(first.len(), 1);
+            assert_eq!(first[0]["delivery"], "sent", "ack settled before batch-progress failure");
+            assert_eq!(before["humanForwardBatches"][0]["destinations"][0]["completed"], false);
+        } else {
+            assert!(before.get("humanForwardBatches").is_none());
+        }
+        db.execute_batch("DROP TRIGGER reject_forward_metadata;").expect("remove scoped injected fault");
+        drop(db); runtime.shutdown(); drop(runtime);
+        let resumed = human_message_fixture_runtime(&root, &server.url);
+        if fail_progress {
+            dispatch(&resumed, "syncHumanConversation", json!({"conversationId":args["destinationConversationIds"][1]}));
+        } else {
+            forward_gateway_result(&resumed, &args).expect("retry after persistence recovery");
+        }
+        assert_forward_settled(&resumed, &args);
+        assert_eq!(server.post_count(), 2, "settled first target cannot be sent again after progress recovery");
+        assert_eq!(server.state.lock().unwrap().accepted.len(), 2);
+        resumed.shutdown(); drop(resumed);
+        server.finish(); fs::remove_dir_all(root).expect("remove SQLite fault fixture");
+    }
+}
+

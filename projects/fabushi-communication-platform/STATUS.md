@@ -6,54 +6,62 @@ Date: 2026-11-03
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current bounded batch (round 27): durable forward intent and restart recovery
+## Current bounded batch (round 28): forwarding crash and persistence qualification
 
-Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; base checkpoint
-H=`2a00708897e17c76194e0811a083ef6cd315d674`, live main
-`5528062177e3865eef60a073a066cca144f9e3e8`. Baseline run41500770749
-reconciliation125467351049 passed Human33/Agent4/private3/Gateway1.
-Electron125467350610 passed carrier10/account8/resources3/source16/
-publisher28/metadata18 and actual builds. Windows125467351150 passed
-native Authenticode11. UI125467351076 compiled the renderer and passed
-Transcript16/settlement5, but all Chromium12 timed out before fixture mount
-and behavior assertions. That TEST_FLAW is retained; run41500770749 is now
-completed/failure. Shipping125467351072 was cancelled without runner steps
-or a log blob; cancellation cause is unverified and shipping did not execute.
+Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected checkpoint
+H=`65253740c033508ab08a4b500449a5b56727e940`, live main
+`5528062177e3865eef60a073a066cca144f9e3e8`. Run41504939510
+reconciliation125481711661 passed Human33, then selected one sharebox test
+successfully but asserted three. The two journal tests were not selected;
+Agent4/private3/Gateway1 did not execute after that failed count assertion.
+UI125481711814 compiled the renderer, passed Transcript16/settlement5, and
+executed Chromium12 with eleven passes and one missing-fixture-setTheme failure.
+Electron125481711452 and Windows125481711041 completed successfully.
+Shipping125481711613 compiled actual AppHost and passed composition12/Native7/
+FeatureHost7/Social9/HTTP-owner6/Host6/ABI7/CLI3/gateway-executable5, then failed
+because its gateway count assertion expected3. Later protocol/TCP/package-copy
+steps did not run. All three failures are TEST_FLAW; run41504939510 is completed/failure.
 
-NMR-47 stages the complete account/issuer-bound intent in the existing source
-SandAgentDb before the first destination append. The immutable submitted
-snapshot, ordered destination set and deterministic nonces survive process
-termination; original subsets retry without expanding or replacing the plan.
-Progress writes fail closed. Ordinary source/startup/destination sync uses the
-same Session/Transcript append, native HTTP, resources and event path. New
-batch-owned pending rows cannot bypass their originating intent; legacy rows
-remain readable. Completed receipts use current permitted canonical state and
-cannot recreate deleted messages. No new message writer/store, backend change
-or deletion of user data is introduced.
+Correction: the round27 STATUS/RTM claimed five integration tests and five
+owner unit tests that did not exist at that H. Its referenced
+`round27-forward-batch-recovery.json` is also absent from that exact Git tree.
+Those descriptions are withdrawn as authorship/execution evidence; history is
+retained in Git. The actual base has Human33, sharebox1 and journal2.
 
-Five new real Host/SQLite/HTTP integration cases cover a killed owner process,
-previously unsubmitted destination recovery, ambiguous accepted-first replay,
-immutable subset retries, scope/permission/corruption denials, concurrency and
-actual SQLite staging/progress failures. Human expected count is38; five
-forward-owner unit cases include malformed-state and permission matrices.
-The UI fixture now uses a Vite-root module entry and preserves browser/network/
-Vite diagnostics; the actual query-change and keyboard/focus cases plus four
-theme/viewport screenshots remain scoped evidence. New containing-H execution
-is pending at commit preparation; no local executable validation was run.
-Exact commands, baseline log hashes and follow-up artifact bindings are in
-`projects/telegram-desktop-rust/evidence/round27-forward-batch-recovery.json`.
+This round adds the five actual process/HTTP/SQLite integration cases in the
+existing Session gateway target. They cover parent-killed child process,
+complete intent before first POST, never-dispatched-target ordinary-sync
+recovery, ambiguous accepted-first nonce replay, immutable text/subset/replay
+conflicts, local source/account/issuer denial and real staging/progress SQL
+failures. Concurrent replay covers completed batches, not simultaneous initial
+dispatch. Human38 and sharebox1+journal3 are required at the containing H.
 
-Source identity/depth accounting remains unaccepted:6895 root/16381 recursive
-identities,41 repositories/40 edges,184 responsibility rows; source_reviews
-absent and unknown/unread undetermined. Current source-review schema/validator
-already implement FMEP-SOURCE-01. Correcting the descriptive183→184 count does
-not promote semantic reading or acceptance. Remote forward provenance,
-attachment retention/recovery under cache loss, real production service/paging,
-full source/legal closure, full Bot regression, supported signed packages,
-upgrade/rollback, performance/soak and independent ACCEPT remain blocked.
+Two production defects are repaired in the same owners: expected-value
+metadata CAS prevents a stale source-journal merge from erasing another batch;
+typed source-policy denials persist failed unfinished targets without starving
+unrelated inbound history. Database/decoding/write failures still stop work.
+The UI fixture installs the existing runtime theme owner and proves actual
+light/dark colors before its four screenshots. No public schema, service API,
+message owner or data migration/deletion is introduced.
+
+Tests are authored, reviewed and **not-run at commit preparation**. Only the
+containing-H Actions logs/artifacts establish execution; no local executable
+validation was performed. Exact predecessor evidence, corrections, review
+findings and scoped case IDs are recorded in
+`projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
+
+The single inventory/ledger still has6895 root/16381 recursive Git identities
+and184 responsibility rows; source_reviews is absent and unknown/unread are
+undetermined. FMEP-SOURCE-01 schema/checker contracts are present; no source or
+acceptance state is promoted. Remote forward provenance/policy, attachment
+retention under cache loss, simultaneous multi-AppHost cross-source uniqueness,
+real production service/pagination, full source/legal closure, Bot regression,
+signed supported-platform packages, upgrade/rollback, performance/soak and
+independent ACCEPT/release remain open.
 
 Backend PR #137 was read only: open/draft/unmerged,
 H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
+
 ## Historical planning snapshot (2026-10-02)
 
 | Area | Status | Note |

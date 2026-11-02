@@ -411,6 +411,51 @@ impl SandAgentDb {
         Ok(changed)
     }
 
+    /// Compare a single metadata key (including absent versus explicit null)
+    /// with the caller's observed value, and atomically CAS the complete SQLite
+    /// metadata record. Unlike unconditional set_metadata, this rejects a
+    /// stale merge of another writer's source-owned forwarding journal.
+    pub fn set_metadata_if_unchanged(
+        &self,
+        key: &str,
+        expected: Option<&serde_json::Value>,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let Some(raw) = self.read_kv("metadata")? else {
+            return Ok(false);
+        };
+        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+        let Some(object) = metadata.as_object_mut() else {
+            return Ok(false);
+        };
+        if object.get(key) != expected {
+            return Ok(false);
+        }
+        if object.get(key) == Some(&value) {
+            return Ok(true);
+        }
+        object.insert(key.to_string(), value);
+        let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+        let changed = self.run_write(&format!("setMetadataIfUnchanged:{key}"), |db| {
+            db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![next_raw, "metadata", raw],
+            )
+            .map(|changes| changes == 1)
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(key.to_string()),
+            );
+        }
+        Ok(changed)
+    }
+
     /// Atomically advances the durable Agent root and marks the addressed
     /// user transcript entry as confirmed. Conversation blobs are written
     /// before this call; metadata + recovery watermark must commit together.

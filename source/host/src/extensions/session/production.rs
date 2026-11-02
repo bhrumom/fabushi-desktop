@@ -89,6 +89,14 @@ use super::native_messaging::{
     fabushi_identity_text,
 };
 
+#[derive(Debug, thiserror::Error)]
+enum ForwardSourceFailure {
+    #[error("{0}")]
+    Policy(String),
+    #[error("{0}")]
+    Storage(String),
+}
+
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
@@ -2861,28 +2869,38 @@ impl ProductionSessionWorkers {
         Ok(matched)
     }
 
-    fn authorize_forward_source(&self, source_id: &str, source_entry_id: &str) -> Result<serde_json::Value, String> {
-        let owner = self.open_human_conversation_db_owner(source_id)?;
-        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&metadata)? {
-            return Err("local Human identity is not a participant in the source conversation".into());
+    fn authorize_forward_source(
+        &self, source_id: &str, source_entry_id: &str,
+    ) -> Result<serde_json::Value, ForwardSourceFailure> {
+        let owner = self.open_human_conversation_db_owner(source_id)
+            .map_err(ForwardSourceFailure::Storage)?;
+        let metadata = owner.read_metadata().map_err(|error|
+            ForwardSourceFailure::Storage(error.to_string()))?;
+        if !self.metadata_has_local_human(&metadata).map_err(ForwardSourceFailure::Storage)? {
+            return Err(ForwardSourceFailure::Policy(
+                "local Human identity is not a participant in the source conversation".into()));
         }
-        let entry = owner.get_transcript_entries().map_err(|error| error.to_string())?
+        let entry = owner.get_transcript_entries()
+            .map_err(|error| ForwardSourceFailure::Storage(error.to_string()))?
             .into_iter()
             .find(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
-            .ok_or_else(|| "forwardHumanMessage source message is missing".to_string())?;
+            .ok_or_else(|| ForwardSourceFailure::Policy(
+                "forwardHumanMessage source message is missing".into()))?;
         if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
             || entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
         {
-            return Err("forwardHumanMessage source must be a settled canonical message".into());
+            return Err(ForwardSourceFailure::Policy(
+                "forwardHumanMessage source must be a settled canonical message".into()));
         }
         if entry.get("protectedContent").and_then(serde_json::Value::as_bool) == Some(true) {
-            return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
+            return Err(ForwardSourceFailure::Policy(
+                "forwardHumanMessage source is protected and cannot be forwarded".into()));
         }
         if entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default().trim().is_empty()
             && !entry.get("attachments").and_then(serde_json::Value::as_array).is_some_and(|a| !a.is_empty())
         {
-            return Err("forwardHumanMessage source has no forwardable content".into());
+            return Err(ForwardSourceFailure::Policy(
+                "forwardHumanMessage source has no forwardable content".into()));
         }
         Ok(entry)
     }
@@ -2912,7 +2930,21 @@ impl ProductionSessionWorkers {
             // Reauthorize before *each* network dispatch, not merely when the
             // original snapshot was accepted. The immutable payload never
             // changes when the source text is later edited.
-            self.authorize_forward_source(source_id, &batch.source_entry_id)?;
+            match self.authorize_forward_source(source_id, &batch.source_entry_id) {
+                Ok(_) => {}
+                Err(ForwardSourceFailure::Policy(denial)) => {
+                    // Persist a visible denial without sending any remaining
+                    // destination. Ordinary inbound history may still sync.
+                    for destination in &mut batch.destinations {
+                        if !destination.completed {
+                            destination.error = Some(denial.clone());
+                        }
+                    }
+                    store_forward_batch(&owner, &batch)?;
+                    return Ok(batch);
+                }
+                Err(ForwardSourceFailure::Storage(error)) => return Err(error),
+            }
             if self.human_forward_scope()? != (account.clone(), issuer.clone()) {
                 return Err("Fabushi native messaging credential changed Human account or issuer".into());
             }
@@ -2972,7 +3004,6 @@ impl ProductionSessionWorkers {
                 // Do not erase or bypass an invalid source on recovery. An
                 // unavailable source retains the original intent, and no
                 // destination is sent without reauthorization.
-                self.authorize_forward_source(source_id, &batch.source_entry_id)?;
                 self.deliver_forward_batch(source_id, &batch.request_id, None)?;
             }
         }
@@ -3033,7 +3064,8 @@ impl ProductionSessionWorkers {
                 return Err("forwardHumanMessage request may not expand its original destination set".into());
             }
         } else {
-            let source_entry = self.authorize_forward_source(source_conversation_id, source_entry_id)?;
+            let source_entry = self.authorize_forward_source(source_conversation_id, source_entry_id)
+                .map_err(|error| error.to_string())?;
             let source_text = source_entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
             let attachments = source_entry.get("attachments")
                 .and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
