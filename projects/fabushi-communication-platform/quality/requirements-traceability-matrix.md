@@ -14,9 +14,9 @@ independent ACCEPT remain pending; old execution rows below are historical.
 | Requirement | Existing owner and oracle | Authored execution gate | Verdict |
 | --- | --- | --- | --- |
 | NMR-41 / AC-32 | ProductSettingsOwner endpoint identity/order, selected/mode, repeat stability |16 orders/48 deletions/48 repeats; all6 permutations within composition12 | Expanded matrix pending |
-| NMR-42 / AC-33 | Direct MahayanaHost and actual approval calls without ordinary dispatch | CLI3, executable5, full lib11;8 positive/9 negative approval inputs | Base compile failed; new execution pending |
+| NMR-42 / AC-33 | Direct MahayanaHost and actual approval calls without ordinary dispatch | CLI3, executable5, full lib9;8 positive/9 negative approval inputs | Base compile failed; new execution pending |
 | NMR-43 / AC-34 | Release metadata after stapling agrees with bytes/hash/size/external blockmaps | Metadata15 plus digest-pinned artifact13093546572 copy experiment | Authored; signed candidate acceptance open |
-| NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 new lifecycle cases in full lib11 | E0004 repaired; execution pending |
+| NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 new lifecycle cases in full lib9 | E0004 repaired; execution pending |
 
 ## Rule
 

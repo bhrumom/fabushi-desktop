@@ -273,7 +273,7 @@
       "implementation": "explicit lifecycle arm preserves existing gateway wire with no fabricated semantic events, replay increment, cleanup or mapping resurrection; canonical raw RuntimeEvent remains authority",
       "new_behavior_tests": 3,
       "lifecycle_states": 11,
-      "expected_gateway_library_tests": 11,
+      "expected_gateway_library_tests": 9,
       "full_native_lifecycle_wire": "not implemented by this compatibility recovery",
       "validation_status_at_preparation": "not-run"
     }
@@ -386,7 +386,7 @@
   "independent_source_review": "Second source reviewer inspected helper/tests/workflow paths, generator external-output, receipt and input/harness provenance; no blocking issue identified. This is not executable validation or ACCEPT.",
   "required_containing_commit_verification": [
     "native-message-reconciliation: Human33 Agent4 credential3",
-    "native-message-shipping-compile: composition12 with48cases, Native6, FeatureHost7, Host6, C ABI7, CLI3, gateway executable5, full gateway library11, dependency/build/symbol negatives, DNS6, salts2, protocol122, TCP9 including live, proxy4, Native credential1, actual AppHost copy4 and two input-negative controls",
+    "native-message-shipping-compile: composition12 with48cases, Native6, FeatureHost7, Host6, C ABI7, CLI3, gateway executable5, full gateway library9, dependency/build/symbol negatives, DNS6, salts2, protocol122, TCP9 including live, proxy4, Native credential1, actual AppHost copy4 and two input-negative controls",
     "native-message-electron: carrier10/auth8/resources3, metadata15, historical real-package negative/reconciliation, actual Electron build",
     "native-message-ui: transcript16 and renderer build",
     "tdrp-source-review-contract: unchanged checker/schema and current ledger/candidate validation"

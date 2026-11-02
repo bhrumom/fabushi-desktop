@@ -92,7 +92,7 @@ test("ticket append rejects pre-staple metadata then reconciles final hashes, si
   await assert.rejects(verifyMacUpdateMetadata(f.options), /MACOS_METADATA_ASSET_MISMATCH/);
   assert.deepEqual(await snapshot(f.directory), before);
   const receipt = await reconcileMacUpdateMetadata(f.options);
-  const updated = yaml.load(await readFile(f.metadataPath, "utf8"));
+  const updated = yaml.load(await readFile(f.metadataPath, "utf8"), { schema: yaml.JSON_SCHEMA });
   assert.equal(updated.files[1].size, 99143);
   assert.equal(updated.files[1].sha512, createHash("sha512").update(finalDmg).digest("base64"));
   assert.equal(updated.path, f.zip);

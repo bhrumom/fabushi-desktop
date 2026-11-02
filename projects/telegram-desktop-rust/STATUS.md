@@ -17,7 +17,7 @@ RuntimeEvent::TurnStateChanged. CLI/gateway executable/approval tests and
 all subsequent shipping gates did not execute.
 
 NMR-44 fixes the exhaustive lifecycle match in the existing v1 projection,
-with3 behavioral cases in full gateway lib11. NMR-42 approval tests now
+with3 behavioral cases in full gateway lib9. NMR-42 approval tests now
 record real calls:8 valid inputs/four canonical values,9 invalid inputs.
 The existing proxy test covers16 ordered subsets,48 deletions/48 repeated
 no-ops including all6 full permutations. NMR-43 reconciles final post-staple
