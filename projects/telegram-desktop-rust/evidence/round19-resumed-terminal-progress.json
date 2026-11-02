@@ -660,7 +660,10 @@
     "execution": "not-run; no local build, test or validator execution; containing exact-H Actions still required",
     "remote_mutation": false,
     "acceptance": "No full migration, package, service, source/legal, independent ACCEPT, merge or deployment claimed.",
-    "integration_note": "Use authored_blobad000f575f846d612485aff645f7a1af69eb8424, not previousf247cd7. Root must re-read the latest checkpoint and compare the remote source blob before non-force expected-head CAS."
+    "integration_note": "Use authored_blobad000f575f846d612485aff645f7a1af69eb8424, not previousf247cd7. Root must re-read the latest checkpoint and compare the remote source blob before non-force expected-head CAS.",
+    "containing_source_sha": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+    "exact_head_native_run": 41519648699,
+    "exact_head_execution_status": "pending; authored assertions are not acceptance evidence"
   },
   "real_package": {
     "discovery": "Latest package run returned in descending main-branch run list, as read during this audit; package-source predates audited current H.",
@@ -1125,25 +1128,44 @@
     "productionAcceptance": false
   },
   "ledger_transport": {
-    "source_sha": "8abd6d06674b01adb8a86d92a41035f0162086b8",
-    "run_id": 41519201764,
-    "job_id": 125530539826,
-    "input_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
-    "output_blob": "aadb1c99f17fe420406e463b3548c267000f37bd",
-    "output_bytes": 3562581,
-    "operations_sha256": "bd3553e0018871b2eef453eb60664d4b622509c1a2f8dfe8228afa70a99864d7",
-    "artifact_id": 13177430914,
-    "remote_blob_readback_matches_reviewed_output": true,
-    "refs_updated_by_workflow": false,
+    "source_sha": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+    "input_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+    "ledger_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+    "bytes": 3565513,
+    "operations_sha256": "b30637c2b75fafb90f3ddc765d5267f7ef4329c0f587cf7a0c3eb0d1020476af",
+    "refs_updated": false,
     "product_validation": false,
+    "run_id": 41519648663,
+    "job_id": 125532061566,
+    "run_status": "completed",
+    "run_conclusion": "success",
+    "remote_blob_readback_matches_reviewed_output": true,
+    "canonical_append_status": "Included by containing commit after exact input and output object checks; all other source and responsibility fields preserved.",
     "append_only_responsibilities": [
       "FBCP-NMR-001",
       "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001"
     ],
-    "status": "Generated unattached object, not adopted because the canonical ledger changed before CAS integration.",
-    "superseding_reviewed_input_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
-    "superseding_reviewed_output_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
-    "canonical_append_status": "pending exact-input Actions object and subsequent checked CAS integration"
+    "prior_generated_unattached_object": {
+      "source_sha": "8abd6d06674b01adb8a86d92a41035f0162086b8",
+      "run_id": 41519201764,
+      "job_id": 125530539826,
+      "input_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
+      "output_blob": "aadb1c99f17fe420406e463b3548c267000f37bd",
+      "output_bytes": 3562581,
+      "operations_sha256": "bd3553e0018871b2eef453eb60664d4b622509c1a2f8dfe8228afa70a99864d7",
+      "artifact_id": 13177430914,
+      "remote_blob_readback_matches_reviewed_output": true,
+      "refs_updated_by_workflow": false,
+      "product_validation": false,
+      "append_only_responsibilities": [
+        "FBCP-NMR-001",
+        "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001"
+      ],
+      "status": "Generated unattached object, not adopted because the canonical ledger changed before CAS integration.",
+      "superseding_reviewed_input_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+      "superseding_reviewed_output_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+      "canonical_append_status": "pending exact-input Actions object and subsequent checked CAS integration"
+    }
   },
   "preservation": {
     "main_not_modified": true,
