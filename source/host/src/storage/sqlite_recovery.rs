@@ -9,7 +9,9 @@ use rusqlite::{Connection, Error as SqliteError, Row};
 use super::store_db::SQLITE_DB_SIDECAR_SUFFIXES;
 
 fn sidecar_path(db_path: &Path, suffix: &str) -> PathBuf {
-    PathBuf::from(format!("{}{}", db_path.display(), suffix))
+    let mut path = db_path.as_os_str().to_os_string();
+    path.push(suffix);
+    PathBuf::from(path)
 }
 
 fn remove_force(path: &Path, recursive: bool) -> io::Result<()> {
@@ -89,7 +91,7 @@ fn default_quarantine_path(db_path: &Path) -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
-    PathBuf::from(format!("{}.corrupt-{stamp}", db_path.display()))
+    sidecar_path(db_path, &format!(".corrupt-{stamp}"))
 }
 
 pub fn quarantine_corrupt_sqlite_db(

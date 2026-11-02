@@ -272,6 +272,91 @@ sticky unknown effects, backend ACK suppression, original-turn recovery,
 real service compatibility and full OCRM acceptance remain open. No stored
 format, dependency, global acceptance flag or fixed upstream U changes.
 
+### Recovery authority prerequisite — AUTO-RECOVERY-AVAILABILITY-v1
+
+Decision **ARA-01 — FIX / IMPL_BUG**, before implementation at
+`be07ae46b199d712f689fb0b0a67594f327efcad`. Session corruption recovery salvages
+kv/blobs/transcript but can reconstruct an empty cron table. That absence is
+not evidence that earlier external effects settled. Extend the existing
+`agent_db_recovery` owner; preserve healthy open and configured foreground
+recovery, including salvage and reindex. This necessary public contract does
+not by itself close Automation execution/settlement or original-turn recovery.
+
+- ARA-01: retain a stable adjacent `<db-path>.automation-custody.guard` file.
+  Recovery acquires its exclusive fs2 lock before destructive work. A checked
+  availability probe holds its shared lock, validates the supplied existing
+  connection/path and rejects any filesystem or KV unavailability marker.
+  Use try-lock; propagate contention/errors and never unlink the guard in
+  normal operation. Availability is not a run claim or permission grant.
+- ARA-02: before quarantine, create a permanent adjacent
+  `<db-path>.automation-custody-unavailable` marker, or safely reopen/resync an
+  existing regular marker without changing its bytes. Missing/invalid parents,
+  symlink/reparse/nonregular objects, including every existing SQLite sidecar,
+  and real open/write/sync failures refuse
+  before moving or deleting the DB/sidecars. Leave partial markers on error.
+  Any marker contents, including empty/malformed, deny checked availability;
+  no automatic clearing or timeout release is added.
+- ARA-03: Linux checks marker `sync_all` and parent-directory `fsync`; macOS
+  additionally syncs the marker after parent metadata submission; Windows
+  uses a writable `WRITE_THROUGH | OPEN_REPARSE_POINT` marker and checked
+  `sync_all`. Preserve recovery when these real APIs succeed. Do not add a
+  blanket Windows failure or ignore an actual unsupported/error result.
+- ARA-04: configure the reconstructed DB, then publish schema/migrations and
+  `automationCustodyAuthorityUnavailable` KV together in one immediate
+  transaction before salvage. Salvage cannot overwrite that marker. The
+  sibling marker also covers a concurrent ordinary opener's empty-table view
+  and old handles. Successfully unlock the new filesystem guard explicitly
+  before external recovery callbacks/reindex; unlock failure is an error and
+  cannot publish recovery success. The private shared/exclusive lock resource
+  also attempts explicit unlock on Drop, without unlinking the stable guard.
+  A duplicate reference must not keep a successful recovery's lock active.
+  Keep callback-failure and salvage semantics unchanged.
+- ARA-05: existing configured-recovery and kv/blob/transcript assertions stay.
+  Add real-owner checks for healthy availability, required marker refusal,
+  repeated recovery over valid/empty/malformed markers, wrong connection,
+  real lock contention, malformed main/guard/marker/sidecar path objects, and original-byte preservation
+  on refusal. A bounded owned child must demonstrate cross-process exclusion
+  and actual exit before recovery admission. New availability APIs must reject
+  the KV marker even if only that copy survives. Actions executes the existing
+  recovery target and shared affected gates; also select private
+  `agent_db_recovery::physical_release_tests` for actual Unix descriptor
+  duplication at shared-guard Drop and exclusive recovery completion. These
+  Unix controls do not claim Windows duplicate-handle equivalence. Source
+  inspection is not a pass.
+- ARA-06 (ARA-PATH-01): preflight and the existing SQLite quarantine/removal
+  consumer must address the same native path bytes. Derive sidecars and the
+  default quarantine name by appending to `OsString`, never from `display()`.
+  Preserve the existing utility's rename/copy/salvage and retry policies.
+  Real Unix byte-path controls must leave independently named U+FFFD twins and
+  their sentinels untouched through quarantine, sidecar cleanup and Session
+  reconstruction. Cover a non-UTF-8 filename and a non-UTF-8 parent. Select the
+  existing `host_storage_contract` and `conversation_blob_db_recovery_contract`
+  alongside Session recovery in Actions. This narrowly extends the batch to
+  `storage/sqlite_recovery.rs` and its existing storage contract; it does not
+  claim every other owner's path construction or whole-platform acceptance.
+  ARA-PATH-PLATFORM-01: run the five new raw-byte oracles on Linux in the
+  existing runtime workflow, requiring their actual named positive results.
+  They require invalid-UTF-8 entries; the
+  [APFS creation contract](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/APFS_Guide/FAQ/FAQ.html)
+  does not supply that fixture prerequisite. Keep ordinary macOS shared-owner
+  recovery tests. No runtime skip on a failed file creation, empty test filter,
+  or platform inference supplies acceptance; retain actual exits, logs and
+  failed owned fixtures, and keep all other platform obligations open.
+
+This is a target-owner recovery correction, not a new fixed-U full-read claim.
+The checked barrier/order, process-crash behavior and real filesystem/physical
+power-loss acceptance are distinct. Current Rust 1.97.1 source at
+`8bab26f4f68e0e26f0bb7960be334d5b520ea452` maps `sync_all` to Unix fsync,
+Apple F_FULLFSYNC or Windows FlushFileBuffers; Microsoft documents write-through
+metadata behavior for NTFS. Other filesystems/devices and all-platform actual
+execution remain unaccepted. No mock or killed process establishes power-loss
+equivalence. Existing marker resync permits foreground reconstruction only.
+Original effects, unknown-result reconciliation, durable Automation claims,
+terminal/report propagation and the actual complete/retry/ACK consumers still
+require the following production batch. Older writers and external path/marker
+replacement are not protected participants; rollback cannot discard markers
+or treat reconstructed history as permission to replay.
+
 ### Automation oracle fixture custody — AUTO-FIXTURE-CUSTODY-v1
 
 Decision `AUTO-FIXTURE-CUSTODY-01 — FIX / TEST_FLAW`, before implementation.

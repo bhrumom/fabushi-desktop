@@ -334,6 +334,8 @@ jobs:
             --test agent_db_owner_contract \
             --test agent_db_serde_contract \
             --test agent_db_transcript_pages_contract \
+            --test host_storage_contract \
+            --test conversation_blob_db_recovery_contract \
             --test agent_db_recovery_contract \
             --test session_maintenance_contract \
             --test agent_to_agent_messaging_contract \
@@ -341,6 +343,7 @@ jobs:
           if cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               host_lock::physical_guard_tests \
+              extensions::session::agent_db_recovery::physical_release_tests \
               extensions::session::typed_replay::tests \
               extensions::session::production_agent_store::checked_state_tests \
               extensions::session::agent_db::fresh_append_tests \
@@ -575,8 +578,8 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract"],
-              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract"],
+              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests"],
               "integration_recovery_result": "passed",
               "automation_known_run_redelivery_contract": "OCRM-AUTOMATION-KNOWN-RUN-REDELIVERY-v1",
               "automation_known_run_redelivery_result": "passed",
@@ -657,6 +660,113 @@ jobs:
         with:
           name: ocrm-config-${{ env.FABUSHI_TARGET_SHA }}
           path: .evidence/ocrm-config.json
+          if-no-files-found: error
+          retention-days: 90
+
+  sqlite-native-path:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$FABUSHI_TARGET_SHA"
+          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$actual" = "$EXPECTED_DISPATCH_SHA"
+          fi
+          native_path_fixtures="$RUNNER_TEMP/ocrm-sqlite-native-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$native_path_fixtures"
+          printf 'NATIVE_PATH_FIXTURES=%s\n' "$native_path_fixtures" >> "$GITHUB_ENV"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Linux Host native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Test native SQLite paths and affected recovery owners
+        id: native_paths
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/sqlite-native-path
+          command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test host_storage_contract --test agent_db_recovery_contract --test conversation_blob_db_recovery_contract -- --test-threads=1)
+          set +e
+          "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/tests.log
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${command[@]}" <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess, sys
+          root = pathlib.Path(".evidence/sqlite-native-path")
+          log = (root / "tests.log").read_bytes()
+          cargo_exit, capture_exit = map(int, sys.argv[1:3])
+          required = [
+              "sqlite_raw_path_contract::explicit_quarantine_preserves_native_source_and_destination_bytes",
+              "sqlite_raw_path_contract::default_quarantine_appends_to_the_complete_native_path",
+              "sqlite_raw_path_contract::sidecar_and_database_removal_preserve_native_path_lookalikes",
+              "sqlite_raw_path_contract::salvage_sql_failure_cleans_only_native_sidecars",
+              "recovery_preserves_native_filename_and_unrelated_replacement_character_twins",
+          ]
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
+          missing = [name for name in required if passed.count(name) != 1]
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
+          receipt = {
+              "contract": "AUTO-RECOVERY-AVAILABILITY-v1/ARA-PATH-01",
+              "head_sha": head,
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "command": sys.argv[3:],
+              "cargo_exit": cargo_exit,
+              "capture_exit": capture_exit,
+              "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
+              "host_lock_sha256": hashlib.sha256(pathlib.Path("source/host/Cargo.lock").read_bytes()).hexdigest(),
+              "required_native_path_tests": required,
+              "missing_or_nonunique_positive_results": missing,
+              "observed_passed_test_names": passed,
+              "log_sha256": hashlib.sha256(log).hexdigest(),
+              "result": "passed" if accepted else "failed",
+              "scope": "Actual Linux native-byte fixtures and existing three recovery targets only; not all-filesystem, power-loss or whole-platform acceptance.",
+          }
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
+          PY
+      - name: Preserve failed owned native-path fixtures
+        if: ${{ failure() && steps.native_paths.outcome == 'failure' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d "$NATIVE_PATH_FIXTURES" ]; then
+            tar -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
+          fi
+      - name: Upload native SQLite path evidence
+        if: ${{ always() && steps.native_paths.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-sqlite-native-path-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/sqlite-native-path/
           if-no-files-found: error
           retention-days: 90
 
