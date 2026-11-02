@@ -4387,7 +4387,30 @@
     "artifact_id": 13118749668,
     "artifact_bytes": 4582365,
     "artifact_digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
-    "decoded_log_status": "A single full decoded-log request returned Transport closed; do not repeat the oversized request. Recover the pinned artifact with bounded lossless output."
+    "decoded_log_status": "A single full decoded-log request returned Transport closed; do not repeat the oversized request. Recover the pinned artifact with bounded lossless output.",
+    "retrieval": {
+      "scope": "Recover already-produced artifact; retain and verify full ZIP/all members then transfer three original JSONs, an explicitly derived acquisition summary omitting only redundant raw entry arrays, and complete recovery index.",
+      "expected_artifact": 13118749668,
+      "expected_sha256": "77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+      "path": ".github/workflows/tdrp-protocol-failure-evidence.yml",
+      "status": "authored-not-run",
+      "acquisition_repeated": false,
+      "tests_rerun": false,
+      "review": "Independent static review found no blocking issues; 32 MiB per transferred file and 2 MiB aggregate gzip bounds; complete source/acceptance gates retained."
+    },
+    "helper_adapter_repair": {
+      "concurrent_head": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
+      "failed_run": 41397148458,
+      "failed_job": 125120824171,
+      "classification": "integration identity pin mismatch",
+      "actual_failure": "Acquisition engine differs from its reviewed Git blob; review the adapter before updating its pin",
+      "old_helper_blob": "d925d81e4a664a361679b41ef1bd6102898349ac",
+      "new_helper_blob": "0f2b07be4adb31d14838c1ff8a0cdb182041b4ef",
+      "changes": "The concurrent fb4df3898ae31b04bc64adde1944067154ae3678 commit already updates the independently reviewed exact helper pin. Preserve it without a redundant collector change or additional acquisition run in this delivery. Each Actions checkout has fresh artifacts; future reusable-directory cleanup of retained LICENSE files is separate.",
+      "review": "New metadata/records preserve existing method, entry and edge contracts. Original declared expected-lite URL and license blob mode/object/length/bytes are checked; source content is never executed.",
+      "status": "concurrent-fix-preserved-pending-its-exact-H-Actions",
+      "effective_fix_commit": "fb4df3898ae31b04bc64adde1944067154ae3678"
+    }
   },
   "concurrent_work_preserved": [
     {
@@ -4415,6 +4438,17 @@
         "source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs"
       ],
       "action": "Re-read complete compare. Retain the existing plaintext/quick-ack fixture fixes and obsolete-run retirement workflow. Apply only the remaining loopback deadline/directory peer changes; merge evidence without replacing any concurrent record."
+    },
+    {
+      "sha": "fb4df3898ae31b04bc64adde1944067154ae3678",
+      "parent": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+      "paths": [
+        "scripts/tdrp-collect-fixed-upstream.py",
+        "source/mahayana/mahayana-rs/providers/telegram-network/tests/tcp_transport.rs",
+        "docs/specs/fbcp-native-message-reconciliation.md",
+        "projects/telegram-desktop-rust/evidence/fbcp-native-message-round3-20261102.json"
+      ],
+      "action": "Re-read complete compare and full changed files; retain additional TCP bounds/directory request checks, reviewed helper pin, NMR-15/AC-09 and all appended evidence. Only add missing LICENSE cleanup and bounded retrieval of the existing inventory artifact."
     }
   ],
   "tcp_fixture_repair": {
@@ -4448,9 +4482,58 @@
       "scope": "Only the fixed obsolete run, after repository/head/branch/workflow/attempt identity checks; no checkout or test rerun. Preserve before, decision, cancel stdout/stderr/exit, after GET stdout/stderr/exit and result even if POST fails.",
       "atomic_attempt_cas": false,
       "limitation": "The GET identity precondition and POST cancel are not atomic; a same-run attempt can change between them. After identity is checked again, and no different run ID is ever selected.",
-      "status": "authored-not-run"
+      "status": "management-job-success-cancellation-request-accepted",
+      "management_head": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+      "management_run": 41397871951,
+      "management_job": 125123039803,
+      "cancel_exit": 0,
+      "after_get_exit": 0,
+      "after_identity_matches": true,
+      "observed_after_status": "in_progress",
+      "artifact_id": 13119658051,
+      "artifact_bytes": 5896,
+      "artifact_digest": "sha256:0d62593d70f18ec00a64120d483191cce789575cc2f93cc0ca1820b91e68b8c4",
+      "tests_rerun": false,
+      "observed_terminal_status": "completed",
+      "observed_terminal_conclusion": "cancelled"
     },
-    "validation": "pending-new-exact-H-native-message-reconciliation-and-native-message-shipping-compile; consumers-blocked"
+    "validation": "pending-new-exact-H-native-message-reconciliation-and-native-message-shipping-compile; consumers-blocked",
+    "repair_head": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+    "new_run": {
+      "run_id": 41397871884,
+      "head_sha": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
+      "human_job": 125123039202,
+      "shipping_job": 125123039467,
+      "observed_status": "in_progress",
+      "acceptance": false
+    },
+    "prior_terminal_evidence": {
+      "head": "d00fdb48200b105b7aea9f2cb865cf4e7b482b2d",
+      "run": 41395923359,
+      "job": 125117103899,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "full_job_log_read": true,
+      "protocol": {
+        "passed": 118,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "tcp": {
+        "individual_passes": 6,
+        "individual_failures": [
+          "plaintext_exchange_preserves_wire_envelope",
+          "live_session_exchanges_encrypted_ping_and_service_rpc"
+        ],
+        "running_over_60_seconds": "unsolicited_abridged_quick_ack_fails_closed_without_correlation_owner",
+        "terminal_suite_summary_present": false
+      },
+      "proxy": "skipped",
+      "credential": "skipped",
+      "limitation": "Rust harness captured failure bodies until suite completion; cancellation ends the waiting suite without its normal failure-body summary. Do not infer the live failure cause from the names alone.",
+      "acceptance": false
+    }
   },
   "tcp_fixture_additional_bounds": {
     "base": "b13e3d8d072ef5d58f466c55bb273ff502ca4463",
@@ -4512,5 +4595,33 @@
     "status": "implemented-pending-exact-head-actions",
     "source_accepted": false,
     "product_accepted": false
+  },
+  "license_retention_observed": {
+    "head": "5fa9087ae95ab9e9be572181cef07c53d0a94a4f",
+    "run": 41397148482,
+    "job": 125120824549,
+    "status": "completed",
+    "conclusion": "success",
+    "full_log_read": true,
+    "license_blobs": [
+      {
+        "repository": "https://gitlab.com/mnauw/cppgir.git",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "path": "LICENSE",
+        "blob": "d113221e5489255cc4c27d8d4015f23aed0bf472",
+        "bytes": 1073,
+        "sha256": "e3d247cb72fde79e2b2b348b44380193848af0f58e2f0417e61a7f4ce68006b4"
+      },
+      {
+        "repository": "https://github.com/martinmoene/expected-lite.git",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "path": "LICENSE.txt",
+        "blob": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "bytes": 1338,
+        "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+      }
+    ],
+    "legal_acceptance": false,
+    "product_acceptance": false
   }
 }
