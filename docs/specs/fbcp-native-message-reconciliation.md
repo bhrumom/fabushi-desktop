@@ -1712,6 +1712,11 @@ succeeded; they do not execute this UI extension.
   roster or a new lifetime's busy state. Switching conversations in one valid
   account settles the originating cache; its pending send must not disable
   another conversation or release that conversation's non-send busy operation.
+  Background roster selection, persisted selection recovery and transcript-clear
+  reloads must preserve an already open Plugins/settings surface, workspace
+  route and command palette. They may load only the selection still owned by
+  the existing synchronous selection store. Explicit navigation retains its
+  surface-closing behavior even when the requested first page is already in flight.
 - **NMR-UI-01c:** Apply canonical Human empty text, resources, rich text and
   reactions as authoritative values through initial/older/full snapshots and
   mutation overlays. Retain existing opaque cursor/current-payload behavior,
@@ -1739,9 +1744,16 @@ Large full-ledger connector writes were interrupted and the proposed object
 was not available by its Git SHA. Reuse the repository's exact-checkout
 unattached-blob transport pattern for this batch's single existing
 `FBCP-NMR-001` row. A temporary Actions job may append only the explicit
-reviewed arrays and note from a frozen manifest, while proving all old array
-items, scalar/source/legal/acceptance fields, other rows and top-level source
-review data are unchanged. It records the exact input, operations and output
+reviewed arrays and note from a frozen manifest. The same current-contract
+repair may normalize the four already identified repository-prefixed NMR target
+paths and sixteen qualified target-symbol spellings to their exact existing
+checkout paths/declarations. The manifest must name each old/new value, require
+the pinned input blob and existing source identity, preserve unrelated array
+items/order, and remove only an already present equivalent target reference.
+The actual-checkout source contract must read every resulting target and match
+every symbol. No production comment or missing owner may be fabricated to
+satisfy that check. Scalar/source/legal/acceptance fields, other rows and
+top-level source review data must remain unchanged. It records the exact input, operations and output
 blob identities. It cannot create commits or move refs, and grants no test,
 source or product acceptance. Root independently reads the complete input and
 output, reconciles the latest canonical ledger and publishes with
