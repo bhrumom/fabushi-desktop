@@ -2068,3 +2068,58 @@ negative check; it does not accept arbitrary corrupt WAL, hot journals or crash
 states. Multi-AppHost forward uniqueness, complete source/legal accounting,
 live Worker/afterId=0, supported signed packages, Bot regression, upgrade/rollback
 and independent ACCEPT remain open.
+
+### Request round9: bounded automatic Human history continuation
+
+At the inspected production chain `7d57aa4393c4f6c13bc6129255e2bec8173ed5ed`,
+one Host sync persists at most 32 ascending pages. It returns transcript rows;
+the Human roster has no coverage projection. Local transcript paging does not
+perform service sync. A stable connected renderer therefore requires a later
+focus, reconnect or explicit operation to resume an incomplete checkpoint.
+The existing 6,400-row/restart case establishes later-call recovery, not
+automatic completion without those triggers.
+
+- **NMR-HISTORY-CONTINUATION-01:** Keep Session/Transcript's versioned
+  `humanHistoryCoverage` as the only durable cursor authority. Expose an optional
+  `historySync: { afterId: number, complete: boolean }` projection on existing
+  authorized Human roster summaries. `afterId` is a nonnegative safe integer.
+  Normalize an absent/null checkpoint or a structurally valid legacy checkpoint
+  to `0,false` using the same parser as sync. Missing or invalid optional progress must not authorize an
+  automatic request; a corrupt checkpoint still makes actual sync fail before
+  that conversation's reaction/pending-send replay. Reading roster progress
+  must not perform HTTP, mutate metadata or create a second owner.
+- **NMR-HISTORY-CONTINUATION-02:** After a successful connected Human roster
+  sync, consume incomplete progress through the existing
+  `syncHumanConversation` and `listHumanConversations` commands. Each Host call
+  retains its 32-page/200-row budget and existing array reply. Yield between
+  bounded turns and give each eligible conversation a turn before repeating
+  one. Continue only after observed cursor advance or terminal completion.
+  A failed request, removed/malformed progress or nonadvancing cursor stops
+  automatic work for that conversation until an existing later refresh trigger;
+  other eligible conversations may continue. Do not turn a failed initial
+  sync/fallback read into an automatic retry loop.
+- **NMR-HISTORY-CONTINUATION-03:** Reuse the existing roster attempt, account,
+  transport and renderer lifetime fences. Replaced attempts, disconnect,
+  logout/account change, Host/transport replacement and unmount prevent another
+  request or stale projection. The existing Native client binds each request
+  and its complete response to its immutable origin and private credential;
+  issuer changes remain that Host authority, not a new renderer identity field. An already dispatched Host operation may finish its durable
+  work; suppressing a renderer continuation must not undo it. Project admitted
+  updates through the existing transcript feed/cache and preserve optimistic
+  sends, reactions, older pages and Agent behavior. A legacy Host with no
+  optional progress keeps the existing explicit-refresh behavior.
+- **NMR-AC-HISTORY-CONTINUATION-01:** In exact-H Actions, extend the real
+  Host/SQLite/HTTP 6,400/32 case to read roster progress before and after budget
+  exhaustion, reopen and terminal completion. Retain cursor-denial, damaged
+  checkpoint, reaction, delayed receipt, forward and retry negatives. Exercise
+  the actual ProductionRenderer with multiple continuation turns and two
+  pending conversations without focus/reconnect/manual sync, plus
+  failure/no-progress and account/transport invalidation. Keep strict nonzero
+  counts, zero retries/skips and all existing UI/Electron/shipping gates.
+
+This is a continuation of the existing initial history traversal. It does not
+establish an old-message changefeed, outgoing read acknowledgement, arbitrary
+multi-process cancellation, real authenticated Worker compatibility or final
+source/platform/independent acceptance. Reverting the new optional projection
+and renderer consumer leaves the existing durable checkpoint and explicit sync
+recovery intact; no user data or migration reader is deleted.
