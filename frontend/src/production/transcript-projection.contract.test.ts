@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ConversationTranscriptEntry, TranscriptMessage } from "../recovered/features/conversation/workspace/model.ts";
+import { projectTranscriptEntry } from "./model.ts";
 import {
   createTranscriptPaginationController,
   mergeOlderTranscriptEntries,
@@ -35,6 +36,77 @@ function deferred<T>() {
   const promise = new Promise<T>((resolveValue, rejectValue) => { resolve = resolveValue; reject = rejectValue; });
   return { promise, resolve, reject };
 }
+
+test("NMR-49 dispatching Human text and attachments stay pending until settlement", () => {
+  const shapes = [
+    { kind: "message", role: "user", content: "Awaiting acknowledgement",
+      attachments: [{ path: "/saved/parent.txt", name: "parent.txt", byteSize: 12 }] },
+    { kind: "attachment", path: "/saved/parent.txt", fileName: "parent.txt", byteSize: 12 },
+    { kind: "user-attachment", file_path: "/saved/parent.txt", file_name: "parent.txt", byteSize: 12 },
+  ];
+  for (const shape of shapes) {
+    for (const field of ["delivery", "status"] as const) {
+      const input = {
+        ...shape, id: "human-message:pending-parent", authorKind: "human", authorId: "self",
+        clientNonce: "pending-parent", timestampMs: 100, replyToId: "earlier-parent", replyTo: "earlier-parent",
+        [field]: "dispatching",
+      };
+      const original = structuredClone(input);
+      const projected = projectTranscriptEntry(input, 0, "Fabushi", "human-conversation");
+      assert.ok(projected?.kind === "message");
+      assert.equal(projected.delivery, "pending", `${shape.kind} ${field}`);
+      assert.equal(projected.id, input.id);
+      assert.equal(projected.role, "user");
+      assert.equal(projected.clientNonce, input.clientNonce);
+      assert.equal(projected.replyToId, "earlier-parent");
+      assert.equal(projected.text, shape.kind === "message" ? "Awaiting acknowledgement" : "");
+      assert.deepEqual(projected.attachments?.map(({ path, name, size }) => ({ path, name, size })), [
+        { path: "/saved/parent.txt", name: "parent.txt", size: 12 },
+      ]);
+      assert.deepEqual(input, original);
+
+      const settled = projectTranscriptEntry({ ...input, [field]: "sent" }, 0, "Fabushi", "human-conversation");
+      assert.ok(settled?.kind === "message");
+      assert.equal(settled.delivery, "sent");
+      assert.equal(settled.clientNonce, projected.clientNonce);
+      assert.equal(settled.replyToId, projected.replyToId);
+      assert.equal(settled.text, projected.text);
+      assert.deepEqual(settled.attachments, projected.attachments);
+    }
+  }
+});
+
+test("NMR-49 existing Human and Agent delivery projections remain unchanged", () => {
+  const deliveryCases: { fields: Record<string, unknown>; expected: TranscriptMessage["delivery"] }[] = [
+    { fields: {}, expected: "sent" },
+    { fields: { status: "running" }, expected: "sent" },
+    { fields: { pending: true }, expected: "pending" },
+    { fields: { isPending: true }, expected: "pending" },
+    { fields: { failed: true }, expected: "failed" },
+    { fields: { isFailed: true }, expected: "failed" },
+    { fields: { delivery: "sent", status: "dispatching", pending: true }, expected: "sent" },
+  ];
+  for (const field of ["delivery", "status"] as const) {
+    for (const state of ["sent", "pending", "queued", "failed"] as const) {
+      deliveryCases.push({ fields: { [field]: state }, expected: state });
+    }
+  }
+  for (const role of ["user", "assistant"] as const) {
+    for (const { fields, expected } of deliveryCases) {
+      const projected = projectTranscriptEntry({
+        id: `${role}-entry`, kind: "message", role, content: "Existing content", authorName: "Existing Agent",
+        timestampMs: 100, clientNonce: `${role}-nonce`, replyToId: "existing-parent", ...fields,
+      }, 0, "Fallback Agent", "existing-conversation");
+      assert.ok(projected?.kind === "message");
+      assert.equal(projected.delivery, expected, `${role} ${JSON.stringify(fields)}`);
+      assert.equal(projected.role, role);
+      assert.equal(projected.author, role === "assistant" ? "Existing Agent" : "You");
+      assert.equal(projected.text, "Existing content");
+      assert.equal(projected.clientNonce, `${role}-nonce`);
+      assert.equal(projected.replyToId, "existing-parent");
+    }
+  }
+});
 
 test("NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append", () => {
   const newer = { ...message("m2", "edited"), myReactions: new Set(["👍"]), delivery: "sent" as const };

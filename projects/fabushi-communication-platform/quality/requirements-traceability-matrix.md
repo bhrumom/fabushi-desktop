@@ -5,7 +5,28 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Updated: 2026-11-02
 
-## Task20bf round1 resumed — immutable forward intent
+## NMR-49 / NMR-AC-40 — pending-parent reply recovery
+
+Fixed U unchanged; integration base `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`.
+Evidence: `projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-recovery.json`.
+Prerequisite runtime H59f5fa/run41508537631 passed Human38/Agent4/credential3,
+forward sharebox1/journal3/HTTP1, UI16/forward5/Chromium12 and selected shipping,
+Electron and Windows jobs. New tests below are authored; execution at preparation
+is not-run and must bind to the containing code H, not that earlier run.
+
+| Requirement / invariant | Existing production owner / real consumer | Authored behavior / required gate |
+| --- | --- | --- |
+| NMR-49a: no reply action before canonical settlement | production/model.ts → existing TranscriptMessage/actionable guard | Actual projectTranscriptEntry across message/attachment shapes and normal Human/Agent controls; Transcript18 and renderer build |
+| NMR-49b: parent and unsent local reply edges commit together | SandAgentDb::settle_transcript_entry_identity → existing deletion/upsert consumers | Real SQLite parent/child failure injection, unchanged immutable fields and atomic event stream, reopen and actual HTTP recovery; Human47 |
+| NMR-49c: current durable reference and scoped historical alias | Session pending replay and append_human_message_with_context → native direct-message POST | A→B→C restart ordering, unique local canonical parent; peer same nonce, foreign conversation, conflicting/ambiguous identity fail closed; Human47 |
+| Retained NMR-47e and NMR-48 attachment snapshots | Exact94 journal/native service/forwarding owners | Preserve twelve journal cases, strict metadata/source recovery and five attachment byte cases; this batch adds no journal implementation |
+| NMR-AC-40: preserve existing owners and regressions | Same Session, DB, HTTP client and projection; no public/schema owner added | Retain Agent4/credential3/sharebox1/journal12/forward-HTTP1, forward projection5/Chromium16 and selected shipping/Electron/Windows gates |
+
+Source reviews, acceptance counters and all full-migration/service/package/Bot
+and independent ACCEPT gates remain unpromoted. Backend PR137 is Draft and
+production readiness has no authorized live execution.
+
+## Retained concurrent batch — task20bf round1 resumed, immutable forward intent
 
 Current input `94dcf7a2213808a8ded6baddaf069562d365c6d7` supersedes the interrupted
 `bb0013e1302c69cbd125bf0c4e64c070688de542` local snapshot. Existing Host journal,
@@ -13,7 +34,8 @@ account fences, source acquisition and schema improvements are retained. The
 earlier production input `59f5fa24827812f78336c464995d161f403dedfb` passed
 run41508537631 attempt1; that is predecessor evidence, not execution of the new
 picker/source-review extension. New Host snapshot and journal guards are
-retained with Human44 and journal12 expectations.
+retained with Human44 and journal12 in the concurrent base; the combined reply
+batch requires Human47 and retains journal12.
 
 | Requirement / oracle | Existing production owner | Authored check / acceptance boundary |
 | --- | --- | --- |
@@ -25,7 +47,8 @@ retained with Human44 and journal12 expectations.
 | FMEP-SOURCE-01 | Unique source_reviews and existing source candidate checker | Two exact option-source records complete, four fully read panel/phrase records pending decomposition; pending records never counted complete and full acceptance still requires the entire source set |
 
 Existing Chromium12 cases are retained and extended to16, alongside settlement5,
-Transcript16 and current Host/Agent/shipping/Electron/Windows gates. Current-H
+the original Transcript16 plus two reply-projection cases (Transcript18), and
+current Host/Agent/shipping/Electron/Windows gates. Current-H
 execution is pending at authoring; no local executable verification or independent
 ACCEPT. Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
 
@@ -180,7 +203,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–39 | NMR-01–06,09,18–26,31–48c | Existing Session/Transcript and SandAgentDb; whole-batch CAS, source denial and private attachment byte snapshots | Exact59f5fa/run41508537631 Human38/sharebox1/journal3/Agent4/private3/Gateway1 all pass | NMR-48 adds five actual process/SQLite/multipart cases and seven owner cases; containing-H Human44/journal12 (including concurrent4f1070 CAS/progress cases) authored, not-run at preparation | Exact59 renderer16/settlement5/Chromium12, Electron and Windows gates pass; retained new-H gates required | Source policy and credential fences; all pinned buffers validated before upload; corrupt/missing second pin prevents new POST; legacy unpinned intent preserved | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 CAS/process tests; NMR-48 cache loss, damage/repair, bounded input and immutable upload regressions | Existing fbcp-native-message-round4-20261102.json records complete exact59 logs/counts/artifacts and separately pending NMR-48; historical round27 claims remain withdrawn | Focused source review and static implementation review only; independent ACCEPT pending | IMPLEMENTED; NMR-48 containing-H execution required; full acceptance BLOCKED |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–40 | NMR-01–06,09,18–26,31–49c | Existing Session/Transcript and SandAgentDb; whole-batch CAS, source denial, private attachment snapshots and atomic pending-reply identity repair | Exact59f5fa/run41508537631 Human38/sharebox1/journal3/Agent4/private3/Gateway1 all pass | Retain NMR-48 five byte cases, source-corruption recovery and journal12; NMR-49 adds three Host/SQLite/HTTP and two projection cases. Containing-H Human47/journal12/Transcript18 authored, not-run at preparation | Exact59 renderer16/settlement5/Chromium12, Electron and Windows gates pass; require combined Transcript18/settlement5/Chromium16 and retained shipping jobs at new H | Preserve source/credential and complete-buffer fences; pending-parent aliases require same conversation, local Human author and unique canonical nonce; failed identity/child-edge persistence rolls back without identity events | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 CAS/process; NMR-48 byte retention/repair; NMR-49 A→B→C, scoped aliases and parent/child ABORT/IGNORE recovery | fbcp-native-message-round4-20261102.json binds exact59 evidence; task20bf-round1-forward-intent-ui.json and round12-pending-parent-reply-recovery.json record authored extensions pending containing-H execution; historical round27 claims remain withdrawn | Focused source and independent static implementation review only; independent ACCEPT pending | IMPLEMENTED; NMR-48/NMR-49 and retained forward UI require containing-H execution; full acceptance BLOCKED |
 | TDRP-UPDATER-DISCOVERY-AUTHORITY-001 | critical | EUS-01–06 / EUS-WIN-01–06 | Explicit source and exact publisher/bytes/one-use invariants | Existing updater/service/Windows installer and Settings | At a119: source16, controlled publisher28, native Windows11; zero failures/skips | Controlled ports and native CI signer; authorized real signed install/upgrade/rollback open | Existing Settings helper; full visual/a11y pending | Source/redirect/abort/marker and signature/publisher/tamper/one-use negatives; performance/soak pending | Existing valid source scheduling and marker recovery | Round26 receipt: run41496846317 Electron125453934276/Windows125453934371 success | Bounded frozen review; release ACCEPT pending | IMPLEMENTED / BOUNDED TESTS EXECUTED; source/product/release BLOCKED |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
@@ -349,6 +372,7 @@ Authorship/evidence boundary: the original strengthened ten-case blob `127700079
 The bounded Host gate passed at exact95/run41403643662. Every subsequent message change remains gated by NMR-AC-06/07/08/09/10/11/12: both named message jobs on one exact H, actual thirteen Human and four Agent nonce cases, locked AppHost compilation, response normalization, both bare future-salts library fixtures, full protocol/TCP including its live case, proxy rejection and credential-schema cases. A skipped step, diagnostic lock generation, test authorship or old-H result is not a pass. Use the existing round3 evidence receipt for execution records; no second result ledger.
 
 Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-message application and identity-transition sections recorded in `research/native-message-known-overlap-fixed-u.md`. It does not close whole upstream files or change inventory/source_reviews/unknown/unread/source acceptance. Known-message refresh, durable history-range coverage, read-state/visible receipt behavior, distinct-emoji/whole-payload bounds and stale mutation/refresh ordering remain separate open work. Full native-service, UI/package/platform, performance/soak, complete Bot regression and independent ACCEPT remain open.
+
 
 
 
