@@ -79,7 +79,10 @@ impl GatewayApi for TestApi {
     }
 }
 
-struct NodeTokenApi;
+#[derive(Default)]
+struct NodeTokenApi {
+    calls: Mutex<Vec<(String, Value)>>,
+}
 
 impl GatewayApi for NodeTokenApi {
     fn authenticate_device_token(
@@ -109,6 +112,10 @@ impl GatewayApi for NodeTokenApi {
     }
 
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        self.calls
+            .lock()
+            .expect("node dispatch observations")
+            .push((method.to_string(), args.clone()));
         Ok(json!({"method": method, "args": args}))
     }
 }
@@ -164,8 +171,9 @@ fn device_pairing_owner_authenticates_issued_token_with_role_and_scopes() {
 
 #[test]
 fn gateway_binds_node_token_to_the_addressed_node_before_dispatch() {
+    let api = Arc::new(NodeTokenApi::default());
     let server = start_gateway_server(GatewayServerDeps {
-        api: Arc::new(NodeTokenApi),
+        api: api.clone(),
         events: GatewayEventHub::default(),
         local_exec: None,
         webauthn: None,
@@ -175,12 +183,28 @@ fn gateway_binds_node_token_to_the_addressed_node_before_dispatch() {
     .expect("gateway server");
     let port = server.port();
 
-    let rejected = request(
-        port,
-        "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer node-token\r\nContent-Length: 18\r\nConnection: close\r\n\r\n{\"nodeId\":\"node-2\"}",
-    );
+    let invoke = |node_id: &str| {
+        let body = json!({"nodeId": node_id}).to_string();
+        request(
+            port,
+            &format!(
+                "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer node-token\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len(),
+            ),
+        )
+    };
+    let rejected = invoke("node-2");
     assert!(rejected.starts_with("HTTP/1.1 403 Forbidden"), "{rejected}");
     assert!(rejected.contains("DEVICE_SCOPE_MISMATCH"), "{rejected}");
+    assert!(api.calls.lock().expect("node dispatch observations").is_empty());
+
+    let accepted = invoke("node-1");
+    assert!(accepted.starts_with("HTTP/1.1 200 OK"), "{accepted}");
+    assert_eq!(json_body(&accepted), json!({"method":"node.invoke", "args":{"nodeId":"node-1"}}));
+    assert_eq!(
+        *api.calls.lock().expect("node dispatch observations"),
+        vec![("node.invoke".to_string(), json!({"nodeId":"node-1"}))],
+    );
 
     server.close();
 }
