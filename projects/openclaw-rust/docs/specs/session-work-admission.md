@@ -881,6 +881,51 @@ bind upgrade markers to the original stream/model/generation, or authorize
 replaying effects with unknown results. Those process-restart responsibilities
 and the full OCRM G01–G12/AC01–AC24 matrix remain open.
 
+## Failed Host takeover refusal — OCRM-HOST-TAKEOVER-REFUSAL-v1
+
+At base `7382badafe5c3a793835b7760bf3ab54e7fb54c9`, the existing Host lock
+owner can remove a known Host's PID file even when that process remains alive
+after graceful and forced termination polling. Its acquisition-budget fallback
+also overwrites the lock without exclusive creation. Both paths can let a
+second Host continue into production startup while another execution owner
+may still exist. This is a bounded startup admission defect under SWA-06/07;
+it does not establish an original-turn recovery contract.
+
+The existing `host_lock.rs` owner and PID-file format remain in place:
+
+- `OCRM-HTR-01`: After both bounded termination polling phases, a known Host
+  that still reports alive makes acquisition return `io::ErrorKind::TimedOut`.
+  Preserve the lock file and its PID; do not publish a new acquisition handle.
+- `OCRM-HTR-02`: Every successful acquisition still requires exclusive
+  `create_new`. Exhausting `MAX_ACQUIRE_ATTEMPTS` returns
+  `io::ErrorKind::WouldBlock`; it must not truncate or overwrite a contender's
+  lock. Recheck the observed PID before stale-lock removal and skip removal
+  when the visible holder changed during the liveness/termination probes.
+- `OCRM-HTR-03`: Preserve fresh acquisition, dead-holder reclamation,
+  successful graceful or forced known-Host takeover, existing same-PID and
+  malformed-PID compatibility, and the existing foreign-PID policy. Do not
+  signal a foreign PID or add a second lock/runtime owner.
+- `OCRM-HTR-04`: The shipping `main.rs` caller already returns on an
+  acquisition error, before managed box-daemon and subsequent production
+  startup. Keep that existing error propagation; no app-main or public schema
+  change is required for this slice.
+
+Actions oracles use real temporary lock files with injected deterministic
+liveness, termination and delay callbacks. Cover a known Host that survives
+both signals with unchanged bytes, forced termination that succeeds during
+polling, repeated visible holder replacement until the acquisition budget
+expires without overwriting the last contender, and fresh/dead-holder
+controls. Retain the existing successful graceful-takeover and foreign-PID
+assertions. Shipping compilation and the affected bootstrap/wiring contracts
+must pass on the frozen exact H; no local executable validation is allowed.
+
+This bounded correction does not make PID-file read/remove an atomic
+cross-process CAS, solve PID reuse or prove process-tree/tool-effect
+termination. Durable Runner claim fencing, unknown-effect reconciliation,
+marker preservation and original-stream/provider/model/generation recovery
+remain required. There is no state migration; rollback must not erase a
+pending recovery marker or assert that an unknown tool result is settled.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

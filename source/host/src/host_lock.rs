@@ -66,8 +66,18 @@ pub fn read_lock_pid(path: &Path) -> Option<u32> {
         .filter(|pid| *pid > 0)
 }
 
-fn remove_lock(path: &Path) {
-    let _ = fs::remove_file(path);
+fn remove_lock_if_pid_matches(path: &Path, expected_pid: Option<u32>) -> io::Result<bool> {
+    // A liveness probe or takeover can outlast the PID file it inspected.
+    // Leave a visibly newer holder for the next exclusive acquisition attempt.
+    // This recheck is not an atomic cross-process compare-and-remove operation.
+    if read_lock_pid(path) != expected_pid {
+        return Ok(false);
+    }
+    match fs::remove_file(path) {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error),
+    }
 }
 
 fn try_create_lock(path: &Path, pid: u32) -> io::Result<bool> {
@@ -202,23 +212,23 @@ where
         let holder = read_lock_pid(path);
         let Some(holder) = holder else {
             outcome = HostLockOutcome::ReclaimedDead;
-            remove_lock(path);
+            remove_lock_if_pid_matches(path, None)?;
             continue;
         };
         if holder == pid {
-            remove_lock(path);
+            remove_lock_if_pid_matches(path, Some(holder))?;
             continue;
         }
         if !is_alive(holder) {
             outcome = HostLockOutcome::ReclaimedDead;
             previous_pid = Some(holder);
-            remove_lock(path);
+            remove_lock_if_pid_matches(path, Some(holder))?;
             continue;
         }
         if !is_host_process(holder) {
             outcome = HostLockOutcome::ReclaimedForeign;
             previous_pid = Some(holder);
-            remove_lock(path);
+            remove_lock_if_pid_matches(path, Some(holder))?;
             continue;
         }
 
@@ -242,18 +252,21 @@ where
                 delay(Duration::from_millis(poll));
             }
         }
-        remove_lock(path);
+        if is_alive(holder) {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                format!(
+                    "Host process {holder} is still running after graceful and forced takeover polling"
+                ),
+            ));
+        }
+        remove_lock_if_pid_matches(path, Some(holder))?;
     }
 
-    fs::write(path, pid.to_string())?;
-    Ok(HostLockAcquisition {
-        outcome,
-        lock: HostLockHandle {
-            path: path.to_path_buf(),
-            pid,
-        },
-        previous_pid,
-    })
+    Err(io::Error::new(
+        io::ErrorKind::WouldBlock,
+        format!("Host lock acquisition exhausted {MAX_ACQUIRE_ATTEMPTS} exclusive attempts"),
+    ))
 }
 
 pub fn acquire_host_lock(path: &Path, pid: u32) -> io::Result<HostLockAcquisition> {

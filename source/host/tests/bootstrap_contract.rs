@@ -215,3 +215,182 @@ fn host_lock_takes_over_only_known_host_processes() {
 
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn host_lock_refuses_a_known_host_that_survives_both_termination_attempts() {
+    use std::cell::RefCell;
+    use std::io::ErrorKind;
+    use mahayana_host_runtime::host_lock::{acquire_host_lock_with, read_lock_pid};
+
+    let root = temp_dir("lock-live-refusal");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("host.lock");
+    let original = b"41\n";
+    fs::write(&path, original).unwrap();
+    let signals = RefCell::new(Vec::<(u32, bool)>::new());
+
+    let error = acquire_host_lock_with(
+        &path,
+        99,
+        |pid| {
+            assert_eq!(pid, 41);
+            true
+        },
+        |pid| {
+            assert_eq!(pid, 41);
+            true
+        },
+        |pid, force| signals.borrow_mut().push((pid, force)),
+        |_| {},
+        20,
+        10,
+    )
+    .expect_err("a surviving Host must prevent another Host from starting");
+
+    assert_eq!(error.kind(), ErrorKind::TimedOut);
+    assert_eq!(signals.borrow().as_slice(), &[(41, false), (41, true)]);
+    assert_eq!(fs::read(&path).unwrap().as_slice(), original);
+    assert_eq!(read_lock_pid(&path), Some(41));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn host_lock_accepts_forced_takeover_only_after_the_host_stops_during_polling() {
+    use std::cell::{Cell, RefCell};
+    use mahayana_host_runtime::host_lock::{
+        HostLockOutcome, acquire_host_lock_with, read_lock_pid,
+    };
+
+    let root = temp_dir("lock-force-poll");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("host.lock");
+    fs::write(&path, "41").unwrap();
+    let alive = Cell::new(true);
+    let force_requested = Cell::new(false);
+    let forced_delays = Cell::new(0usize);
+    let signals = RefCell::new(Vec::<(u32, bool)>::new());
+
+    let acquired = acquire_host_lock_with(
+        &path,
+        99,
+        |pid| {
+            assert_eq!(pid, 41);
+            alive.get()
+        },
+        |pid| {
+            assert_eq!(pid, 41);
+            true
+        },
+        |pid, force| {
+            signals.borrow_mut().push((pid, force));
+            if force {
+                force_requested.set(true);
+            }
+        },
+        |_| {
+            if force_requested.get() {
+                forced_delays.set(forced_delays.get() + 1);
+                if forced_delays.get() == 2 {
+                    alive.set(false);
+                }
+            }
+        },
+        30,
+        10,
+    )
+    .unwrap();
+
+    assert!(!alive.get());
+    assert_eq!(forced_delays.get(), 2);
+    assert_eq!(signals.borrow().as_slice(), &[(41, false), (41, true)]);
+    assert_eq!(acquired.outcome, HostLockOutcome::TookOver);
+    assert_eq!(acquired.previous_pid, Some(41));
+    assert_eq!(read_lock_pid(&path), Some(99));
+    acquired.lock.release().unwrap();
+    assert!(!path.exists());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn host_lock_exhaustion_preserves_a_contender_that_replaces_each_observed_holder() {
+    use std::cell::RefCell;
+    use std::io::ErrorKind;
+    use mahayana_host_runtime::host_lock::{
+        MAX_ACQUIRE_ATTEMPTS, acquire_host_lock_with, read_lock_pid,
+    };
+
+    let root = temp_dir("lock-contended");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("host.lock");
+    fs::write(&path, "41").unwrap();
+    let observed = RefCell::new(Vec::<u32>::new());
+
+    let error = acquire_host_lock_with(
+        &path,
+        99,
+        |pid| {
+            observed.borrow_mut().push(pid);
+            assert_eq!(read_lock_pid(&path), Some(pid));
+            // A contender publishes a different holder while the old PID is
+            // being probed. The old observation cannot authorize its removal.
+            fs::write(&path, (pid + 1).to_string()).unwrap();
+            false
+        },
+        |_| panic!("a dead-holder probe does not need process classification"),
+        |_, _| panic!("no observed holder is live"),
+        |_| panic!("no termination polling is needed"),
+        20,
+        10,
+    )
+    .expect_err("contention must not bypass exclusive creation at the retry limit");
+
+    assert_eq!(error.kind(), ErrorKind::WouldBlock);
+    assert_eq!(observed.borrow().len(), MAX_ACQUIRE_ATTEMPTS);
+    let last_contender = 41 + MAX_ACQUIRE_ATTEMPTS as u32;
+    assert_eq!(read_lock_pid(&path), Some(last_contender));
+    assert_eq!(fs::read_to_string(&path).unwrap(), last_contender.to_string());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn host_lock_preserves_fresh_dead_same_pid_and_malformed_pid_acquisition() {
+    use mahayana_host_runtime::host_lock::{
+        HostLockOutcome, acquire_host_lock_with, read_lock_pid,
+    };
+
+    for (name, stored_pid, expected_outcome, expected_previous_pid) in [
+        ("fresh", None, HostLockOutcome::Created, None),
+        ("dead", Some("41"), HostLockOutcome::ReclaimedDead, Some(41)),
+        ("same", Some("99"), HostLockOutcome::Created, None),
+        ("malformed", Some("invalid"), HostLockOutcome::ReclaimedDead, None),
+    ] {
+        let root = temp_dir(&format!("lock-control-{name}"));
+        fs::create_dir_all(&root).unwrap();
+        let path = root.join("host.lock");
+        if let Some(stored_pid) = stored_pid {
+            fs::write(&path, stored_pid).unwrap();
+        }
+
+        let acquired = acquire_host_lock_with(
+            &path,
+            99,
+            |pid| {
+                assert_eq!(Some(pid), expected_previous_pid);
+                false
+            },
+            |_| panic!("no live holder requires process classification"),
+            |_, _| panic!("no live holder may be signalled"),
+            |_| panic!("no termination polling is needed"),
+            20,
+            10,
+        )
+        .unwrap();
+
+        assert_eq!(acquired.outcome, expected_outcome);
+        assert_eq!(acquired.previous_pid, expected_previous_pid);
+        assert_eq!(read_lock_pid(&path), Some(99));
+        acquired.lock.release().unwrap();
+        assert!(!path.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+}

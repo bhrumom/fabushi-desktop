@@ -8,6 +8,18 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation subject: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; historical unit reads and later discovery candidates do not replace this subject or confer scoped authority.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+## 2026-11-02 bounded Host takeover refusal
+
+`OCRM-HOST-TAKEOVER-REFUSAL-v1` uses the existing `host_lock.rs` owner and
+shipping startup error branch. A known Host still alive after both termination
+polling phases leaves its lock/PID intact and refuses acquisition; exhausting
+exclusive attempts cannot overwrite a contender. Real-file bootstrap controls
+cover refusal, forced success, visible replacement and existing compatibility
+policies. The three-path immutable source review approved the implementation;
+the integrated shipping/`bootstrap_contract`/startup wiring scope still needs
+its own exact-H Actions. This does not establish atomic PID-file fencing or
+known tool-effect termination. Fixed U and full acceptance remain unchanged.
+
 ## 2026-11-02 bounded production checkpoint-root recovery
 
 `SWA-ROOT-RECOVERY-v1` repairs the existing Session/AgentDb/AgentStore recovery
@@ -21,9 +33,13 @@ Valid initialized empty state, zero-byte protobuf and legacy fixed roots remain
 supported. Real Session/SQLite/blob cases cover corruption, explicit repair,
 cache mismatch, pending recovery custody and unchanged failed-write state.
 
-These are authored bounded implementation/consumer changes awaiting independent
-immutable review and their exact-H Actions. Existing historical source-read
-records are unchanged. The Session responsibility is `implementing`; complete
+The independently reviewed batch was published and API-read back at
+`88143ef99a21e87d2da0a31cc509aff3e5176552`. Source Actions `41409355085` and
+Runtime Actions `41409355083` succeeded on that exact H, including shipping
+Host compilation and 472 distinct selected Rust tests. That evidence includes
+strict root/refusal/repair, poisoned-state and prior model/channel/Automation
+controls; it is not evidence for later candidate changes. Existing historical
+source-read records are unchanged. The Session responsibility is `implementing`; complete
 wiring, scoped source authority/coverage, original-turn checkpoint claim/settle,
 provider/device/package recovery and final acceptance remain pending. No global
 completion flag is promoted and no local executable validation is used.
