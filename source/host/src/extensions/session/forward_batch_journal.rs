@@ -855,23 +855,65 @@ mod tests {
     #[test]
     fn concurrent_forward_metadata_writers_have_one_durable_winner_and_recover() {
         use std::sync::{Arc, Barrier};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        fn read_committed_metadata(path: &Path) -> (String, Value) {
+            let db = rusqlite::Connection::open_with_flags(
+                path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+            ).expect("independent read-only SQLite connection");
+            let raw: String = db.query_row(
+                "SELECT value FROM kv WHERE key = 'metadata'", [], |row| row.get(0),
+            ).expect("committed metadata row");
+            assert_eq!(raw.len() % 2, 0);
+            let bytes = (0..raw.len()).step_by(2).map(|offset|
+                u8::from_str_radix(&raw[offset..offset + 2], 16).expect("metadata hex")
+            ).collect::<Vec<_>>();
+            let metadata = serde_json::from_slice(&bytes).expect("committed metadata JSON");
+            (raw, metadata)
+        }
+
         let dir = std::env::temp_dir().join(format!("forward-parallel-cas-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("store.db");
         let seed = SandAgentDb::open(&path, 5000).unwrap();
         assert!(seed.set_metadata("unrelated", serde_json::json!(19)).unwrap());
         seed.close(false); drop(seed);
+
+        let busy_errors = Arc::new(AtomicUsize::new(0));
+        let observed_busy_errors = Arc::clone(&busy_errors);
+        let mut options = super::super::agent_db::SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = 5000;
+        options.on_busy_error = Some(Arc::new(move |_, _| {
+            observed_busy_errors.fetch_add(1, Ordering::SeqCst);
+        }));
+        let batches = (0..2).map(|index| {
+            let request_id = index.to_string();
+            let context = serde_json::json!({
+                "batchVersion": 1, "requestId": request_id,
+                "sourceConversationId": "s", "sourceEntryId": "e",
+                "privacy": {"dropSenderNames": false, "dropCaptions": false},
+            });
+            HumanForwardBatch::new(
+                "a".into(), "prod".into(), request_id, "s".into(), "e".into(),
+                "text".into(), vec![], context, &["b".into(), "c".into()],
+            )
+        }).collect::<Vec<_>>();
+        // Finish fallible owner setup, stale observations and encoding before
+        // spawning either participant, so setup failure cannot strand a waiter.
+        let prepared = batches.iter().map(|batch| {
+            let owner = SandAgentDb::open_with_options(&path, options.clone()).unwrap();
+            let observed = owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
+            assert!(observed.is_none());
+            let value = serde_json::to_value(vec![batch]).unwrap();
+            (owner, observed, value)
+        }).collect::<Vec<_>>();
         let barrier = Arc::new(Barrier::new(3));
-        let threads = (0..2).map(|index| {
-            let path = path.clone();
+        let threads = prepared.into_iter().map(|(owner, observed, value)| {
             let barrier = Arc::clone(&barrier);
             std::thread::spawn(move || {
-                let owner = SandAgentDb::open(&path, 5000).unwrap();
-                let observed = owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
-                assert!(observed.is_none());
                 barrier.wait();
                 let result = owner.set_metadata_if_unchanged(
-                    FORWARD_BATCHES_KEY, observed.as_ref(), serde_json::json!([{"winner":index}])
+                    FORWARD_BATCHES_KEY, observed.as_ref(), value,
                 );
                 owner.close(false);
                 result
@@ -879,13 +921,46 @@ mod tests {
         }).collect::<Vec<_>>();
         barrier.wait();
         let outcomes = threads.into_iter().map(|thread| thread.join().unwrap()).collect::<Vec<_>>();
-        assert!(outcomes.iter().all(Result::is_ok), "SQLite busy is not a CAS rejection: {outcomes:?}");
+        assert_eq!(busy_errors.load(Ordering::SeqCst), 0,
+            "SQLite busy/locked must not masquerade as a CAS loser");
+        assert!(outcomes.iter().all(Result::is_ok), "SQLite write errors are not a CAS rejection: {outcomes:?}");
         assert_eq!(outcomes.iter().filter(|item| *item.as_ref().unwrap()).count(), 1);
-        let reopened = SandAgentDb::open(&path, 5000).unwrap();
+        let reopened = SandAgentDb::open_with_options(&path, options.clone()).unwrap();
         let winner = reopened.get_metadata(FORWARD_BATCHES_KEY).unwrap().unwrap();
-        assert!(winner == serde_json::json!([{"winner":0}]) || winner == serde_json::json!([{"winner":1}]));
+        let winner_id = winner[0]["requestId"].as_str().unwrap();
+        assert!(winner_id == "0" || winner_id == "1");
+        let winner_index: usize = winner_id.parse().unwrap();
+        assert!(*outcomes[winner_index].as_ref().unwrap());
+        assert_eq!(winner, serde_json::to_value(vec![batches[winner_index].clone()]).unwrap());
         assert_eq!(reopened.get_metadata("unrelated").unwrap(), Some(serde_json::json!(19)));
+        let (winner_raw, metadata) = read_committed_metadata(&path);
+        assert_eq!(metadata[FORWARD_BATCHES_KEY], winner);
+        assert_eq!(metadata["unrelated"], serde_json::json!(19));
+        assert_eq!(load_forward_batches(&reopened, "s").unwrap(), vec![batches[winner_index].clone()]);
+
+        let loser = &batches[1 - winner_index];
+        assert!(!reopened.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, None, serde_json::to_value(vec![loser]).unwrap(),
+        ).expect("old observation remains rejected after reopen"));
+        assert_eq!(read_committed_metadata(&path).0, winner_raw,
+            "stale loser must preserve the complete committed metadata row");
+        store_forward_batch(&reopened, loser).expect("fresh journal retry recovers the losing batch");
+        let recovered = load_forward_batches(&reopened, "s").unwrap();
+        assert_eq!(recovered.len(), 2);
+        for batch in &batches {
+            assert!(recovered.contains(batch), "both immutable intents must survive recovery");
+        }
+        assert_eq!(busy_errors.load(Ordering::SeqCst), 0,
+            "recovery controls must not be explained by a SQLite lock error");
         reopened.close(false); drop(reopened);
+        let (recovered_raw, metadata) = read_committed_metadata(&path);
+        assert_eq!(metadata[FORWARD_BATCHES_KEY], serde_json::to_value(&recovered).unwrap());
+        assert_eq!(metadata["unrelated"], serde_json::json!(19));
+        let restored = SandAgentDb::open(&path, 5000).unwrap();
+        assert_eq!(load_forward_batches(&restored, "s").unwrap(), recovered);
+        assert_eq!(restored.get_metadata("unrelated").unwrap(), Some(serde_json::json!(19)));
+        assert_eq!(read_committed_metadata(&path).0, recovered_raw);
+        restored.close(false); drop(restored);
         std::fs::remove_dir_all(dir).unwrap();
     }
 
