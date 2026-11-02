@@ -1,5 +1,25 @@
 # Native Human known-message state during reconnect — fixed-U research
 
+## Round5 follow-up at exact25 — NMR-R5-04
+
+The historical comparison below remains bound to62a3fc. At current inspection
+25fa54fb3a7326d24439e44c2783981f0fa58c9a, known-row admission, monotonic readAt,
+optional reactions and durable afterId coverage already exist, but histories
+larger than200 known rows refresh only the latest tail after catching up.
+Previously loaded older rows can therefore retain stale state indefinitely.
+The fixed-U reaction/read update symbols below were rechecked selectively;
+no complete-file source-review state or global counters are promoted.
+
+NMR-R5-04 adds a separate, fixed-ceiling old-interval cursor to the same
+SandAgentDb and reserves one of the existing32 history requests for it. It
+reuses the credential-bound numeric afterId contract, same materializer and
+changed-row events. Ordered row persistence precedes cursor CAS; no page atomic
+transaction, deletion inference, new owner or complete change-feed equivalence
+is claimed. Existing renderer Human open/reconnect/window-focus commands reach
+this production path. The existing reaction projection is reused; durable readAt
+refresh alone does not add visual read receipts. New authored cases require
+containing-H Actions; deployed afterId service and independent ACCEPT stay open.
+
 ## Identity, scope and status
 
 - Upstream repository: `telegramdesktop/tdesktop`.

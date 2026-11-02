@@ -53,6 +53,11 @@ interface ForwardDialogLifetime {
 
 type ForwardRequest = Parameters<ForwardMessageDialogProps["forwardMessage"]>[0];
 
+interface ForwardIntentSnapshot {
+  readonly request: ForwardRequest;
+  readonly hasCaption: boolean;
+}
+
 // Match the existing Session request bound before freezing a retry intent.
 // The Host still rechecks the bound and each destination's authorization.
 const MAX_FORWARD_DESTINATIONS = 32;
@@ -80,7 +85,7 @@ export function ForwardMessageDialog({
   const searchGenerationRef = useRef(0);
   const lifetimeRef = useRef<ForwardDialogLifetime | null>(null);
   const submittingLifetimeRef = useRef<ForwardDialogLifetime | null>(null);
-  const snapshotRef = useRef<ForwardRequest | null>(null);
+  const snapshotRef = useRef<ForwardIntentSnapshot | null>(null);
   const selectedRef = useRef<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<readonly ForwardRecipient[]>([]);
@@ -95,6 +100,11 @@ export function ForwardMessageDialog({
   const [activeRecipientIndex, setActiveRecipientIndex] = useState(0);
 
   const sourceEntryId = message?.id ?? null;
+  // These are the selected canonical transcript's existing content and media
+  // projection, not a separate eligibility flag supplied by the dialog caller.
+  const sourceHasCaption = (message?.attachments?.length ?? 0) > 0
+    && (message?.text.trim().length ?? 0) > 0;
+  const hasCaption = snapshotRef.current?.hasCaption ?? sourceHasCaption;
   const scopeKey = open && sourceEntryId != null && sourceConversationId != null
     ? JSON.stringify([accountScopeGeneration, sourceConversationId, sourceEntryId])
     : null;
@@ -143,6 +153,10 @@ export function ForwardMessageDialog({
       searchGenerationRef.current += 1;
     };
   }, [accountScopeGeneration, scopeKey, sourceConversationId, sourceEntryId]);
+
+  useLayoutEffect(() => {
+    if (!sourceHasCaption && snapshotRef.current == null) setDropCaptions(false);
+  }, [sourceHasCaption, scopeKey]);
 
   useEffect(() => {
     const lifetime = lifetimeRef.current;
@@ -240,16 +254,20 @@ export function ForwardMessageDialog({
     // One accepted nonce identifies one immutable intent. The Host's durable
     // journal allows retries to narrow to unconfirmed destinations, never to
     // broaden the original set or change its normalized privacy options.
+    const hideCaption = sourceHasCaption && dropCaptions;
     const snapshot = snapshotRef.current ?? {
-      sourceConversationId: lifetime.sourceConversationId,
-      sourceEntryId: lifetime.sourceEntryId,
-      destinationConversationIds: [...selectedRef.current],
-      clientNonce: lifetime.requestId,
-      dropSenderNames: dropSenderNames || dropCaptions,
-      dropCaptions,
+      hasCaption: sourceHasCaption,
+      request: {
+        sourceConversationId: lifetime.sourceConversationId,
+        sourceEntryId: lifetime.sourceEntryId,
+        destinationConversationIds: [...selectedRef.current],
+        clientNonce: lifetime.requestId,
+        dropSenderNames: dropSenderNames || hideCaption,
+        dropCaptions: hideCaption,
+      },
     };
     snapshotRef.current = snapshot;
-    const destinationConversationIds = snapshot.destinationConversationIds
+    const destinationConversationIds = snapshot.request.destinationConversationIds
       .filter((id) => selectedRef.current.has(id));
     // React may batch two submit events before repainting `submitting`.
     submittingLifetimeRef.current = lifetime;
@@ -258,7 +276,7 @@ export function ForwardMessageDialog({
     setFailure(null);
     try {
       const settlement = await forwardMessage({
-        ...snapshot,
+        ...snapshot.request,
         destinationConversationIds,
       });
       if (!isCurrent(lifetime)) return;
@@ -383,7 +401,7 @@ export function ForwardMessageDialog({
             />
             <span>Hide sender name</span>
           </label>
-          <label>
+          {hasCaption ? <label>
             <input
               checked={dropCaptions}
               disabled={snapshotLocked}
@@ -396,7 +414,7 @@ export function ForwardMessageDialog({
               type="checkbox"
             />
             <span>Hide media caption</span>
-          </label>
+          </label> : null}
         </fieldset>
         {failure == null && searchFailure == null ? null : <p className="fabushi-forward-dialog__error" role="alert">{failure ?? searchFailure}</p>}
         {snapshotLocked ? <p>Retry keeps your forwarding choices and skips confirmed recipients. Messages already being sent may still arrive after you close.</p> : null}

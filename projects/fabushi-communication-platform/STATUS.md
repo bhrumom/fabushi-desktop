@@ -38,6 +38,67 @@ and shipping gates.
 See `projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json`.
 Full migration, real service, source/legal, packages/UI/a11y/Bot and ACCEPT remain open.
 
+## Round5 caption and covered-history refresh — qualified434 inputs, combined H pending
+
+The existing picker now hides its caption control for plain text and media
+without caption text, sends false for that flag on new intents, and keeps sender
+hiding independently available. Captioned-media coupling and frozen retries
+remain intact through the real transcript projection. Original16 Chromium cases
+are preserved with3 new contrasts, requiring19. No new owner/wire field or data
+migration is introduced. Retained reaction/credential qualification and shared
+checkpoint integration remain required; no pending or old-H result is a pass.
+
+NMR-R5-04 also addresses old messages outside the latest200: a separate persisted
+refresh cursor with a fixed covered upper bound receives one of the existing32
+history requests, preserving new-message coverage and all existing message
+owners. Row persistence precedes cursor CAS; failures and restart cannot skip
+an unfinished page. Row and cursor admission follow SQLite write-lock acquisition
+and recheck the original Native credential and current owner scope. This adds
+no background owner or visual read-receipt UI.
+Six added real Host cases passed within standalone434 Human56/private5.
+The current combined c830+434 input preserves all63 concurrent Human cases and
+adds both R5 reaction cases plus6 refresh cases: require Human71/private5,
+creation12/storage3/resource3/journal12 and every current inherited gate.
+Version1 coverage, strict message identities, monotonic activity, opaque walks,
+forward ownership and all existing data remain with the same owner. Published
+legacy coverage plus refresh progress requalifies from origin with admitted CAS
+and restart-safe retirement; the combined source needs its own exact-H Actions.
+
+Exact434/run41525525126 reconciliation125552130949 completed successfully: Human56/resource3/sharebox1/journal12/Agent4/private5/forwardHTTP1, 82 actual cases and zero failed/ignored. Full log SHA256 fcea993ada2b6d2d88ffc2a000d0df215e44c934c74c26339c8eec53e0770bdb; artifact13180545559. UI18/settlement5/Chromium19 plus renderer build, Electron and native Windows11 also passed. Source run41525525144 passed Node157/schema37/current-ledger0errors and correctly refused accepted mode. Shipping was still queued at this read. These are standalone434 results, not combined-H or full acceptance.
+
+Exact25/run41518902093 job125529507403 now has complete-log success for
+Human50/resource3/sharebox1/journal12/Agent4/private4/forwardHTTP1. This scoped
+prerequisite includes the R5 atomic reaction cases; it does not execute the
+new refresh/caption code. Exact25 shipping was still queued at observation.
+
+## Current round5 reaction recovery qualification — NMR-R5-01/02
+
+Existing Session/Transcript remains the only Human message owner. This batch
+atomically settles an acknowledged reaction and its exact durable intent,
+checks the full Native credential fingerprint after SQLite write-lock
+acquisition, and publishes only changed committed rows. It also shares the
+existing persisted-journal directory scan and propagates non-NotFound errors.
+Current known-message refresh/history coverage, reaction serialization,
+current94 attachment snapshots/journal12, concurrent forward UI and six source
+review records, and NMR-49 pending-parent reply work are preserved.
+
+Two real HTTP/SQLite/restart cases, one private SQLite wait/credential case and
+stronger ordinary-sync permission assertions are authored. Required gates are
+Human50, journal12 and private credential4; new containing-H execution is
+pending at preparation. Exact68/run41402071662 and exact59/run41508537631 are
+actually passed prerequisites, not evidence for unrun changes. Receipt:
+projects/telegram-desktop-rust/evidence/round5-recovery-resume-20261102.json.
+
+No user data was deleted and no local executable validation was run. Full
+fixed-U source/legal and product closure, deployed authenticated service,
+original-byte legacy recovery, power-loss and multi-AppHost qualification,
+signed platforms, full UI/a11y/security/performance/soak/upgrade/Bot and
+independent ACCEPT remain open. Backend PR137 remains read-only.
+
+Concurrent936 parent/child reply repair and dispatching projection remain intact, including all three added Human cases and Transcript18. This batch adds only its two Human reaction cases.
+
+Qualification branch: checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8. Parent exact76a84e8 retains current service25MiB resource bounds/resource3 and real CLI/gateway process4. Shared checkpoint integration is pending; existing workflows qualify this frozen branch without disabling any gate.
+
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
 Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.

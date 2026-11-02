@@ -1919,6 +1919,28 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    fn update_human_activity_with_admission(
+        owner: &SandAgentDb,
+        timestamp_ms: f64,
+        admission: &dyn Fn(&serde_json::Value) -> Result<(), String>,
+    ) -> Result<(), String> {
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
+        let prior = owner.get_metadata("lastActivityAt").map_err(|error| error.to_string())?;
+        let latest = prior.as_ref().and_then(serde_json::Value::as_f64)
+            .filter(|value| value.is_finite()).unwrap_or(timestamp_ms).max(timestamp_ms);
+        // The row event has already run. A changed credential or membership
+        // must not authorize activity, even when this value is unchanged.
+        if !owner.set_metadata_if_unchanged_with_admission(
+            "lastActivityAt", prior.as_ref(), serde_json::json!(latest),
+            |metadata| admission(metadata),
+        ).map_err(|error| error.to_string())? {
+            return Err("Human message activity was not durably updated".into());
+        }
+        Ok(())
+    }
+
     fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
         match (&self.native_messaging, self.native_messaging_required) {
             (Some(client), _) => Ok(Some(client.as_ref())),
@@ -2185,8 +2207,25 @@ impl ProductionSessionWorkers {
         remote: &FabushiRemoteHumanMessage,
         existing: &[serde_json::Value],
     ) -> Result<serde_json::Value, String> {
+        self.materialize_remote_human_message_with_snapshot_and_admission(owner, remote, existing, None)
+    }
+
+    fn materialize_remote_human_message_with_snapshot_and_admission(
+        &self,
+        owner: &SandAgentDb,
+        remote: &FabushiRemoteHumanMessage,
+        existing: &[serde_json::Value],
+        admission: Option<&dyn Fn(&serde_json::Value) -> Result<(), String>>,
+    ) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?;
         let remote_id = fabushi_message_identity_text(&remote.id)?;
+        let entry_id = format!("human-server-message:{remote_id}");
+        if admission.is_some() && !existing.iter().any(|entry| {
+            entry.get("id").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+                && entry.get("remoteMessageId").and_then(serde_json::Value::as_str) == Some(remote_id.as_str())
+        }) {
+            return Err("Human history refresh requires an existing canonical message".into());
+        }
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
@@ -2198,7 +2237,6 @@ impl ProductionSessionWorkers {
         let timestamp_ms = chrono::DateTime::parse_from_rfc3339(&remote.created_at)
             .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
             .timestamp_millis() as f64;
-        let entry_id = format!("human-server-message:{remote_id}");
         let mut entry = serde_json::json!({
             "id": entry_id,
             "kind": "message",
@@ -2300,6 +2338,19 @@ impl ProductionSessionWorkers {
                         .insert("readAt".into(), serde_json::json!(read_at));
                 }
             }
+            if let Some(admission) = admission {
+                // The same merge is used by every lane, but only old-history
+                // refresh requires this full-row CAS and post-write-lock
+                // admission. Equal rows still admit; they publish no event.
+                let refreshed = owner.update_transcript_entry_if_unchanged_with_admission(
+                    entry.get("id").and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| "remote Human message projection omitted its id".to_string())?,
+                    current, &entry, |metadata| admission(metadata),
+                ).map_err(|error| error.to_string())?
+                    .ok_or_else(|| "remote Human message could not be durably refreshed".to_string())?;
+                Self::update_human_activity_with_admission(owner, timestamp_ms, admission)?;
+                return Ok(refreshed);
+            }
             if current == &entry {
                 Self::update_human_activity(owner, timestamp_ms)?;
                 return Ok(current.clone());
@@ -2366,6 +2417,26 @@ impl ProductionSessionWorkers {
         }
         Self::update_human_activity(owner, timestamp_ms)?;
         Ok(entry)
+    }
+
+    // Metadata is supplied by the current SQLite transaction. Never re-enter
+    // the owner here: this guard runs after acquiring its write reservation.
+    fn admit_human_history_refresh(
+        &self,
+        metadata: &serde_json::Value,
+        conversation_id: &str,
+        peer: &str,
+        client: &FabushiNativeMessagingClient,
+        request_credential: &str,
+    ) -> Result<(), String> {
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
+            || !self.metadata_has_local_human(metadata)?
+            || self.peer_human_id_from_metadata(metadata)? != peer
+        {
+            return Err("Human history refresh conversation membership changed".into());
+        }
+        client.ensure_request_credential_fingerprint(request_credential)
     }
 
     fn human_message_lock(&self, conversation_id: &str) -> Result<Arc<Mutex<()>>, String> {
@@ -2544,8 +2615,8 @@ impl ProductionSessionWorkers {
             return Err("Fabushi native messaging credential changed Human account".into());
         }
         let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
-        let (covered, complete) = match coverage.as_ref() {
-            None | Some(serde_json::Value::Null) => (0, false),
+        let (covered, complete, legacy_covered) = match coverage.as_ref() {
+            None | Some(serde_json::Value::Null) => (0, false, None),
             Some(checkpoint) => {
                 let after_id = checkpoint.get("afterId")
                     .and_then(serde_json::Value::as_u64)
@@ -2555,12 +2626,12 @@ impl ProductionSessionWorkers {
                     .and_then(serde_json::Value::as_bool)
                     .ok_or_else(|| "persisted Human history coverage completion flag is invalid".to_string())?;
                 match checkpoint.get("version") {
-                    Some(version) if version.as_u64() == Some(1) => (after_id, complete),
+                    Some(version) if version.as_u64() == Some(1) => (after_id, complete, None),
                     None => {
                         // Older clients persisted this shape without requiring
                         // historyCursor. Preserve their rows and checkpoint until
                         // a qualified origin page is durably applied.
-                        (0, false)
+                        (0, false, Some(after_id))
                     }
                     Some(_) => return Err("persisted Human history coverage version is unsupported".into()),
                 }
@@ -2602,12 +2673,88 @@ impl ProductionSessionWorkers {
             );
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
+        let refresh_checkpoint = owner.get_metadata("humanHistoryRefresh").map_err(|error| error.to_string())?;
+        let refresh_window = match refresh_checkpoint.as_ref() {
+            None | Some(serde_json::Value::Null) => {
+                // IDs are service-wide, so a large numeric ID alone does not
+                // imply that this conversation has more than one latest page.
+                let known_count = owner.get_transcript_entries().map_err(|error| error.to_string())?
+                    .iter().filter(|entry| {
+                        let Some(remote_id) = entry.get("remoteMessageId").and_then(serde_json::Value::as_str) else { return false; };
+                        entry.get("id").and_then(serde_json::Value::as_str) == Some(format!("human-server-message:{remote_id}").as_str())
+                            && remote_id.parse::<u64>().is_ok_and(|id| id > 0 && id <= covered)
+                    }).take(PAGE_LIMIT + 1).count();
+                (legacy_covered.is_none() && known_count > PAGE_LIMIT).then_some((0, covered))
+            }
+            Some(checkpoint) => {
+                let object = checkpoint.as_object().filter(|object| object.len() == 2)
+                    .ok_or_else(|| "persisted Human history refresh cursor is invalid".to_string())?;
+                let after_id = object.get("afterId").and_then(serde_json::Value::as_u64)
+                    .ok_or_else(|| "persisted Human history refresh cursor is invalid".to_string())?;
+                let ceiling_id = object.get("ceilingId").and_then(serde_json::Value::as_u64)
+                    .ok_or_else(|| "persisted Human history refresh cursor is invalid".to_string())?;
+                // Published unversioned checkpoints may carry a valid old
+                // sweep. Validate its original ceiling without treating that
+                // unqualified watermark as current coverage authority.
+                if ceiling_id == 0 || ceiling_id > legacy_covered.unwrap_or(covered) || after_id > ceiling_id {
+                    return Err("persisted Human history refresh cursor is invalid".into());
+                }
+                // New arrivals cannot extend an unfinished cycle. A completed
+                // cycle starts again only on the next sync, at its then-covered
+                // high water mark, without changing new-message coverage.
+                if legacy_covered.is_some() { None } else {
+                    Some(if after_id == ceiling_id { (0, covered) } else { (after_id, ceiling_id) })
+                }
+            }
+        };
+        let mut legacy_checkpoint = legacy_covered.and(coverage.clone());
+        let mut store_coverage = |after_id: u64, complete: bool, request_credential: &str| -> Result<(), String> {
+            let Some(legacy) = legacy_checkpoint.as_ref() else {
+                return Self::store_human_coverage(&owner, after_id, complete);
+            };
+            let retired = refresh_checkpoint.as_ref().is_some_and(|value| !value.is_null());
+            if retired && !owner.set_metadata_if_unchanged_with_admission(
+                "humanHistoryRefresh", refresh_checkpoint.as_ref(), serde_json::Value::Null,
+                |metadata| {
+                    self.admit_human_history_refresh(metadata, conversation_id, &peer, client, request_credential)?;
+                    if metadata.get("humanHistoryCoverage") != Some(legacy) {
+                        return Err("Human legacy history coverage changed before qualification".into());
+                    }
+                    Ok(())
+                },
+            ).map_err(|error| error.to_string())? {
+                return Err("Human legacy history refresh retirement was not durably stored".into());
+            }
+            // Retire first: a crash here leaves legacy+null, so reopening
+            // repeats origin qualification instead of trusting a partial
+            // version1 watermark under the obsolete larger sweep ceiling.
+            let expected_refresh = if retired { Some(serde_json::Value::Null) } else { refresh_checkpoint.clone() };
+            if !owner.set_metadata_if_unchanged_with_admission(
+                "humanHistoryCoverage", Some(legacy),
+                serde_json::json!({"version":1,"afterId":after_id,"complete":complete}),
+                |metadata| {
+                    self.admit_human_history_refresh(metadata, conversation_id, &peer, client, request_credential)?;
+                    if metadata.get("humanHistoryRefresh") != expected_refresh.as_ref() {
+                        return Err("Human legacy history refresh changed before qualification".into());
+                    }
+                    Ok(())
+                },
+            ).map_err(|error| error.to_string())? {
+                return Err("Human history coverage checkpoint was not durably stored".into());
+            }
+            legacy_checkpoint = None;
+            Ok(())
+        };
         let mut after = if complete && covered < PAGE_LIMIT as u64 { 0 } else { covered };
         let mut rejected: Option<String> = None;
         let mut reached_end = false;
         let mut pages_used = 0;
-        for _ in 0..MAX_GAP_PAGES {
+        // Once old history exists, reserve one of the same 32 requests even
+        // when continuous new arrivals fill the entire catch-up allowance.
+        let gap_budget = MAX_GAP_PAGES - usize::from(refresh_window.is_some());
+        for _ in 0..gap_budget {
             pages_used += 1;
+            let request_credential = client.request_credential_fingerprint()?;
             let page = client.list_direct_messages_after_for_user(&peer, &local_human_id, after, PAGE_LIMIT)?;
             if client.identity()?.user_id != local_human_id {
                 return Err("Fabushi native messaging credential changed Human account".into());
@@ -2616,7 +2763,7 @@ impl ProductionSessionWorkers {
                 return Err("Fabushi Human history page exceeded the 200-message response budget".into());
             }
             if page.is_empty() {
-                if rejected.is_none() { Self::store_human_coverage(&owner, after.max(covered), true)?; }
+                if rejected.is_none() { store_coverage(after.max(covered), true, &request_credential)?; }
                 reached_end = true;
                 break;
             }
@@ -2644,14 +2791,91 @@ impl ProductionSessionWorkers {
                 let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
                 Self::update_human_replay_snapshot(&mut snapshot, settled);
             }
-            if rejected.is_none() { Self::store_human_coverage(&owner, last, is_last)?; }
+            if rejected.is_none() { store_coverage(last, is_last, &request_credential)?; }
             after = last;
             if is_last { reached_end = true; break; }
         }
-        // A 32-page window is an absolute request budget, including the last
-        // short or empty page. A latest-snapshot refresh may use only spare capacity.
+        if rejected.is_none() {
+            if let Some((refresh_after, ceiling_id)) = refresh_window {
+                pages_used += 1;
+                let refresh_credential = client.request_credential_fingerprint()?;
+                let page = client.list_direct_messages_after_for_user(
+                    &peer, &local_human_id, refresh_after, PAGE_LIMIT,
+                )?;
+                if client.identity()?.user_id != local_human_id {
+                    return Err("Fabushi native messaging credential changed Human account".into());
+                }
+                if page.len() > PAGE_LIMIT {
+                    return Err("Fabushi Human history page exceeded the 200-message response budget".into());
+                }
+                let mut snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+                let known = snapshot.iter().filter_map(|entry| {
+                    let remote_id = entry.get("remoteMessageId").and_then(serde_json::Value::as_str)?;
+                    (entry.get("id").and_then(serde_json::Value::as_str)
+                        == Some(format!("human-server-message:{remote_id}").as_str()))
+                        .then(|| remote_id.to_string())
+                }).collect::<BTreeSet<_>>();
+                let mut last = refresh_after;
+                let mut accepted = Vec::new();
+                // Validate the complete response before fetching resources or
+                // touching any row. The API has no upper-bound query; rows
+                // beyond this cycle's ceiling are valid but cannot be applied
+                // by the refresh route or extend its checkpoint.
+                for remote in &page {
+                    let remote_id = fabushi_message_identity_text(&remote.id)?;
+                    let id = remote_id.parse::<u64>()
+                        .map_err(|_| "remote Human history id is not a positive integer".to_string())?;
+                    if id <= last || id > MAX_SAFE_ID {
+                        return Err("Fabushi Human history afterId did not advance monotonically".into());
+                    }
+                    last = id;
+                    self.validate_remote_human_message(remote, &local_human_id, &peer, &snapshot)?;
+                    if id <= ceiling_id && known.contains(remote_id.as_str()) {
+                        accepted.push(remote);
+                    }
+                }
+                let admit_refresh = |metadata: &serde_json::Value| self.admit_human_history_refresh(
+                    metadata, conversation_id, &peer, client, &refresh_credential,
+                );
+                for remote in accepted {
+                    self.validate_remote_human_message(remote, &local_human_id, &peer, &snapshot)?;
+                    // Recheck before any attachment work after a preceding
+                    // row's event, then admit again inside the row write lock.
+                    admit_refresh(&owner.read_metadata().map_err(|error| error.to_string())?)?;
+                    let settled = self.materialize_remote_human_message_with_snapshot_and_admission(
+                        &owner, remote, &snapshot, Some(&admit_refresh),
+                    )?;
+                    Self::update_human_replay_snapshot(&mut snapshot, settled);
+                }
+                // Writes precede the checkpoint. A crash or failed CAS repeats
+                // this page; unchanged canonical rows publish no new event.
+                // A successful empty/short page also completes a sparse range;
+                // absence never means deleting an existing local row.
+                let next_after = if page.len() < PAGE_LIMIT || last >= ceiling_id {
+                    ceiling_id
+                } else {
+                    last
+                };
+                // Empty or entirely out-of-range pages do not enter the
+                // materializer, so they still need current owner admission
+                // before their checkpoint can mark a range as refreshed.
+                if !owner.set_metadata_if_unchanged_with_admission(
+                    "humanHistoryRefresh", refresh_checkpoint.as_ref(),
+                    serde_json::json!({"afterId":next_after,"ceilingId":ceiling_id}),
+                    |metadata| admit_refresh(metadata),
+                ).map_err(|error| error.to_string())? {
+                    return Err("Human history refresh checkpoint was not durably stored".into());
+                }
+            }
+        }
+        // Gap, old-history refresh and the latest snapshot share one absolute
+        // request budget, including short/empty pages. The latest response may
+        // carry a newer summary for an ID just seen by a preceding request.
         if reached_end && rejected.is_none() && pages_used < MAX_GAP_PAGES && after >= PAGE_LIMIT as u64 {
             let latest = client.list_direct_messages_for_user(&peer, &local_human_id, None, PAGE_LIMIT)?;
+            if latest.len() > PAGE_LIMIT {
+                return Err("Fabushi Human history page exceeded the 200-message response budget".into());
+            }
             let mut snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
                 .and_then(serde_json::Value::as_str).map(str::to_string)).collect::<BTreeSet<_>>();
@@ -3067,18 +3291,16 @@ impl ProductionSessionWorkers {
         Ok((account, issuer))
     }
 
-    /// Scan even now-ineligible source records, so removing a conversation
-    /// cannot free its old request ID for another source under one account.
-    fn find_forward_request(
-        &self, account: &str, issuer: &str, request_id: &str,
-    ) -> Result<Option<HumanForwardBatch>, String> {
+    /// Internal recovery must retain sources hidden from the authorized UI
+    /// list, so their pending journals can record a durable policy refusal.
+    fn persisted_human_conversation_ids(&self) -> Result<Vec<String>, String> {
         let root = get_native_conversations_root(&self.agents_root);
         let entries = match fs::read_dir(root) {
             Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
             Err(error) => return Err(error.to_string()),
         };
-        let mut matched: Option<HumanForwardBatch> = None;
+        let mut ids = Vec::new();
         for entry in entries {
             let entry = entry.map_err(|error| error.to_string())?;
             if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
@@ -3087,7 +3309,24 @@ impl ProductionSessionWorkers {
             let id = entry.file_name().to_string_lossy().into_owned();
             let db_path = get_native_conversation_db_path(&self.agents_root, &id)
                 .map_err(|error| error.to_string())?;
-            if !db_path.is_file() { continue; }
+            match fs::metadata(&db_path) {
+                Ok(metadata) if metadata.is_file() => ids.push(id),
+                Ok(_) => {},
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error.to_string()),
+            }
+        }
+        ids.sort();
+        Ok(ids)
+    }
+
+    /// Scan even now-ineligible source records, so removing a conversation
+    /// cannot free its old request ID for another source under one account.
+    fn find_forward_request(
+        &self, account: &str, issuer: &str, request_id: &str,
+    ) -> Result<Option<HumanForwardBatch>, String> {
+        let mut matched: Option<HumanForwardBatch> = None;
+        for id in self.persisted_human_conversation_ids()? {
             let owner = self.open_human_conversation_db_owner(&id)?;
             for batch in load_forward_batches(&owner, &id)? {
                 if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
@@ -3227,23 +3466,9 @@ impl ProductionSessionWorkers {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
         let (account, issuer) = self.human_forward_scope()?;
         // Unlike the visible roster, recovery cannot omit revoked sources or
-        // silently skip corrupt stored metadata. Reuse the strict source scan
-        // semantics of find_forward_request, without filtering by request ID.
-        let root = get_native_conversations_root(&self.agents_root);
-        let entries = match fs::read_dir(root) {
-            Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-            Err(error) => return Err(error.to_string()),
-        };
-        for entry in entries {
-            let entry = entry.map_err(|error| error.to_string())?;
-            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
-                continue;
-            }
-            let source_id = entry.file_name().to_string_lossy().into_owned();
-            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
-                .map_err(|error| error.to_string())?;
-            if !db_path.is_file() { continue; }
+        // silently skip corrupt stored metadata. Share the strict source scan
+        // with find_forward_request, without filtering by request ID.
+        for source_id in self.persisted_human_conversation_ids()? {
             let owner = self.open_human_conversation_db_owner(&source_id)?;
             for batch in load_forward_batches(&owner, &source_id)? {
                 if batch.account_id != account || batch.issuer != issuer
@@ -4040,6 +4265,9 @@ impl ProductionSessionWorkers {
         if Self::human_reaction_remote_identity(&current)? != remote_id {
             return Err("persisted Human reaction remote identity changed".into());
         }
+        // Keep the original dispatch credential through any later SQLite
+        // owner/write-lock wait, rather than adopting a post-response refresh.
+        let request_credential_fingerprint = client.request_credential_fingerprint()?;
         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
         Self::validate_remote_human_reactions(&remote)?;
         // HTTP success is not settlement: the service must confirm the requested
@@ -4051,14 +4279,17 @@ impl ProductionSessionWorkers {
         if observed_active != active {
             return Err("Fabushi Human reaction response did not confirm the desired state".into());
         }
-        let projected = Self::project_remote_human_reactions(&remote, &peer);
-        let mut next = owner.get_transcript_entry_by_id(entry_id)
+        // Retain any unrelated fields written while HTTP was in flight. The
+        // database commit below compares this exact row and the original intent.
+        let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
-        Self::validate_human_reaction_target(&next, author, &peer)?;
-        if Self::human_reaction_remote_identity(&next)? != remote_id {
+        Self::validate_human_reaction_target(&current, author, &peer)?;
+        if Self::human_reaction_remote_identity(&current)? != remote_id {
             return Err("persisted Human reaction remote identity changed".into());
         }
+        let projected = Self::project_remote_human_reactions(&remote, &peer);
+        let mut next = current.clone();
         let is_peer = next.get("authorId").and_then(serde_json::Value::as_str) != Some(author);
         let object = next.as_object_mut()
             .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
@@ -4070,14 +4301,13 @@ impl ProductionSessionWorkers {
         object.insert("remoteReactions".into(), serde_json::to_value(&remote)
             .map_err(|error| format!("remote Human reactions could not be projected: {error}"))?);
         object.insert("reactions".into(), serde_json::Value::Array(projected));
-        let settled = owner.update_transcript_entry(entry_id, &next)
+        owner.settle_human_reaction_if_unchanged(
+            entry_id, &current, &intent, &next,
+            || client.ensure_request_credential_fingerprint(&request_credential_fingerprint),
+        )
             .map_err(|error| error.to_string())?
-            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
-        if !owner.set_metadata("humanReactionIntent", serde_json::Value::Null)
-            .map_err(|error| error.to_string())? {
-            return Err("Human reaction intent could not be durably acknowledged".into());
-        }
-        Ok(Some(settled))
+            .map(Some)
+            .ok_or_else(|| "Human reaction settlement lost its durable intent or target".to_string())
     }
 
     pub fn toggle_human_message_reaction(
@@ -4601,6 +4831,329 @@ mod human_send_settlement_credential_tests {
             worker.join().expect("settlement worker");
             server.join().expect("settlement HTTP fixture");
             fs::remove_dir_all(root).expect("remove settlement fixture");
+        }
+    }
+
+    #[test]
+    fn shipping_human_settlement_credential_reaction_sqlite_write_wait_fences_rotation_and_revocation() {
+        for change in ["rotated", "removed", "unchanged"] {
+            let root = std::env::temp_dir().join(format!("fabushi-reaction-admission-{}", Uuid::new_v4()));
+            fs::create_dir_all(&root).expect("reaction admission fixture directory");
+            let credential_path = root.join("credential.json");
+            let db_path = root.join("store.db");
+            let issuer = "http://127.0.0.1:4200";
+            write_credential(&credential_path, issuer, "reaction-dispatch-token");
+            let client = FabushiNativeMessagingClient::new(issuer, &credential_path)
+                .expect("real Native credential owner");
+            let fingerprint = client.request_credential_fingerprint().expect("dispatch fingerprint");
+            let owner = Arc::new(SandAgentDb::open(&db_path, 15_000).expect("reaction SQLite owner"));
+            let entry_id = format!("human-server-message:{}", Uuid::new_v4());
+            let original = serde_json::json!({
+                "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+                "authorId":"2","content":"retain the whole reaction target","timestampMs":1000.0,
+                "delivery":"sent","remoteMessageId":"890351","remoteReactions":[],"reactions":[],
+                "remoteReadAt":"2026-10-05T01:00:18Z","retainedLocalMetadata":{"keep":true}
+            });
+            let intent = serde_json::json!({
+                "entryId":entry_id,"remoteMessageId":"890351","emoji":"👍",
+                "active":true,"localHumanId":"1"
+            });
+            let mut next = original.clone();
+            next["remoteReactions"] = serde_json::json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
+            next["reactions"] = serde_json::json!([{"emoji":"👍","by":"me"}]);
+            assert!(owner.append_transcript_entry(&original).expect("persist reaction target"));
+            assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("persist reaction intent"));
+            assert!(owner.set_metadata("retainedAdmissionMetadata", serde_json::json!({"keep":true}))
+                .expect("persist unrelated metadata"));
+            let original_metadata = owner.read_metadata().expect("read original complete metadata");
+            let mut settled_metadata = original_metadata.clone();
+            settled_metadata["humanReactionIntent"] = serde_json::Value::Null;
+
+            let events = Arc::new(Mutex::new(Vec::new()));
+            let captured = Arc::clone(&events);
+            let observed_entry = entry_id.clone();
+            let subscription = crate::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+                let target = mutation.get("entryId").and_then(serde_json::Value::as_str) == Some(observed_entry.as_str())
+                    || mutation.get("entries").and_then(serde_json::Value::as_array)
+                        .is_some_and(|entries| entries.iter().any(|entry| entry["id"].as_str() == Some(observed_entry.as_str())));
+                if target {
+                    captured.lock().expect("capture reaction admission event")
+                        .push(serde_json::Value::Object(mutation.clone()));
+                }
+            });
+
+            // The full HTTP/body boundary is covered by the shipping Human
+            // reaction cases. This case controls the later real SQLite writer
+            // wait with the same credential guard used by production replay.
+            let competing_writer = rusqlite::Connection::open(&db_path).expect("independent SQLite writer");
+            competing_writer.execute_batch("BEGIN IMMEDIATE").expect("hold SQLite write reservation");
+            let (started, wait_started) = mpsc::sync_channel(1);
+            let (admitted, wait_admitted) = mpsc::sync_channel(1);
+            let (finished, wait_finished) = mpsc::sync_channel(1);
+            let worker_owner = Arc::clone(&owner);
+            let worker_entry_id = entry_id.clone();
+            let worker_original = original.clone();
+            let worker_intent = intent.clone();
+            let worker_next = next.clone();
+            let probe_path = db_path.clone();
+            let worker = thread::spawn(move || {
+                started.send(()).expect("announce real SQLite settlement attempt");
+                let result = worker_owner.settle_human_reaction_if_unchanged(
+                    &worker_entry_id, &worker_original, &worker_intent, &worker_next,
+                    || {
+                        admitted.send(()).expect("observe credential admission after the write lock");
+                        // With the competing writer released, this failed probe
+                        // proves that settlement itself already owns the write
+                        // reservation when it admits the original credential.
+                        let probe = rusqlite::Connection::open(&probe_path).expect("independent admission probe");
+                        probe.busy_timeout(Duration::from_millis(0)).expect("nonblocking admission probe");
+                        let busy = probe.execute_batch("BEGIN IMMEDIATE")
+                            .expect_err("credential admission must run inside the write transaction");
+                        assert!(crate::storage::sqlite_busy::is_sqlite_busy_error(&busy));
+                        client.ensure_request_credential_fingerprint(&fingerprint)
+                    },
+                ).map_err(|error| error.to_string());
+                finished.send(result).expect("observe SQLite settlement outcome");
+            });
+            wait_started.recv_timeout(Duration::from_secs(15)).expect("settlement worker started");
+            assert!(matches!(wait_admitted.recv_timeout(Duration::from_millis(100)), Err(mpsc::RecvTimeoutError::Timeout)),
+                "credential admission cannot precede acquisition of the held SQLite write lock");
+            match change {
+                "rotated" => write_credential(&credential_path, issuer, "rotated-during-sqlite-wait"),
+                "removed" => fs::remove_file(&credential_path).expect("revoke credential during SQLite wait"),
+                "unchanged" => (),
+                _ => unreachable!(),
+            }
+            competing_writer.execute_batch("ROLLBACK").expect("release competing SQLite writer");
+            wait_admitted.recv_timeout(Duration::from_secs(15)).expect("admission follows acquired SQLite write lock");
+            let result = wait_finished.recv_timeout(Duration::from_secs(15)).expect("bounded reaction settlement result");
+            worker.join().expect("reaction settlement worker");
+            drop(competing_writer);
+
+            if change == "unchanged" {
+                assert_eq!(result.expect("unchanged credential can settle after the write wait"), Some(next.clone()));
+                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).expect("settled reaction row"), Some(next.clone()));
+                assert_eq!(owner.read_metadata().expect("settled complete metadata"), settled_metadata);
+            } else {
+                let error = result.expect_err("obsolete dispatch credential must not settle after the write wait");
+                assert!(error.starts_with("agent database admission rejected:"), "wrong admission error: {error}");
+                assert!(error.contains("credential"), "credential cause must survive admission: {error}");
+                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).expect("unmodified complete reaction row"), Some(original.clone()));
+                assert_eq!(owner.read_metadata().expect("unmodified complete metadata"), original_metadata);
+                assert!(events.lock().expect("reaction events").is_empty(), "rejected admission publishes no target mutation");
+            }
+            owner.close(false);
+            drop(owner);
+
+            let reopened = SandAgentDb::open(&db_path, 15_000).expect("reopen reaction owner");
+            if change != "unchanged" {
+                assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).expect("reopened untouched row"), Some(original.clone()));
+                assert_eq!(reopened.read_metadata().expect("reopened outstanding intent and metadata"), original_metadata);
+                write_credential(&credential_path, issuer, "fresh-recovery-token");
+                let recovered_client = FabushiNativeMessagingClient::new(issuer, &credential_path)
+                    .expect("reopened Native credential owner");
+                let recovered_fingerprint = recovered_client.request_credential_fingerprint().expect("new dispatch fingerprint");
+                assert_eq!(reopened.settle_human_reaction_if_unchanged(
+                    &entry_id, &original, &intent, &next,
+                    || recovered_client.ensure_request_credential_fingerprint(&recovered_fingerprint),
+                ).expect("current credential can recover the same desired reaction"), Some(next.clone()));
+            }
+            assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).expect("durable settled reaction row"), Some(next.clone()));
+            assert_eq!(reopened.read_metadata().expect("durable settled metadata"), settled_metadata);
+            let target_events = events.lock().expect("settled reaction events").clone();
+            assert_eq!(target_events.len(), 1, "only successful current-credential settlement publishes the row");
+            assert_eq!(target_events[0]["kind"], "entries-upserted");
+            assert_eq!(target_events[0]["entries"], serde_json::json!([next]));
+            reopened.close(false);
+            drop(reopened);
+            subscription.unsubscribe();
+            fs::remove_dir_all(root).expect("remove reaction admission fixture");
+        }
+    }
+
+    #[test]
+    fn shipping_human_settlement_credential_history_sqlite_write_wait_fences_rows_and_cursors() {
+        for (lane_index, lane) in ["row", "cursor"].into_iter().enumerate() {
+            for (case, change) in ["rotated", "removed", "unchanged", "stale", "equal-rotated", "equal-unchanged", "membership"].into_iter().enumerate() {
+                let root = std::env::temp_dir().join(format!("fabushi-history-admission-{}", Uuid::new_v4()));
+                let agents_root = root.join("agents");
+                fs::create_dir_all(&agents_root).expect("history admission fixture directory");
+                let credential_path = root.join("credential.json");
+                let issuer = "http://127.0.0.1:4200";
+                write_credential(&credential_path, issuer, "history-dispatch-token");
+                let client = Arc::new(FabushiNativeMessagingClient::new(issuer, &credential_path)
+                    .expect("real Native credential owner"));
+                let fingerprint = client.request_credential_fingerprint().expect("history request fingerprint");
+                let runtime = Arc::new(ProductionSessionWorkers::with_agents_root_identity_messaging_and_dependencies(
+                    &agents_root, 15_000, Some("1".into()), Some(Arc::clone(&client)), true, None,
+                    Arc::new(|| None), Arc::new(MemoryService::new(agents_root.clone())),
+                ));
+                let conversation = runtime.create_human_conversation("2", "Peer").expect("real Human conversation")["id"]
+                    .as_str().expect("conversation ID").to_string();
+                let owner = runtime.open_human_conversation_db_owner(&conversation).expect("real Human SQLite owner");
+                let db_path = owner.db_path().to_path_buf();
+                let remote_id = 970100 + lane_index as u64 * 100 + case as u64;
+                let entry_id = format!("human-server-message:{remote_id}");
+                let original = serde_json::json!({
+                    "id":entry_id,"kind":"message","role":"user","authorKind":"human","authorId":"2",
+                    "content":"retained covered row","timestampMs":1000.0,"delivery":"sent",
+                    "remoteMessageId":remote_id.to_string(),"remoteReactions":[],"reactions":[],
+                    "retainedLocalMetadata":{"keep":true},"forwardContext":{"preserve":true}
+                });
+                let equal = change.starts_with("equal-");
+                let row_lane = lane == "row";
+                let mut next = original.clone();
+                if !equal {
+                    next["remoteReactions"] = serde_json::json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
+                    next["reactions"] = serde_json::json!([{"emoji":"👍","by":"2"}]);
+                }
+                let checkpoint = serde_json::json!({"afterId":remote_id - 1,"ceilingId":remote_id});
+                let next_checkpoint = if equal { checkpoint.clone() }
+                    else { serde_json::json!({"afterId":remote_id,"ceilingId":remote_id}) };
+                let intent = serde_json::json!({"entryId":entry_id,"remoteMessageId":remote_id.to_string(),
+                    "emoji":"🔥","active":false,"localHumanId":"1"});
+                assert!(owner.append_transcript_entry(&original).expect("persist known Human row"));
+                assert!(owner.set_metadata("humanHistoryRefresh", checkpoint.clone()).expect("persist refresh cursor"));
+                assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("preserve unrelated desired-state intent"));
+                assert!(owner.set_metadata("retainedAdmissionMetadata", serde_json::json!({"keep":true})).unwrap());
+                let original_metadata = owner.read_metadata().expect("complete metadata before writer wait");
+
+                let events = Arc::new(Mutex::new(Vec::new()));
+                let captured = Arc::clone(&events);
+                let observed_entry = entry_id.clone();
+                let event_probe_path = db_path.clone();
+                let subscription = crate::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+                    let target = mutation.get("entries").and_then(serde_json::Value::as_array)
+                        .is_some_and(|entries| entries.iter().any(|entry| entry["id"].as_str() == Some(observed_entry.as_str())));
+                    if !target { return; }
+                    let probe = rusqlite::Connection::open(&event_probe_path).expect("event publication SQLite probe");
+                    probe.busy_timeout(Duration::from_millis(0)).expect("nonblocking event probe");
+                    probe.execute_batch("BEGIN IMMEDIATE; ROLLBACK")
+                        .expect("row notification follows commit and release of the SQLite write reservation");
+                    captured.lock().expect("capture admitted history event")
+                        .push(serde_json::Value::Object(mutation.clone()));
+                });
+                let competing_writer = rusqlite::Connection::open(&db_path).expect("independent actual SQLite writer");
+                competing_writer.execute_batch("BEGIN IMMEDIATE").expect("hold writer before guarded operation");
+                let (started, wait_started) = mpsc::sync_channel(1);
+                let (admitted, wait_admitted) = mpsc::sync_channel(1);
+                let (finished, wait_finished) = mpsc::sync_channel(1);
+                let worker_owner = Arc::clone(&owner);
+                let worker_runtime = Arc::clone(&runtime);
+                let worker_client = Arc::clone(&client);
+                let worker_conversation = conversation.clone();
+                let worker_entry = entry_id.clone();
+                let worker_original = original.clone();
+                let worker_next = next.clone();
+                let worker_checkpoint = checkpoint.clone();
+                let worker_next_checkpoint = next_checkpoint.clone();
+                let probe_path = db_path.clone();
+                let worker = thread::spawn(move || {
+                    started.send(()).expect("announce guarded history SQLite write");
+                    let admit = |metadata: &serde_json::Value| {
+                        admitted.send(()).expect("observe post-lock history admission");
+                        let probe = rusqlite::Connection::open(&probe_path).expect("independent admission probe");
+                        probe.busy_timeout(Duration::from_millis(0)).expect("nonblocking admission probe");
+                        let busy = probe.execute_batch("BEGIN IMMEDIATE")
+                            .expect_err("history admission must run while the guarded operation owns the write reservation");
+                        assert!(crate::storage::sqlite_busy::is_sqlite_busy_error(&busy));
+                        worker_runtime.admit_human_history_refresh(
+                            metadata, &worker_conversation, "2", &worker_client, &fingerprint,
+                        )
+                    };
+                    let result = if row_lane {
+                        worker_owner.update_transcript_entry_if_unchanged_with_admission(
+                            &worker_entry, &worker_original, &worker_next, admit,
+                        ).map(|row| row.is_some())
+                    } else {
+                        worker_owner.set_metadata_if_unchanged_with_admission(
+                            "humanHistoryRefresh", Some(&worker_checkpoint), worker_next_checkpoint, admit,
+                        )
+                    }.map_err(|error| error.to_string());
+                    finished.send(result).expect("observe guarded history write outcome");
+                });
+                wait_started.recv_timeout(Duration::from_secs(15)).expect("history worker started");
+                assert!(matches!(wait_admitted.recv_timeout(Duration::from_millis(100)), Err(mpsc::RecvTimeoutError::Timeout)),
+                    "{lane}/{change}: admission cannot run before the held writer releases SQLite");
+                let mut durable_row = original.clone();
+                let mut durable_metadata = original_metadata.clone();
+                match change {
+                    "rotated" | "equal-rotated" => write_credential(&credential_path, issuer, "rotated-during-history-sqlite-wait"),
+                    "removed" => fs::remove_file(&credential_path).expect("revoke credential while history waits"),
+                    "stale" if row_lane => {
+                        durable_row["retainedLocalMetadata"] = serde_json::json!({"changedByAnotherWriter":true});
+                        assert_eq!(competing_writer.execute("UPDATE transcript_entries SET entry = ?1 WHERE id = ?2",
+                            rusqlite::params![durable_row.to_string(), entry_id]).unwrap(), 1);
+                    },
+                    "stale" => durable_metadata["humanHistoryRefresh"] = next_checkpoint.clone(),
+                    "membership" => durable_metadata["participantIds"] = serde_json::json!(["2", "3"]),
+                    "unchanged" | "equal-unchanged" => (),
+                    _ => unreachable!(),
+                }
+                if durable_metadata != original_metadata {
+                    let encoded = serde_json::to_vec(&durable_metadata).unwrap().iter()
+                        .map(|byte| format!("{byte:02x}")).collect::<String>();
+                    assert_eq!(competing_writer.execute("UPDATE kv SET value = ?1 WHERE key = 'metadata'",
+                        rusqlite::params![encoded]).unwrap(), 1);
+                }
+                competing_writer.execute_batch(if change == "stale" || change == "membership" { "COMMIT" } else { "ROLLBACK" })
+                    .expect("release competing writer after the controlled state change");
+                let result = wait_finished.recv_timeout(Duration::from_secs(15)).expect("guarded write terminates after release");
+                worker.join().expect("history write worker");
+                drop(competing_writer);
+                if change == "stale" {
+                    assert_eq!(result.expect("stale row or key is a refused CAS"), false, "{lane}");
+                    assert!(!matches!(wait_admitted.try_recv(), Ok(())), "stale state must not run its admission callback");
+                } else {
+                    wait_admitted.recv_timeout(Duration::from_secs(15)).expect("admission happens after acquiring the real write lock");
+                    if matches!(change, "unchanged" | "equal-unchanged") {
+                        assert!(result.expect("current credential admits even an equal row or cursor"), "{lane}");
+                        if row_lane { durable_row = next.clone(); }
+                        else { durable_metadata["humanHistoryRefresh"] = next_checkpoint.clone(); }
+                    } else {
+                        let error = result.expect_err("changed credential or membership cannot authorize a post-wait write");
+                        assert!(error.starts_with("agent database admission rejected:"), "{lane}/{change}: {error}");
+                        assert!(error.contains(if change == "membership" { "membership changed" } else { "credential" }),
+                            "{lane}/{change}: {error}");
+                    }
+                }
+                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).unwrap(), Some(durable_row.clone()), "{lane}/{change}");
+                assert_eq!(owner.read_metadata().unwrap(), durable_metadata, "{lane}/{change}: preserve the complete metadata document");
+                let changed_row = row_lane && !equal && change == "unchanged";
+                assert_eq!(events.lock().unwrap().len(), usize::from(changed_row), "{lane}/{change}: refused/equal writes emit no row event");
+                runtime.shutdown(); drop(owner);
+
+                let reopened = SandAgentDb::open_conversation_store(&db_path, 15_000).expect("reopen the same Human SQLite owner");
+                assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).unwrap(), Some(durable_row.clone()));
+                assert_eq!(reopened.read_metadata().unwrap(), durable_metadata);
+                if matches!(change, "rotated" | "removed" | "equal-rotated") {
+                    write_credential(&credential_path, issuer, "current-history-recovery-token");
+                    let recovered_client = FabushiNativeMessagingClient::new(issuer, &credential_path).unwrap();
+                    let recovered_fingerprint = recovered_client.request_credential_fingerprint().unwrap();
+                    let admit = |metadata: &serde_json::Value| runtime.admit_human_history_refresh(
+                        metadata, &conversation, "2", &recovered_client, &recovered_fingerprint,
+                    );
+                    if row_lane {
+                        assert_eq!(reopened.update_transcript_entry_if_unchanged_with_admission(
+                            &entry_id, &original, &next, admit,
+                        ).expect("fresh credential recovers the unchanged expected row"), Some(next.clone()));
+                        durable_row = next;
+                    } else {
+                        assert!(reopened.set_metadata_if_unchanged_with_admission(
+                            "humanHistoryRefresh", Some(&checkpoint), next_checkpoint.clone(), admit,
+                        ).expect("fresh credential recovers the unchanged expected cursor"));
+                        durable_metadata["humanHistoryRefresh"] = next_checkpoint;
+                    }
+                }
+                assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).unwrap(), Some(durable_row));
+                assert_eq!(reopened.read_metadata().unwrap(), durable_metadata);
+                assert_eq!(reopened.get_metadata("humanReactionIntent").unwrap(), Some(intent), "refresh never retires a desired-state intent");
+                let expected_events = usize::from(row_lane && !equal && !matches!(change, "stale" | "membership"));
+                assert_eq!(events.lock().unwrap().len(), expected_events, "{lane}/{change}: only a current-credential changed row publishes once");
+                reopened.close(false); drop(reopened); subscription.unsubscribe();
+                drop(runtime); drop(client);
+                fs::remove_dir_all(root).expect("remove history admission fixture");
+            }
         }
     }
 

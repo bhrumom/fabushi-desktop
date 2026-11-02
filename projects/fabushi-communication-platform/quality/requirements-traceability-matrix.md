@@ -69,6 +69,42 @@ was TEST_FLAW, corrected in concurrent106bb and preserved. Backend PR137 stays
 read-only; full source/legal, real services, signed supported-platform packages,
 full Bot/quality/upgrade/rollback and independent ACCEPT remain open.
 
+## Round5 caption and covered-history refresh — NMR-R5-03/04
+
+| Requirement | Existing owner and production input | Authored oracle |
+| --- | --- | --- |
+| NMR-R5-03 / NMR-AC-R5-03 | Production Human transcript projector → selected TranscriptMessage → ForwardMessageDialog → existing Coordinator/Session forward command and journal | No caption option and false flag for plain text or blank-caption media; independent sender selection; captioned-media coupling; immutable retry and source replacement guards. Original16 plus3 actual Chromium cases require19 at the containing H. |
+| NMR-R5-04 / NMR-AC-R5-04 | Existing Human open/reconnect/focus → Coordinator Session sync → native afterId API → same SandAgentDb materializer/events and separate persisted refresh cursor | Covered old reaction/read state remains reachable under continuous new traffic; fixed upper bound, one reserved request within32, row-before-cursor CAS, failure/restart without skipped pages or duplicate events. Six new real Host cases plus both R5 reaction cases and all63 concurrent Human cases require71 at combined H; post-lock row/activity/cursor admission, legacy coverage+refresh requalification, private5/creation12/storage3/resource3/journal12 and all current gates remain required. |
+
+Exact434/run41525525126 actually passed Human56/private5/resource3/sharebox1/
+journal12/Agent4/forwardHTTP1 and UI18/5/Chromium19; source run41525525144
+passed157/schema37 and rejected accepted mode. Full logs and artifacts bind to434.
+Shipping remained queued. The combined current owner requires its own Human71
+and complete inherited gates; these results grant no full source/product/
+service/platform/Bot/independent ACCEPT.
+
+## Current round5 reaction recovery — NMR-R5-01/02
+
+Receipt: projects/telegram-desktop-rust/evidence/round5-recovery-resume-20261102.json.
+Exact68 and exact59 are executed prerequisites. Exact25 reconciliation executed Human50/
+private4, resource3/sharebox1/journal12/Agent4/forwardHTTP1 with zero failed/ignored;
+the current combined batch retains them within Human71/private5/
+journal12 and requires all affected current Actions.
+Existing source reviews, prior evidence and independent acceptance are retained.
+
+| Requirement | Existing production owner | Authored behavioral oracle |
+| --- | --- | --- |
+| NMR-R5-01 / NMR-AC-R5-01 | replay_human_reaction_intent → SandAgentDb::settle_human_reaction_if_unchanged | Real cleanup-trigger failure rolls back row+intent with zero target events; reopen settles once; equal legacy row retires intent without duplicate publication. |
+| NMR-R5-01 / NMR-AC-R5-01 | Same SQLite owner and Native credential fingerprint | Replaced intent during blocked HTTP refuses old acknowledgement. Token rotation/revocation during an independent SQLite writer lock refuses before first write; unchanged credentials recover. |
+| NMR-R5-02 / NMR-AC-R5-02 | persisted_human_conversation_ids → current authorization/journal CAS | Ordinary sync records denial before explicit retry, keeps excluded source absent from UI and preserves completed batches; non-NotFound storage errors propagate. |
+
+No new source coverage or ACCEPT is asserted. Fixed U, sole inventory/ledger/
+RTM, existing message authority, and all final service/platform/Bot gates remain.
+
+Concurrent936 parent/child reply repair and dispatching projection remain intact, including all three added Human cases and Transcript18. This batch adds only its two Human reaction cases.
+
+Qualification branch: checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8. Parent exact76a84e8 retains current service25MiB resource bounds/resource3 and real CLI/gateway process4. Shared checkpoint integration is pending; existing workflows qualify this frozen branch without disabling any gate.
+
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
 Fixed U unchanged; integration base `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`.

@@ -66,6 +66,24 @@ Execution and remaining gates are recorded in
 `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
 All executable validation is GitHub Actions at the containing H.
 
+## Round5 zero-caption product branch
+
+The complete fixed-U options pair also encodes captionsCount==0: no caption
+control is constructed and the emitted dropCaptions is false. The prior
+Fabushi pure-text fixture exposed that control; its coupled sender flag could
+therefore suppress origin on a message without any media caption.
+
+NMR-R5-03 now derives availability from the existing selected
+TranscriptMessage.text and attachments, produced by the real Human transcript
+projector. New plain-text or captionless-media requests carry dropCaptions=false;
+independent sender hiding remains available. Captioned media keeps both privacy
+transition directions. First dispatch freezes availability with the existing
+immutable request, preserving partial/ambiguous retries when updated projection props arrive;
+editable source changes clear unavailable caption choices. The three new actual
+Chromium cases and all sixteen existing cases require containing-H execution.
+No additional source review is marked complete, and full caller/eligibility/
+feedback, service, legal and independent acceptance remain open.
+
 ## Historical source review
 
 Status: read-complete / responsibility closure open  

@@ -1,0 +1,237 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 5,
+  "base": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+  "branch": "checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "requirements": [
+    "NMR-R5-03",
+    "NMR-AC-R5-03",
+    "NMR-R5-04",
+    "NMR-AC-R5-04"
+  ],
+  "source_blobs": {
+    "forward_options_box.h": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+    "forward_options_box.cpp": "708ae65e92dc435bf798f8c0220b0547f35ab2bf"
+  },
+  "production_chain": "Host content/attachments -> projectHumanConversationTranscript/projectTranscriptEntry -> existing selected TranscriptMessage -> ForwardMessageDialog -> existing Coordinator/Session forward command -> source journal and target transcript; no owner/wire/data migration change",
+  "new_cases": [
+    "plain text has no caption option and keeps that privacy snapshot through retry",
+    "media without caption text still allows independent sender hiding",
+    "caption availability refresh clears editable choices and source replacement rejects old settlement"
+  ],
+  "original_cases_preserved": 16,
+  "required_chromium": 19,
+  "preserved_required_gates": "Human56/resource3/sharebox1/journal12/Agent4/private5/forwardHTTP1; Transcript18/settlement5/Chromium19; all current AppHost/CLI binary+process4/shipping/Electron/Windows/source gates",
+  "blobs": {
+    ".github/workflows/native-service-contracts.yml": "c78bb1fc4e03046bca6df1bc3ef6d4f79fbacdb2",
+    "docs/specs/fbcp-native-message-reconciliation.md": "25150dc6b58f4b97bcd706775310a569288be621",
+    "frontend/src/production/ForwardMessageDialog.behavior.test.mjs": "d7774593428575b6bebd138f415284e3ad9b9cf7",
+    "frontend/src/production/ForwardMessageDialog.fixture.tsx": "407cd74b7262b0dfa8f8792371d51b40b9e198cd",
+    "frontend/src/production/ForwardMessageDialog.tsx": "84a20da34f2750c28c4adb9e69c4428295333e21",
+    "projects/fabushi-communication-platform/STATUS.md": "1dc417d69ba9e98edfe75c5c5e2f8e15f9383e76",
+    "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md": "c993d53ababff45c5b0bfa89fa3e8fab1b1ec1e0",
+    "projects/telegram-desktop-rust/STATUS.md": "37595953f234b8a78f8cc17f6c96abff618d42e5",
+    "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md": "da795b98663bf5ba6688fd3effb2d7817fc3fbb5",
+    "projects/telegram-desktop-rust/parity-ledger.json": "d8c34cf04f505ed1618daeeb0bbd67ec3f7a8322",
+    "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md": "a2b58389684632c7cf8507a1adfcd5ba11e299d1",
+    "source/host/src/extensions/session/agent_db.rs": "bd4b4c2b1f5ce1cc780999a3dc27fabda982fdbe",
+    "source/host/src/extensions/session/production.rs": "76620c67ba5586a4430fc73b095b40ea72de22d7",
+    "source/host/tests/session_gateway_contract.rs": "080a1de795ac551accac1951563d6ae5fcaffcd9"
+  },
+  "execution_at_freeze": "authored and independently source-reviewed; no local execution; exact containing-H Actions required",
+  "local_executable_validation": "not-run",
+  "prior_exact25": {
+    "sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+    "remote_ref_commit_tree_and_full_12_file_content_hashes_verified": true,
+    "source_run": 41518902209,
+    "source_contract_job": 125529507128,
+    "source_candidate_job": 125529937171,
+    "source_actual": "157 Node,37 schema,0 canonical-ledger errors; candidate consistent but unaccepted and required acceptance-mode refusal",
+    "native_run": 41518902093,
+    "ui_job": 125529507305,
+    "ui_actual": "18 transcript,5 settlement,16 Chromium, actual renderer build, all zero failed/cancelled/skipped",
+    "electron_job": 125529507518,
+    "electron_actual": "10/8/3/16/28/18 plus promotion6, actual Electron build, zero failed/cancelled/skipped",
+    "windows_job": 125529507507,
+    "windows_actual": "actual nativeAPI11, zero fixture executables; owned certificates remaining0",
+    "reconciliation_job": 125529507403,
+    "reconciliation_observation": "completed/success; full log read, all seven required suites actually executed with zero failed/ignored",
+    "shipping_job": 125529506944,
+    "shipping_observation": "in_progress at the later transfer audit; no completed shipping evidence at preparation",
+    "scope": "Old-H observations only; no new caption test or acceptance credit",
+    "observed_at": "2026-11-02T20:56:26Z",
+    "artifacts": [
+      {
+        "id": 13176537667,
+        "name": "native-message-electron-25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "digest": "sha256:9388f51ff45e40ede19c43e1b2c097a5d888d620173a755605878dc845c498a8",
+        "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "run_id": 41518902093
+      },
+      {
+        "id": 13176278283,
+        "name": "windows-update-publisher-25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "digest": "sha256:1454ae7a79570ae09d2e8e284330903aa6552ca078c68838f0f6ffcf3586520d",
+        "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "run_id": 41518902093
+      },
+      {
+        "id": 13175883736,
+        "name": "native-message-ui-25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "digest": "sha256:ab5b43059bce7c622565443e43834a3f5385147538fda7da88cac13b73745cf6",
+        "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "run_id": 41518902093
+      },
+      {
+        "id": 13176911838,
+        "name": "tdrp-source-review-contract-25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "digest": "sha256:9ac3c84a9d180d69be78a644546dfc3d1828d82e230fa0201e03bd86ce176525",
+        "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "run_id": 41518902209
+      },
+      {
+        "id": 13176537601,
+        "name": "tdrp-source-candidate-25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "digest": "sha256:d89a32bf153b1185a02648a9644076248ceba328854c8855f8a3b9f61858ee41",
+        "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "run_id": 41518902209
+      }
+    ],
+    "reconciliation_audit": {
+      "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+      "run_id": 41518902093,
+      "run_attempt": 1,
+      "job_id": 125529507403,
+      "actual_counts": {
+        "human": 50,
+        "resource": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "agent_nonce": 4,
+        "private_credential": 4,
+        "forward_http": 1
+      },
+      "cargo_result_lines": [
+        "2026-11-02T20:54:26.6151790Z test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 87.88s",
+        "2026-11-02T20:55:12.4420800Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 137 filtered out; finished in 0.16s",
+        "2026-11-02T20:55:13.2537680Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 139 filtered out; finished in 0.03s",
+        "2026-11-02T20:55:17.3452730Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 128 filtered out; finished in 3.71s",
+        "2026-11-02T20:55:19.2169920Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "2026-11-02T20:55:20.5056340Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.90s",
+        "2026-11-02T20:55:22.5449090Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.53s"
+      ],
+      "required_r5_cases": [
+        "shipping_human_reaction_atomic_cleanup_failure_and_legacy_half_settlement_recover_after_restart",
+        "shipping_human_reaction_stale_acknowledgement_preserves_replaced_intent_after_restart",
+        "extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_reaction_sqlite_write_wait_fences_rotation_and_revocation"
+      ],
+      "failed_tests": 0,
+      "ignored_tests": 0,
+      "log": {
+        "bytes": 354426,
+        "lines": 4017,
+        "sha256": "808a29399331110c8f993f5b791be81145bedaee7ba7a1e51bee1eaa80c05a7e"
+      },
+      "artifact": {
+        "id": 13177184831,
+        "name": "native-message-reconciliation-25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+        "size_in_bytes": 37555,
+        "digest": "sha256:52c45f0c835164b457d302a75e4db7bfd1b462f8956ba74d37a67a2f6a325085",
+        "workflow_run": {
+          "id": 41518902093,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8",
+          "head_sha": "25fa54fb3a7326d24439e44c2783981f0fa58c9a"
+        }
+      }
+    }
+  },
+  "acceptance": false,
+  "remaining": [
+    "Containing-H Chromium19 and all applicable current workflow execution",
+    "Shared checkpoint CAS integration with all concurrent work and exact combined-H qualification",
+    "Four pending forward callers and full source/generated/external/LFS/legal closure",
+    "Full deployed-service, signed-platform, visual/a11y/security/performance/soak/upgrade/Bot and independent ACCEPT"
+  ],
+  "component_scope": "The real production projector supplies the selected message. Updated-props browser cases exercise component behavior; ProductionRenderer retains its existing selected-message snapshot and this batch adds no background subscription.",
+  "independent_code_review": "Three frontend files read independently: actual projection, first-request privacy flags, immutable retry and source/account/close/unmount guards. No blocking defect found; this is code review, not independent product ACCEPT.",
+  "history_refresh": {
+    "base": "25fa54fb3a7326d24439e44c2783981f0fa58c9a",
+    "source_read_scope": "selected fixed-U updateMessageReactions, read-history and existing-item symbols; no whole-file review or source counters promoted",
+    "owner": "existing ProductionSessionWorkers/SandAgentDb",
+    "state": "separate humanHistoryRefresh afterId/ceilingId metadata; fixed covered upper bound; one reserved request within total32",
+    "durability": "separately atomic expected-row and expected-cursor writes with post-lock credential/owner admission; ordered row commits precede cursor CAS, not a page-atomic transaction",
+    "production_triggers": [
+      "initial Human open",
+      "Coordinator reconnect",
+      "window-focus roster refresh"
+    ],
+    "limits": [
+      "No new background subscription",
+      "Durable readAt does not add visual receipt UI",
+      "No global mutation revision or arbitrary stale-snapshot ordering",
+      "Backend PR137 read-only and deployed afterId acceptance remains open"
+    ],
+    "authored_cases": [
+      "shipping_human_history_refresh_reaches_old_messages_and_resumes_fixed_cycle_after_restart",
+      "shipping_human_history_refresh_reserves_one_request_during_continuous_catchup",
+      "shipping_human_history_refresh_rejects_damaged_cursor_before_history_request",
+      "shipping_human_history_refresh_rejects_invalid_pages_and_permission_without_advancing",
+      "shipping_human_history_refresh_row_and_checkpoint_failures_resume_without_duplicate_events",
+      "shipping_human_history_refresh_sparse_empty_and_ceiling_boundaries_preserve_local_rows"
+    ],
+    "execution": "not-run at preparation; exact containing-H Actions required",
+    "required_human": 56,
+    "previous_human_cases_retained": 50,
+    "modified_existing_case": "shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart: first32 request and all6400 row oracles retained; resume is coverage+sweep+latest with a separate durable cursor",
+    "post_body_review_correction": "Independent review identified credential rotation after an earlier row event or SQLite wait. New row and cursor methods compare expected state and admit the original fingerprint/current transaction metadata after BEGIN IMMEDIATE, before writing; commit/unlock precede notifications.",
+    "required_private_credential": 5,
+    "private_case": "shipping_human_settlement_credential_history_sqlite_write_wait_fences_rows_and_cursors",
+    "private_matrix": "row/cursor x rotated/removed/unchanged/stale/equal-rotated/equal-unchanged/membership; actual SQLite lock, admission busy probe, publication writer probe, full metadata/intent and reopen",
+    "independent_code_review": {
+      "status": "no blocking finding after P1 correction; static only, not independent ACCEPT",
+      "reviewed_blobs": {
+        "source/host/src/extensions/session/production.rs": "76620c67ba5586a4430fc73b095b40ea72de22d7",
+        "source/host/tests/session_gateway_contract.rs": "080a1de795ac551accac1951563d6ae5fcaffcd9",
+        "source/host/src/extensions/session/agent_db.rs": "bd4b4c2b1f5ce1cc780999a3dc27fabda982fdbe"
+      },
+      "required_execution": "Human56/private5/resource3/sharebox1/journal12/Agent4/forwardHTTP1 and all applicable containing-H Actions"
+    },
+    "row_event_negative": "First committed old-row event rotates the same-account bearer; next row has a valid attachment but no resource request or row/cursor write follows; only the earlier legitimate row event remains."
+  },
+  "ledger_transport": {
+    "scope": "Exact ledger blob transport only; not product validation and no migration ref modified by the job",
+    "head_sha": "f04273cc271b857fb10f2ede4acf675eca942b9a",
+    "run_id": 41524958872,
+    "job_id": 125550194804,
+    "conclusion": "success",
+    "actual_receipt": {
+      "repository": "bhrumom/fabushi-desktop",
+      "blob": "d8c34cf04f505ed1618daeeb0bbd67ec3f7a8322",
+      "bytes": 3574560,
+      "source_commit": "f04273cc271b857fb10f2ede4acf675eca942b9a",
+      "run_id": "41524958872",
+      "migration_ref_modified": false
+    },
+    "complete_log": {
+      "bytes": 18224,
+      "lines": 212,
+      "sha256": "cc99f7027fff2e04abf9e78cc237f0b8cd634f9626815d48bd5ddaac8f6f0f0c"
+    },
+    "artifact": {
+      "id": 13177989605,
+      "name": "round5-frozen-ledger-object-f04273cc271b857fb10f2ede4acf675eca942b9a",
+      "size_in_bytes": 345,
+      "digest": "sha256:d64ce8e75b5717007908dc607acad91bc653ac9d4f12d7b6f1a305d9ff3483ad",
+      "workflow_run": {
+        "id": 41524958872,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/tdrp-round5-object-transfer-dfbcda802f2a",
+        "head_sha": "f04273cc271b857fb10f2ede4acf675eca942b9a"
+      }
+    }
+  }
+}

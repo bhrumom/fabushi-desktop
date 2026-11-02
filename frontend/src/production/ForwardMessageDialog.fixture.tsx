@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
+import { projectHumanConversationTranscript } from "./model";
 import { createRuntimeThemeInstaller, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import type { TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import "./production.css";
@@ -32,6 +33,12 @@ const forwardMessage = (input: {
   dropCaptions: boolean;
 }) => controlled<readonly ForwardSettlement[]>("forward", input);
 
+type SourceMessage = {
+  readonly id: string;
+  readonly content: string;
+  readonly attachments?: readonly { path: string; name: string; mimeType?: string; sizeBytes?: number }[];
+};
+
 type Controls = {
   readonly generation: number;
   readonly scope: { current: number };
@@ -39,6 +46,7 @@ type Controls = {
   readonly reopen: () => void;
   readonly close: () => void;
   readonly replaceSource: (messageId: string) => void;
+  readonly setSource: (source: SourceMessage) => void;
   readonly refreshMessage: () => void;
   readonly refreshCredential: () => void;
 };
@@ -50,17 +58,23 @@ function Fixture() {
   const [generation, setGeneration] = useState(1);
   const scope = useRef(1);
   const [open, setOpen] = useState(true);
-  const [messageId, setMessageId] = useState("message-1");
+  const [source, setSource] = useState<SourceMessage>({ id: "message-1", content: "Forward this message" });
   const [messageRefresh, setMessageRefresh] = useState(0);
   const [credentialRefresh, setCredentialRefresh] = useState(0);
   const accountRef = useRef<string | null>(account);
   useForwardAccountScopeUnmountFence(scope);
   const isCurrent = useCallback((value: number) =>
     value === scope.current && accountRef.current != null, []);
-  const message = useMemo<TranscriptMessage>(() => ({
-    id: messageId, kind: "message", role: "user", author: "You",
-    text: "Forward this message", timestampMs: 1 + messageRefresh,
-  }), [messageId, messageRefresh]);
+  const message = useMemo<TranscriptMessage>(() => {
+    // Exercise the same Host row -> TranscriptMessage projection used by
+    // ProductionRenderer. Caption availability is never a fixture-only flag.
+    const projected = projectHumanConversationTranscript([{
+      ...source, kind: "message", role: "user", authorKind: "human", authorId: "1",
+      delivery: "sent", timestampMs: 1 + messageRefresh,
+    }], "Human conversation", "human:source")[0];
+    if (projected?.kind !== "message") throw new Error("forward fixture requires a projected Human message");
+    return projected;
+  }, [source, messageRefresh]);
   controls = {
     generation,
     scope,
@@ -73,7 +87,8 @@ function Fixture() {
     },
     reopen: () => { if (accountRef.current != null) setOpen(true); },
     close: () => setOpen(false),
-    replaceSource: (nextId) => setMessageId(nextId),
+    replaceSource: (nextId) => setSource((current) => ({ ...current, id: nextId })),
+    setSource,
     refreshMessage: () => setMessageRefresh((value) => value + 1),
     refreshCredential: () => setCredentialRefresh((value) => value + 1),
   };
@@ -115,6 +130,10 @@ Object.assign(window, {
     reopen: () => controls?.reopen(),
     close: () => controls?.close(),
     replaceSource: (id: string) => controls?.replaceSource(id),
+    setSource: async (source: SourceMessage) => {
+      controls?.setSource(source);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    },
     refreshMessage: () => controls?.refreshMessage(),
     refreshCredential: () => controls?.refreshCredential(),
     setTheme: (mode: "light" | "dark") => themeInstaller.update(mode),

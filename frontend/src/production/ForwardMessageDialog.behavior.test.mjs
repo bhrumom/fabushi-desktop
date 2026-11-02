@@ -14,6 +14,8 @@ let browser;
 let serverLog;
 let serverClosed = false;
 const artifacts = resolve(root, "artifacts/native-message-ui");
+const sourceAttachment = { path: "/host/conversations/source/photo.jpg", name: "photo.jpg", mimeType: "image/jpeg", sizeBytes: 4 };
+const captionedSource = (id = "message-1") => ({ id, content: "A caption on the source photo", attachments: [sourceAttachment] });
 before(async () => {
   await mkdir(artifacts, { recursive: true });
   serverLog = createWriteStream(resolve(artifacts, "forward-vite.log"));
@@ -163,7 +165,9 @@ test("rapid double-submit dispatches only once", async (t) => {
   assert.equal((await f.call("requests")).filter((r) => r.kind === "forward").length, 1);
 });
 test("partial retry only sends failed destination with stable identity", async (t) => {
-  const f = await fixture(t); const recipients = await f.request("search");
+  const f = await fixture(t);
+  await f.call("setSource", captionedSource());
+  const recipients = await f.request("search");
   await f.call("resolve", recipients.id, [{ id: "human:b", name: "human:b" }, { id: "human:c", name: "human:c" }]);
   await f.page.getByRole("option", { name: "human:b" }).waitFor();
   await f.select("human:b"); await f.select("human:c");
@@ -185,9 +189,11 @@ test("partial retry only sends failed destination with stable identity", async (
   await f.call("resolve", first.id, [{ conversationId: "human:b", status: "sent" }, { conversationId: "human:c", status: "failed", error: "retry" }]);
   await f.page.getByRole("alert").waitFor();
   await f.call("refreshMessage");
+  await f.call("setSource", { id: "message-1", content: "Later plain-text source projection" });
   assert.equal(await f.page.getByRole("alert").textContent(), "retry");
   assert.equal(await sender.isDisabled(), true);
   assert.equal(await captions.isDisabled(), true);
+  assert.equal(await captions.isChecked(), true, "an admitted captioned request keeps its original privacy projection");
   assert.equal(await f.page.getByRole("option", { name: "human:b" }).locator('input[type="checkbox"]').isDisabled(), true);
   assert.equal(await f.page.getByRole("option", { name: "human:b" }).getAttribute("aria-selected"), "false");
   assert.equal(await f.page.getByText("1 selected", { exact: true }).count(), 1);
@@ -347,5 +353,98 @@ test("late searches preserve send failure and retry destinations even when selec
   assert.deepEqual(retry.args, first.args);
   await f.call("resolve", retry.id, [{ conversationId: "human:b", status: "sent" }]);
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+});
+
+test("plain text has no caption option and keeps that privacy snapshot through retry", async (t) => {
+  const f = await fixture(t); await f.settleSearch(); await f.select();
+  const captions = f.page.getByRole("checkbox", { name: "Hide media caption", exact: true });
+  const sender = f.page.getByRole("checkbox", { name: "Hide sender name", exact: true });
+  assert.equal(await captions.count(), 0);
+  assert.equal(await sender.isChecked(), false);
+  await sender.check();
+  assert.equal(await sender.isChecked(), true);
+  await sender.uncheck();
+  await f.submit();
+  const first = await f.request("forward");
+  assert.equal(first.args.dropCaptions, false);
+  assert.equal(first.args.dropSenderNames, false);
+  await f.call("reject", first.id, "Plain-text delivery is uncertain");
+  await f.page.getByRole("alert").waitFor();
+
+  // A later object refresh cannot add an option to an already admitted intent.
+  await f.call("setSource", captionedSource());
+  assert.equal(await captions.count(), 0);
+  assert.equal(await sender.isDisabled(), true);
+  assert.equal(await f.page.getByRole("alert").textContent(), "Plain-text delivery is uncertain");
+  await f.submit();
+  const retry = await f.request("forward", 2);
+  assert.deepEqual(retry.args, first.args);
+  await f.call("resolve", retry.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 1);
+});
+
+test("media without caption text still allows independent sender hiding", async (t) => {
+  const f = await fixture(t);
+  for (const [index, content] of ["", " \t\n"].entries()) {
+    await f.call("setSource", { id: "message-1", content, attachments: [sourceAttachment] });
+    if (index > 0) await f.call("reopen");
+    const search = await f.request("search", index + 1);
+    await f.call("resolve", search.id, [{ id: "human:b", name: "human:b" }]);
+    await f.select();
+    assert.equal(await f.page.getByRole("checkbox", { name: "Hide media caption", exact: true }).count(), 0);
+    const sender = f.page.getByRole("checkbox", { name: "Hide sender name", exact: true });
+    assert.equal(await sender.isChecked(), false);
+    await sender.check();
+    await f.submit();
+    const sent = await f.request("forward", index + 1);
+    assert.equal(sent.args.dropCaptions, false);
+    assert.equal(sent.args.dropSenderNames, true);
+    await f.call("resolve", sent.id, [{ conversationId: "human:b", status: "sent" }]);
+    await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  }
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 2);
+});
+
+test("caption availability refresh clears editable choices and source replacement rejects old settlement", async (t) => {
+  const f = await fixture(t);
+  await f.call("setSource", captionedSource());
+  await f.settleSearch(); await f.select();
+  const captions = f.page.getByRole("checkbox", { name: "Hide media caption", exact: true });
+  const sender = f.page.getByRole("checkbox", { name: "Hide sender name", exact: true });
+  await captions.check();
+  assert.equal(await sender.isChecked(), true);
+  await f.call("setSource", { id: "message-1", content: "The same source now has no attachment" });
+  assert.equal(await captions.count(), 0);
+  assert.equal(await sender.isChecked(), true, "caption availability does not erase the separate sender choice");
+  assert.equal(await f.page.getByText("1 selected", { exact: true }).count(), 1);
+  await f.call("setSource", captionedSource());
+  assert.equal(await captions.isChecked(), false, "a formerly unavailable option cannot recover a stale checked state");
+  assert.equal((await f.call("requests")).filter((request) => request.kind === "search").length, 1);
+  await captions.check();
+  await f.submit();
+  const old = await f.request("forward");
+  assert.equal(old.args.dropCaptions, true);
+  assert.equal(old.args.dropSenderNames, true);
+
+  await f.call("setSource", { id: "message-2", content: "A different plain-text source" });
+  const replacement = await f.request("search", 2);
+  assert.equal(replacement.args.sourceEntryId, "message-2");
+  assert.equal(await captions.count(), 0);
+  assert.equal(await sender.isChecked(), false);
+  await f.call("resolve", old.id, [{ conversationId: "human:b", status: "sent" }]);
+  assert.deepEqual(await f.call("events"), [], "retired source success cannot settle or close the replacement");
+  await f.call("resolve", replacement.id, [{ id: "human:c", name: "human:c" }]);
+  await f.select("human:c");
+  await sender.check();
+  await f.submit();
+  const current = await f.request("forward", 2);
+  assert.equal(current.args.sourceEntryId, "message-2");
+  assert.notEqual(current.args.clientNonce, old.args.clientNonce);
+  assert.equal(current.args.dropCaptions, false);
+  assert.equal(current.args.dropSenderNames, true);
+  await f.call("resolve", current.id, [{ conversationId: "human:c", status: "sent" }]);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 1);
 });
 

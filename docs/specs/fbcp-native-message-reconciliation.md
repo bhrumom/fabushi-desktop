@@ -1925,3 +1925,237 @@ Keep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and
 all current message gates intact. Store exact run/job/artifact identities;
 retain all final service, package, migration and independent-ACCEPT gaps.
 The one-purpose workflow may be removed after its immutable evidence is saved.
+
+
+### Atomic reaction settlement and journal discovery (NMR-R5-01/02)
+
+The original exact68/run41402071662 and the later exact59/run41508537631
+prerequisites passed their applicable message gates. Preserve current94's
+attachment snapshots, journal guards and recovery, current forward UI/source
+reviews, and the separate NMR-49 pending-parent reply contract above. This
+batch closes remaining reaction settlement boundaries in the existing owner.
+
+- NMR-R5-01: Settle the current canonical reaction row and retire its exact
+  observed humanReactionIntent in one existing SandAgentDb BEGIN IMMEDIATE
+  transaction. Compare the entire observed row and intent before writing.
+  After obtaining SQLite's write lock, recheck the full existing Native
+  credential fingerprint captured before HTTP; token rotation, revocation,
+  device/account/session/issuer/expiry changes refuse the old response.
+  A competing row/intent, closed owner or persistence failure cannot grant
+  settlement or clear a newer intent. Roll back both writes on failure and
+  publish no target event. Preserve unrelated current-row metadata, participant
+  and remote identity checks, desired-state validation and conversation lock.
+  Legacy replay of an equal settled row clears only its matching intent and
+  publishes no duplicate row event.
+- NMR-R5-02: Reuse one persisted Human conversation enumeration helper for forward
+  request lookup and restart recovery. Preserve current94's internal discovery
+  of membership-hidden source journals, active-account/issuer checks and
+  existing source/destination authorization. Missing directories are empty;
+  other enumeration/metadata errors propagate. Denied unfinished destinations
+  retain durable policy refusal, completed destinations stay completed,
+  ordinary sync remains independent and the UI does not expose excluded
+  sources. No new store or authority is introduced.
+- NMR-AC-R5-01: In the real Host/SQLite/HTTP harness, inject an intent cleanup
+  write failure after a valid response and prove complete row/intent rollback
+  with no target event. Reopen and settle the same desired state once; an equal
+  legacy row retires the matching intent without another event. Replace an
+  intent through an independent SQLite owner during blocked HTTP; the stale
+  acknowledgement preserves both current row and new intent, which alone
+  settles after restart. A separate private real SQLite writer-lock case must
+  demonstrate credential admission after waiting, token rotation/revocation
+  refusal, unchanged row/intent/events, and unchanged-credential recovery.
+- NMR-AC-R5-02: Strengthen the existing forward permission/restart test to inspect
+  durable denial immediately after ordinary sync, before explicit forward
+  retry. Keep the removed source absent from the authorized UI list, preserve
+  completed batches, and assert zero denied POSTs. Preserve all existing gates;
+  this batch preserves current Human48 and expands it to50 and private settlement credential3 to4,
+  retaining journal12. Execute on the containing exact H in GitHub Actions.
+
+Test authorship and source review are not execution or independent ACCEPT.
+No public schema, second writer, new store, user-data deletion or backend
+mutation is introduced. Fixed U and final source/legal/service/platform/UI/
+security/performance/soak/upgrade/Bot/independent acceptance remain open.
+
+The R5 namespace keeps these two requirement and oracle IDs distinct from
+concurrent numeric NMR-49 reply and NMR-50 nonblocking-forward contracts. The
+existing canonical ledger schema permits nonempty requirement/oracle IDs; no
+schema relaxation or gate removal is needed.
+
+The R5 qualification checkpoint descends from exact76a84e8a9ff8867a076edd0c89f913a58cdb2806 and uses the existing Native/source workflows on its explicit branch while concurrent integration continues. Required current gates include resource3, CLI production binaries/process4, Transcript18 and Chromium16. Integration back to the shared checkpoint still requires a fresh expected-head CAS and exact combined-H qualification.
+
+### Forward caption-control availability (NMR-R5-03 / NMR-AC-R5-03)
+
+Fixed U forward_options_box.cpp (blob708ae65e92dc435bf798f8c0220b0547f35ab2bf)
+creates the caption checkbox only when captionsCount is nonzero, and otherwise
+emits dropCaptions=false. The matching h blob is65db5fbe067e340e0259a23ae57cda59096ccda0.
+Before this batch, the pure-text/no-attachment Fabushi picker exposed this checkbox;
+its coupling can consequently suppress sender origin for a source with no media
+caption. This product disposition is distinct from full source reading and requires the new containing-H execution evidence.
+
+- NMR-R5-03: Derive caption availability from the actual selected
+  TranscriptMessage's existing media attachment and text projection. A source
+  without an attachment or without actual caption text does not expose the Hide
+  media caption control, and its newly admitted forward has dropCaptions=false.
+  Keep Hide sender names independently usable. For actual captioned media,
+  preserve the existing bidirectional sender/caption coupling and Host privacy
+  normalization. Use the existing picker, selected-message projection and command;
+  no new message owner, wire field, backend route or UI root is introduced.
+- An admitted forward retry retains its original immutable source/options and
+  request identity. Source changes, account generation, close/unmount and blocked
+  or partial delivery retain existing cancellation/response guards. Eligibility
+  is not inferred from a fabricated fixture-only flag. Newly unavailable caption
+  options cannot leak a stale unchecked/checked UI state into a new request.
+- NMR-AC-R5-03: Preserve every existing actual Chromium picker case and add
+  plain-text, media-without-caption and captioned-media contrast through the
+  real component and projection. Verify control availability and the actual
+  Coordinator frame's privacy flags, independent sender hiding, prior coupling
+  and immutable partial retry. Use a captioned fixture for tests that exercise
+  caption controls; never weaken them by removing their assertions. Run the
+  affected renderer/Chromium and current regression gates at the containing
+  exact H in GitHub Actions only.
+
+No existing source_review is promoted, and the four pending callers remain
+pending. Full forwarding permissions/service/restart, source/legal/platform and
+independent ACCEPT requirements remain in force. Root integration owns the
+canonical privacy ledger/RTM and final gate counts after code review.
+
+The existing picker16 cases remain, with the caption-retry case using real
+captioned media through the production projector. Three additional cases make
+the containing-H Chromium gate19. Human50/resource3/journal12/private4,
+Transcript18/settlement5 and all current shipping/Electron/Windows/source gates
+remain unchanged and required.
+
+The same-ID refresh tests exercise updated component props through the real
+projector. ProductionRenderer retains its selected message snapshot; this batch
+does not claim a new background subscription for an already-open picker.
+
+### Fair bounded refresh of covered Human history (NMR-R5-04)
+
+At exact25fa54fb3a7326d24439e44c2783981f0fa58c9a, completed large-history
+sync reads new IDs and refreshes only the latest200 rows. A previously loaded
+message outside that tail can consequently retain stale reactions/readAt
+indefinitely. Fixed U api_updates.cpp#71c929cfe3c779c94719efef32a47a4d029e2c67
+routes updateMessageReactions by peer/message ID and applies read-history updates
+to loaded history; history_item.cpp#b753d3ea7bd5fde15cdad206d17ab3eee6d68cab
+and data_session.cpp#baac09c9c320d748d008867dc4ec3ec560c6681b notify/update
+existing items. These are selected-symbol source reads, not complete-file review
+or acceptance records. Fabushi must realize the responsibility through its
+existing Session/Transcript owner and native service contract.
+
+- NMR-R5-04: Keep the monotonic new-message humanHistoryCoverage checkpoint
+  separate from a persisted, bounded old-message refresh cursor in the same
+  SandAgentDb metadata. Use the existing numeric afterId/200-message API and its
+  strict historyCursor/nextAfterId validation. No timestamp cursor, new backend
+  route, public wire field, secondary owner or user-data migration is added.
+- A refresh cycle fixes its upper bound to an already covered ID interval.
+  Newly arriving messages cannot extend that cycle forever. A completed/short/
+  empty valid page may finish a cycle; restarting a cycle never decreases or
+  advances the new-message coverage checkpoint. Missing refresh metadata is
+  backward-compatible. Malformed, unsafe, reversed or otherwise incompatible
+  persisted refresh state fails closed without silently resetting progress.
+- Once an old covered interval needs refresh, reserve one request of the existing
+  total32 history-request budget for it, including during continuous new-message
+  catch-up. Gap, latest and old refresh requests share that single budget. Keep
+  the200-row response bound and do not issue a33rd request. Initial uncovered
+  history may still use the existing full32-page budget.
+- A page's refresh checkpoint advances only after every admitted row in that
+  page is durably applied. Wrong echo/boundary/order, duplicate or unsafe ID,
+  oversized page, foreign participant, invalid nonce/reaction, resource failure
+  or SQLite failure cannot skip that page. Independently valid rows already
+  durably applied may remain; restart/retry replays them without duplicate
+  identity or changed-row notifications. Successful empty pages are distinct
+  from rejected or failed requests. Sparse IDs and equal timestamps remain valid.
+- Reuse existing credential-bound Native requests, active Human membership,
+  conversation mutation serialization and known-message admission/materializer.
+  Preserve omitted-versus-empty reactions, monotonic parsed readAt, local metadata,
+  reply and forward context. This new known-row refresh lane is not a send/reaction acknowledgement and
+  cannot retire a pending desired-state intent, consume a peer nonce as local or
+  infer deletion from a missing row. A failed reaction replay retains the current
+  failure path and durable intent. No data is deleted by this batch.
+- NMR-AC-R5-04: Actual Host/HTTP/SQLite/reopen cases must show a message older than
+  the latest200 receives later reaction/read updates, a finite cycle progresses
+  with new arrivals, and restart resumes a nonzero refresh cursor. Cover cycle
+  wrap, failed row/page/cursor persistence without skipped progress, malformed
+  cursor/page/permission refusal, local context and unchanged-event replay.
+  Retain and strengthen the existing32-request boundary case to account for the
+  reserved old-page request; do not weaken its no33rd-request assertion. Run all
+  retained Human/Agent/private credential/resource/journal gates plus new cases
+  and current shipping/UI/source gates on the containing exact H in Actions.
+
+Backend PR137 remains read-only, draft and unmerged at the inspected head
+52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23. Its afterId implementation establishes
+an authored API contract; it is not authenticated deployed-service acceptance.
+Full source/legal/product/platform/Bot and independent ACCEPT remain open.
+
+The existing incremental lane still admits a valid outgoing server echo under
+its current immutable local-dispatch rules. Native history has no global
+mutation revision; this batch guarantees repeated access to the covered old
+interval, not ordering of arbitrary stale server snapshots or a complete change
+feed. The production triggers remain the existing Human open, reconnect and
+window-focus refresh commands through Coordinator/Session.
+
+The six added real Host cases preserve the preceding50 Human cases and require
+Human56 at the containing H, alongside private credential4/resource3/journal12,
+Agent4/sharebox1/forwardHTTP1, Transcript18/settlement5/Chromium19 and all retained
+shipping/Electron/Windows/source gates. Count/name gates do not grant execution.
+
+R5-04 review correction: an HTTP/body credential fence alone cannot authorize a
+later row or cursor write after SQLite waiting or an earlier row's event callback.
+Each new sweep row update compares its expected entire row and admits the original
+request fingerprint against the current owner metadata after BEGIN IMMEDIATE,
+before its first write. The cursor CAS uses the same post-lock admission, including
+empty/unchanged pages. A stale row/key, changed owner scope or credential, ignored
+write or commit failure rolls back that operation and publishes no new target
+event; earlier legitimately committed rows remain durable. Existing other lanes
+retain their current behavior. Add real first-row-event rotation and row/cursor
+SQLite-writer-wait negative/unchanged/reopen controls; private credential4 expands
+to5 while the six Human refresh cases remain part of Human56. Change notifications and their observer
+callbacks occur only after commit and lock release, with no new message owner.
+
+### Round5 integration with the current message owner
+
+Integrate `434fa0cd2fc81630d9178ed024ea98ec97ff522a` with the fixed concurrent
+checkpoint `c83039f9da8330560680a3efccc5ae83bf2db419`, retaining its later
+current source `1c0bd07f85c4f17ee465509c766eead878879185`; neither is a replacement
+for the other. Preserve all current production, source-review and release
+contracts above. The new covered-history refresh must consume only qualified
+`humanHistoryCoverage.version == 1`; legacy unversioned coverage retains its
+existing origin-requalification path and cannot authorize a sweep. Keep strict
+canonical positive safe-integer message identity parsing, replay target and
+emoji admission, current-row preservation and monotonic durable Human activity
+on every materialization/settlement path, including the new admitted refresh.
+Retain the forwardBatchOwned/source-journal compatibility fences, atomic Human
+creation, durable opaque transcript walks and current renderer recovery.
+
+Carry the Round5 row-plus-intent atomic settlement, post-write-lock credential
+admission, fixed-ceiling 31+1 refresh budget and restart cases through these
+existing owners. Reconcile authored test selectors additively without deleting
+concurrent cases; qualify the resulting exact combined H in GitHub Actions.
+The standalone434 UI18/settlement5/dialog19 and source157/schema37 successes
+are scoped to that H and their unchanged inputs; they do not qualify the new
+combined source. No full source, service, platform, Bot or independent ACCEPT
+is granted by this integration.
+
+The published434 compatibility combination of an unversioned coverage value
+and a valid nonempty refresh cursor must remain recoverable. Validate that
+cursor against the original legacy coverage, pause its sweep, and perform the
+existing qualified origin re-read. Only after an admitted origin page has been
+durably applied may the old internal refresh progress be retired to null. Use
+expected-value CAS with transaction-time identity/credential and unchanged
+legacy-coverage admission; retire the old cursor before upgrading coverage.
+Persist the version1 checkpoint through expected-value admission as well, so
+another writer cannot be overwritten. A failure or crash between these two
+safe steps leaves legacy coverage with null refresh and repeats origin
+qualification; it must never leave version1 partial coverage under an obsolete
+larger ceiling. Denied/invalid origin responses keep both old metadata values,
+and invalid cursor/version shapes still fail closed. Retain every transcript,
+pending intent and unrelated metadata field. Extend the existing legacy
+upgrade/restart case with this exact published-state combination and a durable
+interruption control; no extra top-level Human case is required.
+
+The admitted old-history path's activity repair is also a metadata write: apply
+the same post-lock scope/credential admission and expected-value max update,
+including equal values. A row event may revoke admission before activity is
+persisted; retain that legitimately committed row, refuse activity/later writes,
+and let an admitted equal-row retry repair activity. Ordinary existing lanes
+retain their current activity contract.
