@@ -318,6 +318,7 @@ pub fn build_turn_subagent_types(
 #[derive(Clone)]
 pub struct TurnAgentComposition {
     provider: RoutedProvider,
+    fabushi_model: Option<String>,
     bridge: Arc<dyn RoutedToolBridge>,
     cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     request_context: RunnerRequestContextSnapshot,
@@ -386,6 +387,7 @@ impl TurnAgentComposition {
             });
         Self {
             provider,
+            fabushi_model: None,
             bridge,
             cursor_auth: None,
             request_context,
@@ -437,6 +439,11 @@ impl TurnAgentComposition {
             max_steps: SAND_AGENT_MAX_STEPS,
             tool_loop_gate: None,
         }
+    }
+
+    pub fn with_fabushi_model(mut self, model: impl Into<String>) -> Self {
+        self.fabushi_model = Some(model.into());
+        self
     }
 
     pub fn with_cursor_auth(
@@ -1065,6 +1072,7 @@ impl TurnAgentComposition {
         run_routed_provider_in_runner(
             RoutedProviderRun {
                 provider: self.provider,
+                fabushi_model: self.fabushi_model.clone(),
                 data_dir,
                 messages,
                 typed_replay,

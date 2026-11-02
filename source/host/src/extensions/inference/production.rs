@@ -9,7 +9,7 @@ use crate::extensions::settings::settings_service::SettingsService;
 use super::cursor_inference_transport::CursorInferenceAuth;
 use super::cursor_session::{
     RequestLineage, RequestedModel, ResolveRequestedModelInputs, SandAttachedMediaUrlProvider,
-    SAND_DEFAULT_MODEL_ID, SAND_SUMMARIZATION_MODEL_ID, SandSessionOptions, resolve_sand_requested_model,
+    SAND_SUMMARIZATION_MODEL_ID, SandSessionOptions, resolve_sand_requested_model,
 };
 use super::generated_inference_codec::InferenceReason;
 use super::sand_labeling::{
@@ -29,6 +29,7 @@ use super::inference_service::{
 use super::provider_session::{
     ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
+    resolve_fabushi_request_model,
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 
@@ -209,18 +210,15 @@ fn model_selection_from_value(value: Option<serde_json::Value>) -> Option<SandAg
     })
 }
 
-// The native Responses default and the Cursor catalog default differ.
- // A turn without an explicit model must retain the native default.
-fn has_explicit_first_party_model(
-    selected: &RequestedModel,
-    options: &SandSessionOptions,
-    has_saved_default: bool,
-    has_env_override: bool,
-) -> bool {
-    options.model_id.as_deref().is_some_and(|value| !value.trim().is_empty())
-        || has_saved_default
-        || has_env_override
-        || selected.model_id != SAND_DEFAULT_MODEL_ID
+fn cursor_default_model(value: Option<serde_json::Value>) -> Option<SandAgentModelSelection> {
+    let value = value?;
+    match value.get("provider") {
+        None => model_selection_from_value(Some(value)),
+        Some(serde_json::Value::String(provider)) if provider == "cursor" => {
+            model_selection_from_value(Some(value))
+        }
+        _ => None,
+    }
 }
 
 impl ProductionAgentInferenceOwner {
@@ -228,12 +226,57 @@ impl ProductionAgentInferenceOwner {
         self.settings.get_inference_provider()
     }
 
+    /// Resolve the Fabushi identity once at turn admission. The selected route
+    /// remains the caller's independently authorized provider.
+    pub fn resolve_fabushi_turn_model(
+        &self,
+        session_model_id: Option<&str>,
+        session_provider: Option<&str>,
+        explicit_model_id: Option<&serde_json::Value>,
+    ) -> Result<String, ProviderSessionError> {
+        let explicit = match explicit_model_id {
+            None | Some(serde_json::Value::Null) => None,
+            Some(serde_json::Value::String(value)) => {
+                Some(resolve_fabushi_request_model(Some(value), None)?)
+            }
+            Some(_) => return Err(ProviderSessionError::Configuration(
+                "Fabushi modelId must be a nonempty string when supplied".into(),
+            )),
+        };
+        match (session_model_id, session_provider) {
+            (Some(model), Some("fabushi")) => {
+                return resolve_fabushi_request_model(Some(model), None);
+            }
+            (None, None) => {}
+            _ => return Err(ProviderSessionError::Configuration(
+                "persisted session model must contain a complete Fabushi provider/model pair".into(),
+            )),
+        }
+        if let Some(model) = explicit {
+            return Ok(model);
+        }
+        let stored = self.settings.get_agent_default_model_checked().map_err(|error| {
+            ProviderSessionError::Configuration(format!(
+                "could not read the persisted default model: {error}"
+            ))
+        })?;
+        if let Some(value) = stored.as_ref().filter(|value| {
+            value.get("provider").and_then(serde_json::Value::as_str) == Some("fabushi")
+        }) {
+            let model = value.get("modelId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| ProviderSessionError::Configuration(
+                    "persisted Fabushi default is missing modelId".into(),
+                ))?;
+            return resolve_fabushi_request_model(Some(model), None);
+        }
+        resolve_fabushi_request_model(None, None)
+    }
+
     pub fn resolve_requested_model(
         &self,
         session_options: Option<&SandSessionOptions>,
     ) -> RequestedModel {
-        let stored_default_model =
-            model_selection_from_value(self.settings.get_agent_default_model());
+        let stored_default_model = cursor_default_model(self.settings.get_agent_default_model());
         let configured_computer_use_model = self
             .experiments
             .get_computer_use_model_override()
@@ -294,7 +337,6 @@ impl AgentInferenceOwner for ProductionAgentInferenceOwner {}
 struct ProductionCursorInferenceAuth {
     auth: Arc<HostAuthExtension>,
     requested_model: RequestedModel,
-    first_party_responses_model: Option<String>,
     session_options: SandSessionOptions,
     labeling_client: Arc<SandLabelingClient>,
     labeling_tracker: Arc<Mutex<FollowupLabelingTracker>>,
@@ -312,10 +354,6 @@ impl CursorInferenceAuth for ProductionCursorInferenceAuth {
 
     fn requested_model(&self) -> RequestedModel {
         self.requested_model.clone()
-    }
-
-    fn first_party_responses_model(&self) -> Option<String> {
-        self.first_party_responses_model.clone()
     }
 
     fn conversation_id(&self) -> Option<String> {
@@ -448,19 +486,9 @@ impl ProductionInferenceExtension {
         let session_options = session_options.cloned().unwrap_or_default();
         let owner = self.runtime.port();
         let requested_model = owner.resolve_requested_model(Some(&session_options));
-        let first_party_responses_model = has_explicit_first_party_model(
-            &requested_model,
-            &session_options,
-            owner.settings.get_agent_default_model().is_some(),
-            std::env::var("SAND_AGENT_MODEL")
-                .ok()
-                .is_some_and(|value| !value.trim().is_empty()),
-        )
-        .then(|| requested_model.model_id.clone());
         Arc::new(ProductionCursorInferenceAuth {
             auth: Arc::clone(&self.auth),
             requested_model,
-            first_party_responses_model,
             session_options,
             labeling_client: Arc::clone(&self.labeling_client),
             labeling_tracker: Arc::clone(&self.labeling_tracker),
@@ -479,9 +507,17 @@ impl ProductionInferenceExtension {
         user_prompt: &str,
         should_cancel: &dyn Fn() -> bool,
     ) -> Result<String, ProviderSessionError> {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled("summarization cancelled".into()));
+        }
         let provider = match self.route() {
             InferenceRoute::Cursor => RoutedProvider::Cursor,
             InferenceRoute::Routed(provider) => provider,
+        };
+        let fabushi_model = if provider == RoutedProvider::Fabushi {
+            Some(self.runtime.port().resolve_fabushi_turn_model(None, None, None)?)
+        } else {
+            None
         };
         let session_options = summarization_session_options();
         let cursor_auth = self.cursor_auth_for_session(Some(&session_options));
@@ -508,6 +544,7 @@ impl ProductionInferenceExtension {
         let mut options = RoutedProviderOptions {
             data_dir,
             typed_replay: None,
+            fabushi_model: fabushi_model.as_deref(),
             cursor_auth: Some(cursor_auth),
             tools: &[],
             mcp_server_url: None,
@@ -592,12 +629,46 @@ pub fn start_production_inference_extension(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        RoutedProvider, has_explicit_first_party_model, resolve_production_inference_provider,
-    };
-    use crate::extensions::inference::cursor_session::{
-        RequestedModel, SAND_DEFAULT_MODEL_ID, SandSessionOptions,
-    };
+    use super::*;
+    use crate::extensions::auth::auth_service::{HostAuthEnvironment, HostAuthServiceOptions};
+    use crate::extensions::auth::extension::start_host_auth_extension_with_options;
+    use crate::extensions::experiments::extension::HostExperimentsOptions;
+    use serde_json::json;
+
+    fn inference_fixture(label: &str) -> (
+        std::path::PathBuf,
+        Arc<SettingsService>,
+        ProductionInferenceExtension,
+    ) {
+        let root = std::env::temp_dir().join(format!("fabushi-model-{label}-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).expect("fixture directory");
+        let settings = Arc::new(SettingsService::new(root.join("settings.json")));
+        let auth = Arc::new(start_host_auth_extension_with_options(
+            HostAuthServiceOptions {
+                environment: HostAuthEnvironment::from_pairs(std::iter::empty()),
+                backend_url: Some("http://127.0.0.1:9".into()),
+                backend: None,
+                machine_id: Arc::new(|| Ok("model-contract-machine".into())),
+                log: Arc::new(|_| {}),
+                now_ms: Arc::new(|| 1),
+            },
+            Arc::new(|_| Err("model resolution must not fetch account identity".into())),
+        ).expect("auth owner"));
+        let experiments = Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+            is_dev_build: false,
+            env_gate_overrides: None,
+        }));
+        let inference = start_production_inference_extension(auth, experiments, Arc::clone(&settings));
+        (root, settings, inference)
+    }
+
+    fn save_default(settings: &SettingsService, provider: Option<&str>, model: &str) {
+        let mut value = json!({"modelId": model, "maxMode": false, "parameters": []});
+        if let Some(provider) = provider {
+            value["provider"] = json!(provider);
+        }
+        assert!(settings.set_agent_default_model(Some(&value)).expect("save model"));
+    }
 
     #[test]
     fn packaged_fabushi_is_pinned_to_first_party_inference() {
@@ -626,26 +697,80 @@ mod tests {
     }
     #[test]
     fn native_responses_preserves_unconfigured_default_and_binds_explicit_turn_models() {
-        let unconfigured = RequestedModel {
-            model_id: SAND_DEFAULT_MODEL_ID.into(),
-            max_mode: None,
-            parameters: Vec::new(),
-        };
-        let ordinary = SandSessionOptions::default();
-        assert!(!has_explicit_first_party_model(&unconfigured, &ordinary, false, false));
-        assert!(has_explicit_first_party_model(&unconfigured, &ordinary, true, false));
-        assert!(has_explicit_first_party_model(&unconfigured, &ordinary, false, true));
-        let overridden = SandSessionOptions {
-            model_id: Some("explicit-session-model".into()),
-            session_model_override: true,
-            ..SandSessionOptions::default()
-        };
-        assert!(has_explicit_first_party_model(&unconfigured, &overridden, false, false));
-        let experiment_choice = RequestedModel {
-            model_id: "experiment-model".into(),
-            ..unconfigured
-        };
-        assert!(has_explicit_first_party_model(&experiment_choice, &ordinary, false, false));
+        let (root, settings, inference) = inference_fixture("selection");
+        let owner = inference.port();
+        let configured_route = owner.configured_provider();
+        let fallback = resolve_fabushi_request_model(None, None).expect("configured fallback");
+        assert_eq!(owner.resolve_fabushi_turn_model(None, None, None).unwrap(), fallback);
+        save_default(&settings, None, "legacy-cursor-model");
+        assert_eq!(owner.resolve_fabushi_turn_model(None, None, None).unwrap(), fallback);
+        assert_eq!(cursor_default_model(settings.get_agent_default_model()).unwrap().model_id,
+            "legacy-cursor-model");
+        for provider in ["cursor", "codex", "claude-code", "openrouter"] {
+            save_default(&settings, Some(provider), "Other/Model@Version");
+            assert_eq!(owner.resolve_fabushi_turn_model(None, None, None).unwrap(), fallback);
+        }
+        save_default(&settings, Some("fabushi"), "  Vendor/Nested/Model@Version  ");
+        assert_eq!(owner.resolve_fabushi_turn_model(None, None, None).unwrap(),
+            "Vendor/Nested/Model@Version");
+        assert!(cursor_default_model(settings.get_agent_default_model()).is_none());
+        let explicit = json!("  Explicit/Case@2 ");
+        assert_eq!(owner.resolve_fabushi_turn_model(None, None, Some(&explicit)).unwrap(),
+            "Explicit/Case@2");
+        assert_eq!(owner.resolve_fabushi_turn_model(
+            Some(" Session/Model@Q "), Some("fabushi"), Some(&explicit),
+        ).unwrap(), "Session/Model@Q");
+        assert_eq!(owner.configured_provider(), configured_route);
+        assert_eq!(inference.cursor_auth_for_session(Some(&summarization_session_options()))
+            .requested_model().model_id, SAND_SUMMARIZATION_MODEL_ID);
+        std::fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn fabushi_model_resolution_rejects_malformed_pairs_and_raw_fields() {
+        let (root, settings, inference) = inference_fixture("refusal");
+        save_default(&settings, Some("fabushi"), "Valid/Default");
+        let owner = inference.port();
+        for (model, provider) in [
+            (Some("model"), None), (None, Some("fabushi")),
+            (Some("model"), Some("cursor")), (Some("model"), Some("FABUSHI")),
+            (Some(""), Some("fabushi")), (Some("model\n"), Some("fabushi")),
+        ] {
+            assert!(matches!(owner.resolve_fabushi_turn_model(model, provider, None),
+                Err(ProviderSessionError::Configuration(_))));
+        }
+        for raw in [json!(false), json!(17), json!([]), json!({}), json!("  "), json!("\nmodel")] {
+            assert!(matches!(owner.resolve_fabushi_turn_model(None, None, Some(&raw)),
+                Err(ProviderSessionError::Configuration(_))));
+            assert!(matches!(owner.resolve_fabushi_turn_model(Some("valid"), Some("fabushi"), Some(&raw)),
+                Err(ProviderSessionError::Configuration(_))), "persisted pair must not hide malformed input");
+        }
+        assert_eq!(owner.resolve_fabushi_turn_model(None, None, Some(&serde_json::Value::Null)).unwrap(),
+            "Valid/Default");
+        std::fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn fabushi_model_resolution_distinguishes_bad_settings_from_absence_and_unused_default() {
+        let (root, settings, inference) = inference_fixture("source");
+        save_default(&settings, Some("fabushi"), "Valid/Default");
+        let path = root.join("settings.json");
+        let mut document: serde_json::Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        document["agentDefaultModel"]["provider"] = serde_json::Value::Null;
+        std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(None, None, None),
+            Err(ProviderSessionError::Configuration(_))));
+        std::fs::write(&path, "{").unwrap();
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(None, None, None),
+            Err(ProviderSessionError::Configuration(_))));
+        assert_eq!(inference.port().resolve_fabushi_turn_model(None, None, Some(&json!("Explicit"))).unwrap(),
+            "Explicit");
+        assert_eq!(inference.port().resolve_fabushi_turn_model(Some("Session"), Some("fabushi"), None).unwrap(),
+            "Session");
+        assert!(matches!(inference.run_summarization_prompt(&root, "system", "user", &|| true),
+            Err(ProviderSessionError::Cancelled(_))));
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "{");
+        std::fs::remove_dir_all(root).expect("cleanup");
     }
 
 }

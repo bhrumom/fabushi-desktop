@@ -778,10 +778,29 @@ impl SettingsService {
     pub fn get_agent_default_model(&self) -> Option<Value> {
         agent_default_model_from_settings(&self.load())
     }
+
+    /// Read one document without persisting compatibility normalization. Invalid
+    /// sources and malformed present selections must not become absent defaults.
+    pub fn get_agent_default_model_checked(&self) -> Result<Option<Value>, String> {
+        let _guard = self.write_lock.lock().unwrap();
+        let settings = self.load_checked().map_err(|error| error.to_string())?;
+        let Some(value) = settings
+            .get("agentDefaultModel")
+            .filter(|value| !value.is_null())
+        else {
+            return Ok(None);
+        };
+        validate_agent_default_model(value)?;
+        Ok(Some(force_model_max_mode(value.clone())))
+    }
+
     pub fn set_agent_default_model(
         &self,
         value: Option<&Value>,
     ) -> Result<bool, String> {
+        if let Some(value) = value.filter(|value| value.get("provider").is_some()) {
+            validate_agent_default_model(value)?;
+        }
         if value.is_some_and(|value| !is_model_selection(value)) {
             return Ok(false);
         }
@@ -1298,6 +1317,12 @@ impl SettingsService {
                 self.get_config_source_metadata(),
             ));
         };
+        if let Some(value) = update
+            .get("agentDefaultModel")
+            .filter(|value| value.get("provider").is_some())
+        {
+            validate_agent_default_model(value).map_err(HostSettingsUpdateError::Rejected)?;
+        }
         let previous_zone = user_time_zone_from_settings(&settings);
         let changed_fields = update.keys().cloned().collect::<Vec<_>>();
 
@@ -1910,6 +1935,31 @@ fn clear_account_sensitive_settings(settings: &mut Map<String, Value>) {
     settings.insert("mcpCustomInstructionsByServerId".into(), json!({}));
     settings.insert("mcpDisabledToolsByServerId".into(), json!({}));
 }
+
+fn validate_agent_default_model(value: &Value) -> Result<(), String> {
+    if !is_model_selection(value) {
+        return Err("agentDefaultModel must be a valid model selection".into());
+    }
+    if !value
+        .get("modelId")
+        .and_then(Value::as_str)
+        .is_some_and(|model| !model.trim().is_empty() && !model.chars().any(char::is_control))
+    {
+        return Err(
+            "agentDefaultModel.modelId must be nonblank and contain no control characters".into(),
+        );
+    }
+    if let Some(provider) = value.get("provider") {
+        if !provider
+            .as_str()
+            .is_some_and(|provider| INFERENCE_PROVIDERS.contains(&provider))
+        {
+            return Err("agentDefaultModel.provider must be a canonical inference provider".into());
+        }
+    }
+    Ok(())
+}
+
 fn is_model_selection(value: &Value) -> bool {
     let Some(object) = value.as_object() else {
         return false;

@@ -189,6 +189,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
     let composition = create_production_runner_composition(
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
+            fabushi_model: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
             request_context: request_context(),
@@ -244,6 +245,7 @@ fn production_bridge_projects_mcp_management_into_canonical_turn_composition() {
     let composition = create_production_runner_composition(
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
+            fabushi_model: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
             request_context: request_context(),
@@ -283,6 +285,7 @@ fn production_bridge_registers_canonical_mcp_state_executor_on_turn_composition(
     let composition = create_production_runner_composition(
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
+            fabushi_model: None,
             bridge: Arc::new(McpStateBridge),
             cursor_auth: None,
             request_context: request_context(),
@@ -398,6 +401,7 @@ fn production_bridge_projects_host_resolved_turn_hooks_behaviorally() {
     let composition = create_production_runner_composition_with_hooks(
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
+            fabushi_model: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
             request_context: request_context(),
@@ -452,6 +456,7 @@ fn production_bridge_binds_the_generated_runner_facade() {
     let composition = create_production_runner_composition(
         ProductionRunnerCompositionInput {
             provider: RoutedProvider::OpenRouter,
+            fabushi_model: None,
             bridge: Arc::new(EmptyBridge),
             cursor_auth: None,
             request_context: request_context(),

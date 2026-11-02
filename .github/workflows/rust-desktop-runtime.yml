@@ -182,7 +182,16 @@ jobs:
             --test gateway_command_error_contract \
             --test openclaw_agent_roster_contract \
             --test inference_codex_direct_contract \
-            --test inference_provider_session_contract
+            --test inference_provider_session_contract \
+            --test runner_production_bridge_contract \
+            --test fabushi_model_identity_production_contract
+      - name: Test shipping model admission and lease recovery
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: >-
+          cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host
+          tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects
+          -- --exact
       - name: Test affected Session Transcript and Runner integration recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -275,14 +284,17 @@ jobs:
               "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "runner_os": os.environ["RUNNER_OS"],
               "shipping_host_check": "passed",
-              "owner_contract_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract", "inference_codex_direct_contract", "inference_provider_session_contract"],
+              "owner_contract_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract", "inference_codex_direct_contract", "inference_provider_session_contract", "runner_production_bridge_contract", "fabushi_model_identity_production_contract"],
               "owner_contract_result": "passed",
+              "model_identity_contract": "OCRM-MODEL-IDENTITY-v1",
+              "shipping_model_admission_test": "tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects",
+              "shipping_model_admission_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
               "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "host_upgrade_production_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract"],
               "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests"],
               "integration_recovery_result": "passed",
               "committed_source_integrity": "passed",
-              "scope": "Shared Settings owner CAS/snapshot and existing consumers; not cross-process, provider compatibility, platform packaging or final acceptance",
+              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, and shipping lease refusal through existing owners. Loopback protocol evidence is not real provider compatibility or process-restart execution. Platform packaging and final acceptance remain pending.",
               "independent_acceptance": "pending",
           }
           Path(".evidence/ocrm-config.json").write_text(json.dumps(evidence, sort_keys=True, indent=2)+"\n")

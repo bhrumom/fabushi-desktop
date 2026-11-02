@@ -364,3 +364,64 @@ bypass: it is outside this four-path planner recovery and will be repaired in
 the next compaction production-boundary batch. The helper refusal test does
 not establish end-to-end refusal. The independent review found no other
 blocking issue in this scope; the fix requires a fresh focused review.
+
+### H8 shared gate and provider-bound model implementation
+
+Before publishing the local planner tree `44a346f6bc51e8603ef1148d9f0476d571abbe4e`,
+the branch lease check found concurrent successor
+`126dea3a7f077677e86f2e0fbfe73b660e11bd60` / tree
+`17568a0110ea7201c8fb202e093ce7ba73769dd3`. A fresh independent xhigh
+reconciliation inspected all four changed paths and adjacent consumers, found
+the production corrections equivalent and the strict replay/serializer oracles
+intact, and approved adoption. The unpublished snapshot was retained; no
+remote change was overwritten and no duplicate Actions run was started.
+
+At H8, runtime `41402597254`, job `125137462760`, completed successfully:
+shipping Host compilation; 95 configuration/inference tests; 191 recovery
+integration tests; and 50 tests across the seven selected library filters,
+including all 19 compaction planner tests. Audit integrity passed. Runtime
+artifact `13122263293` has digest
+`sha256:1b80c1f4da117088dbfd1a3bef70103595550e8995cfb543f76055107c6e84b1`.
+Source run `41402597240` passed, with artifact `13122386669`, digest
+`sha256:9b4700ab99622d4f4d5f5cda2375170c55309f12afd7a0f199a2b1a35ad7f2b7`.
+These are H8 results, not evidence for the following working delta.
+
+After those shared checks passed, implementation began against H8 and
+`OCRM-MODEL-IDENTITY-v1`. Settings owns checked default reads and atomic
+provider-bound writes; Inference resolves identity; the existing Host/Runner
+composition carries the frozen value; the Fabushi adapter validates accepted
+checkpoint identity before transport creation. Main admission now guards the
+accepted lease before session/model reading and permission direction changes.
+Its configuration/session refusals and later valid admission are exercised
+through the actual shipping helper. Cursor web inputs remain separate, and
+summarization resolves the Fabushi default through the same inference owner.
+
+Disjoint Settings, provider and integrated-contract workers used actual xhigh
+effort; the integrator alone changed shared composition, the entrypoint,
+workflow and this task. The new loopback contract observes five real Runner
+requests `[A,A,A,A,B]`, then a separate summarization request using B, plus
+accepted checkpoint JSON and two native message deliveries. This is authored
+coverage pending frozen-H Actions, not an executed result or real-service claim.
+The selected workflow also compiles and runs the shipping model-admission test;
+four missing imports in its pre-existing cfg(test) module were repaired from
+source inspection without dropping their assertions. No local executable
+validation was run. U, all source/coverage acceptance states and the eight
+global completion flags remain unchanged. Production disk-load/resume ingress,
+real ecosystem compatibility and full G01–G12 / AC01–AC24 remain open.
+
+Frozen model review tree `0612b281dcce3f3e724312f01a2c64cf315be6f5`
+received independent general, recovery/security and oracle inspection at xhigh.
+Decision `M1 FIX / TEST_FLAW`: the new inference `save_default` and shipping
+admission fixture omit the existing required `parameters` array. Bound writes
+therefore refuse before the intended oracle; the legacy write returns
+`Ok(false)`. Add `parameters: []` to those valid fixtures and assert the setup
+write changed the document. Keep the production validator and every behavior
+assertion. This is a source-proven fixture defect, not an executed CI result.
+The complete frozen scope stays 17 paths; the fix requires a fresh immutable
+focused review before publication and exact-H Actions.
+
+`M2 NON_BLOCKING / DEFER`: the new account-clearing test's `allow` permission
+spelling already normalizes to `ask`, so that assertion does not independently
+prove permission clearing. Existing coverage uses `SandLocalToolPermission::Always`
+and checks clearing; this batch's model clearing/replacement assertions remain
+discriminating. No standalone fix round or permission-behavior claim follows.

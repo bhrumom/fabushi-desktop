@@ -193,6 +193,53 @@ fn config_set_racing_one_owner_hash_has_one_commit_and_one_conflict() {
 }
 
 #[test]
+fn config_set_model_validation_preserves_cas_and_readonly_fence_order() {
+    let path = temp_path("bound-model-fence-order");
+    let original = br#"{"version":1,"notifications":{"isEnabled":true,"legacy":"keep"},"mcpCustomInstructionsAccountScope":"account-a","agentDefaultModel":{"provider":"fabushi","modelId":"Original/Model","maxMode":true,"parameters":[]}}"#;
+    fs::write(&path, original).expect("seed legacy notification and bound model");
+    let service = SettingsService::new(&path);
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+    let invalid_update = json!({
+        "agentDefaultModel": {"provider": null, "modelId": "Candidate/Model", "maxMode": false, "parameters": []},
+        "mcpCustomInstructionsAccountScope": "account-b", "userTimeZone": "UTC"
+    });
+    let conflict = service.set_host_settings_if_current(Some("stale"), invalid_update.clone())
+        .expect_err("CAS remains the first update fence");
+    assert!(matches!(&conflict, HostSettingsUpdateError::Conflict { actual, .. } if actual == "stale"));
+    assert_eq!(GatewayCommandError::from(conflict).status(), 409);
+    assert_eq!(fs::read(&path).expect("source after conflict"), original);
+
+    let current = service.get_host_settings_snapshot();
+    // The normalized hash does not depend on the legacy notification bytes.
+    // Restore them so a rejected update must prove it cannot normalize disk.
+    fs::write(&path, original).expect("restore equivalent unnormalized source");
+    let rejected = service.set_host_settings_if_current(Some(&current.hash), invalid_update.clone())
+        .expect_err("matching CAS reaches model validation");
+    assert!(matches!(rejected, HostSettingsUpdateError::Rejected(message) if message.contains("agentDefaultModel.provider")));
+    assert_eq!(fs::read(&path).expect("source after validation refusal"), original);
+    assert!(service.set_host_settings(&invalid_update).is_err());
+    assert_eq!(fs::read(&path).expect("source after compatibility writer refusal"), original);
+
+    let mut read_only: Value = serde_json::from_slice(original).expect("original JSON");
+    read_only["readOnly"] = json!(true);
+    let read_only_bytes = serde_json::to_vec(&read_only).expect("readonly source bytes");
+    fs::write(&path, &read_only_bytes).expect("seed externally managed source");
+    let read_only_snapshot = service.get_host_settings_snapshot();
+    let readonly = service.set_host_settings_if_current(Some(&read_only_snapshot.hash), invalid_update)
+        .expect_err("readonly fence precedes model validation");
+    assert!(matches!(readonly, HostSettingsUpdateError::Rejected(message) if message.contains("readOnly")));
+    assert_eq!(fs::read(&path).expect("source after readonly refusal"), read_only_bytes);
+    assert_eq!(service.get_agent_default_model_checked().expect("readonly model remains readable")
+        .expect("original selection")["modelId"], "Original/Model");
+    assert!(observed.lock().expect("observed changes").is_empty());
+    let _ = fs::remove_file(path);
+}
+
+#[test]
 fn test_system_info_schema_and_zero_secret_leakage() {
     let recorded_diagnostics = Arc::new(Mutex::new(Vec::new()));
     let sink = Arc::clone(&recorded_diagnostics);

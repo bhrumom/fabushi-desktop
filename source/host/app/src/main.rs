@@ -217,6 +217,7 @@ use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
 };
 use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
+use mahayana_host_runtime::extensions::inference::model_picker_service::SessionModelEntryState;
 use mahayana_host_runtime::extensions::inference::cursor_session::{
     RequestLineage, SandSessionOptions,
 };
@@ -1378,6 +1379,56 @@ impl Drop for RoutedTurnLeaseGuard {
     fn drop(&mut self) {
         self.settle();
     }
+}
+
+struct RoutedTurnModelAdmission {
+    lease_guard: RoutedTurnLeaseGuard,
+    persisted_session_model: SessionModelEntryState,
+    fabushi_model: Option<String>,
+    direction_epoch: u64,
+}
+
+/// The authorized entrypoint uses this boundary before staging attachments or
+/// starting a worker. Any session/configuration refusal releases its accepted
+/// lease before a new permission direction can be created.
+fn prepare_routed_turn_model_admission(
+    runtime: &Arc<ProductionTranscriptRuntime>,
+    events: &GatewayEventHub,
+    sessions: &Arc<ProductionSessionWorkers>,
+    inference: &ProductionInferenceExtension,
+    permission: &mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController,
+    provider: RoutedProvider,
+    agent_id: &str,
+    stream_id: &str,
+    explicit_model_id: Option<&serde_json::Value>,
+    starts_new_user_direction: bool,
+) -> Result<RoutedTurnModelAdmission, GatewayCommandError> {
+    runtime.require_routed_turn_lease(agent_id, stream_id)
+        .map_err(map_production_send_error)?;
+    let lease_guard = RoutedTurnLeaseGuard::new(
+        Arc::clone(runtime), agent_id.to_string(), stream_id.to_string(), events.clone(),
+    );
+    let persisted_session_model = SandAgentSessionStore::new(Arc::clone(sessions))
+        .read_session_model_entry(agent_id)
+        .map_err(GatewayCommandError::Internal)?;
+    let fabushi_model = if provider == RoutedProvider::Fabushi {
+        Some(inference.port().resolve_fabushi_turn_model(
+            persisted_session_model.model_override.as_deref(),
+            persisted_session_model.provider_override.as_deref(),
+            explicit_model_id,
+        ).map_err(|error| GatewayCommandError::BadRequest(error.to_string()))?)
+    } else {
+        None
+    };
+    if starts_new_user_direction {
+        permission.begin_turn(agent_id);
+    }
+    Ok(RoutedTurnModelAdmission {
+        lease_guard,
+        persisted_session_model,
+        fabushi_model,
+        direction_epoch: permission.direction_epoch(agent_id),
+    })
 }
 
 struct UnifiedGatewayApi {
@@ -7847,9 +7898,6 @@ fn start_routed_provider_task(
         .and_then(|record| {
             (record.session_key == worker_session_key).then(|| worker_session_key.clone())
         });
-    let persisted_session_model = SandAgentSessionStore::new(Arc::clone(&session_workers))
-        .read_session_model_entry(&agent_id)
-        .map_err(GatewayCommandError::Internal)?;
     let provider_name = args
         .get("provider")
         .and_then(serde_json::Value::as_str)
@@ -7938,11 +7986,6 @@ fn start_routed_provider_task(
         .get("hidden")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
-    transcript_runtime
-        .require_routed_turn_lease(&agent_id, &stream_id)
-        .map_err(map_production_send_error)?;
-    let human_handoff_conversation_id =
-        transcript_runtime.routed_human_handoff_conversation_id(&agent_id, &stream_id);
     let turn_local_tool_permission = local_tool_permission.controller();
     let starts_new_user_direction = starts_new_local_tool_direction(
         request_source.as_deref(),
@@ -7952,17 +7995,25 @@ fn start_routed_provider_task(
         is_group_member_turn,
         generated_parent_agent_id.is_some(),
     );
-    if starts_new_user_direction {
-        turn_local_tool_permission.begin_turn(&agent_id);
-    }
-    let turn_local_tool_direction_epoch =
-        turn_local_tool_permission.direction_epoch(&agent_id);
-    let routed_turn_lease_guard = RoutedTurnLeaseGuard::new(
-        Arc::clone(&transcript_runtime),
-        agent_id.clone(),
-        stream_id.clone(),
-        events.clone(),
-    );
+    let RoutedTurnModelAdmission {
+        lease_guard: routed_turn_lease_guard,
+        persisted_session_model,
+        fabushi_model,
+        direction_epoch: turn_local_tool_direction_epoch,
+    } = prepare_routed_turn_model_admission(
+        &transcript_runtime,
+        &events,
+        &session_workers,
+        &inference,
+        turn_local_tool_permission.as_ref(),
+        provider,
+        &agent_id,
+        &stream_id,
+        args.get("modelId"),
+        starts_new_user_direction,
+    )?;
+    let human_handoff_conversation_id =
+        transcript_runtime.routed_human_handoff_conversation_id(&agent_id, &stream_id);
     let mut attachment_paths = args
         .get("attachmentPaths")
         .and_then(serde_json::Value::as_array)
@@ -10793,9 +10844,10 @@ fn start_routed_provider_task(
                 });
             let cursor_auth = inference.cursor_auth_for_session(Some(&worker_session_options));
             let settle_labeling_auth = Arc::clone(&cursor_auth);
-            let turn_model_id = cursor_auth.requested_model().model_id;
+            let cursor_model_id = cursor_auth.requested_model().model_id;
+            let turn_model_id = fabushi_model.clone().unwrap_or_else(|| cursor_model_id.clone());
             let web_executor: Arc<dyn WebToolExecutor> = Arc::new(
-                ProductionWebToolExecutor::new(Arc::clone(&inference), turn_model_id.clone()),
+                ProductionWebToolExecutor::new(Arc::clone(&inference), cursor_model_id),
             );
             let generated_image_sessions = Arc::clone(&worker_sessions);
             let generated_image_agent_id = agent_id.clone();
@@ -10871,6 +10923,7 @@ fn start_routed_provider_task(
             let composition = worker_host_runner_composition.compose_production_turn(
                 ProductionRunnerCompositionInput {
                     provider,
+                    fabushi_model: fabushi_model.clone(),
                     bridge,
                     cursor_auth: Some(cursor_auth),
                     request_context: resolved_request_context,
@@ -11585,6 +11638,7 @@ fn start_routed_provider_task(
                                     let mut options = RoutedProviderOptions {
                                         data_dir: &data_dir,
                                         typed_replay: None,
+                                        fabushi_model: fabushi_model.as_deref(),
                                         cursor_auth: Some(auth.clone()),
                                         tools: &[],
                                         mcp_server_url: None,
@@ -16869,11 +16923,121 @@ mod tests {
         AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
         listener_connect_resume_args, starts_new_local_tool_direction,
         project_forever_box_status, reaction_gateway_args,
+        ProductionSessionWorkers, TranscriptRunnerRegistry,
+        listener_connection_state_or_disconnected, RUNNER_INFERENCE_EVENT_CHANNEL,
     };
     use mahayana_host_runtime::extensions::forever_box::BoxStatus;
     use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn model_admission_refusals_release_the_accepted_lease_before_permission_effects() {
+        use std::sync::Arc;
+        use mahayana_host_runtime::extensions::auth::auth_service::{
+            HostAuthEnvironment, HostAuthServiceOptions,
+        };
+        use mahayana_host_runtime::extensions::auth::extension::start_host_auth_extension_with_options;
+        use mahayana_host_runtime::extensions::experiments::{HostExperimentsExtension, HostExperimentsOptions};
+        use mahayana_host_runtime::extensions::inference::production::start_production_inference_extension;
+        use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
+        use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController;
+        use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+        use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
+        use serde_json::json;
+
+        let root = std::env::temp_dir().join(format!("fabushi-model-admission-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let settings_path = root.join("settings.json");
+        let settings = Arc::new(SettingsService::new(&settings_path));
+        assert!(settings.set_agent_default_model(Some(&json!({
+            "provider":"fabushi", "modelId":"Vendor/Default@A", "maxMode":false,
+            "parameters":[],
+        }))).unwrap());
+        let good_settings = fs::read(&settings_path).unwrap();
+        let auth = Arc::new(start_host_auth_extension_with_options(
+            HostAuthServiceOptions {
+                environment: HostAuthEnvironment::from_pairs(std::iter::empty()),
+                backend_url: Some("http://127.0.0.1:9".into()),
+                backend: None,
+                machine_id: Arc::new(|| Ok("admission-contract-machine".into())),
+                log: Arc::new(|_| {}),
+                now_ms: Arc::new(|| 1),
+            },
+            Arc::new(|_| Err("model admission must not fetch account identity".into())),
+        ).unwrap());
+        let inference = start_production_inference_extension(
+            auth,
+            Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+                is_dev_build: false, env_gate_overrides: None,
+            })),
+            Arc::clone(&settings),
+        );
+        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root.join("agents"), 500));
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let runtime = Arc::new(super::ProductionTranscriptRuntime::new(Some(&root)));
+        let events = super::GatewayEventHub::default();
+        let permission = SandLocalToolPermissionController::production(settings);
+        permission.begin_turn(&record.id);
+        let prior_direction = permission.direction_epoch(&record.id);
+        let accept = |stream_id: &str| {
+            runtime.accept_routed_send(&json!({
+                "agentId": &record.id, "prompt":"hello", "streamId":stream_id,
+                "clientNonce":stream_id,
+            }), |_| Ok(PersistedSendContext::default())).expect("accepted turn");
+            assert!(runtime.has_routed_turn_lease(&record.id, stream_id));
+        };
+        for (index, raw) in [json!(false), json!(17), json!("  "), json!("\nmodel")].iter().enumerate() {
+            let stream = format!("invalid-model-{index}");
+            accept(&stream);
+            assert!(matches!(super::prepare_routed_turn_model_admission(
+                &runtime, &events, &sessions, &inference, &permission,
+                RoutedProvider::Fabushi, &record.id, &stream, Some(raw), true,
+            ), Err(super::GatewayCommandError::BadRequest(_))));
+            assert!(!runtime.has_routed_turn_lease(&record.id, &stream));
+            assert_eq!(runtime.in_flight_run_count(&record.id), 0);
+            assert!(runtime.is_turn_dispatch_idle(&record.id));
+            assert_eq!(permission.direction_epoch(&record.id), prior_direction);
+        }
+
+        fs::write(&settings_path, "{").unwrap();
+        accept("invalid-settings");
+        assert!(super::prepare_routed_turn_model_admission(
+            &runtime, &events, &sessions, &inference, &permission,
+            RoutedProvider::Fabushi, &record.id, "invalid-settings", None, true,
+        ).is_err());
+        assert!(!runtime.has_routed_turn_lease(&record.id, "invalid-settings"));
+        assert_eq!(permission.direction_epoch(&record.id), prior_direction);
+        assert_eq!(fs::read_to_string(&settings_path).unwrap(), "{");
+        fs::write(&settings_path, good_settings).unwrap();
+
+        let db = sessions.open_agent_db_owner(&record.id).unwrap();
+        assert!(db.write_kv("sessionModelSelection", "{").unwrap());
+        accept("invalid-session-model");
+        assert!(matches!(super::prepare_routed_turn_model_admission(
+            &runtime, &events, &sessions, &inference, &permission,
+            RoutedProvider::Fabushi, &record.id, "invalid-session-model", None, true,
+        ), Err(super::GatewayCommandError::Internal(_))));
+        assert!(!runtime.has_routed_turn_lease(&record.id, "invalid-session-model"));
+        assert_eq!(permission.direction_epoch(&record.id), prior_direction);
+        assert!(db.delete_kv("sessionModelSelection").unwrap());
+
+        accept("valid-after-refusal");
+        let admitted = super::prepare_routed_turn_model_admission(
+            &runtime, &events, &sessions, &inference, &permission,
+            RoutedProvider::Fabushi, &record.id, "valid-after-refusal",
+            Some(&json!("  Vendor/Next@Case  ")), true,
+        ).expect("later turn remains admissible");
+        assert_eq!(admitted.fabushi_model.as_deref(), Some("Vendor/Next@Case"));
+        assert_eq!(admitted.direction_epoch, prior_direction + 1);
+        assert!(runtime.has_routed_turn_lease(&record.id, "valid-after-refusal"));
+        drop(admitted);
+        assert_eq!(runtime.in_flight_run_count(&record.id), 0);
+        assert!(runtime.is_turn_dispatch_idle(&record.id));
+        drop(db);
+        drop(sessions);
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn local_tool_direction_advances_only_for_new_direct_user_turns() {

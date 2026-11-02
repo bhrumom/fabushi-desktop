@@ -384,21 +384,67 @@ fn codex_home() -> PathBuf {
         .unwrap_or_else(|| home_dir().join(".codex"))
 }
 
-fn configured_fabushi_model() -> String {
-    env::var("FABUSHI_RESPONSES_MODEL")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "deepseek-chat".into())
+fn normalized_fabushi_model_selection(model: &str) -> Result<&str, ProviderSessionError> {
+    if model.chars().any(char::is_control) || model.trim().is_empty() {
+        return Err(ProviderSessionError::Configuration(
+            "Fabushi model selection must be nonblank and contain no control characters.".into(),
+        ));
+    }
+    Ok(model.trim())
 }
 
-fn selected_fabushi_model_for_request(
-    auth: Option<&Arc<dyn CursorInferenceAuth>>,
-) -> String {
-    auth.and_then(|bound| bound.first_party_responses_model())
-        .map(|model| model.trim().to_string())
-        .filter(|model| !model.is_empty())
-        .unwrap_or_else(configured_fabushi_model)
+fn configured_fabushi_model() -> Result<String, ProviderSessionError> {
+    let configured = match env::var("FABUSHI_RESPONSES_MODEL") {
+        Ok(value) => value,
+        Err(env::VarError::NotPresent) => return Ok("deepseek-chat".into()),
+        Err(env::VarError::NotUnicode(_)) => {
+            return Err(ProviderSessionError::Configuration(
+                "FABUSHI_RESPONSES_MODEL must contain a valid Unicode model identity.".into(),
+            ));
+        }
+    };
+    if configured.trim().is_empty() && !configured.chars().any(char::is_control) {
+        return Ok("deepseek-chat".into());
+    }
+    normalized_fabushi_model_selection(&configured).map(str::to_string)
+}
+
+/// Resolve one request identity without consulting authentication or transport.
+/// Accepted Fabushi checkpoints pin their normalized model across retries.
+pub fn resolve_fabushi_request_model(
+    requested: Option<&str>,
+    resume: Option<&CodexDirectCheckpoint>,
+) -> Result<String, ProviderSessionError> {
+    let checkpoint_model = resume
+        .map(|checkpoint| {
+            checkpoint
+                .model
+                .as_deref()
+                .filter(|model| {
+                    !model.is_empty()
+                        && model.trim() == *model
+                        && !model.chars().any(char::is_control)
+                })
+                .ok_or_else(|| {
+                    ProviderSessionError::Protocol(
+                        "Fabushi checkpoint requires a nonblank, normalized model identity without control characters.".into(),
+                    )
+                })
+        })
+        .transpose()?;
+    let requested = requested
+        .map(normalized_fabushi_model_selection)
+        .transpose()?;
+    match (requested, checkpoint_model) {
+        (Some(requested), Some(checkpoint)) if requested != checkpoint => {
+            Err(ProviderSessionError::Protocol(
+                "Fabushi checkpoint model identity does not match this turn.".into(),
+            ))
+        }
+        (_, Some(checkpoint)) => Ok(checkpoint.to_string()),
+        (Some(requested), None) => Ok(requested.to_string()),
+        (None, None) => configured_fabushi_model(),
+    }
 }
 
 fn configured_codex_model() -> String {
@@ -1378,11 +1424,10 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
-    let model = configured_fabushi_model();
     run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
         messages,
         None,
-        &model,
+        None,
         tools,
         execute_tool,
         on_text_delta,
@@ -1398,7 +1443,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
 fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
     messages: &[ProviderMessage],
     typed_replay: Option<&[TypedReplayEntry]>,
-    model: &str,
+    requested_model: Option<&str>,
     tools: &[RoutedToolDefinition],
     execute_tool: &mut dyn FnMut(
         &RoutedToolDefinition,
@@ -1415,6 +1460,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_r
     max_steps: usize,
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
+    let model = resolve_fabushi_request_model(requested_model, resume_from)?;
     let mut transport = CodexHttpTransport::new_fabushi()?;
     let system_prompt = format!(
         "{}\n\nRuntime inference metadata: provider=Fabushi first-party Responses API; model={model}. If the user asks which provider or model is active, answer from this runtime metadata and do not infer a different vendor identity.",
@@ -1466,6 +1512,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_r
 pub struct RoutedProviderOptions<'a> {
     pub data_dir: &'a Path,
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
+    pub fabushi_model: Option<&'a str>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub tools: &'a [RoutedToolDefinition],
     pub mcp_server_url: Option<&'a str>,
@@ -1588,11 +1635,10 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
             let mut fabushi_checkpoint = |checkpoint: &CodexDirectCheckpoint| {
                 on_checkpoint(&RoutedProviderCheckpoint::Fabushi(checkpoint.clone()))
             };
-            let model = selected_fabushi_model_for_request(options.cursor_auth.as_ref());
             run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay(
                 messages,
                 options.typed_replay,
-                &model,
+                options.fabushi_model,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,
@@ -2634,31 +2680,12 @@ mod tests {
         FABUSHI_ROUTER_SYSTEM_PROMPT, RoutedProvider, await_cancelable_provider_io,
         credential_issuer, ensure_responses_issuer_matches, jwt_audience,
         provider_io_runtime, responses_http_client,
-        selected_fabushi_model_for_request, configured_fabushi_model,
         toml_string_setting, validate_fabushi_responses_url,
     };
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
     use std::cell::Cell;
     use std::future::pending;
-    use std::sync::Arc;
-    use super::CursorInferenceAuth;
-
-    struct SelectedFirstPartyModel;
-    impl CursorInferenceAuth for SelectedFirstPartyModel {
-        fn access_token(&self) -> Result<String, String> { Ok("unused".into()) }
-        fn machine_id(&self) -> Result<String, String> { Ok("unused".into()) }
-        fn first_party_responses_model(&self) -> Option<String> {
-            Some("  selected-from-settings  ".into())
-        }
-    }
-
-    #[test]
-    fn first_party_request_uses_frozen_selection_without_changing_unconfigured_default() {
-        let auth: Arc<dyn CursorInferenceAuth> = Arc::new(SelectedFirstPartyModel);
-        assert_eq!(selected_fabushi_model_for_request(Some(&auth)), "selected-from-settings");
-        assert_eq!(selected_fabushi_model_for_request(None), configured_fabushi_model());
-    }
 
     #[test]
     fn fabushi_router_prompt_declares_product_identity() {

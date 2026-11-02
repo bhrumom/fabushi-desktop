@@ -315,6 +315,7 @@ impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
 
 struct ProductionRoutedProviderAttemptExecutor<'a> {
     provider: RoutedProvider,
+    fabushi_model: Option<String>,
     data_dir: &'a Path,
     messages: &'a [ProviderMessage],
     typed_replay: Option<&'a [TypedReplayEntry]>,
@@ -345,6 +346,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
         let mut options = RoutedProviderOptions {
             data_dir: self.data_dir,
             typed_replay: self.typed_replay,
+            fabushi_model: self.fabushi_model.as_deref(),
             cursor_auth: self.cursor_auth.clone(),
             tools: self.tools,
             mcp_server_url: self.mcp_server_url,
@@ -374,6 +376,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
 
 pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
+    pub fabushi_model: Option<String>,
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
@@ -487,6 +490,7 @@ pub fn run_routed_provider_in_runner(
 
     let mut executor = ProductionRoutedProviderAttemptExecutor {
         provider: run.provider,
+        fabushi_model: run.fabushi_model.clone(),
         data_dir: run.data_dir,
         messages: &provider_messages,
         typed_replay: run.typed_replay,

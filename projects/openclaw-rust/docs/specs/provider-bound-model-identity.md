@@ -2,7 +2,7 @@
 
 Contract: `OCRM-MODEL-IDENTITY-v1`  
 Status: contract frozen; implementation and executable evidence pending  
-Base: `ad60d4edb86e385243a67cb12e39187a073c7c01`  
+Base: `126dea3a7f077677e86f2e0fbfe73b660e11bd60`  
 Fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`, tree
 `90c8aab39972da11cfad220361781d49e1bc6700`
 
@@ -15,12 +15,15 @@ Changing the default affects later turns, not the active turn's tool steps or
 accepted-checkpoint retry. A model selection never grants provider access or
 changes the authorized route.
 
-Current production resolves a Cursor-shaped requested model for turn metadata,
-while the Fabushi request independently selects `FABUSHI_RESPONSES_MODEL` or
-`deepseek-chat`. Session state already stores provider/model overrides together,
-but the entry point discards the provider. The existing checkpoint stores
-accepted tool/reasoning input without its model identity. These are missing
-edges between existing owners, not missing runtime or persistence owners.
+Current production forwards an explicitly selected Cursor-shaped model into
+Fabushi Responses and otherwise selects `FABUSHI_RESPONSES_MODEL` or
+`deepseek-chat`. That interim bridge cannot distinguish a legacy Cursor default
+from a provider-bound Fabushi selection. Session state already stores
+provider/model overrides together, but the entry point discards the provider.
+Commit `5f0d548c325998ce4dcbedd1f1f04f91489df323` added the checkpoint's optional
+model identity and known-model mismatch fence. This batch completes provider
+binding, turn freezing, and strict Fabushi legacy-checkpoint refusal through the
+existing owners; it does not add another runtime or persistence owner.
 
 Read identities and honest full/partial extents are in
 `../../dossiers/model-picker-scoped.md`. Fixed-U selection preserves resolved
@@ -78,6 +81,8 @@ introduced. React/Electron stay unchanged for this API-level behavior.
   one member, a blank member or a different provider fails before effects.
   When the persistent default is consulted, use the checked Settings view;
   invalid source is not absence. Explicit selections never silently fall back.
+  Validate any present raw explicit model before applying precedence, so a
+  malformed explicit field cannot be hidden behind a valid persisted pair.
 - A selected model is trimmed, nonempty and free of control characters; retain
   case, nested paths, `@` and other model identity characters. No catalog
   availability or authorization is inferred from this syntactic check.
@@ -95,8 +100,9 @@ introduced. React/Electron stay unchanged for this API-level behavior.
   transport/auth/tool activity. Without an explicit value, a known checkpoint
   pins its model instead of consulting a changed environment. Missing identity
   is a refusal, not permission to replay accepted effects under a new model.
-- Add `#[serde(default)] model: Option<String>` to `CodexDirectCheckpoint`.
-  Capture Some from the actual options.model at the accepted tool boundary.
+- Retain the existing `#[serde(default)] model: Option<String>` on
+  `CodexDirectCheckpoint` and its capture from the actual options.model at the
+  accepted tool boundary.
   Generic Codex legacy deserialization/behavior remains compatible; the strict
   missing/mismatch fence is in the Fabushi adapter. Do not erase old checkpoints.
 

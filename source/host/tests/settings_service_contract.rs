@@ -26,6 +26,288 @@ fn temp_path(label: &str) -> std::path::PathBuf {
     ))
 }
 
+fn malformed_provider_bound_models() -> Vec<(&'static str, serde_json::Value)> {
+    let valid = serde_json::json!({
+        "provider": "fabushi", "modelId": "Org/Model@Stable", "maxMode": false,
+        "parameters": [{"id": "reasoning", "value": "high"}]
+    });
+    let mut cases = Vec::new();
+    for (label, provider) in [
+        ("null-provider", serde_json::Value::Null),
+        ("boolean-provider", serde_json::json!(true)),
+        ("number-provider", serde_json::json!(7)),
+        ("array-provider", serde_json::json!(["fabushi"])),
+        ("object-provider", serde_json::json!({"id": "fabushi"})),
+        ("blank-provider", serde_json::json!("")),
+        ("provider-case", serde_json::json!("Fabushi")),
+        ("provider-leading-space", serde_json::json!(" fabushi")),
+        ("provider-trailing-space", serde_json::json!("fabushi ")),
+        ("provider-alias", serde_json::json!("claude")),
+        ("provider-underscore-alias", serde_json::json!("claude_code")),
+        ("unknown-provider", serde_json::json!("openai")),
+    ] {
+        let mut value = valid.clone();
+        value["provider"] = provider;
+        cases.push((label, value));
+    }
+    for (label, field, replacement) in [
+        ("null-model", "modelId", serde_json::Value::Null),
+        ("number-model", "modelId", serde_json::json!(7)),
+        ("empty-model", "modelId", serde_json::json!("")),
+        ("blank-model", "modelId", serde_json::json!(" \u{2003} ")),
+        ("newline-model", "modelId", serde_json::json!("\nOrg/Model")),
+        ("tab-model", "modelId", serde_json::json!("Org\t/Model")),
+        ("nul-model", "modelId", serde_json::json!("Org\0/Model")),
+        ("unicode-control-model", "modelId", serde_json::json!("Org\u{0085}/Model")),
+        ("invalid-max-mode", "maxMode", serde_json::json!("true")),
+        ("null-parameters", "parameters", serde_json::Value::Null),
+        ("non-object-parameter", "parameters", serde_json::json!(["high"])),
+        ("empty-parameter-id", "parameters", serde_json::json!([{"id": "", "value": "high"}])),
+        ("invalid-parameter-value", "parameters", serde_json::json!([{"id": "reasoning", "value": 1}])),
+    ] {
+        let mut value = valid.clone();
+        value[field] = replacement;
+        cases.push((label, value));
+    }
+    for field in ["modelId", "maxMode", "parameters"] {
+        let mut value = valid.clone();
+        value.as_object_mut().expect("model object").remove(field);
+        cases.push((field, value));
+    }
+    cases
+}
+
+#[test]
+fn checked_agent_default_model_reads_are_nonmutating_and_preserve_selection_fields() {
+    let path = temp_path("checked-model-projection");
+    let service = SettingsService::new(&path);
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+    assert_eq!(service.get_agent_default_model_checked().expect("missing source"), None);
+    assert!(!path.exists(), "the checked reader cannot create missing settings");
+
+    for default in [None, Some(serde_json::Value::Null)] {
+        let mut source = serde_json::json!({
+            "version": 1, "notifications": {"isEnabled": true, "legacy": "keep"}
+        });
+        if let Some(default) = default {
+            source["agentDefaultModel"] = default;
+        }
+        let original = serde_json::to_vec(&source).expect("absent model source");
+        fs::write(&path, &original).expect("seed absent model");
+        assert_eq!(service.get_agent_default_model_checked().expect("absent default"), None);
+        assert_eq!(fs::read(&path).expect("unchanged source"), original);
+    }
+
+    for provider in [None, Some("fabushi")] {
+        let mut model = serde_json::json!({
+            "modelId": " Org/Nested/Model@Stable ", "maxMode": false,
+            "parameters": [{"id": "reasoning", "value": "high", "extension": {"keep": true}}],
+            "extension": {"revision": 17}
+        });
+        if let Some(provider) = provider {
+            model["provider"] = serde_json::json!(provider);
+        }
+        let original = serde_json::to_vec(&serde_json::json!({
+            "version": 1, "agentDefaultModel": model,
+            "notifications": {"isEnabled": true, "legacy": "keep"}
+        })).expect("valid model source");
+        fs::write(&path, &original).expect("seed valid model");
+        let mut expected = model.clone();
+        expected["maxMode"] = serde_json::json!(true);
+        assert_eq!(service.get_agent_default_model_checked().expect("valid default"), Some(expected.clone()));
+        assert_eq!(service.get_agent_default_model(), Some(expected.clone()));
+        assert_eq!(SettingsService::new(&path).get_agent_default_model_checked().expect("reopened default"), Some(expected));
+        assert_eq!(fs::read(&path).expect("unnormalized source"), original);
+    }
+    assert!(observed.lock().expect("observed changes").is_empty());
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn checked_agent_default_model_rejects_malformed_present_bound_and_legacy_values() {
+    let path = temp_path("checked-malformed-model");
+    let service = SettingsService::new(&path);
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+    let mut cases = malformed_provider_bound_models();
+    cases.extend([
+        ("legacy-string", serde_json::json!("model")),
+        ("legacy-array", serde_json::json!([])),
+        ("legacy-empty-object", serde_json::json!({})),
+        ("legacy-blank-model", serde_json::json!({"modelId": "   ", "maxMode": true, "parameters": []})),
+        ("legacy-control-model", serde_json::json!({"modelId": "Model\n", "maxMode": true, "parameters": []})),
+        ("legacy-malformed-parameters", serde_json::json!({"modelId": "Model", "maxMode": true, "parameters": [null]})),
+    ]);
+    for (label, model) in cases {
+        let original = serde_json::to_vec(&serde_json::json!({
+            "version": 1, "agentDefaultModel": model,
+            "notifications": {"isEnabled": true, "legacy": "keep"}, "unrelated": [1, 2]
+        })).expect("malformed selection fixture");
+        fs::write(&path, &original).expect("seed malformed selection");
+        assert!(service.get_agent_default_model_checked().is_err(), "{label}");
+        assert_eq!(fs::read(&path).expect("unchanged malformed source"), original, "{label}");
+        assert!(observed.lock().expect("observed changes").is_empty(), "{label}");
+    }
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn canonical_provider_bound_models_round_trip_through_both_settings_writers() {
+    let path = temp_path("canonical-bound-models");
+    fs::write(&path, br#"{"version":1,"inferenceProvider":"cursor","unrelated":{"keep":true}}"#)
+        .expect("seed independent route and unknown field");
+    let service = SettingsService::new(&path);
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _subscription = service.subscribe_to_changes(Arc::new(move |fields| {
+        sink.lock().expect("observed changes").push(fields);
+    }));
+    for provider in ["fabushi", "cursor", "codex", "claude-code", "openrouter"] {
+        for whole_document in [false, true] {
+            let model = serde_json::json!({
+                "provider": provider,
+                "modelId": format!(" Org/Nested/Model@{provider}-{whole_document} "),
+                "maxMode": false,
+                "parameters": [{"id": "reasoning", "value": "high", "unknown": [1, 2]}],
+                "extension": {"keep": true}
+            });
+            let mut expected = model.clone();
+            expected["maxMode"] = serde_json::json!(true);
+            if whole_document {
+                let reply = service.set_host_settings(&serde_json::json!({"agentDefaultModel": model}))
+                    .expect("whole-document model commit");
+                assert_eq!(reply["agentDefaultModel"], expected);
+            } else {
+                assert!(service.set_agent_default_model(Some(&model)).expect("specialized model commit"));
+            }
+            assert_eq!(service.get_agent_default_model_checked().expect("checked committed model"), Some(expected.clone()));
+            assert_eq!(service.get_agent_default_model(), Some(expected.clone()));
+            assert_eq!(SettingsService::new(&path).get_agent_default_model_checked().expect("reopened model"), Some(expected.clone()));
+            let stored: serde_json::Value = serde_json::from_slice(&fs::read(&path).expect("persisted bytes"))
+                .expect("persisted JSON");
+            assert_eq!(stored["agentDefaultModel"], expected);
+            assert_eq!(stored["unrelated"], serde_json::json!({"keep": true}));
+            assert_eq!(stored["inferenceProvider"], "cursor", "a model binding cannot select its provider route");
+        }
+    }
+    let expected_notifications = vec![vec!["agentDefaultModel".to_string()]; 10];
+    assert_eq!(observed.lock().expect("observed changes").as_slice(), expected_notifications.as_slice());
+    assert!(service.set_agent_default_model(None).expect("clear specialized default"));
+    assert_eq!(service.get_agent_default_model_checked().expect("cleared default"), None);
+    assert!(!service.set_agent_default_model(None).expect("redundant clear"));
+    assert_eq!(observed.lock().expect("observed changes").len(), 11);
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn malformed_bound_model_updates_preserve_bytes_and_all_observers() {
+    let path = temp_path("refused-bound-model");
+    let original = br#"{"version":1,"mcpCustomInstructionsAccountScope":"account-a","notifications":{"isEnabled":true,"legacy":"keep"},"agentDefaultModel":{"provider":"fabushi","modelId":"Original/Model","maxMode":true,"parameters":[]},"localToolPermission":"allow","skills":{"entries":{"demo":{"enabled":true}}},"unrelated":{"keep":true}}"#;
+    fs::write(&path, original).expect("seed model and account state");
+    let service = SettingsService::new(&path);
+    let observed = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&observed);
+    let _changes = service.subscribe_to_changes(Arc::new(move |_| {
+        sink.lock().expect("observed changes").push("settings");
+    }));
+    let sink = Arc::clone(&observed);
+    let _timezone = service.subscribe_to_user_time_zone(Arc::new(move |_| {
+        sink.lock().expect("observed changes").push("timezone");
+    }));
+    let sink = Arc::clone(&observed);
+    let _features = service.subscribe_to_feature_flag_overrides(Arc::new(move |_| {
+        sink.lock().expect("observed changes").push("features");
+    }));
+
+    for (label, model) in malformed_provider_bound_models() {
+        assert!(service.set_agent_default_model(Some(&model)).is_err(), "{label}");
+        assert_eq!(fs::read(&path).expect("source after specialized refusal"), original, "{label}");
+        let result = service.set_host_settings_if_current(None, serde_json::json!({
+            "agentDefaultModel": model,
+            "mcpCustomInstructionsAccountScope": "account-b",
+            "skills": {"entries": {"demo": {"enabled": false}}},
+            "userTimeZone": "UTC", "featureFlagOverrides": {"model_validation": true}
+        }));
+        assert!(matches!(result, Err(HostSettingsUpdateError::Rejected(_))), "{label}");
+        assert_eq!(fs::read(&path).expect("source after whole-document refusal"), original, "{label}");
+        assert!(observed.lock().expect("observed changes").is_empty(), "{label}");
+        assert_eq!(service.get_agent_default_model_checked().expect("original default remains")
+            .expect("original selection")["modelId"], "Original/Model");
+    }
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn legacy_unbound_writes_and_computer_models_keep_their_compatibility_contract() {
+    let path = temp_path("legacy-model-writes");
+    let service = SettingsService::new(&path);
+    let mut legacy = serde_json::json!({"modelId": "   ", "maxMode": false, "parameters": []});
+    assert!(service.set_agent_default_model(Some(&legacy)).expect("legacy blank model behavior"));
+    legacy["maxMode"] = serde_json::json!(true);
+    assert_eq!(service.get_agent_default_model(), Some(legacy.clone()));
+    assert!(service.get_agent_default_model_checked().is_err());
+    let before = fs::read(&path).expect("legacy bytes");
+    assert!(!service.set_agent_default_model(Some(&serde_json::json!({"modelId": "missing-shape"})))
+        .expect("malformed unbound specialized update is ignored"));
+    assert!(!service.set_agent_default_model(Some(&serde_json::Value::Null))
+        .expect("specialized null retains its old no-op meaning"));
+    assert_eq!(fs::read(&path).expect("unchanged legacy bytes"), before);
+
+    let reply = service.set_host_settings(&serde_json::json!({
+        "agentDefaultModel": {"modelId": "missing-shape"}, "userTimeZone": "UTC"
+    })).expect("malformed unbound whole-document field remains ignored");
+    assert_eq!(reply["agentDefaultModel"], legacy);
+    assert_eq!(reply["userTimeZone"], "UTC");
+    let legacy_control = serde_json::json!({"modelId": "Model\n", "maxMode": false, "parameters": []});
+    service.set_host_settings(&serde_json::json!({"agentDefaultModel": legacy_control}))
+        .expect("legacy whole-document control-containing model behavior");
+    assert_eq!(service.get_agent_default_model().expect("compatibility projection")["modelId"], "Model\n");
+    assert!(service.get_agent_default_model_checked().is_err());
+
+    let computer = serde_json::json!({"provider": null, "modelId": "   ", "maxMode": false, "parameters": []});
+    assert!(service.set_computer_use_model(Some(&computer)).expect("unchanged computer model validator"));
+    assert_eq!(service.get_computer_use_model(), Some(computer));
+    let computer_control = serde_json::json!({"provider": "legacy-alias", "modelId": "Computer\n", "maxMode": false, "parameters": []});
+    let reply = service.set_host_settings(&serde_json::json!({"computerUseModel": computer_control}))
+        .expect("unchanged whole-document computer model validator");
+    assert_eq!(reply["computerUseModel"], computer_control);
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn provider_bound_model_account_clearing_and_same_update_replacement_keep_their_order() {
+    let path = temp_path("bound-model-account-order");
+    let service = SettingsService::new(&path);
+    service.set_host_settings(&serde_json::json!({
+        "mcpCustomInstructionsAccountScope": "account-a",
+        "agentDefaultModel": {"provider": "fabushi", "modelId": "A/Model", "maxMode": false, "parameters": []},
+        "localToolPermission": "allow"
+    })).expect("first account default");
+    let reply = service.set_host_settings(&serde_json::json!({
+        "mcpCustomInstructionsAccountScope": "account-b",
+        "agentDefaultModel": {"provider": "openrouter", "modelId": "B/Model", "maxMode": false, "parameters": []}
+    })).expect("clear old account before replacing its model");
+    let expected = serde_json::json!({"provider": "openrouter", "modelId": "B/Model", "maxMode": true, "parameters": []});
+    assert_eq!(reply["agentDefaultModel"], expected);
+    assert_eq!(reply["localToolPermission"], "ask");
+    assert_eq!(SettingsService::new(&path).get_agent_default_model_checked().expect("reopened account model"), Some(expected.clone()));
+    assert!(service.scope_to_account("account-c").expect("clear account-bound model"));
+    assert_eq!(service.get_agent_default_model_checked().expect("new account without default"), None);
+    assert!(service.set_agent_default_model(Some(&expected)).expect("replace cleared model"));
+    let reply = service.set_host_settings(&serde_json::json!({"agentDefaultModel": null}))
+        .expect("whole-document null clears the bound model");
+    assert!(reply.get("agentDefaultModel").is_none());
+    assert_eq!(service.get_agent_default_model_checked().expect("explicitly cleared model"), None);
+    let _ = fs::remove_file(path);
+}
+
 #[test]
 fn conditional_settings_reply_keeps_its_commit_when_a_listener_commits_again() {
     let path = temp_path("cas-reentrant-listener");
@@ -241,6 +523,7 @@ fn conditional_unreadable_source_rejects_candidate_and_leaves_no_commit_event() 
     fs::create_dir_all(&path).expect("create blocked settings destination");
     fs::write(path.join("keep"), b"untouched").expect("seed destination marker");
     let service = SettingsService::new(&path);
+    assert!(service.get_agent_default_model_checked().is_err());
     let current = service.get_host_settings_snapshot();
     let observed = Arc::new(Mutex::new(Vec::new()));
     let sink = Arc::clone(&observed);
@@ -282,6 +565,8 @@ fn invalid_sources_are_not_replaced_by_getter_normalization_or_settings_writers(
             sink.lock().expect("observed changes").push(fields);
         }));
 
+        assert!(service.get_agent_default_model_checked().is_err(), "{label}");
+        assert_eq!(service.get_agent_default_model(), None, "legacy read compatibility");
         assert_eq!(service.get_notification_config()["isEnabled"], false);
         let fallback = service.get_host_settings_snapshot();
         assert_eq!(service.get_host_settings(), fallback.settings);

@@ -1,14 +1,19 @@
 use std::collections::VecDeque;
 use std::fs;
 use std::io::Cursor;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::inference::codex_direct_responses::CodexDirectCheckpoint;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     OpenRouterCheckpoint, OpenRouterTransport, ProviderMessage,
-    ProviderSessionError, ProviderTokenUsage, RoutedProvider, RoutedProviderOptions,
-    RoutedToolDefinition, configured_routed_provider, decode_sse_stream,
+    ProviderSessionError, ProviderTokenUsage, RoutedProvider, RoutedProviderCheckpoint,
+    RoutedProviderOptions, RoutedToolDefinition, configured_routed_provider, decode_sse_stream,
+    resolve_fabushi_request_model,
     run_openrouter_with_transport, run_openrouter_with_transport_reporting_usage,
     run_openrouter_with_transport_reporting_usage_and_partials, run_routed_provider_text,
+    run_routed_provider_text_with_lifecycle,
 };
 use serde_json::{Value, json};
 
@@ -66,6 +71,7 @@ fn provider_session_honors_runner_cancellation_before_provider_setup() {
         &mut RoutedProviderOptions {
             data_dir: &root,
             typed_replay: None,
+            fabushi_model: None,
             cursor_auth: None,
             tools: &tools,
             mcp_server_url: None,
@@ -77,6 +83,259 @@ fn provider_session_honors_runner_cancellation_before_provider_setup() {
     )
     .expect_err("runner cancellation should win before provider setup");
     assert!(matches!(error, ProviderSessionError::Cancelled(_)));
+}
+
+fn fabushi_checkpoint(model: Option<&str>) -> CodexDirectCheckpoint {
+    CodexDirectCheckpoint {
+        model: model.map(str::to_string),
+        input: vec![
+            json!({"role":"user","content":"calendar"}),
+            json!({
+                "type":"function_call", "name":"calendar_list",
+                "call_id":"accepted-call", "arguments":"{}"
+            }),
+            json!({
+                "type":"function_call_output", "call_id":"accepted-call",
+                "output":"{\"events\":[\"daily\"]}"
+            }),
+        ],
+        text: "Checking ".into(),
+        response_id: "accepted-response".into(),
+        usage: Default::default(),
+        completed_steps: 1,
+        tool_calls_completed: 1,
+    }
+}
+
+fn refused_fabushi_dispatch(
+    requested: Option<&str>,
+    checkpoint: Option<&RoutedProviderCheckpoint>,
+    cancelled: bool,
+) -> ProviderSessionError {
+    let root = std::env::temp_dir();
+    let should_cancel = || cancelled;
+    run_routed_provider_text_with_lifecycle(
+        RoutedProvider::Fabushi,
+        &[],
+        &mut RoutedProviderOptions {
+            data_dir: &root,
+            typed_replay: None,
+            fabushi_model: requested,
+            cursor_auth: None,
+            tools: &[],
+            mcp_server_url: None,
+            execute_tool: &mut |_tool, _args, _call_id| {
+                panic!("refused Fabushi dispatch must not execute a tool")
+            },
+            on_text_delta: &mut |_delta, _accumulated| {
+                panic!("refused Fabushi dispatch must not emit text")
+            },
+            on_partial_tool_call: None,
+            should_cancel: &should_cancel,
+        },
+        checkpoint,
+        &mut |_accepted| panic!("refused Fabushi dispatch must not accept a checkpoint"),
+    )
+    .expect_err("Fabushi dispatch must fail before provider activity")
+}
+
+#[test]
+fn fabushi_request_model_preserves_explicit_identity_and_rejects_invalid_selection() {
+    for (requested, expected) in [
+        ("  Org/Family/Model@2026-11  ", "Org/Family/Model@2026-11"),
+        ("\u{2003}Model.Mixed+Case\u{2003}", "Model.Mixed+Case"),
+        ("grok", "grok"),
+        ("gemini", "gemini"),
+    ] {
+        assert_eq!(
+            resolve_fabushi_request_model(Some(requested), None).unwrap(),
+            expected,
+        );
+    }
+    for requested in [
+        "", "   ", "\u{2003}", "\tModel", "Model\n", "A\0B", "Model\u{7f}", "\u{85}Model",
+    ] {
+        assert!(
+            matches!(
+                resolve_fabushi_request_model(Some(requested), None),
+                Err(ProviderSessionError::Configuration(_)),
+            ),
+            "invalid explicit model: {requested:?}",
+        );
+    }
+}
+
+#[test]
+fn fabushi_checkpoint_requires_normalized_identity_and_exact_selected_model() {
+    for model in [
+        None, Some(""), Some(" "), Some(" Model"), Some("Model "), Some("Model\n"),
+        Some("A\u{7f}B"),
+    ] {
+        let checkpoint = fabushi_checkpoint(model);
+        for requested in [None, Some("Model"), Some("\t")] {
+            assert!(
+                matches!(
+                    resolve_fabushi_request_model(requested, Some(&checkpoint)),
+                    Err(ProviderSessionError::Protocol(_)),
+                ),
+                "invalid checkpoint model must fail first: {model:?}",
+            );
+        }
+    }
+
+    let model = "Org/Family/Model@2026-11";
+    let checkpoint = fabushi_checkpoint(Some(model));
+    assert_eq!(
+        resolve_fabushi_request_model(None, Some(&checkpoint)).unwrap(),
+        model,
+    );
+    assert_eq!(
+        resolve_fabushi_request_model(
+            Some("  Org/Family/Model@2026-11  "),
+            Some(&checkpoint),
+        ).unwrap(),
+        model,
+    );
+    for requested in ["org/Family/Model@2026-11", "Org/Family/Model@other", "other"] {
+        assert!(matches!(
+            resolve_fabushi_request_model(Some(requested), Some(&checkpoint)),
+            Err(ProviderSessionError::Protocol(_)),
+        ));
+    }
+    for requested in ["", "  ", "\tOrg/Family/Model@2026-11"] {
+        assert!(matches!(
+            resolve_fabushi_request_model(Some(requested), Some(&checkpoint)),
+            Err(ProviderSessionError::Configuration(_)),
+        ));
+    }
+}
+
+#[test]
+fn fabushi_dispatch_preserves_cancellation_and_provider_tag_priority() {
+    let legacy = RoutedProviderCheckpoint::Fabushi(fabushi_checkpoint(None));
+    let other_provider = RoutedProviderCheckpoint::Codex(fabushi_checkpoint(None));
+    for checkpoint in [&legacy, &other_provider] {
+        assert!(matches!(
+            refused_fabushi_dispatch(Some("\t"), Some(checkpoint), true),
+            ProviderSessionError::Cancelled(_),
+        ));
+    }
+    assert!(matches!(
+        refused_fabushi_dispatch(Some("\t"), Some(&other_provider), false),
+        ProviderSessionError::Protocol(message) if message.contains("belongs to codex"),
+    ));
+}
+
+#[test]
+fn fabushi_environment_fallback_checkpoint_pin_and_auth_order_are_isolated() {
+    const CHILD_CASE: &str = "FABUSHI_PROVIDER_MODEL_CONTRACT_CASE";
+    const CHILD_COMPLETED: &str = "fabushi-provider-model-contract-completed";
+    if let Ok(case) = std::env::var(CHILD_CASE) {
+        let result = resolve_fabushi_request_model(None, None);
+        match case.as_str() {
+            "missing" | "empty" | "spaces" => assert_eq!(result.unwrap(), "deepseek-chat"),
+            "selected" => assert_eq!(result.unwrap(), "Env/Family/Model@Case"),
+            "control" | "control_only" => assert!(matches!(
+                result,
+                Err(ProviderSessionError::Configuration(_)),
+            )),
+            _ => panic!("unknown isolated model case: {case}"),
+        }
+
+        let model = "Frozen/Family/Model@Case";
+        let checkpoint = fabushi_checkpoint(Some(model));
+        assert_eq!(
+            resolve_fabushi_request_model(None, Some(&checkpoint)).unwrap(),
+            model,
+        );
+        assert_eq!(resolve_fabushi_request_model(Some(model), None).unwrap(), model);
+
+        // A valid selection reaches the deliberately unavailable credential.
+        // Every model refusal below must precede this same authentication path.
+        assert!(matches!(
+            refused_fabushi_dispatch(Some(model), None, false),
+            ProviderSessionError::Authentication(message) if message.contains("credential is unavailable"),
+        ));
+        let accepted = RoutedProviderCheckpoint::Fabushi(checkpoint);
+        assert!(matches!(
+            refused_fabushi_dispatch(None, Some(&accepted), false),
+            ProviderSessionError::Authentication(message) if message.contains("credential is unavailable"),
+        ));
+        assert!(matches!(
+            refused_fabushi_dispatch(Some("Changed/Model"), Some(&accepted), false),
+            ProviderSessionError::Protocol(message) if message.contains("model identity"),
+        ));
+        for checkpoint_model in [None, Some(""), Some(" model "), Some("model\n")] {
+            let invalid = RoutedProviderCheckpoint::Fabushi(fabushi_checkpoint(checkpoint_model));
+            assert!(matches!(
+                refused_fabushi_dispatch(Some(model), Some(&invalid), false),
+                ProviderSessionError::Protocol(message) if message.contains("model identity"),
+            ));
+        }
+        for requested in ["", "  ", "\tModel"] {
+            assert!(matches!(
+                refused_fabushi_dispatch(Some(requested), None, false),
+                ProviderSessionError::Configuration(message) if message.contains("model selection"),
+            ));
+        }
+        eprintln!("{CHILD_COMPLETED}:{case}");
+        return;
+    }
+
+    for (case, model) in [
+        ("missing", None),
+        ("empty", Some("")),
+        ("spaces", Some(" \u{2003} ")),
+        ("selected", Some("  Env/Family/Model@Case  ")),
+        ("control", Some("\tEnv/Family/Model@Case")),
+        ("control_only", Some("\n")),
+    ] {
+        let suffix = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let missing_credential = std::env::temp_dir().join(format!(
+            "fabushi-model-absent-credential-{}-{suffix}-{case}",
+            std::process::id(),
+        ));
+        assert!(!missing_credential.exists());
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args([
+                "--exact",
+                "fabushi_environment_fallback_checkpoint_pin_and_auth_order_are_isolated",
+                "--nocapture",
+            ])
+            .env(CHILD_CASE, case)
+            .env("FABUSHI_RESPONSES_URL", "http://127.0.0.1:1/responses")
+            .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &missing_credential)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        match model {
+            Some(model) => {
+                command.env("FABUSHI_RESPONSES_MODEL", model);
+            }
+            None => {
+                command.env_remove("FABUSHI_RESPONSES_MODEL");
+            }
+        }
+        let mut child = command.spawn().expect("start isolated model contract");
+        let deadline = Instant::now() + Duration::from_secs(30);
+        loop {
+            if child.try_wait().expect("poll isolated model contract").is_some() {
+                break;
+            }
+            if Instant::now() >= deadline {
+                child.kill().expect("stop timed out model contract");
+                let output = child.wait_with_output().expect("collect timed out model contract");
+                panic!("isolated model case {case} timed out: {output:?}");
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        let output = child.wait_with_output().expect("collect isolated model contract");
+        assert!(output.status.success(), "isolated model case {case} failed: {output:?}");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(&format!("{CHILD_COMPLETED}:{case}")),
+            "isolated model case {case} did not execute its assertions: {output:?}",
+        );
+    }
 }
 
 

@@ -78,6 +78,7 @@ pub struct ProductionRunnerCompositionHooks {
 
 pub struct ProductionRunnerCompositionInput {
     pub provider: RoutedProvider,
+    pub fabushi_model: Option<String>,
     pub bridge: Arc<dyn RoutedToolBridge>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub request_context: RunnerRequestContextSnapshot,
@@ -117,6 +118,9 @@ pub fn create_production_runner_composition(
         input.cancellation,
         input.checkpoint_store,
     );
+    if let Some(model) = input.fabushi_model {
+        composition = composition.with_fabushi_model(model);
+    }
     if let Some(cursor_auth) = input.cursor_auth {
         composition = composition.with_cursor_auth(cursor_auth);
     }
