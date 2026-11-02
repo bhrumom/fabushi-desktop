@@ -128,7 +128,8 @@ export function localTranscriptClientNonce(
   return entry.authorKind == null && entry.authorId == null ? entry.clientNonce : null;
 }
 
-export function isSettledTranscriptMessage(entry: ConversationTranscriptEntry): entry is TranscriptMessage {
+// A false settlement state still permits a message; this is not a kind guard.
+export function isSettledTranscriptMessage(entry: ConversationTranscriptEntry): boolean {
   return entry.kind === "message" && entry.role === "user" && entry.delivery === "sent"
     && !entry.id.startsWith("pending-")
     && !("sourceKind" in entry && entry.sourceKind === "user-attachment")

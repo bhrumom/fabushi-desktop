@@ -2,7 +2,7 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-02 21:41:36 UTC",
+  "recorded_at": "2026-11-02 21:45:49 UTC",
   "scope": "NMR-UI-01 / NMR-AC-UI-01: existing ProductionRenderer Human author, cache, queue and asynchronous settlement",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
@@ -167,7 +167,7 @@
     "frozen_blobs": {
       "frontend/src/production/ProductionRenderer.tsx": "f58438d4c7fc98e64cb83197961e5edf1a0d0a08",
       "frontend/src/production/model.ts": "de1e444c792bbb1604605bcd40211d940bac4ac1",
-      "frontend/src/production/transcript-projection.ts": "5c24a35cc5eed2b4ed1f6021683a478275f94041",
+      "frontend/src/production/transcript-projection.ts": "7f539eab47f8b2c1e357cf522fccb7458588273f",
       "frontend/src/production/transcript-projection.contract.test.ts": "7b2b9a8164746aa81d9017461c851a35704db003",
       "desktop/e2e/native-message-author-recovery.spec.ts": "351113a85c4094735de49afb4c991f28dddfbe57",
       "desktop/e2e/fixtures/native-message-author-recovery.tsx": "f200b48d92e308422b44e820ea469223d5746647"
@@ -1800,8 +1800,33 @@
   "corrected_ui_qualification": {
     "sha": "779ca162cfbf57a4c9ffb175af2ea16b61dc2439",
     "run_id": 41530015937,
-    "status": "pending",
-    "scope": "only actual UI affected gates; other review-branch jobs skipped, never counted as passed",
-    "exact_remote_content_readback": true
+    "job_id": 125567467626,
+    "conclusion": "failure",
+    "pure": {
+      "executed": 41,
+      "passed": 41,
+      "failed": 0
+    },
+    "cursor": {
+      "executed": 17,
+      "passed": 17,
+      "failed": 0
+    },
+    "renderer_build": {
+      "conclusion": "failure",
+      "errors": [
+        "ProductionRenderer.tsx(1361,15) TS2698",
+        "ProductionRenderer.tsx(1459,17) TS2698"
+      ],
+      "root_cause": "isSettledTranscriptMessage incorrectly promised the entire TranscriptMessage kind as a type guard; its false state erased pending/failed messages to never.",
+      "minimal_fix": "Return boolean for a delivery-state predicate; runtime identity/author logic and all case assertions are unchanged."
+    },
+    "browser": {
+      "actual_11": "skipped",
+      "transcript_8": "skipped",
+      "own_author_16": "skipped"
+    },
+    "following_revision": "not-run at preparation",
+    "all_other_review_gates": "skipped by explicit UI-only review scope, not passed"
   }
 }
