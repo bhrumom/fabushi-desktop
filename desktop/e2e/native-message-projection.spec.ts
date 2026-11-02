@@ -299,14 +299,14 @@ for (const oldPhase of ['in-flight', 'queued']) {
 test('NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation', async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);
-  await messageRow(page, 'm1').hover();
+  await messageRow(page, 'm1').locator('.sand-message-action-anchor').hover();
   await messageRow(page, 'm1').getByRole('button', { name: 'Add reaction', exact: true }).click();
   await messageRow(page, 'm1').getByRole('button', { name: 'React with 👍', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(1);
   await page.evaluate(() => window.nativeMessageFixture.settleReaction());
   await expect(messageRow(page, 'm1').locator('.sand-reaction-pill')).toContainText('👍');
 
-  await messageRow(page, 'm2').hover();
+  await messageRow(page, 'm2').locator('.sand-message-action-anchor').hover();
   await messageRow(page, 'm2').getByRole('button', { name: 'Add reaction', exact: true }).click();
   await messageRow(page, 'm2').getByRole('button', { name: 'React with ❤️', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(2);
