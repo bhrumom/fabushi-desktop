@@ -325,6 +325,16 @@ jobs:
               "source/host/src/extensions/attachments/media_fetch.rs",
               "source/host/src/extensions/attachments/media_store.rs",
               "source/host/tests/openclaw_media_fetch_contract.rs",
+              "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+              "source/host/src/extensions/attachments/media_reference.rs",
+              "source/host/src/extensions/attachments/media_file_context.rs",
+              "source/host/src/connectors/channel_attachment.rs",
+              "source/host/src/extensions/cross_user_sharing/production.rs",
+              "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
+              "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
+              "source/host/src/extensions/cross_user_sharing/xuser_relay.rs",
+              "source/host/tests/openclaw_media_reference_contract.rs",
+              "source/host/tests/channel_attachment_contract.rs",
               "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
               "source/host/app/src/tests/link_preview_gateway_tests.rs",
               "source/host/src/host_gateway_api.rs",
@@ -402,8 +412,9 @@ jobs:
           set -euo pipefail
           export no_proxy="$NO_PROXY"
           source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
-          run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract
+          run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract --test openclaw_media_reference_contract --test channel_attachment_contract
           run_recovery_check media-input-url-projection cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact
+          run_recovery_check media-reference-unicode cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::cross_user_sharing::production::unicode_tests::
           python3 - <<'PY'
           import hashlib, json, os, re, subprocess, sys
           from pathlib import Path
@@ -411,9 +422,10 @@ jobs:
           subject = json.loads((root / "subject.json").read_text())
           log = (root / "media-input-policy.log").read_bytes()
           projection_log = (root / "media-input-url-projection.log").read_bytes()
+          unicode_log = (root / "media-reference-unicode.log").read_bytes()
           command = (root / "media-input-policy.command.txt").read_text().strip()
           exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
-                   if line.split("\t")[0] in ("media-input-policy", "media-input-url-projection")]
+                   if line.split("\t")[0] in ("media-input-policy", "media-input-url-projection", "media-reference-unicode")]
           required = [
               "gateway_file_extraction_rejects_every_malformed_explicit_policy",
               "gateway_file_policy_errors_precede_base64_and_url_processing",
@@ -445,27 +457,39 @@ jobs:
               "gateway_media_fetch_applies_explicit_and_default_redirect_caps",
               "gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
               "gateway_input_url_allowlist_never_grants_private_access",
+              "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+              "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+              "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
           projection_name = "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust"
           projection_passed = re.findall(r"^test (\S+) \.\.\. ok$", projection_log.decode("utf-8", errors="replace"), re.MULTILINE)
+          unicode_required = [
+              "extensions::cross_user_sharing::production::unicode_tests::mru_production_attachment_callback_preserves_unicode_and_refusal_controls",
+              "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals",
+          ]
+          unicode_passed = re.findall(r"^test (\S+) \.\.\. ok$", unicode_log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
           missing += [] if projection_passed.count(projection_name) == 1 else [projection_name]
+          missing += [name for name in unicode_required if unicode_passed.count(name) != 1]
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = (exits == [["media-input-policy", "0"], ["media-input-url-projection", "0"]] and not missing
+          accepted = (exits == [["media-input-policy", "0"], ["media-input-url-projection", "0"], ["media-reference-unicode", "0"]] and not missing
                       and head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"])
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({
-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1", "command": command, "command_exit_records": exits,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1", "command": command, "command_exit_records": exits,
               "required_tests": required, "observed_passed_test_names": passed,
               "projection_command": (root / "media-input-url-projection.command.txt").read_text().strip(),
               "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
               "projection_log_sha256": hashlib.sha256(projection_log).hexdigest(),
+              "unicode_command": (root / "media-reference-unicode.command.txt").read_text().strip(),
+              "unicode_required_tests": unicode_required, "unicode_observed_passed_test_names": unicode_passed,
+              "unicode_log_sha256": hashlib.sha256(unicode_log).hexdigest(),
               "missing_or_nonunique_positive_results": missing,
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           })
           (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -1123,6 +1147,9 @@ jobs:
               "link_preview_native_gateway_result": "passed",
               "link_preview_native_gateway_receipt": "link-preview-native-gateway.receipt.json in the exact-subject Coordinator artifact",
               "link_preview_native_gateway_scope": "Only fetchLinkMetadata joins the native Attachments registry; actual HTTP native authority/service-cache cases, shipping Coordinator MainData/Data routing against a controlled peer, and three app helper controls with closed Host lane and preserved ordinary replies. Source anchors establish shared service composition. No full UI/cold network timing, concurrency soak, remote-host path portability or platform acceptance is established.",
+              "media_reference_unicode_contract": "MRU-v1",
+              "media_reference_unicode_result": "passed",
+              "media_reference_unicode_scope": "UTF-8-safe ASCII scheme decisions, unchanged inbound URI refusals, and actual ProductionXuserHost/AttachmentsService plus ordered publisher callbacks with a controlled relay. Fresh desktop producer projection, actual sharing accounts, platforms and full media acceptance remain open.",
               "media_http_error_contract": "MHE-v1",
               "media_http_error_target": "openclaw_media_fetch_contract",
               "media_http_error_result": "passed",
@@ -1448,6 +1475,10 @@ jobs:
     env:
       CARGO_TERM_COLOR: never
       CARGO_BUILD_JOBS: '2'
+      # CI-LINUX-STORAGE-01: retain test assertions without full debug artifacts.
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1480,6 +1511,32 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Record Linux build profile and available storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/sqlite-native-path
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          root = pathlib.Path(".evidence/sqlite-native-path")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"]
+          profile = {key: os.environ[key] for key in (
+              "CARGO_PROFILE_DEV_DEBUG", "CARGO_PROFILE_TEST_DEBUG", "CARGO_INCREMENTAL")}
+          assert all(value == "0" for value in profile.values())
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          (root / "build-storage-subject.json").write_text(json.dumps({
+              "contract": "CI-LINUX-STORAGE-01", "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "profile_environment": profile, "result": "environment recorded; execution not yet assessed",
+          }, indent=2) + "\n")
+          PY
+          df -Pk . "$RUNNER_TEMP" > .evidence/sqlite-native-path/storage-before.txt
+          if [ -d source/host/target ]; then
+            du -sk source/host/target >> .evidence/sqlite-native-path/storage-before.txt
+          fi
       - name: Test native SQLite paths and affected recovery owners
         id: native_paths
         env:
@@ -1571,21 +1628,26 @@ jobs:
           set -euo pipefail
           export no_proxy="$NO_PROXY"
           mkdir -p .evidence/sqlite-native-path/media-input-policy
-          command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract)
+          command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract --test openclaw_media_reference_contract --test channel_attachment_contract)
           projection_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact)
+          unicode_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::cross_user_sharing::production::unicode_tests::)
           set +e
           "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/tests.log
           pipeline_status=("${PIPESTATUS[@]}")
           "${projection_command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/projection.log
           projection_status=("${PIPESTATUS[@]}")
+          "${unicode_command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/unicode.log
+          unicode_status=("${PIPESTATUS[@]}")
           set -e
-          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${projection_status[0]}" "${projection_status[1]}" "${command[@]}" --projection-command "${projection_command[@]}" <<'PY'
+          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${projection_status[0]}" "${projection_status[1]}" "${unicode_status[0]}" "${unicode_status[1]}" "${command[@]}" --projection-command "${projection_command[@]}" --unicode-command "${unicode_command[@]}" <<'PY'
           import hashlib, json, os, pathlib, re, subprocess, sys
           root = pathlib.Path(".evidence/sqlite-native-path/media-input-policy")
           log = (root / "tests.log").read_bytes()
           projection_log = (root / "projection.log").read_bytes()
-          cargo_exit, capture_exit, projection_exit, projection_capture_exit = map(int, sys.argv[1:5])
-          separator = sys.argv.index("--projection-command", 5)
+          unicode_log = (root / "unicode.log").read_bytes()
+          cargo_exit, capture_exit, projection_exit, projection_capture_exit, unicode_exit, unicode_capture_exit = map(int, sys.argv[1:7])
+          separator = sys.argv.index("--projection-command", 7)
+          unicode_separator = sys.argv.index("--unicode-command", separator + 1)
           required = [
               "gateway_file_extraction_rejects_every_malformed_explicit_policy",
               "gateway_file_policy_errors_precede_base64_and_url_processing",
@@ -1617,14 +1679,23 @@ jobs:
               "gateway_media_fetch_applies_explicit_and_default_redirect_caps",
               "gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
               "gateway_input_url_allowlist_never_grants_private_access",
+              "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+              "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+              "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
           projection_name = "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust"
           projection_passed = re.findall(r"^test (\S+) \.\.\. ok$", projection_log.decode("utf-8", errors="replace"), re.MULTILINE)
+          unicode_required = [
+              "extensions::cross_user_sharing::production::unicode_tests::mru_production_attachment_callback_preserves_unicode_and_refusal_controls",
+              "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals",
+          ]
+          unicode_passed = re.findall(r"^test (\S+) \.\.\. ok$", unicode_log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
           missing += [] if projection_passed.count(projection_name) == 1 else [projection_name]
+          missing += [name for name in unicode_required if unicode_passed.count(name) != 1]
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = cargo_exit == capture_exit == projection_exit == projection_capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
+          accepted = cargo_exit == capture_exit == projection_exit == projection_capture_exit == unicode_exit == unicode_capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml",
@@ -1642,27 +1713,40 @@ jobs:
               "source/host/src/extensions/attachments/media_fetch.rs",
               "source/host/src/extensions/attachments/media_store.rs",
               "source/host/tests/openclaw_media_fetch_contract.rs",
+              "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+              "source/host/src/extensions/attachments/media_reference.rs",
+              "source/host/src/extensions/attachments/media_file_context.rs",
+              "source/host/src/connectors/channel_attachment.rs",
+              "source/host/src/extensions/cross_user_sharing/production.rs",
+              "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
+              "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs",
+              "source/host/src/extensions/cross_user_sharing/xuser_relay.rs",
+              "source/host/tests/openclaw_media_reference_contract.rs",
+              "source/host/tests/channel_attachment_contract.rs",
           ]
           receipt = {
-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1", "subject_commit": head,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
-              "command": sys.argv[5:separator], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
-              "projection_command": sys.argv[separator+1:], "projection_exit": projection_exit, "projection_capture_exit": projection_capture_exit,
+              "command": sys.argv[7:separator], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+              "projection_command": sys.argv[separator+1:unicode_separator], "projection_exit": projection_exit, "projection_capture_exit": projection_capture_exit,
               "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
               "projection_log_sha256": hashlib.sha256(projection_log).hexdigest(),
+              "unicode_command": sys.argv[unicode_separator+1:], "unicode_exit": unicode_exit, "unicode_capture_exit": unicode_capture_exit,
+              "unicode_required_tests": unicode_required, "unicode_observed_passed_test_names": unicode_passed,
+              "unicode_log_sha256": hashlib.sha256(unicode_log).hexdigest(),
               "required_tests": required, "missing_or_nonunique_positive_results": missing,
               "observed_passed_test_names": passed,
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
-          sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or 1)
+          sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
           PY
       - name: Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache
         id: channel_pending_recovery
@@ -1789,6 +1873,24 @@ jobs:
           print(json.dumps(receipt, indent=2), flush=True)
           raise SystemExit(0 if accepted else 1)
           PY
+      - name: Record storage after completed native, media and channel checks
+        if: ${{ always() && steps.native_paths.outcome != 'skipped' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/sqlite-native-path
+          df -Pk . "$RUNNER_TEMP" > .evidence/sqlite-native-path/storage-after-owner-checks.txt
+          if [ -d source/host/target ]; then
+            du -sk source/host/target >> .evidence/sqlite-native-path/storage-after-owner-checks.txt
+          fi
+      - name: Save completed Linux owner evidence before Automation and App checks
+        if: ${{ always() && steps.native_paths.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-linux-before-automation-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/sqlite-native-path/
+          if-no-files-found: error
+          retention-days: 90
       - name: Test typed Automation admission and actual owners on the existing Linux Host cache
         id: automation_admission
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}

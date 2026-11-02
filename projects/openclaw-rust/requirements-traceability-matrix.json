@@ -1213,7 +1213,9 @@
         "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
         "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2370,7 +2372,9 @@
         "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
         "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

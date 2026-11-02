@@ -280,3 +280,101 @@ fn test_ocrm_media_ref_08_canonicalize_persisted_user_message_media() {
     assert_eq!(projected.get("MediaPath").and_then(|v| v.as_str()), Some("/tmp/captured.jpg"));
     assert_eq!(projected.get("MediaType").and_then(|v| v.as_str()), Some("image/jpeg"));
 }
+
+#[test]
+fn mru_unicode_non_media_references_preserve_normalization_and_local_projection() {
+    for (source, expected) in [
+        ("", ""),
+        ("ééééé.png", "ééééé.png"),
+        ("  /tmp/猫.png  ", "/tmp/猫.png"),
+        ("/home/你/照片.png", "/home/你/照片.png"),
+        ("abc📷.png", "abc📷.png"),
+        ("abcdefé.png", "abcdefé.png"),
+        ("file:/é.png", "file:/é.png"),
+        ("file://é.invalid/a.png", "file://é.invalid/a.png"),
+        (r"C:\图像.png", r"C:\图像.png"),
+        ("MEDIA: 猫.png", "猫.png"),
+        ("\t MEDIA : 📷.png  ", "📷.png"),
+        ("文件://猫.png", "文件://猫.png"),
+    ] {
+        assert_eq!(normalize_media_reference_source(source), expected, "{source:?}");
+        assert_eq!(parse_inbound_media_uri(source), Ok(None), "{source:?}");
+        let rewrite = resolve_media_reference_sandbox_path(source, None);
+        assert_eq!(rewrite.resolved, expected, "{source:?}");
+        assert_eq!(rewrite.rewritten_from, None, "{source:?}");
+        assert_eq!(
+            resolve_media_reference_local_path_info(source, Path::new("unused-media-root")),
+            Ok(MediaReferenceLocalPathInfo::Local { path: PathBuf::from(expected) }),
+            "{source:?}"
+        );
+    }
+}
+
+#[test]
+fn mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy() {
+    // Expected columns: unsupported, data, file, http, media-store, Windows drive.
+    for (source, expected) in [
+        ("/tmp/猫.png", [false, false, false, false, false, false]),
+        ("abc📷.png", [false, false, false, false, false, false]),
+        ("abcdefé.png", [false, false, false, false, false, false]),
+        ("fileé://猫.png", [false, false, false, false, false, false]),
+        ("文件://猫.png", [false, false, false, false, false, false]),
+        ("file:/é.png", [false, false, true, false, false, false]),
+        ("FiLe://é.invalid/a.png", [false, false, true, false, false, false]),
+        ("file:€.png", [false, false, true, false, false, false]),
+        ("HTTP://example.invalid/猫.png", [false, false, false, true, false, false]),
+        ("hTtPs://example.invalid/📷.png", [false, false, false, true, false, false]),
+        ("https:/猫.png", [true, false, false, false, false, false]),
+        ("ftp://example.invalid/猫.png", [true, false, false, false, false, false]),
+        ("DATA:图片", [true, true, false, false, false, false]),
+        ("mEdIa://inbound/猫.png", [false, false, false, false, true, false]),
+        ("media:/猫.png", [true, false, false, false, false, false]),
+        (r"C:\图像.png", [false, false, false, false, false, true]),
+    ] {
+        let actual = classify_media_reference_source(source, false);
+        assert_eq!(
+            [actual.has_unsupported_scheme, actual.is_data_url, actual.is_file_url,
+             actual.is_http_url, actual.is_media_store_url, actual.looks_like_windows_drive_path],
+            expected,
+            "{source:?}"
+        );
+    }
+    let allowed_data = classify_media_reference_source("DATA:图片", true);
+    assert!(allowed_data.is_data_url);
+    assert!(!allowed_data.has_unsupported_scheme);
+    assert!(!allowed_data.is_file_url && !allowed_data.is_http_url && !allowed_data.is_media_store_url);
+}
+
+#[test]
+fn mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals() {
+    for (source, normalized, id) in [
+        ("media://inbound/猫.png", "media://inbound/猫.png", "猫.png"),
+        ("MEDIA: media://inbound/📷.png", "media://inbound/📷.png", "📷.png"),
+        (" MeDiA://inbound/%E7%8C%AB%20%C3%A9.png ",
+         "MeDiA://inbound/%E7%8C%AB%20%C3%A9.png", "猫 é.png"),
+    ] {
+        let parsed = parse_inbound_media_uri(source).unwrap().unwrap();
+        assert_eq!(parsed.id, id);
+        assert_eq!(parsed.normalized_source, normalized);
+        let rewritten = resolve_media_reference_sandbox_path(source, None);
+        assert_eq!(rewritten.resolved, format!("media/inbound/{id}"));
+        assert_eq!(rewritten.rewritten_from.as_deref(), Some(normalized));
+    }
+    assert!(matches!(
+        parse_inbound_media_uri("media://outbound/猫.png"),
+        Err(MediaReferenceError::PathNotAllowed(_))
+    ));
+    for source in [
+        "media://user@inbound/猫.png",
+        "media://inbound/猫.png?query=yes",
+        "media://inbound/猫.png#fragment",
+        "media://inbound/猫/child.png",
+        "media://inbound/猫%2fchild.png",
+        "media://inbound/猫%5cchild.png",
+        "media://inbound/猫%00.png",
+        "media://inbound/../猫.png",
+        "media://inbound/%2e%2e",
+    ] {
+        assert!(matches!(parse_inbound_media_uri(source), Err(MediaReferenceError::InvalidPath(_))), "{source}");
+    }
+}

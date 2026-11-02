@@ -30,7 +30,7 @@ static SCHEME_RE: LazyLock<Regex> =
 /// Strips legacy MEDIA: prefixes while preserving canonical media:// references.
 pub fn normalize_media_reference_source(source: &str) -> String {
     let trimmed = source.trim();
-    if trimmed.len() >= 8 && trimmed[..8].eq_ignore_ascii_case("media://") {
+    if trimmed.get(..8).is_some_and(|prefix| prefix.eq_ignore_ascii_case("media://")) {
         return trimmed.to_string();
     }
     MEDIA_PREFIX_RE.replace(trimmed, "").trim().to_string()
@@ -39,7 +39,7 @@ pub fn normalize_media_reference_source(source: &str) -> String {
 /// Parses canonical inbound media-store URIs and rejects nested or cross-bucket references.
 pub fn parse_inbound_media_uri(source: &str) -> Result<Option<InboundMediaUri>, MediaReferenceError> {
     let normalized = normalize_media_reference_source(source);
-    if normalized.len() < 8 || !normalized[..8].eq_ignore_ascii_case("media://") {
+    if !normalized.get(..8).is_some_and(|prefix| prefix.eq_ignore_ascii_case("media://")) {
         return Ok(None);
     }
 
@@ -128,11 +128,12 @@ pub fn classify_media_reference_source(
 ) -> MediaReferenceSourceInfo {
     let looks_like_windows_drive_path = WIN_DRIVE_RE.is_match(source);
     let has_scheme = SCHEME_RE.is_match(source);
-    let is_file_url = source.len() >= 5 && source[..5].eq_ignore_ascii_case("file:");
-    let is_http_url = (source.len() >= 7 && source[..7].eq_ignore_ascii_case("http://"))
-        || (source.len() >= 8 && source[..8].eq_ignore_ascii_case("https://"));
-    let is_data_url = source.len() >= 5 && source[..5].eq_ignore_ascii_case("data:");
-    let is_media_store_url = source.len() >= 8 && source[..8].eq_ignore_ascii_case("media://");
+    // A local path may place a UTF-8 code point across any ASCII prefix boundary.
+    let is_file_url = source.get(..5).is_some_and(|prefix| prefix.eq_ignore_ascii_case("file:"));
+    let is_http_url = source.get(..7).is_some_and(|prefix| prefix.eq_ignore_ascii_case("http://"))
+        || source.get(..8).is_some_and(|prefix| prefix.eq_ignore_ascii_case("https://"));
+    let is_data_url = source.get(..5).is_some_and(|prefix| prefix.eq_ignore_ascii_case("data:"));
+    let is_media_store_url = source.get(..8).is_some_and(|prefix| prefix.eq_ignore_ascii_case("media://"));
 
     let has_unsupported_scheme = has_scheme
         && !looks_like_windows_drive_path

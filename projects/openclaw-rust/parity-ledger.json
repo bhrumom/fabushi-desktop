@@ -12267,7 +12267,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_media_reference_contract.rs",
-        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -13678,7 +13680,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_media_reference_contract.rs",
-        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
       ],
       "existing_owner_candidates": [
         {

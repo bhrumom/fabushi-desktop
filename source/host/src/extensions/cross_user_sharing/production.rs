@@ -861,6 +861,10 @@ fn now_ms() -> u64 {
 }
 
 #[cfg(test)]
+#[path = "production_unicode_tests.rs"]
+mod unicode_tests;
+
+#[cfg(test)]
 mod tests {
     use super::jwt_subject_from_access_token;
     use base64::Engine;
