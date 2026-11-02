@@ -119,9 +119,9 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-correct-bare-future-salts-and-complete-exact-H-message-gates",
+    "status": "original-NMR-required-gate-passed-at-exact-68; bounded-reaction-batch-now-in-progress",
     "local_executable_validation": "not-run",
-    "dependent_message_batches": "blocked-until-all-NMR-required-jobs-and-tests-pass",
+    "dependent_message_batches": "original prerequisite passed; new batch needs own exact-H complete gates",
     "full_product_acceptance": false,
     "independent_acceptance": false
   },
@@ -871,6 +871,290 @@
             "head_repository_id": 1375312893,
             "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
             "head_sha": "f3b00a552dbc14536a26c7b19492319d3445fd1c"
+          }
+        }
+      ]
+    },
+    {
+      "id": 41401616063,
+      "head_sha": "3386755e992d4b6d80b41211975903a3c9d5c839",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "id": 125134447823,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          "full_log_read": true,
+          "log_characters": 116835
+        },
+        {
+          "id": 125134448035,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "selected_behavior_execution": "none; cfg(test) compilation failed before response normalization",
+          "classification": "TEST_BUG",
+          "failure": "E0433 missing ApiRequestError and TlError imports in mtproto_service_builder_contract_tests for the concurrently introduced precise future_salts error assertions",
+          "full_log_read": true,
+          "log_characters": 190733
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13121587107,
+          "name": "native-message-reconciliation-3386755e992d4b6d80b41211975903a3c9d5c839",
+          "size_in_bytes": 10026,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121587107",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121587107/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:44:32Z",
+          "expires_at": "2027-01-31T06:42:29Z",
+          "updated_at": "2026-11-02T06:44:32Z",
+          "digest": "sha256:d9e74a987badb6c798d7c5553f771895458b0ad4a0dd0c3fc166d58632367147",
+          "workflow_run": {
+            "id": 41401616063,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "3386755e992d4b6d80b41211975903a3c9d5c839"
+          }
+        },
+        {
+          "id": 13121418048,
+          "name": "native-message-shipping-compile-3386755e992d4b6d80b41211975903a3c9d5c839",
+          "size_in_bytes": 13127,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121418048",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121418048/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:45:05Z",
+          "expires_at": "2027-01-31T06:42:29Z",
+          "updated_at": "2026-11-02T06:45:05Z",
+          "digest": "sha256:4ccc826e3886d92b172778f6f7c75a75c9da9d869db6d8910db321ce72340676",
+          "workflow_run": {
+            "id": 41401616063,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "3386755e992d4b6d80b41211975903a3c9d5c839"
+          }
+        }
+      ]
+    },
+    {
+      "id": 41402071662,
+      "head_sha": "68d4f07688741e8f54b35f3746a087f7fdd12108",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662",
+      "jobs": [
+        {
+          "id": 125135845372,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "full_log_read": true,
+          "log_characters": 118900
+        },
+        {
+          "id": 125135845319,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "success",
+          "app_host_compile": "success",
+          "tests": {
+            "normalization": {
+              "passed": 6,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 60
+            },
+            "future_salts_parser": {
+              "passed": 2,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 64
+            },
+            "protocol_contract": {
+              "passed": 122,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            },
+            "tcp_transport": {
+              "passed": 9,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0,
+              "live_case": "live_session_exchanges_encrypted_ping_and_service_rpc",
+              "live_result": "passed"
+            },
+            "proxy_boundary": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 18
+            },
+            "native_credential_schema": {
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 25
+            }
+          },
+          "full_log_read": true,
+          "log_characters": 227642
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13122201285,
+          "name": "native-message-shipping-compile-68d4f07688741e8f54b35f3746a087f7fdd12108",
+          "size_in_bytes": 21856,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13122201285",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13122201285/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:51:04Z",
+          "expires_at": "2027-01-31T06:46:47Z",
+          "updated_at": "2026-11-02T06:51:04Z",
+          "digest": "sha256:90ad15f97a4f6f1906b05cb4f7f0f9351ee9f6dbe93888c03e132809baf3e162",
+          "workflow_run": {
+            "id": 41402071662,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "68d4f07688741e8f54b35f3746a087f7fdd12108"
+          }
+        },
+        {
+          "id": 13122181591,
+          "name": "native-message-reconciliation-68d4f07688741e8f54b35f3746a087f7fdd12108",
+          "size_in_bytes": 10028,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13122181591",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13122181591/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:48:58Z",
+          "expires_at": "2027-01-31T06:46:47Z",
+          "updated_at": "2026-11-02T06:48:58Z",
+          "digest": "sha256:efb9a58757f0f56291f93a0d11c0bf062e5e718dada4028ddd92aa389b3a647b",
+          "workflow_run": {
+            "id": 41402071662,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "68d4f07688741e8f54b35f3746a087f7fdd12108"
+          }
+        }
+      ]
+    },
+    {
+      "id": 41401971023,
+      "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "id": 125135532859,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          "full_log_read": true,
+          "log_characters": 119676
+        },
+        {
+          "id": 125135533172,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "app_host_compile": "success",
+          "classification": "TEST_BUG",
+          "failure": "Same missing ApiRequestError/TlError imports from concurrent338; fixed by preserved68 commit. No selected behavior executed past lib test compilation.",
+          "full_log_read": true,
+          "log_characters": 191429
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13121691943,
+          "name": "native-message-shipping-compile-1cd59bb01513624d26e12f77bfab66729ab72694",
+          "size_in_bytes": 13095,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121691943",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121691943/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:48:56Z",
+          "expires_at": "2027-01-31T06:45:50Z",
+          "updated_at": "2026-11-02T06:48:56Z",
+          "digest": "sha256:8876cc099cddf4ec5c0494f1aea31515b18097c74857c11807e7c1fa2952bd62",
+          "workflow_run": {
+            "id": 41401971023,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694"
+          }
+        },
+        {
+          "id": 13121637327,
+          "name": "native-message-reconciliation-1cd59bb01513624d26e12f77bfab66729ab72694",
+          "size_in_bytes": 10031,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121637327",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121637327/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:50:25Z",
+          "expires_at": "2027-01-31T06:45:50Z",
+          "updated_at": "2026-11-02T06:50:25Z",
+          "digest": "sha256:7c0313b7b3fae15bf736b14b220ed49b5e942a3a790ec8d902b8865f155c7cbb",
+          "workflow_run": {
+            "id": 41401971023,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694"
           }
         }
       ]
@@ -4925,6 +5209,14 @@
         "source/mahayana/mahayana-rs/providers/telegram-protocol/tests/protocol_contract.rs"
       ],
       "action": "Read complete compare, commit and all four changed files. Adopt the already-published minimal production bare-count parser instead of overwriting it with an unpublished helper refactor. Preserve new NMR17/AC11, two parser-library cases and exact 122 protocol/9 TCP guards. Integrate stronger independent external oracles while retaining concurrent renamed cases/positive and precise error assertions. Correct new guard's literal backslash over-escape and actual fixed-U scheme source path."
+    },
+    {
+      "sha": "68d4f07688741e8f54b35f3746a087f7fdd12108",
+      "parent": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "files": [
+        "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs"
+      ],
+      "action": "Full compare/commit/file readback confirms equivalent missing-test-import repair already published. Drop redundant unpublished root import hunk and preserve the remote version byte-for-byte."
     }
   ],
   "tcp_fixture_repair": {
@@ -5316,7 +5608,7 @@
     ],
     "test_names_count": 10,
     "independent_static_review": "production_chain_review and spec_evidence_review reviewed case changes; production_chain_review reviewed final fixture bounds, no blocking finding; no executable local validation",
-    "execution_status": "not-run-at-final-test-blob",
+    "execution_status": "10 Human tests including strengthened three cases actually passed at exact68 run41402071662/job125135845372",
     "product_acceptance": false
   },
   "nmr_traceability_reconciliation": {
@@ -5340,7 +5632,41 @@
     "source_reviews_changed": false,
     "execution_evidence_promoted": false,
     "acceptance_promoted": false,
-    "status": "authored-awaiting-publication-and-Actions"
+    "status": "original prerequisite actually passed at68; NMR18/19/20 extension implemented and statically reviewed; new exact-H execution pending",
+    "schema_execution": {
+      "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "run_id": 41401971019,
+      "job_id": 125135533088,
+      "status": "completed",
+      "conclusion": "success",
+      "source_relation_tests_passed": 63,
+      "schema_behavior_tests_passed": 31,
+      "canonical_ledger_schema_errors": 0,
+      "full_log_read": true,
+      "log_characters": 53025,
+      "artifacts": [
+        {
+          "id": 13121926109,
+          "name": "tdrp-source-review-contract-1cd59bb01513624d26e12f77bfab66729ab72694",
+          "size_in_bytes": 3814,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121926109",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121926109/zip",
+          "expired": false,
+          "created_at": "2026-11-02T06:46:02Z",
+          "expires_at": "2027-01-31T06:45:50Z",
+          "updated_at": "2026-11-02T06:46:02Z",
+          "digest": "sha256:045213b96a86a6fba2cc81b7acd645f017c60e7eade48c1b5f60301bccbd8da0",
+          "workflow_run": {
+            "id": 41401971019,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694"
+          }
+        }
+      ],
+      "acceptance": false
+    }
   },
   "future_salts_wire_repair": {
     "base": "3386755e992d4b6d80b41211975903a3c9d5c839",
@@ -5419,7 +5745,7 @@
     ]
   },
   "fixed_upstream_build_input_export": {
-    "status": "authored-awaiting-exact-H-Actions",
+    "status": "executed-success-at-1cd59bb01513624d26e12f77bfab66729ab72694",
     "paths": [
       {
         "path": "scripts/tdrp-scan-fixed-build-inputs.py",
@@ -5456,6 +5782,142 @@
     "independent_review": "production_chain_review read artifact schema, real canonical shapes and workflow/helper/tests; corrected precreated output directory, canonical no-ID format, opaque DLL handling, fetch-not-checkout semantics and read1 deadline boundaries; no remaining static blocker.",
     "source_acceptance": false,
     "product_acceptance": false,
-    "independent_acceptance": false
+    "independent_acceptance": false,
+    "execution": {
+      "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+      "run_id": 41401970993,
+      "job_id": 125135533668,
+      "status": "completed",
+      "conclusion": "success",
+      "tests": {
+        "executed": 35,
+        "passed": 35,
+        "failed": 0
+      },
+      "full_log_read": true,
+      "log_characters": 246476,
+      "artifact": {
+        "id": 13121721589,
+        "name": "tdrp-fixed-build-inputs-1cd59bb01513624d26e12f77bfab66729ab72694",
+        "size_in_bytes": 9756692,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13121721589/zip",
+        "expired": false,
+        "created_at": "2026-11-02T06:46:49Z",
+        "expires_at": "2027-01-31T06:45:50Z",
+        "updated_at": "2026-11-02T06:46:49Z",
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+        "workflow_run": {
+          "id": 41401970993,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694"
+        }
+      },
+      "transferred_documents": [
+        {
+          "file": "build-time-acquisition-candidates.json",
+          "bytes": 201915,
+          "sha256": "03a0ddbf4b69515f0161e804a4ba8c93e2e615747e9e506f0336d2483bd04e4a",
+          "gzip_bytes": 10261,
+          "target_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "source_acceptance": false,
+          "acquisition_repeated": false
+        },
+        {
+          "file": "fixed-u-build-input-contexts.json",
+          "bytes": 1138162,
+          "sha256": "8da7109d597530bae9bfe770cb49773f4637371b22bcec18d15654832d1b5a11",
+          "gzip_bytes": 84792,
+          "target_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "source_acceptance": false,
+          "acquisition_repeated": false
+        },
+        {
+          "file": "fixed-u-build-input-delta.json",
+          "bytes": 368807,
+          "sha256": "c7ef3e019de515e08539b3a8976408981af8910528d80447fda8487e48f2e518",
+          "gzip_bytes": 14491,
+          "target_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "source_acceptance": false,
+          "acquisition_repeated": false
+        },
+        {
+          "file": "fixed-u-build-input-report.json",
+          "bytes": 7229,
+          "sha256": "fb6feccfff369ed510b99c2280314ebe94ab5121da17a422689aa20da537a6b3",
+          "gzip_bytes": 2886,
+          "target_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "source_acceptance": false,
+          "acquisition_repeated": false
+        }
+      ],
+      "observed": {
+        "selected_inputs": 205,
+        "text_files_read": 203,
+        "git_blob_requests": 202,
+        "opaque_unread": 2,
+        "candidate_lines_by_scope": {
+          "legacy-root-paths": 331,
+          "pinned-cmake-component": 2
+        },
+        "context_observations": 508,
+        "unresolved_ref_observations": 76
+      },
+      "source_bytes_recovery": "Complete four JSON transfer reconstructed from ordered gzip chunks and matched raw byte lengths/SHA256. This is retrieval integrity, not local repository test execution.",
+      "acceptance": false
+    }
+  },
+  "future_salts_test_import_repair": {
+    "base": "1cd59bb01513624d26e12f77bfab66729ab72694",
+    "origin": "3386755e992d4b6d80b41211975903a3c9d5c839",
+    "failure_run": 41401616063,
+    "failure_job": 125134448035,
+    "classification": "TEST_BUG",
+    "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/api.rs",
+    "change": "Import ApiRequestError from super and TlError from crate::tl in the existing cfg(test) module. No production decoder or assertion changes.",
+    "local_executable_validation": "not-run",
+    "execution": "exact68 required jobs terminal success; library parser2/protocol122/TCP9 including live passed",
+    "adopted_commit": "68d4f07688741e8f54b35f3746a087f7fdd12108",
+    "remote_blob": "6864cb9e89423df8193cb9101f9eee78caaa7ee8",
+    "publication": "Already published by concurrent session; full remote file read back. No redundant root production commit."
+  },
+  "next_production_batch": {
+    "id": "NMR-18-through-20",
+    "spec": "docs/specs/fbcp-native-message-reconciliation.md",
+    "base": "68d4f07688741e8f54b35f3746a087f7fdd12108",
+    "gate": "prerequisite41402071662 actual terminal success; new exact-H execution required",
+    "scope": "Bounded Human direct-pair reaction summaries at existing message ingress and reaction-toggle owner, exact-string duplicate rejection, bounded actor projection, resources/state/events/reopen behavior",
+    "status": "implemented-tests-authored-independently-statically-reviewed; new exact-H publication/execution pending",
+    "full_product_acceptance": false,
+    "production_path": "source/host/src/extensions/session/production.rs",
+    "production_blob": "c9a486af86b252ca4c7a025452928caf66439563",
+    "test_path": "source/host/tests/session_gateway_contract.rs",
+    "test_blob": "0728038de6b3fa6df656604a352283715d2cdfff",
+    "new_test_cases": [
+      "shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
+      "shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
+      "shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+    ],
+    "required_human_cases": 13,
+    "backend_basis": {
+      "repository": "bhrumom/fabushi",
+      "commit": "edde714def34e6eb5ae133dba20790c80a355c85",
+      "handler_path": "fabushi/web/src/handlers/friends.js",
+      "handler_blob": "e3c6461a01181eb66f1dccbb3845fea530ec072e",
+      "migration_path": "fabushi/web/migrations/20261005_direct_message_remote_semantics.sql",
+      "migration_blob": "048c6f922b726460ba7eea8c4ef5551b62b2a4ca",
+      "meaning": "Normal POST authentication/participant checks and message-user-emoji PK constrain each emoji to the direct pair; SQL has no participant CHECK and aggregator does not filter corrupt third actors. No deployed backend claim."
+    },
+    "local_executable_validation": "not-run",
+    "known_remaining": [
+      "known-row refresh",
+      "durable history-range coverage",
+      "GET/POST freshness and rapid supersession",
+      "read receipt semantics/UI",
+      "distinct-emoji and whole HTTP payload bounds",
+      "complete source/legal/native-service/packages/UI/Bot/independent acceptance"
+    ]
   }
 }

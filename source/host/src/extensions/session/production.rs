@@ -82,7 +82,8 @@ use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_byte
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
-    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
+    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
+    fabushi_identity_text,
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -1958,6 +1959,47 @@ impl ProductionSessionWorkers {
         }))
     }
 
+    fn validate_remote_human_reactions(
+        reactions: &[FabushiRemoteHumanReaction],
+    ) -> Result<(), String> {
+        let mut emojis = BTreeSet::new();
+        for reaction in reactions {
+            if !matches!(
+                (reaction.count, reaction.reacted_by_me),
+                (0, false) | (1, false) | (1, true) | (2, true)
+            ) {
+                return Err("remote Human reaction summary is inconsistent with direct participants".into());
+            }
+            if !emojis.insert(reaction.emoji.as_str()) {
+                return Err("remote Human reaction summary contains duplicate emoji".into());
+            }
+        }
+        Ok(())
+    }
+
+    // Call only after direct-pair summary admission. Projection work depends on
+    // summary items, never on an externally supplied numeric count.
+    fn project_remote_human_reactions(
+        reactions: &[FabushiRemoteHumanReaction],
+        peer_human_id: &str,
+    ) -> Vec<serde_json::Value> {
+        let mut projected = Vec::new();
+        for reaction in reactions {
+            if reaction.reacted_by_me {
+                projected.push(serde_json::json!({
+                    "emoji": reaction.emoji,
+                    "by": "me",
+                }));
+            }
+            if reaction.count > u64::from(reaction.reacted_by_me) {
+                projected.push(serde_json::json!({
+                    "emoji": reaction.emoji,
+                    "by": peer_human_id,
+                }));
+            }
+        }
+        projected
+    }
 
     // Admission is pure and happens before remote resources or transcript writes.
     // Server request ids are scoped to their actual author, not to this device.
@@ -1986,6 +2028,7 @@ impl ProductionSessionWorkers {
         }) {
             return Err("remote Human canonical identity conflicts with the persisted sender".into());
         }
+        Self::validate_remote_human_reactions(&remote.reactions)?;
 
         // Peer request provenance can never acknowledge a local intent. On our own
         // outgoing echo, both canonical-ID and nonce lookups must pass the same
@@ -2149,24 +2192,8 @@ impl ProductionSessionWorkers {
         } else {
             sender_id.as_str()
         };
-        let mut projected_reactions = Vec::new();
-        for reaction in &remote.reactions {
-            if reaction.reacted_by_me {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": "me",
-                }));
-            }
-            let peer_reaction_count = reaction
-                .count
-                .saturating_sub(if reaction.reacted_by_me { 1 } else { 0 });
-            for _ in 0..peer_reaction_count {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": peer_human_id,
-                }));
-            }
-        }
+        let projected_reactions =
+            Self::project_remote_human_reactions(&remote.reactions, peer_human_id);
         object.insert(
             "remoteReactions".into(),
             serde_json::to_value(&remote.reactions).map_err(|error| {
@@ -3283,25 +3310,10 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Fabushi Human reactions require the shipping messaging backend".to_string())?;
         let remote_reactions =
             client.set_direct_message_reaction(&remote_message_id, emoji, !currently_active)?;
+        Self::validate_remote_human_reactions(&remote_reactions)?;
         let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-        let mut projected_reactions = Vec::new();
-        for reaction in &remote_reactions {
-            if reaction.reacted_by_me {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": "me",
-                }));
-            }
-            let peer_reaction_count = reaction
-                .count
-                .saturating_sub(if reaction.reacted_by_me { 1 } else { 0 });
-            for _ in 0..peer_reaction_count {
-                projected_reactions.push(serde_json::json!({
-                    "emoji": reaction.emoji,
-                    "by": peer_human_id,
-                }));
-            }
-        }
+        let projected_reactions =
+            Self::project_remote_human_reactions(&remote_reactions, &peer_human_id);
         let mut next = current;
         let local_human_id = self.local_human_id()?;
         let is_peer_message = next.get("authorId")
