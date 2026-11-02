@@ -1784,6 +1784,15 @@ claim of an observed production data-loss incident.
   a successful owner, and retain valid WAL-backed committed identity. Use the
   current SandAgentDb and recovery options without changing general Agent
   recovery consumers. This binds the current FBCP-HUMAN-CREATE-04 amendment.
+  A retained nonempty main file must supply the complete 100-byte SQLite
+  header and exact leading 16-byte signature before WAL/journal presence can
+  bypass the immutable probe. Use ordinary read-only file I/O before SQLite.
+  Invalid or truncated headers refuse without touching the main file, sidecars
+  or siblings; repeat/reopen must preserve those bytes. Absent and zero-length
+  stores retain normal interrupted-creation behavior; valid-header WAL snapshots
+  stay on the existing owner path. Retain short/truncated and full-length invalid
+  header controls, and exercise the zero-length positive in the existing table.
+  Arbitrary corrupt/hot sidecar combinations remain separately unqualified.
   The implementation candidate disables automatic corruption recovery on the
   existing configured opener. With no nonempty WAL or rollback journal, first
   check the existing main DB through immutable read-only SQLite before any

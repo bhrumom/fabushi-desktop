@@ -661,8 +661,8 @@ fn cached_owner_with_missing_identity_never_relabels_retained_data() {
 
 #[test]
 fn existing_empty_directory_and_schema_only_store_resume_without_replacing_files() {
-    for schema_opened in [false, true] {
-        let root = test_root("empty-restart");
+    for retained_store in ["empty-directory", "zero-length-file", "schema-only"] {
+        let root = test_root(&format!("empty-restart-{retained_store}"));
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
         let (resume, released) = mpsc::channel();
@@ -680,11 +680,14 @@ fn existing_empty_directory_and_schema_only_store_resume_without_replacing_files
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         let sibling = path.parent().unwrap().join("retained-empty-directory.bin");
         fs::write(&sibling, b"existing directory sentinel").unwrap();
-        if schema_opened {
+        if retained_store == "schema-only" {
             let previous = SandAgentDb::open_conversation_store(&path, 25).unwrap();
             assert_eq!(previous.read_kv("metadata").unwrap(), None);
             drop(previous);
             assert_eq!(live_db_handle_count(&path), 0);
+        } else if retained_store == "zero-length-file" {
+            fs::write(&path, b"").unwrap();
+            assert_eq!(fs::metadata(&path).unwrap().len(), 0);
         }
         resume.send(()).unwrap();
         let first = finish_creation(result, task).unwrap();

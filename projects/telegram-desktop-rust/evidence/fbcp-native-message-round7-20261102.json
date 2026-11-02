@@ -244,7 +244,7 @@
     "preservation": "No user-data deletion/migration; existing Agent, forward, credential, CLI/package and shipping tests preserved. Full Bot acceptance remains open.",
     "shared_contracts": "Root integration retains gateway/spec/workflow/unique ledger; isolated tests/UI diffs reviewed. Existing NMR49/50/51 meanings preserved.",
     "actions_only": "All executable validation is GitHub Actions only. Exact5d38 Human63/recovery3/resource3 passed; inherited creation and UI failures, Social TEST_FLAW and queued shipping are preserved. Causal fixes require a new exact-H run. No local or htch-runtime validation.",
-    "causal_recovery": "Initial63da fixtures repaired and passed30b4. Newafb failure was compile-only TEST_FLAW with zero Human execution; concurrent106 one-line lifecycle repair preserved, Human62 actually passed. Do not rerun failingafb or count compilation as tests.",
+    "causal_recovery": "Initial63da test fixtures repaired and passed30b4; afb restart fixture E0382 repaired concurrently106 and Human62 passed. Exact5d38 newreaction63 passed but inherited NOTADB, UI lifetime and Social oracle failures were retained. Later9b/f95 SQLite/UI and Social single-line fixes are preserved rather than duplicated; this publication extends two remaining storage table boundaries and requires containing-H execution.",
     "single_accounting": "Unique184-row ledger gains only reviewed FBCP-NMR-001 test evidence and eight exact pending source reviews; all unrelated rows, historical/source counters and acceptance fields retained.",
     "final_acceptance": "Incomplete: source/legal/product/realservice/packages/platform/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain open.",
     "delivery": "Use temporary exact-object transport only after interrupted large connector write; final root publication requires force=false, expected_sha CAS, remote full SHA/content readback, and exact-H gates."
@@ -677,7 +677,39 @@
         },
         "failure": "Ten cases stopped at the shared pending().older expected1/actual0 precondition; nine in openAlice and one in initial-tail-remap. Do not describe this as16 executed scenarios or ten independently proved product defects.",
         "later_steps": "Transcript cache and continuation step skipped",
-        "current_recovery": "Concurrent441425/e4f91d/270583 viewport/scroll readiness changes retained; read-only causal review of latest fixture ongoing, containing-H execution required."
+        "current_recovery": {
+          "read_head": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+          "production_fix_commit": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+          "renderer_blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+          "pagination_blob": "8a9e536fd567b0c90013cc5c6240279e281f3840",
+          "behavior": "Only a ready more cursor enables automatic older loading. Same-scope cached reselect installs a page only for unprobed cursor, preserving actual pending request/failure state; explicit scope change still resets. Test observes automatic1, reselects and scrolls, still requires1.",
+          "earlier_recovery_runs": [
+            {
+              "head": "441425cd65a661f95d8b629c388281c77115d2b2",
+              "run": 41527189803,
+              "job": 125557844335,
+              "full_log_characters": 123546,
+              "actual_renderer": {
+                "passed": 2,
+                "failed": 9
+              },
+              "failure": "Expected1 older request, actual2 after ready-cursor fix"
+            },
+            {
+              "head": "e4f91d1cae92ef32e6299c683248bf32ddafa073",
+              "run": 41527256827,
+              "job": 125558078887,
+              "full_log_characters": 123193,
+              "actual_renderer": {
+                "passed": 2,
+                "failed": 9
+              },
+              "failure": "same duplicate request precondition"
+            }
+          ],
+          "static_review": "Two independent code reviews found the9b fix matches this single-flight cause. No duplicate source change; queued runs are not pass evidence.",
+          "required": "11 actual Playwright cases plus later8 actual Transcript behavior cases at a containing-H; not16 Playwright cases"
+        }
       },
       "additional_results": {
         "retained_direct_c": {
@@ -884,9 +916,52 @@
       "new_reviews": 8,
       "new_review_status": "pending",
       "unrelated_rows_and_all_old_reviews_and_acceptance_states": "unchanged",
-      "publication_rule": "Install this object in the same containing commit only after the input remains the current canonical ledger; nonforced expected-head CAS and full remote readback remain required."
+      "publication_rule": "Installed with force=false expected_sha CAS; remote commit and complete ledger/receipt contents matched.14 recorded/2 complete, no acceptance promotion; source candidate Actions still required.",
+      "publication": {
+        "sha": "6f692309387aa549d98740968997d70e1f48011d",
+        "parent": "9bb7bd6b1a00d4f1028e60aee8ccfaacfa97656a",
+        "tree": "638e69e4dff98afaae4e875a0e0b91ab14fe27ee",
+        "ledger_blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+        "receipt_blob": "9e0367fe32fe6eee5add38343a82c9b9c02c0c10",
+        "full_contents_match": true,
+        "verified": true
+      }
     },
     "target_gap_observation": "35fe95331cdb67eb32430e03043ab9246b9b1453: complete=false has no consumer continuation under the precisely stated no-independent-trigger conditions; static finding, no browser reproduction",
     "overall_source_acceptance": false
+  },
+  "human_creation_recovery": {
+    "base": "9d669a964825ceff655e59c2d9288e239a2fb3ae",
+    "classification": "IMPL_BUG",
+    "observed_failure_head": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+    "cause": "The sidecar bypass preceded the main-file probe. NOTADB with nonempty WAL/journal reached normal SQLite open/configuration; sidecars disappeared before refusal despite recover_on_corruption=false. The log does not identify individual unlink syscalls.",
+    "actual_change": "The live branch published the equivalent NOTADB refusal in9b9cadd7, the six-byte negative in f95a33b and complete100-byte header admission with two further negatives in8b801ff. Preserve all of them; do not publish the older duplicate16-byte probe or duplicate truncated-header case. This candidate adds only the still-missing zero-length main-file compatibility positive to the existing empty-directory/schema-only table.",
+    "production_blob": "8b6cafa332f10a1372a61b6727f003c914bf3eeb",
+    "tests_blob": "cebca2cf871cab6dc8693a9f241c190041359490",
+    "authored": {
+      "corrupt_store_variants_preserved_at_review": 6,
+      "empty_store_variants": 3,
+      "new_negative_variants": 0,
+      "new_positive_variants": 1,
+      "new_test_functions": 0,
+      "required_creation_functions": 12,
+      "required_creation_storage_functions": 3
+    },
+    "oracles": "Complete main/sidecar/sibling name+bytes, no cached owner/live handle, same-worker retry and pure reopen; zero-length creation/retained rows plus existing live-WAL winner control.",
+    "independent_static_review": {
+      "result": "The zero-length positive and all original persistence/reopen assertions were independently reviewed; later concurrent stronger corrupt-header negatives are retained verbatim.",
+      "current_positive_table_functions": 1,
+      "required_creation_functions": 12,
+      "execution": "not-run at preparation"
+    },
+    "scope": "No arbitrary hot/corrupt-sidecar recovery, user-data migration/deletion or full release acceptance.",
+    "execution": "not-run at preparation; select existing exact-H native-service-contracts with all inherited gates",
+    "production_fix_commit": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "concurrent_short_header_commit": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "unpublished_duplicate_disposition": "The locally authored16-byte helper and15-byte negative are not published over the stronger concurrent100-byte helper/current corruption cases. Only the unchanged reviewed zero-length positive is carried forward.",
+    "production_fix_commits": [
+      "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1"
+    ]
   }
 }
