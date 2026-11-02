@@ -188,7 +188,10 @@ async function launchDesktopApp(appDataDir: string) {
   });
 }
 
-async function completeBrowserLogin(page: Page): Promise<void> {
+async function completeBrowserLogin(
+  page: Page,
+  destination: 'agent-network' | 'plugins' = 'agent-network',
+): Promise<void> {
   const rendererErrors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') rendererErrors.push(message.text());
@@ -260,6 +263,21 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   // account/session readiness signal.
   const roster = page.getByRole('region', { name: 'Agent list' });
   await expect(roster).toBeVisible({ timeout: 15_000 });
+
+  // FPM-UI-CLOSE-01 exercises the authenticated shell's Close control even when
+  // the independent Host roster cannot load. Keep that observed state in the
+  // trace; only Agent Network requires a real Agent before its own assertions.
+  if (destination === 'plugins') {
+    await test.info().attach('plugins-roster-observation', {
+      body: Buffer.from(JSON.stringify({
+        agentRowCount: await roster.locator('button.sand-agent-item').count(),
+        unavailable: await page.getByText("Can't reach your computer", { exact: true }).isVisible(),
+        scope: 'Plugins pointer only; Host roster recovery remains unqualified',
+      })),
+      contentType: 'application/json',
+    });
+    return;
+  }
 
   // Agent Network is intentionally fail-closed until a real Agent exists.
   // A fresh authenticated account can have an empty canonical Host roster, so
@@ -363,7 +381,7 @@ for (const viewport of [{ width: 1024, height: 684 }, { width: 1280, height: 900
     try {
       app = await launchDesktopApp(appDataDir);
       page = await app.firstWindow();
-      await completeBrowserLogin(page);
+      await completeBrowserLogin(page, 'plugins');
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
       await app.evaluate(({ BrowserWindow }, size) => {
         const win = BrowserWindow.getAllWindows()[0];

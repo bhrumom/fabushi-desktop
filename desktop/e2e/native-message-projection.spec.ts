@@ -27,8 +27,9 @@ const messageRow = (page: Page, id: string) => page.getByRole('log', { name: 'Co
 const domIds = (page: Page) => page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id]').evaluateAll((entries) => entries.map((entry) => entry.getAttribute('data-entry-id')));
 
 async function scrollToOlderHistory(page: Page) {
-  // unprobed -> more keeps hasOlder=true; exercise the mounted viewport's
-  // scroll listener instead of assuming that the automatic probe reruns.
+  // Cursor readiness must start the automatic page request before scrolling.
+  // The mounted viewport's scroll listener must keep that request single-flight.
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
   await page.evaluate(async () => {
     for (let frame = 0; frame < 8; frame += 1) await new Promise(requestAnimationFrame);
   });
