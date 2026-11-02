@@ -1,0 +1,119 @@
+name: Task20bf Human retry ledger object
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/workflows/task20bf-human-retry-ledger-object.yml'
+permissions:
+  contents: write
+jobs:
+  prepare-reviewed-blobs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare only exact reviewed Git blobs without commits or ref updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVIEWED_PAYLOAD_BASE64: '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'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/task20bf-human-retry-ledger-object
+          python - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request, zlib
+          repository = os.environ['GITHUB_REPOSITORY']
+          if repository != 'bhrumom/fabushi-desktop':
+              raise SystemExit('unexpected repository')
+          header = json.loads('{"task_id":"20bf9475-a885-4314-b509-bea53ef8849f","format":1,"parts":[],"packed_sha256":"82a4415f1b020634dfea3cf8e12947790ce5d7bada8426922df93572d15b7ca5"}')
+          if header['task_id'] != '20bf9475-a885-4314-b509-bea53ef8849f' or header['format'] != 1:
+              raise SystemExit('unexpected task envelope')
+          encoded = os.environ['REVIEWED_PAYLOAD_BASE64']
+          packed = base64.b64decode(encoded, validate=True)
+          if hashlib.sha256(packed).hexdigest() != header['packed_sha256']:
+              raise SystemExit('payload digest mismatch')
+          decoder = zlib.decompressobj()
+          raw = decoder.decompress(packed, 2_000_001)
+          if len(raw) > 2_000_000 or decoder.unconsumed_tail or not decoder.eof:
+              raise SystemExit('payload exceeds reviewed transfer bounds')
+          payload = json.loads(raw)
+          allowed = {
+              'source/host/src/extensions/session/production.rs',
+              'source/host/src/extensions/session/gateway.rs',
+              'source/host/src/gateway_server.rs',
+              'source/host/tests/session_gateway_contract.rs',
+              'source/host/tests/gateway_server_contract.rs',
+              'source/shared/rpc/coordinator.ts',
+              'source/shared/rpc/coordinator.contract.test.ts',
+              'frontend/src/production/ProductionRenderer.tsx',
+              'frontend/src/production/model.ts',
+              'frontend/src/production/coordinator-client.ts',
+              'frontend/src/production/transcript-projection.ts',
+              'frontend/src/production/transcript-projection.contract.test.ts',
+              'frontend/src/production/human-message-retry.ts',
+              'frontend/src/production/human-message-retry.contract.test.ts',
+              'frontend/src/production/human-message-retry-port.contract.test.ts',
+              'frontend/src/production/human-message-submission.ts',
+              'frontend/src/production/human-message-submission.contract.test.ts',
+              'frontend/src/recovered/features/conversation/workspace/submission.ts',
+              '.github/workflows/native-service-contracts.yml',
+              'docs/specs/fbcp-human-message-retry.md',
+              'projects/fabushi-communication-platform/STATUS.md',
+              'projects/fabushi-communication-platform/inventory/current-owners.md',
+              'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md',
+              'projects/telegram-desktop-rust/parity-ledger.json',
+              'projects/telegram-desktop-rust/evidence/task20bf-round1-human-message-retry.json',
+          }
+          def git_blob(data):
+              return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          def api(method, suffix, body=None):
+              request = urllib.request.Request('https://api.github.com/repos/' + repository + '/git/blobs' + suffix,
+                  data=None if body is None else json.dumps(body).encode(), method=method,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  return json.load(response)
+          result = []
+          seen = set()
+          for item in payload['files']:
+              path = item['path']
+              if path not in allowed or path in seen:
+                  raise SystemExit('unreviewed or duplicate path')
+              seen.add(path)
+              old = b''
+              if item['input_blob'] is not None:
+                  blob = api('GET', '/' + item['input_blob'])
+                  old = base64.b64decode(blob['content'])
+                  if git_blob(old) != item['input_blob']:
+                      raise SystemExit('input blob mismatch: ' + path)
+              updated = old
+              previous = len(old) + 1
+              for splice in reversed(item['splices']):
+                  offset, removed, inserted = splice
+                  if offset < 0 or removed < 0 or offset + removed > len(old) or offset + removed > previous:
+                      raise SystemExit('invalid splice ordering: ' + path)
+                  updated = updated[:offset] + base64.b64decode(inserted, validate=True) + updated[offset + removed:]
+                  previous = offset
+              if len(updated) > 6_000_000 or git_blob(updated) != item['output_blob']:
+                  raise SystemExit('reviewed output mismatch: ' + path)
+              created = api('POST', '', {'content': base64.b64encode(updated).decode(), 'encoding': 'base64'})
+              if created['sha'] != item['output_blob']:
+                  raise SystemExit('GitHub returned a different blob: ' + path)
+              result.append({'path': path, 'input_blob': item['input_blob'], 'output_blob': created['sha'], 'bytes': len(updated)})
+              print(path + ' -> ' + created['sha'], flush=True)
+          receipt = {'task_id': header['task_id'], 'carrier_sha': os.environ['GITHUB_SHA'],
+                     'base_commit': payload['base_commit'], 'files': result,
+                     'scope': 'Unattached Git blobs only. No commit/ref update, product tests or acceptance.'}
+          pathlib.Path('artifacts/task20bf-human-retry-ledger-object/receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: task20bf-human-retry-ledger-object-${{ github.sha }}
+          path: artifacts/task20bf-human-retry-ledger-object
+          if-no-files-found: error
