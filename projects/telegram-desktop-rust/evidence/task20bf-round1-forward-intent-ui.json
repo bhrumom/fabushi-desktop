@@ -171,7 +171,7 @@
     "conclusion": "success",
     "scope": "Exact object transport only; run and job steps reread through GitHub API. No product verification or acceptance."
   },
-  "delivery": "Product commit continues the existing migration branch using current-ref compare-and-swap and connector/API readback of full commit/tree/files. After direct 3.5MB object upload did not return and the object was confirmed absent, a temporary Actions-only transport branch at f81409edc0f962ba55ed1ae139004e91ebbfe17f applies the reviewed ledger delta and uploads only exact blob 81e9d4009231b07d78a851cbdff3a4cc0ef29796. It cannot promote the migration ref or grant acceptance; its helper files are excluded from the product tree.",
+  "delivery": "H73 was published to the existing migration branch and API reread. The privacy extension preserves that lineage and all current reply/upload/CLI work. Three expected-head updates encountered concurrent head advances; no force update was used. Product commit 8b4594b5dba71164d978eea1e1bb9fdb639a82b3 is now saved on checkpoint/tdrp-forward-privacy-task20bf-r1 for a stable exact-H Actions campaign and pull-request integration into the same migration branch. The two existing workflow push filters add only this exact batch branch, retaining all checks and final acceptance gates.",
   "execution_history": [
     {
       "head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
@@ -341,16 +341,25 @@
         "base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
         "result_blob": "e494ba34eaaa0dbd06429a367554d9114a793236",
         "scope": "Same temporary transport branch; only exact Git object creation, no product verification/ref update."
+      },
+      {
+        "head": "e880fdc944006268f1608de8ea123bc5dd687091",
+        "run": 41517503125,
+        "job": 125524685557,
+        "conclusion": "success",
+        "base_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+        "result_blob": "4a4660291628a9bdb65a9ac387defae16f7c50f1",
+        "scope": "Exact append preserves concurrent NMR-49 canonical ledger; object-only transport, no ref writes or acceptance."
       }
     ],
     "ledger_transport": {
-      "head": "e880fdc944006268f1608de8ea123bc5dd687091",
-      "run": 41517503125,
-      "job": 125524685557,
-      "conclusion": "success",
-      "base_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
-      "result_blob": "4a4660291628a9bdb65a9ac387defae16f7c50f1",
-      "scope": "Exact append preserves concurrent NMR-49 canonical ledger; object-only transport, no ref writes or acceptance."
+      "head": "5d391cf131e3b270f576fd2e234d2e3ac120c44f",
+      "run": 41518276457,
+      "job": 125527348636,
+      "object_step_conclusion": "success",
+      "base_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+      "result_blob": "097e28e2c276db9926e9a183995d939a1ef97d8e",
+      "scope": "Exact privacy-row patch preserves concurrent reply/upload ledger. Remote product tree references this object; no Actions ref writes or acceptance."
     }
   },
   "concurrent_integration": {
@@ -363,6 +372,8 @@
       "resource_upload": 3
     },
     "subsequent_preserved_base": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
-    "subsequent_preservation": "CLI native Host features, real production binary/process controls, installer receipt delivery and six promotion-consumer contracts retained. No journal/test/ledger delta from this later base."
+    "subsequent_preservation": "CLI native Host features, real production binary/process controls, installer receipt delivery and six promotion-consumer contracts retained. No journal/test/ledger delta from this later base.",
+    "publication_parent": "8a20566eb48a7056d932f3f34667f89a2e6a4a4a",
+    "publication_delta": "76a84e8a..8a20566e changed only nine disjoint object-transport/task-spec paths; all are preserved in the published base tree."
   }
 }

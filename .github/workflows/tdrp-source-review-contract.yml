@@ -1,7 +1,7 @@
 name: TDRP source review contract
 on:
   push:
-    branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - scripts/tdrp-source-review*.mjs
       - scripts/tdrp-source-review*.py
