@@ -1401,3 +1401,59 @@ UI failure notice/draft restoration was traced, not visually accepted.
 Fixed-U source review is limited to `PrepareMediaList` and `Uploader::readDocPart`
 sections; no complete upstream-file review, source/legal closure, deployed
 service/package/platform/Bot or independent ACCEPT is claimed.
+
+### Atomic reaction settlement and journal discovery (NMR-R5-01/02)
+
+The original exact68/run41402071662 and the later exact59/run41508537631
+prerequisites passed their applicable message gates. Preserve current94's
+attachment snapshots, journal guards and recovery, current forward UI/source
+reviews, and the separate NMR-49 pending-parent reply contract above. This
+batch closes remaining reaction settlement boundaries in the existing owner.
+
+- NMR-R5-01: Settle the current canonical reaction row and retire its exact
+  observed humanReactionIntent in one existing SandAgentDb BEGIN IMMEDIATE
+  transaction. Compare the entire observed row and intent before writing.
+  After obtaining SQLite's write lock, recheck the full existing Native
+  credential fingerprint captured before HTTP; token rotation, revocation,
+  device/account/session/issuer/expiry changes refuse the old response.
+  A competing row/intent, closed owner or persistence failure cannot grant
+  settlement or clear a newer intent. Roll back both writes on failure and
+  publish no target event. Preserve unrelated current-row metadata, participant
+  and remote identity checks, desired-state validation and conversation lock.
+  Legacy replay of an equal settled row clears only its matching intent and
+  publishes no duplicate row event.
+- NMR-R5-02: Reuse one persisted Human conversation enumeration helper for forward
+  request lookup and restart recovery. Preserve current94's internal discovery
+  of membership-hidden source journals, active-account/issuer checks and
+  existing source/destination authorization. Missing directories are empty;
+  other enumeration/metadata errors propagate. Denied unfinished destinations
+  retain durable policy refusal, completed destinations stay completed,
+  ordinary sync remains independent and the UI does not expose excluded
+  sources. No new store or authority is introduced.
+- NMR-AC-R5-01: In the real Host/SQLite/HTTP harness, inject an intent cleanup
+  write failure after a valid response and prove complete row/intent rollback
+  with no target event. Reopen and settle the same desired state once; an equal
+  legacy row retires the matching intent without another event. Replace an
+  intent through an independent SQLite owner during blocked HTTP; the stale
+  acknowledgement preserves both current row and new intent, which alone
+  settles after restart. A separate private real SQLite writer-lock case must
+  demonstrate credential admission after waiting, token rotation/revocation
+  refusal, unchanged row/intent/events, and unchanged-credential recovery.
+- NMR-AC-R5-02: Strengthen the existing forward permission/restart test to inspect
+  durable denial immediately after ordinary sync, before explicit forward
+  retry. Keep the removed source absent from the authorized UI list, preserve
+  completed batches, and assert zero denied POSTs. Preserve all existing gates;
+  this batch preserves current Human48 and expands it to50 and private settlement credential3 to4,
+  retaining journal12. Execute on the containing exact H in GitHub Actions.
+
+Test authorship and source review are not execution or independent ACCEPT.
+No public schema, second writer, new store, user-data deletion or backend
+mutation is introduced. Fixed U and final source/legal/service/platform/UI/
+security/performance/soak/upgrade/Bot/independent acceptance remain open.
+
+The R5 namespace keeps these two requirement and oracle IDs distinct from
+concurrent numeric NMR-49 reply and NMR-50 nonblocking-forward contracts. The
+existing canonical ledger schema permits nonempty requirement/oracle IDs; no
+schema relaxation or gate removal is needed.
+
+The R5 qualification checkpoint descends from exact76a84e8a9ff8867a076edd0c89f913a58cdb2806 and uses the existing Native/source workflows on its explicit branch while concurrent integration continues. Required current gates include resource3, CLI production binaries/process4, Transcript18 and Chromium16. Integration back to the shared checkpoint still requires a fresh expected-head CAS and exact combined-H qualification.
