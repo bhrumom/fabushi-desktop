@@ -4404,10 +4404,11 @@
   },
   "traceability": {
     "inventory": "projects/telegram-desktop-rust/inventory/index.json (unchanged)",
-    "ledger": "NMR48 arrays/notes integrated at222371af3d0c2241697c5a57b0160ecb336edbab via force=false expected_sha CAS; canonical blob e88c75896bd0dce29b2d8b89e949c9231dad872c fully read back. Source gate41521510203 passed157 Node/37 Python/schema0 without acceptance. Later live f716580b22c6b6791b2e535e2b286df4f9257444 retains all NMR48 additions and other source/root fields.",
+    "ledger": "NMR48 arrays/notes were integrated at222371af3d0c2241697c5a57b0160ecb336edbab; canonical blob e88c75896bd0dce29b2d8b89e949c9231dad872c was fully read back. A later full5d38ddd snapshot confirms all12 published fields, order and complete notes preserved in ledgerad5e0b28add4e6bd99b3ec6036f0984595de2568. Exact808/run41526808527 source gate passed158 Node/37 Python/schema0; acceptance flags remain false. See latest_source_and_ledger_observation for frozen time and limitations.",
     "rtm": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md#FBCP-NMR-001",
     "owner": "Existing Session/Transcript, SandAgentDb and Native HTTP owners preserved; current owner/RTM changes from concurrent pagination, reply, reaction and forward recovery batches retained.",
-    "historical_execution": "Exact59 qualified the prerequisite; exact94/run41513767498 passed all five NMR48 jobs including44 Human/12journal and live TCP9. Laterd261 executed54 Human and its own UI gates. Exactafb UI29/17/5/16 passed but Human62 executed0 due E0382. One cleanup receiver was fixed at106bb95ba97ef7722e9523285783824393039bc0; run41523018920 now actually passes62/3/1/12/4/3/1 Rust groups, UI29/17/5/16, Electron and Windows. Shipping125543545357 remains queued; whole current batch is not accepted."
+    "historical_execution": "Exact59 qualified the prerequisite; exact94/run41513767498 passed all five NMR48 jobs including44 Human/12journal and live TCP9. Laterd261 executed54 Human and its own UI gates. Exactafb UI29/17/5/16 passed but Human62 executed0 due E0382. One cleanup receiver was fixed at106bb95ba97ef7722e9523285783824393039bc0; run41523018920 now actually passes62/3/1/12/4/3/1 Rust groups, UI29/17/5/16, Electron and Windows. Shipping125543545357 remains queued; whole current batch is not accepted.",
+    "supplemental_execution": "The existing FBCP-NMR-001 ledger and RTM reference this evidence path. This append records exact9329 current named execution and exactf40 retained-runtime live execution without changing any responsibility, source or independent-acceptance status; it does not create a second inventory/ledger/RTM."
   },
   "original_requirement_review": [
     {
@@ -4462,8 +4463,8 @@
     }
   ],
   "unresolved": [
-    "Exact106 passed four required jobs and62-Human/UI29 suites but shipping125543545357 is still queued. Later workflow9329/run41523624057 has its own required gates; shipping125545613231 is queued at the recorded observation. No whole current batch acceptance or dependent batch start until mandatory shipping and all actual gates succeed.",
-    "Execution claims remain bound to exact heads: prior94 full gates, later54 atd261, and current62 at106 are separate. Do not transplant results to later changed inputs or treat artifact-only packaging scope as service/final acceptance.",
+    "Current owned candidate f95a33b13672095d68c6ca731f2f42e6c10b9890/run41528598989 includes the existing9b UI/NOTADB repairs plus the new short-header subcase. All nine required jobs were queued without runners at21:29:19. No current whole-batch acceptance or dependent-batch approval until actual required gates complete. Full priorf544/e4 failures are preserved in the current recovery evidence.",
+    "Prior94 full gates, later106/9329 Human62/UI29 gates, and f40 retained Rust live bootstrap1 are separate exact-H evidence. f544 then exposed real creation sidecar deletion, real UI history scheduling defects and a Social log-oracle flaw. Existing source fixes do not constitute execution; do not reuse old counts as proof of current63Human/12creation/3storage/33Transcript/11renderer/8pagination/new peer23 gates.",
     "Authenticated production Fabushi authorization/history/forward provenance and Backend PR137 deployment remain unaccepted; no backend merge or deployment authorized here.",
     "Complete fixed-U source/generated/external/LFS/legal review remains open: six source reviews are two complete/four pending, unknown/unread null; lexical captures are not deep review completion.",
     "Snapshot filesystem/power-loss/lifetime, signed supported-platform packages, full UI/visual/accessibility/timing/security/performance/soak, upgrades/rollback, complete Bot regression and independent ACCEPT remain open."
@@ -5719,7 +5720,7 @@
   },
   "current_live_main_readback": {
     "sha": "5528062177e3865eef60a073a066cca144f9e3e8",
-    "observed_at": "2026-11-02 20:46:59 UTC"
+    "observation": "API reread during the retained-live preparation; unchanged from the earlier main snapshot."
   },
   "later_native_workflow_snapshot": {
     "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
@@ -5729,5 +5730,318 @@
     "shipping_job": 125545613231,
     "shipping_status": "queued",
     "qualification": "Separate later workflow: do not assign exact106 counts to this run without its own full logs."
-  }
+  },
+  "retained_runtime_live_transport": {
+    "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+    "run_id": 41526697492,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526697492",
+    "job_id": 125556156642,
+    "status": "completed",
+    "conclusion": "success",
+    "actual_result": {
+      "line": 542,
+      "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 2.09s",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 15,
+      "duration_seconds": 2.09
+    },
+    "actual_named_case": {
+      "name": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+      "outcome": "ok",
+      "line": 540
+    },
+    "artifact": {
+      "id": 13178619203,
+      "name": "retained-runtime-live-transport-f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+      "digest": "sha256:db4d4b1b8c680eaa2dc0c5d44fcc99ad28c84018856dfd0aaa7e0928de2b8086",
+      "size": 4466,
+      "expired": false,
+      "workflow_run": {
+        "id": 41526697492,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d"
+      }
+    },
+    "publication_verified": true,
+    "full_evidence": "projects/telegram-desktop-rust/evidence/nmr48-ledger-publication-receipt.json#retained_runtime_live_transport",
+    "scope": "Existing retained Rust client production DC2 auth-key handshake, encrypted ping, status and close only; no account login/message, exported C call, persisted restart, installed consumer or final product acceptance.",
+    "source_unchanged": true,
+    "local_executable_validation": "not-run"
+  },
+  "later_exact9329_terminal_audit": {
+    "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+    "run_id": 41523624057,
+    "observed_at_utc": "2026-11-02T21:09:38Z",
+    "outcome": {
+      "required_jobs": 6,
+      "required_jobs_terminal_success": 5,
+      "required_jobs_queued": 1,
+      "all_required_jobs_success": false,
+      "run_terminal": false,
+      "acceptance": false,
+      "blocking_reason": "native-message-shipping-compile has runner_id=0 and no steps. Its AppHost/CLI builds, protocol/TCP real-service tests and other shipping gates have not executed on this exact H. Retained FFI job succeeds with one explicitly ignored live case."
+    },
+    "actual_groups": {
+      "Human": 62,
+      "resource": 3,
+      "sharebox": 1,
+      "journal": 12,
+      "Agent_nonce": 4,
+      "private_credential": 3,
+      "gateway": 1,
+      "Transcript": 29,
+      "cursor_consumer": 17,
+      "forward_settlement": 5,
+      "Chromium": 16,
+      "Electron_groups": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
+      ],
+      "Windows": 11,
+      "retained_C_wrapper": {
+        "passed": 15,
+        "ignored": 1
+      }
+    },
+    "all_reported_pass_groups_zero_fail": true,
+    "shipping_not_executed": true,
+    "original_human10_and_nmr48_named_cases_verified": true,
+    "full_evidence": "projects/telegram-desktop-rust/evidence/nmr48-ledger-publication-receipt.json#later_exact9329_terminal_audit"
+  },
+  "last_round4_delivery_before_supplement": {
+    "sha": "f60515165b7bf382c1e38c0b6feeff2feb64bd92",
+    "remote_verification": true,
+    "scope": "Historical publication receipt; subsequent f40 execution is recorded separately."
+  },
+  "latest_source_and_ledger_observation": {
+    "snapshot": {
+      "checkpoint_head": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+      "checkpoint_observed_at_utc": "2026-11-02T21:17:49Z",
+      "main": "5528062177e3865eef60a073a066cca144f9e3e8",
+      "main_observed_at_utc": "2026-11-02T21:16:17Z",
+      "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "initial_checkpoint_during_review": "6263e675933e99efebbbaf08b0eb55817e15b3ef",
+      "initial_ledger_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+      "qualification": "This is the frozen5d38ddd observation, not a claim that a continuously changing branch remains at this head after that time. No repeated chasing of subsequent heads."
+    },
+    "remote_readback": {
+      "tree_complete": true,
+      "canonical_path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "ledger": {
+        "path": "audit/current-source/live-preservation-final-5d38ddd/ledger.json",
+        "bytes": 3637745,
+        "git_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+        "sha256": "1e43bc47b97fb17acc1cf633cb31f6a1f3bfb089095d71fb7fb8c0c0d7c62e42"
+      },
+      "tree_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+      "full_blob_retrieved": true,
+      "all_saved_input_hashes_equal_remote_tree": true
+    },
+    "all_nmr48_values_and_notes_preserved": true,
+    "current_accounting": {
+      "responsibility_rows_actual": 184,
+      "responsibility_ids_unique": 184,
+      "source_review_records_actual": 6,
+      "source_review_identities_unique": 6,
+      "source_review_status_counts": {
+        "complete": 2,
+        "pending": 4
+      },
+      "source_reviews_equal_exact222": true,
+      "coverage": {
+        "source_entries_total": 16381,
+        "unknown": null,
+        "unread": null,
+        "omitted": 0,
+        "responsibilities_total": 184,
+        "unmapped_responsibilities": 0
+      },
+      "unique_canonical_source_reviews_location": "projects/telegram-desktop-rust/parity-ledger.json#/source_reviews",
+      "count_method": "Recounted the complete freshly retrieved5d38ddd/ad5e0 ledger; historical222 counts were not substituted. Source identity total is recorded in current lock/index/ledger and checked by the scoped source candidate execution; it is not a count of independently deep-read sources.",
+      "lock_inventory_ledger_U_match": true,
+      "lock_status": "fixed-upstream-unaccepted-git-and-build-input-candidate",
+      "rebaseline_status": "unaccepted-inventory-open",
+      "index_inventory": {
+        "root_non_directory_entries": 6895,
+        "recursive_non_directory_entries": 16381,
+        "semantic_read_complete": false,
+        "responsibility_decomposition_complete": false,
+        "unknown_minimum": null,
+        "unread_minimum": null,
+        "omitted_known": 0
+      }
+    },
+    "acceptance": {
+      "lock_upstream_accepted": false,
+      "lock_baseline_ready": false,
+      "lock_accepted": false,
+      "index_baseline_identity_accepted": false,
+      "candidate_execution_flags": {
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      },
+      "rows_release_gate_status_counts": {
+        "pending": 181,
+        "blocked": 3
+      },
+      "rows_with_nonnull_acceptance_reviewer": 0,
+      "nmr_acceptance_reviewer": null,
+      "nmr_release_gate_status": "blocked",
+      "historical_execution_scalars": {
+        "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
+        "workflow_run": 41508537631,
+        "qualification": "These remain historicalexact59 scalars; newer execution evidence is appended separately. Neither these scalars nor this preservation audit qualify current production."
+      }
+    },
+    "source_execution": {
+      "run": {
+        "id": 41526808527,
+        "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "created_at": "2026-11-02T21:16:19Z",
+        "updated_at": "2026-11-02T21:17:54Z"
+      },
+      "jobs": [
+        {
+          "id": 125556533680,
+          "name": "contract",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T21:16:51Z",
+          "completed_at": "2026-11-02T21:17:07Z"
+        },
+        {
+          "id": 125556959979,
+          "name": "fixed-source-candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T21:17:20Z",
+          "completed_at": "2026-11-02T21:17:53Z"
+        }
+      ],
+      "node_actual": {
+        "tests": 158,
+        "pass": 158,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "python_actual_tests": 37,
+      "python_OK_observed": true,
+      "schema_errors_zero_observed": true,
+      "candidate_actual": {
+        "status": "unaccepted-candidate-consistent",
+        "target_commit": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+        "source_entries_total": 16381,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      },
+      "accepted_mode_rejection_observed": true,
+      "logs": {
+        "contract": {
+          "path": "audit/run-41526808527-contract.log",
+          "bytes": 90252,
+          "git_blob": "b1bc39491626452c3b407a951df0eda7ba311dc3",
+          "sha256": "e6b80f199cb629d630ace6d1ec36d16e9fc0a01e4ab082b8ba07ec47e9459eb5"
+        },
+        "fixed-source-candidate": {
+          "path": "audit/run-41526808527-fixed-source-candidate.log",
+          "bytes": 146049,
+          "git_blob": "4545c4f8aff534b3deb9224554e43875a4cdf34f",
+          "sha256": "9b0ac8ae0474cd79763487c62367d9b6d1e46cc887e3fd51c63daa5e82036b6f"
+        }
+      },
+      "log_hash_scope": "Saved complete decoded MCP logs, normalized CRLF to LF; these hashes are not ZIP artifact digests.",
+      "artifacts": [
+        {
+          "id": 13180536168,
+          "name": "tdrp-source-candidate-808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "size_in_bytes": 79137,
+          "digest": "sha256:8bb10c2c8e6c58cdab454b4a19f39bac1945092beeb2dc7d992fb941839dd11a",
+          "expired": false,
+          "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "upload_log_id_match": true,
+          "upload_log_digest_match": true
+        },
+        {
+          "id": 13179902859,
+          "name": "tdrp-source-review-contract-808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "size_in_bytes": 6826,
+          "digest": "sha256:91cc169f6782722a8227b1ef20c8db142780caa54ac24ebd192b8bcc3219e344",
+          "expired": false,
+          "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "upload_log_id_match": true,
+          "upload_log_digest_match": true
+        }
+      ],
+      "artifact_digest_scope": "GitHub API artifact metadata digests match complete job upload logs; this audit did not download/hash artifact ZIPs.",
+      "current_input_relation": {
+        "execution_head": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+        "observed_head": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+        "compare_status": "ahead",
+        "intervening_commits": 5,
+        "intervening_changed_path_count": 11,
+        "changed_source_gate_input_paths": [],
+        "qualification": "Complete Git comparison808de595→5d38ddd shows no changes to the listed source gate inputs, including the canonical ledger, tests, schema, validators and workflow. The execution itself is at808; no run at5d is invented."
+      }
+    },
+    "full_evidence": "projects/telegram-desktop-rust/evidence/nmr48-ledger-publication-receipt.json#live_source_and_nmr48_preservation"
+  },
+  "current_corrective_gate_candidate": {
+    "head_sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "run_id": 41528598989,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528598989",
+    "published_test_blob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+    "preserved_concurrent_production_blob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+    "publication_verified": true,
+    "scope": "Test-only extension; no product code changed in this commit",
+    "observed_state": "All nine required jobs queued with no runner/steps at21:29:19; no actual pass claimed.",
+    "full_evidence": "projects/telegram-desktop-rust/evidence/round4-current-gates-and-recovery.json",
+    "production_fix_credit": "Sidecar refusal and active-history repair were concurrently published at9b9cadd; root preserved them and added only the short-header subcase atf95."
+  },
+  "governing_inputs_updates": [
+    {
+      "path": "docs/specs/fabushi-deferred-ci-migration.md",
+      "blob": "01dc632975eca100c9bdc80746efdc2b0b044a57",
+      "observed_head": "996d95a8b99f46e49261a944c301fb0b920dfe39",
+      "delta_reviewed": "Accepted acquisition state guard must have an actual authority-entrypoint subprocess negative, not only direct helper calls. Current source test change later executes158 cases; original FMEP-SOURCE-01 scope unchanged."
+    },
+    {
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob": "bd545bf38a7577a55ff0fecece1932a44df30ada",
+      "observed_head": "9eec8e01b2bbf9707ba6d6633877ec66c55eaa6d",
+      "relevant_requirements_read": [
+        "NMR-CREATE-01d",
+        "NMR-AC-CREATE-01",
+        "FBCP-HUMAN-CREATE-04"
+      ],
+      "scope": "Existing corrupt-main/sidecar preservation requirements govern the focused repair; no extra public contract or new owner was introduced."
+    }
+  ]
 }

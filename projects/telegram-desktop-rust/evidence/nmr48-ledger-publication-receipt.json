@@ -5047,14 +5047,15 @@
       "acceptance_promoted": false
     }
   },
-  "updates_after_requirements_review": "The independent requirements snapshot preceded completion of exact106 reconciliation. Subsequent full logs now prove62/3/1/12/4/3/1 Rust groups and UI29/17/5/16 plus Electron and Windows passed; shipping125543545357 remains queued. Required report remains next, not complete.",
+  "updates_after_requirements_review": "Exact106 and exact9329 full logs now independently prove Human62 and retained gates, original10 and all NMR48 named cases; their shipping jobs remained queued. Exactf40/run41526697492 additionally executes the unchanged retained Rust live DC case:1pass/0fail/0ignored/15filtered. Later exactf544 has additional changed-input gates still requiring actual execution. All original requirements and final source/product/platform/independent acceptance remain incomplete; report status next. A later current-gate review found actualf544 failures (creation11/12, renderer1/11, Social10 tests pass then grep error) and e4 renderer2/11 with two pending older reads. Concurrent9b preserved existing active history requests and refused invalid headers before SQLite; root preserved that production and published only the short-header regression atf95. Full corrected-H execution remains pending.",
   "all_five_current_required_jobs_success": false,
   "next_required_action": {
     "repository": "bhrumom/fabushi-desktop",
-    "run_id": 41523624057,
-    "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
-    "shipping_job": 125545613231,
-    "action": "Read the latest frozen Native run job terminal states and complete logs/artifacts; require every actual workflow count and successful shipping (AppHost, CLI/process/package, DNS6, salts2, protocol122, live TCP9, proxy4, credential1). Preserve exact10662-Human proof but do not substitute it for later changed workflow inputs. Fix only proven causes with force=false expected_sha CAS before another dependent batch."
+    "run_id": 41528598989,
+    "head_sha": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+    "reconciliation_job": 125562666933,
+    "shipping_job": 125562667564,
+    "action": "Read the exactf95 nine mandatory job terminal states and complete logs. Require actual compaction3/Human63/resource3/creation12/storage3/sharebox1/journal12/Agent4/privatecredential3/Gateway1; creation named-case normal completion must cover all four unconditional corruption subscenarios including new short header. Require UI33/17/5/16+actual renderer11+pagination8, Social10/9/6, gateway-peer23 on both platforms, retained FFI15/1explicitly ignored with separatef40 live1 evidence, all Electron/Windows and full shipping DNS6/salts2/protocol122/TCP9-real/proxy4/credential1/build/owner/package gates. If failure, read fresh checkpoint and inspect already-published fixes before a minimal force=false expected_sha CAS change. Do not count queued/not-run/skipped as passed."
   },
   "final_prepublication_observation": {
     "observed_at": "2026-11-02 20:58:55 UTC",
@@ -5852,5 +5853,3735 @@
       "          grep -F 'FABUSHI_WINDOWS_NATIVE_UNICODE ' ../artifacts/windows-update-publisher/native-publisher.log",
       "          grep -F 'FABUSHI_WINDOWS_NATIVE_CLEANUP ' ../artifacts/windows-update-publisher/native-publisher.log"
     ]
-  }
+  },
+  "later_exact9329_terminal_audit": {
+    "schema": "fabushi.exact_head_terminal_job_audit.v1",
+    "observed_at_utc": "2026-11-02T21:09:38Z",
+    "compiled_report_at_utc": "2026-11-02T21:10:34Z",
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+    "upstream_sha": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "workflow": {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob_sha": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d",
+      "source_snapshot": "audit/retained-ffi-live-gap-9329/native-service-contracts.yml"
+    },
+    "run": {
+      "id": 41523624057,
+      "run_attempt": 1,
+      "event": "push",
+      "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+      "status": "queued",
+      "conclusion": null,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523624057",
+      "created_at": "2026-11-02T20:55:27Z",
+      "updated_at": "2026-11-02T20:55:27Z"
+    },
+    "outcome": {
+      "required_jobs": 6,
+      "required_jobs_terminal_success": 5,
+      "required_jobs_queued": 1,
+      "all_required_jobs_success": false,
+      "run_terminal": false,
+      "acceptance": false,
+      "blocking_reason": "native-message-shipping-compile has runner_id=0 and no steps. Its AppHost/CLI builds, protocol/TCP real-service tests and other shipping gates have not executed on this exact H. Retained FFI job succeeds with one explicitly ignored live case."
+    },
+    "audited_new_terminal_jobs": [
+      {
+        "id": 125545613305,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "runner_id": 1000259834,
+        "runner_name": "GitHub Actions 1000259834",
+        "started_at": "2026-11-02T20:55:29Z",
+        "completed_at": "2026-11-02T20:59:56Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install existing Linux Host native dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human resource upload size and bounded-read contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "log": {
+          "path": "audit/run-41523624057/native-message-reconciliation-125545613305.log",
+          "bytes": 353242,
+          "lines": 3872,
+          "sha256": "b918f2a677321b8dbbf8e9b85a6831b5637ac1e103bc6ba84ec768287f146a37"
+        },
+        "binding": {
+          "checkout_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "checkout_log_lines": [
+            108,
+            136
+          ],
+          "artifact": {
+            "id": 13178278016,
+            "node_id": "MDg6QXJ0aWZhY3QxMzE3ODI3ODAxNg==",
+            "name": "native-message-reconciliation-9329aced33343e8e356ba34dfd0f474f3e767914",
+            "size_in_bytes": 35270,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178278016",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178278016/zip",
+            "expired": false,
+            "digest": "sha256:1dac1873bb2e0c946cf7272b0c83ab6eaae4bdf4aa2b3a17ccf7a216cc6674da",
+            "created_at": "2026-11-02T20:59:48Z",
+            "updated_at": "2026-11-02T20:59:48Z",
+            "expires_at": "2027-01-31T20:55:27Z",
+            "workflow_run": {
+              "id": 41523624057,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+              "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914"
+            }
+          },
+          "upload_digest": [
+            {
+              "digest": "1dac1873bb2e0c946cf7272b0c83ab6eaae4bdf4aa2b3a17ccf7a216cc6674da",
+              "line": 3832
+            }
+          ],
+          "upload_ids": [
+            {
+              "id": 13178278016,
+              "line": 3834
+            }
+          ],
+          "digest_matches": true,
+          "id_matches": true,
+          "head_matches": true,
+          "errors": []
+        },
+        "test_suites": [
+          {
+            "running": 62,
+            "start_line": 1103,
+            "result_line": 1192,
+            "result": "test result: ok. 62 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 108.82s",
+            "named_cases": [
+              {
+                "name": "shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart",
+                "outcome": "ok",
+                "line": 1104
+              },
+              {
+                "name": "shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page",
+                "outcome": "ok",
+                "line": 1105
+              },
+              {
+                "name": "shipping_human_agent_handoff_and_history_download_keep_activity_monotonic",
+                "outcome": "ok",
+                "line": 1106
+              },
+              {
+                "name": "shipping_human_concurrent_reactions_serialize_one_conversation_without_blocking_another",
+                "outcome": "ok",
+                "line": 1107
+              },
+              {
+                "name": "shipping_human_equal_timestamp_pagination_keeps_cursor_through_refresh_reaction_and_restart",
+                "outcome": "ok",
+                "line": 1110
+              },
+              {
+                "name": "shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+                "outcome": "ok",
+                "line": 1113
+              },
+              {
+                "name": "shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+                "outcome": "ok",
+                "line": 1114
+              },
+              {
+                "name": "shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations",
+                "outcome": "ok",
+                "line": 1115
+              },
+              {
+                "name": "shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging",
+                "outcome": "ok",
+                "line": 1116
+              },
+              {
+                "name": "shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+                "outcome": "ok",
+                "line": 1121
+              },
+              {
+                "name": "shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+                "outcome": "ok",
+                "line": 1124
+              },
+              {
+                "name": "shipping_human_forward_process_kill_preserves_complete_intent_before_first_post",
+                "outcome": "ok",
+                "line": 1129
+              },
+              {
+                "name": "shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources",
+                "outcome": "ok",
+                "line": 1130
+              },
+              {
+                "name": "shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope",
+                "outcome": "ok",
+                "line": 1137
+              },
+              {
+                "name": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+                "outcome": "ok",
+                "line": 1140
+              },
+              {
+                "name": "shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot",
+                "outcome": "ok",
+                "line": 1141
+              },
+              {
+                "name": "shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch",
+                "outcome": "ok",
+                "line": 1144
+              },
+              {
+                "name": "shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+                "outcome": "ok",
+                "line": 1145
+              },
+              {
+                "name": "shipping_human_history_rejects_damaged_checkpoint_before_any_network_request",
+                "outcome": "ok",
+                "line": 1146
+              },
+              {
+                "name": "shipping_human_history_rejects_oversized_page_before_persisting_coverage",
+                "outcome": "ok",
+                "line": 1147
+              },
+              {
+                "name": "shipping_human_history_cursor_echo_rejects_legacy_and_conflicting_backend_pages",
+                "outcome": "ok",
+                "line": 1148
+              },
+              {
+                "name": "shipping_human_known_refresh_preserves_omitted_reactions_and_clears_explicit_empty",
+                "outcome": "ok",
+                "line": 1149
+              },
+              {
+                "name": "shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
+                "outcome": "ok",
+                "line": 1150
+              },
+              {
+                "name": "shipping_human_late_send_acknowledgement_preserves_newer_reaction_and_read_receipt",
+                "outcome": "ok",
+                "line": 1151
+              },
+              {
+                "name": "shipping_human_late_send_transport_failure_returns_durable_settlement_after_restart",
+                "outcome": "ok",
+                "line": 1152
+              },
+              {
+                "name": "shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+                "outcome": "ok",
+                "line": 1153
+              },
+              {
+                "name": "shipping_human_late_invalid_send_acknowledgements_stay_rejected_without_rolling_back_settlement",
+                "outcome": "ok",
+                "line": 1154
+              },
+              {
+                "name": "shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_after_restart",
+                "outcome": "ok",
+                "line": 1155
+              },
+              {
+                "name": "shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
+                "outcome": "ok",
+                "line": 1156
+              },
+              {
+                "name": "shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order",
+                "outcome": "ok",
+                "line": 1157
+              },
+              {
+                "name": "shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart",
+                "outcome": "ok",
+                "line": 1158
+              },
+              {
+                "name": "shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_restart",
+                "outcome": "ok",
+                "line": 1159
+              },
+              {
+                "name": "shipping_human_reaction_missing_summary_does_not_acknowledge_intent",
+                "outcome": "ok",
+                "line": 1160
+              },
+              {
+                "name": "shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_after_restart",
+                "outcome": "ok",
+                "line": 1161
+              },
+              {
+                "name": "shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_staging_intent",
+                "outcome": "ok",
+                "line": 1162
+              },
+              {
+                "name": "shipping_human_reaction_rejects_credential_change_while_response_body_is_streaming",
+                "outcome": "ok",
+                "line": 1163
+              },
+              {
+                "name": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+                "outcome": "ok",
+                "line": 1164
+              },
+              {
+                "name": "shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
+                "outcome": "ok",
+                "line": 1165
+              },
+              {
+                "name": "shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+                "outcome": "ok",
+                "line": 1166
+              },
+              {
+                "name": "shipping_human_reaction_rechecks_current_target_after_http_without_overwriting_newer_fields",
+                "outcome": "ok",
+                "line": 1167
+              },
+              {
+                "name": "shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+                "outcome": "ok",
+                "line": 1168
+              },
+              {
+                "name": "shipping_human_reaction_unconfirmed_success_keeps_intent_until_restart_replay",
+                "outcome": "ok",
+                "line": 1169
+              },
+              {
+                "name": "shipping_human_reaction_rejects_midflight_credential_rotation_and_recovers_after_restart",
+                "outcome": "ok",
+                "line": 1170
+              },
+              {
+                "name": "shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen",
+                "outcome": "ok",
+                "line": 1171
+              },
+              {
+                "name": "shipping_human_read_receipts_compare_rfc3339_instants_and_reject_invalid_ingress_before_resources",
+                "outcome": "ok",
+                "line": 1172
+              },
+              {
+                "name": "shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+                "outcome": "ok",
+                "line": 1173
+              },
+              {
+                "name": "shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_http",
+                "outcome": "ok",
+                "line": 1174
+              },
+              {
+                "name": "shipping_human_reaction_waits_for_inflight_history_before_deriving_desired_state",
+                "outcome": "ok",
+                "line": 1175
+              },
+              {
+                "name": "shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+                "outcome": "ok",
+                "line": 1176
+              },
+              {
+                "name": "shipping_human_send_rejects_changed_account_before_message_or_resource_dispatch",
+                "outcome": "ok",
+                "line": 1177
+              },
+              {
+                "name": "shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_anchor_refresh",
+                "outcome": "ok",
+                "line": 1178
+              },
+              {
+                "name": "shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+                "outcome": "ok",
+                "line": 1179
+              },
+              {
+                "name": "shipping_human_send_rejects_midflight_credential_changes_and_recovers_after_restart",
+                "outcome": "ok",
+                "line": 1180
+              },
+              {
+                "name": "shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+                "outcome": "ok",
+                "line": 1181
+              },
+              {
+                "name": "shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+                "outcome": "ok",
+                "line": 1182
+              },
+              {
+                "name": "shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+                "outcome": "ok",
+                "line": 1183
+              },
+              {
+                "name": "shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+                "outcome": "ok",
+                "line": 1184
+              },
+              {
+                "name": "shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
+                "outcome": "ok",
+                "line": 1185
+              },
+              {
+                "name": "shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_time_inserts",
+                "outcome": "ok",
+                "line": 1186
+              },
+              {
+                "name": "shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
+                "outcome": "ok",
+                "line": 1187
+              },
+              {
+                "name": "shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart",
+                "outcome": "ok",
+                "line": 1188
+              },
+              {
+                "name": "shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync",
+                "outcome": "ok",
+                "line": 1190
+              }
+            ],
+            "suite": "Human ingress/settlement/restart",
+            "metrics": {
+              "passed": 62,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 15
+            }
+          },
+          {
+            "running": 3,
+            "start_line": 1619,
+            "result_line": 1624,
+            "result": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.21s",
+            "named_cases": [
+              {
+                "name": "extensions::session::native_messaging::native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http",
+                "outcome": "ok",
+                "line": 1620
+              },
+              {
+                "name": "extensions::session::native_messaging::native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one",
+                "outcome": "ok",
+                "line": 1621
+              },
+              {
+                "name": "extensions::session::native_messaging::native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected",
+                "outcome": "ok",
+                "line": 1622
+              }
+            ],
+            "suite": "Human resource bounds",
+            "metrics": {
+              "passed": 3,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 136
+            }
+          },
+          {
+            "running": 1,
+            "start_line": 2050,
+            "result_line": 2053,
+            "result": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.03s",
+            "named_cases": [
+              {
+                "name": "extensions::session::production::sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
+                "outcome": "ok",
+                "line": 2051
+              }
+            ],
+            "suite": "Durable sharebox owner",
+            "metrics": {
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 138
+            }
+          },
+          {
+            "running": 12,
+            "start_line": 2477,
+            "result_line": 2491,
+            "result": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 127 filtered out; finished in 1.76s",
+            "named_cases": [
+              {
+                "name": "extensions::session::forward_batch_journal::tests::bad_forward_journal_versions_and_destinations_fail_closed",
+                "outcome": "ok",
+                "line": 2478
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_capture_keeps_original_bytes_and_metadata_after_source_loss_and_reopen",
+                "outcome": "ok",
+                "line": 2479
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_capture_bounds_count_size_and_regular_file_inputs_before_acceptance",
+                "outcome": "ok",
+                "line": 2480
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_legacy_journal_remains_loadable_without_fabricating_byte_evidence",
+                "outcome": "ok",
+                "line": 2481
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
+                "outcome": "ok",
+                "line": 2482
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_paths_are_account_scoped_and_reject_aliases_and_symlinks",
+                "outcome": "ok",
+                "line": 2483
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_nonce_is_account_issuer_and_destination_scoped",
+                "outcome": "ok",
+                "line": 2484
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_reader_rejects_missing_or_corrupt_snapshots_without_source_fallback",
+                "outcome": "ok",
+                "line": 2485
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_publication_never_overwrites_and_cleans_only_its_owned_temporary",
+                "outcome": "ok",
+                "line": 2486
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::stale_forward_metadata_observation_cannot_erase_other_batch",
+                "outcome": "ok",
+                "line": 2487
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::stale_same_batch_snapshot_cannot_regress_completed_destination",
+                "outcome": "ok",
+                "line": 2488
+              },
+              {
+                "name": "extensions::session::forward_batch_journal::tests::forward_attachment_exact_resource_byte_limit_remains_supported",
+                "outcome": "ok",
+                "line": 2489
+              }
+            ],
+            "suite": "Forward journal and CAS",
+            "metrics": {
+              "passed": 12,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 127
+            }
+          },
+          {
+            "running": 4,
+            "start_line": 2932,
+            "result_line": 2938,
+            "result": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+            "named_cases": [
+              {
+                "name": "concurrent_nonce_cannot_coalesce_different_agent_or_prompt",
+                "outcome": "ok",
+                "line": 2933
+              },
+              {
+                "name": "identical_concurrent_nonce_is_coalesced_without_second_dispatch",
+                "outcome": "ok",
+                "line": 2934
+              },
+              {
+                "name": "conflicting_reply_and_attachments_are_rejected_without_mutating_admission",
+                "outcome": "ok",
+                "line": 2935
+              },
+              {
+                "name": "accepted_nonce_stays_durable_and_failed_in_flight_nonce_can_retry",
+                "outcome": "ok",
+                "line": 2936
+              }
+            ],
+            "suite": "Agent nonce",
+            "metrics": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 0
+            }
+          },
+          {
+            "running": 3,
+            "start_line": 3360,
+            "result_line": 3365,
+            "result": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.01s",
+            "named_cases": [
+              {
+                "name": "extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_unchanged_retains_the_existing_lock",
+                "outcome": "ok",
+                "line": 3361
+              },
+              {
+                "name": "extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_rejection_preserves_the_original_refusal",
+                "outcome": "ok",
+                "line": 3362
+              },
+              {
+                "name": "extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_rotation_after_completed_http_is_rejected",
+                "outcome": "ok",
+                "line": 3363
+              }
+            ],
+            "suite": "Private settlement credential",
+            "metrics": {
+              "passed": 3,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 136
+            }
+          },
+          {
+            "running": 1,
+            "start_line": 3804,
+            "result_line": 3807,
+            "result": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.07s",
+            "named_cases": [
+              {
+                "name": "gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed",
+                "outcome": "ok",
+                "line": 3805
+              }
+            ],
+            "suite": "Authenticated recipient gateway",
+            "metrics": {
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 14
+            }
+          }
+        ]
+      },
+      {
+        "id": 125545613328,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "runner_id": 1000259835,
+        "runner_name": "GitHub Actions 1000259835",
+        "started_at": "2026-11-02T20:55:29Z",
+        "completed_at": "2026-11-02T20:56:54Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Durable Human cursor and canonical pagination consumers",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "log": {
+          "path": "audit/run-41523624057/native-message-ui-125545613328.log",
+          "bytes": 86814,
+          "lines": 1040,
+          "sha256": "15ad64742596e69da807ebe6ff63203f4de2ed549c46d7cad48ae846ec86909c"
+        },
+        "binding": {
+          "checkout_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "checkout_log_lines": [
+            107,
+            135
+          ],
+          "artifact": {
+            "id": 13179331029,
+            "node_id": "MDg6QXJ0aWZhY3QxMzE3OTMzMTAyOQ==",
+            "name": "native-message-ui-9329aced33343e8e356ba34dfd0f474f3e767914",
+            "size_in_bytes": 229047,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179331029",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179331029/zip",
+            "expired": false,
+            "digest": "sha256:c036f8cc701b2aded89dbf23305c0798644308c538de944057aa9322c04d8952",
+            "created_at": "2026-11-02T20:56:35Z",
+            "updated_at": "2026-11-02T20:56:35Z",
+            "expires_at": "2027-01-31T20:55:27Z",
+            "workflow_run": {
+              "id": 41523624057,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+              "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914"
+            }
+          },
+          "upload_digest": [
+            {
+              "digest": "c036f8cc701b2aded89dbf23305c0798644308c538de944057aa9322c04d8952",
+              "line": 1000
+            }
+          ],
+          "upload_ids": [
+            {
+              "id": 13179331029,
+              "line": 1002
+            }
+          ],
+          "digest_matches": true,
+          "id_matches": true,
+          "head_matches": true,
+          "errors": []
+        },
+        "test_suites": [
+          {
+            "start_line": 212,
+            "result_line": 388,
+            "metrics": {
+              "tests": 29,
+              "suites": 0,
+              "pass": 29,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 97.157858
+            },
+            "named_cases": [
+              {
+                "name": "NMR-49 dispatching Human text and attachments stay pending until settlement",
+                "outcome": "ok",
+                "line": 214
+              },
+              {
+                "name": "NMR-49 existing Human and Agent delivery projections remain unchanged",
+                "outcome": "ok",
+                "line": 220
+              },
+              {
+                "name": "NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append",
+                "outcome": "ok",
+                "line": 226
+              },
+              {
+                "name": "NMR-26 duplicate initial IDs and nonce acknowledgement retain one canonical send",
+                "outcome": "ok",
+                "line": 232
+              },
+              {
+                "name": "NMR-26 feed baseline cannot roll back a same-ID Agent terminal event",
+                "outcome": "ok",
+                "line": 238
+              },
+              {
+                "name": "NMR-26 tail merge preserves cached older updates in canonical order",
+                "outcome": "ok",
+                "line": 244
+              },
+              {
+                "name": "NMR-26 disjoint tail stays between cached history and events first seen during the read",
+                "outcome": "ok",
+                "line": 250
+              },
+              {
+                "name": "NMR-26 complete refresh updates unchanged rows but preserves post-request events",
+                "outcome": "ok",
+                "line": 256
+              },
+              {
+                "name": "NMR-26 older page overlap deduplicates IDs without reverting current row state",
+                "outcome": "ok",
+                "line": 262
+              },
+              {
+                "name": "NMR-26 accepted pages commit to the root cache and resume the exclusive cursor on reopen",
+                "outcome": "ok",
+                "line": 268
+              },
+              {
+                "name": "NMR-26 update of an unloaded old row wins over an in-flight page",
+                "outcome": "ok",
+                "line": 274
+              },
+              {
+                "name": "NMR-26 loaded older row refresh retains order and the next-page cursor",
+                "outcome": "ok",
+                "line": 280
+              },
+              {
+                "name": "NMR-26 account and conversation changes fence stale rows and request completion",
+                "outcome": "ok",
+                "line": 286
+              },
+              {
+                "name": "NMR-26 clear/reset prevents a late page from repopulating the transcript",
+                "outcome": "ok",
+                "line": 292
+              },
+              {
+                "name": "NMR-26 authoritative complete refresh supersedes an older request",
+                "outcome": "ok",
+                "line": 298
+              },
+              {
+                "name": "NMR-26 failed history load preserves rows and retries the same cursor once",
+                "outcome": "ok",
+                "line": 304
+              },
+              {
+                "name": "NMR-26 synchronous fetch failure cannot leave pagination permanently busy",
+                "outcome": "ok",
+                "line": 310
+              },
+              {
+                "name": "NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
+                "outcome": "ok",
+                "line": 316
+              },
+              {
+                "name": "Human transcript correlation isolates authors while retaining Host and optimistic send settlement",
+                "outcome": "ok",
+                "line": 322
+              },
+              {
+                "name": "Human older pages cannot resurrect a settled pending row in the root cache",
+                "outcome": "ok",
+                "line": 328
+              },
+              {
+                "name": "NMR-26 an intermediate row commit cannot consume an older-page viewport anchor",
+                "outcome": "ok",
+                "line": 334
+              },
+              {
+                "name": "NMR-26 a late first reaction response cannot replace a later mutation settlement",
+                "outcome": "ok",
+                "line": 340
+              },
+              {
+                "name": "NMR-26 an authoritative event wins over an outstanding reaction RPC response",
+                "outcome": "ok",
+                "line": 346
+              },
+              {
+                "name": "NMR-26 account generation fences a reaction across logout and return to the same identity",
+                "outcome": "ok",
+                "line": 352
+              },
+              {
+                "name": "NMR-26 independent conversation and message reactions retain their completion scope",
+                "outcome": "ok",
+                "line": 358
+              },
+              {
+                "name": "NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback",
+                "outcome": "ok",
+                "line": 364
+              },
+              {
+                "name": "NMR-26 deferred reaction state and error updates recheck events, clear and account generation",
+                "outcome": "ok",
+                "line": 370
+              },
+              {
+                "name": "NMR-26 Human reaction settlement and a later event refresh an older row without moving it",
+                "outcome": "ok",
+                "line": 376
+              },
+              {
+                "name": "NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error",
+                "outcome": "ok",
+                "line": 382
+              }
+            ],
+            "suite": "Transcript projection/pagination/refresh/reactions"
+          },
+          {
+            "start_line": 425,
+            "result_line": 529,
+            "metrics": {
+              "tests": 17,
+              "suites": 0,
+              "pass": 17,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 105.059483
+            },
+            "named_cases": [
+              {
+                "name": "Human transcript cursors preserve the opaque traversal beside the physical anchor",
+                "outcome": "ok",
+                "line": 427
+              },
+              {
+                "name": "Human transcript cursor admission rejects malformed scope and continuation without coercion",
+                "outcome": "ok",
+                "line": 433
+              },
+              {
+                "name": "Telegram authorization projection accepts typed challenge, issue, and bounded backoff",
+                "outcome": "ok",
+                "line": 439
+              },
+              {
+                "name": "Telegram authorization projection rejects malformed or unbounded state",
+                "outcome": "ok",
+                "line": 445
+              },
+              {
+                "name": "remaining Telegram auth lifecycle methods share the canonical projection contract",
+                "outcome": "ok",
+                "line": 451
+              },
+              {
+                "name": "timeline event registry validates protocol rows and descriptions",
+                "outcome": "ok",
+                "line": 457
+              },
+              {
+                "name": "transcript feed fanout shares one subscription and validates entry identity",
+                "outcome": "ok",
+                "line": 463
+              },
+              {
+                "name": "hidden chat mutations rollback permanent failures and hold transport failures for reconnect",
+                "outcome": "ok",
+                "line": 469
+              },
+              {
+                "name": "find-in-chat searches visible text, wraps navigation and resets on scope",
+                "outcome": "ok",
+                "line": 475
+              },
+              {
+                "name": "routine history formats status and relative/zoned timestamps",
+                "outcome": "ok",
+                "line": 481
+              },
+              {
+                "name": "composer draft restore does not overwrite a staged attachment added while persistence is loading",
+                "outcome": "ok",
+                "line": 487
+              },
+              {
+                "name": "forward recipient keyboard policy preserves picker boundaries and submit semantics",
+                "outcome": "ok",
+                "line": 493
+              },
+              {
+                "name": "Human opaque history cursors survive projection, root-cache commits and cached conversation reopen",
+                "outcome": "ok",
+                "line": 499
+              },
+              {
+                "name": "Human failed history retries preserve the exact token and the latest committed row overlay",
+                "outcome": "ok",
+                "line": 505
+              },
+              {
+                "name": "Human opaque history rejects stale account ABA results and their buffered updates",
+                "outcome": "ok",
+                "line": 511
+              },
+              {
+                "name": "Human replacement initial history clears the prior token and failed-read overlays",
+                "outcome": "ok",
+                "line": 517
+              },
+              {
+                "name": "Agent pagination retains its sequence-only request and viewport anchor",
+                "outcome": "ok",
+                "line": 523
+              }
+            ],
+            "suite": "Canonical Human cursor consumers"
+          },
+          {
+            "start_line": 601,
+            "result_line": 633,
+            "metrics": {
+              "tests": 5,
+              "suites": 0,
+              "pass": 5,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 132.740407
+            },
+            "named_cases": [
+              {
+                "name": "current forward success projects notice and roster",
+                "outcome": "ok",
+                "line": 603
+              },
+              {
+                "name": "mixed settlement retains failed count and current roster",
+                "outcome": "ok",
+                "line": 609
+              },
+              {
+                "name": "account switch before settlement prevents every projection",
+                "outcome": "ok",
+                "line": 615
+              },
+              {
+                "name": "late successful roster response cannot repopulate a new account",
+                "outcome": "ok",
+                "line": 621
+              },
+              {
+                "name": "late rejected roster request cannot alter a new account or rollback notice",
+                "outcome": "ok",
+                "line": 627
+              }
+            ],
+            "suite": "Forward settlement boundary"
+          },
+          {
+            "start_line": 871,
+            "result_line": 969,
+            "metrics": {
+              "tests": 16,
+              "suites": 0,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 9555.34636
+            },
+            "named_cases": [
+              {
+                "name": "current forward closes and settles exactly once",
+                "outcome": "ok",
+                "line": 873
+              },
+              {
+                "name": "account switch prevents old success from closing B dialog",
+                "outcome": "ok",
+                "line": 879
+              },
+              {
+                "name": "logout prevents late error from being displayed",
+                "outcome": "ok",
+                "line": 885
+              },
+              {
+                "name": "A B A reuse still rejects old settlement",
+                "outcome": "ok",
+                "line": 891
+              },
+              {
+                "name": "closed dialog discards old search",
+                "outcome": "ok",
+                "line": 897
+              },
+              {
+                "name": "replaced source discards old search",
+                "outcome": "ok",
+                "line": 903
+              },
+              {
+                "name": "unmount synchronously invalidates root generation",
+                "outcome": "ok",
+                "line": 909
+              },
+              {
+                "name": "late rejected search cannot display error in reopened dialog",
+                "outcome": "ok",
+                "line": 915
+              },
+              {
+                "name": "rapid double-submit dispatches only once",
+                "outcome": "ok",
+                "line": 921
+              },
+              {
+                "name": "partial retry only sends failed destination with stable identity",
+                "outcome": "ok",
+                "line": 927
+              },
+              {
+                "name": "query change does not invalidate valid submit",
+                "outcome": "ok",
+                "line": 933
+              },
+              {
+                "name": "credential refresh does not replace account dialog lifetime",
+                "outcome": "ok",
+                "line": 939
+              },
+              {
+                "name": "ambiguous missing duplicate and unexpected settlements retain the frozen retry intent",
+                "outcome": "ok",
+                "line": 945
+              },
+              {
+                "name": "recipient limit stays editable and counts selections outside the current search",
+                "outcome": "ok",
+                "line": 951
+              },
+              {
+                "name": "closing a pending forward retires presentation without cancelling or settling a reopened intent",
+                "outcome": "ok",
+                "line": 957
+              },
+              {
+                "name": "late searches preserve send failure and retry destinations even when selected rows are hidden",
+                "outcome": "ok",
+                "line": 963
+              }
+            ],
+            "suite": "Actual Chromium forward dialog"
+          }
+        ]
+      },
+      {
+        "id": 125545613591,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "runner_id": 1000259838,
+        "runner_name": "GitHub Actions 1000259838",
+        "started_at": "2026-11-02T20:55:31Z",
+        "completed_at": "2026-11-02T20:56:56Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Native package resources exclude retained FFI libraries",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Explicit approved update source and recovery behaviors",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Windows publisher authorization and candidate recovery behaviors",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Final macOS update metadata and blockmap behaviors",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Explicit artifact-only scope and side-effect admission contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Existing installer promotion consumer contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reconcile immutable historical installer metadata without changing package bytes",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "log": {
+          "path": "audit/run-41523624057/native-message-electron-125545613591.log",
+          "bytes": 92520,
+          "lines": 1222,
+          "sha256": "be4bdc99c0366c0b5eb5550b7d44c7a48e091cdb010166eae8c9554678730668"
+        },
+        "binding": {
+          "checkout_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "checkout_log_lines": [
+            108,
+            136
+          ],
+          "artifact": {
+            "id": 13177669629,
+            "node_id": "MDg6QXJ0aWZhY3QxMzE3NzY2OTYyOQ==",
+            "name": "native-message-electron-9329aced33343e8e356ba34dfd0f474f3e767914",
+            "size_in_bytes": 14817,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177669629",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177669629/zip",
+            "expired": false,
+            "digest": "sha256:829706a121a7835a56556852553ffe5a302696d5e860f703ecdeddb716255dda",
+            "created_at": "2026-11-02T20:56:52Z",
+            "updated_at": "2026-11-02T20:56:52Z",
+            "expires_at": "2027-01-31T20:55:27Z",
+            "workflow_run": {
+              "id": 41523624057,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+              "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914"
+            }
+          },
+          "upload_digest": [
+            {
+              "digest": "829706a121a7835a56556852553ffe5a302696d5e860f703ecdeddb716255dda",
+              "line": 1182
+            }
+          ],
+          "upload_ids": [
+            {
+              "id": 13177669629,
+              "line": 1184
+            }
+          ],
+          "digest_matches": true,
+          "id_matches": true,
+          "head_matches": true,
+          "errors": []
+        },
+        "test_suites": [
+          {
+            "start_line": 209,
+            "result_line": 271,
+            "metrics": {
+              "tests": 10,
+              "suites": 0,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 126.572549
+            },
+            "named_cases": [
+              {
+                "name": "NMR-ELECTRON-01: bootstrap binds one native child and all three existing ports",
+                "outcome": "ok",
+                "line": 211
+              },
+              {
+                "name": "NMR-ELECTRON-02: transcript windows preserve cursor, stable IDs and channel identity",
+                "outcome": "ok",
+                "line": 217
+              },
+              {
+                "name": "NMR-ELECTRON-03: opaque native replies/events retain identity, reactions and receipts; unsupported edits/deletes stay errors",
+                "outcome": "ok",
+                "line": 223
+              },
+              {
+                "name": "NMR-ELECTRON-04: cancellation and native failure outcomes remain explicit",
+                "outcome": "ok",
+                "line": 229
+              },
+              {
+                "name": "NMR-ELECTRON-05: invalid output cannot reach a subscriber or log private payloads",
+                "outcome": "ok",
+                "line": 235
+              },
+              {
+                "name": "NMR-ELECTRON-06: closed subscriptions fence late traffic and all-port disposal retires the child once",
+                "outcome": "ok",
+                "line": 241
+              },
+              {
+                "name": "NMR-ELECTRON-07: child errors close subscriptions and reject late delivery",
+                "outcome": "ok",
+                "line": 247
+              },
+              {
+                "name": "NMR-ELECTRON-08: native child exit preserves failure status without killing an exited process",
+                "outcome": "ok",
+                "line": 253
+              },
+              {
+                "name": "NMR-ELECTRON-09: signal termination remains non-successful",
+                "outcome": "ok",
+                "line": 259
+              },
+              {
+                "name": "NMR-ELECTRON-10: absent bootstrap or incomplete port handoff cannot launch a child",
+                "outcome": "ok",
+                "line": 265
+              }
+            ],
+            "suite": "Native command/event/disposal carrier"
+          },
+          {
+            "start_line": 294,
+            "result_line": 344,
+            "metrics": {
+              "tests": 8,
+              "suites": 0,
+              "pass": 8,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 236.324322
+            },
+            "named_cases": [
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves valid retained storage/application secrets",
+                "outcome": "ok",
+                "line": 296
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and non-JSON application secret",
+                "outcome": "ok",
+                "line": 302
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves corrupt retained storage and invalid application credential",
+                "outcome": "ok",
+                "line": 308
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: login/refresh/restart/logout preserves new account without legacy secrets",
+                "outcome": "ok",
+                "line": 314
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: account switch replaces Native identity without touching either legacy account",
+                "outcome": "ok",
+                "line": 320
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: restart denies another issuer before isolated login establishes its own Native identity",
+                "outcome": "ok",
+                "line": 326
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: rejected refresh clears Native authority and preserves malformed legacy data",
+                "outcome": "ok",
+                "line": 332
+              },
+              {
+                "name": "NMR-NATIVE-ACCOUNT: logout fences a delayed refresh before it can republish any credential",
+                "outcome": "ok",
+                "line": 338
+              }
+            ],
+            "suite": "Native auth lifecycle and retained secrets"
+          },
+          {
+            "start_line": 367,
+            "result_line": 390,
+            "metrics": {
+              "tests": 3,
+              "suites": 0,
+              "pass": 3,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 222.872742
+            },
+            "named_cases": [
+              {
+                "name": "NMR-39 Unix: actual resource copy retains only canonical executable bytes and permissions",
+                "outcome": "ok",
+                "line": 369
+              },
+              {
+                "name": "NMR-39 Windows-named: actual resource copy retains only canonical executable bytes and permissions",
+                "outcome": "ok",
+                "line": 376
+              },
+              {
+                "name": "NMR-39 an approved executable name used as a directory cannot smuggle nested payload",
+                "outcome": "ok",
+                "line": 383
+              }
+            ],
+            "suite": "Package resource exclusion"
+          },
+          {
+            "start_line": 414,
+            "result_line": 512,
+            "metrics": {
+              "tests": 16,
+              "suites": 0,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 202.947677
+            },
+            "named_cases": [
+              {
+                "name": "EUS-01/03 no implicit feed for startup, manual, track, minimum-version or backend checks",
+                "outcome": "ok",
+                "line": 416
+              },
+              {
+                "name": "EUS-02 invalid and foreign sources fail before requests without echoing configuration",
+                "outcome": "ok",
+                "line": 422
+              },
+              {
+                "name": "EUS-02 approved production, isolated CI and loopback origins retain explicit paths",
+                "outcome": "ok",
+                "line": 428
+              },
+              {
+                "name": "EUS-01 primary configuration is authoritative including blank and invalid values",
+                "outcome": "ok",
+                "line": 434
+              },
+              {
+                "name": "EUS-01/05 actual production wiring uses the same source precedence and service",
+                "outcome": "ok",
+                "line": 440
+              },
+              {
+                "name": "EUS-03 existing disabled reasons retain precedence and clearing them cannot bypass source gating",
+                "outcome": "ok",
+                "line": 446
+              },
+              {
+                "name": "EUS-05 source gating reaches the actual Settings projection and non-retryable telemetry",
+                "outcome": "ok",
+                "line": 452
+              },
+              {
+                "name": "EUS-04 approved explicit feed preserves request contract and genuine 204 no-update settlement",
+                "outcome": "ok",
+                "line": 458
+              },
+              {
+                "name": "EUS-02/04 approved feed HTTP failure is an error with no fallback or private request URL",
+                "outcome": "ok",
+                "line": 464
+              },
+              {
+                "name": "EUS-02 real loopback manifest redirect is refused before reaching the redirect target",
+                "outcome": "ok",
+                "line": 470
+              },
+              {
+                "name": "EUS-04 approved source retains startup and periodic timers",
+                "outcome": "ok",
+                "line": 476
+              },
+              {
+                "name": "EUS-03/04 disabling an approved service aborts its exact in-flight check and allows explicit recovery",
+                "outcome": "ok",
+                "line": 482
+              },
+              {
+                "name": "EUS-03 disposal blocks later manual checks and startup timers",
+                "outcome": "ok",
+                "line": 488
+              },
+              {
+                "name": "EUS-03/04 a new service recovers after explicit configuration is corrected",
+                "outcome": "ok",
+                "line": 494
+              },
+              {
+                "name": "EUS-04 real persisted apply markers settle on disabled restart without touching user data",
+                "outcome": "ok",
+                "line": 500
+              },
+              {
+                "name": "EUS-04 approved explicit feed retains verified download, installer staging and apply marker owner",
+                "outcome": "ok",
+                "line": 506
+              }
+            ],
+            "suite": "Approved update source/recovery"
+          },
+          {
+            "start_line": 537,
+            "result_line": 707,
+            "metrics": {
+              "tests": 28,
+              "suites": 0,
+              "pass": 28,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 228.548311
+            },
+            "named_cases": [
+              {
+                "name": "EUS-WIN-01 absent and blank authority are distinct from every malformed policy",
+                "outcome": "ok",
+                "line": 539
+              },
+              {
+                "name": "EUS-WIN-01 explicit rotation and the 16-entry bound normalize only certificate hexadecimal case",
+                "outcome": "ok",
+                "line": 545
+              },
+              {
+                "name": "EUS-WIN-01/03 an installer snapshots startup authority and denies absent authority before the native probe",
+                "outcome": "ok",
+                "line": 551
+              },
+              {
+                "name": "EUS-WIN-02 valid native trust requires the subject and certificate pin from one authorized entry",
+                "outcome": "ok",
+                "line": 557
+              },
+              {
+                "name": "EUS-WIN-02 explicit certificate rotation accepts each approved pin without learning a new pin",
+                "outcome": "ok",
+                "line": 563
+              },
+              {
+                "name": "EUS-WIN-02 historical Anysphere common-name and certificate-only shortcuts never authorize an installer",
+                "outcome": "ok",
+                "line": 569
+              },
+              {
+                "name": "EUS-WIN-02 malformed, unsigned, untrusted and catalog probe output fails with fixed non-disclosing errors",
+                "outcome": "ok",
+                "line": 575
+              },
+              {
+                "name": "EUS-WIN-02 native timeout, native failure and file-read failure deny receipts without disclosing native output",
+                "outcome": "ok",
+                "line": 581
+              },
+              {
+                "name": "EUS-WIN-02 the native command treats apostrophes and metacharacters as a literal file path",
+                "outcome": "ok",
+                "line": 587
+              },
+              {
+                "name": "EUS-WIN-03 exact-path receipts belong to one installer instance and permit only one spawn",
+                "outcome": "ok",
+                "line": 593
+              },
+              {
+                "name": "EUS-WIN-04 a file changed during the native probe cannot receive an install receipt",
+                "outcome": "ok",
+                "line": 599
+              },
+              {
+                "name": "EUS-WIN-04 failed re-verification revokes that path even when its bytes remain unchanged",
+                "outcome": "ok",
+                "line": 605
+              },
+              {
+                "name": "EUS-WIN-03/04 an older in-flight probe cannot resurrect a receipt after a newer verification fails",
+                "outcome": "ok",
+                "line": 611
+              },
+              {
+                "name": "EUS-WIN-03/04 an older superseded probe cannot revoke a newer successful path receipt",
+                "outcome": "ok",
+                "line": 617
+              },
+              {
+                "name": "EUS-WIN-04 changed or missing bytes at launch fail through the callback and consume the old receipt",
+                "outcome": "ok",
+                "line": 623
+              },
+              {
+                "name": "EUS-WIN-03/05 spawn errors use the existing callback and cannot reuse a consumed receipt",
+                "outcome": "ok",
+                "line": 629
+              },
+              {
+                "name": "EUS-WIN-03 service admission and all later gates cannot bypass missing or invalid publisher authority",
+                "outcome": "ok",
+                "line": 635
+              },
+              {
+                "name": "EUS-WIN-03 Windows ports without an authority method cannot silently opt into update admission",
+                "outcome": "ok",
+                "line": 641
+              },
+              {
+                "name": "EUS-WIN-03 runtime and feed gates retain precedence while non-Windows behavior remains unchanged",
+                "outcome": "ok",
+                "line": 647
+              },
+              {
+                "name": "EUS-WIN-01/03 actual production wiring reads only the explicit publisher variable and preserves its raw value",
+                "outcome": "ok",
+                "line": 653
+              },
+              {
+                "name": "EUS-WIN-01/03 changing startup environment requires reconstruction and preserves user Settings",
+                "outcome": "ok",
+                "line": 659
+              },
+              {
+                "name": "EUS-WIN-05 publisher gating reaches actual Settings and distinct non-retryable telemetry without raw policy",
+                "outcome": "ok",
+                "line": 665
+              },
+              {
+                "name": "EUS-WIN-03/05 disabled restart settles persisted apply markers before the publisher gate without touching sessions",
+                "outcome": "ok",
+                "line": 671
+              },
+              {
+                "name": "EUS-WIN-04/05 real installer authorization preserves service staging, one-use launch and marker ownership",
+                "outcome": "ok",
+                "line": 677
+              },
+              {
+                "name": "EUS-WIN-02/05 a rejected downloaded publisher cannot become ready or quit and cleanup preserves user data",
+                "outcome": "ok",
+                "line": 683
+              },
+              {
+                "name": "EUS-WIN-04/05 a newer candidate failing authorization preserves the previously ready candidate receipt",
+                "outcome": "ok",
+                "line": 689
+              },
+              {
+                "name": "EUS-WIN-04/05 cancelling a newly verified track candidate preserves the previous candidate receipt",
+                "outcome": "ok",
+                "line": 695
+              },
+              {
+                "name": "EUS-WIN-04/05 rejected launch bytes and spawn failures retain spawn_failed restart evidence",
+                "outcome": "ok",
+                "line": 701
+              }
+            ],
+            "suite": "Windows publisher authorization/recovery"
+          },
+          {
+            "start_line": 731,
+            "result_line": 842,
+            "metrics": {
+              "tests": 18,
+              "suites": 0,
+              "pass": 18,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 1711.196285
+            },
+            "named_cases": [
+              {
+                "name": "final ZIP and DMG metadata uses the locked generator and verify leaves all candidate bytes unchanged",
+                "outcome": "ok",
+                "line": 733
+              },
+              {
+                "name": "ticket append rejects pre-staple metadata then reconciles final hashes, sizes and maps without altering packages",
+                "outcome": "ok",
+                "line": 740
+              },
+              {
+                "name": "equivalent gzip envelopes verify read-only and receipts hash the actual accepted sidecars",
+                "outcome": "ok",
+                "line": 746
+              },
+              {
+                "name": "valid gzip cannot conceal changes to decoded blockmap checksums, sizes or structure",
+                "outcome": "ok",
+                "line": 752
+              },
+              {
+                "name": "malformed, truncated, CRC-corrupt and oversized decoded maps fail closed without candidate writes",
+                "outcome": "ok",
+                "line": 758
+              },
+              {
+                "name": "a same-size byte change with manually refreshed hash still rejects its stale differential map",
+                "outcome": "ok",
+                "line": 764
+              },
+              {
+                "name": "a nonempty but unrelated blockmap is rejected and rebuilt from its own package",
+                "outcome": "ok",
+                "line": 770
+              },
+              {
+                "name": "missing package, sidecar or metadata fails preflight without touching the remaining files",
+                "outcome": "ok",
+                "line": 776
+              },
+              {
+                "name": "duplicate file entries cannot omit one of the required package identities",
+                "outcome": "ok",
+                "line": 782
+              },
+              {
+                "name": "a metadata or expected-version mismatch cannot rewrite another release",
+                "outcome": "ok",
+                "line": 788
+              },
+              {
+                "name": "file and legacy paths cannot escape the canonical arm64 release filenames",
+                "outcome": "ok",
+                "line": 794
+              },
+              {
+                "name": "symlinked package, sidecar and metadata inputs are refused before writes",
+                "outcome": "ok",
+                "line": 800
+              },
+              {
+                "name": "directories and empty files cannot stand in for regular package inputs",
+                "outcome": "ok",
+                "line": 806
+              },
+              {
+                "name": "duplicate YAML keys and malformed digest fields fail before sidecar mutation",
+                "outcome": "ok",
+                "line": 812
+              },
+              {
+                "name": "receipt identity must be an exact complete source SHA",
+                "outcome": "ok",
+                "line": 818
+              },
+              {
+                "name": "partly replaced sidecars from an interrupted reconciliation remain repairable",
+                "outcome": "ok",
+                "line": 824
+              },
+              {
+                "name": "legacy ZIP hash is checked independently and reconciles without changing release fields",
+                "outcome": "ok",
+                "line": 830
+              },
+              {
+                "name": "production CLI writes an exact-source receipt only on success and exposes a read-only verify mode",
+                "outcome": "ok",
+                "line": 836
+              }
+            ],
+            "suite": "macOS metadata and blockmap"
+          },
+          {
+            "start_line": 866,
+            "result_line": 928,
+            "metrics": {
+              "tests": 10,
+              "suites": 0,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 409.289419
+            },
+            "named_cases": [
+              {
+                "name": "push defaults and canonical false inputs retain full acceptance scope",
+                "outcome": "ok",
+                "line": 868
+              },
+              {
+                "name": "full dispatch leaves every existing release and candidate route combination to its owner",
+                "outcome": "ok",
+                "line": 874
+              },
+              {
+                "name": "explicit dispatch artifact-only accepts only disabled existing routes",
+                "outcome": "ok",
+                "line": 880
+              },
+              {
+                "name": "every boolean rejects noncanonical raw strings and nonstring values",
+                "outcome": "ok",
+                "line": 886
+              },
+              {
+                "name": "missing, unknown and noncanonical events cannot select a scope",
+                "outcome": "ok",
+                "line": 892
+              },
+              {
+                "name": "push cannot opt out of full acceptance",
+                "outcome": "ok",
+                "line": 898
+              },
+              {
+                "name": "artifact-only rejects each conflicting route and their combined request",
+                "outcome": "ok",
+                "line": 904
+              },
+              {
+                "name": "actual CLI appends exactly the canonical outputs for full and artifact-only scopes",
+                "outcome": "ok",
+                "line": 910
+              },
+              {
+                "name": "actual CLI failures do not create or alter output or unrelated files",
+                "outcome": "ok",
+                "line": 916
+              },
+              {
+                "name": "importing the helper never reads CLI policy or writes workflow output",
+                "outcome": "ok",
+                "line": 922
+              }
+            ],
+            "suite": "Artifact-only admission scope"
+          },
+          {
+            "start_line": 952,
+            "result_line": 996,
+            "metrics": {
+              "tests": 7,
+              "suites": 0,
+              "pass": 7,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 60.1039
+            },
+            "named_cases": [
+              {
+                "name": "only the same immutable main binary accepted by both independent gates promotes",
+                "outcome": "ok",
+                "line": 954
+              },
+              {
+                "name": "missing or skipped source, production lifecycle and cleanup assertions cannot pass",
+                "outcome": "ok",
+                "line": 960
+              },
+              {
+                "name": "public Desktop version must strictly exceed every other published version",
+                "outcome": "ok",
+                "line": 966
+              },
+              {
+                "name": "promotion never rebuilds or deletes an existing release on uncertain outcome",
+                "outcome": "ok",
+                "line": 972
+              },
+              {
+                "name": "published installer checksum manifest exactly covers the immutable delivery assets",
+                "outcome": "ok",
+                "line": 978
+              },
+              {
+                "name": "promotion binds the isolated factory to the current deployed Backend/Core sources",
+                "outcome": "ok",
+                "line": 984
+              },
+              {
+                "name": "artifact-only candidates cannot substitute for full immutable promotion evidence",
+                "outcome": "ok",
+                "line": 990
+              }
+            ],
+            "suite": "Existing installer promotion consumer"
+          }
+        ]
+      },
+      {
+        "id": 125545613654,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "runner_id": 1000259840,
+        "runner_name": "GitHub Actions 1000259840",
+        "started_at": "2026-11-02T20:55:31Z",
+        "completed_at": "2026-11-02T20:58:40Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact Windows publisher source",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Actual Windows signature and Unicode publisher contracts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve native API evidence only",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "log": {
+          "path": "audit/run-41523624057/windows-update-publisher-125545613654.log",
+          "bytes": 35510,
+          "lines": 408,
+          "sha256": "6de47ac90ae2893b72328b6c51fc59cdbb8d626539ab6eced9d52c3c6a84b9f2"
+        },
+        "binding": {
+          "checkout_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "checkout_log_lines": [
+            94,
+            186
+          ],
+          "artifact": {
+            "id": 13178757035,
+            "node_id": "MDg6QXJ0aWZhY3QxMzE3ODc1NzAzNQ==",
+            "name": "windows-update-publisher-9329aced33343e8e356ba34dfd0f474f3e767914",
+            "size_in_bytes": 1827,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178757035",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178757035/zip",
+            "expired": false,
+            "digest": "sha256:ccbc8f8ea42d153f7a61b76506c8d3dc1c8e4adb9a6656df7ed803fabb1aac33",
+            "created_at": "2026-11-02T20:56:34Z",
+            "updated_at": "2026-11-02T20:56:34Z",
+            "expires_at": "2027-01-31T20:55:27Z",
+            "workflow_run": {
+              "id": 41523624057,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+              "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914"
+            }
+          },
+          "upload_digest": [
+            {
+              "digest": "ccbc8f8ea42d153f7a61b76506c8d3dc1c8e4adb9a6656df7ed803fabb1aac33",
+              "line": 368
+            }
+          ],
+          "upload_ids": [
+            {
+              "id": 13178757035,
+              "line": 370
+            }
+          ],
+          "digest_matches": true,
+          "id_matches": true,
+          "head_matches": true,
+          "errors": []
+        },
+        "test_suites": [
+          {
+            "start_line": 262,
+            "result_line": 333,
+            "metrics": {
+              "tests": 11,
+              "suites": 0,
+              "pass": 11,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0,
+              "duration_ms": 13212.8315
+            },
+            "named_cases": [
+              {
+                "name": "native Windows: exact CI certificate subject and SHA256 authorize an embedded signed candidate",
+                "outcome": "ok",
+                "line": 265
+              },
+              {
+                "name": "native Windows: an actually trusted signed file cannot supply missing publisher authorization",
+                "outcome": "ok",
+                "line": 271
+              },
+              {
+                "name": "native Windows: a valid certificate hash cannot authorize a different subject",
+                "outcome": "ok",
+                "line": 277
+              },
+              {
+                "name": "native Windows: the exact subject cannot authorize a different certificate SHA256",
+                "outcome": "ok",
+                "line": 283
+              },
+              {
+                "name": "native Windows: a real unsigned PE is refused and cannot receive launch permission",
+                "outcome": "ok",
+                "line": 289
+              },
+              {
+                "name": "native Windows: modifying a signed PE section produces HashMismatch and is refused",
+                "outcome": "ok",
+                "line": 295
+              },
+              {
+                "name": "native Windows: replacing the file after native verification prevents the spawn callback",
+                "outcome": "ok",
+                "line": 301
+              },
+              {
+                "name": "native Windows: a native verification permits exactly one captured launch",
+                "outcome": "ok",
+                "line": 307
+              },
+              {
+                "name": "native Windows: failed native reverification revokes the prior receipt even when signed bytes return",
+                "outcome": "ok",
+                "line": 313
+              },
+              {
+                "name": "native Windows: actual PowerShell literal paths retain spaces, apostrophes and wildcard characters",
+                "outcome": "ok",
+                "line": 319
+              },
+              {
+                "name": "native Windows: Unicode publisher identity survives a controlled CP437 native prelude and matches strictly",
+                "outcome": "ok",
+                "line": 326
+              }
+            ],
+            "suite": "Native Windows signature/Unicode publisher"
+          }
+        ]
+      }
+    ],
+    "reconciliation_original_and_regression_case_checks": {
+      "original_human_10": [
+        {
+          "name": "shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
+          "outcome": "ok",
+          "line": 1176
+        },
+        {
+          "name": "shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+          "outcome": "ok",
+          "line": 1173
+        },
+        {
+          "name": "shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript",
+          "outcome": "ok",
+          "line": 1168
+        },
+        {
+          "name": "shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap",
+          "outcome": "ok",
+          "line": 1184
+        },
+        {
+          "name": "shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap",
+          "outcome": "ok",
+          "line": 1183
+        },
+        {
+          "name": "shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
+          "outcome": "ok",
+          "line": 1179
+        },
+        {
+          "name": "shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access",
+          "outcome": "ok",
+          "line": 1182
+        },
+        {
+          "name": "shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
+          "outcome": "ok",
+          "line": 1181
+        },
+        {
+          "name": "shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
+          "outcome": "ok",
+          "line": 1153
+        },
+        {
+          "name": "shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
+          "outcome": "ok",
+          "line": 1185
+        }
+      ],
+      "nmr48_snapshot_sigkill_multipart_5": [
+        {
+          "name": "shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+          "outcome": "ok",
+          "line": 1114
+        },
+        {
+          "name": "shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+          "outcome": "ok",
+          "line": 1145
+        },
+        {
+          "name": "shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+          "outcome": "ok",
+          "line": 1124
+        },
+        {
+          "name": "shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+          "outcome": "ok",
+          "line": 1121
+        },
+        {
+          "name": "shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+          "outcome": "ok",
+          "line": 1113
+        }
+      ],
+      "cached_corruption": {
+        "name": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+        "outcome": "ok",
+        "line": 1140
+      }
+    },
+    "human_source_readback": {
+      "path": "source/host/tests/session_gateway_contract.rs",
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/9329aced33343e8e356ba34dfd0f474f3e767914/source/host/tests/session_gateway_contract.rs",
+      "blob_sha": "2e032c705fcec8256dd66476807dd1fd683625db",
+      "snapshot": {
+        "path": "audit/run-41523624057/session_gateway_contract.rs",
+        "bytes": 388559,
+        "lines": 7357,
+        "sha256": "19b03e67ae7eb510e719829944aa7b5636c746448e87b396067e5394965f0d55"
+      },
+      "authored_cases": 62,
+      "actual_cases": 62,
+      "authored_not_actual": [],
+      "actual_not_authored": [],
+      "every_authored_shipping_human_function_executed": true,
+      "named_original_10_all_ok": true,
+      "nmr48_named_snapshot_cases_5_all_ok": true,
+      "cached_corruption_case_ok": true,
+      "sigkill_and_multipart_source_scope": {
+        "actual_sigkill_assertion_line": 4842,
+        "process_terminate_function_line": 4833,
+        "exact_original_upload_bytes_assertion_function_line": 5253,
+        "passing_process_kill_case_function_line": 5288,
+        "source_identical_blob_to_exact106_repair": true
+      },
+      "repair_case": {
+        "name": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+        "outcome": "ok",
+        "line": 1164
+      }
+    },
+    "production_build_execution": {
+      "renderer": {
+        "job_id": 125545613328,
+        "step": "Compile actual production renderer",
+        "conclusion": "success",
+        "command_line": 550,
+        "command": "tsc --noEmit && vite build && node scripts/check-desktop-bundle.mjs",
+        "vite_built_line": 590,
+        "scope": "Actual source renderer compilation; not a packaged platform acceptance."
+      },
+      "electron": {
+        "job_id": 125545613591,
+        "step": "Compile actual Electron main, preload and carrier",
+        "conclusion": "success",
+        "command_line": 1099,
+        "command": "node scripts/build-electron-runtime.mjs",
+        "built_owner_marker_line": 1153,
+        "built_owner_marker": "built Fabushi product main/preload and Rust Coordinator carrier",
+        "scope": "Actual Electron main/preload/carrier source bundle; not final native macOS shipping binary or installed app acceptance."
+      }
+    },
+    "retained_ffi_prior_audit_same_exact_head": {
+      "audit_path": "audit/round4-retained-ffi-live-gap.json",
+      "job_id": 125545613103,
+      "conclusion": "success",
+      "actual_counts": {
+        "passed": 15,
+        "failed": 0,
+        "ignored": 1,
+        "filtered_out": 0
+      },
+      "ignored_case": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+      "log": {
+        "path": "audit/retained-ffi-live-gap-9329/retained-direct-ffi-125545613103.log",
+        "bytes": 79471,
+        "lines": 872,
+        "sha256": "d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233",
+        "encoding": "UTF-8; CRLF normalized to LF; final LF",
+        "contains_setup_execution_artifact_upload_and_post_job_cleanup": true
+      },
+      "artifact_id": 13179096257,
+      "artifact_digest": "sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661",
+      "artifact_matches_api_and_upload": true,
+      "scope": "Existing complete-log evidence reused for identical H; not re-downloaded and not counted as live execution."
+    },
+    "shipping_pending": {
+      "id": 125545613231,
+      "name": "native-message-shipping-compile",
+      "status": "queued",
+      "conclusion": null,
+      "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+      "runner_id": 0,
+      "runner_name": "",
+      "started_at": "2026-11-02T20:55:28Z",
+      "completed_at": null,
+      "steps": [],
+      "executed_tests": 0,
+      "log_download_attempted": false,
+      "artifact_available": false,
+      "status_not_interpreted_as_failure_or_pass": "queued / runner_id=0 / steps=[]",
+      "expected_workflow_gates_not_executed": [
+        {
+          "suite": "DNS and special-config response normalization",
+          "expected_pass": 6,
+          "workflow_lines": [
+            489,
+            494
+          ]
+        },
+        {
+          "suite": "Bare future-salts parser",
+          "expected_pass": 2,
+          "workflow_lines": [
+            495,
+            500
+          ]
+        },
+        {
+          "suite": "Complete protocol_contract",
+          "expected_pass": 122,
+          "expected_ignored": 0,
+          "workflow_lines": [
+            501,
+            506
+          ]
+        },
+        {
+          "suite": "Complete tcp_transport including ignored/live cases",
+          "expected_pass": 9,
+          "expected_ignored": 0,
+          "flag": "--include-ignored",
+          "workflow_lines": [
+            507,
+            508
+          ]
+        },
+        {
+          "suite": "Network proxy boundary",
+          "expected_pass": 4,
+          "workflow_lines": [
+            509,
+            514
+          ]
+        },
+        {
+          "suite": "Native credential schema",
+          "expected_pass": 1,
+          "workflow_lines": [
+            515,
+            516
+          ]
+        }
+      ],
+      "additional_pending_scope": "Actual AppHost/CLI builds, composition, Host/FeatureHost/FFI/CLI/Gateway owner, CLI process, retained startup, native package-resource evidence are also in the same queued shipping job and remain unexecuted here.",
+      "previous_success_not_transplanted": "94dcf7a2213808a8ded6baddaf069562d365c6d7 shipping success is historical evidence only; changed code at 9329 has not passed shipping."
+    },
+    "conditional_skip": {
+      "id": 125545615377,
+      "name": "native-auth-and-journal",
+      "status": "completed",
+      "conclusion": "skipped",
+      "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+      "runner_id": null,
+      "runner_name": null,
+      "started_at": "2026-11-02T20:55:28Z",
+      "completed_at": "2026-11-02T20:55:27Z",
+      "steps": []
+    },
+    "evidence_integrity": {
+      "logs_downloaded_complete_for_each_new_terminal_job": true,
+      "all_new_logs_contain_checkout_full_sha": true,
+      "all_new_artifacts_match_job_upload_id_and_digest": true,
+      "artifact_archives_independently_downloaded_or_rehashed": false,
+      "artifact_hash_claim_scope": "GitHub artifacts API digest cross-matched against complete job upload log. Separate SHA-256 values above describe saved decoded full logs.",
+      "normalization": "CRLF converted to LF; final newline retained.",
+      "count_method": "Rust actual running-N blocks through their first test result only; named outcomes counted within each block. TAP actual summaries require the following # suites line; grep echoes excluded. Named outcomes matched each actual summary count.",
+      "local_activity": "Read and static parse/hash existing source and cloud logs only; no local test/build/validator executed.",
+      "no_github_writes_or_dispatch": true,
+      "no_production_edits": true,
+      "files": [
+        {
+          "path": "audit/run-41523624057/artifacts.json",
+          "bytes": 4784,
+          "lines": 105,
+          "sha256": "809920f237d7a5bd5718ae3830885ed7c03edba6bd68af1610c0da00163311c0"
+        },
+        {
+          "path": "audit/run-41523624057/jobs-initial.json",
+          "bytes": 27443,
+          "lines": 773,
+          "sha256": "e938c3fece1196b1c0a43548a42f522a2d07583b4ffff98841d283a0b622bc20"
+        },
+        {
+          "path": "audit/run-41523624057/native-message-electron-125545613591.log",
+          "bytes": 92520,
+          "lines": 1222,
+          "sha256": "be4bdc99c0366c0b5eb5550b7d44c7a48e091cdb010166eae8c9554678730668"
+        },
+        {
+          "path": "audit/run-41523624057/native-message-reconciliation-125545613305.log",
+          "bytes": 353242,
+          "lines": 3872,
+          "sha256": "b918f2a677321b8dbbf8e9b85a6831b5637ac1e103bc6ba84ec768287f146a37"
+        },
+        {
+          "path": "audit/run-41523624057/native-message-ui-125545613328.log",
+          "bytes": 86814,
+          "lines": 1040,
+          "sha256": "15ad64742596e69da807ebe6ff63203f4de2ed549c46d7cad48ae846ec86909c"
+        },
+        {
+          "path": "audit/run-41523624057/run-initial.json",
+          "bytes": 14341,
+          "lines": 224,
+          "sha256": "a313b4b2fb78577063140e91fd7230a7fbc15d71f6209de7dfcde4da7f6fa5d7"
+        },
+        {
+          "path": "audit/run-41523624057/session_gateway_contract.rs",
+          "bytes": 388559,
+          "lines": 7357,
+          "sha256": "19b03e67ae7eb510e719829944aa7b5636c746448e87b396067e5394965f0d55"
+        },
+        {
+          "path": "audit/run-41523624057/windows-update-publisher-125545613654.log",
+          "bytes": 35510,
+          "lines": 408,
+          "sha256": "6de47ac90ae2893b72328b6c51fc59cdbb8d626539ab6eced9d52c3c6a84b9f2"
+        }
+      ]
+    }
+  },
+  "retained_runtime_live_transport": {
+    "publication": {
+      "sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+      "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+      "parent": "da219ea9a9e5f143a42912ca9a127c225f36899e",
+      "tree": "25fcf035c48ef47756210b2698949d11797ad7bd",
+      "verified": true,
+      "full_content_readback": [
+        {
+          "path": ".github/workflows/round4-retained-runtime-live.yml",
+          "expected_blob": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+          "remote_blob": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+          "full_content_equal": true,
+          "characters": 3760
+        },
+        {
+          "path": "docs/specs/fbcp-native-message-reconciliation.md",
+          "expected_blob": "104211367f97d4399a083470d877f98b50189306",
+          "remote_blob": "104211367f97d4399a083470d877f98b50189306",
+          "full_content_equal": true,
+          "characters": 147575
+        }
+      ],
+      "files": [
+        {
+          "path": ".github/workflows/round4-retained-runtime-live.yml",
+          "status": "added",
+          "sha": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+          "additions": 55,
+          "deletions": 0
+        },
+        {
+          "path": "docs/specs/fbcp-native-message-reconciliation.md",
+          "status": "modified",
+          "sha": "104211367f97d4399a083470d877f98b50189306",
+          "additions": 23,
+          "deletions": 0
+        }
+      ],
+      "runs": [
+        {
+          "id": 41526697492,
+          "name": "Round4 retained runtime live transport",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "status": "queued",
+          "conclusion": null,
+          "event": "push",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526697492"
+        }
+      ],
+      "only_workflow_and_spec": true,
+      "production_changes": false
+    },
+    "static_review": {
+      "schema": "fabushi-round4-retained-live-workflow-static-review-v1",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 4,
+      "repository": "bhrumom/fabushi-desktop",
+      "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "reviewed_at_utc": "2026-11-02T21:14:02.915450+00:00",
+      "review_type": "Static text/source review and byte identities only",
+      "verdict": "no_blocking_static_findings",
+      "required_changes": [],
+      "product_execution_claimed": false,
+      "local_tests_builds_yaml_validator_run": false,
+      "primary_file_changes": false,
+      "github_writes": false,
+      "files": {
+        "workflow": {
+          "path": "current-live/.github/workflows/round4-retained-runtime-live.yml",
+          "bytes": 3760,
+          "git_blob": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+          "sha256": "5b234ce1bd359afb2ae2f38103166a27c1ecedf50cc31a9031bc7193bffa59db"
+        },
+        "spec": {
+          "path": "current-live/docs/specs/fbcp-native-message-reconciliation.md",
+          "bytes": 146919,
+          "git_blob": "f7b284518201abbd38b504d5de03186c1d13e654",
+          "sha256": "5d4e829f73242e08b916e1a5211de3c6d33d51a86ee2c1a94ed287fdbe9f2006"
+        },
+        "spec_base": {
+          "path": "audit/retained-live-preparation/spec-latest-be66066.md",
+          "bytes": 145400,
+          "git_blob": "edaa7ea422cbac42b0993b612b3e0ee13c50df7c",
+          "sha256": "78733e39df6700d16199fff82173dab862416e4fee4040513ae1a3f82baf0d9b"
+        },
+        "test": {
+          "path": "audit/retained-live-preparation/runtime_ffi.rs",
+          "bytes": 23192,
+          "git_blob": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+          "sha256": "18756da019a239327dc272d7b03053b31b0c335976c283667b90cddb708411d0"
+        },
+        "original_gate": {
+          "path": "audit/retained-live-preparation/native-service-contracts.yml",
+          "bytes": 64152,
+          "git_blob": "ef0f45357a789431565fea06af9d527a0e040ebb",
+          "sha256": "348df40f0d689820247e91c66ed6cd227ebdd8b008aecca702b374237e02c8d1"
+        },
+        "runtime": {
+          "path": "audit/retained-ffi-live-gap-9329/runtime.rs",
+          "bytes": 114452,
+          "git_blob": "5771a5ee104612ec844d65f4298d037454527361",
+          "sha256": "e5c8feca6596974a7204efb17eeb2668c36ab8d4493dec5ace84b363c8e68d09"
+        },
+        "runtime_manifest": {
+          "path": "audit/retained-ffi-live-gap-9329/runtime-Cargo.toml",
+          "bytes": 674,
+          "git_blob": "0fc8ee357ef5c00074e5fdcd1d7594860e289bd1",
+          "sha256": "f3c0eed6d2596590bf147e756035fcc926c383ace7595eec81a88a0a7d9ef93e"
+        }
+      },
+      "reviewed_object_identities_match": {
+        "workflow": true,
+        "spec": true,
+        "spec_base": true,
+        "test": true
+      },
+      "spec_review": {
+        "base_bytes_exactly_preserved": true,
+        "appended_bytes": 1519,
+        "single_new_section": true,
+        "new_concurrent_sections_preserved": true,
+        "append_text": "\n### NMR-FFI-LIVE-01 — Retained Rust runtime production transport check\n\nThe non-live retained C-wrapper job above deliberately leaves the existing\n`live_runtime_bootstrap_keeps_an_encrypted_transport_session` case ignored.\nRun that unchanged case separately in GitHub Actions at its containing exact\nH, using Rust 1.97.1 and the workspace's locked dependency graph. The scoped\nworkflow checks out `github.sha`, records the source/test/lock identities and\ncomplete command/log, and executes only that named case with\n`--ignored --exact --nocapture --test-threads=1`. Require its actual named\nsuccess and exactly 1 passed, 0 failed, 0 ignored and 15 filtered out; preserve\nfailure output and classify any failure before a focused repair or retry.\n\nThis invokes the existing Rust client owner: create → bootstrap production DC2\nwith a fresh MTProto auth key → encrypted ping → connected status → close.\nIt needs no account, API credentials, user data or device; runner network,\nclock and randomness remain real inputs. It does not invoke the exported C\nwrappers, restore a persisted transport, log in, send messages, qualify an\ninstalled consumer, or restore the retired Telegram production registration.\nKeep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and\nall current message gates intact. Store exact run/job/artifact identities;\nretain all final service, package, migration and independent-ACCEPT gaps.\nThe one-purpose workflow may be removed after its immutable evidence is saved.\n",
+        "scope_before_execution": "Publish this reviewed append together with the workflow in the same exact containing commit; no live execution is claimed before it occurs.",
+        "historical_5bde_base_superseded": "Original5bde base was superseded first byf47 then byedaa; the current full base including NMR-CREATE-01/NMR-HTTP-OWNER-01/Round10 is retained exactly."
+      },
+      "workflow_review": {
+        "yaml_readability": "Manually read complete YAML; indentation, mappings, sequence items, run block scalars, quoted paths and GitHub expressions have no visible syntax defect. No YAML parser/validator was executed.",
+        "trigger": {
+          "event": "push",
+          "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "paths": [
+            ".github/workflows/round4-retained-runtime-live.yml"
+          ],
+          "judgment": "Appropriate for the requested one-purpose supplementary gate: adding/changing this workflow starts the exact containing-H check. It is not automatic coverage for future spec/runtime-only changes; no such permanent coverage is claimed."
+        },
+        "runner": "ubuntu-24.04",
+        "timeout_minutes": 30,
+        "permissions": {
+          "contents": "read",
+          "assessment": "No declared repository write permission or secret/account input; checkout persist-credentials=false. Artifact upload uses the ordinary Actions artifact mechanism."
+        },
+        "checkout": {
+          "ref": "github.sha",
+          "fetch_depth": 1,
+          "persist_credentials": false,
+          "explicit_head_equality": true
+        },
+        "test_blob_pin": {
+          "sha": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+          "appropriate": true,
+          "reason": "This one-purpose check is intended to execute the unchanged reviewed ignored test and frozen16-case target. Whole-file pin makes changed tests or counts fail closed instead of silently qualifying different inputs. It binds the test only; actual runtime/dependency code remains the containing-H source recorded separately.",
+          "concurrent_change_rule": "If the current remote test blob differs before publication, re-read and review the delta and recalculate justified counts; do not bypass the pin or weaken assertions."
+        },
+        "dependency_binding": {
+          "cargo_locked": true,
+          "toolchain": "1.97.1",
+          "tool_versions_recorded": true,
+          "cargo_lock_hash_recorded": true,
+          "cargo_lock_diff_rejected": true,
+          "recorded_git_paths": [
+            "providers/telegram-runtime",
+            "providers/telegram-protocol",
+            "providers/telegram-network",
+            "providers/telegram-core",
+            "providers/telegram-storage",
+            "workspace Cargo.toml",
+            "workspace Cargo.lock",
+            "projects/telegram-desktop-rust/upstream.lock.json"
+          ],
+          "direct_runtime_local_dependencies_seen": [
+            "fabushi-telegram-core",
+            "fabushi-telegram-network",
+            "fabushi-telegram-protocol",
+            "fabushi-telegram-storage"
+          ],
+          "qualification": "Direct runtime dependencies in the read Cargo manifest are covered, and the complete immutable checkout SHA binds all repository inputs. This is not a new full-source/legal closure audit."
+        },
+        "execution": {
+          "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi live_runtime_bootstrap_keeps_an_encrypted_transport_session -- --ignored --exact --nocapture --test-threads=1",
+          "named_success_required": "test live_runtime_bootstrap_keeps_an_encrypted_transport_session ... ok",
+          "required_result": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 15
+          },
+          "count_reason": "Reviewed test file contains16 #[test] cases and one ignored case; the exact single-case run excludes the other15. This is a static expectation, not an executed result.",
+          "failure_propagation": "set -euo pipefail retains nonzero cargo status through tee; named success and anchored exact result assertions reject zero cases, ignored/skipped cases or changed counts. No continue-on-error, fallback success, automatic retry or conditional test skip is present.",
+          "lock_after_success": "git diff --exit-code on workspace Cargo.lock"
+        },
+        "evidence": {
+          "directory": "artifacts/retained-runtime-live",
+          "files": [
+            "target-sha.txt",
+            "input-git-objects.txt",
+            "input-sha256.txt",
+            "scope.txt",
+            "toolchain.txt",
+            "command.txt",
+            "runtime-live.log"
+          ],
+          "stdout_stderr_complete_to_tee": true,
+          "upload_if": "always()",
+          "artifact_name": "retained-runtime-live-transport-${{ github.sha }}",
+          "if_no_files_found": "error",
+          "retention_days": 30,
+          "failure_scope": "Cargo/test failure retains runtime-live.log through always-upload. A failure before artifact creation remains a failing job whose complete Actions log must also be retrieved."
+        }
+      },
+      "original_gate_preservation": {
+        "reviewed_source": "audit/retained-live-preparation/native-service-contracts.yml",
+        "non_live_expected": {
+          "passed": 15,
+          "failed": 0,
+          "ignored": 1,
+          "filtered_out": 0
+        },
+        "original_gate_text_contains_exact_15_1_assertion": true,
+        "original_named_ignored_assertion_present": true,
+        "existing_gate_edited_by_candidate": false,
+        "qualification": "Candidate files are the new supplementary workflow and spec append only. Publication must preserve native-service-contracts.yml and every current message/shipping/source gate in the chosen remote base."
+      },
+      "actual_test_source_scope": {
+        "test_lines": [
+          301,
+          317
+        ],
+        "static_test_count": 16,
+        "ignored_attribute_count": 1,
+        "call_chain": [
+          "Rust create_client() -> RuntimeClient::default()",
+          "execute_json through local execute helper",
+          "telegram.bootstrapTransport with dcId2 and default testMode=false",
+          "establish_auth_key_with_proxy with built-in production DC directory",
+          "session.ping -> encryptedPingVerified and authKeyId response",
+          "telegram.getStatus -> transportConnected true and dcId2",
+          "Rust close_client()"
+        ],
+        "source_anchors": {
+          "runtime_create_client": [
+            536,
+            538
+          ],
+          "runtime_dispatch": [
+            687,
+            697
+          ],
+          "runtime_bootstrap": [
+            971,
+            1024
+          ],
+          "test": [
+            303,
+            316
+          ]
+        },
+        "account_inputs_required_by_selected_case": false,
+        "original_user_storage_opened_by_selected_case": false,
+        "exports_invoked_by_selected_case": false,
+        "persisted_restart_tested_by_selected_case": false,
+        "network_clock_randomness_are_real_inputs": true,
+        "qualification": "The C wrapper imports and other15 tests share the file, but the selected live case calls the Rust owner directly. No account login, real message send, installed consumer, library export/package acceptance or persistent-session restart is claimed."
+      },
+      "publication_and_acceptance_conditions": [
+        "CAS only on the latest remote base and re-read both reviewed full file contents and SHA after publication. Preserve concurrent NMR-CREATE-01/NMR-HTTP-OWNER-01 and all other session work.",
+        "Require terminal successful Actions job at the published containingH, complete logs, actual named case success and exact1/0/0/15 result; queued/in_progress is not evidence of passing.",
+        "Record actual run/job/artifact identities and the upload/API digest correspondence. Retain real failure output and classify causes before a focused repair or justified retry.",
+        "Keep the existing15/1 C compatibility gate separately qualified. A live Rust transport pass does not replace exported-C, persisted restart, real messaging, native shipping, installed-platform or independent ACCEPT gates.",
+        "The workflow may be removed after immutable evidence is saved; no source/product/independent acceptance is promoted by this static review."
+      ],
+      "concurrent_spec_rebase": {
+        "observed_at_utc": "2026-11-02T21:13:37.936936+00:00",
+        "prior_reviewed_base_blob": "f47b3ab2268bf7dfdeacfe0ec5313b571f49e8cb",
+        "prior_reviewed_spec_blob": "c94b8a418dc140d068ebc06721e0fa754a82ba22",
+        "new_base": {
+          "path": "audit/retained-live-preparation/spec-latest-be66066.md",
+          "bytes": 145400,
+          "git_blob": "edaa7ea422cbac42b0993b612b3e0ee13c50df7c",
+          "sha256": "78733e39df6700d16199fff82173dab862416e4fee4040513ae1a3f82baf0d9b"
+        },
+        "new_spec": {
+          "path": "current-live/docs/specs/fbcp-native-message-reconciliation.md",
+          "bytes": 146919,
+          "git_blob": "f7b284518201abbd38b504d5de03186c1d13e654",
+          "sha256": "5d4e829f73242e08b916e1a5211de3c6d33d51a86ee2c1a94ed287fdbe9f2006"
+        },
+        "checks": {
+          "new_base_hash_matches": true,
+          "new_spec_hash_matches": true,
+          "exact_base_plus_same_append": true,
+          "same_workflow": true,
+          "round10_nmr_create_http_preserved": true
+        },
+        "cause": "A concurrent Round10 pagination specification was added to the remote base during this read-only review. Current candidate correctly preserves its complete new base and appends the identical1519-byte NMR-FFI-LIVE-01 section. No workflow or count change."
+      },
+      "approval_scope": {
+        "workflow_blob": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+        "append": {
+          "path": "audit/retained-live-preparation/spec-append.md",
+          "git_blob": "190ed0773745ee4c4c8755e7a25e2f695b3b0d2c",
+          "bytes": 1519,
+          "sha256": "91164effda6c290495fd58ea3b5ad934bf9c68cc3e266e4d16653ecb9f647aca"
+        },
+        "reviewed_test_blob": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+        "latest_fully_compared_spec_base": "edaa7ea422cbac42b0993b612b3e0ee13c50df7c",
+        "latest_fully_compared_spec_candidate": "f7b284518201abbd38b504d5de03186c1d13e654",
+        "mutable_path_note": "The current-live spec path may advance while the integrator preserves subsequent concurrent owner additions. Recorded whole-spec identities are reviewed snapshots, not assertions about a future mutable path.",
+        "subsequent_base_rule": [
+          "Read and retain the complete latest remote spec bytes, including new owner sections.",
+          "The new proposed spec must be exactly those bytes plus this identical1519-byte append.",
+          "Ensure the latest base does not already contain a duplicate or conflicting NMR-FFI-LIVE-01 section or a material contradictory constraint; such a conflict requires review.",
+          "Workflow object and reviewed f623 test blob stay unchanged; if either changes, redo affected static review rather than relaxing count or hash checks.",
+          "Re-read the final commit and both full files after latest-base force=false expected_sha CAS; bind Actions to that containing-H."
+        ],
+        "unseen_latest_spec": "Parent reported a further379a371… base at3949d54…; its full identity/content was not read by this reviewer and is not presented as independently reviewed."
+      }
+    },
+    "execution": {
+      "schema": "fabushi.exact_head_live_test_audit.v1",
+      "observed_at_utc": "2026-11-02T21:17:03Z",
+      "repository": "bhrumom/fabushi-desktop",
+      "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+      "upstream_sha": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "run": {
+        "id": 41526697492,
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "success",
+        "event": "push",
+        "workflow_id": 405003602,
+        "path": ".github/workflows/round4-retained-runtime-live.yml",
+        "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+        "created_at": "2026-11-02T21:15:36Z",
+        "updated_at": "2026-11-02T21:16:22Z",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526697492"
+      },
+      "job": {
+        "id": 125556156642,
+        "name": "retained-runtime-live-transport",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+        "runner_id": 1000260021,
+        "runner_name": "GitHub Actions 1000260021",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "started_at": "2026-11-02T21:15:45Z",
+        "completed_at": "2026-11-02T21:16:21Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:15:46Z",
+            "completed_at": "2026-11-02T21:15:47Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:15:47Z",
+            "completed_at": "2026-11-02T21:15:52Z"
+          },
+          {
+            "name": "Bind exact source and reviewed test",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:15:52Z",
+            "completed_at": "2026-11-02T21:15:52Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:15:52Z",
+            "completed_at": "2026-11-02T21:15:59Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:15:59Z",
+            "completed_at": "2026-11-02T21:16:05Z"
+          },
+          {
+            "name": "Execute the existing production DC transport case",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:16:05Z",
+            "completed_at": "2026-11-02T21:16:12Z"
+          },
+          {
+            "name": "Preserve exact live transport evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:16:12Z",
+            "completed_at": "2026-11-02T21:16:13Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:16:13Z",
+            "completed_at": "2026-11-02T21:16:14Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:16:14Z",
+            "completed_at": "2026-11-02T21:16:14Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-11-02T21:16:14Z",
+            "completed_at": "2026-11-02T21:16:14Z"
+          }
+        ]
+      },
+      "workflow": {
+        "path": ".github/workflows/round4-retained-runtime-live.yml",
+        "blob_sha": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+        "snapshot": "audit/run-41526697492/round4-retained-runtime-live.yml",
+        "permissions": {
+          "contents": "read"
+        },
+        "checkout_persist_credentials": false,
+        "target_test_blob_assertion": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+        "uses_locked_dependencies": true,
+        "allow_failure": false,
+        "retry_loop": false,
+        "input_identity_manifest_recorded": "artifacts/retained-runtime-live/input-git-objects.txt",
+        "dependency_lock_mutation_check": "git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock"
+      },
+      "execution": {
+        "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi live_runtime_bootstrap_keeps_an_encrypted_transport_session -- --ignored --exact --nocapture --test-threads=1",
+        "toolchain": "1.97.1",
+        "compile_completed": {
+          "line": 536,
+          "text": "    Finished `test` profile [unoptimized] target(s) in 4.89s",
+          "duration_seconds": 4.89
+        },
+        "test_binary_started": {
+          "line": 537,
+          "text": "     Running tests/runtime_ffi.rs (source/mahayana/mahayana-rs/target/debug/deps/runtime_ffi-cdd2fd86858e6c9a)"
+        },
+        "running_count": 1,
+        "running_line": 539,
+        "actual_named_cases": [
+          {
+            "name": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+            "outcome": "ok",
+            "line": 540
+          }
+        ],
+        "actual_result": {
+          "line": 542,
+          "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 2.09s",
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered_out": 15,
+          "duration_seconds": 2.09
+        },
+        "grep_echo_line_not_counted": 544,
+        "actual_named_count_matches_summary": true,
+        "failure_classification": null,
+        "actual_test_passed": true,
+        "no_skip_or_env_short_circuit_in_reviewed_test": true,
+        "original_ignored_attribute_retained": true
+      },
+      "checkout_binding": {
+        "api_head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+        "job_head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+        "log_full_sha_lines": [
+          108,
+          136
+        ],
+        "bind_step_success": true,
+        "remote_test_blob_confirmed": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+        "remote_workflow_blob_confirmed": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5"
+      },
+      "source_readbacks": [
+        {
+          "path": ".github/workflows/round4-retained-runtime-live.yml",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+          "byte_content_equal_to_prior_review": null,
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/.github/workflows/round4-retained-runtime-live.yml"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+          "byte_content_equal_to_prior_review": true,
+          "prior_blob_sha": "f6234339c3a1d644f7f06c08e36635c7a851c882",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "5771a5ee104612ec844d65f4298d037454527361",
+          "byte_content_equal_to_prior_review": true,
+          "prior_blob_sha": "5771a5ee104612ec844d65f4298d037454527361",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/Cargo.toml",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "0fc8ee357ef5c00074e5fdcd1d7594860e289bd1",
+          "byte_content_equal_to_prior_review": true,
+          "prior_blob_sha": "0fc8ee357ef5c00074e5fdcd1d7594860e289bd1",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/source/mahayana/mahayana-rs/providers/telegram-runtime/Cargo.toml"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6",
+          "byte_content_equal_to_prior_review": true,
+          "prior_blob_sha": "6dece8da8f9a1512dcd17bc76fd1cc9ce43c1ef6",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/source/mahayana/mahayana-rs/providers/telegram-network/src/lib.rs"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "f9aecd0370b43317f81b437ee308fb88d141a302",
+          "byte_content_equal_to_prior_review": true,
+          "prior_blob_sha": "f9aecd0370b43317f81b437ee308fb88d141a302",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/source/mahayana/mahayana-rs/providers/telegram-protocol/src/dc.rs"
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/src/handshake.rs",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "blob_sha": "803593559a90a72687e0996772a161a2eb15bd50",
+          "byte_content_equal_to_prior_review": true,
+          "prior_blob_sha": "803593559a90a72687e0996772a161a2eb15bd50",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/f40a6e8f911c366627bf81ebdd4c32d6d8d1445d/source/mahayana/mahayana-rs/providers/telegram-protocol/src/handshake.rs"
+        }
+      ],
+      "source_review": {
+        "prior_audit": "audit/round4-retained-ffi-live-gap.json",
+        "previous_source_head": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "six_reviewed_test_runtime_manifest_network_dc_handshake_files_byte_identical": true,
+        "evidence_new_execution_not_previous_skip": true,
+        "call_chain": "create_client -> RuntimeClient::default (no persistence/no account/proxy disabled) -> execute_json telegram.bootstrapTransport(dcId=2,testMode=false) -> establish_auth_key_with_proxy -> native obfuscated TCP to pinned production DC2 -> RSA/DH fresh auth key -> encrypted ping/Pong -> retained connected status -> close_client",
+        "test_assertions": [
+          "bootstrap response ok=true",
+          "encryptedPingVerified=true",
+          "authKeyId is string",
+          "getStatus transportConnected=true",
+          "getStatus dcId=2",
+          "close_client succeeds"
+        ],
+        "account_credentials_or_device_inputs_required": false,
+        "extra_cargo_features_required": false,
+        "actual_selected_ip_not_emitted": true,
+        "configured_production_dc_id": 2,
+        "configured_ipv4_candidates": [
+          "149.154.167.51",
+          "95.161.76.100"
+        ],
+        "configured_ipv6_candidates": [
+          "2001:67c:4e8:f002::a"
+        ]
+      },
+      "artifact": {
+        "id": 13178619203,
+        "node_id": "MDg6QXJ0aWZhY3QxMzE3ODYxOTIwMw==",
+        "name": "retained-runtime-live-transport-f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+        "size_in_bytes": 4466,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178619203",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178619203/zip",
+        "expired": false,
+        "digest": "sha256:db4d4b1b8c680eaa2dc0c5d44fcc99ad28c84018856dfd0aaa7e0928de2b8086",
+        "created_at": "2026-11-02T21:16:13Z",
+        "updated_at": "2026-11-02T21:16:13Z",
+        "expires_at": "2026-12-02T21:16:12Z",
+        "workflow_run": {
+          "id": 41526697492,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d"
+        },
+        "upload_id_log_line": 571,
+        "upload_digest_log_line": 569,
+        "id_matches_upload": true,
+        "digest_matches_upload": true,
+        "head_sha_matches": true,
+        "archive_independently_downloaded_or_hashed": false
+      },
+      "complete_log": {
+        "path": "audit/run-41526697492/retained-runtime-live-125556156642.log",
+        "bytes": 55144,
+        "lines": 592,
+        "sha256": "e45df05e33d3400120a467832897a41dcd8a249e588fd6b73c3befe81a8a08ce"
+      },
+      "result_scope": {
+        "proven": "The existing Rust runtime client actually completed fresh production DC2 MTProto bootstrap, encrypted ping, connected-session status and close in GitHub Actions.",
+        "not_proven": [
+          "Exported C ABI invocation or final shared/static library consumer",
+          "Telegram account login or user-message operations",
+          "Persistent restart recovery by this case",
+          "Installed or packaged app acceptance",
+          "Full Native service shipping job",
+          "Final product or independent ACCEPT"
+        ],
+        "prior_ignore_gap": "This one authored live case is now executed successfully at exact f40a6e8f911c366627bf81ebdd4c32d6d8d1445d. The prior 9329 suite remains historically 15 passed / 1 ignored; its log/result is not rewritten.",
+        "product_acceptance": false
+      },
+      "separate_native_shipping_observation": {
+        "observed_at_utc": "2026-11-02T21:17:03Z",
+        "run_id": 41523624057,
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "job_id": 125545613231,
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "step_count": 0,
+        "evidence_transferred_from_live_bootstrap": false,
+        "still_pending": "AppHost/CLI builds and DNS6/future-salts2/protocol122/TCP9 including live/proxy4/credential1 plus the other shipping gates remain unexecuted in this queued job."
+      },
+      "evidence_files": [
+        {
+          "path": "audit/run-41526697492/artifacts.json",
+          "bytes": 997,
+          "lines": 25,
+          "sha256": "a544bb7430aeecf9a8c52c4fe4c0452f1ddbac27a610b3708e72943558e8d688"
+        },
+        {
+          "path": "audit/run-41526697492/jobs-initial.json",
+          "bytes": 3563,
+          "lines": 105,
+          "sha256": "4d1e8fecde20497fd60cfdf38c6b70165d20fa7e8af5d6f1ee100889d916e6b0"
+        },
+        {
+          "path": "audit/run-41526697492/jobs-terminal.json",
+          "bytes": 3849,
+          "lines": 113,
+          "sha256": "97e41ea03fb956e1837e8de0c76831a7358459c5f69804728fca388c6b3b874b"
+        },
+        {
+          "path": "audit/run-41526697492/retained-runtime-live-125556156642.log",
+          "bytes": 55144,
+          "lines": 592,
+          "sha256": "e45df05e33d3400120a467832897a41dcd8a249e588fd6b73c3befe81a8a08ce"
+        },
+        {
+          "path": "audit/run-41526697492/round4-retained-runtime-live.yml",
+          "bytes": 3760,
+          "lines": 55,
+          "sha256": "5b234ce1bd359afb2ae2f38103166a27c1ecedf50cc31a9031bc7193bffa59db"
+        },
+        {
+          "path": "audit/run-41526697492/run-initial.json",
+          "bytes": 13757,
+          "lines": 224,
+          "sha256": "1b533b34b6d234f3886378cedf03cbf405cfbcecd4fb4cefe0543e21327a2bf1"
+        },
+        {
+          "path": "audit/run-41526697492/run-terminal.json",
+          "bytes": 13760,
+          "lines": 224,
+          "sha256": "dc8820dd3895c2f9c153ed6a8a370ccf7f7877a70ca7710e25775f743170891a"
+        },
+        {
+          "path": "audit/run-41526697492/source-comparison.json",
+          "bytes": 3393,
+          "lines": 57,
+          "sha256": "18f66a64627e370c1e4fc32f018fe3fe345e937c9f8eb2f79d898e1e660b5f2a"
+        }
+      ],
+      "activity": {
+        "github_read_only": true,
+        "github_dispatch": false,
+        "github_rerun": false,
+        "github_mutation": false,
+        "local_product_test_build_validator_execution": false,
+        "local_activity": "Source/log reads, JSON parsing, comparison, hashes and audit-file writes only.",
+        "full_log_download_count": 1,
+        "status_reads": "Initial in_progress snapshot, followed by one terminal read after reviewing and preserving exact source/workflow; no polling loop."
+      }
+    },
+    "root_api_readback": {
+      "run": {
+        "id": 41526697492,
+        "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1
+      },
+      "jobs": [
+        {
+          "id": 125556156642,
+          "name": "retained-runtime-live-transport",
+          "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T21:15:45Z",
+          "completed_at": "2026-11-02T21:16:21Z"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13178619203,
+          "name": "retained-runtime-live-transport-f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+          "digest": "sha256:db4d4b1b8c680eaa2dc0c5d44fcc99ad28c84018856dfd0aaa7e0928de2b8086",
+          "size": 4466,
+          "expired": false,
+          "workflow_run": {
+            "id": 41526697492,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d"
+          }
+        }
+      ],
+      "latest_native_runs": [
+        {
+          "id": 41526852400,
+          "head_sha": "f544e9b3161d758141e1b419bcdab22cc522952e",
+          "created_at": "2026-11-02T21:16:36Z",
+          "status": "queued",
+          "conclusion": null,
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526852400"
+        },
+        {
+          "id": 41526479236,
+          "head_sha": "db6d7f427ba25d7f90d6470a3ff69574bab5c034",
+          "created_at": "2026-11-02T21:14:12Z",
+          "status": "queued",
+          "conclusion": null,
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526479236"
+        },
+        {
+          "id": 41526315271,
+          "head_sha": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+          "created_at": "2026-11-02T21:13:08Z",
+          "status": "queued",
+          "conclusion": null,
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526315271"
+        },
+        {
+          "id": 41526236521,
+          "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+          "created_at": "2026-11-02T21:12:37Z",
+          "status": "queued",
+          "conclusion": null,
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526236521"
+        },
+        {
+          "id": 41526114480,
+          "head_sha": "c83039f9da8330560680a3efccc5ae83bf2db419",
+          "created_at": "2026-11-02T21:11:50Z",
+          "status": "queued",
+          "conclusion": null,
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41526114480"
+        }
+      ]
+    },
+    "scope_of_static_review_after_rebase": "Root read the379a371 legacy-source-permission delta and preserved that entire latest Spec prefix; published104211367 contains exactly that prefix and the same reviewed1519-byte append. Independent static review binds workflowa7 and immutable append190ed077, not unread whole later Spec.",
+    "original_ignored_case_preserved": true,
+    "no_runtime_product_change": true,
+    "no_acceptance_promotion": true
+  },
+  "retained_live_workflow_cleanup": {
+    "path": ".github/workflows/round4-retained-runtime-live.yml",
+    "expected_blob": "a7c6657f4b75f07e1bd5953020776cdac0f22ae5",
+    "policy": "After exactf40 terminal evidence is preserved in this receipt, remove only this one-purpose workflow if its remote blob is still unchanged. Historical workflow/test/run remain available at exactf40. Keep native-service-contracts.yml and its ordinary15-pass/1-ignored compatibility gate unchanged.",
+    "status": "Removed atomically with this evidence update only if the remote blob still equals a7c6657f4b75f07e1bd5953020776cdac0f22ae5; immutable execution remains atf40/run41526697492. The delivery commit diff and remote absence provide the removal evidence."
+  },
+  "live_source_and_nmr48_preservation": {
+    "schema": "fabushi-round4-live-ledger-preservation-final-v1",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 4,
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "saved_at_utc": "2026-11-02T21:21:01.026404+00:00",
+    "scope": "Read-only full remote ledger/blob and source metadata comparison plus completed GitHub Actions logs. Only audit snapshots/report written. No local product tests/builds/schema/YAML validators, GitHub mutation, or primary file edits.",
+    "snapshot": {
+      "checkpoint_head": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+      "checkpoint_observed_at_utc": "2026-11-02T21:17:49Z",
+      "main": "5528062177e3865eef60a073a066cca144f9e3e8",
+      "main_observed_at_utc": "2026-11-02T21:16:17Z",
+      "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "initial_checkpoint_during_review": "6263e675933e99efebbbaf08b0eb55817e15b3ef",
+      "initial_ledger_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+      "qualification": "This is the frozen5d38ddd observation, not a claim that a continuously changing branch remains at this head after that time. No repeated chasing of subsequent heads."
+    },
+    "remote_readback": {
+      "tree_complete": true,
+      "canonical_path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "ledger": {
+        "path": "audit/current-source/live-preservation-final-5d38ddd/ledger.json",
+        "bytes": 3637745,
+        "git_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+        "sha256": "1e43bc47b97fb17acc1cf633cb31f6a1f3bfb089095d71fb7fb8c0c0d7c62e42"
+      },
+      "tree_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+      "full_blob_retrieved": true,
+      "all_saved_input_hashes_equal_remote_tree": true
+    },
+    "nmr48_preservation": {
+      "published_commit": "222371af3d0c2241697c5a57b0160ecb336edbab",
+      "published_ledger_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+      "append_base_blob": "d44b094065722c5a70f92e21489887f86f5b2b0e",
+      "row": "FBCP-NMR-001",
+      "one_current_row": true,
+      "fields": {
+        "requirement_ids": {
+          "published_value_count": 80,
+          "current_value_count": 92,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 4,
+          "all_nmr48_added_values_preserved": true
+        },
+        "fabushi_target_paths": {
+          "published_value_count": 25,
+          "current_value_count": 33,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 0,
+          "all_nmr48_added_values_preserved": true
+        },
+        "fabushi_target_symbols": {
+          "published_value_count": 30,
+          "current_value_count": 37,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 4,
+          "all_nmr48_added_values_preserved": true
+        },
+        "unit_case_ids": {
+          "published_value_count": 12,
+          "current_value_count": 18,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 9,
+          "all_nmr48_added_values_preserved": true
+        },
+        "contract_case_ids": {
+          "published_value_count": 39,
+          "current_value_count": 39,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 5,
+          "all_nmr48_added_values_preserved": true
+        },
+        "integration_case_ids": {
+          "published_value_count": 36,
+          "current_value_count": 60,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 6,
+          "all_nmr48_added_values_preserved": true
+        },
+        "fault_recovery_case_ids": {
+          "published_value_count": 25,
+          "current_value_count": 50,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 5,
+          "all_nmr48_added_values_preserved": true
+        },
+        "security_case_ids": {
+          "published_value_count": 26,
+          "current_value_count": 44,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 5,
+          "all_nmr48_added_values_preserved": true
+        },
+        "production_evidence": {
+          "published_value_count": 30,
+          "current_value_count": 42,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 4,
+          "all_nmr48_added_values_preserved": true
+        },
+        "test_evidence": {
+          "published_value_count": 47,
+          "current_value_count": 90,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 15,
+          "all_nmr48_added_values_preserved": true
+        },
+        "test_execution_evidence": {
+          "published_value_count": 27,
+          "current_value_count": 45,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 4,
+          "all_nmr48_added_values_preserved": true
+        },
+        "blockers": {
+          "published_value_count": 10,
+          "current_value_count": 15,
+          "all_published_values_preserved": true,
+          "published_relative_order_preserved": true,
+          "nmr48_added_value_count": 3,
+          "all_nmr48_added_values_preserved": true
+        }
+      },
+      "notes": {
+        "complete_published_notes_retained": true,
+        "complete_published_notes_are_prefix": true,
+        "nmr48_appended_note_present": true,
+        "nmr48_note_utf8_bytes": 1209,
+        "nmr48_note_sha256": "fc4ee8171eb422d0c6f612765cfacca54daedb7ca07293333986ebbd94f31a33"
+      },
+      "all_preserved": true,
+      "qualification": "No arrays or full notes copied into this report; complete immutable ledger and prior published snapshots remain at the linked audit paths."
+    },
+    "current_accounting": {
+      "responsibility_rows_actual": 184,
+      "responsibility_ids_unique": 184,
+      "source_review_records_actual": 6,
+      "source_review_identities_unique": 6,
+      "source_review_status_counts": {
+        "complete": 2,
+        "pending": 4
+      },
+      "source_reviews_equal_exact222": true,
+      "coverage": {
+        "source_entries_total": 16381,
+        "unknown": null,
+        "unread": null,
+        "omitted": 0,
+        "responsibilities_total": 184,
+        "unmapped_responsibilities": 0
+      },
+      "unique_canonical_source_reviews_location": "projects/telegram-desktop-rust/parity-ledger.json#/source_reviews",
+      "count_method": "Recounted the complete freshly retrieved5d38ddd/ad5e0 ledger; historical222 counts were not substituted. Source identity total is recorded in current lock/index/ledger and checked by the scoped source candidate execution; it is not a count of independently deep-read sources.",
+      "lock_inventory_ledger_U_match": true,
+      "lock_status": "fixed-upstream-unaccepted-git-and-build-input-candidate",
+      "rebaseline_status": "unaccepted-inventory-open",
+      "index_inventory": {
+        "root_non_directory_entries": 6895,
+        "recursive_non_directory_entries": 16381,
+        "semantic_read_complete": false,
+        "responsibility_decomposition_complete": false,
+        "unknown_minimum": null,
+        "unread_minimum": null,
+        "omitted_known": 0
+      }
+    },
+    "acceptance": {
+      "lock_upstream_accepted": false,
+      "lock_baseline_ready": false,
+      "lock_accepted": false,
+      "index_baseline_identity_accepted": false,
+      "candidate_execution_flags": {
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      },
+      "rows_release_gate_status_counts": {
+        "pending": 181,
+        "blocked": 3
+      },
+      "rows_with_nonnull_acceptance_reviewer": 0,
+      "nmr_acceptance_reviewer": null,
+      "nmr_release_gate_status": "blocked",
+      "historical_execution_scalars": {
+        "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
+        "workflow_run": 41508537631,
+        "qualification": "These remain historicalexact59 scalars; newer execution evidence is appended separately. Neither these scalars nor this preservation audit qualify current production."
+      }
+    },
+    "source_metadata": {
+      "full_saved_inputs": [
+        {
+          "repository_path": ".github/workflows/tdrp-source-review-contract.yml",
+          "remote_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+          "path": "audit/current-source/live-preservation-final-5d38ddd/tdrp-source-review-contract.yml",
+          "bytes": 8716,
+          "git_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+          "sha256": "c6367def37165b56e6e57122b036341a3236fb545ff8f6be64d6bf1b3229fbae",
+          "remote_object_identity_matches": true
+        },
+        {
+          "repository_path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+          "remote_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+          "path": "audit/current-source/live-preservation-final-5d38ddd/parity-ledger.schema.json",
+          "bytes": 34792,
+          "git_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+          "sha256": "dcaab70fd699b6e605de5ed0024c8cf506f5d746ebdbb3a2915a3865b18696d5",
+          "remote_object_identity_matches": true
+        },
+        {
+          "repository_path": "projects/telegram-desktop-rust/inventory/index.json",
+          "remote_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+          "path": "audit/current-source/live-preservation-final-5d38ddd/inventory-index.json",
+          "bytes": 9098,
+          "git_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+          "sha256": "044891923548bd1672b8bc63cb4293c7513eeddf8edfb1dddb7bb77793ec3eb5",
+          "remote_object_identity_matches": true
+        },
+        {
+          "repository_path": "projects/telegram-desktop-rust/parity-ledger.json",
+          "remote_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+          "path": "audit/current-source/live-preservation-final-5d38ddd/ledger.json",
+          "bytes": 3637745,
+          "git_blob": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+          "sha256": "1e43bc47b97fb17acc1cf633cb31f6a1f3bfb089095d71fb7fb8c0c0d7c62e42",
+          "remote_object_identity_matches": true
+        },
+        {
+          "repository_path": "projects/telegram-desktop-rust/upstream.lock.json",
+          "remote_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+          "path": "audit/current-source/live-preservation-final-5d38ddd/upstream.lock.json",
+          "bytes": 33202,
+          "git_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+          "sha256": "6a8b907f78ad41ff8f8abbe176a2cf37e0051119bbc3bbf93e36861f1cd03038",
+          "remote_object_identity_matches": true
+        },
+        {
+          "repository_path": "scripts/tdrp-source-review.mjs",
+          "remote_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+          "path": "audit/current-source/live-preservation-final-5d38ddd/tdrp-source-review.mjs",
+          "bytes": 36890,
+          "git_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+          "sha256": "706ef2ed4edaa533630ad7a0baaf6dc4b5f82de7644aedc961e8832b01689437",
+          "remote_object_identity_matches": true
+        }
+      ],
+      "changes_since_exact222": [
+        {
+          "path": "scripts/tdrp-source-review.test.mjs",
+          "sha": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+          "old222_sha": "09dea53a4967b39439c04302c71e040b1c0bf475"
+        },
+        {
+          "path": "projects/telegram-desktop-rust/parity-ledger.json",
+          "sha": "ad5e0b28add4e6bd99b3ec6036f0984595de2568",
+          "old222_sha": "e88c75896bd0dce29b2d8b89e949c9231dad872c"
+        }
+      ],
+      "schema_unchanged_since222": true,
+      "checker_unchanged_since222": true,
+      "workflow_unchanged_since222": true,
+      "test_change_qualification": "source-review.test.mjs changed from09dea53a4967b39439c04302c71e040b1c0bf475 to3ef07bee2d0eb93126c26317d9007c2f4e6a4008. New completed contract execution reports158 Node cases. This audit records identity and execution, not a new semantic review of that test diff."
+    },
+    "source_execution": {
+      "run": {
+        "id": 41526808527,
+        "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "created_at": "2026-11-02T21:16:19Z",
+        "updated_at": "2026-11-02T21:17:54Z"
+      },
+      "jobs": [
+        {
+          "id": 125556533680,
+          "name": "contract",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T21:16:51Z",
+          "completed_at": "2026-11-02T21:17:07Z"
+        },
+        {
+          "id": 125556959979,
+          "name": "fixed-source-candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-02T21:17:20Z",
+          "completed_at": "2026-11-02T21:17:53Z"
+        }
+      ],
+      "node_actual": {
+        "tests": 158,
+        "pass": 158,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "python_actual_tests": 37,
+      "python_OK_observed": true,
+      "schema_errors_zero_observed": true,
+      "candidate_actual": {
+        "status": "unaccepted-candidate-consistent",
+        "target_commit": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+        "source_entries_total": 16381,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      },
+      "accepted_mode_rejection_observed": true,
+      "logs": {
+        "contract": {
+          "path": "audit/run-41526808527-contract.log",
+          "bytes": 90252,
+          "git_blob": "b1bc39491626452c3b407a951df0eda7ba311dc3",
+          "sha256": "e6b80f199cb629d630ace6d1ec36d16e9fc0a01e4ab082b8ba07ec47e9459eb5"
+        },
+        "fixed-source-candidate": {
+          "path": "audit/run-41526808527-fixed-source-candidate.log",
+          "bytes": 146049,
+          "git_blob": "4545c4f8aff534b3deb9224554e43875a4cdf34f",
+          "sha256": "9b0ac8ae0474cd79763487c62367d9b6d1e46cc887e3fd51c63daa5e82036b6f"
+        }
+      },
+      "log_hash_scope": "Saved complete decoded MCP logs, normalized CRLF to LF; these hashes are not ZIP artifact digests.",
+      "artifacts": [
+        {
+          "id": 13180536168,
+          "name": "tdrp-source-candidate-808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "size_in_bytes": 79137,
+          "digest": "sha256:8bb10c2c8e6c58cdab454b4a19f39bac1945092beeb2dc7d992fb941839dd11a",
+          "expired": false,
+          "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "upload_log_id_match": true,
+          "upload_log_digest_match": true
+        },
+        {
+          "id": 13179902859,
+          "name": "tdrp-source-review-contract-808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "size_in_bytes": 6826,
+          "digest": "sha256:91cc169f6782722a8227b1ef20c8db142780caa54ac24ebd192b8bcc3219e344",
+          "expired": false,
+          "head_sha": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+          "upload_log_id_match": true,
+          "upload_log_digest_match": true
+        }
+      ],
+      "artifact_digest_scope": "GitHub API artifact metadata digests match complete job upload logs; this audit did not download/hash artifact ZIPs.",
+      "current_input_relation": {
+        "execution_head": "808de59594d0b2d5d9fa9f4421f135bf96908800",
+        "observed_head": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+        "compare_status": "ahead",
+        "intervening_commits": 5,
+        "intervening_changed_path_count": 11,
+        "changed_source_gate_input_paths": [],
+        "qualification": "Complete Git comparison808de595→5d38ddd shows no changes to the listed source gate inputs, including the canonical ledger, tests, schema, validators and workflow. The execution itself is at808; no run at5d is invented."
+      }
+    },
+    "limits": [
+      "Full ledger retrieval and metadata review do not mean all upstream source logic has been read. Two complete source review records and four pending records remain scoped metadata.",
+      "Unknown/unread remain null. Complete generated/build-time/external/LFS/legal review, full product responsibilities and independent ACCEPT remain open.",
+      "Successful source contracts/candidate consistency and NMR48-preservation do not qualify current changed production, the live Rust transport supplement, signed packages, real Fabushi services, migration/rollback or final shipping.",
+      "Full source snapshots are audit evidence only; canonical inventory/ledger/RTM remain the repository authority."
+    ]
+  },
+  "later_current_gate_recovery_evidence": "projects/telegram-desktop-rust/evidence/round4-current-gates-and-recovery.json"
 }
