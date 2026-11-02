@@ -917,6 +917,259 @@ fn test_transcript_owners_roll_back_when_commit_fails() {
     }
 }
 
+// CA-07: this command adapter returns to an explicit transaction error owner.
+// Pin its complete method, not its impl or the surrounding production source.
+const CHANNEL_RAW_COMMIT_METHOD: &str = r#"fn commit(&self, db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        db.execute_batch("COMMIT")?;
+        #[cfg(test)]
+        if self.lose_commit_acknowledgement {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        Ok(())
+    }"#;
+
+const CHANNEL_COMMIT_OWNER_TAIL: &str = r#"match inserted {
+        Err(failure) => channel_inbound_transaction_failure(db, failure, false, control),
+        Ok(inserted_count) => match control.commit(db) {
+            Ok(()) if db.is_autocommit() => (
+                ChannelInboundAppendOutcome::Committed { inserted_count }, false,
+            ),
+            Ok(()) => channel_inbound_transaction_failure(
+                db,
+                channel_inbound_failure(
+                    ChannelInboundAppendFailureKind::Storage,
+                    "channel append commit left a live transaction",
+                ),
+                true,
+                control,
+            ),
+            Err(error) => channel_inbound_transaction_failure(
+                db, channel_inbound_storage_failure(error), true, control,
+            ),
+        },
+    }"#;
+
+fn channel_transaction_control_impl(file: &syn::File) -> Option<&syn::ItemImpl> {
+    let mut candidates = file.items.iter().filter_map(|item| {
+        let syn::Item::Impl(item) = item else { return None; };
+        let syn::Type::Path(ty) = item.self_ty.as_ref() else { return None; };
+        ty.path.segments.last()
+            .is_some_and(|segment| segment.ident == "ChannelInboundTransactionControl")
+            .then_some(item)
+    });
+    let item = candidates.next()?;
+    let syn::Type::Path(ty) = item.self_ty.as_ref() else { return None; };
+    (candidates.next().is_none()
+        && ty.qself.is_none()
+        && ty.path.is_ident("ChannelInboundTransactionControl")
+        && item.attrs.is_empty()
+        && item.trait_.is_none()
+        && item.defaultness.is_none()
+        && item.unsafety.is_none()
+        && item.generics.params.is_empty()
+        && item.generics.where_clause.is_none())
+        .then_some(item)
+}
+
+#[derive(Clone, Copy)]
+enum ChannelCommitTokenContext {
+    Source,
+    MacroInvocation,
+}
+
+// Admit only ($receiver:expr) => { $receiver.commit() }; as one complete rule.
+// The receiver is the only substitution; method, arguments and outer tokens
+// are literal. Every other definition revokes the exception.
+fn channel_literal_raii_macro(cursor: syn::buffer::Cursor<'_>) -> bool {
+    use syn::parse::Parser;
+
+    (|input: syn::parse::ParseStream<'_>| {
+        let matcher;
+        syn::parenthesized!(matcher in input);
+        matcher.parse::<syn::Token![$]>()?;
+        let receiver = matcher.parse::<syn::Ident>()?;
+        matcher.parse::<syn::Token![:]>()?;
+        let fragment = matcher.parse::<syn::Ident>()?;
+        input.parse::<syn::Token![=>]>()?;
+        let expansion;
+        syn::braced!(expansion in input);
+        expansion.parse::<syn::Token![$]>()?;
+        let expanded_receiver = expansion.parse::<syn::Ident>()?;
+        expansion.parse::<syn::Token![.]>()?;
+        let method = expansion.parse::<syn::Ident>()?;
+        let arguments;
+        syn::parenthesized!(arguments in expansion);
+        input.parse::<syn::Token![;]>()?;
+        Ok(matcher.is_empty() && fragment == "expr"
+            && receiver == expanded_receiver && method == "commit"
+            && arguments.is_empty() && expansion.is_empty())
+    }).parse2(cursor.token_stream()).unwrap_or(false)
+}
+
+// Ordinary zero-argument calls and the complete literal rule above are outside
+// the adapter interface. Real macro inputs remain opaque, including apparent
+// zero-argument calls; this oracle does not expand macros or resolve names.
+fn channel_commit_call_count(
+    mut cursor: syn::buffer::Cursor<'_>,
+    context: ChannelCommitTokenContext,
+) -> Option<usize> {
+    use ChannelCommitTokenContext::MacroInvocation;
+
+    let mut count = 0;
+    let mut punctuation = None;
+    while !cursor.eof() {
+        if let Some((group, _, _, rest)) = cursor.any_group() {
+            count += channel_commit_call_count(group, context)?;
+            cursor = rest;
+            punctuation = None;
+        } else if let Some((ident, rest)) = cursor.ident() {
+            let name = ident.to_string();
+            let normalized = name.strip_prefix("r#").unwrap_or(&name);
+            // Unlike other invocations, macro_rules! has a name between ! and
+            // its body. Inside invocation input it is only another token: do
+            // not lower that context or skip its possibly forwarded name.
+            if normalized == "macro_rules" && !matches!(context, MacroInvocation) {
+                if let Some((bang, definition)) = rest.punct() {
+                    if bang.as_char() == '!' {
+                        let (_, body) = definition.ident()?;
+                        let (tokens, _, _, after) = body.any_group()?;
+                        if !channel_literal_raii_macro(tokens) {
+                            return None;
+                        }
+                        cursor = after;
+                        punctuation = None;
+                        continue;
+                    }
+                }
+            }
+            if normalized == "commit" {
+                if matches!(context, MacroInvocation) {
+                    return None;
+                }
+                match punctuation {
+                    Some('.') => {
+                        let (arguments, _, _, _) = rest.any_group()?;
+                        count += usize::from(!arguments.eof());
+                    }
+                    Some(':') => return None,
+                    _ => {}
+                }
+            }
+            // The source already parsed as Rust. A legal final path identifier
+            // plus ! and a group is a macro boundary; return/if/other keywords
+            // fail Ident parsing, so their unary ! groups inherit this context.
+            if let Some((bang, after_bang)) = rest.punct() {
+                if bang.as_char() == '!' && syn::parse_str::<syn::Ident>(&name).is_ok() {
+                    if let Some((tokens, _, _, after)) = after_bang.any_group() {
+                        if normalized == "commit" {
+                            return None;
+                        }
+                        count += channel_commit_call_count(tokens, MacroInvocation)?;
+                        cursor = after;
+                        punctuation = None;
+                        continue;
+                    }
+                }
+            }
+            cursor = rest;
+            punctuation = None;
+        } else if let Some((punct, rest)) = cursor.punct() {
+            // .$method and ::$method can introduce an adapter call without
+            // spelling commit at the call site. Do not guess the substitution.
+            if punct.as_char() == '$' && matches!(punctuation, Some('.') | Some(':')) {
+                return None;
+            }
+            punctuation = Some(punct.as_char());
+            cursor = rest;
+        } else if let Some((_, rest)) = cursor.lifetime() {
+            cursor = rest;
+            punctuation = None;
+        } else if let Some((_, rest)) = cursor.literal() {
+            cursor = rest;
+            punctuation = None;
+        } else {
+            return None;
+        }
+    }
+    Some(count)
+}
+
+fn agent_db_transaction_owner_source(source: &str) -> Option<String> {
+    use syn::parse::Parser;
+
+    let parsed = syn::parse_file(source).ok()?;
+    let helper = channel_transaction_control_impl(&parsed)?;
+    let mut methods = helper.items.iter().filter_map(|item| match item {
+        syn::ImplItem::Fn(method) if method.sig.ident == "commit" => Some(method),
+        _ => None,
+    });
+    let method = methods.next()?;
+    if methods.next().is_some() || !method.attrs.is_empty()
+        || !matches!(method.vis, syn::Visibility::Inherited)
+        || source.matches(CHANNEL_RAW_COMMIT_METHOD).count() != 1
+    {
+        return None;
+    }
+
+    let owners = source.replacen(CHANNEL_RAW_COMMIT_METHOD, "", 1);
+    let remaining = syn::parse_file(&owners).ok()?;
+    let remaining_helper = channel_transaction_control_impl(&remaining)?;
+    // Reparse to prove the removed text was this whole method, not a matching
+    // comment, string, nested function, or method belonging to another impl.
+    if parsed.items.len() != remaining.items.len()
+        || helper.items.len() != remaining_helper.items.len() + 1
+        || remaining_helper.items.iter().any(|item| {
+            matches!(item, syn::ImplItem::Fn(method) if method.sig.ident == "commit")
+        })
+    {
+        return None;
+    }
+
+    let expected_tail = (|input: syn::parse::ParseStream<'_>| {
+        let tokens = input.cursor().token_stream().to_string();
+        input.parse::<syn::ExprMatch>()?;
+        Ok(tokens)
+    }).parse_str(CHANNEL_COMMIT_OWNER_TAIL).ok()?;
+    let handled = (|input: syn::parse::ParseStream<'_>| {
+        if channel_commit_call_count(input.cursor(), ChannelCommitTokenContext::Source) != Some(1) {
+            return Ok(false);
+        }
+        input.call(syn::Attribute::parse_inner)?;
+        let mut callers = 0;
+        while !input.is_empty() {
+            let boundary = input.fork();
+            let item = input.parse::<syn::Item>()?;
+            let syn::Item::Fn(function) = item else { continue; };
+            if function.sig.ident != "append_channel_inbound_transaction" {
+                continue;
+            }
+            callers += 1;
+            if !function.attrs.is_empty()
+                || !matches!(function.vis, syn::Visibility::Inherited)
+            {
+                return Ok(false);
+            }
+            boundary.call(syn::Attribute::parse_outer)?;
+            boundary.parse::<syn::Visibility>()?;
+            boundary.parse::<syn::Signature>()?;
+            let body;
+            syn::braced!(body in boundary);
+            let mut tail = String::new();
+            while !body.is_empty() {
+                tail = body.cursor().token_stream().to_string();
+                body.parse::<syn::Stmt>()?;
+            }
+            // The real returned expression must handle the sole call. A match
+            // in a comment, nested fixture, or discarded statement is no proof.
+            if boundary.cursor() != input.cursor() || tail != expected_tail {
+                return Ok(false);
+            }
+        }
+        Ok(callers == 1)
+    }).parse_str(source).ok()?;
+    handled.then_some(owners)
+}
+
 #[test]
 fn test_agent_db_has_no_direct_commit_error_propagation() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
@@ -940,8 +1193,8 @@ fn source_without_owned_channel_commit_adapter(source: &str) -> Option<String> {
     {
         return None;
     }
-    let (before, tail) = source.split_once(ADAPTER)?;
-    let (adapter, after) = tail.split_once(NEXT)?;
+    let (_, tail) = source.split_once(ADAPTER)?;
+    let (adapter, _) = tail.split_once(NEXT)?;
     if adapter.matches(COMMIT).count() != 1
         || !adapter.contains("fn commit(&self, db: &rusqlite::Connection)")
         || !adapter.contains("db.execute_batch(\"ROLLBACK\")")
@@ -965,7 +1218,7 @@ fn source_without_owned_channel_commit_adapter(source: &str) -> Option<String> {
     {
         return None;
     }
-    Some(format!("{before}{NEXT}{after}"))
+    agent_db_transaction_owner_source(source)
 }
 
 #[test]
@@ -1000,6 +1253,260 @@ fn test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup() 
     assert!(source_without_owned_channel_commit_adapter(&source.replace(
         "impl ChannelInboundTransactionControl {", "impl MissingChannelTransactionControl {",
     )).is_none());
+}
+
+fn channel_commit_oracle_fixture() -> String {
+    format!(
+        "impl ChannelInboundTransactionControl {{\n{CHANNEL_RAW_COMMIT_METHOD}\n}}\n\
+         fn append_channel_inbound_transaction() {{ {CHANNEL_COMMIT_OWNER_TAIL} }}"
+    )
+}
+
+#[test]
+fn channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl() {
+    let fixture = channel_commit_oracle_fixture();
+    let owners = agent_db_transaction_owner_source(&fixture).expect("bounded adapter fixture");
+    assert!(!owners.contains("db.execute_batch(\"COMMIT\")?;"));
+    let unrelated = format!(
+        "{fixture}\nfn raii_commit<'a>(transaction: &'a Transaction) {{\n\
+         transaction.commit()?; let note = \"control.commit(db)\"; }}"
+    );
+    assert!(agent_db_transaction_owner_source(&unrelated).is_some(),
+        "lifetimes, quoted text, and the separate zero-argument RAII commit are not adapter callers");
+    let declarations_and_macro = format!(
+        "{unrelated}\nimpl Transaction {{ fn commit(self) {{}} }}\n\
+         fn compaction_data(commit: &CompactionCommit) {{ observe(commit); }}\n\
+         macro_rules! raii_command {{ ($transaction:expr) => {{ $transaction.commit() }}; }}\n\
+         fn macro_raii_commit(transaction: Transaction) {{ raii_command!(transaction)?; }}"
+    );
+    assert!(agent_db_transaction_owner_source(&declarations_and_macro).is_some(),
+        "parsed declarations, ordinary data identifiers, and explicit zero-argument commits remain valid");
+    let actual_source = include_str!("../src/extensions/session/agent_db.rs");
+    for body in [
+        "!(transaction.commit().is_ok())",
+        "return !(transaction.commit().is_ok());",
+        "if !(transaction.commit().is_ok()) { true } else { false }",
+    ] {
+        let ordinary = format!(
+            "fn raii_commit_failed(transaction: rusqlite::Transaction<'_>) -> bool {{ {body} }}"
+        );
+        let bounded = format!("{fixture}\n{ordinary}");
+        let actual = format!("{actual_source}\n{ordinary}");
+        assert!(syn::parse_file(&bounded).is_ok(), "ordinary RAII fixture syntax: {body}");
+        assert!(syn::parse_file(&actual).is_ok(), "ordinary RAII production-source syntax: {body}");
+        assert!(agent_db_transaction_owner_source(&bounded).is_some(),
+            "ordinary unary negation must preserve the bounded RAII control: {body}");
+        assert!(source_without_owned_channel_commit_adapter(&actual).is_some(),
+            "ordinary unary negation must preserve the actual-source exception: {body}");
+    }
+    let unsafe_owner = "fn unsafe_owner() { db.execute_batch(\"COMMIT\")?; }";
+    for source in [
+        format!("{unsafe_owner}\n{fixture}"),
+        format!("{fixture}\n{unsafe_owner}"),
+        fixture.replacen(CHANNEL_RAW_COMMIT_METHOD,
+            &format!("{CHANNEL_RAW_COMMIT_METHOD}\n{unsafe_owner}"), 1),
+    ] {
+        let owners = agent_db_transaction_owner_source(&source).expect("unchanged adapter boundary");
+        assert!(owners.contains("db.execute_batch(\"COMMIT\")?;"),
+            "the original owner assertion must still reject this direct propagation: {source}");
+    }
+}
+
+#[test]
+fn channel_commit_oracle_rejects_extra_unhandled_callers_and_method_references() {
+    for call in [
+        "control.commit(db)?;",
+        "let alias = control; alias.commit(db)?;",
+        "let alias = control; alias.r#commit(db)?;",
+        "ChannelInboundTransactionControl::commit(control, db)?;",
+        "let commit = ChannelInboundTransactionControl::commit; commit(control, db)?;",
+        // These definitions alone are unresolved, even without a literal
+        // commit token or an invocation that could independently reject them.
+        "macro_rules! invoke_command { ($owner:expr, $method:ident, $db:expr) => { $owner.$method($db) }; }",
+        "macro_rules! invoke_associated { ($owner:ty, $method:ident, $control:expr, $db:expr) => { <$owner>::$method($control, $db) }; }",
+        // A supplied method name must also fail closed when its macro is
+        // imported, forwarded, raw-identified, or nested in another group.
+        "invoke_command!(control, commit, db)?;",
+        "invoke_command![control, r#commit, db]?;",
+        "(commands::invoke_command! { control, (commit), db })?;",
+        "macro_rules! unresolved_name { () => { commit }; }",
+        // Opaque invocation syntax does not establish zero-argument arity.
+        r#"macro_rules! forward_adapter {
+            ($owner:ident $separator:tt $method:ident (), $db:expr) => {
+                $owner $separator $method($db)
+            };
+        }
+        forward_adapter!(control.commit(), db)?;"#,
+        "commit!(control, db)?;",
+        "r#commit!(control, db)?;",
+        // Definition-shaped tokens inside invocation input cannot lower its
+        // context or hide a forwarded name in the definition-name position.
+        r#"macro_rules! forward_nested {
+            ($keyword:ident $bang:tt $name:ident { $owner:ident $separator:tt $method:ident (), $db:expr }) => {
+                $owner $separator $method($db)
+            };
+        }
+        forward_nested!(macro_rules! apparent_definition { control.commit(), db })?;"#,
+        "external_command!(macro_rules! commit { control, db })?;",
+        // A forwarded bang can turn a definition's apparent RAII expression
+        // into another macro's input before the argument-taking call is made.
+        r#"macro_rules! forward_adapter {
+            ($owner:ident $separator:tt $method:ident (), $db:expr) => {
+                $owner $separator $method($db)
+            };
+        }
+        macro_rules! build_forwarded {
+            ($invoke:ident $bang:tt $owner:ident, $db:expr) => {
+                $invoke $bang ($owner.commit(), $db)
+            };
+        }
+        build_forwarded!(forward_adapter ! control, db)?;"#,
+        // Genuine macro boundaries must remain opaque beside the unary-not
+        // positives, including a qualified macro path.
+        "external_command!(control.commit(), db)?;",
+        "commands::external_command!(control.commit(), db)?;",
+    ] {
+        let source = format!("{}\nfn unsafe_caller() {{ {call} }}", channel_commit_oracle_fixture());
+        assert!(syn::parse_file(&source).is_ok(),
+            "extra caller counterfactual must remain valid source syntax: {call}");
+        assert!(agent_db_transaction_owner_source(&source).is_none(),
+            "an additional caller or unbounded method reference must be rejected: {call}");
+    }
+}
+
+#[test]
+fn channel_commit_oracle_rejects_changed_missing_or_discarded_error_handling() {
+    let fixture = channel_commit_oracle_fixture();
+    let error_arm = "Err(error) => channel_inbound_transaction_failure(\n                db, channel_inbound_storage_failure(error), true, control,\n            ),";
+    assert!(fixture.contains(error_arm));
+    for replacement in [
+        "",
+        "Err(error) => return Err(error),",
+        "Err(error) => channel_inbound_transaction_failure(db, channel_inbound_storage_failure(error), false, control),",
+        "Err(error) => channel_inbound_transaction_failure(db, channel_inbound_storage_failure(error), true, other_control),",
+        "Err(error) if db.is_autocommit() => channel_inbound_transaction_failure(db, channel_inbound_storage_failure(error), true, control),",
+        "_ => (ChannelInboundAppendOutcome::Committed { inserted_count }, false),",
+    ] {
+        assert!(agent_db_transaction_owner_source(&fixture.replacen(error_arm, replacement, 1)).is_none(),
+            "the actual unguarded error arm must retain unknown/rollback handling: {replacement}");
+    }
+    let discarded = fixture.replacen(CHANNEL_COMMIT_OWNER_TAIL,
+        &format!("{CHANNEL_COMMIT_OWNER_TAIL}; ignored_outcome()"), 1);
+    assert!(agent_db_transaction_owner_source(&discarded).is_none());
+    let test_only_caller = fixture.replacen("fn append_channel_inbound_transaction",
+        "#[cfg(test)] fn append_channel_inbound_transaction", 1);
+    assert!(agent_db_transaction_owner_source(&test_only_caller).is_none());
+    let wrong_owner = fixture.replacen("fn append_channel_inbound_transaction", "fn other_owner", 1);
+    assert!(agent_db_transaction_owner_source(&wrong_owner).is_none());
+}
+
+#[test]
+fn channel_commit_oracle_rejects_missing_ambiguous_or_malformed_helper_boundaries() {
+    let fixture = channel_commit_oracle_fixture();
+    for source in [
+        fixture.replacen(CHANNEL_RAW_COMMIT_METHOD, "", 1),
+        fixture.replacen("impl ChannelInboundTransactionControl", "impl OtherControl", 1),
+        format!("{fixture}\nimpl ChannelInboundTransactionControl {{}}"),
+        fixture.replacen(CHANNEL_RAW_COMMIT_METHOD,
+            &format!("{CHANNEL_RAW_COMMIT_METHOD}\n{CHANNEL_RAW_COMMIT_METHOD}"), 1),
+        fixture.replacen(CHANNEL_RAW_COMMIT_METHOD,
+            &format!("/* {CHANNEL_RAW_COMMIT_METHOD} */ fn commit() {{ other_command(); }}"), 1),
+        fixture.replacen("impl ChannelInboundTransactionControl",
+            "#[cfg(test)] impl ChannelInboundTransactionControl", 1),
+        fixture.replacen(CHANNEL_RAW_COMMIT_METHOD,
+            &format!("#[cfg(test)] {CHANNEL_RAW_COMMIT_METHOD}"), 1),
+        fixture.replacen("        Ok(())", "        another_transaction(); Ok(())", 1),
+        fixture.replacen("impl ChannelInboundTransactionControl {",
+            "impl ChannelInboundTransactionControl", 1),
+        format!("{fixture}\nfn malformed() {{"),
+    ] {
+        assert!(agent_db_transaction_owner_source(&source).is_none(),
+            "only the complete unambiguous production command method may be excluded: {source}");
+    }
+}
+
+#[test]
+fn channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source() {
+    let source = include_str!("../src/extensions/session/agent_db.rs");
+    let direct = "db.execute_batch(\"COMMIT\")?;";
+    let boundary = "\nfn read_channel_inbound_admission(";
+    assert_eq!(source.matches(direct).count(), 1);
+    assert_eq!(source.matches(boundary).count(), 1);
+
+    // The raw adapter keeps equivalent error propagation, while an unrelated
+    // owner now contains the only exact forbidden statement. A delimiter-sized
+    // exception must not erase that intervening owner along with the adapter.
+    let rewritten = source.replacen(
+        direct,
+        "if let Err(error) = db.execute_batch(\"COMMIT\") { return Err(error); }",
+        1,
+    );
+    let hidden_owner = format!(
+        "\nfn unguarded_commit(db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {{ {direct} Ok(()) }}\n{boundary}"
+    );
+    let hidden = rewritten.replacen(boundary, &hidden_owner, 1);
+    assert!(syn::parse_file(&hidden).is_ok(), "counterfactual must remain valid source syntax");
+    assert_eq!(hidden.matches(direct).count(), 1);
+    assert!(source_without_owned_channel_commit_adapter(&hidden).is_none(),
+        "only the actual raw method may receive the exception");
+
+    for (declaration, call) in [
+        ("", "adapter.commit(db)?;"),
+        ("", "ChannelInboundTransactionControl::commit(adapter, db)?;"),
+        (
+            "macro_rules! invoke_command { ($owner:expr, $method:ident, $db:expr) => { $owner.$method($db) }; }",
+            "invoke_command!(adapter, commit, db)?;",
+        ),
+        ("", "external_command!(adapter, commit, db)?;"),
+        (
+            r#"macro_rules! forward_adapter {
+                ($owner:ident $separator:tt $method:ident (), $db:expr) => {
+                    $owner $separator $method($db)
+                };
+            }"#,
+            "forward_adapter!(adapter.commit(), db)?;",
+        ),
+        ("", "commit!(adapter, db)?;"),
+        ("", "r#commit!(adapter, db)?;"),
+        (
+            r#"macro_rules! forward_nested {
+                ($keyword:ident $bang:tt $name:ident { $owner:ident $separator:tt $method:ident (), $db:expr }) => {
+                    $owner $separator $method($db)
+                };
+            }"#,
+            "forward_nested!(macro_rules! apparent_definition { adapter.commit(), db })?;",
+        ),
+        ("", "external_command!(macro_rules! commit { adapter, db })?;"),
+        (
+            r#"macro_rules! forward_adapter {
+                ($owner:ident $separator:tt $method:ident (), $db:expr) => {
+                    $owner $separator $method($db)
+                };
+            }
+            macro_rules! build_forwarded {
+                ($invoke:ident $bang:tt $owner:ident, $db:expr) => {
+                    $invoke $bang ($owner.commit(), $db)
+                };
+            }"#,
+            "build_forwarded!(forward_adapter ! adapter, db)?;",
+        ),
+        ("", "external_command!(adapter.commit(), db)?;"),
+        ("", "commands::external_command!(adapter.commit(), db)?;"),
+    ] {
+        let extra_owner = format!(
+            "{source}\n{declaration}\nfn unguarded_adapter_owner(\n\
+             db: &rusqlite::Connection, adapter: &ChannelInboundTransactionControl,\n\
+             mutation_sql: &str,\n\
+             ) -> Result<(), rusqlite::Error> {{\n\
+             db.execute_batch(\"BEGIN IMMEDIATE\")?;\n\
+             db.execute_batch(mutation_sql)?; {call} Ok(()) }}\n"
+        );
+        assert!(syn::parse_file(&extra_owner).is_ok(), "second owner must remain valid source syntax");
+        assert_eq!(extra_owner.matches("control.commit(db)").count(), 1,
+            "the old receiver-spelling count alone cannot see this second owner");
+        assert!(source_without_owned_channel_commit_adapter(&extra_owner).is_none(),
+            "a second unhandled adapter caller must revoke the exception: {call}");
+    }
 }
 
 #[test]

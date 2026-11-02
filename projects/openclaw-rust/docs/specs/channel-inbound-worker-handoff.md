@@ -162,6 +162,52 @@ rollback/retirement, queue and continuation assertions. A fresh independent
 oracle review and final-H Actions must decide the repair; no CA execution pass
 or environment failure is inferred from this source assessment.
 
+CA-07 precise-exception continuation on
+`e70a72574c108f8b7704eb45e5109875a24eddb9`: preserve the incoming repair and all
+of its cleanup/Unknown mutation controls. Independent source assessment found
+two further `TEST_FLAW` cases: deleting the entire text interval can hide an
+unrelated exact-literal COMMIT owner after a harmless rewrite of the raw method,
+and counting only `control.commit(db)` misses a second aliased or qualified
+caller. Bind the exception to the unique parsed inherent raw method and remove
+only that method, retaining siblings and intervening items. Require the one
+argument-taking adapter call to be the actual returned handled match; refuse
+extra or unresolved method references. Preserve the original literal assertion
+and existing failure-owner checks. Add actual-source and bounded counterfactual
+controls for these cases, malformed/ambiguous boundaries and discarded or
+changed error handling. Reuse pinned Syn without changing dependencies or
+production code. The complete shared target and real SQLite controls remain
+required in exact-H Actions; a source review is not an execution pass.
+
+CA-07 independent R1 disposition `FIX / TEST_FLAW`: a method-name forwarding
+macro can hide an additional adapter call from a token-only direct-call count.
+Refuse unresolved method-name forwarding and bare method identifiers before
+granting the exception; add this counterfactual and preserve ordinary parsed
+method declarations, zero-argument RAII commits, and all preceding controls.
+Integration on `0ac0a8030dc74bbd0d9832fea684458b4e52da0e` preserves its fresh
+Session append contract and all existing real SQLite oracles. No production
+syntax rewrite or local executable check is authorized by this test repair.
+
+CA-07 R2 dispositions `FIX / TEST_FLAW`: opaque macro arguments can disguise
+an adapter call as `.commit()` by forwarding its separator and method; an
+unqualified `commit!` invocation can also avoid the direct-call count. Keep
+macro invocation inputs unresolved, including apparent zero-argument calls,
+and reject the normalized `commit!` name. Distinguish literal macro definitions
+so explicit zero-argument RAII controls remain valid; nested definition tokens
+cannot lower an already opaque invocation context. Add both concrete cases to
+the existing bounded and actual-source controls without removing any positive
+or failure-owner assertion. This still does not claim general macro expansion
+or semantic name resolution; unsupported recognized shapes revoke the exception.
+
+CA-07 R3 dispositions `FIX / TEST_FLAW`: a substituted invocation separator
+can make an apparent literal macro-definition call opaque after expansion.
+Refuse that unresolved envelope, while retaining the explicit literal RAII
+macro control. Recognize genuine macro path/bang boundaries; ordinary unary
+negation, including after Rust control-flow keywords, must not revoke an
+otherwise valid zero-argument RAII exception. Add both bounded and actual-source
+counterfactuals and preserve every prior positive and failure-owner assertion.
+The macro-definition exception is bounded to a complete single literal
+receiver-to-zero-argument-commit rule; other definitions remain unresolved.
+
 Use the actual Session/SQLite owner, retained queue and production-used Host
 append/handoff control. Required controls include checked read/open/closed-owner
 failure; real SQLite later-insert failure with complete rollback; ID conflict
