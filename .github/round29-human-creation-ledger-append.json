@@ -4,8 +4,8 @@
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
   "authored_code_commit": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
-  "expected_input_blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
-  "expected_output_blob": "6fc0252f48c5b4c290cdc4f7aab5613da9e01e3c",
+  "expected_input_blob": "09ae58962a743d8010e94906190fc054f878c28f",
+  "expected_output_blob": "e4d0b477425ada42be6a27e7db004f237240faec",
   "row_id": "FBCP-NMR-001",
   "append": {
     "requirement_ids": [
