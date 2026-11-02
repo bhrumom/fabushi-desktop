@@ -154,7 +154,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          coordinator_command=(cargo test --manifest-path source/node-agent-coordinator/Cargo.toml)
+          coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml)
           coordinator_status=0
           "${coordinator_command[@]}" || coordinator_status=$?
           printf 'command=%s\nexit_code=%s\n' "${coordinator_command[*]}" "$coordinator_status" >> "$GITHUB_OUTPUT"
@@ -385,7 +385,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          coordinator_command=(cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract)
+          coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract)
           coordinator_status=0
           "${coordinator_command[@]}" || coordinator_status=$?
           printf 'command=%s\nexit_code=%s\n' "${coordinator_command[*]}" "$coordinator_status" >> "$GITHUB_OUTPUT"

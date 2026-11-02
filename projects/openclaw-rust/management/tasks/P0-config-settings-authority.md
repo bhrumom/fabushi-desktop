@@ -313,6 +313,23 @@ Rollback restores this bounded input/enforcement change without editing user
 data. No global acceptance flags change. Recursive sources, legal records,
 real nodes/devices/platform packages and full OCRM acceptance remain open.
 
+CL-04/05 adoption: Actions `41459062456`, attempt `1`, Host job `125326029035`,
+captured the actual successful scoped command at H
+`e81bb4e812fa0160bd30cdeb2727d3032df2f3cc`, tree
+`38aafe713f79f12b9a84311a75a86be9226fc98a`, manifest blob
+`7205ee428e18bdd4ba82e3f98147698058e07f22`. Artifact `13149930935` is a 6,392-byte
+ZIP with SHA-256 `d2e73e07afad0df213d78593ded395d5abc6cbc2279be079207a187e2e985cc7`;
+its only members are `coordinator-Cargo.lock` and `coordinator-inputs.json`.
+The receipt binds success/exit 0, macOS ARM64, Cargo/Rust 1.97.1 and a newly
+observed, previously uncommitted resolution. The complete 91 package entries,
+registry checksums and dependency edges were read before copying the exact
+20,926 lock bytes: Git blob `496fcdffe765997c18978eeb45d1d28da783d8a2`, SHA-256
+`3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358`.
+Both existing Coordinator command arrays now add only `--locked`; selectors,
+manifest and exits are preserved. Literal artifact identity and source review
+do not replace the required new exact-H locked execution, numerical baseline,
+recursive dependency/license disposition or full acceptance.
+
 ### Active shared-gate recovery — RUNNER-WIRING-ORACLE-01 (2026-11-02)
 
 Decision: **FIX / TEST_FLAW**, recorded before the oracle repair. Exact H
