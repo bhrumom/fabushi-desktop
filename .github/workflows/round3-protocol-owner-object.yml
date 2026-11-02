@@ -24,7 +24,7 @@ jobs:
           OBJECT_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          import base64, copy, hashlib, json, os, pathlib, re, subprocess, urllib.request
           scope = {'TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001', 'TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001'}
           allowed = {'existing_owner', 'implementation_status', 'coverage_disposition', 'production_entrypoints', 'production_evidence', 'blockers', 'release_gate_status', 'notes', 'lifecycle_owner', 'composition_root', 'service_owner', 'capability_surface', 'ui_disposition'}
           manifest = pathlib.Path('.github/round3-protocol-owner-object.json').read_bytes()
@@ -36,8 +36,36 @@ jobs:
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           if head != os.environ['GITHUB_SHA']:
               raise SystemExit('Exact checkout required')
-          input_blob = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + ledger_path], text=True).strip()
-          original = json.loads(pathlib.Path(ledger_path).read_text())
+          # The checkout pins the reviewed transformation. Capture one current
+          # input commit separately, then read its immutable ledger blob only.
+          # This is object transport, not execution/acceptance of that input.
+          branch = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          def read_json(endpoint):
+              request = urllib.request.Request('https://api.github.com/repos/' + repository + endpoint,
+                  headers={'Authorization': 'Bearer ' + os.environ['OBJECT_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}, method='GET')
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  return json.load(response)
+          ref = read_json('/git/ref/heads/' + branch)
+          if ref['ref'] != 'refs/heads/' + branch or ref['object']['type'] != 'commit':
+              raise SystemExit('Unexpected input ref identity')
+          input_head = ref['object']['sha']
+          if not re.fullmatch(r'[0-9a-f]{40}', input_head):
+              raise SystemExit('An immutable input commit is required')
+          entry = read_json('/contents/' + ledger_path + '?ref=' + input_head)
+          if entry['path'] != ledger_path or entry['type'] != 'file' or not re.fullmatch(r'[0-9a-f]{40}', entry['sha']):
+              raise SystemExit('Unexpected canonical input object')
+          if not isinstance(entry['size'], int) or not 0 < entry['size'] <= 10 * 1024 * 1024:
+              raise SystemExit('Unexpected ledger size')
+          source_blob = read_json('/git/blobs/' + entry['sha'])
+          if source_blob['sha'] != entry['sha'] or source_blob['encoding'] != 'base64':
+              raise SystemExit('Unexpected canonical blob encoding or identity')
+          source_bytes = base64.b64decode(''.join(source_blob['content'].split()), validate=True)
+          if len(source_bytes) != entry['size'] or len(source_bytes) != source_blob['size']:
+              raise SystemExit('Incomplete canonical input bytes')
+          input_blob = hashlib.sha1(b'blob ' + str(len(source_bytes)).encode() + b'\0' + source_bytes).hexdigest()
+          if input_blob != entry['sha']:
+              raise SystemExit('Canonical input Git identity mismatch')
+          original = json.loads(source_bytes)
           ledger = copy.deepcopy(original)
           if ledger['upstream_commit'] != payload['upstream']:
               raise SystemExit('Frozen source changed; independent review required')
@@ -80,12 +108,12 @@ jobs:
               result = json.load(response)
           if result.get('sha') != blob:
               raise SystemExit('GitHub object identity differs from prepared content')
-          receipt = {'source_sha': head, 'input_blob': input_blob, 'ledger_blob': blob, 'bytes': len(encoded), 'operations_sha256': hashlib.sha256(manifest).hexdigest(), 'changed_responsibilities': sorted(scope), 'refs_updated': False, 'product_validation': False, 'accepted': False}
+          receipt = {'preparation_sha': head, 'source_sha': input_head, 'input_blob': input_blob, 'ledger_blob': blob, 'bytes': len(encoded), 'operations_sha256': hashlib.sha256(manifest).hexdigest(), 'changed_responsibilities': sorted(scope), 'refs_updated': False, 'product_validation': False, 'accepted': False}
           pathlib.Path('round3-protocol-owner-object-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
           print('ROUND3_PROTOCOL_OWNER_OBJECT ' + json.dumps(receipt))
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: round3-protocol-owner-object-${{ github.sha }}
+          name: round3-protocol-owner-object-${{ github.sha }}-${{ github.run_attempt }}
           path: round3-protocol-owner-object-receipt.json
           if-no-files-found: error
