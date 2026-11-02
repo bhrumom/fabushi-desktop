@@ -3,9 +3,33 @@
 Status: active / normative schema  
 Matrix ID: FQT-RTM-001  
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
-Updated: 2026-11-03
+Updated: 2026-11-02
 
-## Round 28 — actual forwarding crash tests and persistence repair
+## Task20bf round1 resumed — immutable forward intent
+
+Current input `94dcf7a2213808a8ded6baddaf069562d365c6d7` supersedes the interrupted
+`bb0013e1302c69cbd125bf0c4e64c070688de542` local snapshot. Existing Host journal,
+account fences, source acquisition and schema improvements are retained. The
+earlier production input `59f5fa24827812f78336c464995d161f403dedfb` passed
+run41508537631 attempt1; that is predecessor evidence, not execution of the new
+picker/source-review extension. New Host snapshot and journal guards are
+retained with Human44 and journal12 expectations.
+
+| Requirement / oracle | Existing production owner | Authored check / acceptance boundary |
+| --- | --- | --- |
+| FWD-UI-01 / ORA-TDRP-FORWARD-INTENT-UI-001 | ForwardMessageDialog → Session HumanForwardBatch | Same-ID refresh, partial subset retry, stable nonce/options, duplicate-submit and keyboard target-change fences |
+| FWD-UI-02 | Existing picker and settleForwardProjection | Missing/duplicate/conflicting/unexpected destinations cannot confirm success; search cannot erase send error |
+| FWD-UI-03 | Existing recipient selection; Host bound remains authoritative | 32 unique targets across searches; 33rd refused while selection remains editable |
+| FWD-UI-04 | Existing privacy controls plus shared ForwardPrivacy | Hiding captions hides names; showing names restores captions; first dispatch locks snapshot |
+| FWD-UI-05 | Existing account/dialog lifetime and Session durable recovery | Close while pending retires callback only; late result cannot settle/close reopened presentation |
+| FMEP-SOURCE-01 | Unique source_reviews and existing source candidate checker | Two exact option-source records complete, four fully read panel/phrase records pending decomposition; pending records never counted complete and full acceptance still requires the entire source set |
+
+Existing Chromium12 cases are retained and extended to16, alongside settlement5,
+Transcript16 and current Host/Agent/shipping/Electron/Windows gates. Current-H
+execution is pending at authoring; no local executable verification or independent
+ACCEPT. Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
+
+## Historical round 28 — actual forwarding crash tests and persistence repair
 
 Evidence: `projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
 Inspected base H=`65253740c033508ab08a4b500449a5b56727e940`,
@@ -156,7 +180,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–38 | NMR-01–06,09,18–20,31–47f | Existing Session/Transcript and SandAgentDb; whole batch, expected-value CAS and typed source denial | Base6525374 Human33/sharebox1 pass; owner count assertion fails; Agent4/private3/Gateway1 not run | Five real process/SQLite/HTTP cases now authored in round28; Human38 required, not-run at preparation | Base renderer/Transcript16/settlement5 pass; Chromium11/12 TEST_FLAW; theme fixture repaired; new-H Chromium12 required | First pending target cannot bypass denied source; journal CAS3 plus sharebox1; actual SQL failure recovery | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 process/permission/durable-write cases | Round28 receipt and containing-H Actions artifacts; prior round27 authorship/evidence claims withdrawn | Focused source review only; independent ACCEPT pending | IMPLEMENTED; containing-H execution required; full acceptance BLOCKED |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–39 | NMR-01–06,09,18–26,31–48c | Existing Session/Transcript and SandAgentDb; whole-batch CAS, source denial and private attachment byte snapshots | Exact59f5fa/run41508537631 Human38/sharebox1/journal3/Agent4/private3/Gateway1 all pass | NMR-48 adds five actual process/SQLite/multipart cases and seven owner cases; containing-H Human44/journal12 (including concurrent4f1070 CAS/progress cases) authored, not-run at preparation | Exact59 renderer16/settlement5/Chromium12, Electron and Windows gates pass; retained new-H gates required | Source policy and credential fences; all pinned buffers validated before upload; corrupt/missing second pin prevents new POST; legacy unpinned intent preserved | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 CAS/process tests; NMR-48 cache loss, damage/repair, bounded input and immutable upload regressions | Existing fbcp-native-message-round4-20261102.json records complete exact59 logs/counts/artifacts and separately pending NMR-48; historical round27 claims remain withdrawn | Focused source review and static implementation review only; independent ACCEPT pending | IMPLEMENTED; NMR-48 containing-H execution required; full acceptance BLOCKED |
 | TDRP-UPDATER-DISCOVERY-AUTHORITY-001 | critical | EUS-01–06 / EUS-WIN-01–06 | Explicit source and exact publisher/bytes/one-use invariants | Existing updater/service/Windows installer and Settings | At a119: source16, controlled publisher28, native Windows11; zero failures/skips | Controlled ports and native CI signer; authorized real signed install/upgrade/rollback open | Existing Settings helper; full visual/a11y pending | Source/redirect/abort/marker and signature/publisher/tamper/one-use negatives; performance/soak pending | Existing valid source scheduling and marker recovery | Round26 receipt: run41496846317 Electron125453934276/Windows125453934371 success | Bounded frozen review; release ACCEPT pending | IMPLEMENTED / BOUNDED TESTS EXECUTED; source/product/release BLOCKED |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle

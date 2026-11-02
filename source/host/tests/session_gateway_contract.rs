@@ -4344,6 +4344,76 @@ fn shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_
 struct ForwardHttpState {
     requests: Vec<String>,
     accepted: std::collections::BTreeMap<String, serde_json::Value>,
+    resources: std::collections::BTreeMap<String, (serde_json::Value, Vec<u8>)>,
+    uploaded_files: Vec<(String, Vec<u8>)>,
+    observe_source: Option<(std::path::PathBuf, String)>,
+    first_upload_snapshot: Option<(serde_json::Value, Vec<Vec<u8>>)>,
+    mutate_second_pin_after_first_upload: bool,
+    mutated_second_pin: Option<(std::path::PathBuf, Vec<u8>)>,
+    mutation_observed_by_second_upload: bool,
+    mutation_restored_before_message_ack: bool,
+}
+
+// Keep multipart payloads binary. The older text helper is sufficient for JSON
+// contracts but its UTF-8 replacement would destroy this test's byte oracle.
+fn read_forward_http_bytes(stream: &mut std::net::TcpStream) -> Vec<u8> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+    let mut bytes = Vec::new();
+    let mut chunk = [0_u8; 4096];
+    let mut expected = None;
+    loop {
+        let remaining = deadline.checked_duration_since(std::time::Instant::now())
+            .filter(|duration| !duration.is_zero()).expect("forward HTTP total deadline");
+        stream.set_read_timeout(Some(remaining)).expect("bounded binary request");
+        let count = stream.read(&mut chunk).expect("read binary forward request");
+        assert_ne!(count, 0, "forward client closed an incomplete request");
+        bytes.extend_from_slice(&chunk[..count]);
+        if expected.is_none() {
+            if let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") {
+                let headers = std::str::from_utf8(&bytes[..end]).expect("HTTP headers are text");
+                assert!(!headers.to_ascii_lowercase().contains("transfer-encoding: chunked"),
+                    "the bytes-backed multipart client must provide a bounded Content-Length");
+                let length = headers.lines().find_map(|line| line.split_once(':')
+                    .filter(|(key, _)| key.eq_ignore_ascii_case("content-length"))
+                    .map(|(_, value)| value.trim().parse::<usize>().expect("request length")))
+                    .unwrap_or(0);
+                assert!(length <= 32 * 1024 * 1024 + 64 * 1024, "fixture body budget");
+                expected = Some(end + 4 + length);
+            } else {
+                assert!(bytes.len() <= 64 * 1024, "fixture header budget");
+            }
+        }
+        if let Some(expected) = expected {
+            if bytes.len() >= expected {
+                assert_eq!(bytes.len(), expected, "one complete request per connection");
+                return bytes;
+            }
+        }
+    }
+}
+
+fn forward_multipart_file(request: &[u8]) -> (String, Vec<u8>) {
+    let header_end = request.windows(4).position(|part| part == b"\r\n\r\n")
+        .expect("multipart HTTP headers");
+    let headers = std::str::from_utf8(&request[..header_end]).expect("multipart headers");
+    let content_type = headers.lines().find_map(|line| line.split_once(':')
+        .filter(|(name, _)| name.eq_ignore_ascii_case("content-type"))
+        .map(|(_, value)| value.trim())).expect("multipart content type");
+    assert!(content_type.starts_with("multipart/form-data;"));
+    let boundary = content_type.split(';').find_map(|value|
+        value.trim().strip_prefix("boundary=")).expect("multipart boundary").trim_matches('"');
+    let body = &request[header_end + 4..];
+    let prefix = format!("--{boundary}\r\n");
+    let suffix = format!("\r\n--{boundary}--\r\n");
+    assert!(body.starts_with(prefix.as_bytes()));
+    assert!(body.ends_with(suffix.as_bytes()), "single file part has an exact closing boundary");
+    let part_end = body.windows(4).position(|part| part == b"\r\n\r\n")
+        .expect("multipart file headers");
+    let part_headers = std::str::from_utf8(&body[prefix.len()..part_end]).expect("file headers");
+    assert!(part_headers.contains("name=\"file\""));
+    let name = part_headers.split("filename=\"").nth(1)
+        .and_then(|tail| tail.split('"').next()).expect("file name").to_string();
+    (name, body[part_end + 4..body.len() - suffix.len()].to_vec())
 }
 
 struct ForwardHttpFixture {
@@ -4382,39 +4452,102 @@ impl ForwardHttpFixture {
                 stream.set_nonblocking(false).expect("blocking forward stream");
                 stream.set_write_timeout(Some(std::time::Duration::from_secs(5)))
                     .expect("bounded forward write");
-                let request = read_fixture_http_request_before(&mut stream, Some(
-                    std::time::Instant::now() + std::time::Duration::from_secs(15)
-                ));
+                let request_bytes = read_forward_http_bytes(&mut stream);
+                let request = String::from_utf8_lossy(&request_bytes).into_owned();
                 assert!(request.to_ascii_lowercase().contains("authorization: bearer fixture-token"));
                 let is_post = request.starts_with("POST /api/social/messages ");
-                let body = {
+                let (body, content_type, status) = {
                     let mut state = thread_state.lock().expect("forward HTTP state");
                     state.requests.push(request.clone());
-                    if is_post {
+                    if request.starts_with("POST /api/social/message-resources ") {
+                        if state.uploaded_files.len() == 1 {
+                            if let Some((path, original)) = state.mutated_second_pin.as_ref() {
+                                assert_eq!(fs::read(path).expect("pin remains altered during the next upload"),
+                                    vec![b'X'; original.len()]);
+                                state.mutation_observed_by_second_upload = true;
+                            }
+                        }
+                        if state.uploaded_files.is_empty() {
+                            if let Some((root, source)) = state.observe_source.clone() {
+                                // Observe committed SQLite and the complete byte set
+                                // before even the first resource upload is acknowledged.
+                                let metadata = read_forward_metadata_from_disk(&root, &source);
+                                let snapshots = metadata["humanForwardBatches"][0]["attachments"]
+                                    .as_array().into_iter().flatten().map(|attachment|
+                                        fs::read(attachment["path"].as_str().expect("staged file path"))
+                                            .expect("snapshot exists before resource POST")
+                                    ).collect();
+                                state.first_upload_snapshot = Some((metadata, snapshots));
+                            }
+                        }
+                        let (name, bytes) = forward_multipart_file(&request_bytes);
+                        let id = format!("forward-resource-{}", state.resources.len() + 1);
+                        let resource = json!({
+                            "resourceId":id,"name":name,"size":bytes.len(),
+                            "contentType":"application/octet-stream","createdAt":"2026-10-05T01:00:00Z"
+                        });
+                        state.uploaded_files.push((name, bytes.clone()));
+                        state.resources.insert(id, (resource.clone(), bytes));
+                        if state.uploaded_files.len() == 1 && state.mutate_second_pin_after_first_upload {
+                            let (metadata, snapshots) = state.first_upload_snapshot.as_ref()
+                                .expect("observe the committed snapshots before mutation");
+                            let path = std::path::PathBuf::from(metadata["humanForwardBatches"][0]
+                                ["attachments"][1]["path"].as_str().expect("second pin path"));
+                            let original = snapshots[1].clone();
+                            assert_ne!(original, vec![b'X'; original.len()]);
+                            // The server has accepted the first file, while the
+                            // client has not yet received its acknowledgement.
+                            fs::write(&path, vec![b'X'; original.len()])
+                                .expect("replace the next pin after preflight with same-length bytes");
+                            state.mutated_second_pin = Some((path, original));
+                        }
+                        (json!({"success":true,"resource":resource}).to_string().into_bytes(),
+                            "application/json", 201)
+                    } else if request.starts_with("GET /api/social/message-resources/") {
+                        let path = request.split_whitespace().nth(1).expect("resource GET path");
+                        let id = path.strip_prefix("/api/social/message-resources/").expect("resource prefix");
+                        let (_, bytes) = state.resources.get(id).expect("download only uploaded resource");
+                        (bytes.clone(), "application/octet-stream", 200)
+                    } else if is_post {
                         post_count += 1;
+                        if post_count == 1 {
+                            if let Some((path, original)) = state.mutated_second_pin.take() {
+                                assert!(state.mutation_observed_by_second_upload,
+                                    "next upload happened while its pin held different bytes");
+                                fs::write(path, original).expect("restore pin before the next destination preflight");
+                                state.mutation_restored_before_message_ack = true;
+                            }
+                        }
                         let submitted = fixture_request_json(&request);
                         let nonce = submitted["clientRequestId"].as_str().expect("forward nonce");
                         let peer = submitted["targetUserId"].as_str().expect("forward target")
                             .parse::<u64>().expect("numeric forward target");
                         let text = submitted["text"].as_str().expect("forward text");
+                        let attachments = submitted["attachments"].as_array().into_iter().flatten()
+                            .map(|item| {
+                                let id = item["resourceId"].as_str().expect("submitted resource identity");
+                                state.resources.get(id).expect("message binds an actually uploaded resource").0.clone()
+                            }).collect::<Vec<_>>();
                         let existing = state.accepted.get(nonce).cloned();
                         let deduplicated = existing.is_some();
                         let message = existing.unwrap_or_else(|| fixture_remote_human_message(
-                            70 + state.accepted.len() as u64, 1, peer, text, Some(nonce), json!([])
+                            70 + state.accepted.len() as u64, 1, peer, text, Some(nonce), json!(attachments)
                         ));
                         assert_eq!(message["recipientUserId"], peer, "nonce cannot rebind recipient");
                         assert_eq!(message["text"], text, "nonce cannot rebind submitted snapshot");
+                        assert_eq!(message["attachments"], json!(attachments), "nonce cannot rebind uploaded resources");
                         state.accepted.insert(nonce.to_string(), message.clone());
-                        json!({"success":true,"deduplicated":deduplicated,"message":message})
+                        (json!({"success":true,"deduplicated":deduplicated,"message":message})
+                            .to_string().into_bytes(), "application/json", 200)
                     } else {
                         assert!(request.starts_with("GET /api/social/messages?"), "{request}");
                         let after = request.split("afterId=").nth(1)
                             .and_then(|tail| tail.split(|c: char| !c.is_ascii_digit()).next())
                             .and_then(|value| value.parse::<u64>().ok()).expect("coverage cursor");
-                        json!({"success":true,"data":{
+                        (json!({"success":true,"data":{
                             "messages":[],"historyCursor":{"mode":"after-id","afterId":after},
                             "nextAfterId":after
-                        }})
+                        }}).to_string().into_bytes(), "application/json", 200)
                     }
                 };
                 if is_post && post_count == 1 {
@@ -4424,12 +4557,11 @@ impl ForwardHttpFixture {
                             .expect("first POST must be explicitly released");
                     }
                 }
-                let body = body.to_string();
                 let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    body.len(), body
+                    "HTTP/1.1 {status} OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
                 );
-                let result = stream.write_all(response.as_bytes());
+                let result = stream.write_all(response.as_bytes()).and_then(|_| stream.write_all(&body));
                 // The killed child deliberately cannot receive the first ack.
                 // All subsequent response writes must still be successful.
                 if !(hold_first_post && is_post && post_count == 1) {
@@ -4459,6 +4591,20 @@ impl ForwardHttpFixture {
     fn history_count(&self) -> usize {
         self.state.lock().expect("forward history requests").requests.iter()
             .filter(|request| request.starts_with("GET /api/social/messages?")).count()
+    }
+
+    fn resource_post_count(&self) -> usize {
+        self.state.lock().expect("forward resources").uploaded_files.len()
+    }
+
+    fn observe_snapshot_staging(&self, root: &std::path::Path, source: &str) {
+        self.state.lock().expect("forward observer").observe_source =
+            Some((root.to_path_buf(), source.to_string()));
+    }
+
+    fn mutate_second_pin_after_first_upload(&self) {
+        self.state.lock().expect("owned pin mutation")
+            .mutate_second_pin_after_first_upload = true;
     }
 
     fn finish(mut self) {
@@ -4831,5 +4977,413 @@ fn shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch() {
         resumed.shutdown(); drop(resumed);
         server.finish(); fs::remove_dir_all(root).expect("remove SQLite fault fixture");
     }
+}
+
+// NMR-48 byte oracles start from independently specified binary input and the
+// actual multipart upload, not a serializer/helper from the snapshot owner.
+type ForwardFileFixture = (String, std::path::PathBuf, Vec<u8>);
+
+fn forward_attachment_files(root: &std::path::Path, count: usize) -> Vec<ForwardFileFixture> {
+    fs::create_dir_all(root).expect("attachment fixture root");
+    (0..count).map(|index| {
+        let name = format!("report-{index}.bin");
+        let path = root.join(format!("original-cache-{index}.dat"));
+        let mut bytes = b"\x00original forward payload\xff\r\n".to_vec();
+        bytes.extend_from_slice(&[index as u8, 0x80, 0]);
+        fs::write(&path, &bytes).expect("original binary attachment");
+        (name, path, bytes)
+    }).collect()
+}
+
+fn prepare_forward_attachment_process(
+    root: &std::path::Path,
+    url: &str,
+    files: &[ForwardFileFixture],
+) -> serde_json::Value {
+    let args = prepare_forward_process(root, url);
+    let runtime = human_message_fixture_runtime(root, url);
+    let owner = runtime.open_human_conversation_db_owner(
+        args["sourceConversationId"].as_str().unwrap()
+    ).expect("attachment source owner");
+    let mut source = owner.get_transcript_entries().expect("source rows")[0].clone();
+    source["attachments"] = json!(files.iter().enumerate().map(|(index, (name, path, bytes))|
+        json!({"name":name,"path":path,"size":bytes.len(),"resourceId":format!("original-resource-{index}")})
+    ).collect::<Vec<_>>());
+    owner.update_transcript_entry(args["sourceEntryId"].as_str().unwrap(), &source)
+        .expect("store source attachments").expect("source exists");
+    runtime.shutdown(); drop(owner); drop(runtime);
+    args
+}
+
+fn assert_forward_staged_bytes(
+    root: &std::path::Path,
+    args: &serde_json::Value,
+    files: &[ForwardFileFixture],
+    server: &ForwardHttpFixture,
+) -> Vec<std::path::PathBuf> {
+    use sha2::Digest;
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let metadata = read_forward_metadata_from_disk(root, source);
+    let batch = &metadata["humanForwardBatches"][0];
+    assert_eq!(batch["destinations"].as_array().unwrap().len(), 2);
+    let attachments = batch["attachments"].as_array().expect("durable pinned attachments");
+    assert_eq!(attachments.len(), files.len());
+    let directory = fs::canonicalize(forward_db_path(root, source).parent().unwrap())
+        .expect("canonical source Session directory").join("forward-attachments");
+    let paths = attachments.iter().zip(files.iter()).map(|(attachment, (name, original, bytes))| {
+        assert_eq!(attachment["name"], json!(name));
+        let path = std::path::PathBuf::from(attachment["path"].as_str().expect("snapshot path"));
+        assert_ne!(&path, original, "accepted bytes cannot reference the mutable cache");
+        assert!(path.starts_with(&directory), "snapshot remains inside this source Session owner");
+        assert_eq!(fs::read(&path).expect("durable snapshot bytes"), *bytes);
+        assert_eq!(attachment["forwardSnapshot"]["version"], 1);
+        assert_eq!(attachment["forwardSnapshot"]["size"], json!(bytes.len()));
+        assert_eq!(attachment["forwardSnapshot"]["sha256"],
+            json!(format!("{:x}", sha2::Sha256::digest(bytes))));
+        path
+    }).collect::<Vec<_>>();
+    let state = server.state.lock().expect("independent upload observation");
+    let (observed, observed_bytes) = state.first_upload_snapshot.as_ref()
+        .expect("observe committed intent during the first resource POST");
+    assert_eq!(observed["humanForwardBatches"][0]["attachments"], batch["attachments"]);
+    assert_eq!(*observed_bytes, files.iter().map(|(_, _, bytes)| bytes.clone()).collect::<Vec<_>>(),
+        "all snapshots already exist before the first uploaded resource is acknowledged");
+    assert!(observed["humanForwardBatches"][0]["destinations"].as_array().unwrap()
+        .iter().all(|destination| destination["completed"] == false));
+    paths
+}
+
+fn assert_forward_uploaded_bytes(server: &ForwardHttpFixture, files: &[ForwardFileFixture]) {
+    let state = server.state.lock().expect("captured multipart data");
+    assert_eq!(state.uploaded_files.len(), files.len() * 2, "one upload set per destination");
+    for (index, (name, bytes)) in state.uploaded_files.iter().enumerate() {
+        let expected = &files[index % files.len()];
+        assert_eq!(name, &expected.0, "preserve submitted file name and order");
+        assert_eq!(bytes, &expected.2, "actual multipart bytes match the original submitted input");
+    }
+    assert_eq!(state.accepted.len(), 2, "nonce dedupe creates one message per destination");
+    let mut peers = std::collections::BTreeSet::new();
+    for message in state.accepted.values() {
+        peers.insert(message["recipientUserId"].as_u64().unwrap());
+        let attachments = message["attachments"].as_array().unwrap();
+        assert_eq!(attachments.len(), files.len());
+        for (attachment, (name, _, expected)) in attachments.iter().zip(files.iter()) {
+            assert_eq!(attachment["name"], json!(name));
+            let (_, bytes) = state.resources.get(attachment["resourceId"].as_str().unwrap()).unwrap();
+            assert_eq!(bytes, expected, "each accepted destination binds the actual uploaded bytes");
+        }
+    }
+    assert_eq!(peers, [3_u64, 4].into_iter().collect::<std::collections::BTreeSet<_>>());
+}
+
+fn assert_forward_intent_unchanged(before: &serde_json::Value, after: &serde_json::Value) {
+    for key in ["version", "accountId", "issuer", "requestId", "sourceConversationId", "sourceEntryId", "text", "attachments", "context"] {
+        assert_eq!(after[key], before[key], "retain immutable forward {key}");
+    }
+    for index in 0..2 {
+        for key in ["conversationId", "clientNonce"] {
+            assert_eq!(after["destinations"][index][key], before["destinations"][index][key]);
+        }
+    }
+}
+
+#[test]
+fn shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement() {
+    for delete_original in [false, true] {
+        let root = temp_root(if delete_original { "forward-byte-deleted-cache" } else { "forward-byte-replaced-cache" });
+        let files = forward_attachment_files(&root, 2);
+        let mut server = ForwardHttpFixture::start(true);
+        let args = prepare_forward_attachment_process(&root, &server.url, &files);
+        let source = args["sourceConversationId"].as_str().unwrap();
+        server.observe_snapshot_staging(&root, source);
+        let mut child = ForwardProcess::start(&root, &server.url);
+        server.wait_for_first_post();
+        let snapshots = assert_forward_staged_bytes(&root, &args, &files, &server);
+        assert_eq!(server.resource_post_count(), 2);
+        assert_eq!(server.post_count(), 1);
+        child.terminate(); server.release_first_post();
+        for (_, path, bytes) in &files {
+            if delete_original { fs::remove_file(path).expect("delete mutable original cache"); }
+            else { fs::write(path, vec![b'X'; bytes.len()]).expect("replace original with same-size bytes"); }
+        }
+        let resumed = human_message_fixture_runtime(&root, &server.url);
+        dispatch(&resumed, "syncHumanConversation", json!({"conversationId":args["destinationConversationIds"][1]}));
+        assert_forward_settled(&resumed, &args);
+        assert_forward_uploaded_bytes(&server, &files);
+        assert_eq!(server.post_count(), 3, "replay accepted first nonce once, send second once");
+        for (path, (_, original, bytes)) in snapshots.iter().zip(files.iter()) {
+            assert_eq!(fs::read(path).unwrap(), *bytes, "the retained snapshot is not rewritten on recovery");
+            if delete_original { assert!(!original.exists(), "recovery must not recreate a deleted user cache"); }
+            else { assert_eq!(fs::read(original).unwrap(), vec![b'X'; bytes.len()]); }
+        }
+        resumed.shutdown(); drop(resumed); drop(child);
+        let reopened = human_message_fixture_runtime(&root, &server.url);
+        dispatch(&reopened, "syncHumanConversation", json!({"conversationId":args["destinationConversationIds"][1]}));
+        assert_forward_settled(&reopened, &args);
+        assert_eq!(server.post_count(), 3);
+        assert_eq!(server.resource_post_count(), 4, "another restart cannot re-upload completed resources");
+        reopened.shutdown(); drop(reopened);
+        server.finish(); fs::remove_dir_all(root).expect("remove immutable attachment fixture");
+    }
+}
+
+#[test]
+fn shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair() {
+    for fault in ["missing", "same-size-corrupt", "oversized", "directory"] {
+        let root = temp_root(&format!("forward-snapshot-{fault}"));
+        let files = forward_attachment_files(&root, 2);
+        let mut server = ForwardHttpFixture::start(true);
+        let args = prepare_forward_attachment_process(&root, &server.url, &files);
+        let source = args["sourceConversationId"].as_str().unwrap();
+        let second = args["destinationConversationIds"][1].as_str().unwrap();
+        server.observe_snapshot_staging(&root, source);
+        let mut child = ForwardProcess::start(&root, &server.url);
+        server.wait_for_first_post();
+        let snapshots = assert_forward_staged_bytes(&root, &args, &files, &server);
+        child.terminate(); server.release_first_post();
+        let runtime = human_message_fixture_runtime(&root, &server.url);
+        let mut first_only = args.clone();
+        first_only["destinationConversationIds"] = json!([args["destinationConversationIds"][0]]);
+        assert_eq!(forward_gateway_result(&runtime, &first_only).expect("settle accepted resource identity")["destinations"][0]["status"], "sent");
+        assert_eq!(server.post_count(), 2);
+        assert_eq!(server.resource_post_count(), 2, "ambiguous POST reuses its persisted resource IDs");
+        let before = read_forward_metadata_from_disk(&root, source)["humanForwardBatches"][0].clone();
+        // The first file stays valid: a per-file read/upload loop would leak a
+        // resource POST before discovering this later invalid attachment.
+        let snapshot = &snapshots[1];
+        match fault {
+            "missing" => fs::remove_file(snapshot).unwrap(),
+            "same-size-corrupt" => fs::write(snapshot, vec![b'X'; files[1].2.len()]).unwrap(),
+            "oversized" => fs::File::create(snapshot).unwrap().set_len(32 * 1024 * 1024 + 1).unwrap(),
+            _ => { fs::remove_file(snapshot).unwrap(); fs::create_dir(snapshot).unwrap(); }
+        }
+        let failed = forward_gateway_result(&runtime, &args).expect("snapshot failure is a durable per-target result");
+        assert_eq!(failed["destinations"][0]["status"], "sent");
+        assert_eq!(failed["destinations"][1]["status"], "failed");
+        let expected_error = match fault {
+            "missing" => "unavailable",
+            "same-size-corrupt" => "snapshot digest",
+            "oversized" => "size",
+            _ => "regular non-symlink",
+        };
+        assert!(failed["destinations"][1]["error"].as_str()
+            .is_some_and(|error| error.contains(expected_error)), "report the actual {fault} cause");
+        let pending = runtime.read_human_conversation_transcript(second).expect("retryable pinned outbox");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0]["delivery"], "pending");
+        assert!(pending[0].get("remoteMessageId").is_none());
+        assert!(pending[0].get("remoteDispatchAttachments").is_none());
+        let history_before = server.history_count();
+        dispatch(&runtime, "syncHumanConversation", json!({"conversationId":second}));
+        assert!(server.history_count() > history_before, "a damaged pin cannot starve unrelated inbound history");
+        assert_eq!(server.post_count(), 2, "no message POST while pin is invalid");
+        assert_eq!(server.resource_post_count(), 2, "no resource POST even for the valid first pin when a later pin is invalid");
+        let blocked = read_forward_metadata_from_disk(&root, source)["humanForwardBatches"][0].clone();
+        assert_forward_intent_unchanged(&before, &blocked);
+        assert_eq!(blocked["destinations"][0]["completed"], true);
+        assert_eq!(blocked["destinations"][1]["completed"], false);
+        assert!(blocked["destinations"][1]["error"].is_string());
+        runtime.shutdown(); drop(runtime); drop(child);
+        let resumed = human_message_fixture_runtime(&root, &server.url);
+        let reopened_pending = resumed.read_human_conversation_transcript(second).unwrap();
+        for key in ["id", "content", "clientNonce", "attachments", "forwardContext", "delivery"] {
+            assert_eq!(reopened_pending[0][key], pending[0][key], "persist {fault} outbox {key}");
+        }
+        if fault == "directory" { fs::remove_dir(snapshot).expect("remove invalid snapshot directory"); }
+        fs::write(snapshot, &files[1].2).expect("restore the exact independently retained input bytes");
+        dispatch(&resumed, "syncHumanConversation", json!({"conversationId":second}));
+        assert_forward_settled(&resumed, &args);
+        assert_forward_uploaded_bytes(&server, &files);
+        assert_eq!(server.post_count(), 3);
+        resumed.shutdown(); drop(resumed);
+        server.finish(); fs::remove_dir_all(root).expect("remove damaged snapshot fixture");
+    }
+}
+
+#[test]
+fn shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post() {
+    for fault in ["too-many", "empty", "oversized", "directory", "staging-path"] {
+        let root = temp_root(&format!("forward-attachment-admission-{fault}"));
+        let files = forward_attachment_files(&root, if fault == "too-many" { 7 } else { 1 });
+        let server = ForwardHttpFixture::start(false);
+        let args = prepare_forward_attachment_process(&root, &server.url, &files);
+        let source = args["sourceConversationId"].as_str().unwrap();
+        let staging = forward_db_path(&root, source).parent().unwrap().join("forward-attachments");
+        match fault {
+            "empty" => fs::write(&files[0].1, []).unwrap(),
+            "oversized" => fs::File::create(&files[0].1).unwrap().set_len(32 * 1024 * 1024 + 1).unwrap(),
+            "directory" => { fs::remove_file(&files[0].1).unwrap(); fs::create_dir(&files[0].1).unwrap(); }
+            "staging-path" => fs::write(&staging, b"retained unrelated file").unwrap(),
+            _ => {}
+        }
+        let runtime = human_message_fixture_runtime(&root, &server.url);
+        for _ in 0..2 {
+            assert!(forward_gateway_result(&runtime, &args).is_err(), "reject new batch for {fault}");
+            assert!(read_forward_metadata_from_disk(&root, source).get("humanForwardBatches").is_none(),
+                "failed staging cannot accept a durable batch for {fault}");
+        }
+        for destination in args["destinationConversationIds"].as_array().unwrap() {
+            assert!(runtime.read_human_conversation_transcript(destination.as_str().unwrap()).unwrap().is_empty());
+        }
+        assert_eq!(server.post_count(), 0, "no message POST for {fault}");
+        assert_eq!(server.resource_post_count(), 0, "no resource POST for {fault}");
+        assert!(server.state.lock().unwrap().accepted.is_empty());
+        if fault == "staging-path" {
+            assert_eq!(fs::read(&staging).unwrap(), b"retained unrelated file");
+        }
+        runtime.shutdown(); drop(runtime);
+        server.finish(); fs::remove_dir_all(root).expect("remove attachment admission fixture");
+    }
+}
+
+#[test]
+fn shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes() {
+    let root = temp_root("forward-legacy-unpinned");
+    let files = forward_attachment_files(&root, 1);
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_attachment_process(&root, &server.url, &files);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    server.observe_snapshot_staging(&root, source);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    let snapshots = assert_forward_staged_bytes(&root, &args, &files, &server);
+    child.terminate(); server.release_first_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let mut first_only = args.clone(); first_only["destinationConversationIds"] = json!([first]);
+    assert_eq!(forward_gateway_result(&runtime, &first_only).unwrap()["destinations"][0]["status"], "sent");
+    let completed_first = runtime.read_human_conversation_transcript(first).unwrap();
+    let owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let mut legacy = owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    legacy[0]["attachments"][0].as_object_mut().unwrap().remove("forwardSnapshot");
+    legacy[0]["attachments"][0]["path"] = json!(files[0].1);
+    assert!(owner.set_metadata("humanForwardBatches", legacy.clone()).unwrap());
+    fs::write(&files[0].1, vec![b'X'; files[0].2.len()]).expect("old mutable path now holds different bytes");
+    runtime.shutdown(); drop(owner); drop(runtime); drop(child);
+    let resumed = human_message_fixture_runtime(&root, &server.url);
+    let before_history = server.history_count();
+    dispatch(&resumed, "syncHumanConversation", json!({"conversationId":second}));
+    assert!(server.history_count() > before_history);
+    let failure = forward_gateway_result(&resumed, &args).expect("legacy retry remains a visible failure envelope");
+    assert_eq!(failure["destinations"][0]["status"], "sent");
+    assert_eq!(failure["destinations"][1]["status"], "failed");
+    assert!(failure["destinations"][1]["error"].as_str().is_some_and(|error|
+        error.contains("snapshot") || error.contains("unpinned") || error.contains("legacy")));
+    assert_eq!(server.post_count(), 2, "never upload/send mutable legacy input to the unfinished target");
+    assert_eq!(server.resource_post_count(), 1);
+    assert_eq!(resumed.read_human_conversation_transcript(first).unwrap(), completed_first);
+    let blocked = read_forward_metadata_from_disk(&root, source)["humanForwardBatches"][0].clone();
+    assert_forward_intent_unchanged(&legacy[0], &blocked);
+    assert_eq!(blocked["destinations"][0]["completed"], true);
+    assert_eq!(blocked["destinations"][1]["completed"], false);
+    assert!(blocked["attachments"][0].get("forwardSnapshot").is_none(), "do not invent historical byte evidence");
+    assert_eq!(fs::read(&snapshots[0]).unwrap(), files[0].2, "retain existing immutable data for recovery review");
+    resumed.shutdown(); drop(resumed);
+    server.finish(); fs::remove_dir_all(root).expect("remove legacy attachment fixture");
+}
+
+#[test]
+fn shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy() {
+    let root = temp_root("forward-attachment-privacy");
+    let files = forward_attachment_files(&root, 6);
+    let server = ForwardHttpFixture::start(false);
+    let mut args = prepare_forward_attachment_process(&root, &server.url, &files);
+    args["dropCaptions"] = json!(true);
+    args["dropSenderNames"] = json!(false);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    server.observe_snapshot_staging(&root, source);
+    server.mutate_second_pin_after_first_upload();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let original = owner.get_transcript_entries().unwrap()[0].clone();
+    let mut protected = original.clone(); protected["protectedContent"] = json!(true);
+    owner.update_transcript_entry(args["sourceEntryId"].as_str().unwrap(), &protected).unwrap().unwrap();
+    assert!(forward_gateway_result(&runtime, &args).is_err(), "source permission precedes snapshot and upload");
+    let staging = forward_db_path(&root, source).parent().unwrap().join("forward-attachments");
+    assert!(!staging.exists());
+    assert!(read_forward_metadata_from_disk(&root, source).get("humanForwardBatches").is_none());
+    assert_eq!(server.post_count(), 0); assert_eq!(server.resource_post_count(), 0);
+    owner.update_transcript_entry(args["sourceEntryId"].as_str().unwrap(), &original).unwrap().unwrap();
+    let sent = forward_gateway_result(&runtime, &args).expect("authorized six-attachment forward");
+    assert_eq!(sent["privacy"], json!({"dropSenderNames":true,"dropCaptions":true}));
+    assert_forward_staged_bytes(&root, &args, &files, &server);
+    assert_forward_uploaded_bytes(&server, &files);
+    {
+        let state = server.state.lock().expect("preflight byte lifetime observation");
+        assert!(state.mutation_observed_by_second_upload,
+            "the second pin changed after preflight and before its actual upload");
+        assert!(state.mutation_restored_before_message_ack,
+            "restore the retained bytes before the next destination begins");
+    }
+    assert_eq!(server.post_count(), 2);
+    for destination in args["destinationConversationIds"].as_array().unwrap() {
+        let rows = runtime.read_human_conversation_transcript(destination.as_str().unwrap()).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["content"], "", "caption privacy applies to actual persisted target");
+        assert_eq!(rows[0]["delivery"], "sent");
+        assert_eq!(rows[0]["forwardContext"]["privacy"], sent["privacy"]);
+        assert!(rows[0]["forwardContext"].get("origin").is_none(), "hidden sender is not retained in target provenance");
+        let attachments = rows[0]["attachments"].as_array().unwrap();
+        for (attachment, (name, _, bytes)) in attachments.iter().zip(files.iter()) {
+            assert_eq!(attachment["name"], json!(name));
+            assert_eq!(fs::read(attachment["path"].as_str().unwrap()).unwrap(), *bytes,
+                "downloaded target resource has the same uploaded bytes");
+        }
+    }
+    assert_eq!(owner.get_transcript_entries().unwrap()[0], original, "privacy cannot mutate the source");
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    let replay = forward_gateway_result(&reopened, &args).expect("completed privacy replay");
+    assert_eq!(replay, sent);
+    assert_eq!(server.post_count(), 2); assert_eq!(server.resource_post_count(), 12);
+    reopened.shutdown(); drop(reopened);
+    server.finish(); fs::remove_dir_all(root).expect("remove privacy snapshot fixture");
+}
+
+#[test]
+fn shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal() {
+    let root = temp_root("forward-corrupt-recovery");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    child.terminate();
+    server.release_first_post();
+    drop(child);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let db = rusqlite::Connection::open(forward_db_path(&root, source)).unwrap();
+    let original_hex: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+    assert_eq!(read_forward_metadata_from_disk(&root, source)["humanForwardBatches"][0]["requestId"], args["clientNonce"]);
+    for cached_owner in [false, true] {
+        // Independent bytes: invalid hex, invalid JSON, null, an array and a
+        // string. Valid non-object JSON must not become "no forward journal".
+        for damaged in ["zz", "6e6f742d6a736f6e", "6e756c6c", "5b5d", "2264616d6167656422"] {
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+            let resumed = human_message_fixture_runtime(&root, &server.url);
+            if cached_owner {
+                resumed.open_human_conversation_db_owner(source).expect("cache valid source owner before damage");
+            }
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [damaged]).unwrap();
+            let target = args["destinationConversationIds"][1].as_str().unwrap();
+            let error = resumed.sync_human_conversation(target).expect_err("corrupt source metadata must block recovery");
+            assert!(!error.is_empty());
+            assert_eq!(server.post_count(), 1);
+            assert_eq!(server.history_count(), 0);
+            let stored: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+            assert_eq!(stored, damaged);
+            resumed.shutdown(); drop(resumed);
+        }
+    }
+    db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+    drop(db);
+    let restored = human_message_fixture_runtime(&root, &server.url);
+    restored.sync_human_conversation(args["destinationConversationIds"][1].as_str().unwrap())
+        .expect("recover original intent after repairing injected metadata");
+    assert_forward_settled(&restored, &args);
+    assert_eq!(server.post_count(), 3);
+    assert_eq!(server.state.lock().unwrap().accepted.len(), 2);
+    restored.shutdown(); drop(restored);
+    server.finish(); fs::remove_dir_all(root).unwrap();
 }
 

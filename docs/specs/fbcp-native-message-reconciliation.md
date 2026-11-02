@@ -1035,6 +1035,183 @@ batch with a deleted/protected source currently aborts unrelated ordinary sync.
 The data format, command/service schema, unique Session/Transcript owner,
 Backend PR #137 read-only boundary and all final acceptance blockers remain.
 
+### Round 4 resumed batch: immutable forwarding attachment bytes (NMR-48)
+
+Prerequisite run `41508537631` at `59f5fa24827812f78336c464995d161f403dedfb`
+finished successfully: Human38, sharebox1, journal3, Agent4, credential3,
+forward HTTP1, renderer16/settlement5/Chromium12, Electron and Windows suites,
+actual AppHost/package copy, normalization6, future-salts2, protocol122,
+TCP9 including live service, proxy4 and Native credential1. Concurrent source
+guard commit `59308cf3cee48213278c52e4ad60bfd9250fb545` is retained.
+The existing batch freezes attachment JSON but each destination rereads its
+mutable path. Later destinations can therefore receive different bytes after
+cache replacement, and source cache loss prevents recovery. This is a
+source-observed implementation gap; no pre-fix test failure is claimed.
+
+- NMR-48a: Before accepting a new batch with attachments, preserve an ordered
+  byte snapshot in the existing source Session's durable conversation directory.
+  Bind paths to the account/issuer/request and record a version, SHA-256 and
+  exact nonzero byte size with each attachment. Limit the batch to the existing
+  service's six attachments and each file to 32 MiB. Read through a bounded
+  handle, require a regular file, flush and atomically commit each snapshot
+  before the source journal references it. Retain names/privacy and the same
+  Session/native-resource owner. Do not overwrite source/cache/user files or
+  erase old journals; interrupted unreferenced snapshots are not accepted sends.
+- NMR-48b: All destinations, pending-send replay and ordinary-sync restart
+  consume the pinned attachment identity. Validate size and digest on the same
+  bounded byte buffer submitted to the existing credential-bound upload; a
+  second unchecked path read is forbidden. Verify all target attachments before
+  its first resource POST and retain those exact buffers, bounded at six times
+  32 MiB; later path changes cannot alter the bytes already admitted for upload.
+  Source path replacement/deletion
+  cannot change an accepted batch. Missing, corrupt, oversized or nonregular
+  snapshots fail before resource/message POST and retain retry/error state.
+  Existing valid uploaded resource IDs may still settle an ambiguous send.
+- NMR-48c: Old attachment batches without byte evidence stay preserved and
+  explicitly fail unfinished delivery rather than fabricate an old digest or
+  silently read changed source content. Completed targets and unrelated inbound
+  sync remain intact. Text-only version-one batches retain normal recovery.
+  Restoring the exact pinned bytes may retry an incomplete new batch; a new
+  user request is required when the original legacy bytes cannot be established.
+- NMR-AC-39: Execute real Session/SQLite/loopback upload/send/reopen behaviors
+  for original-cache mutation and deletion after staging, two destinations with
+  identical uploaded payloads, missing/corrupt snapshot refusal and exact-byte
+  repair, bounded/nonregular inputs, failed snapshot staging, and legacy
+  unpinned recovery. Inspect durable intent before the first destination POST
+  and preserve the existing actual process-kill/restart cases. Add focused
+  owner tests for atomic retention, path confinement and bounded byte/digest
+  validation; run all existing Human/Agent/shipping/UI/Electron/Windows gates
+  at the new exact H in Actions. No local executable validation is permitted.
+
+This freezes bytes admitted from the existing authorized source projection;
+it does not establish remote forward provenance or prove that an already
+corrupt historical cache matched its original server object. Backend PR #137,
+real-service authorization/pagination, power-loss/filesystem qualification,
+full source/legal, signed-platform packages and independent ACCEPT remain open.
+Rollback retains snapshots and journal metadata; an older binary must not be
+used to resume newly pinned attachments without the same integrity checks.
+
+### Auxiliary packaged executable source locks (FMEP-SOURCE-01)
+
+The four-file desktop resource boundary also depends on the independent
+Coordinator and box-exec-daemon Cargo roots and the Go network-worker module.
+At `59308cf3cee48213278c52e4ad60bfd9250fb545`, the two Rust roots have no
+tracked Cargo.lock, the Go root has no tracked go.sum, and the release build
+runs go mod tidy. The existing fixed Telegram U is unchanged; this batch binds
+currently unresolved Fabushi package inputs without claiming source ACCEPT.
+
+1. Capture missing dependency locks/checksums only in exact-H GitHub Actions,
+   using the existing Rust 1.97.1 / Go 1.27.1 and the unchanged direct manifests.
+   Preserve the original Go manifest and its fixed Tailscale v1.104.1 selection.
+   A capture-mode result is review evidence, not a locked-input acceptance.
+2. Review the captured inputs, commit them with expected-head CAS, and make the
+   existing desktop/release build commands require Cargo --locked and Go
+   -mod=readonly. Normal builds must not regenerate or tidy dependency inputs.
+3. At the containing pinned H, build the three actual macOS auxiliary binaries,
+   retain source/toolchain/normal-build dependency/module, file/hash/symbol/library
+   evidence, and reject legacy Telegram or generic FFI runtime dependencies.
+   Run the existing owner-focused lifecycle tests; missing inputs or changes to
+   tracked locks/checksums must fail. Preserve prior full regression requirements.
+4. Do not alter command/service schemas, process lifecycle owners, executable
+   override policy, user data, legacy readers, signing or deployment. Registry/Go
+   source/legal review, supported-platform signed packages and independent
+   acceptance remain separate open gates.
+
+### NMR-47e concurrent completion preservation
+
+Concurrent commit `4f1070d73958a1275160c2590d31fbe6507008ee` adds strict
+source-journal recovery scanning and two journal concurrency regressions. Keep
+those tests and the scanner when integrating NMR-48. A stale batch snapshot
+must not change any durably completed destination back to unfinished, even if
+the caller reads a fresh metadata value immediately before CAS. Reject that
+regression before writing; preserve complete intent and allow a freshly loaded
+batch to advance remaining destinations. The existing two independent-handle
+and concurrent SQLite tests are required with the original three and NMR-48's
+seven: 12 journal tests, plus Human44 and all retained exact-H message gates.
+Human44 retains concurrent `06fb24c4963f35d1450c122e7222ee39e21b4192`'s
+actual process-restart corrupted-journal refusal and exact-repair test.
+This does not claim cross-source request uniqueness across multiple AppHosts.
+Journal load and store also require the containing metadata to be a JSON object,
+including when the source owner is already cached. Invalid hex/JSON or a valid
+JSON scalar/array must remain a storage error, never absence of a journal; retry
+may proceed only after the exact original metadata is restored. Extend the
+existing corrupted-journal test across cold and cached owners without removing
+its process-kill, unchanged-bytes, zero-network and exact-repair assertions.
+
+### Pending-parent reply identity and restart recovery (NMR-49 / NMR-AC-40)
+
+Current source `59f5fa24827812f78336c464995d161f403dedfb` and its
+completed/success run `41508537631` are the prerequisite. The existing UI
+delivery decoder does not recognize Host `dispatching` and defaults it to
+`sent`, making an in-flight local parent actionable for Reply. A child is
+durably staged before dispatch discovers that parent has no remote ID. Parent
+settlement currently rekeys only the parent; the child's persisted reply and
+the sync pending snapshot still name the old local ID. This is a source-observed
+recovery defect; no pre-fix runtime reproduction is claimed.
+
+- NMR-49a: Treat Host `dispatching` as existing UI `pending`, preserving the
+  current prohibition on pending/queued/failed message reply actions. Keep
+  all existing sent, failed and Agent projections and component roots. Do not
+  introduce a new public delivery state, route or message owner.
+- NMR-49b: When the existing Session store settles a local Human parent to
+  its canonical identity, atomically rekey that parent and rewrite exact old
+  `replyToId` references on the same conversation's local-author unsent
+  pending/dispatching children. Preserve their nonce, text, attachments,
+  forwarding metadata, sequence and other fields. No remote-authored or already
+  canonical child is rewritten. Use the existing SQLite owner and an explicit
+  transaction; its write wrapper alone is not a transaction. Failed parent or
+  child persistence rolls back the whole change and the atomic store method
+  publishes no mutation. An outer send may still record its existing pending
+  dispatch error; it must not publish canonical identity or child-reference
+  changes from the rolled-back transaction.
+  After commit, emit the existing deletion/upsert events for every changed row
+  so the mounted projection receives the new references.
+- NMR-49c: Pending replay must consume each row's current durable reply
+  reference after earlier parent settlement, rather than the initial stale
+  snapshot. Preserve current account/participant checks, per-conversation
+  locking, ordered retries and forwarding-batch policy exclusions. For data
+  already orphaned by older code, resolve `human-message:<nonce>` only to one
+  canonical sent parent in this same conversation with the matching local
+  author and exact nonce. Validate canonical ID and remote ID agreement.
+  Normalize both requested and persisted reply identities before idempotency
+  comparison and persist the canonical reference before dispatch. Missing,
+  foreign, ambiguous or conflicting identity never drops the reply or borrows
+  a peer's nonce; retain durable retry evidence and refuse that send.
+  Retrying an unsent local row also requires its existing Human author kind and
+  exact `human-message:<its own nonempty nonce>` ID. A canonical-looking row
+  missing remote identity, or a non-Human row with the same author ID, is not a
+  local outbox intent; preserve it without HTTP dispatch or child-edge repair.
+- NMR-AC-40: Add actual Host/SQLite/loopback tests for A→B→C staging,
+  failure/restart and ordered canonical replay; historical dangling local
+  parent references with same-nonce peer and foreign-conversation negatives;
+  and a SQLite child-update trigger failure proving parent/children and the
+  atomic owner's event stream remain unchanged, followed by recovery after
+  reopen through the real send path. Preserve the existing outer pending-error
+  event semantics separately from forbidden identity/reference changes. Check
+  immutable content/resources/nonces and no duplicate sends. Add a behavior
+  regression using the actual renderer delivery projection for dispatching
+  and unchanged normal/Agent states. Preserve all existing Human44/Agent4 (including the concurrent source-corruption restart case),
+  credential3, forwarding journal/HTTP and UI/Chromium gates. Bind new actual
+  counts and complete logs to the new exact H in GitHub Actions only.
+
+This repair changes no server contract, schema or owner and deletes no user
+data. A normal code revert retains canonicalized references; it cannot repair
+new dangling references created by older code. Full source/legal closure,
+real service/Worker recovery, signed packages, complete Bot regression and
+independent ACCEPT remain open. Fixed U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+
+Delivery constraint: the direct 3.5MB ledger-object request was interrupted and
+the expected remote blob is absent. A temporary checkpoint-only Actions job may
+apply the exact reviewed NMR row delta to the expected base blob, prove every
+other row and all source/acceptance fields unchanged, and create only the exact
+unattached Git blob. It may not commit, update refs, push or modify production.
+The main integrator must read back that blob, use ordinary expected-head CAS to
+integrate the sole canonical ledger, and remove this temporary delivery job.
+Existing schema/source and product gates remain required; object creation is
+neither validation nor acceptance evidence.
+
+
 
 
 

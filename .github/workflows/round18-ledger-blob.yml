@@ -1,0 +1,79 @@
+name: Round 18 exact ledger blob preparation
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - projects/telegram-desktop-rust/evidence/round18-ledger-transport.json
+permissions: {}
+jobs:
+  prepare:
+    if: github.repository == 'bhrumom/fabushi-desktop'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare the exact ledger blob without updating any ref
+        env:
+          GH_BLOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, urllib.request
+          root = pathlib.Path.cwd()
+          spec = json.loads((root / "projects/telegram-desktop-rust/evidence/round18-ledger-transport.json").read_text())
+          target = "projects/telegram-desktop-rust/parity-ledger.json"
+          allowed = {"FBCP-NMR-001", "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001"}
+          if spec["target_path"] != target or set(spec["rows"]) != allowed:
+              raise SystemExit("Unexpected transport scope")
+          original = (root / target).read_bytes()
+          def git_blob(data):
+              return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+          if git_blob(original) != spec["base_blob"]:
+              raise SystemExit("Canonical ledger changed; refuse stale row replacement")
+          doc = json.loads(original)
+          for identity, change in spec["rows"].items():
+              matches = [i for i, row in enumerate(doc["rows"]) if row["responsibility_id"] == identity]
+              if len(matches) != 1 or doc["rows"][matches[0]] != change["expected"]:
+                  raise SystemExit("Row observation does not match")
+              if change["replacement"]["responsibility_id"] != identity:
+                  raise SystemExit("Responsibility identity changed")
+              doc["rows"][matches[0]] = change["replacement"]
+          content = json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
+          data = content.encode()
+          blob = git_blob(data)
+          body = json.dumps({"content": content, "encoding": "utf-8"}).encode()
+          request = urllib.request.Request(
+              "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs",
+              data=body, method="POST",
+              headers={"Authorization": "Bearer " + os.environ["GH_BLOB_TOKEN"],
+                       "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+                       "Content-Type": "application/json"})
+          with urllib.request.urlopen(request, timeout=45) as response:
+              result = json.load(response)
+          if result.get("sha") != blob:
+              raise SystemExit("Remote blob identity mismatch")
+          out = root / "artifacts/round18-ledger-transport"
+          out.mkdir(parents=True)
+          receipt = {"schema":"round18-ledger-blob-receipt-v1",
+                     "workflow_sha": os.environ["GITHUB_SHA"], "base_blob":spec["base_blob"],
+                     "ledger_blob":blob, "ledger_sha256":hashlib.sha256(data).hexdigest(),
+                     "ledger_bytes":len(data), "rows":sorted(allowed),
+                     "source_review_count_preserved":len(doc.get("source_reviews", [])),
+                     "ref_updated":False,"acceptance":False}
+          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt))
+          PY
+      - name: Preserve preparation receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: round18-ledger-blob-${{ github.sha }}
+          path: artifacts/round18-ledger-transport/receipt.json
+          if-no-files-found: error
+          retention-days: 30

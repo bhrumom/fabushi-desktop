@@ -29,7 +29,8 @@ use super::agent_db::{
     update_persisted_transcript_entry,
 };
 use super::forward_batch_journal::{
-    HumanForwardBatch, load_forward_batches, store_forward_batch,
+    HumanForwardBatch, load_forward_batches, read_forward_attachment_bytes,
+    snapshot_forward_attachments, store_forward_batch,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
@@ -2994,17 +2995,30 @@ impl ProductionSessionWorkers {
     fn resume_human_forward_batches(&self) -> Result<(), String> {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
         let (account, issuer) = self.human_forward_scope()?;
-        for conversation in self.list_human_conversations()? {
-            let Some(source_id) = conversation.get("id").and_then(serde_json::Value::as_str) else { continue };
-            let owner = self.open_human_conversation_db_owner(source_id)?;
-            for batch in load_forward_batches(&owner, source_id)? {
+        // Unlike the visible roster, recovery cannot omit revoked sources or
+        // silently skip corrupt stored metadata. Reuse the strict source scan
+        // semantics of find_forward_request, without filtering by request ID.
+        let root = get_native_conversations_root(&self.agents_root);
+        let entries = match fs::read_dir(root) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error.to_string()),
+        };
+        for entry in entries {
+            let entry = entry.map_err(|error| error.to_string())?;
+            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
+                continue;
+            }
+            let source_id = entry.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
+            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            for batch in load_forward_batches(&owner, &source_id)? {
                 if batch.account_id != account || batch.issuer != issuer
                     || batch.destinations.iter().all(|target| target.completed)
                 { continue; }
-                // Do not erase or bypass an invalid source on recovery. An
-                // unavailable source retains the original intent, and no
-                // destination is sent without reauthorization.
-                self.deliver_forward_batch(source_id, &batch.request_id, None)?;
+                self.deliver_forward_batch(&source_id, &batch.request_id, None)?;
             }
         }
         Ok(())
@@ -3069,6 +3083,16 @@ impl ProductionSessionWorkers {
             let source_text = source_entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
             let attachments = source_entry.get("attachments")
                 .and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
+            let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
+            // A path is only an input to accepting a new forward. Every later
+            // destination uses the source Session's immutable byte snapshot.
+            // No resource/message POST can precede this or the journal commit.
+            let attachments = snapshot_forward_attachments(
+                &source_owner, &account, &issuer, client_nonce, &attachments,
+            )?;
+            if self.human_forward_scope()? != (account.clone(), issuer.clone()) {
+                return Err("Fabushi native messaging credential changed Human account or issuer".into());
+            }
             let text = if privacy.drop_captions && !attachments.is_empty() {
                 String::new()
             } else {
@@ -3098,7 +3122,6 @@ impl ProductionSessionWorkers {
                 account, issuer, client_nonce.to_string(), source_conversation_id.to_string(),
                 source_entry_id.to_string(), text, attachments, context, &destinations,
             );
-            let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
             // The complete ordered batch (including destinations not yet
             // dispatched) commits atomically before the first POST.
             store_forward_batch(&source_owner, &batch)?;
@@ -3198,7 +3221,14 @@ impl ProductionSessionWorkers {
                     .map(str::trim)
                     .filter(|value| !value.is_empty())
                     .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
-                Ok(serde_json::json!({ "path": path, "name": name }))
+                let mut normalized = serde_json::json!({ "path": path, "name": name });
+                if forward_context.is_some() {
+                    if let Some(snapshot) = object.get("forwardSnapshot") {
+                        normalized.as_object_mut().expect("attachment object")
+                            .insert("forwardSnapshot".into(), snapshot.clone());
+                    }
+                }
+                Ok(normalized)
             })
             .collect::<Result<Vec<_>, String>>()?;
         let timestamp_ms = composed_at_ms.unwrap_or_else(|| {
@@ -3299,12 +3329,49 @@ impl ProductionSessionWorkers {
                     .unwrap_or_default();
                 if uploaded.is_empty() && !normalized_attachments.is_empty() {
                     uploaded = Vec::with_capacity(normalized_attachments.len());
+                    let mut forward_bytes = if let Some(context) = forward_context.filter(|context|
+                        context.get("batchVersion").and_then(serde_json::Value::as_u64) == Some(1)
+                    ) {
+                        let source_id = context.get("sourceConversationId")
+                            .and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "Human forward source identity is missing".to_string())?;
+                        let request_id = context.get("requestId")
+                            .and_then(serde_json::Value::as_str)
+                            .ok_or_else(|| "Human forward request identity is missing".to_string())?;
+                        let source_owner = self.open_human_conversation_db_owner(source_id)?;
+                        let (account, issuer) = self.human_forward_scope()?;
+                        if normalized_attachments.len() > 6 {
+                            return Err("Human forward exceeds the six-attachment backend limit".into());
+                        }
+                        // Validate the complete target before any resource
+                        // POST, then consume those exact buffers. This is
+                        // bounded by six files of at most 32 MiB each and
+                        // cannot reopen a changed path after preflight.
+                        let mut verified = Vec::with_capacity(normalized_attachments.len());
+                        for (index, attachment) in normalized_attachments.iter().enumerate() {
+                            verified.push(read_forward_attachment_bytes(
+                                &source_owner, &account, &issuer, request_id, index, attachment,
+                            )?);
+                        }
+                        Some(verified.into_iter())
+                    } else {
+                        None
+                    };
                     for attachment in &normalized_attachments {
                         let path = attachment.get("path").and_then(serde_json::Value::as_str)
                             .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
                         let name = attachment.get("name").and_then(serde_json::Value::as_str)
                             .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
-                        uploaded.push(client.upload_direct_message_resource_for_user(std::path::Path::new(path), name, sender_id)?);
+                        let resource = if let Some(buffers) = forward_bytes.as_mut() {
+                            let bytes = buffers.next().ok_or_else(||
+                                "Human forward attachment preflight omitted a buffer".to_string())?;
+                            // Use the verified buffer itself. Reopening its
+                            // path in the uploader would reintroduce the race.
+                            client.upload_direct_message_resource_bytes_for_user(bytes, name, sender_id)?
+                        } else {
+                            client.upload_direct_message_resource_for_user(std::path::Path::new(path), name, sender_id)?
+                        };
+                        uploaded.push(resource);
                     }
                 }
                 if let Some(object) = pending_entry.as_object_mut() {

@@ -39,6 +39,7 @@ type Controls = {
   readonly reopen: () => void;
   readonly close: () => void;
   readonly replaceSource: (messageId: string) => void;
+  readonly refreshMessage: () => void;
   readonly refreshCredential: () => void;
 };
 let controls: Controls | null = null;
@@ -50,6 +51,7 @@ function Fixture() {
   const scope = useRef(1);
   const [open, setOpen] = useState(true);
   const [messageId, setMessageId] = useState("message-1");
+  const [messageRefresh, setMessageRefresh] = useState(0);
   const [credentialRefresh, setCredentialRefresh] = useState(0);
   const accountRef = useRef<string | null>(account);
   useForwardAccountScopeUnmountFence(scope);
@@ -57,8 +59,8 @@ function Fixture() {
     value === scope.current && accountRef.current != null, []);
   const message = useMemo<TranscriptMessage>(() => ({
     id: messageId, kind: "message", role: "user", author: "You",
-    text: "Forward this message", timestampMs: 1,
-  }), [messageId]);
+    text: "Forward this message", timestampMs: 1 + messageRefresh,
+  }), [messageId, messageRefresh]);
   controls = {
     generation,
     scope,
@@ -72,6 +74,7 @@ function Fixture() {
     reopen: () => { if (accountRef.current != null) setOpen(true); },
     close: () => setOpen(false),
     replaceSource: (nextId) => setMessageId(nextId),
+    refreshMessage: () => setMessageRefresh((value) => value + 1),
     refreshCredential: () => setCredentialRefresh((value) => value + 1),
   };
   return <div data-account={account ?? "signed-out"} data-credential-refresh={credentialRefresh} data-generation={generation}>
@@ -93,22 +96,26 @@ Object.assign(window, {
     requests: () => [...calls],
     events: () => [...events],
     pending: () => [...pending.keys()],
-    resolve: (id: string, value: unknown) => {
+    resolve: async (id: string, value: unknown) => {
       const item = pending.get(id);
       if (item == null) throw new Error(`unrecognized controlled request: ${id}`);
       pending.delete(id);
       item.resolve(value);
+      // Let consumers render before a negative assertion reads the new scope.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     },
-    reject: (id: string, reason: string) => {
+    reject: async (id: string, reason: string) => {
       const item = pending.get(id);
       if (item == null) throw new Error(`unrecognized controlled request: ${id}`);
       pending.delete(id);
       item.reject(new Error(reason));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     },
     switchAccount: (account: string | null) => controls?.switchAccount(account),
     reopen: () => controls?.reopen(),
     close: () => controls?.close(),
     replaceSource: (id: string) => controls?.replaceSource(id),
+    refreshMessage: () => controls?.refreshMessage(),
     refreshCredential: () => controls?.refreshCredential(),
     setTheme: (mode: "light" | "dark") => themeInstaller.update(mode),
     unmount: () => {

@@ -454,11 +454,45 @@ impl FabushiNativeMessagingClient {
         name: &str,
         expected_user_id: Option<&str>,
     ) -> Result<FabushiRemoteHumanAttachment, String> {
+        const MAX_RESOURCE_BYTES: u64 = 32 * 1024 * 1024;
         let name = required_trimmed(name, "attachment name")?;
-        let bytes = fs::read(path)
+        let metadata = fs::symlink_metadata(path)
+            .map_err(|error| format!("Fabushi Human attachment could not be inspected: {error}"))?;
+        if !metadata.file_type().is_file() || metadata.len() > MAX_RESOURCE_BYTES {
+            return Err("Fabushi Human attachment must be a regular file within the 32 MiB backend limit".into());
+        }
+        let file = fs::File::open(path)
             .map_err(|error| format!("Fabushi Human attachment could not be read from {}: {error}", path.display()))?;
+        if !file.metadata().map_err(|error| error.to_string())?.is_file() {
+            return Err("Fabushi Human attachment must be a regular file".into());
+        }
+        let mut bytes = Vec::new();
+        file.take(MAX_RESOURCE_BYTES + 1).read_to_end(&mut bytes)
+            .map_err(|error| format!("Fabushi Human attachment could not be read: {error}"))?;
+        self.upload_direct_message_resource_bytes_bound(bytes, name, expected_user_id)
+    }
+
+    pub(super) fn upload_direct_message_resource_bytes_for_user(
+        &self,
+        bytes: Vec<u8>,
+        name: &str,
+        expected_user_id: &str,
+    ) -> Result<FabushiRemoteHumanAttachment, String> {
+        self.upload_direct_message_resource_bytes_bound(bytes, name, Some(expected_user_id))
+    }
+
+    fn upload_direct_message_resource_bytes_bound(
+        &self,
+        bytes: Vec<u8>,
+        name: &str,
+        expected_user_id: Option<&str>,
+    ) -> Result<FabushiRemoteHumanAttachment, String> {
+        let name = required_trimmed(name, "attachment name")?;
         if bytes.is_empty() {
             return Err("Fabushi Human attachment is empty".into());
+        }
+        if bytes.len() > 32 * 1024 * 1024 {
+            return Err("Fabushi Human attachment exceeds the 32 MiB backend limit".into());
         }
         let credentials = self.read_bound_credentials()?;
         Self::ensure_bound_user(&credentials, expected_user_id)?;

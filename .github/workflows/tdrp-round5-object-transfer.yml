@@ -20,11 +20,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = a35e51575a9786c1e89694c170f7eb1e6c5f2467
+          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = 81e9d4009231b07d78a851cbdff3a4cc0ef29796
           git apply --check .github/round5-ledger-transfer.patch
           git apply .github/round5-ledger-transfer.patch
           test "$(git diff --name-only)" = projects/telegram-desktop-rust/parity-ledger.json
-          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = b7f5215d20068e83dd8d8d4dd2aba6d627ddee0d
+          test "$(git hash-object projects/telegram-desktop-rust/parity-ledger.json)" = dddeddcfc3429de9cf86b89986b389e56abd7c0f
       - name: Upload the exact frozen blob without moving any migration ref
         id: upload
         env:
@@ -36,9 +36,9 @@ jobs:
           from pathlib import Path
           import hashlib, json, os, urllib.request
           data = Path('projects/telegram-desktop-rust/parity-ledger.json').read_bytes()
-          expected = 'b7f5215d20068e83dd8d8d4dd2aba6d627ddee0d'
+          expected = 'dddeddcfc3429de9cf86b89986b389e56abd7c0f'
           actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-          if actual != expected or len(data) != 3541710:
+          if actual != expected or len(data) != 3551058:
               raise SystemExit('frozen ledger identity mismatch')
           body = json.dumps({'content': data.decode('utf-8'), 'encoding': 'utf-8'}).encode()
           request = urllib.request.Request(
