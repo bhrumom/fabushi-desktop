@@ -21,6 +21,10 @@ use super::box_store_pack_pipeline::{
 use super::box_store_sync::{
     DEFAULT_COPY_IN_CONCURRENCY, DOWNLOAD_IN_FLIGHT_BYTE_BUDGET, LARGE_OBJECT_THRESHOLD_BYTES,
 };
+use crate::durable_file_policy::{
+    HOST_CONFIG_REVISION_KEY_FILE_NAME, is_host_config_revision_key_file_name,
+};
+use crate::host_paths::SAND_BOX_DATA_ROOT;
 use crate::r#box::box_transfer::{for_each_bounded, for_each_wave_pipelined};
 
 pub const COPY_IN_LARGE_BLOB_CONCURRENCY: usize = 4;
@@ -89,6 +93,478 @@ fn lexical_normalize(path: &Path) -> PathBuf {
         }
     }
     out
+}
+
+const INSTALLATION_KEY_RESTORE_REFUSED: &str =
+    "manifest may replace installation revision key material";
+const RESTORE_ALIAS_PREFLIGHT_LIMIT: usize = 256;
+const RESTORE_STAGED_KEY_IDENTITY_LIMIT: usize = 32;
+const RESTORE_PROTECTED_PARENT_LIMIT: usize = 256;
+const RESTORE_DELETE_ENTRY_LIMIT: usize = 16_384;
+const RESTORE_DELETE_DEPTH_LIMIT: usize = 64;
+
+// Compare the actual destination namespace, including case and Win32 filename
+// aliases. These identities are only used for the exclusion, never for writes.
+fn restore_boundary_identity(path: &Path) -> PathBuf {
+    let normalized = lexical_normalize(path);
+    let mut identity = PathBuf::new();
+    for component in normalized.components() {
+        match component {
+            Component::Normal(name) => {
+                let name = name.to_string_lossy().to_ascii_lowercase();
+                #[cfg(windows)]
+                let name = name
+                    .split(':')
+                    .next()
+                    .unwrap_or_default()
+                    .trim_end_matches([' ', '.']);
+                identity.push(name);
+            }
+            other => identity.push(other.as_os_str()),
+        }
+    }
+    identity
+}
+
+fn path_contains_installation_key(path: &Path, data_root: &Path) -> bool {
+    path.strip_prefix(data_root)
+        .ok()
+        .and_then(|relative| relative.components().next())
+        .is_some_and(|component| {
+            matches!(component, Component::Normal(name)
+                if name.to_str().is_some_and(is_host_config_revision_key_file_name))
+        })
+}
+
+fn absolute_symlink_target(link: &Path, target: &Path) -> PathBuf {
+    if target.is_absolute() {
+        target.to_path_buf()
+    } else {
+        link.parent().unwrap_or(Path::new("")).join(target)
+    }
+}
+
+fn existing_restore_identity(path: &Path) -> Result<Option<same_file::Handle>, &'static str> {
+    match fs::metadata(path) {
+        // Do not open FIFOs/devices while inspecting a restore. Neither can be
+        // a regular-file local hit or an existing directory alias.
+        Ok(metadata) if metadata.is_file() || metadata.is_dir() => {
+            same_file::Handle::from_path(path)
+                .map(Some)
+                .map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)
+        }
+        Ok(_) => Ok(None),
+        Err(error) if matches!(error.kind(),
+            std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory
+        ) => Ok(None),
+        Err(_) => Err(INSTALLATION_KEY_RESTORE_REFUSED),
+    }
+}
+
+// Shared only by the existing download/transfer owners. The caller supplies
+// trusted local roots; portable manifest paths never choose this boundary.
+pub(super) struct InstallationKeyMaterial {
+    roots: Vec<(PathBuf, Option<same_file::Handle>)>,
+    keys: Vec<same_file::Handle>,
+    staged_keys: Vec<same_file::Handle>,
+}
+
+impl InstallationKeyMaterial {
+    pub(super) fn new(data_roots: &[PathBuf]) -> Result<Self, &'static str> {
+        // Restore has at most the portable root and the actual installation;
+        // transfer supplies only the captured actual installation root.
+        if data_roots.len() > 2 {
+            return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+        }
+        let mut material = Self {
+            roots: Vec::new(),
+            keys: Vec::new(),
+            staged_keys: Vec::new(),
+        };
+        for data_root in data_roots {
+            let root_handle = existing_restore_identity(data_root)?;
+            let already_scanned = root_handle.as_ref().is_some_and(|candidate| {
+                material.roots.iter().any(|(_, handle)| handle.as_ref() == Some(candidate))
+            });
+            material.roots.push((restore_boundary_identity(data_root), root_handle));
+            if already_scanned {
+                continue;
+            }
+            if let Some(key) = existing_restore_identity(&data_root.join(HOST_CONFIG_REVISION_KEY_FILE_NAME))? {
+                material.keys.push(key);
+            }
+            let entries = match fs::read_dir(data_root) {
+                Ok(entries) => Some(entries),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+                Err(_) => return Err(INSTALLATION_KEY_RESTORE_REFUSED),
+            };
+            if let Some(entries) = entries {
+                for entry in entries {
+                    let entry = entry.map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)?;
+                    let name = restore_boundary_identity(Path::new(&entry.file_name()));
+                    let Some(name) = name.file_name().and_then(|name| name.to_str()) else {
+                        continue;
+                    };
+                    if name == HOST_CONFIG_REVISION_KEY_FILE_NAME
+                        || !is_host_config_revision_key_file_name(name)
+                    {
+                        continue;
+                    }
+                    if material.staged_keys.len() == RESTORE_STAGED_KEY_IDENTITY_LIMIT {
+                        return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+                    }
+                    let handle = existing_restore_identity(&entry.path())?
+                        .ok_or(INSTALLATION_KEY_RESTORE_REFUSED)?;
+                    material.staged_keys.push(handle);
+                }
+            }
+        }
+        Ok(material)
+    }
+
+    fn contains_identity(&self, candidate: &same_file::Handle) -> bool {
+        self.keys.iter().chain(&self.staged_keys).any(|key| key == candidate)
+    }
+
+    pub(super) fn contains_portable_path(relative: &str) -> bool {
+        path_contains_installation_key(
+            &restore_boundary_identity(Path::new(relative)),
+            Path::new(SAND_BOX_DATA_ROOT.trim_start_matches('/')),
+        )
+    }
+
+    pub(super) fn excludes_path(&self, path: &Path) -> Result<bool, &'static str> {
+        if self.roots.iter().any(|(root, _)| {
+            path_contains_installation_key(&restore_boundary_identity(path), root)
+        }) {
+            return Ok(true);
+        }
+        if self.roots.is_empty() {
+            return Ok(false);
+        }
+        if let Some(candidate) = existing_restore_identity(path)? {
+            if self.contains_identity(&candidate) {
+                return Ok(true);
+            }
+        }
+        // A bind-mounted data directory may expose a not-yet-published key
+        // name. Compare its parent identity as well as existing file identity.
+        let name = restore_boundary_identity(path);
+        if name.file_name().and_then(|name| name.to_str())
+            .is_some_and(is_host_config_revision_key_file_name)
+        {
+            if let Some(parent) = path.parent() {
+                if let Some(candidate) = existing_restore_identity(parent)? {
+                    return Ok(self.roots.iter().any(|(_, handle)| {
+                        handle.as_ref() == Some(&candidate)
+                    }));
+                }
+            }
+        }
+        Ok(false)
+    }
+}
+
+struct RestoreNativeIdentities {
+    parents: Vec<(PathBuf, same_file::Handle)>,
+    material: InstallationKeyMaterial,
+    aliases: HashMap<PathBuf, Vec<PathBuf>>,
+}
+
+impl RestoreNativeIdentities {
+    fn new(data_roots: &[PathBuf]) -> Result<Self, &'static str> {
+        let material = InstallationKeyMaterial::new(data_roots)?;
+        let mut parents = Vec::new();
+        let mut seen = HashSet::new();
+        for data_root in data_roots {
+            for path in data_root.ancestors() {
+                let path = if path.as_os_str().is_empty() { Path::new(".") } else { path };
+                if !seen.insert(path.to_path_buf()) {
+                    continue;
+                }
+                if seen.len() > RESTORE_PROTECTED_PARENT_LIMIT {
+                    return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+                }
+                if let Some(handle) = existing_restore_identity(path)? {
+                    parents.push((path.to_path_buf(), handle));
+                }
+            }
+        }
+        Ok(Self {
+            parents,
+            material,
+            aliases: HashMap::new(),
+        })
+    }
+
+    fn parent_aliases(&mut self, path: &Path) -> Result<&[PathBuf], &'static str> {
+        if !self.aliases.contains_key(path) {
+            let mut aliases = Vec::new();
+            if let Some(candidate) = existing_restore_identity(path)? {
+                if self.material.contains_identity(&candidate) {
+                    return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+                }
+                for (parent, handle) in &self.parents {
+                    if *handle == candidate {
+                        aliases.push(parent.clone());
+                    }
+                }
+                // candidate closes here. Cached path mappings retain no file
+                // handle, and all native comparisons kept both handles open.
+            }
+            self.aliases.insert(path.to_path_buf(), aliases);
+        }
+        Ok(self.aliases.get(path).expect("cached native aliases"))
+    }
+
+    fn protects_identity(&self, candidate: &same_file::Handle) -> bool {
+        self.material.contains_identity(candidate)
+            || self.parents.iter().any(|(_, handle)| handle == candidate)
+    }
+}
+
+// Keep both the directory and symlink alternatives: restore may replace a
+// parent link, and manifest symlinks are published concurrently. Retain raw
+// `..` components until after expanding links as well as the lexical identity.
+struct RestorePathAliases {
+    identities: HashSet<PathBuf>,
+    paths: HashSet<PathBuf>,
+}
+
+fn restore_path_aliases(
+    path: &Path,
+    follow_leaf: bool,
+    manifest_links: &HashMap<PathBuf, Vec<PathBuf>>,
+    existing_links: &mut HashMap<PathBuf, Option<PathBuf>>,
+    native: &mut RestoreNativeIdentities,
+) -> Result<RestorePathAliases, &'static str> {
+    let mut pending = VecDeque::from([path.to_path_buf()]);
+    let mut visited = HashSet::new();
+    let mut identities = HashSet::new();
+    while let Some(candidate) = pending.pop_front() {
+        if !visited.insert(candidate.clone()) {
+            continue;
+        }
+        if visited.len() > RESTORE_ALIAS_PREFLIGHT_LIMIT {
+            return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+        }
+        identities.insert(restore_boundary_identity(&candidate));
+        let normalized = lexical_normalize(&candidate);
+        if normalized != candidate {
+            pending.push_back(normalized);
+        }
+        for (depth, prefix) in candidate.ancestors().enumerate() {
+            if depth >= RESTORE_ALIAS_PREFLIGHT_LIMIT {
+                return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+            }
+            if prefix.as_os_str().is_empty() {
+                continue;
+            }
+            let suffix = candidate.strip_prefix(prefix).expect("path ancestor");
+            for parent in native.parent_aliases(prefix)? {
+                pending.push_back(parent.join(suffix));
+            }
+        }
+        for prefix in candidate.ancestors().skip(usize::from(!follow_leaf)) {
+            if prefix.as_os_str().is_empty() {
+                continue;
+            }
+            let suffix = candidate.strip_prefix(prefix).expect("path ancestor");
+            if let Some(targets) = manifest_links.get(&restore_boundary_identity(prefix)) {
+                pending.extend(targets.iter().map(|target| target.join(suffix)));
+            }
+            if !existing_links.contains_key(prefix) {
+                let target = match fs::symlink_metadata(prefix) {
+                    Ok(metadata) if metadata.file_type().is_symlink() => Some(
+                        absolute_symlink_target(
+                            prefix,
+                            &fs::read_link(prefix)
+                                .map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)?,
+                        ),
+                    ),
+                    Ok(_) => None,
+                    Err(error) if matches!(error.kind(),
+                        std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory
+                    ) => None,
+                    Err(_) => return Err(INSTALLATION_KEY_RESTORE_REFUSED),
+                };
+                existing_links.insert(prefix.to_path_buf(), target);
+            }
+            if let Some(Some(target)) = existing_links.get(prefix) {
+                pending.push_back(target.join(suffix));
+            }
+        }
+    }
+    Ok(RestorePathAliases { identities, paths: visited })
+}
+
+fn preflight_installation_key_restore(
+    target_root: &Path,
+    manifest: &BTreeMap<String, BoxStoreManifestEntry>,
+    installation_data_root: Option<&Path>,
+) -> Result<(), &'static str> {
+    let portable_root = resolve_restore_destination(
+        target_root,
+        SAND_BOX_DATA_ROOT.trim_start_matches('/'),
+    )
+    .ok_or(INSTALLATION_KEY_RESTORE_REFUSED)?;
+    let mut data_roots = vec![portable_root];
+    if let Some(actual_root) = installation_data_root {
+        if actual_root.as_os_str().is_empty() {
+            return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+        }
+        let actual_root = if actual_root.is_absolute() {
+            actual_root.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)?
+                .join(actual_root)
+        };
+        if !data_roots.contains(&actual_root) {
+            data_roots.push(actual_root);
+        }
+    }
+    let data_identities = data_roots.iter().map(|root| restore_boundary_identity(root))
+        .collect::<Vec<_>>();
+    let mut destinations = Vec::new();
+    let mut manifest_links = HashMap::<PathBuf, Vec<PathBuf>>::new();
+    for (relative, entry) in manifest {
+        let Some(destination) = resolve_restore_destination(target_root, relative) else {
+            continue;
+        };
+        let identity = restore_boundary_identity(&destination);
+        // Every entry is a file or symlink; installing an ancestor removes the
+        // protected directory recursively, even when the key is not listed.
+        if data_identities.iter().any(|data| {
+            data.starts_with(&identity) || path_contains_installation_key(&identity, data)
+        }) {
+            return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+        }
+        let target = match entry {
+            BoxStoreManifestEntry::Symlink { target }
+                if symlink_target_stays_within_root(target_root, &destination, target) =>
+            {
+                let target = absolute_symlink_target(&destination, Path::new(target));
+                manifest_links.entry(identity).or_default().push(target.clone());
+                Some(target)
+            }
+            _ => None,
+        };
+        let installs = entry.is_file() || target.is_some();
+        destinations.push((destination, target, installs));
+    }
+
+    let mut existing_links = HashMap::new();
+    let mut native = RestoreNativeIdentities::new(&data_roots)?;
+    let mut data_aliases = HashSet::new();
+    for data_root in &data_roots {
+        data_aliases.extend(restore_path_aliases(
+            data_root,
+            true,
+            &HashMap::new(),
+            &mut existing_links,
+            &mut native,
+        )?.identities);
+    }
+    let root_identity = restore_boundary_identity(target_root);
+    let protected_parent_links = data_roots.iter()
+        .flat_map(|root| root.ancestors())
+        .filter(|parent| restore_boundary_identity(parent).starts_with(&root_identity))
+        .filter(|parent| existing_links.get(*parent).is_some_and(Option::is_some))
+        .map(restore_boundary_identity)
+        .collect::<Vec<_>>();
+
+    let mut removal_entries = 0usize;
+    for (destination, target, installs) in destinations {
+        let aliases = restore_path_aliases(
+            &destination,
+            false,
+            &manifest_links,
+            &mut existing_links,
+            &mut native,
+        )?;
+        if aliases.identities.iter().any(|alias| {
+            data_aliases.iter().any(|data| {
+                data.starts_with(alias) || path_contains_installation_key(alias, data)
+            }) || protected_parent_links.iter().any(|parent| alias.starts_with(parent))
+        }) {
+            return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+        }
+        if installs {
+            // Include concrete manifest-link alternatives: concurrent symlink
+            // publication can select one during the later symlink phase.
+            for path in &aliases.paths {
+                preflight_recursive_removal(path, &native, &mut removal_entries)?;
+            }
+        }
+        if let Some(target) = target {
+            let aliases = restore_path_aliases(
+                &target,
+                true,
+                &manifest_links,
+                &mut existing_links,
+                &mut native,
+            )?;
+            if aliases.identities.iter().any(|alias| {
+                data_aliases.iter().any(|data| path_contains_installation_key(alias, data))
+            }) {
+                return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn preflight_recursive_removal(
+    destination: &Path,
+    native: &RestoreNativeIdentities,
+    entries_queued: &mut usize,
+) -> Result<(), &'static str> {
+    match fs::symlink_metadata(destination) {
+        Ok(metadata) if metadata.is_dir() => {}
+        Ok(_) => return Ok(()),
+        Err(error) if matches!(error.kind(),
+            std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory
+        ) => return Ok(()),
+        Err(_) => return Err(INSTALLATION_KEY_RESTORE_REFUSED),
+    }
+    *entries_queued += 1;
+    if *entries_queued > RESTORE_DELETE_ENTRY_LIMIT {
+        return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+    }
+    let mut pending = vec![(destination.to_path_buf(), 0usize)];
+    while let Some((path, depth)) = pending.pop() {
+        let metadata = fs::symlink_metadata(&path)
+            .map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)?;
+        // remove_dir_all unlinks symlinks rather than visiting their targets.
+        if metadata.file_type().is_symlink() {
+            continue;
+        }
+        if metadata.is_dir() || metadata.is_file() {
+            let candidate = existing_restore_identity(&path)?
+                .ok_or(INSTALLATION_KEY_RESTORE_REFUSED)?;
+            if native.protects_identity(&candidate) {
+                return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+            }
+            // Drop the candidate before opening a directory iterator. The
+            // traversal retains no per-entry native handles.
+        }
+        if metadata.is_dir() {
+            let entries = fs::read_dir(&path)
+                .map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)?;
+            for entry in entries {
+                let path = entry.map_err(|_| INSTALLATION_KEY_RESTORE_REFUSED)?.path();
+                *entries_queued += 1;
+                if depth == RESTORE_DELETE_DEPTH_LIMIT
+                    || *entries_queued > RESTORE_DELETE_ENTRY_LIMIT
+                {
+                    return Err(INSTALLATION_KEY_RESTORE_REFUSED);
+                }
+                pending.push((path, depth + 1));
+            }
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Default)]
@@ -215,6 +691,9 @@ pub struct BoxStoreDownloadOptions {
     pub large_object_threshold: u64,
     pub download_byte_budget: u64,
     pub owner: Option<(u32, u32)>,
+    /// Trusted actual installation directory, in addition to the portable
+    /// target-root/home/box/sand-data namespace. Never read from a manifest.
+    pub installation_data_root: Option<PathBuf>,
     pub on_progress: Option<Arc<dyn Fn(BoxStoreDownloadProgress) + Send + Sync>>,
     pub on_trace: Option<Arc<dyn Fn(BoxStoreDownloadTrace) + Send + Sync>>,
     pub on_log: Option<Arc<dyn Fn(String) + Send + Sync>>,
@@ -227,6 +706,7 @@ impl Default for BoxStoreDownloadOptions {
             large_object_threshold: LARGE_OBJECT_THRESHOLD_BYTES,
             download_byte_budget: DOWNLOAD_IN_FLIGHT_BYTE_BUDGET,
             owner: None,
+            installation_data_root: None,
             on_progress: None,
             on_trace: None,
             on_log: None,
@@ -1294,6 +1774,17 @@ pub fn download_manifest(
     manifest: &BTreeMap<String, BoxStoreManifestEntry>,
     options: BoxStoreDownloadOptions,
 ) -> BoxStoreDownloadSummary {
+    if let Err(error) = preflight_installation_key_restore(
+        target_root,
+        manifest,
+        options.installation_data_root.as_deref(),
+    ) {
+        return BoxStoreDownloadSummary {
+            manifest_entries: manifest.len(),
+            failures: vec![error.to_string()],
+            ..BoxStoreDownloadSummary::default()
+        };
+    }
     if let Err(error) = fs::create_dir_all(target_root) {
         return BoxStoreDownloadSummary {
             manifest_entries: manifest.len(),

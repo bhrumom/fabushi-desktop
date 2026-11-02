@@ -5991,10 +5991,11 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Load a single valid settings source, preserve unreadable/invalid existing bytes on rejected mutation, stage and publish through the existing atomic rename path, and return the exact commit receipt before callbacks.",
+      "behavior": "Load a single valid settings source, preserve unreadable/invalid existing bytes on rejected mutation, stage and publish through the existing atomic rename path, and return the exact commit receipt before callbacks. Public Settings responses additionally mask credentials and use installation-key HMAC revisions; masked saves restore inside the same writer, and responses retain their captured commit after callbacks.",
       "blocker_ids": [
         "OCRM-CONFIG-CAS-EXACT-H-EVIDENCE",
-        "OCRM-CONFIG-FULL-SOURCE-AND-PROTOCOL-ACCEPTANCE"
+        "OCRM-CONFIG-FULL-SOURCE-AND-PROTOCOL-ACCEPTANCE",
+        "OCRM-CONFIG-PUBLIC-SECRET-EXACT-H-EVIDENCE"
       ],
       "capability_ids": [
         "config.io_snapshot"
@@ -6006,7 +6007,13 @@
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
         "source/host/tests/settings_service_contract.rs",
         "projects/openclaw-rust/docs/specs/config-settings-atomic-commit.md",
-        "projects/openclaw-rust/dossiers/config-settings-scoped.md"
+        "projects/openclaw-rust/dossiers/config-settings-scoped.md",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+        "source/host/src/extensions/settings/public_projection.rs",
+        "source/host/src/host_secret_store.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -6028,9 +6035,9 @@
       "id": "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
       "integration": {
         "consumer": "ProductionInferenceSettings / ProductionAgentInferenceOwner; HostRosterBookkeeping::apply_current_settings; existing Settings subscribers",
-        "entrypoint": "SettingsService::set_host_settings_if_current",
+        "entrypoint": "SettingsService::get_public_host_settings_snapshot / set_public_host_settings_if_current / existing trusted setters",
         "owner": "source/host/src/extensions/settings/settings_service.rs",
-        "producer": "source/host/app/src/main.rs::call_openclaw_config_set (existing setHostSettings also retained)"
+        "producer": "source/host/app/src/main.rs::dispatch_public_settings_command via config.get/config.set/getHostSettings/setHostSettings; trusted internal consumers retain existing interfaces"
       },
       "invariants": [
         "Partial or failed writes never overwrite active settings.json on disk"
@@ -6085,12 +6092,19 @@
         "source/host/tests/settings_service_contract.rs::test_ocrm_config_o04_io_atomic_snapshot",
         "source/host/tests/settings_service_contract.rs::conditional_unreadable_source_rejects_candidate_and_leaves_no_commit_event",
         "source/host/tests/settings_service_contract.rs::invalid_sources_are_not_replaced_by_getter_normalization_or_settings_writers",
-        "source/host/tests/settings_service_contract.rs::stale_account_snapshot_cannot_restore_cleared_models_and_restart_reads_the_commit"
+        "source/host/tests/settings_service_contract.rs::stale_account_snapshot_cannot_restore_cleared_models_and_restart_reads_the_commit",
+        "source/host/tests/settings_service_contract.rs::public_settings_owner_contract",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs"
       ],
       "typed_contracts": [
         "SettingsService::load_checked() -> Result<Map<String, Value>, String>",
         "SettingsService::persist(&Map<String, Value>, &MutexGuard<()>) -> io::Result<()>",
-        "HostSettingsSnapshot { settings, hash, config_source }"
+        "HostSettingsSnapshot { settings, hash, config_source }",
+        "OCRM-CONFIG-PUBLIC-SECRET-v1 (CS-01 through CS-09)",
+        "PublicHostSettingsSnapshot / PublicHostSettingsCommit / PublicHostSettingsError",
+        "HostConfigRevisionKey: installation-local, domain-separated opaque revision projection"
       ],
       "unit_id": "OCRM-UNIT-CONFIG-001"
     },
@@ -6317,7 +6331,13 @@
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
         "source/host/tests/settings_service_contract.rs",
         "projects/openclaw-rust/docs/specs/config-settings-atomic-commit.md",
-        "projects/openclaw-rust/dossiers/config-settings-scoped.md"
+        "projects/openclaw-rust/dossiers/config-settings-scoped.md",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+        "source/host/src/extensions/settings/public_projection.rs",
+        "source/host/src/host_secret_store.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -6330,7 +6350,7 @@
         "consumer": "ProductionInferenceSettings / ProductionAgentInferenceOwner; HostRosterBookkeeping::apply_current_settings; existing Settings subscribers",
         "entrypoint": "SettingsService::set_host_settings_if_current",
         "owner": "source/host/src/extensions/settings/settings_service.rs",
-        "producer": "source/host/app/src/main.rs::call_openclaw_config_set (existing setHostSettings also retained)"
+        "producer": "source/host/app/src/main.rs::dispatch_public_settings_command plus existing trusted Settings writers"
       },
       "invariants": [
         "Only one writer thread can hold settings mutation lock at any given instant"
@@ -6401,7 +6421,8 @@
       "typed_contracts": [
         "SettingsService write_lock Mutex serialization",
         "SettingsService::set_host_settings_if_current(Option<&str>, Value) -> Result<HostSettingsSnapshot, HostSettingsUpdateError>",
-        "SettingsCommitNotification queue: enqueue under writer; drain callbacks outside writer/queue locks in commit order"
+        "SettingsCommitNotification queue: enqueue under writer; drain callbacks outside writer/queue locks in commit order",
+        "Public optional baseHash compares the HMAC of the unredacted normalized snapshot under the same writer before restoring masks; internal SHA CAS remains unchanged"
       ],
       "unit_id": "OCRM-UNIT-CONFIG-001"
     },

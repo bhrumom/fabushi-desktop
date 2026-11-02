@@ -1,5 +1,5 @@
 use std::fs::{self, OpenOptions};
-use std::io;
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -7,11 +7,188 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use ed25519_dalek::{Signer, SigningKey};
 use fs2::FileExt;
+use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::host_paths::{get_host_node_auth_path, get_host_secrets_path};
+use crate::host_paths::{
+    get_host_config_revision_key_path, get_host_node_auth_path, get_host_secrets_path,
+};
+
+const CONFIG_REVISION_KEY_BYTES: usize = 32;
+const CONFIG_REVISION_NORMALIZED_DOMAIN: &str = "fabushi.gateway.config-revision.normalized.v1";
+const CONFIG_REVISION_RAW_DOMAIN: &str = "fabushi.gateway.config-revision.raw.v1";
+
+/// Installation-local key material is deliberately not printable, serializable,
+/// or exposed to callers. Only domain-separated public revisions leave the owner.
+pub struct HostConfigRevisionKey {
+    bytes: [u8; CONFIG_REVISION_KEY_BYTES],
+}
+
+impl HostConfigRevisionKey {
+    pub fn project_normalized_hash(&self, internal_hash: &str) -> String {
+        self.project(CONFIG_REVISION_NORMALIZED_DOMAIN, internal_hash)
+    }
+
+    pub fn project_raw_hash(&self, internal_hash: &str) -> String {
+        self.project(CONFIG_REVISION_RAW_DOMAIN, internal_hash)
+    }
+
+    fn project(&self, domain: &str, internal_hash: &str) -> String {
+        let input = serde_json::to_vec(&[domain, internal_hash])
+            .expect("config revision input serializes");
+        let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(&self.bytes)
+            .expect("HMAC accepts a 32-byte key");
+        mac.update(&input);
+        format!("hmac-sha256:v1:{}", URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes()))
+    }
+}
+
+fn invalid_config_revision_key() -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, "config revision key is not a regular 32-byte file")
+}
+
+fn read_config_revision_key(path: &Path) -> io::Result<Option<HostConfigRevisionKey>> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error),
+    };
+    if !metadata.file_type().is_file() || metadata.len() != CONFIG_REVISION_KEY_BYTES as u64 {
+        return Err(invalid_config_revision_key());
+    }
+
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        // Reject a symlink/FIFO swap between metadata and open without blocking.
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        // FILE_FLAG_OPEN_REPARSE_POINT: inspect the entry, never its link target.
+        options.custom_flags(0x0020_0000);
+    }
+    let mut file = options.open(path)?;
+    let opened = file.metadata()?;
+    if !opened.file_type().is_file() || opened.len() != CONFIG_REVISION_KEY_BYTES as u64 {
+        return Err(invalid_config_revision_key());
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if metadata.dev() != opened.dev() || metadata.ino() != opened.ino() {
+            return Err(invalid_config_revision_key());
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        // Reject all reparse points, including ones without a symlink tag.
+        if opened.file_attributes() & 0x0400 != 0 {
+            return Err(invalid_config_revision_key());
+        }
+    }
+    let mut bytes = [0_u8; CONFIG_REVISION_KEY_BYTES];
+    file.read_exact(&mut bytes)?;
+    let mut trailing = [0_u8; 1];
+    if file.read(&mut trailing)? != 0 {
+        return Err(invalid_config_revision_key());
+    }
+    Ok(Some(HostConfigRevisionKey { bytes }))
+}
+
+struct StagedConfigRevisionKey {
+    path: PathBuf,
+    file: Option<fs::File>,
+    bytes: [u8; CONFIG_REVISION_KEY_BYTES],
+}
+
+impl Drop for StagedConfigRevisionKey {
+    fn drop(&mut self) {
+        drop(self.file.take());
+        // Only this operation's create_new file is owned here. A failed cleanup
+        // remains covered by the same portable-state exclusion as active staging.
+        let _ = fs::remove_file(&self.path);
+    }
+}
+
+fn stage_config_revision_key(
+    path: &Path,
+    bytes: [u8; CONFIG_REVISION_KEY_BYTES],
+) -> io::Result<StagedConfigRevisionKey> {
+    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        let mut builder = fs::DirBuilder::new();
+        builder.recursive(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt;
+            builder.mode(0o700);
+        }
+        builder.create(parent)?;
+    }
+    let mut name = path.file_name().ok_or_else(invalid_config_revision_key)?.to_os_string();
+    name.push(format!(".{}.tmp", Uuid::new_v4().simple()));
+    let temporary = path.with_file_name(name);
+    let mut options = OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let file = options.open(&temporary)?;
+    let mut staged = StagedConfigRevisionKey { path: temporary, file: Some(file), bytes };
+    let file = staged.file.as_mut().expect("staged key owns its open file");
+    file.write_all(&staged.bytes)?;
+    file.sync_all()?;
+    drop(staged.file.take());
+    Ok(staged)
+}
+
+fn publish_config_revision_key(
+    path: &Path,
+    staged: StagedConfigRevisionKey,
+) -> io::Result<HostConfigRevisionKey> {
+    match fs::hard_link(&staged.path, path) {
+        Ok(()) => {
+            #[cfg(unix)]
+            {
+                let parent = path.parent().filter(|parent| !parent.as_os_str().is_empty())
+                    .unwrap_or_else(|| Path::new("."));
+                fs::File::open(parent)?.sync_all()?;
+            }
+            Ok(HostConfigRevisionKey { bytes: staged.bytes })
+        }
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+            // Never replace a winner or silently repair an invalid existing key.
+            read_config_revision_key(path)?.ok_or_else(|| {
+                io::Error::new(io::ErrorKind::NotFound, "config revision key disappeared during creation")
+            })
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// Load an installation key or atomically publish one fully written candidate.
+/// Every call reads the requested path; corrupt/unreadable keys never rotate.
+pub fn load_or_create_host_config_revision_key(
+    path: Option<&Path>,
+) -> io::Result<HostConfigRevisionKey> {
+    let path = path.map(Path::to_path_buf).unwrap_or_else(get_host_config_revision_key_path);
+    if let Some(key) = read_config_revision_key(&path)? {
+        return Ok(key);
+    }
+    let mut bytes = [0_u8; CONFIG_REVISION_KEY_BYTES];
+    getrandom::fill(&mut bytes)
+        .map_err(|_| io::Error::other("could not generate config revision key"))?;
+    let staged = stage_config_revision_key(&path, bytes)?;
+    publish_config_revision_key(&path, staged)
+}
 
 static MACHINE_ID_CACHE: OnceLock<Mutex<Option<String>>> = OnceLock::new();
 
@@ -522,5 +699,88 @@ fn temp_path_for(path: &Path) -> PathBuf {
 pub fn clear_host_machine_id_cache_for_tests() {
     if let Ok(mut cache) = machine_id_cache().lock() {
         *cache = None;
+    }
+}
+
+#[cfg(test)]
+mod config_revision_key_publication_tests {
+    use super::*;
+    use crate::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
+
+    struct PrivateRoot(PathBuf);
+
+    impl PrivateRoot {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!(
+                "fabushi-revision-publication-{}", Uuid::new_v4().simple()
+            ));
+            let mut builder = fs::DirBuilder::new();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::DirBuilderExt;
+                builder.mode(0o700);
+            }
+            builder.create(&path).expect("create owned private publication fixture");
+            Self(path)
+        }
+    }
+
+    impl Drop for PrivateRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn staged_config_revision_keys_publish_without_overwrite_and_loser_rereads() {
+        let root = PrivateRoot::new();
+        let path = root.0.join(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+        let first_bytes = [0x21_u8; 32];
+        let second_bytes = [0x43_u8; 32];
+        let first = stage_config_revision_key(&path, first_bytes).expect("stage first candidate");
+        let second = stage_config_revision_key(&path, second_bytes).expect("stage second candidate");
+        let first_temporary = first.path.clone();
+        let second_temporary = second.path.clone();
+        assert!(!path.exists(), "staging must not expose an incomplete final key");
+        for temporary in [&first_temporary, &second_temporary] {
+            let metadata = fs::metadata(temporary).expect("staged metadata");
+            assert_eq!(metadata.len(), 32);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                assert_eq!(metadata.permissions().mode() & 0o777, 0o600);
+            }
+        }
+        let winner = publish_config_revision_key(&path, first).expect("publish first candidate");
+        let loser = publish_config_revision_key(&path, second).expect("reread published winner");
+        assert_eq!(winner.project_raw_hash("race"), loser.project_raw_hash("race"));
+        assert!(fs::read(&path).expect("read winner") == first_bytes, "loser replaced winner bytes");
+        assert!(!first_temporary.exists());
+        assert!(!second_temporary.exists());
+
+        let third = stage_config_revision_key(&path, second_bytes).expect("stage later candidate");
+        let third_temporary = third.path.clone();
+        fs::write(&path, b"corrupt-winner").expect("corrupt owned winner");
+        assert!(publish_config_revision_key(&path, third).is_err(), "corrupt winner must not rotate");
+        assert!(fs::read(&path).expect("read corrupt winner") == b"corrupt-winner");
+        assert!(!third_temporary.exists());
+    }
+
+    #[test]
+    fn staged_config_revision_key_failure_cleans_only_its_candidate() {
+        let root = PrivateRoot::new();
+        let path = root.0.join(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+        let candidate = stage_config_revision_key(&path, [0x65_u8; 32]).expect("stage owned candidate");
+        let temporary = candidate.path.clone();
+        let other_temporary = root.0.join(format!("{HOST_CONFIG_REVISION_KEY_FILE_NAME}.other.tmp"));
+        fs::write(&other_temporary, b"other-operation").expect("seed ownership control");
+        fs::create_dir(&path).expect("block final key publication");
+        let marker = path.join("marker");
+        fs::write(&marker, b"keep-directory").expect("seed blocked destination");
+
+        assert!(publish_config_revision_key(&path, candidate).is_err());
+        assert!(fs::read(&marker).expect("destination control") == b"keep-directory");
+        assert!(fs::read(&other_temporary).expect("unowned temporary control") == b"other-operation");
+        assert!(!temporary.exists(), "failed publication retained its own candidate");
     }
 }

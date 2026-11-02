@@ -1478,6 +1478,79 @@ fn visit_upgrade_resume_markers_checked(
     Ok(accepted)
 }
 
+// All complete Settings responses cross this shipping adapter. The callback
+// keeps existing trusted commit consumers outside the transport projection.
+fn dispatch_public_settings_command(
+    settings: &SettingsService,
+    method: &str,
+    args: &serde_json::Value,
+    on_committed: impl FnOnce(&serde_json::Value, bool),
+) -> Result<serde_json::Value, GatewayCommandError> {
+    if matches!(method, "config.get" | "getHostSettings") {
+        let snapshot = settings.get_public_host_settings_snapshot()
+            .map_err(GatewayCommandError::from)?;
+        if method == "getHostSettings" {
+            return Ok(snapshot.settings);
+        }
+        let matches = args.get("baseHash").and_then(serde_json::Value::as_str)
+            .map(|candidate| candidate == snapshot.hash);
+        let mut result = serde_json::json!({
+            "config": snapshot.settings.clone(),
+            "settings": snapshot.settings,
+            "hash": snapshot.hash,
+            "configSource": snapshot.config_source,
+        });
+        if let Some(matches) = matches {
+            result["matches"] = serde_json::json!(matches);
+        }
+        return Ok(result);
+    }
+    if !matches!(method, "config.set" | "setHostSettings") {
+        return Err(GatewayCommandError::UnknownMethod(method.into()));
+    }
+    let parsed_raw = if method == "config.set" {
+        args.get("raw").and_then(serde_json::Value::as_str)
+            .map(|raw| serde_json::from_str::<serde_json::Value>(raw)
+                .map_err(|_| GatewayCommandError::BadRequest("malformed json in raw".into())))
+            .transpose()?
+    } else {
+        None
+    };
+    let target = if method == "setHostSettings" {
+        args
+    } else {
+        parsed_raw.as_ref().or_else(|| args.get("config")).or_else(|| args.get("settings"))
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "config.set requires raw, config, or settings".into(),
+            ))?
+    };
+    if method == "config.set" && !target.is_object() {
+        return Err(GatewayCommandError::BadRequest(
+            "config.set target must be a JSON object".into(),
+        ));
+    }
+    let permission_changed = target.get("localToolPermission").is_some();
+    let base_hash = if method == "config.set" {
+        args.get("baseHash").and_then(serde_json::Value::as_str)
+    } else {
+        None
+    };
+    let committed = settings.set_public_host_settings_if_current(base_hash, target.clone())
+        .map_err(GatewayCommandError::from)?;
+    on_committed(&committed.trusted_settings, permission_changed);
+    let snapshot = committed.snapshot;
+    if method == "setHostSettings" {
+        return Ok(snapshot.settings);
+    }
+    Ok(serde_json::json!({
+        "ok": true,
+        "config": snapshot.settings.clone(),
+        "settings": snapshot.settings,
+        "hash": snapshot.hash,
+        "configSource": snapshot.config_source,
+    }))
+}
+
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     auth: Arc<HostAuthExtension>,
@@ -3930,72 +4003,35 @@ impl UnifiedGatewayApi {
         }
     }
 
+    fn call_public_settings_command(
+        &self,
+        method: &str,
+        args: &serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        dispatch_public_settings_command(&self.settings, method, args, |trusted, permission_changed| {
+            report_agent_roster_security_findings(trusted);
+            self.roster_bookkeeping
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .apply_current_settings(&self.settings);
+            if permission_changed {
+                self.local_tool_permission.note_permission_changed();
+            }
+        })
+    }
+
     fn call_openclaw_config_get(
         &self,
         args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let snapshot = self.settings.get_host_settings_snapshot();
-        let settings = snapshot.settings;
-        let hash = snapshot.hash;
-        let matches = args.get("baseHash")
-            .and_then(serde_json::Value::as_str)
-            .map(|bh| bh == hash);
-
-        let mut res = serde_json::json!({
-            "settings": settings.clone(),
-            "config": settings,
-            "hash": hash,
-            "configSource": snapshot.config_source,
-        });
-        if let Some(m) = matches {
-            res["matches"] = serde_json::json!(m);
-        }
-        Ok(res)
+        self.call_public_settings_command("config.get", args)
     }
 
     fn call_openclaw_config_set(
         &self,
         args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let parsed_raw: Option<serde_json::Value> = if let Some(raw) = args.get("raw").and_then(serde_json::Value::as_str) {
-            Some(serde_json::from_str(raw).map_err(|e| GatewayCommandError::BadRequest(format!("malformed json in raw: {e}")))?)
-        } else {
-            None
-        };
-        let target = parsed_raw.as_ref()
-            .or_else(|| args.get("config"))
-            .or_else(|| args.get("settings"))
-            .ok_or_else(|| GatewayCommandError::BadRequest(
-                "config.set requires raw, config, or settings".into(),
-            ))?;
-        if !target.is_object() {
-            return Err(GatewayCommandError::BadRequest(
-                "config.set target must be a JSON object".into(),
-            ));
-        }
-
-        let permission_changed = target.get("localToolPermission").is_some();
-        let snapshot = self.settings.set_host_settings_if_current(
-            args.get("baseHash").and_then(serde_json::Value::as_str),
-            target.clone(),
-        ).map_err(GatewayCommandError::from)?;
-        let result = snapshot.settings;
-        report_agent_roster_security_findings(&result);
-        self.roster_bookkeeping
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .apply_current_settings(&self.settings);
-        if permission_changed {
-            self.local_tool_permission.note_permission_changed();
-        }
-
-        Ok(serde_json::json!({
-            "ok": true,
-            "config": result.clone(),
-            "settings": result,
-            "hash": snapshot.hash,
-            "configSource": snapshot.config_source,
-        }))
+        self.call_public_settings_command("config.set", args)
     }
 
     fn call_openclaw_system_info(
@@ -14084,23 +14120,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(map_local_tool_permission_resolution_error)?;
             return Ok(serde_json::Value::Null);
         }
-        if method == "getHostSettings" {
-            let settings = self.settings.get_host_settings();
-            return Ok(settings);
-        }
-        if method == "setHostSettings" {
-            let permission_changed = args.get("localToolPermission").is_some();
-            let result = self.settings.set_host_settings(&args)
-                .map_err(|error| GatewayCommandError::Internal(format!("Failed to persist settings: {error}")))?;
-            report_agent_roster_security_findings(&result);
-            self.roster_bookkeeping
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .apply_current_settings(&self.settings);
-            if permission_changed {
-                self.local_tool_permission.note_permission_changed();
-            }
-            return Ok(result);
+        if matches!(method, "getHostSettings" | "setHostSettings") {
+            return self.call_public_settings_command(method, &args);
         }
         call_host_lane(&self.host_tx, method, args)
     }
@@ -17306,6 +17327,9 @@ mod tests {
 
     #[path = "channel_inbound_readiness_tests.rs"]
     mod channel_inbound_readiness_tests;
+
+    #[path = "config_secret_boundary_tests.rs"]
+    mod config_secret_boundary_tests;
 
     use super::{
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,

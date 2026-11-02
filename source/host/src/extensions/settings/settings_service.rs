@@ -12,6 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::{SecondsFormat, Utc};
 use chrono_tz::Tz;
 use serde_json::{Map, Value, json};
+use subtle::ConstantTimeEq;
 
 use crate::agents::agent_roster::{
     apply_implicit_agent_roster_defaults, collect_agent_entries,
@@ -21,6 +22,14 @@ use crate::agents::agent_roster::{
 use crate::extensions::secrets::audit_manager::SecretsAuditManager;
 use crate::host_diagnostics::report_diagnostic_event;
 use crate::host_paths::get_sand_root_dir;
+use crate::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
+use crate::host_secret_store::{
+    HostConfigRevisionKey, load_or_create_host_config_revision_key,
+};
+use super::public_projection::{
+    is_marker as is_public_redaction_marker, redact_public_settings,
+    restore_public_settings_update,
+};
 
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES: usize = 20;
@@ -42,7 +51,11 @@ fn collect_secret_audit_findings(settings: &Map<String, Value>) -> Vec<Value> {
         .collect()
 }
 
-fn apply_skill_config_update(settings: &mut Map<String, Value>, update: &Value) {
+fn apply_skill_config_update(
+    settings: &mut Map<String, Value>,
+    update: &Value,
+    submitted_public_update: Option<&Value>,
+) {
     let Some(skill_update) = update.as_object() else {
         return;
     };
@@ -75,11 +88,20 @@ fn apply_skill_config_update(settings: &mut Map<String, Value>, update: &Value) 
             *current = json!({});
         }
         let current_object = current.as_object_mut().expect("skill entry object");
+        // The public owner has already validated/restored this submission under
+        // its writer lock. A marker means preserve the stored bytes, not a new
+        // explicit value to trim (or an empty value to remove).
+        let submitted = submitted_public_update
+            .and_then(|value| value.get("entries"))
+            .and_then(|entries| entries.get(skill_key));
 
         if let Some(enabled) = requested.get("enabled").and_then(Value::as_bool) {
             current_object.insert("enabled".into(), Value::Bool(enabled));
         }
-        if let Some(api_key) = requested.get("apiKey").and_then(Value::as_str) {
+        if let Some(api_key) = requested.get("apiKey").and_then(Value::as_str)
+            .filter(|_| !submitted.and_then(|value| value.get("apiKey"))
+                .is_some_and(is_public_redaction_marker))
+        {
             let api_key = api_key.trim();
             if api_key != REDACTED_SECRET_SENTINEL {
                 if api_key.is_empty() {
@@ -98,6 +120,12 @@ fn apply_skill_config_update(settings: &mut Map<String, Value>, update: &Value) 
             }
             let env_object = env.as_object_mut().expect("skill env object");
             for (key, value) in requested_env {
+                if submitted.and_then(|value| value.get("env"))
+                    .and_then(|env| env.get(key))
+                    .is_some_and(is_public_redaction_marker)
+                {
+                    continue;
+                }
                 let Some(value) = value.as_str() else {
                     continue;
                 };
@@ -129,6 +157,56 @@ pub struct HostSettingsSnapshot {
     pub settings: Value,
     pub hash: String,
     pub config_source: Value,
+}
+
+/// The only complete Settings snapshot intended for an RPC/UI response.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PublicHostSettingsSnapshot {
+    pub settings: Value,
+    pub hash: String,
+    pub config_source: Value,
+}
+
+/// Keep trusted commit consumers separate from the public response projection.
+/// This type deliberately has no serialization implementation.
+pub struct PublicHostSettingsCommit {
+    pub snapshot: PublicHostSettingsSnapshot,
+    pub trusted_settings: Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum PublicHostSettingsError {
+    #[error("config baseHash mismatch")]
+    Conflict,
+    #[error("configuration update rejected")]
+    Rejected,
+    #[error("configuration revision key is unavailable")]
+    KeyUnavailable,
+}
+
+impl From<HostSettingsUpdateError> for PublicHostSettingsError {
+    fn from(error: HostSettingsUpdateError) -> Self {
+        match error {
+            HostSettingsUpdateError::Conflict { .. } => Self::Conflict,
+            HostSettingsUpdateError::Rejected(_) => Self::Rejected,
+        }
+    }
+}
+
+fn public_host_settings_snapshot(
+    snapshot: &HostSettingsSnapshot,
+    key: &HostConfigRevisionKey,
+) -> PublicHostSettingsSnapshot {
+    let mut config_source = snapshot.config_source.clone();
+    if let Some(raw_hash) = config_source.get("rawHash").and_then(Value::as_str) {
+        let projected = key.project_raw_hash(raw_hash);
+        config_source["rawHash"] = Value::String(projected);
+    }
+    PublicHostSettingsSnapshot {
+        settings: redact_public_settings(&snapshot.settings),
+        hash: key.project_normalized_hash(&snapshot.hash),
+        config_source,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -1262,6 +1340,40 @@ impl SettingsService {
         self.get_host_settings_snapshot().settings
     }
 
+    fn load_public_revision_key(&self) -> Result<HostConfigRevisionKey, PublicHostSettingsError> {
+        // The installation root follows the actual Settings owner, including
+        // private test installations. No process-global key or identity cache.
+        let path = self.settings_path.with_file_name(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+        load_or_create_host_config_revision_key(Some(&path))
+            .map_err(|_| PublicHostSettingsError::KeyUnavailable)
+    }
+
+    pub fn get_public_host_settings_snapshot(
+        &self,
+    ) -> Result<PublicHostSettingsSnapshot, PublicHostSettingsError> {
+        // This must precede the trusted getter's possible normalization write.
+        let key = self.load_public_revision_key()?;
+        let snapshot = self.get_host_settings_snapshot();
+        Ok(public_host_settings_snapshot(&snapshot, &key))
+    }
+
+    pub fn set_public_host_settings_if_current(
+        &self,
+        base_hash: Option<&str>,
+        update: Value,
+    ) -> Result<PublicHostSettingsCommit, PublicHostSettingsError> {
+        let key = self.load_public_revision_key()?;
+        let committed = self.commit_host_settings(base_hash, update, Some(&key))
+            .map_err(PublicHostSettingsError::from)?;
+        // Pure projection of this captured commit, even if a listener committed
+        // a newer document while the existing notification queue was draining.
+        let snapshot = public_host_settings_snapshot(&committed, &key);
+        Ok(PublicHostSettingsCommit {
+            snapshot,
+            trusted_settings: committed.settings,
+        })
+    }
+
     /// Capture the normalized configuration and source provenance under this
     /// owner's writer lock. Invalid sources retain legacy default projections
     /// with invalid source metadata and are never normalized back to disk.
@@ -1292,15 +1404,27 @@ impl SettingsService {
         base_hash: Option<&str>,
         update: Value,
     ) -> Result<HostSettingsSnapshot, HostSettingsUpdateError> {
+        self.commit_host_settings(base_hash, update, None)
+    }
+
+    fn commit_host_settings(
+        &self,
+        base_hash: Option<&str>,
+        update: Value,
+        public_key: Option<&HostConfigRevisionKey>,
+    ) -> Result<HostSettingsSnapshot, HostSettingsUpdateError> {
         let guard = self.write_lock.lock().unwrap();
         let mut settings = self
             .load_checked()
             .map_err(|error| HostSettingsUpdateError::Rejected(error.to_string()))?;
         let current = host_settings_snapshot(&settings, self.get_config_source_metadata());
         if let Some(base_hash) = base_hash {
-            if base_hash != current.hash {
+            let expected = public_key
+                .map(|key| key.project_normalized_hash(&current.hash))
+                .unwrap_or_else(|| current.hash.clone());
+            if !bool::from(base_hash.as_bytes().ct_eq(expected.as_bytes())) {
                 return Err(HostSettingsUpdateError::Conflict {
-                    expected: current.hash,
+                    expected,
                     actual: base_hash.to_string(),
                 });
             }
@@ -1310,6 +1434,15 @@ impl SettingsService {
                 "Config is externally managed or marked readOnly; mutations are not allowed".into(),
             ));
         }
+        let submitted_public_skills = public_key
+            .and_then(|_| update.get("skills"))
+            .cloned();
+        let update = if public_key.is_some() {
+            restore_public_settings_update(&update, &current.settings)
+                .map_err(|message| HostSettingsUpdateError::Rejected(message.into()))?
+        } else {
+            update
+        };
         let Some(update) = update.as_object() else {
             self.normalize_notifications_locked(&mut settings, &guard);
             return Ok(host_settings_snapshot(
@@ -1348,7 +1481,7 @@ impl SettingsService {
             }
         }
         if let Some(value) = update.get("skills") {
-            apply_skill_config_update(&mut settings, value);
+            apply_skill_config_update(&mut settings, value, submitted_public_skills.as_ref());
         }
 
         settings.insert("notifications".into(), json!({ "isEnabled": false }));

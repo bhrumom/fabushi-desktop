@@ -175,12 +175,25 @@ jobs:
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         run: cargo test --manifest-path source/host/Cargo.toml
+      - name: Check affected Native workspace dependency integration
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo check --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
       - name: Test OCRM Settings transaction and inference consumers
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         run: |
           set -euo pipefail
           cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
+            --test host_secret_store_contract \
+            --test host_foundation_contract \
+            --test box_store_download_frozen_parity_contract \
+            --test box_store_transfer_frozen_parity_contract \
+            --test box_copy_in_production_wiring_contract \
+            --test box_store_sync_production_wiring_contract \
             --test settings_service_contract \
             --test openclaw_sessions_and_config_contract \
             --test inference_extension_composition_contract \
@@ -202,6 +215,12 @@ jobs:
           admission_status=0
           if cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host --no-run; then
             for admission_test in \
+              tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests \
+              tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization \
+              tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers \
+              tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry \
+              tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret \
+              tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization \
               tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects \
               tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce \
               tests::upgrade_marker_handoff_preserves_kickstart_intent_on_failure \
@@ -353,6 +372,10 @@ jobs:
           if cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               host_lock::physical_guard_tests \
+              extensions::settings::public_projection::tests \
+              host_secret_store::config_revision_key_publication_tests \
+              extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key \
+              extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material \
               extensions::session::typed_replay::tests \
               extensions::session::production_agent_store::checked_state_tests \
               extensions::session::agent_db::fresh_append_tests \
@@ -552,8 +575,15 @@ jobs:
               "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "runner_os": os.environ["RUNNER_OS"],
               "shipping_host_check": "passed",
-              "owner_contract_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract", "extensions_auth_service_contract", "inference_codex_direct_contract", "inference_provider_session_contract", "runner_production_bridge_contract", "fabushi_model_identity_production_contract", "fabushi_responses_credential_context_contract"],
+              "native_workspace_lock_check": "cargo check --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib; committed lock unchanged",
+              "owner_contract_targets": ["host_secret_store_contract", "host_foundation_contract", "box_store_download_frozen_parity_contract", "settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract", "extensions_auth_service_contract", "inference_codex_direct_contract", "inference_provider_session_contract", "runner_production_bridge_contract", "fabushi_model_identity_production_contract", "fabushi_responses_credential_context_contract"],
               "owner_contract_result": "passed",
+              "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
+              "config_public_secret_app_tests": ["tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization", "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests", "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers", "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry", "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret", "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization"],
+              "config_public_secret_library_filters": ["extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
+              "config_public_secret_owner_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "host_secret_store_contract", "host_foundation_contract", "box_store_download_frozen_parity_contract", "box_store_transfer_frozen_parity_contract", "box_copy_in_production_wiring_contract", "box_store_sync_production_wiring_contract"],
+              "config_public_secret_result": "passed",
+              "config_public_secret_scope": "Real shipping dispatcher and filesystem Settings owner cover four public routes, exact masked skill bytes, opaque normalized/raw revisions, same-owner CAS, commit receipts and key lifetime. Existing backup/restore owners cover actual installation-root propagation, key exclusion and bounded pre-mutation identity/deletion refusal. Real Linux mounted-descendant execution has a separate required job and receipt on this H; this macOS receipt does not assert its result. These handler/state-machine checks are not live client/auth compatibility, cross-process Settings transactions, external namespace mutation exclusion, complete schema hints or secret-provider resolution acceptance.",
               "model_identity_contract": "OCRM-MODEL-IDENTITY-v1",
               "fabushi_credential_context_contract": "OCRM-FABUSHI-CREDENTIAL-CONTEXT-v1",
               "fabushi_credential_context_result": "passed",
@@ -667,6 +697,165 @@ jobs:
         with:
           name: ocrm-config-${{ env.FABUSHI_TARGET_SHA }}
           path: .evidence/ocrm-config.json
+          if-no-files-found: error
+          retention-days: 90
+
+  config-restore-linux:
+    name: OCRM installation key restore boundary / Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/source/host/target
+      RESTORE_EVIDENCE_DIR: ${{ runner.temp }}/ocrm-config-restore-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind exact restore test subject
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$FABUSHI_TARGET_SHA"
+          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$actual" = "$EXPECTED_DISPATCH_SHA" || { echo "Dispatch ref moved away from frozen subject"; exit 1; }
+          fi
+          mkdir -p "$RESTORE_EVIDENCE_DIR"
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          upstream=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())["upstream"]
+          binding={
+              "contract": "OCRM-CONFIG-PUBLIC-SECRET-v1:CS06-ROOT/DELETE",
+              "subject_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: upstream[key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "independent_acceptance": "pending",
+          }
+          assert binding["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+          Path(os.environ["RESTORE_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(binding, indent=2)+"\n")
+          PY
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Install canonical Linux native Computer build prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Compile locked restore contracts as the ordinary runner user
+        id: config_restore_compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(id -u)" -ne 0
+          cargo test --locked --manifest-path source/host/Cargo.toml \
+            --test box_store_download_frozen_parity_contract --no-run --message-format=json \
+            > "$RESTORE_EVIDENCE_DIR/compiler-artifacts.jsonl"
+          git diff --exit-code -- source/host/Cargo.lock
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          root=Path(os.environ["RESTORE_EVIDENCE_DIR"])
+          candidates=set()
+          for line in (root/"compiler-artifacts.jsonl").read_text().splitlines():
+              if not line.startswith("{"):
+                  continue
+              item=json.loads(line)
+              if (item.get("reason") == "compiler-artifact"
+                      and item.get("target", {}).get("name") == "box_store_download_frozen_parity_contract"
+                      and item.get("target", {}).get("kind") == ["test"]
+                      and item.get("profile", {}).get("test") is True
+                      and item.get("executable")):
+                  candidates.add(item["executable"])
+          assert len(candidates) == 1, "Expected exactly one actual restore contract executable"
+          binary=Path(candidates.pop()).resolve(strict=True)
+          target=Path(os.environ["CARGO_TARGET_DIR"]).resolve(strict=True)
+          assert binary.is_file() and binary.is_relative_to(target), "Unexpected compiler executable boundary"
+          sha256=lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          compiled={
+              "command": ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml", "--test", "box_store_download_frozen_parity_contract", "--no-run", "--message-format=json"],
+              "exit_code": 0,
+              "executable": str(binary),
+              "executable_sha256": sha256(binary),
+              "manifest_sha256": sha256("source/host/Cargo.toml"),
+              "lock_sha256": sha256("source/host/Cargo.lock"),
+              "compiler_artifacts_sha256": sha256(root/"compiler-artifacts.jsonl"),
+              "rustc": subprocess.check_output(["rustc", "-Vv"], text=True),
+              "cargo": subprocess.check_output(["cargo", "-V"], text=True).strip(),
+              "compiler_uid": os.geteuid(),
+          }
+          (root/"compiled.json").write_text(json.dumps(compiled, indent=2)+"\n")
+          PY
+      - name: Exercise ordinary restore and real mounted descendants
+        id: config_restore_execution
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          root=Path(os.environ["RESTORE_EVIDENCE_DIR"])
+          compiled=json.loads((root/"compiled.json").read_text())
+          binary=Path(compiled["executable"])
+          assert os.geteuid() != 0, "Ordinary permission oracles must not run as root"
+          assert hashlib.sha256(binary.read_bytes()).hexdigest() == compiled["executable_sha256"]
+          cases=[("ordinary", [str(binary), "--nocapture"], None)]
+          for name in (
+              "linux_bind_mounted_descendant_file_restore_boundary",
+              "linux_bind_mounted_descendant_symlink_restore_boundary",
+          ):
+              cases.append((name, ["sudo", "-n", "unshare", "--mount", "--propagation", "private", "--",
+                  str(binary), "--exact", name, "--ignored", "--nocapture"], name))
+          results=[]
+          for label, command, exact in cases:
+              log=root/(label+".log")
+              print("Executing "+json.dumps(command), flush=True)
+              with log.open("wb") as output:
+                  completed=subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
+              raw=log.read_bytes()
+              text=raw.decode("utf-8", errors="replace")
+              print(text, flush=True)
+              summaries=re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)
+              counts=tuple(map(int, summaries[-1])) if summaries else None
+              accepted=completed.returncode == 0 and counts is not None and counts[0] > 0 and counts[1] == 0
+              if exact is not None:
+                  accepted=accepted and counts == (1, 0, 0) and f"test {exact} ... ok" in text
+              results.append({
+                  "case": label, "command": command, "exit_code": completed.returncode,
+                  "passed": counts[0] if counts else None,
+                  "failed": counts[1] if counts else None,
+                  "ignored": counts[2] if counts else None,
+                  "oracle_accepted": accepted,
+                  "log": log.name, "log_sha256": hashlib.sha256(raw).hexdigest(),
+              })
+              receipt={
+                  **json.loads((root/"subject.json").read_text()),
+                  "compiled": compiled, "executions": results,
+                  "result": "passed" if len(results) == len(cases) and all(item["oracle_accepted"] for item in results) else "failed-or-incomplete",
+                  "scope": "Ordinary restore contracts plus real private-namespace bind-mounted descendant file/symlink replacements, using synthetic installation keys and owned fixtures. Missing privileges fail execution. This is not exclusion of concurrent external namespace mutation or full backup/client compatibility acceptance.",
+              }
+              (root/"execution.json").write_text(json.dumps(receipt, indent=2)+"\n")
+          raise SystemExit(0 if all(item["oracle_accepted"] for item in results) else 1)
+          PY
+      - name: Upload exact-subject Linux restore evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-config-restore-linux-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ocrm-config-restore-${{ github.run_id }}-${{ github.run_attempt }}/
           if-no-files-found: error
           retention-days: 90
 

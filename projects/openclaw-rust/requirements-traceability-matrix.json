@@ -81,7 +81,13 @@
         "source/host/tests/transcript_manager_contract.rs",
         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
         "source/host/src/host_lock.rs",
-        "source/host/tests/bootstrap_contract.rs"
+        "source/host/tests/bootstrap_contract.rs",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+        "source/host/src/extensions/settings/public_projection.rs",
+        "source/host/src/host_secret_store.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -434,7 +440,13 @@
         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
         "source/shared/node/mcp/mcp-manager.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
-        "source/electron-main/mcp/mcp-runtime.ts"
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+        "source/host/src/extensions/settings/public_projection.rs",
+        "source/host/src/host_secret_store.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -1241,7 +1253,13 @@
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "source/host/tests/runner_effect_custody_contract.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
-        "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs"
+        "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+        "source/host/src/extensions/settings/public_projection.rs",
+        "source/host/src/host_secret_store.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC05",
@@ -1699,7 +1717,13 @@
         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
         "source/shared/node/mcp/mcp-manager.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
-        "source/electron-main/mcp/mcp-runtime.ts"
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+        "source/host/src/extensions/settings/public_projection.rs",
+        "source/host/src/host_secret_store.rs",
+        "source/host/tests/host_secret_store_contract.rs",
+        "source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",

@@ -1268,3 +1268,999 @@ fn test_ocrm_roster_include_write_guard_is_server_owned_and_fail_closed() {
     let _ = fs::remove_file(target_include_path);
 }
 
+// OCRM-CONFIG-PUBLIC-SECRET-v1: exercise the real Settings transaction owner.
+// These fixtures never share an installation directory or revision-key path.
+mod public_settings_owner_contract {
+    use std::collections::BTreeMap;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::{Arc, Barrier, Mutex, mpsc};
+    use std::time::Duration;
+
+    use mahayana_host_runtime::extensions::settings::settings_service::{
+        HostSettingsUpdateError, PublicHostSettingsCommit, PublicHostSettingsError,
+        PublicHostSettingsSnapshot, SettingsService, SettingsSubscription,
+    };
+    use mahayana_host_runtime::sha256::sha256_hex;
+    use serde_json::{Value, json};
+    use uuid::Uuid;
+
+    const MASK: &str = "[REDACTED]";
+    const UPSTREAM_MASK: &str = "__OPENCLAW_REDACTED__";
+    const AGENT_A: &str = "synthetic-agent-a";
+    const AGENT_B: &str = "synthetic-agent-b";
+    const SKILL_KEY: &str = "synthetic-skill-key";
+    const SKILL_ENV: &str = "synthetic-skill-env";
+    const LOCAL_ENV: &str = "synthetic-local-env";
+    const PRIVATE_URL: &str = "https://fixture:synthetic-url@example.invalid/callback";
+
+    struct Installation {
+        root: PathBuf,
+    }
+
+    impl Installation {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-public-settings-{}", Uuid::new_v4().simple()
+            ));
+            let mut builder = fs::DirBuilder::new();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::DirBuilderExt;
+                builder.mode(0o700);
+            }
+            // Exclusive creation is the ownership proof for recursive cleanup.
+            builder.create(&root).expect("create private settings installation");
+            Self { root }
+        }
+
+        fn seeded(value: &Value) -> Self {
+            let installation = Self::new();
+            installation.write(value);
+            installation
+        }
+
+        fn settings_path(&self) -> PathBuf {
+            self.root.join("settings.json")
+        }
+
+        fn key_path(&self) -> PathBuf {
+            self.root.join("host-config-revision-key.bin")
+        }
+
+        fn write(&self, value: &Value) {
+            let bytes = serde_json::to_vec(value).expect("serialize synthetic settings fixture");
+            fs::write(self.settings_path(), bytes).expect("write owned settings fixture");
+        }
+
+        fn bytes(&self) -> Vec<u8> {
+            fs::read(self.settings_path()).expect("read owned settings fixture")
+        }
+
+        fn stored(&self) -> Value {
+            serde_json::from_slice(&self.bytes()).expect("read valid owned settings document")
+        }
+
+        fn owner(&self) -> SettingsService {
+            SettingsService::new(self.settings_path())
+        }
+    }
+
+    impl Drop for Installation {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[derive(Clone, PartialEq)]
+    enum Notice {
+        Changes(Vec<String>),
+        TimeZone(Option<String>),
+        Features(BTreeMap<String, bool>),
+    }
+
+    struct Observers {
+        notices: Arc<Mutex<Vec<Notice>>>,
+        _changes: SettingsSubscription<dyn Fn(Vec<String>) + Send + Sync + 'static>,
+        _time_zone: SettingsSubscription<dyn Fn(Option<String>) + Send + Sync + 'static>,
+        _features: SettingsSubscription<dyn Fn(BTreeMap<String, bool>) + Send + Sync + 'static>,
+    }
+
+    impl Observers {
+        fn new(owner: &SettingsService) -> Self {
+            let notices = Arc::new(Mutex::new(Vec::new()));
+            let sink = Arc::clone(&notices);
+            let changes = owner.subscribe_to_changes(Arc::new(move |fields| {
+                sink.lock().expect("record settings notice").push(Notice::Changes(fields));
+            }));
+            let sink = Arc::clone(&notices);
+            let time_zone = owner.subscribe_to_user_time_zone(Arc::new(move |zone| {
+                sink.lock().expect("record timezone notice").push(Notice::TimeZone(zone));
+            }));
+            let sink = Arc::clone(&notices);
+            let features = owner.subscribe_to_feature_flag_overrides(Arc::new(move |flags| {
+                sink.lock().expect("record feature notice").push(Notice::Features(flags));
+            }));
+            Self { notices, _changes: changes, _time_zone: time_zone, _features: features }
+        }
+
+        fn captured(&self) -> Vec<Notice> {
+            self.notices.lock().expect("read settings notices").clone()
+        }
+
+        fn commit_count(&self) -> usize {
+            self.captured().iter().filter(|notice| matches!(notice, Notice::Changes(_))).count()
+        }
+    }
+
+    fn source_document() -> Value {
+        json!({
+            "version": 1,
+            "notifications": {"isEnabled": false},
+            "agents": {"ownership": "explicit", "list": [
+                {"id": "alpha", "default": true, "name": "Alpha", "apiKey": AGENT_A,
+                 "model": {"provider": "openrouter", "modelId": "org/model"},
+                 "maxTokens": 4096, "tokenBudget": 128, "passwordFile": "local-password.txt",
+                 "localService": {"command": "fixture-service", "env": {"PLAIN_NAME": LOCAL_ENV}},
+                 "callback": PRIVATE_URL},
+                {"id": "beta", "name": "Beta", "apiKey": AGENT_B}
+            ]},
+            "skills": {"entries": {"demo": {
+                "enabled": true, "apiKey": SKILL_KEY,
+                "env": {"PLAIN_NAME": SKILL_ENV, "maxTokens": "synthetic-env-budget"},
+                "extension": {"keep": true}
+            }}},
+            "inferenceProvider": "openrouter",
+            "agentDefaultModel": {"provider": "openrouter", "modelId": "org/model",
+                                  "maxMode": true, "parameters": []},
+            "localToolPermission": "ask", "userTimeZone": "UTC",
+            "pinnedAgentIds": ["alpha"],
+            "unrelatedStoredExtension": {"keep": [1, 2]}
+        })
+    }
+
+    fn snapshot(owner: &SettingsService) -> PublicHostSettingsSnapshot {
+        match owner.get_public_host_settings_snapshot() {
+            Ok(snapshot) => snapshot,
+            Err(_) => panic!("expected a readable public settings snapshot"),
+        }
+    }
+
+    fn commit(owner: &SettingsService, token: Option<&str>, update: Value) -> PublicHostSettingsCommit {
+        match owner.set_public_host_settings_if_current(token, update) {
+            Ok(receipt) => receipt,
+            Err(_) => panic!("expected a valid public settings transaction"),
+        }
+    }
+
+    fn assert_token(token: &str) {
+        let encoded = token.strip_prefix("hmac-sha256:v1:")
+            .expect("public revisions must use the versioned opaque format");
+        assert!(encoded.len() == 43 && encoded.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_')
+        }), "public revisions must contain one unpadded base64url SHA-256 MAC");
+    }
+
+    fn assert_no_disclosure(snapshot: &PublicHostSettingsSnapshot, hidden: &[&str]) {
+        let serialized = serde_json::to_string(&json!({
+            "settings": &snapshot.settings, "hash": &snapshot.hash,
+            "configSource": &snapshot.config_source
+        })).expect("serialize complete public owner response");
+        for value in hidden {
+            assert!(!serialized.contains(*value), "complete public snapshot disclosed a protected value");
+        }
+        assert_token(&snapshot.hash);
+        if let Some(raw_hash) = snapshot.config_source["rawHash"].as_str() {
+            assert_token(raw_hash);
+        }
+    }
+
+    fn reject_without_effects(
+        installation: &Installation,
+        owner: &SettingsService,
+        observers: &Observers,
+        token: Option<&str>,
+        update: Value,
+        expected: PublicHostSettingsError,
+    ) {
+        let before = installation.bytes();
+        let before_notices = observers.captured();
+        let result = owner.set_public_host_settings_if_current(token, update);
+        let error = result.err().expect("the invalid public transaction must be rejected");
+        let message = match &expected {
+            PublicHostSettingsError::Conflict => "config baseHash mismatch",
+            PublicHostSettingsError::Rejected => "configuration update rejected",
+            PublicHostSettingsError::KeyUnavailable => "configuration revision key is unavailable",
+        };
+        assert!(error == expected && error.to_string() == message,
+            "public transaction must return only its bounded static error category and message");
+        assert!(installation.bytes() == before, "rejected transaction changed settings bytes");
+        assert!(observers.captured() == before_notices, "rejected transaction notified an observer");
+    }
+
+    #[test]
+    fn masked_save_reopens_with_original_agent_skill_and_environment_values() {
+        let installation = Installation::seeded(&source_document());
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let before = snapshot(&owner);
+        let trusted = owner.get_host_settings_snapshot();
+        assert_no_disclosure(&before, &[
+            AGENT_A, AGENT_B, SKILL_KEY, SKILL_ENV, LOCAL_ENV, PRIVATE_URL,
+            "synthetic-env-budget", &trusted.hash,
+            trusted.config_source["rawHash"].as_str().expect("trusted source hash"),
+        ]);
+        let first = &before.settings["agents"]["list"][0];
+        assert!(first["apiKey"] == MASK && first["localService"]["env"]["PLAIN_NAME"] == MASK,
+            "agent and local service credentials must be masked");
+        assert!(first["callback"] == MASK, "credential URLs must be masked in ordinary fields");
+        assert!(first["maxTokens"] == 4096 && first["tokenBudget"] == 128
+            && first["passwordFile"] == "local-password.txt",
+            "ordinary token budgets and password-file paths must remain visible");
+        assert!(before.settings["skills"]["entries"]["demo"]["env"]["maxTokens"] == MASK,
+            "environment values must be masked even under normally excluded names");
+        assert!(before.settings["agentDefaultModel"] == trusted.settings["agentDefaultModel"]
+            && before.settings["localToolPermission"] == "ask"
+            && before.settings["pinnedAgentIds"] == json!(["alpha"]),
+            "provider/model, permissions and roster presentation must remain usable");
+
+        for marker in [MASK, UPSTREAM_MASK] {
+            let base = snapshot(&owner);
+            let mut update = base.settings.clone();
+            update["userTimeZone"] = json!("Europe/London");
+            update["agents"]["list"][0]["apiKey"] = json!(marker);
+            update["skills"]["entries"]["demo"]["apiKey"] = json!(marker);
+            update["skills"]["entries"]["demo"]["env"]["PLAIN_NAME"] = json!(marker);
+            update["skills"]["entries"]["demo"]["enabled"] = json!(false);
+            let receipt = commit(&owner, Some(&base.hash), update);
+            let reopened = installation.owner();
+            let durable = reopened.get_host_settings_snapshot();
+            assert!(receipt.trusted_settings == durable.settings,
+                "the returned trusted receipt must describe the durable commit");
+            assert!(receipt.snapshot == snapshot(&reopened), "public receipt must survive reopening");
+            assert!(durable.settings["agents"]["list"][0]["apiKey"] == AGENT_A
+                && durable.settings["agents"]["list"][1]["apiKey"] == AGENT_B
+                && durable.settings["agents"]["list"][0]["localService"]["env"]["PLAIN_NAME"] == LOCAL_ENV
+                && durable.settings["agents"]["list"][0]["callback"] == PRIVATE_URL
+                && durable.settings["skills"]["entries"]["demo"]["apiKey"] == SKILL_KEY
+                && durable.settings["skills"]["entries"]["demo"]["env"]["PLAIN_NAME"] == SKILL_ENV,
+                "a masked save must preserve credentials at their original locations");
+            assert!(durable.settings["userTimeZone"] == "Europe/London"
+                && durable.settings["skills"]["entries"]["demo"]["enabled"] == false,
+                "nonsecret edits must be committed alongside restored credentials");
+            let stored = installation.stored();
+            assert!(stored["skills"]["entries"]["demo"]["extension"]["keep"] == true
+                && stored["unrelatedStoredExtension"] == json!({"keep": [1, 2]}),
+                "existing skill merge and unknown-field preservation must remain intact");
+            assert_no_disclosure(&receipt.snapshot, &[AGENT_A, AGENT_B, SKILL_KEY, SKILL_ENV, LOCAL_ENV, PRIVATE_URL]);
+        }
+        assert!(observers.commit_count() == 2, "each valid masked save must notify once");
+    }
+
+    #[test]
+    fn explicit_replacements_and_skill_empty_string_removal_keep_owner_semantics() {
+        let installation = Installation::seeded(&source_document());
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        let receipt = commit(&owner, Some(&base.hash), json!({
+            "skills": {"entries": {"demo": {"apiKey": "",
+                "env": {"PLAIN_NAME": "", "maxTokens": UPSTREAM_MASK, "NEW": "synthetic-new-env"}}}}
+        }));
+        let skill = &receipt.trusted_settings["skills"]["entries"]["demo"];
+        assert!(skill.get("apiKey").is_none() && skill["env"].get("PLAIN_NAME").is_none(),
+            "empty strings must retain the established skill credential removal behavior");
+        assert!(skill["env"]["maxTokens"] == "synthetic-env-budget"
+            && skill["env"]["NEW"] == "synthetic-new-env",
+            "restoration and explicit environment replacement must compose");
+        assert!(receipt.trusted_settings["agents"] == source_document()["agents"],
+            "omitted agent configuration must remain unchanged");
+        let replacement = commit(&owner, Some(&receipt.snapshot.hash), json!({
+            "skills": {"entries": {"demo": {"apiKey": "synthetic-replacement"}}}
+        }));
+        assert!(replacement.trusted_settings["skills"]["entries"]["demo"]["apiKey"] == "synthetic-replacement",
+            "explicit replacement must be accepted without a marker");
+        assert!(snapshot(&installation.owner()) == replacement.snapshot,
+            "replacement and removal must be durable");
+        assert!(observers.commit_count() == 2, "only successful updates may notify");
+    }
+
+    #[test]
+    fn opaque_revisions_are_installation_local_durable_and_domain_separated() {
+        let mut source = source_document();
+        source["readOnly"] = json!(true);
+        let first = Installation::seeded(&source);
+        let trusted = first.owner().get_host_settings_snapshot();
+        // A readOnly source preserves these exact normalized bytes on read. This
+        // makes both internal digests equal, so token inequality proves domains.
+        first.write(&trusted.settings);
+        let second = Installation::seeded(&trusted.settings);
+        let owner = first.owner();
+        let internal = owner.get_host_settings_snapshot();
+        assert!(internal.config_source["rawHash"] == internal.hash,
+            "domain-separation control requires the same internal digest");
+        let public = snapshot(&owner);
+        let other = snapshot(&second.owner());
+        let other_internal = second.owner().get_host_settings_snapshot();
+        assert!(other_internal.hash == internal.hash
+            && other_internal.config_source["rawHash"] == internal.config_source["rawHash"],
+            "independent installations must start with identical configuration bytes");
+        assert!(public.hash != public.config_source["rawHash"].as_str().expect("public raw revision"),
+            "normalized and raw revisions must use separate MAC domains");
+        assert!(public.hash != other.hash && public.config_source["rawHash"] != other.config_source["rawHash"],
+            "independent installations must not share a public revision key");
+        let key_before = fs::read(first.key_path()).expect("read owned installation key");
+        assert!(key_before.len() == 32, "installation revision keys must contain exactly 32 bytes");
+        assert!(snapshot(&first.owner()) == public, "a restarted owner must reuse its installation key");
+        assert!(fs::read(first.key_path()).expect("reread owned key") == key_before,
+            "ordinary reads and restarts must not replace an existing key");
+        assert_no_disclosure(&public, &[AGENT_A, AGENT_B, SKILL_KEY, &internal.hash]);
+    }
+
+    #[test]
+    fn secret_only_change_invalidates_cas_and_legacy_masked_write_restores_current_secret() {
+        let installation = Installation::seeded(&source_document());
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let stale = snapshot(&owner);
+        let rotated = owner.set_host_settings_if_current(None, json!({
+            "skills": {"entries": {"demo": {"apiKey": "synthetic-rotated"}}}
+        })).expect("trusted secret-only rotation must succeed");
+        let current = snapshot(&owner);
+        assert!(stale.settings == current.settings, "secret-only rotation must preserve the visible masked document");
+        assert!(stale.hash != current.hash, "secret-only rotation must invalidate the public revision");
+        let mut old_masked_document = stale.settings.clone();
+        old_masked_document["userTimeZone"] = json!("Asia/Tokyo");
+        reject_without_effects(&installation, &owner, &observers, Some(&stale.hash),
+            old_masked_document.clone(), PublicHostSettingsError::Conflict);
+        let receipt = commit(&owner, None, old_masked_document);
+        assert!(receipt.trusted_settings["skills"]["entries"]["demo"]["apiKey"] == "synthetic-rotated",
+            "legacy no-token writes must restore against the current secret under the owner lock");
+        assert!(receipt.trusted_settings["skills"] == rotated.settings["skills"]
+            && receipt.trusted_settings["userTimeZone"] == "Asia/Tokyo",
+            "the legacy edit must commit without reverting a concurrent secret rotation");
+        assert!(installation.owner().get_host_settings_snapshot().settings == receipt.trusted_settings,
+            "the current secret and legacy nonsecret edit must survive reopening");
+        assert!(observers.commit_count() == 2, "the failed CAS must add no notification");
+    }
+
+    #[test]
+    fn public_cas_refuses_both_internal_digests_and_trusted_sha_cas_stays_separate() {
+        let installation = Installation::seeded(&source_document());
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let public = snapshot(&owner);
+        let trusted = owner.get_host_settings_snapshot();
+        let raw_hash = trusted.config_source["rawHash"].as_str().expect("trusted source digest");
+        for digest in [trusted.hash.as_str(), raw_hash] {
+            reject_without_effects(&installation, &owner, &observers, Some(digest),
+                json!({"userTimeZone": "Europe/London"}), PublicHostSettingsError::Conflict);
+        }
+        let before = installation.bytes();
+        let wrong_boundary = owner.set_host_settings_if_current(Some(&public.hash),
+            json!({"userTimeZone": "Europe/London"}));
+        assert!(matches!(wrong_boundary, Err(HostSettingsUpdateError::Conflict { expected, actual })
+            if expected == trusted.hash && actual == public.hash),
+            "trusted SHA CAS must retain its existing typed expected/actual error semantics");
+        assert!(installation.bytes() == before && observers.captured().is_empty(),
+            "cross-boundary digest refusal must not change settings or observers");
+        let accepted = commit(&owner, Some(&public.hash), json!({"userTimeZone": "Europe/London"}));
+        let latest = owner.get_host_settings_snapshot();
+        let trusted_commit = owner.set_host_settings_if_current(Some(&latest.hash),
+            json!({"userTimeZone": "Asia/Tokyo"})).expect("trusted SHA CAS remains supported");
+        assert!(trusted_commit.settings["userTimeZone"] == "Asia/Tokyo"
+            && accepted.snapshot.settings["userTimeZone"] == "Europe/London",
+            "public token CAS and trusted SHA CAS must both retain valid success controls");
+        assert!(observers.commit_count() == 2, "only the two valid boundary-specific commits may notify");
+    }
+
+    #[test]
+    fn simultaneous_writers_with_one_public_token_produce_exactly_one_commit() {
+        let installation = Installation::seeded(&source_document());
+        let owner = Arc::new(installation.owner());
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        let barrier = Arc::new(Barrier::new(3));
+        let (sender, receiver) = mpsc::channel();
+        let mut workers = Vec::new();
+        for zone in ["Europe/London", "Asia/Tokyo"] {
+            let owner = Arc::clone(&owner);
+            let barrier = Arc::clone(&barrier);
+            let sender = sender.clone();
+            let token = base.hash.clone();
+            let mut update = base.settings.clone();
+            update["userTimeZone"] = json!(zone);
+            workers.push(std::thread::spawn(move || {
+                barrier.wait();
+                let result = owner.set_public_host_settings_if_current(Some(&token), update);
+                let _ = sender.send((zone, result));
+            }));
+        }
+        drop(sender);
+        barrier.wait();
+        let mut successes = Vec::new();
+        let mut conflicts = 0;
+        for _ in 0..2 {
+            let (zone, result) = receiver.recv_timeout(Duration::from_secs(10))
+                .expect("both contending owner transactions must complete");
+            match result {
+                Ok(receipt) => successes.push((zone, receipt)),
+                Err(PublicHostSettingsError::Conflict) => conflicts += 1,
+                Err(_) => panic!("contention must not become a key or validation failure"),
+            }
+        }
+        for worker in workers {
+            worker.join().unwrap_or_else(|_| panic!("contending settings writer panicked"));
+        }
+        assert!(successes.len() == 1 && conflicts == 1, "a public revision may authorize only one concurrent commit");
+        let (zone, winner) = successes.pop().expect("one successful transaction");
+        assert!(winner.trusted_settings["userTimeZone"] == zone
+            && installation.owner().get_host_settings_snapshot().settings == winner.trusted_settings,
+            "durable state must equal the single winning receipt");
+        assert!(winner.trusted_settings["skills"]["entries"]["demo"]["apiKey"] == SKILL_KEY,
+            "concurrent masked writes must preserve the current secret");
+        assert!(observers.commit_count() == 1 && observers.captured().len() == 2,
+            "the losing CAS must emit neither a settings nor a timezone notification");
+    }
+
+    #[test]
+    fn actual_agent_array_reordering_keeps_identity_and_refuses_secret_borrowing() {
+        let installation = Installation::seeded(&source_document());
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        let mut update = base.settings.clone();
+        update["agents"]["list"].as_array_mut().expect("agent array").swap(0, 1);
+        update["agents"]["list"][0]["name"] = json!("Beta edited");
+        update["agents"]["list"][1]["apiKey"] = json!(UPSTREAM_MASK);
+        let reordered = commit(&owner, Some(&base.hash), update);
+        let entries = &reordered.trusted_settings["agents"]["list"];
+        assert!(entries[0]["id"] == "beta" && entries[0]["apiKey"] == AGENT_B
+            && entries[1]["id"] == "alpha" && entries[1]["apiKey"] == AGENT_A,
+            "reordered agent credentials must follow literal identities, never old positions");
+        assert!(installation.owner().get_host_settings_snapshot().settings == reordered.trusted_settings,
+            "identity-preserving reorder must be durable");
+
+        let mut forged = reordered.snapshot.settings.clone();
+        forged["agents"]["list"][0]["id"] = json!("gamma");
+        reject_without_effects(&installation, &owner, &observers, Some(&reordered.snapshot.hash),
+            forged.clone(), PublicHostSettingsError::Rejected);
+        for matched_secret in [MASK, "synthetic-explicit-beta"] {
+            let reserved_index = json!({"agents": {"ownership": "explicit", "list": [
+                {"name": "unidentified", "apiKey": MASK},
+                {"id": "beta", "apiKey": matched_secret}
+            ]}});
+            reject_without_effects(&installation, &owner, &observers, Some(&reordered.snapshot.hash),
+                reserved_index, PublicHostSettingsError::Rejected);
+        }
+        forged["agents"]["list"][0]["apiKey"] = json!("synthetic-gamma");
+        let explicit = commit(&owner, Some(&reordered.snapshot.hash), forged);
+        assert!(explicit.trusted_settings["agents"]["list"][0]["id"] == "gamma"
+            && explicit.trusted_settings["agents"]["list"][0]["apiKey"] == "synthetic-gamma"
+            && explicit.trusted_settings["agents"]["list"][1]["apiKey"] == AGENT_A,
+            "a new identity may commit an explicit credential without borrowing another entry's value");
+        assert!(observers.commit_count() == 2, "identity refusals must not add notifications");
+    }
+
+    #[test]
+    fn legacy_duplicate_missing_and_environment_ids_keep_only_bounded_positional_fallback() {
+        for ids in [
+            [Some("duplicate"), Some("duplicate")],
+            [None, None],
+            [Some("${FIRST}"), Some("${SECOND}")],
+            [Some("$${FIRST}"), Some("$${SECOND}")],
+        ] {
+            let mut original_items = vec![
+                json!({"apiKey": "synthetic-first"}),
+                json!({"apiKey": "synthetic-second"}),
+            ];
+            for (item, id) in original_items.iter_mut().zip(ids) {
+                if let Some(id) = id {
+                    item["id"] = json!(id);
+                }
+            }
+            let mut source = source_document();
+            source["agents"]["extensionItems"] = json!(original_items);
+            let installation = Installation::seeded(&source);
+            let owner = installation.owner();
+            let observers = Observers::new(&owner);
+            let base = snapshot(&owner);
+            let mut update = base.settings.clone();
+            update["agents"]["extensionItems"].as_array_mut().expect("extension array").swap(0, 1);
+            let accepted = commit(&owner, Some(&base.hash), update);
+            let items = &accepted.trusted_settings["agents"]["extensionItems"];
+            assert!(items[0]["apiKey"] == "synthetic-first" && items[1]["apiKey"] == "synthetic-second",
+                "nonunique or environment-authored ids must retain positional secret restoration");
+            assert!(items[0].get("id") == original_items[1].get("id")
+                && items[1].get("id") == original_items[0].get("id"),
+                "fallback must not silently rewrite the submitted identity expression");
+            let mut orphan = accepted.snapshot.settings.clone();
+            orphan["agents"]["extensionItems"].as_array_mut().expect("extension array")
+                .push(json!({"apiKey": MASK}));
+            reject_without_effects(&installation, &owner, &observers, Some(&accepted.snapshot.hash),
+                orphan, PublicHostSettingsError::Rejected);
+            assert!(observers.commit_count() == 1, "an appended fallback orphan must not become a commit");
+        }
+    }
+
+    #[test]
+    fn masked_secret_refs_require_the_same_explicit_source_and_provider() {
+        let mut source = source_document();
+        source["agents"]["list"][0]["apiKey"] = json!({
+            "source": "env", "provider": "fixture", "id": "SYNTHETIC_REF_A"
+        });
+        let installation = Installation::seeded(&source);
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        assert!(base.settings["agents"]["list"][0]["apiKey"] == json!({
+            "source": "env", "provider": "fixture", "id": MASK
+        }), "a public SecretRef must preserve visible backend identity and conceal its id");
+        let unchanged = commit(&owner, Some(&base.hash), base.settings.clone());
+        assert!(unchanged.trusted_settings["agents"]["list"][0]["apiKey"]
+            == source["agents"]["list"][0]["apiKey"], "unchanged SecretRefs must round-trip through the real owner");
+        for field in ["source", "provider"] {
+            for replacement in [Some(json!("different")), None, Some(json!(UPSTREAM_MASK))] {
+                let mut update = unchanged.snapshot.settings.clone();
+                let reference = update["agents"]["list"][0]["apiKey"].as_object_mut().expect("reference object");
+                if let Some(value) = replacement {
+                    reference.insert(field.into(), value);
+                } else {
+                    reference.remove(field);
+                }
+                reject_without_effects(&installation, &owner, &observers, Some(&unchanged.snapshot.hash),
+                    update, PublicHostSettingsError::Rejected);
+            }
+        }
+        let mut explicit = unchanged.snapshot.settings.clone();
+        explicit["agents"]["list"][0]["apiKey"] = json!({
+            "source": "file", "provider": "replacement", "id": "SYNTHETIC_REF_B"
+        });
+        let replacement = commit(&owner, Some(&unchanged.snapshot.hash), explicit);
+        assert!(replacement.trusted_settings["agents"]["list"][0]["apiKey"]["id"] == "SYNTHETIC_REF_B"
+            && replacement.snapshot.settings["agents"]["list"][0]["apiKey"]["source"] == "file"
+            && replacement.snapshot.settings["agents"]["list"][0]["apiKey"]["id"] == MASK,
+            "changing a SecretRef backend requires and accepts an explicit replacement id");
+        assert!(snapshot(&installation.owner()) == replacement.snapshot && observers.commit_count() == 2,
+            "only the unchanged and explicit-replacement SecretRefs may commit");
+    }
+
+    #[test]
+    fn credential_urls_in_secret_ref_identity_require_explicit_repair() {
+        for field in ["source", "provider"] {
+            let mut source = source_document();
+            source["agents"]["list"][0]["apiKey"] = json!({
+                "source": "env", "provider": "fixture", "id": "SYNTHETIC_REF_A"
+            });
+            source["agents"]["list"][0]["apiKey"][field] = json!(PRIVATE_URL);
+            let installation = Installation::seeded(&source);
+            let owner = installation.owner();
+            let observers = Observers::new(&owner);
+            let base = snapshot(&owner);
+            assert!(base.settings["agents"]["list"][0]["apiKey"][field] == MASK,
+                "a credential-bearing SecretRef identity must not be disclosed");
+            assert_no_disclosure(&base, &[PRIVATE_URL, "SYNTHETIC_REF_A"]);
+            reject_without_effects(&installation, &owner, &observers, Some(&base.hash),
+                base.settings.clone(), PublicHostSettingsError::Rejected);
+            let mut original_backend = base.settings.clone();
+            original_backend["agents"]["list"][0]["apiKey"][field] = json!(PRIVATE_URL);
+            reject_without_effects(&installation, &owner, &observers, Some(&base.hash),
+                original_backend, PublicHostSettingsError::Rejected);
+            let mut repaired = base.settings.clone();
+            repaired["agents"]["list"][0]["apiKey"] = json!({
+                "source": "env", "provider": "repaired", "id": "EXPLICIT_REPAIRED_ID"
+            });
+            let receipt = commit(&owner, Some(&base.hash), repaired);
+            assert!(receipt.trusted_settings["agents"]["list"][0]["apiKey"]["id"] == "EXPLICIT_REPAIRED_ID"
+                && observers.commit_count() == 1, "an explicit safe backend and id must repair the configuration");
+        }
+    }
+
+    #[test]
+    fn wrong_missing_container_and_nonobject_markers_never_write_or_notify() {
+        let installation = Installation::seeded(&source_document());
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        for marker in [MASK, UPSTREAM_MASK] {
+            for update in [
+                json!({"agents": {"list": [{"id": "alpha", "name": marker}]}}),
+                json!({"skills": {"entries": {"new-entry": {"apiKey": marker}}}}),
+                json!({"agents": {"list": [{"id": "alpha", "localService": {"env": marker}}]}}),
+                json!({"ignoredExtension": [{"missingSecret": marker}]}),
+                json!(marker),
+                json!([{"missingSecret": marker}]),
+                json!([marker]),
+            ] {
+                reject_without_effects(&installation, &owner, &observers, Some(&base.hash),
+                    update, PublicHostSettingsError::Rejected);
+            }
+        }
+        // Nonobject no-ops are an existing compatibility behavior. The marker
+        // refusal above must not accidentally turn every nonobject into an error.
+        let bytes = installation.bytes();
+        for update in [Value::Null, json!(7), json!(["ordinary"])] {
+            let receipt = commit(&owner, Some(&base.hash), update);
+            assert!(receipt.snapshot == base && installation.bytes() == bytes,
+                "ordinary nonobject updates must retain normalized no-op compatibility");
+        }
+        assert!(observers.captured().is_empty(), "neither rejected markers nor compatibility no-ops may notify");
+        let mut valid = base.settings.clone();
+        valid["userTimeZone"] = json!("Europe/London");
+        commit(&owner, Some(&base.hash), valid);
+        assert!(observers.commit_count() == 1, "the same owner and token must accept a valid masked control");
+    }
+
+    #[test]
+    fn a_marker_in_the_original_cannot_survive_restoration_as_a_credential() {
+        for marker in [MASK, UPSTREAM_MASK] {
+            let mut source = source_document();
+            source["skills"]["entries"]["demo"]["apiKey"] = json!(marker);
+            let installation = Installation::seeded(&source);
+            let owner = installation.owner();
+            let observers = Observers::new(&owner);
+            let base = snapshot(&owner);
+            reject_without_effects(&installation, &owner, &observers, Some(&base.hash),
+                base.settings.clone(), PublicHostSettingsError::Rejected);
+            let mut repaired = base.settings.clone();
+            repaired["skills"]["entries"]["demo"]["apiKey"] = json!("synthetic-repaired");
+            let receipt = commit(&owner, Some(&base.hash), repaired);
+            assert!(receipt.trusted_settings["skills"]["entries"]["demo"]["apiKey"] == "synthetic-repaired"
+                && observers.commit_count() == 1, "an explicit credential must repair a residual original marker");
+        }
+    }
+
+    #[test]
+    fn public_receipt_a_stays_a_when_a_listener_commits_b_and_notifications_remain_fifo() {
+        let installation = Installation::seeded(&source_document());
+        let owner = Arc::new(installation.owner());
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        let entered = Arc::new(AtomicBool::new(false));
+        let entered_in_listener = Arc::clone(&entered);
+        let captured = Arc::new(Mutex::new(None));
+        let sink = Arc::clone(&captured);
+        let weak_owner = Arc::downgrade(&owner);
+        let _reentrant = owner.subscribe_to_changes(Arc::new(move |_| {
+            if entered_in_listener.swap(true, Ordering::SeqCst) {
+                return;
+            }
+            let owner = weak_owner.upgrade().expect("the transaction owner remains live");
+            let public_a = snapshot(&owner);
+            let trusted_a = owner.get_host_settings_snapshot();
+            let receipt_b = commit(&owner, Some(&public_a.hash), json!({
+                "userTimeZone": "Asia/Tokyo", "inferenceProvider": "codex",
+                "skills": {"entries": {"demo": {"apiKey": "synthetic-reentrant-b"}}},
+                "featureFlagOverrides": {"receipt_b": true}
+            }));
+            *sink.lock().expect("capture reentrant receipts") = Some((public_a, trusted_a, receipt_b));
+        }));
+        let writer = Arc::clone(&owner);
+        let (sender, receiver) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let result = writer.set_public_host_settings_if_current(Some(&base.hash), json!({
+                "userTimeZone": "Europe/London", "inferenceProvider": "claude-code",
+                "skills": {"entries": {"demo": {"apiKey": "synthetic-reentrant-a"}}},
+                "featureFlagOverrides": {"receipt_a": true}
+            }));
+            let _ = sender.send(result);
+        });
+        let result = receiver.recv_timeout(Duration::from_secs(10))
+            .expect("reentrant reads and commits must complete outside the writer mutex");
+        let receipt_a = match result {
+            Ok(receipt) => receipt,
+            Err(_) => panic!("the original public transaction must succeed"),
+        };
+        worker.join().unwrap_or_else(|_| panic!("the reentrant settings writer panicked"));
+        let (public_a, trusted_a, receipt_b) = captured.lock().expect("read reentrant receipts")
+            .take().expect("the listener must have captured both committed generations");
+        assert!(receipt_a.snapshot == public_a && receipt_a.trusted_settings == trusted_a.settings,
+            "the public and trusted receipt must describe A even after its listener commits B");
+        assert!(receipt_a.trusted_settings["skills"]["entries"]["demo"]["apiKey"] == "synthetic-reentrant-a"
+            && receipt_b.trusted_settings["skills"]["entries"]["demo"]["apiKey"] == "synthetic-reentrant-b",
+            "trusted post-commit consumers must receive the credential generation of their own receipt");
+        assert!(receipt_a.snapshot.hash != receipt_b.snapshot.hash
+            && receipt_a.snapshot.config_source["rawHash"] != receipt_b.snapshot.config_source["rawHash"],
+            "each returned receipt must retain its own opaque normalized and source revisions");
+        assert!(snapshot(&owner) == receipt_b.snapshot
+            && installation.owner().get_host_settings_snapshot().settings == receipt_b.trusted_settings,
+            "latest-state readers and reopened owners must observe B");
+        assert_no_disclosure(&receipt_a.snapshot, &["synthetic-reentrant-a", "synthetic-reentrant-b"]);
+        assert_no_disclosure(&receipt_b.snapshot, &["synthetic-reentrant-a", "synthetic-reentrant-b"]);
+        let notices = observers.captured();
+        assert!(notices.len() == 6, "both commits must drain every subscribed observer exactly once");
+        assert!(notices[0] == Notice::TimeZone(Some("Europe/London".into()))
+            && notices[1] == Notice::Features(BTreeMap::from([("receipt_a".into(), true)]))
+            && matches!(&notices[2], Notice::Changes(fields) if fields.iter().any(|field| field == "skills"))
+            && notices[3] == Notice::TimeZone(Some("Asia/Tokyo".into()))
+            && notices[4] == Notice::Features(BTreeMap::from([("receipt_b".into(), true)]))
+            && matches!(&notices[5], Notice::Changes(fields) if fields.iter().any(|field| field == "skills")),
+            "reentrant callbacks must preserve A's complete notification batch before B's batch");
+    }
+
+    #[test]
+    fn corrupt_or_nonregular_keys_fail_before_public_read_normalization_and_writes() {
+        #[derive(Clone, Copy)]
+        enum KeyFault { Length(usize), Directory }
+        for fault in [KeyFault::Length(0), KeyFault::Length(31), KeyFault::Length(33), KeyFault::Directory] {
+            let mut source = source_document();
+            source["notifications"] = json!({"isEnabled": true, "legacy": "keep-until-valid-key"});
+            let installation = Installation::seeded(&source);
+            let owner = installation.owner();
+            let authored = installation.bytes();
+            let healthy = snapshot(&owner);
+            assert!(installation.bytes() != authored,
+                "the healthy key control must prove this source normally needs read normalization");
+            assert!(fs::read(installation.key_path()).expect("read healthy fixture key").len() == 32,
+                "the corruption control must begin with a valid installation key");
+            installation.write(&source);
+            match fault {
+                KeyFault::Length(length) => {
+                    fs::write(installation.key_path(), vec![0x54_u8; length]).expect("install owned corrupt key fixture");
+                }
+                KeyFault::Directory => {
+                    fs::remove_file(installation.key_path()).expect("remove only the owned fixture key");
+                    fs::create_dir(installation.key_path()).expect("install nonregular fixture key");
+                    fs::write(installation.key_path().join("owned-marker"), b"retain-directory")
+                        .expect("seed nonregular key marker");
+                }
+            }
+            let observers = Observers::new(&owner);
+            let before = installation.bytes();
+            assert!(owner.get_public_host_settings_snapshot().err() == Some(PublicHostSettingsError::KeyUnavailable),
+                "public reads must fail closed when their installation key becomes unusable");
+            assert!(installation.bytes() == before && observers.captured().is_empty(),
+                "key failure must precede even read-time normalization and all notifications");
+            reject_without_effects(&installation, &owner, &observers, Some(&healthy.hash),
+                json!({"userTimeZone": "Europe/London", "featureFlagOverrides": {"key_control": true}}),
+                PublicHostSettingsError::KeyUnavailable);
+            match fault {
+                KeyFault::Length(length) => {
+                    assert!(fs::read(installation.key_path()).expect("reread corrupt fixture key") == vec![0x54_u8; length],
+                        "an invalid existing key must never rotate or be repaired implicitly");
+                }
+                KeyFault::Directory => {
+                    assert!(installation.key_path().is_dir()
+                        && fs::read(installation.key_path().join("owned-marker")).expect("read nonregular key marker")
+                            == b"retain-directory",
+                        "nonregular key material must remain untouched");
+                }
+            }
+            assert!(fs::read_dir(&installation.root).expect("inspect owned key fixture").count() == 2,
+                "a failed key load must not leave a new key candidate or settings staging file");
+        }
+        let control = Installation::seeded(&source_document());
+        let owner = control.owner();
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        commit(&owner, Some(&base.hash), json!({
+            "userTimeZone": "Europe/London", "featureFlagOverrides": {"key_control": true}
+        }));
+        assert!(observers.commit_count() == 1 && observers.captured().len() == 3,
+            "a healthy key must permit the same settings, timezone and flag notifications");
+    }
+
+    #[test]
+    fn key_creation_io_failure_cannot_create_settings_or_notify() {
+        let installation = Installation::new();
+        let blocked = installation.root.join("blocked-parent");
+        fs::write(&blocked, b"owned-nondirectory").expect("create deterministic key-parent fault");
+        let owner = SettingsService::new(blocked.join("settings.json"));
+        let observers = Observers::new(&owner);
+        assert!(owner.get_public_host_settings_snapshot().err() == Some(PublicHostSettingsError::KeyUnavailable),
+            "a failed installation-key parent must reject public reads");
+        assert!(owner.set_public_host_settings_if_current(None, json!({"userTimeZone": "UTC"})).err()
+            == Some(PublicHostSettingsError::KeyUnavailable),
+            "a failed installation-key parent must reject public writes before settings IO");
+        assert!(fs::read(&blocked).expect("read blocked-parent marker") == b"owned-nondirectory"
+            && fs::read_dir(&installation.root).expect("inspect blocked installation").count() == 1
+            && observers.captured().is_empty(),
+            "key creation failure must preserve the obstruction and every observer");
+
+        let control = SettingsService::new(installation.root.join("valid-parent").join("settings.json"));
+        let control_observers = Observers::new(&control);
+        let base = snapshot(&control);
+        let receipt = commit(&control, Some(&base.hash), json!({"userTimeZone": "UTC"}));
+        assert!(receipt.trusted_settings["userTimeZone"] == "UTC"
+            && control_observers.commit_count() == 1,
+            "a creatable private installation must permit the same first-use transaction");
+    }
+
+    #[test]
+    fn invalid_public_sources_remain_invalid_until_explicit_fixture_repair() {
+        let invalid_sources: [&[u8]; 5] = [
+            b"{broken settings source", b"\xff\xfe", b"[1,2,3]",
+            br#"{"version":2,"keep":"invalid-version"}"#,
+            br#"{"keep":"missing-version"}"#,
+        ];
+        for original in invalid_sources {
+            let installation = Installation::new();
+            fs::write(installation.settings_path(), original).expect("seed owned invalid source");
+            let owner = installation.owner();
+            let observers = Observers::new(&owner);
+            let public = snapshot(&owner);
+            assert!(public.config_source["exists"] == true && public.config_source["valid"] == false,
+                "invalid input must retain invalid source provenance in public snapshots");
+            assert!(public.config_source["rawHash"] != sha256_hex(original),
+                "even invalid source digests must remain opaque at the public boundary");
+            assert_token(public.config_source["rawHash"].as_str().expect("existing invalid source has a public raw revision"));
+            assert!(installation.bytes() == original && observers.captured().is_empty(),
+                "public default projection must not replace an invalid source");
+            reject_without_effects(&installation, &owner, &observers, Some(&public.hash),
+                json!({"userTimeZone": "Europe/London", "featureFlagOverrides": {"source_control": true}}),
+                PublicHostSettingsError::Rejected);
+            reject_without_effects(&installation, &owner, &observers, None,
+                json!({"userTimeZone": "Europe/London"}), PublicHostSettingsError::Rejected);
+            installation.write(&source_document());
+            let repaired = snapshot(&owner);
+            let receipt = commit(&owner, Some(&repaired.hash), json!({
+                "userTimeZone": "Europe/London", "featureFlagOverrides": {"source_control": true}
+            }));
+            assert!(receipt.trusted_settings["userTimeZone"] == "Europe/London"
+                && observers.commit_count() == 1 && observers.captured().len() == 3,
+                "the same owner must accept valid source after explicit fixture repair");
+        }
+    }
+
+    #[test]
+    fn unreadable_settings_directory_keeps_null_public_raw_revision_and_no_commit() {
+        let installation = Installation::new();
+        fs::create_dir(installation.settings_path()).expect("create owned unreadable settings source");
+        let marker = installation.settings_path().join("owned-marker");
+        fs::write(&marker, b"retain-settings-directory").expect("seed unreadable source marker");
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let public = snapshot(&owner);
+        assert!(public.config_source["exists"] == true && public.config_source["valid"] == false
+            && public.config_source["rawHash"].is_null(),
+            "an unreadable source must preserve null raw revision rather than inventing a digest");
+        assert_token(&public.hash);
+        assert!(owner.set_public_host_settings_if_current(Some(&public.hash),
+            json!({"userTimeZone": "Europe/London"})).err() == Some(PublicHostSettingsError::Rejected),
+            "an unreadable source must not acknowledge a replacement commit");
+        assert!(installation.settings_path().is_dir()
+            && fs::read(&marker).expect("read unchanged source marker") == b"retain-settings-directory"
+            && fs::read_dir(&installation.root).expect("inspect unreadable installation").count() == 2
+            && observers.captured().is_empty(),
+            "unreadable source rejection must preserve owned files and observers");
+        fs::remove_file(marker).expect("remove only the owned source marker");
+        fs::remove_dir(installation.settings_path()).expect("repair owned source shape");
+        installation.write(&source_document());
+        let repaired = snapshot(&owner);
+        commit(&owner, Some(&repaired.hash), json!({"userTimeZone": "Europe/London"}));
+        assert!(observers.commit_count() == 1, "a regular valid source must pass the same owner path");
+    }
+
+    #[test]
+    fn public_readonly_guard_prevents_normalization_writes_and_all_update_observers() {
+        let mut source = source_document();
+        source["readOnly"] = json!(true);
+        source["notifications"] = json!({"isEnabled": true, "legacy": "retain"});
+        let installation = Installation::seeded(&source);
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let original = installation.bytes();
+        let public = snapshot(&owner);
+        assert!(public.settings["readOnly"] == true && public.settings["notifications"]["isEnabled"] == false,
+            "readOnly public projection must preserve policy and existing normalized display behavior");
+        assert!(installation.bytes() == original, "readOnly display normalization must not touch source bytes");
+        for token in [Some(public.hash.as_str()), None] {
+            reject_without_effects(&installation, &owner, &observers, token, json!({
+                "readOnly": false, "userTimeZone": "Europe/London",
+                "skills": {"entries": {"demo": {"apiKey": "synthetic-refused"}}},
+                "featureFlagOverrides": {"readonly_control": true}
+            }), PublicHostSettingsError::Rejected);
+        }
+        source.as_object_mut().expect("source object").remove("readOnly");
+        installation.write(&source);
+        let writable = snapshot(&owner);
+        commit(&owner, Some(&writable.hash), json!({
+            "userTimeZone": "Europe/London", "featureFlagOverrides": {"readonly_control": true}
+        }));
+        assert!(observers.commit_count() == 1 && observers.captured().len() == 3,
+            "the same owner must accept the valid writable control and notify all intended observers");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn persistence_io_failure_after_valid_read_and_key_leaves_bytes_and_observers_unchanged() {
+        use std::ffi::CString;
+        use std::os::unix::ffi::OsStrExt;
+
+        let installation = Installation::new();
+        let directory = CString::new(installation.root.as_os_str().as_bytes())
+            .expect("owned fixture path has no nul byte");
+        // Query this filesystem's real component bound. Reading the longest
+        // legal source succeeds; Settings' longer staging component cannot.
+        let maximum = unsafe { libc::pathconf(directory.as_ptr(), libc::_PC_NAME_MAX) };
+        assert!(maximum > 0 && maximum <= 1024, "the IO fixture requires a bounded filesystem component limit");
+        let path = installation.root.join("s".repeat(maximum as usize));
+        let original = serde_json::to_vec(&source_document()).expect("serialize IO control source");
+        fs::write(&path, &original).expect("the longest legal source component must be writable");
+        let owner = SettingsService::new(&path);
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        assert!(base.config_source["valid"] == true
+            && fs::read(&path).expect("read IO control source") == original,
+            "the failing writer must begin with a valid readable and already-normalized source");
+        let key = fs::read(installation.key_path()).expect("read healthy IO fixture key");
+        assert!(key.len() == 32, "persistence refusal must not be caused by an unavailable revision key");
+        let update = json!({"userTimeZone": "Europe/London", "featureFlagOverrides": {"io_control": true}});
+        assert!(owner.set_public_host_settings_if_current(Some(&base.hash), update.clone()).err()
+            == Some(PublicHostSettingsError::Rejected), "a failed settings publication must return the bounded rejection");
+        assert!(fs::read(&path).expect("read source after refused publication") == original
+            && fs::read(installation.key_path()).expect("read unchanged IO fixture key") == key
+            && observers.captured().is_empty()
+            && fs::read_dir(&installation.root).expect("inspect failed staging directory").count() == 2,
+            "failed persistence must retain source/key bytes, leave no staging entry and notify nobody");
+
+        let control_path = installation.root.join("short-settings.json");
+        fs::write(&control_path, &original).expect("seed short-path IO control");
+        let control = SettingsService::new(&control_path);
+        let control_observers = Observers::new(&control);
+        let control_base = snapshot(&control);
+        assert!(control_base.hash == base.hash,
+            "the successful control must use identical normalized settings and the same healthy key");
+        let receipt = commit(&control, Some(&control_base.hash), update);
+        assert!(receipt.trusted_settings["userTimeZone"] == "Europe/London"
+            && control_observers.commit_count() == 1 && control_observers.captured().len() == 3,
+            "the identical candidate must succeed when only its staging destination can be created");
+    }
+
+    #[test]
+    fn masked_skill_save_preserves_latest_imported_bytes_after_stale_snapshot() {
+        let mut source = source_document();
+        let installation = Installation::seeded(&source);
+        let owner = installation.owner();
+        let initial = snapshot(&owner);
+        let mut update = initial.settings.clone();
+        update["userTimeZone"] = json!("Europe/London");
+        source["skills"]["entries"]["demo"]["apiKey"] = json!("  synthetic imported key  ");
+        source["skills"]["entries"]["demo"]["env"] = json!({
+            "REGION":" \t\n ", "PRESERVE_EMPTY":"", "MULTILINE":"\nline one\nline two\n"
+        });
+        installation.write(&source);
+        update["skills"]["entries"]["demo"]["env"] = json!({
+            "REGION":MASK, "PRESERVE_EMPTY":UPSTREAM_MASK, "MULTILINE":MASK
+        });
+        let observers = Observers::new(&owner);
+        reject_without_effects(&installation, &owner, &observers, Some(&initial.hash),
+            update.clone(), PublicHostSettingsError::Conflict);
+        let receipt = commit(&owner, None, update);
+        let reopened = installation.owner().get_host_settings_snapshot();
+        for actual in [&receipt.trusted_settings, &reopened.settings, &installation.stored()] {
+            assert!(actual["skills"] == source["skills"],
+                "the masked save must preserve current stored credential bytes exactly");
+            assert_eq!(actual["userTimeZone"], "Europe/London");
+        }
+        assert_eq!(observers.commit_count(), 1);
+    }
+
+    #[test]
+    fn public_writes_preserve_include_ownership_and_specialized_writer_compatibility() {
+        let mut source = source_document();
+        source["agents"] = json!({"entries": {"$include": "agents-fixture.json"}});
+        let installation = Installation::seeded(&source);
+        let owner = installation.owner();
+        let observers = Observers::new(&owner);
+        let base = snapshot(&owner);
+        reject_without_effects(&installation, &owner, &observers, Some(&base.hash),
+            json!({"agents": {"entries": {"local": {}}}}), PublicHostSettingsError::Rejected);
+        assert!(owner.set_user_time_zone(Some("Europe/London")).expect("specialized timezone control"),
+            "include ownership must preserve unrelated specialized Settings writers");
+        assert!(installation.stored()["agents"] == source["agents"] && observers.commit_count() == 1,
+            "the specialized update must keep include-owned roster data intact");
+
+        let target = Installation::seeded(&source_document());
+        let target_owner = target.owner();
+        let target_observers = Observers::new(&target_owner);
+        let target_base = snapshot(&target_owner);
+        reject_without_effects(&target, &target_owner, &target_observers, Some(&target_base.hash),
+            json!({"agents": {"entries": {"$include": "agents-fixture.json"}}}), PublicHostSettingsError::Rejected);
+        commit(&target_owner, Some(&target_base.hash), json!({"userTimeZone": "Europe/London"}));
+        assert!(target_observers.commit_count() == 1,
+            "refusing an include-owned target must retain ordinary public update compatibility");
+    }
+}
+

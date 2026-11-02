@@ -108,6 +108,8 @@ pub struct CopyInWatchdogEvent {
 pub struct CopyInRuntimeOptions {
     pub download_owner: Option<(u32, u32)>,
     pub download_concurrency: Option<usize>,
+    /// Actual installation root captured by the trusted production path owner.
+    pub installation_data_root: Option<PathBuf>,
     pub on_progress: Option<Arc<dyn Fn(CopyInProgress) + Send + Sync>>,
     pub on_trace: Option<Arc<dyn Fn(CopyInTraceStatus) + Send + Sync>>,
 }
@@ -974,6 +976,7 @@ pub fn execute_production_box_copy_in_from_env(
         Some(&marker_path),
         CopyInRuntimeOptions {
             download_owner: resolve_copy_in_download_owner(),
+            installation_data_root: Some(sand_root.clone()),
             download_concurrency: resolve_copy_in_concurrency(
                 environment
                     .get("SAND_BOX_STORE_COPY_IN_CONCURRENCY")
@@ -1179,6 +1182,7 @@ fn restore_manifest(
                 .download_concurrency
                 .unwrap_or(super::box_store_sync::DEFAULT_COPY_IN_CONCURRENCY),
             owner: options.download_owner,
+            installation_data_root: options.installation_data_root.clone(),
             on_progress: Some(Arc::new(move |progress: BoxStoreDownloadProgress| {
                 emit_progress(
                     &progress_options,
