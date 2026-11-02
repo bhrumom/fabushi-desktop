@@ -1,7 +1,7 @@
 # Native Human call creation: canonical conversation admission
 
 Spec ID: FBCP-CALL-SCOPE-001  
-Status: active, implementation/verification pending  
+Status: implemented; bounded loopback passed at 8bcfd464691534acaa04b13852cd523ab49a3dcc; shipping/integration/full gates open  
 Task: `20bf9475-a885-4314-b509-bea53ef8849f`, round 1  
 Date: 2026-11-02
 

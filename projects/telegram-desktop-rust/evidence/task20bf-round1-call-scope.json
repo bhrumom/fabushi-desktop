@@ -3,7 +3,7 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "guard, five contracts, canonical responsibility row and owner/RTM published on isolated migration-line branch; exact-H Actions pending",
+  "status": "CALL-SCOPE bounded loopback and retained reconciliation contracts passed at exact8bcfd; shipping compile and shared-line integration remain pending",
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
@@ -95,10 +95,88 @@
   ],
   "verification": {
     "policy": "GitHub Actions only; no local executable validation or htch-runtime",
-    "implementation_head": "249675ae30502e72e495a4c6aee53e8214f82bd1",
-    "workflow_run": null,
-    "jobs": [],
-    "artifacts": [],
+    "implementation_head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+    "workflow_run": 41521134666,
+    "jobs": [
+      {
+        "id": 125537147556,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "counts": {
+          "call_scope": 5,
+          "shipping_call": 3,
+          "local_call_lifecycle": 1,
+          "human": 54,
+          "upload_bounds": 3,
+          "sharebox": 1,
+          "forward_journal": 12,
+          "agent_nonce": 4,
+          "settlement_credentials": 3,
+          "authenticated_gateway": 1
+        },
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "id": 125537147935,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125537148125,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125537148138,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125537148185,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13177343396,
+        "name": "native-message-reconciliation-8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "bytes": 54509,
+        "digest": "sha256:3b65ad1fde0b105aee7120483dd5ea7fc7f252d31ae2df8c90bc40d5d34a9001",
+        "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "expired": false
+      },
+      {
+        "id": 13177328406,
+        "name": "native-message-electron-8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "bytes": 14009,
+        "digest": "sha256:a4c1fe301431b53cae684e68299af597d561941b4118b8729441da4fa3c90899",
+        "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "expired": false
+      },
+      {
+        "id": 13176754169,
+        "name": "native-message-ui-8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "bytes": 226730,
+        "digest": "sha256:5a5c1e2d05230f40881e2b3778d0d1dd3200d193f3d1f9a00a26252368a7b25d",
+        "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "expired": false
+      },
+      {
+        "id": 13176329308,
+        "name": "windows-update-publisher-8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "bytes": 1826,
+        "digest": "sha256:1de8df0789c0dd5b25ce3a696f910d8f91d21e0be9e942813eeca092426e4d93",
+        "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+        "expired": false
+      }
+    ],
     "commands": [
       "cargo test --locked --manifest-path source/host/Cargo.toml --test native_call_scope_contract -- --nocapture",
       "cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_call_ -- --nocapture",
@@ -109,8 +187,57 @@
       3,
       1
     ],
-    "execution_status": "not-run",
-    "source_schema_execution": "success during exact ledger object preparation; containing-H source workflow remains required",
+    "execution_status": "reconciliation-success; shipping-job-queued; overall-native-run-not-passed",
+    "source_schema_execution": {
+      "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+      "run": 41521134644,
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 125537147421,
+          "name": "contract",
+          "conclusion": "success",
+          "source_tests": 157,
+          "schema_tests": 37,
+          "ledger_schema_errors": 0
+        },
+        {
+          "id": 125537363917,
+          "name": "fixed-source-candidate",
+          "conclusion": "success",
+          "status": "unaccepted-candidate-consistent",
+          "source_entries": 16381,
+          "root_entries": 6895,
+          "responsibility_rows": 185,
+          "source_review_records": 6,
+          "completed_source_review_records": 2,
+          "unknown": null,
+          "unread": null,
+          "baseline_accepted": false,
+          "source_closure_ready": false,
+          "product_accepted": false,
+          "independent_acceptance": false
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13177033973,
+          "name": "tdrp-source-candidate-8bcfd464691534acaa04b13852cd523ab49a3dcc",
+          "bytes": 79138,
+          "digest": "sha256:a2c2c64ab47e1351f6f0c7128d634d553452443af8cefc5f12703be10d1b4c68",
+          "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+          "expired": false
+        },
+        {
+          "id": 13176614097,
+          "name": "tdrp-source-review-contract-8bcfd464691534acaa04b13852cd523ab49a3dcc",
+          "bytes": 6773,
+          "digest": "sha256:f80cc50cd199e6f577fdb045738d9f23909dd62843b20ea3a87e594cc0ecfdb4",
+          "head": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+          "expired": false
+        }
+      ]
+    },
     "ledger_preparation": {
       "head": "19f631c5d74f342109859f8f1d509173b86305cc",
       "run": 41520347187,
@@ -142,7 +269,19 @@
         "source_reviews_preserved": true,
         "acceptance_changed": false
       }
-    ]
+    ],
+    "run_attempt": 1,
+    "independent_evidence_review": {
+      "reviewer": "/root/current_delivery_read",
+      "verdict": "Direct positive evidence supports bounded AC-CALL-SCOPE-01/02; no discrepancy in exact head, counts, artifact identity or job status. Full batch/product ACCEPT not granted.",
+      "method": "Independent reread of full job logs, run/job/artifact metadata, exact-H spec and executed fixture. Upload/server digest agreement checked; ZIP not independently downloaded/rehashed.",
+      "limitations": [
+        "Controlled loopback backend on macOS, not deployed service or media/device authorization.",
+        "Logical SQLite metadata/transcript/table snapshots; reopen reconstructs owners in-process, not process-kill or power-loss durability.",
+        "Malformed metadata rejection exercised through cached owners; reopen verifies preservation rather than repeating every negative cold.",
+        "Shipping compile queued; overall native workflow has no success conclusion."
+      ]
+    }
   },
   "original_requirement_check": [
     {
@@ -184,7 +323,7 @@
     {
       "id": 7,
       "condition": "Implementation and tests together; freeze H; minimal Actions validation with exact-input reuse",
-      "evidence": "No local execution; 5+3+1 focused cases added to existing Actions batch with unchanged broader gates. Publication/execution pending.",
+      "evidence": "Exact8bcfd Actions passed5+3+1 call cases and retained Human54/Agent4/journal12/otherreconcile; source157/schema37/candidate passed. Shippingjob125537147935 queued. No local execution or unchanged-failure reruns.",
       "complete": false
     },
     {
@@ -196,7 +335,7 @@
     {
       "id": 9,
       "condition": "Unique inventory/ledger/RTM separates source, implementation, wiring, authored tests, execution and independent acceptance; schema/validator aligned",
-      "evidence": "Single conservative mapped CALL-SCOPE-001 row prepared against schema e52b2ba; exact case IDs, null execution fields, existing source_reviews preserved. Canonical integration and schema/candidate Actions pending.",
+      "evidence": "Canonical185-row ledger and six source reviews passed current schema/candidate gates at8bcfd; source acceptancefalse and unknown/unreadnull. Actual bounded execution/independent evidence verdict recorded here; row execution update/new credential scope still require integration.",
       "complete": false
     },
     {
@@ -208,29 +347,40 @@
     {
       "id": "delivery",
       "condition": "Current-round result committed/pushed and remote readback verifies exact SHA and files before final",
-      "evidence": "Current production commit249675ae30502e72e495a4c6aee53e8214f82bd1 is published on the derived migration branch; final current-H file readback, Actions and PR are still required.",
-      "complete": false
+      "evidence": "Production/test work published on derived migration-line branch; exact8bcfd commit and11 file contents plus ledger blob reread through GitHub. PR191 exists; shipping and shared-line integration open.",
+      "complete": true
     }
   ],
   "acceptance": {
-    "batch_runtime": false,
+    "batch_runtime": "bounded-call-AC01/02-supported; shipping and integration pending",
     "whole_call": false,
     "full_migration": false,
     "independent_accept": false,
     "shipping_sha": null
   },
   "remaining_blockers": [
-    "Containing-H focused Actions and full canonical source/schema candidate evidence are required.",
+    "Exact8bcfd reconciliation/source/UI/Electron/Windows jobs passed; shipping job125537147935 stillqueued. PR191 remains draft/unmerged and requires latest-target overlap/ledger reconciliation.",
     "Historical wrong-scope call records require separately scoped diagnosis/recovery; this batch does not silently alter user data.",
     "Real call service credentials, account/device cases, deployed authorization, media/ICE/TURN, credential rotation, supported platform packages, UI/a11y, performance/soak and complete Bot regression remain required.",
-    "Complete source review dispositions and generated/build/external/LFS/legal closure remain unaccepted."
+    "Complete source review dispositions and generated/build/external/LFS/legal closure remain unaccepted.",
+    "Independent CALL-CRED-01–06 account/device credential-lifetime repair is being authored. No execution proof for that new delta yet."
   ],
-  "next_action": "Read exact containing implementation-H Native service and source candidate Actions, repair only a demonstrated failure, and record actual job/artifact evidence.",
+  "next_action": "Complete and freeze CALL-CRED-01–06 native credential fences, eight Session call-site bindings and six response-barrier/recovery cases, then run exact-H Actions; retain original queued shipping job without retry.",
   "github_delivery": {
     "preparation_commit": "9e959272d40c0dbceb396fb894151114575b1512",
     "preparation_full_sha_and_five_files_readback": true,
     "implementation_commit": "249675ae30502e72e495a4c6aee53e8214f82bd1",
-    "integration_into_shared_checkpoint": false
+    "integration_into_shared_checkpoint": false,
+    "current_verified_h": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
+    "current_commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/8bcfd464691534acaa04b13852cd523ab49a3dcc",
+    "full_sha_and_changed_files_readback": true,
+    "pr": {
+      "number": 191,
+      "url": "https://github.com/bhrumom/fabushi-desktop/pull/191",
+      "draft": true,
+      "merged": false,
+      "target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
+    }
   },
   "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
 }
