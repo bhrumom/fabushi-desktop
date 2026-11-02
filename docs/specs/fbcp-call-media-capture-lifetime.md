@@ -1,7 +1,7 @@
 # Human call media capture lifetime
 
 Spec ID: FBCP-CALL-MEDIA-CAPTURE-001
-Status: implemented and independently source-reviewed; containing-H execution and full acceptance pending
+Status: implemented; exact8f4 renderer/14 component cases passed; canonical source membership and full acceptance remain gated
 Task: 20bf9475-a885-4314-b509-bea53ef8849f, round 1
 Date: 2026-11-02
 Fixed upstream: f985723b552b30fe1c17d377d57f44e61a15a8c4

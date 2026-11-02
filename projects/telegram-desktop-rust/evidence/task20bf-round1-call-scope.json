@@ -3,7 +3,7 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "Two bounded Native admission/credential batches executed; media capture source-reviewed and awaiting exact-H execution/canonical-row registration; full migration unaccepted.",
+  "status": "Three bounded call batches published; exact8f4 renderer/capture14 and source contract passed; canonical capture-row registration in progress; explicit rejoin implementing; full migration unaccepted.",
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
@@ -311,7 +311,7 @@
     {
       "id": 4,
       "condition": "User-behavior batches include ingress/rules/permissions/persistence/service/events/UI/failure/cancel/restart and tests",
-      "evidence": "Existing-owner call account/peer and credential batches passed exact523 Native15 call cases. Existing HumanCallControls capture/stop/dispose/late-result batch now has independently source-reviewed implementation and14 authored actual-component tests; exact-H execution and canonical row append remain. Full lifecycle/service/platform closure open.",
+      "evidence": "Existing-owner account/peer/credential exact523 Native15 call cases passed; exact8f4 existing HumanCallControls capture/stop/dispose and late-result ownership passed actual renderer+14 component cases. Explicit active-call rejoin is implementing under prior committed speccb66; full call/service/platform gates remain open.",
       "complete": false
     },
     {
@@ -329,19 +329,19 @@
     {
       "id": 7,
       "condition": "Implementation and tests together; freeze H; minimal Actions validation with exact-input reuse",
-      "evidence": "Exact523 passed credential6+scope5+shipping3+local1, retained Human62/Agent/forward/UI/FFI, source157/schema37/candidate. macOS shipping125550827119 queued. All execution is Actions-only; prior exact8bc proof remains separately scoped.",
+      "evidence": "Only Actions execution: exact523 Native and retained message/UI cases; exact8f4 actual renderer+14 media cases, source158/schema37/0schemaerrors. Original12 retained, two reviewed concurrency negatives added. macOS shipping still queued; canonical capture-row membership gate pending.",
       "complete": false
     },
     {
       "id": 8,
       "condition": "Continue independent work during CI, repair common contracts first, distinguish test/code/environment defects",
-      "evidence": "While8bcfd macOS shipping remains queued, the independent call credential batch was authored/reviewed and concurrent shared00036927 changes reconciled. Earlier socket TEST_FLAW fixed after root decision; evidence-only runner/UI count errors explicitly corrected. No rerun-to-green or invented service evidence.",
+      "evidence": "During exact8f4 validation root prepared guarded canonical-row append and independent source check confirmed active-call rejoin gap; spec committed and disjoint UI/Host-test implementation started. No rerun-to-green; previous independent IMPL_BUG fixes recorded before changes.",
       "complete": false
     },
     {
       "id": 9,
       "condition": "Unique inventory/ledger/RTM separates source, implementation, wiring, authored tests, execution and independent acceptance; schema/validator aligned",
-      "evidence": "Canonical185-row ledgerdcfd04a8 records exact523 proof and passed a7 containing-ledger source run41527234303. New media row will append with all prior rows/reviews/counters/acceptance retained. Latest FMEP01dc and matching source-test3ef07 imported with unchanged schemae52/validatorad5; containing-H validation pending.",
+      "evidence": "Canonical186-row ledger9c0fd35e preserves original185 rows and six reviews/counters/acceptance exactly; new capture row records actual8f4 renderer14 and independent bounded source/execution assessment. Actions41531169916 schema-validates before/after and reconstructs original document; root remotely reread full prepared blob. Latest FMEP entrypoint/source158/schema37 passed; containing-ledger seven-tuple candidate gate pending. Full source/product acceptance false.",
       "complete": false
     },
     {
@@ -353,7 +353,7 @@
     {
       "id": "delivery",
       "condition": "Current-round result committed/pushed and remote readback verifies exact SHA and files before final",
-      "evidence": "Current-round production/test/evidence commits through a7e03787dcfe7310c2e28bedcfa226c212eafe0b were pushed and commit/files remotely reread; PR191 draft/unmerged. Media code publication and readback are pending for this new checkpoint.",
+      "evidence": "This round's actual production/test H8f4b1943b4043e6a9da7051d30ff1cefc04b39b2 and all16 file contents were remotely reread; speccb66 also pushed/reread. Draft PR191 remains unmerged; no final shipping claim.",
       "complete": true
     }
   ],
@@ -363,7 +363,8 @@
     "full_migration": false,
     "independent_accept": false,
     "shipping_sha": null,
-    "credential_batch": "bounded-AC01/02/03-supported; not full shipping or product ACCEPT"
+    "credential_batch": "bounded-AC01/02/03-supported; not full shipping or product ACCEPT",
+    "media_capture": "Exact8f4 renderer/14 component contracts passed; full media/product ACCEPT not granted; new responsibility requires containing-ledger source candidate."
   },
   "remaining_blockers": [
     "Exact523c8ca bounded call credential/scope, retained reconciliation/UI/Electron/Windows/FFI and source jobs passed. macOS shipping job125550827119 remains queued; overall Native run has no success conclusion. PR191 remains draft/unmerged.",
@@ -372,10 +373,10 @@
     "Complete source dispositions and generated/build/external/LFS/legal closure remain unaccepted; global unknown/unread remain null and all acceptance flags false.",
     "HumanCallControls capture acquisition/stop/disposal/lifetime repair is implementing under committed spec1094; no media implementation execution or hardware acceptance is claimed yet."
   ],
-  "next_action": "Publish the reviewed media freeze on the existing isolated migration branch, run exact-H renderer/14 browser/source gates, then append its exact scoped responsibility/execution to the canonical ledger and validate all seven source identities.",
+  "next_action": "Run the containing186-row source candidate gate, then integrate the independently reviewed explicit same-device active-call rejoin code/tests and validate its exact-H renderer and Native reopen lane.",
   "github_delivery": {
-    "commit": "a7e03787dcfe7310c2e28bedcfa226c212eafe0b",
-    "url": "https://github.com/bhrumom/fabushi-desktop/commit/a7e03787dcfe7310c2e28bedcfa226c212eafe0b",
+    "commit": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+    "url": "https://github.com/bhrumom/fabushi-desktop/commit/8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
     "remote_commit_and_files_reread": true,
     "review_pr": "https://github.com/bhrumom/fabushi-desktop/pull/191",
     "main_changed": false,
@@ -645,7 +646,7 @@
     "base": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
     "integration_parent": "a7e03787dcfe7310c2e28bedcfa226c212eafe0b",
     "prior_target_blob": "8e5c4cbe5b3c9fb7f0d51d43300ccdeb2d2ac99e",
-    "status": "implemented/source-reviewed/tests-authored; execution pending",
+    "status": "implemented/source-reviewed/tests-executed at exact8f4; canonical capture-row candidate validation pending",
     "frozen_files": {
       "frontend/src/production/human-call-media.tsx": "45641d86e7c2c5adcd0fa7b70609f3a0e28bff78",
       "frontend/src/production/human-call-media.fixture.tsx": "ad9c9f52fb467f8849a23f528f8857cb5fc1b1d7",
@@ -728,7 +729,27 @@
       "obsolete Accept ICE rejection preserves the current peer in same and newer generations"
     ],
     "expected_case_count": 14,
-    "execution": null,
+    "execution": {
+      "head": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+      "run": 41529946311,
+      "attempt": 1,
+      "job": 125567231761,
+      "conclusion": "success",
+      "actual_compile": "npm run build:renderer: tsc --noEmit + Vite + existing check-desktop-bundle;45 emitted text assets within boundary",
+      "cases": 14,
+      "passed": 14,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 20022.570844,
+      "environment": "GitHub Actions Ubuntu24.04 / Nodev24.22.1 / npm11.19.1 / locked desktop dependencies and Chromium",
+      "artifact": 13182056460,
+      "digest": "sha256:30112f06aa3f858f594204ae7499ebe2aa8f2016242036c4ced05c963ccb3314",
+      "artifact_bytes": 70259,
+      "archive_rehashed_independently": false,
+      "root_completed_job_and_artifact_readback": true
+    },
     "independent_source_review": {
       "reviewer": "/root/current_gap_read/call_media_frozen_review",
       "result": "CAPTURE-REVIEW-01/02 source-resolved; no additional concrete defect in fixed five-file freeze; no execution claim"
@@ -742,9 +763,14 @@
     "ledger_registration": {
       "canonical_path": "projects/telegram-desktop-rust/parity-ledger.json",
       "base_blob": "dcfd04a8b4f02b0a089ace937c93c5880d1ac1f3",
-      "status": "distinct scoped row prepared; append with exact execution subject and canonical candidate validation before batch qualification",
+      "blob": "9c0fd35ecded4276ce04d832aacbf2b4534c1f0a",
+      "status": "Actions-validated row appended by this containing commit; exact seven-source candidate membership pending",
+      "responsibilities": 186,
+      "other185RowsExact": true,
       "source_reviews_changed": false,
-      "acceptance_changed": false
+      "unknown_unread_changed": false,
+      "acceptance_changed": false,
+      "containing_source_execution": null
     },
     "contract_reconciliation": {
       "shared_snapshot": "f3ee5d8874ab74b07c60c0751035843b24319deb",
@@ -760,6 +786,200 @@
       "Active-call rejoin after process restart and complete Coordinator pending-dispatch account epoch remain open.",
       "No public schema/data migration/new owner/legacy deletion; normal revert reopens the defect.",
       "Whole source/legal/generated/external/LFS, final UI/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent product ACCEPT remain open."
-    ]
+    ],
+    "implementation_head": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+    "remote_readback": {
+      "head": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+      "tree": "0623bd5e201fdba5ff1d1caa147b0e7c110db83f",
+      "all_verified": true,
+      "files": [
+        {
+          "path": "frontend/src/production/human-call-media.tsx",
+          "sha": "45641d86e7c2c5adcd0fa7b70609f3a0e28bff78",
+          "full_content_equal": true,
+          "length": 46469
+        },
+        {
+          "path": "frontend/src/production/human-call-media.fixture.tsx",
+          "sha": "ad9c9f52fb467f8849a23f528f8857cb5fc1b1d7",
+          "full_content_equal": true,
+          "length": 20219
+        },
+        {
+          "path": "frontend/src/production/human-call-media.behavior.test.mjs",
+          "sha": "31f7ad37d08623dc55534d1f99def9dc129a8623",
+          "full_content_equal": true,
+          "length": 44656
+        },
+        {
+          "path": "desktop/human-call-media-test.html",
+          "sha": "d8aedc6cf7af015802b77d2445cb3b2a4ab96cec",
+          "full_content_equal": true,
+          "length": 273
+        },
+        {
+          "path": "desktop/human-call-media-test.ts",
+          "sha": "41d68e59999432b7f31e046b4ea65d34b0a8dcb3",
+          "full_content_equal": true,
+          "length": 152
+        },
+        {
+          "path": ".github/workflows/human-call-media-contracts.yml",
+          "sha": "bf3f4667a43996d926e3cc33f5bc720d7a794690",
+          "full_content_equal": true,
+          "length": 2938
+        },
+        {
+          "path": "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+          "sha": "ca8e76aa1039f8e4c8083e972bd10472aef359fe",
+          "full_content_equal": true,
+          "length": 54486
+        },
+        {
+          "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+          "sha": "e6d1a79ce279773ddf12597e6aa7861e3499eb68",
+          "full_content_equal": true,
+          "length": 66916
+        },
+        {
+          "path": "projects/telegram-desktop-rust/dossiers/native-call-scope-admission.md",
+          "sha": "1507a4ae1441f56fc22ac38c892e8d5be70acc64",
+          "full_content_equal": true,
+          "length": 20071
+        },
+        {
+          "path": "projects/fabushi-communication-platform/STATUS.md",
+          "sha": "35f84fe2c3b5470241d706025f60e7441c6aebc2",
+          "full_content_equal": true,
+          "length": 14901
+        },
+        {
+          "path": "projects/telegram-desktop-rust/STATUS.md",
+          "sha": "5008e99e708a4fdb00b7dc0eb3ddd516ebad008c",
+          "full_content_equal": true,
+          "length": 24208
+        },
+        {
+          "path": "docs/specs/fbcp-call-media-capture-lifetime.md",
+          "sha": "b468753fb447cd0b6a90ac4a8dfc705ee8a7a258",
+          "full_content_equal": true,
+          "length": 7888
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope-review.md",
+          "sha": "f322dbe09698d8e191b63279451feef06cb14e83",
+          "full_content_equal": true,
+          "length": 26381
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json",
+          "sha": "dec6862c4f06cab3b71d133690605006d7136c9c",
+          "full_content_equal": true,
+          "length": 40266
+        },
+        {
+          "path": "docs/specs/fabushi-deferred-ci-migration.md",
+          "sha": "01dc632975eca100c9bdc80746efdc2b0b044a57",
+          "full_content_equal": true,
+          "length": 7810
+        },
+        {
+          "path": "scripts/tdrp-source-review.test.mjs",
+          "sha": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+          "full_content_equal": true,
+          "length": 60914
+        }
+      ]
+    },
+    "source_execution": {
+      "head": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+      "run": 41529946243,
+      "attempt": 1,
+      "contract_job": 125567231067,
+      "contract_conclusion": "success",
+      "source_cases": 158,
+      "schema_cases": 37,
+      "canonical_schema_errors": 0,
+      "authority_entrypoint_negative": "actual ok25 authority CLI enforces actual acquisition closure before later checks or network access",
+      "artifact": 13182590879,
+      "digest": "sha256:064ee41c15f265afcaed082cd759d13594905ae55df27270afeac0323fa3cc15",
+      "candidate_job": 125569689192,
+      "candidate_status": "completed/success;185 existing responsibility rows; new capture row is not included until ledger integration",
+      "candidate_conclusion": "success",
+      "candidate_artifact": 13182022464,
+      "candidate_digest": "sha256:f18f8d2cdb64a36c1442fb3893debd829f8d4d0e177d4fb57667a978999f587f",
+      "candidate_rows": 185,
+      "source_identities": 16381,
+      "root_identities": 6895,
+      "source_review_records": 6,
+      "completed_source_review_records": 2,
+      "unknown": null,
+      "unread": null,
+      "acceptance_flags": {
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      }
+    },
+    "rejoin_extension": {
+      "spec_commit": "cb66ee7da4f0342d51678a86089a52d3b0d5a602",
+      "spec_blob": "2314cb0ec6b918d7ff1a26ee4744ff853e5e5832",
+      "spec": "docs/specs/fbcp-call-media-rejoin.md",
+      "status": "implementation in progress; no execution claim",
+      "actual_gap": "Fresh active-call mount has no local stream/peer and no explicit action to reacquire; existing controls return early.",
+      "existing_lower_owner": "Current getCallSession/strict device lease/permissions/CallSessionStore reconnect-resume; no new public command/schema",
+      "author_scope": [
+        "frontend/src/production/human-call-media.tsx",
+        "frontend/src/production/human-call-media.fixture.tsx",
+        "frontend/src/production/human-call-media.behavior.test.mjs",
+        "source/host/tests/native_call_rejoin_contract.rs"
+      ]
+    },
+    "independent_execution_review": {
+      "reviewer": "/root/call_media_integration_review",
+      "verdict": "Direct completed-job/artifact readback supports bounded capture execution; no additional concrete finding and no product ACCEPT.",
+      "exact_head": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+      "actual_counts": "renderer/45-asset bundle boundary +14 pass,0 failed/cancelled/skipped/todo; source158/schema37/0 schema errors",
+      "artifact_digest_matches_upload_log": true,
+      "archive_rehashed_independently": false,
+      "candidate_membership": "new row requires containing-ledger gate"
+    },
+    "ledger_preparation_review": {
+      "reviewer": "/root/call_media_integration_review",
+      "helper_blob": "ab263132cfc58c9d3a1feaca46a1def6e4f6d407",
+      "row_blob": "da43455be13be702f22b94040dfb3c6c5542c200",
+      "result": "Approved source-only: exact input guards, before/after schema, one append/count note, original-document reconstruction, computed Git blob match; no ref/tree/commit write.",
+      "preparation_head": "b7062a0bab20b513baa8b0f6d45c1c28f8ea8277",
+      "remote_helper_commit_and_content_reread": true,
+      "execution": {
+        "acceptance_changed": false,
+        "base_blob": "dcfd04a8b4f02b0a089ace937c93c5880d1ac1f3",
+        "bytes": 3675566,
+        "execution_head": "8f4b1943b4043e6a9da7051d30ff1cefc04b39b2",
+        "new_responsibility": "FBCP-CALL-MEDIA-CAPTURE-001",
+        "other_185_rows_preserved": true,
+        "preparation_head": "b7062a0bab20b513baa8b0f6d45c1c28f8ea8277",
+        "prepared_blob": "9c0fd35ecded4276ce04d832aacbf2b4534c1f0a",
+        "refs_written": false,
+        "responsibilities": 186,
+        "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+        "source_reviews_preserved": true,
+        "unknown_unread_preserved": true,
+        "run": 41531169916,
+        "attempt": 1,
+        "job": 125571450892,
+        "conclusion": "success",
+        "artifact": 13182482756,
+        "digest": "sha256:a7db65ccc8df5b8cb9e5d28729333ae6fb6dcbcf5eb1a6c260819ce6200c73f5",
+        "remote_blob_readback": {
+          "blob": "9c0fd35ecded4276ce04d832aacbf2b4534c1f0a",
+          "other185RowsExact": true,
+          "sourceReviewsExact": true,
+          "rowExact": true,
+          "wholeOriginalRestored": true
+        }
+      }
+    }
   }
 }
