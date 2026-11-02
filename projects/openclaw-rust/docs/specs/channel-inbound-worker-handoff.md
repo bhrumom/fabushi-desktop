@@ -970,3 +970,25 @@ upgraded by this change. Rollback loses this live retention fence without
 deleting durable user data. Reuse only the existing fixed-U channel dossier's
 recorded coalescing/final-repump and no-blind-replay review extents; no historical
 full-read fact, scoped verification or global completion flag is promoted.
+
+### CFL-SETTINGS-FIXTURE-01 — checked Settings source prerequisite
+
+Decision **FIX / TEST_FLAW**, before the CI recovery change. At formal H
+`74484facdac03260af2b5ca1bd7963dc2ce5c1c2`, runtime run `41539925579`, Linux
+job `125601172233` compiled the actual shipping App and its test executable,
+then passed the first eighteen Automation/Settings exact cases. The first
+channel case, `channel_failure_settings_commit_rearms_paused_head_with_exact_marker`,
+failed at its real `set_host_settings` call with `Unsupported settings version;
+expected version 1`. Its fixture had created an existing settings file containing
+`{}`. The production checked reader correctly rejects that input before commit
+or readiness notification; this is not evidence of a channel dispatch defect.
+
+Seed a valid version-1 document with no configured provider. Assert both real
+Settings source validity and absence of a configured provider before exercising
+the pause/commit path. Preserve the strict invalid-source reader, every state,
+ordering, marker, no-replay and no-write assertion, and the separate legacy-key
+fixtures. Change no production Settings or channel gate. Re-run the failed
+case and the thirty-three channel cases that were not reached, with their actual
+App executable/input binding; retain the separately bound earlier positives.
+The existing exact-H workflow owns this verification. This correction does not
+establish real channel/provider compatibility or any final acceptance gate.

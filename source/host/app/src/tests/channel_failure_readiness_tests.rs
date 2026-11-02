@@ -61,7 +61,7 @@ impl FailureReadinessFixture {
             "fabushi-channel-failure-readiness-{}", uuid::Uuid::new_v4(),
         ));
         fs::create_dir(&root).unwrap();
-        fs::write(root.join("settings.json"), b"{}").unwrap();
+        fs::write(root.join("settings.json"), br#"{"version":1}"#).unwrap();
         let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
         let agent_id = sessions.materialize_new_session(None, "user", None).unwrap().id;
         let session_key = sessions.read_session_work_admission(&agent_id).unwrap().unwrap().session_key;
@@ -78,6 +78,9 @@ impl FailureReadinessFixture {
         let owners = idle_runner_owners(
             &root, host_tx, GatewayEventHub::default(), Arc::clone(&sessions), Arc::clone(&manager),
         );
+        assert_eq!(owners.deps.settings.get_config_source_metadata()["valid"], json!(true));
+        assert!(shipping::configured_routed_provider(owners.deps.settings.get_settings_path()).is_none(),
+            "a valid Settings source remains unconfigured until the actual commit");
         let roster_events = Arc::new(Mutex::new(Vec::new()));
         let observed_events = Arc::clone(&roster_events);
         let observed_wakes = Arc::clone(&wakes);
