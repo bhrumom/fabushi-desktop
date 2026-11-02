@@ -124,3 +124,43 @@ required tests 未运行、blocked、flaky、缺来源/服务/签名、缺独立
 - https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs
 - https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows
 - https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks
+
+## 12. 产品责任优先与生产归属收口（2026-11-02）
+
+本节落实用户要求：修正迁移方式并合并为 AI 执行依据。它细化阶段 A 的工作选择与实现判定，优先于旧提示词中“最早未闭合文件优先”的机械顺序；完整来源范围与最终验收标准不变。
+
+### FMEP-OWNER-01 — 当前生产图决定目标
+
+PR #20 是架构沿革，不是永久冻结的目标源码。每批绑定实际 base/working head，从 shipping entrypoint 跟踪 UI → command → owner → state/storage → service → event/projection；在既有 current-owner-inventory 和 owner-resolution-matrix 中增量记录路径、符号、权威状态、持久化、权限与调用者。旧 inventory/STATUS 只作有日期的历史证据；不得因旧表写“无 owner”直接新建。只补查当前批次和公共边界，不把全仓盘点反复作为开工前置。
+
+### FMEP-OWNER-02 — 同一语义只有一个权威写入者
+
+首先审计桌面 Session/Transcript/native_messaging、native/mahayana-messaging、FeatureHost MessagingService 和旧 Telegram Provider/FFI 的实际关系。目录名、Cargo 成员、存在测试、注释“desktop uses”均不能证明 shipping reachability。记录每个支持平台/构建配置的入口、注册条件和依赖路径；区分可调用、实际选用、仅研究/历史。
+
+为 Identity、Conversation、Message、Resource、Permission、Search 明确唯一逻辑权威与写入入口；允许服务端权威、本地 durable outbox、离线状态、缓存和 UI 投影分层，但必须定义 ID/版本、幂等、排序、权限、冲突、重放和重启的合同，不要求所有状态挤进一个进程或文件。禁止仅通过重命名隐藏第二 owner，或让同一行为分别在桌面路径和孤立领域库重复实现。领域库只有经真实调用链复用后才计入产品接线。
+
+### FMEP-OWNER-03 — 旧路径有明确退出条件
+
+Telegram core/runtime/provider/network/storage 不作为本迁移的 shipping owner。先识别所有调用者、平台依赖和存量数据，再将适用行为迁入选定 Fabushi owner，补齐版本化数据迁移、失败恢复与回滚方案，最后移除旧注册、默认依赖和产品入口。不能因名字含 Telegram 就直接删库或用户数据，也不能因“遗留代码”无限保留第二运行路径。法律声明和研究 provenance 保留。若另有明确授权的互操作规范，单独标明适用范围，不把互操作算作原生融合完成。
+
+### FMEP-FAST-08 — 完整核算，产品批次驱动
+
+所有源文件继续完整理解并有处置。产品行为、构建/平台/安全/许可证必要支撑、上游开发辅助工具分别记账；沿用一个 inventory/ledger/RTM，用兼容字段或既有 notes 标注类别，不建第二套真相。
+
+上游 .agents、审查提示词、代码健康工具不是 Fabushi 产品需求的自动来源。理解后应说明复用现有机制、必要适配或经证据说明不适用；不能仅因源仓有该文件就改 root AGENTS、复制治理体系或制造 Rust 对应物。已有明确必迁责任不得偷偷改成不适用；冲突必须在当前规范/ADR 中解决。工具工作仅在解除具体产品、构建、安全或最终验收阻塞时优先，并指出被解锁的能力。
+
+按依赖、用户价值和风险选择下一批，不按文件名字典序：先权威模型与生产链收口，再消息/同步/恢复与统一 UI，再群频道/权限/搜索、资源媒体/通话等可并行域；Stories、商业、平台等全部适用职责仍必须完成。每批交付实际 owner 修改、调用接线、数据/错误恢复合同和已编写用例。纯阅读批次如确有必要，记录它解锁的下一生产批次，不冒充功能实现。
+
+### FMEP-STATE-01 — 进度不得混算
+
+分别报告来源理解、产品职责实现、shipping 接线、测试编写、执行与独立接受。治理文档条数不得进入产品完成率；分母尚未完整分解时不得给全产品百分比。单纯政策说明不能把可执行工具职责标 implemented；独立 helper 或领域模型完成但 UI/服务调用未接入时，保留局部实现说明和 wiring gap，不标整个产品责任 implemented。历史行逐项纠正且保留原记录，不批量升级状态。
+
+每批更新既有 STATUS 和 ledger 的相关项、exact head 与未决问题；计数、表头 revision、行状态不一致时明确修正来源。未执行仍 not-run；本规范变更不修改任何产品验收值。
+
+### 首个生产批次与退出标准
+
+下一实现批次从 OWNER-01/02 的三条消息路径及旧 Telegram 注册开始，复用现有迁移线。交付一份写入既有 owner matrix 的路径/权威/调用者差异，以及相应生产收口实现和用例；禁止再次只扩充治理报告。发现跨仓服务依赖时同步追踪服务 owner 和接口版本，缺少源码或权限明确阻塞，继续其他独立能力。
+
+阶段 A 人工审查必须能回答：实际用户入口在哪里；哪个 owner 决策；什么状态被持久化；谁发送/同步；谁消费事件；失败/重启怎么恢复；旧路径何时退出。缺一项则保留该项缺口。阶段 B 再在 Actions 证明支持配置无旧 Telegram 原生路径、同一消息跨 UI/服务/持久化的 ID 与状态一致、重试重启及数据迁移可恢复、现有 Agent 能力不回退。不得提前运行验证或把政策合并当产品完成。
+
+本次政策交付审查：基于 `6f770fb00`，仅修改 Markdown 规范与入口；人工复核范围、状态分层、生产路径判定、安全退出及阶段 A/B 约束。审读该基线全部 `.github/workflows` 事件：本次 ref/PR/合并可触发的自动事件仅 push/pull_request，未发现 pull_request_target/workflow_run/schedule 链；其他入口为显式 dispatch/call。本次分支提交与最终合并提交均带 `[skip ci]`，与该事件清单共同构成此次文档保存的零 CI 条件，不推广为未来提交的通用保证。不修改 workflow/保护规则，不运行测试或构建，不改变产品实现状态。后续发布前若 base/workflow 变化须重查；文档回滚使用普通 revert 并保留历史证据。

@@ -330,6 +330,10 @@ For messaging, rooms, channels, contacts, media, calls, identity, Telegram-sourc
 - `projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md` and TDRP-001 when Telegram source behavior is involved;
 - the current PR #20 / canonical Grok Bot spec.
 
+### Product-owner execution correction
+
+For FBCP/TDRP, `docs/specs/fabushi-deferred-ci-migration.md` §12 is mandatory: current shipping owners govern placement; product batches take priority over upstream tooling order; historical Telegram paths require caller/data-safe retirement; source, product implementation, wiring and verification progress stay distinct. Refresh the relevant existing owner inventory before adding an owner. PR #20 is architectural lineage, not a frozen implementation snapshot.
+
 ### Single target architecture
 
 **PR #20 / canonical Fabushi is the only target product architecture.**

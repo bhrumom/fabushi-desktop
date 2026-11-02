@@ -79,3 +79,7 @@ Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已
 完整执行提示词：`management/prompts/full-migration-deferred-ci.md`。
 
 先做所需基线差异与 current owner 对照，再按依赖批量推进真实实现。遇到阻塞记录解除条件并推进无依赖任务。全量代码融合完成只可进入候选验证；全产品完成仍以 FBCP-001 全部适用 AC 和独立 ACCEPT 为准。
+
+## 2026-11-02 执行纠偏
+
+遵循 `docs/specs/fabushi-deferred-ci-migration.md` §12：以当前生产 owner 和依赖驱动批次，先明确消息权威与旧运行路径退出，再推进完整产品能力。上游开发工具单独核算，不机械导入治理规则，不混入产品进度。历史 STATUS/owner 清单必须按当前批次增量刷新；本次规范修订不代表产品实现或验收完成。
