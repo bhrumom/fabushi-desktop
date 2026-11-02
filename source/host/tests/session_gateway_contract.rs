@@ -4833,3 +4833,41 @@ fn shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch() {
     }
 }
 
+
+#[test]
+fn shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal() {
+    let root = temp_root("forward-corrupt-recovery");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    child.terminate();
+    server.release_first_post();
+    drop(child);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let db = rusqlite::Connection::open(forward_db_path(&root, source)).unwrap();
+    let original_hex: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+    assert_eq!(read_forward_metadata_from_disk(&root, source)["humanForwardBatches"][0]["requestId"], args["clientNonce"]);
+    for damaged in ["zz", "6e6f742d6a736f6e"] {
+        db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [damaged]).unwrap();
+        let resumed = human_message_fixture_runtime(&root, &server.url);
+        let target = args["destinationConversationIds"][1].as_str().unwrap();
+        let error = resumed.sync_human_conversation(target).expect_err("corrupt source metadata must block recovery");
+        assert!(!error.is_empty());
+        assert_eq!(server.post_count(), 1);
+        assert_eq!(server.history_count(), 0);
+        let stored: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+        assert_eq!(stored, damaged);
+        resumed.shutdown(); drop(resumed);
+    }
+    db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+    drop(db);
+    let restored = human_message_fixture_runtime(&root, &server.url);
+    restored.sync_human_conversation(args["destinationConversationIds"][1].as_str().unwrap())
+        .expect("recover original intent after repairing injected metadata");
+    assert_forward_settled(&restored, &args);
+    assert_eq!(server.post_count(), 3);
+    assert_eq!(server.state.lock().unwrap().accepted.len(), 2);
+    restored.shutdown(); drop(restored);
+    server.finish(); fs::remove_dir_all(root).unwrap();
+}
