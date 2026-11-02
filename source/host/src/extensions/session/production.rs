@@ -3977,8 +3977,15 @@ impl ProductionSessionWorkers {
     fn human_reaction_remote_identity(entry: &serde_json::Value) -> Result<String, String> {
         let value = entry.get("remoteMessageId")
             .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
-        fabushi_message_identity_text(value)
-            .map_err(|_| "Human reaction target has an invalid canonical remote message identity".to_string())
+        let remote_id = fabushi_message_identity_text(value)
+            .map_err(|_| "Human reaction target has an invalid canonical remote message identity".to_string())?;
+        let canonical_id = format!("human-server-message:{remote_id}");
+        if entry.get("id").and_then(serde_json::Value::as_str) != Some(canonical_id.as_str())
+            || entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+        {
+            return Err("Human reaction target is not a settled canonical message".into());
+        }
+        Ok(remote_id)
     }
 
     fn validate_human_reaction_target(

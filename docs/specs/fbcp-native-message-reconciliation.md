@@ -1580,7 +1580,16 @@ is not authority to restore blocking sends or replace current projection owners.
 Before replaying a durable Human reaction intention, require a message whose
 `authorKind` is Human and whose author is the authenticated local Human or the
 selected peer. Require a canonical positive safe-integer remote ID and exact
-untrimmed emoji identity. Reject malformed/foreign/missing/changed targets before
+untrimmed emoji identity. The selected row must also have exactly
+`id = human-server-message:<canonical remoteMessageId>` and `delivery = sent`
+before staging, before replay HTTP and after its response. A numeric remote ID
+remains compatible when it denotes that same canonical ID. A local outbox ID,
+different/padded canonical ID, or missing/non-sent delivery is inconsistent;
+preserve its complete row and any existing intention without dispatching or
+settling it. Existing canonical peer-nonce compatibility remains unchanged.
+Extend the same admission, restart and held-response tables, retaining all old
+cases and the numeric positive control; no new suite-count claim is implied.
+Reject malformed/foreign/missing/changed targets before
 HTTP, preserve the complete row and intention, and publish no mutation. Recheck
 the current target and remote identity after HTTP before replacing reaction
 fields; retain unrelated current metadata. New toggles use the same admission
