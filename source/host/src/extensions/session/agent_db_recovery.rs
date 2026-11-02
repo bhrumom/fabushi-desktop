@@ -243,9 +243,32 @@ impl AutomationCustodyRecoveryGuard {
     pub fn require_available(&self, db: &Connection) -> Result<(), AgentDbRecoveryError> {
         check_parent_identity(&self.parent, self.db_path.parent().ok_or_else(invalid_store_object)?)?;
         regular_store_file(&self.db_path, false)?;
-        let connection_path = db.path().filter(|path| !path.is_empty())
+        #[cfg(unix)]
+        let connection_path = {
+            use std::ffi::{CStr, OsStr};
+            use std::os::unix::ffi::OsStrExt;
+
+            // Connection::path discards native filenames that are not UTF-8.
+            // SAFETY: the borrowed Connection keeps its live handle available.
+            // This only reads main's metadata, without SQL, detach or close.
+            // SQLite owns the NUL-terminated filename until detach/close; copy
+            // its bytes immediately, before any other SQLite call. Neither the
+            // handle nor a borrowed filename escapes this block.
+            unsafe {
+                let filename = rusqlite::ffi::sqlite3_db_filename(db.handle(), c"main".as_ptr());
+                if filename.is_null() {
+                    None
+                } else {
+                    let bytes = CStr::from_ptr(filename).to_bytes();
+                    (!bytes.is_empty()).then(|| PathBuf::from(OsStr::from_bytes(bytes)))
+                }
+            }
+        };
+        #[cfg(not(unix))]
+        let connection_path = db.path().filter(|path| !path.is_empty()).map(PathBuf::from);
+        let connection_path = connection_path
             .ok_or(AgentDbRecoveryError::AutomationCustodyUnavailable("connection has no file identity"))?;
-        if Path::new(connection_path).canonicalize()? != self.db_path {
+        if connection_path.canonicalize()? != self.db_path {
             return Err(AgentDbRecoveryError::AutomationCustodyUnavailable("connection belongs to another store"));
         }
         match fs::symlink_metadata(automation_custody_recovery_marker_path(&self.db_path)) {

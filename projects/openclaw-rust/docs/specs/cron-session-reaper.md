@@ -348,6 +348,20 @@ not by itself close Automation execution/settlement or original-turn recovery.
   recovery tests. No runtime skip on a failed file creation, empty test filter,
   or platform inference supplies acceptance; retain actual exits, logs and
   failed owned fixtures, and keep all other platform obligations open.
+- ARA-07 (ARA-PATH-02): checked availability must also admit a healthy main
+  database whose Unix filename or parent contains non-UTF-8 bytes. The pinned
+  rusqlite 0.39.0 `Connection::path` projects SQLite's filename through UTF-8
+  and returns `None` for that supported input; it cannot decide file identity.
+  Read the existing connection's main-database filename without lossy text
+  conversion, keep the existing canonical-path comparison, and retain the
+  parent, physical guard and both marker checks. An attached matching file
+  cannot authorize a different or in-memory main database. Add real healthy
+  filename/parent positives, replacement-character twin/wrong-connection and
+  attached-file negatives, then recheck successful authority and marker refusal.
+  The existing Linux receipt must require these two additional named cases;
+  retain all five earlier raw-byte controls and ordinary macOS owner checks.
+  This corrects the existing availability contract only; it does not wire a
+  durable Automation claim or turn a successful probe into execution permission.
 
 This is a target-owner recovery correction, not a new fixed-U full-read claim.
 The checked barrier/order, process-crash behavior and real filesystem/physical

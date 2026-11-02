@@ -311,6 +311,157 @@ fn healthy_automation_custody_guard_requires_the_same_existing_database() {
     fs::remove_dir_all(root).expect("remove completed owned fixture");
 }
 
+// Required Linux Actions evidence supplies both native-byte path forms.
+#[cfg(target_os = "linux")]
+#[test]
+fn healthy_automation_custody_guard_preserves_native_main_path_identity() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+
+    for native_parent in [false, true] {
+        let label = if native_parent { "healthy-native-parent" } else { "healthy-native-filename" };
+        let root = fixture_root(label);
+        let (db_path, twin_path) = if native_parent {
+            (
+                root.join(OsString::from_vec(b"session-\xff".to_vec())).join("store.db"),
+                root.join("session-\u{fffd}").join("store.db"),
+            )
+        } else {
+            (
+                root.join(OsString::from_vec(b"store-\xff.db".to_vec())),
+                root.join("store-\u{fffd}.db"),
+            )
+        };
+        assert!(db_path.to_str().is_none(), "the actual main path must contain non-UTF-8 bytes");
+        assert!(twin_path.to_str().is_some());
+        assert_ne!(db_path.as_os_str().as_bytes(), twin_path.as_os_str().as_bytes());
+        let db = open_configured_db(&db_path, label, &DbRecoveryOptions::default(), false)
+            .expect("healthy native-path main database");
+        let twin = open_configured_db(&twin_path, label, &DbRecoveryOptions::default(), false)
+            .expect("independent healthy replacement-character main database");
+        db.execute("INSERT INTO kv(key,value) VALUES('identity-sentinel','native-main')", [])
+            .expect("native main sentinel");
+        twin.execute("INSERT INTO kv(key,value) VALUES('identity-sentinel','twin-main')", [])
+            .expect("twin main sentinel");
+        for (path, connection) in [(&db_path, &db), (&twin_path, &twin)] {
+            assert!(is_store_db_healthy(connection));
+            assert_eq!(authority_marker_count(connection), 0);
+            assert_absent(&automation_custody_recovery_marker_path(path));
+        }
+        let guard = acquire_automation_custody_recovery_guard(&db_path, &db)
+            .expect("healthy native main is available");
+        guard.require_available(&db).expect("held native-path authority remains available");
+        let twin_guard = acquire_automation_custody_recovery_guard(&twin_path, &twin)
+            .expect("healthy twin owns its independent authority");
+        twin_guard.require_available(&twin).expect("held twin authority is available");
+        let original = database_bytes(&db_path);
+        let original_twin = database_bytes(&twin_path);
+
+        for (path, wrong_connection, held_guard) in [
+            (&db_path, &twin, &guard),
+            (&twin_path, &db, &twin_guard),
+        ] {
+            let error = acquire_automation_custody_recovery_guard(path, wrong_connection)
+                .expect_err("a replacement-character twin cannot authorize the other main");
+            assert!(matches!(&error, AgentDbRecoveryError::AutomationCustodyUnavailable(
+                "connection belongs to another store"
+            )), "{error}");
+            let error = held_guard.require_available(wrong_connection)
+                .expect_err("held guard must retain native main identity");
+            assert!(matches!(&error, AgentDbRecoveryError::AutomationCustodyUnavailable(
+                "connection belongs to another store"
+            )), "{error}");
+        }
+        guard.require_available(&db).expect("wrong-connection refusals preserve native authority");
+        twin_guard.require_available(&twin).expect("wrong-connection refusals preserve twin authority");
+        assert_eq!(database_bytes(&db_path), original);
+        assert_eq!(database_bytes(&twin_path), original_twin);
+
+        let marker = automation_custody_recovery_marker_path(&db_path);
+        let marker_bytes = b"native-path custody unavailable";
+        fs::write(&marker, marker_bytes).expect("owned native-path marker");
+        for error in [
+            guard.require_available(&db).expect_err("held guard must recheck the native marker"),
+            acquire_automation_custody_recovery_guard(&db_path, &db)
+                .expect_err("native marker denies a new checked guard"),
+        ] {
+            assert!(matches!(&error, AgentDbRecoveryError::AutomationCustodyUnavailable(
+                "recovery marker is present"
+            )), "{error}");
+        }
+        twin_guard.require_available(&twin).expect("native marker must not affect the twin");
+        let twin_shared = acquire_automation_custody_recovery_guard(&twin_path, &twin)
+            .expect("the twin still admits its own checked guard");
+        assert_eq!(fs::read(&marker).expect("unchanged native marker"), marker_bytes);
+        assert_absent(&automation_custody_recovery_marker_path(&twin_path));
+        assert_eq!(database_bytes(&db_path), original);
+        assert_eq!(database_bytes(&twin_path), original_twin);
+
+        drop(twin_shared);
+        drop(twin_guard);
+        drop(guard);
+        drop(twin);
+        drop(db);
+        fs::remove_dir_all(root).expect("remove completed owned native-main fixture");
+    }
+}
+
+#[test]
+fn automation_custody_guard_rejects_matching_attached_database() {
+    let root = fixture_root("attached-main-identity");
+    let db_path = root.join("store.db");
+    let other_path = root.join("other.db");
+    let db = open_configured_db(&db_path, "attached-target", &DbRecoveryOptions::default(), false)
+        .expect("healthy target main database");
+    let other = open_configured_db(&other_path, "attached-other", &DbRecoveryOptions::default(), false)
+        .expect("healthy other main database");
+    let memory = Connection::open_in_memory().expect("in-memory main database");
+    initialize(&memory);
+    db.execute("INSERT INTO kv(key,value) VALUES('attached-identity','actual-target-main')", [])
+        .expect("actual target main sentinel");
+    for connection in [&memory, &other] {
+        connection.execute("ATTACH DATABASE ?1 AS matching_custody",
+            params![db_path.to_str().expect("ordinary UTF-8 fixture path")])
+            .expect("attach the actual target file to an unrelated main");
+        let sentinel: String = connection.query_row(
+            "SELECT value FROM matching_custody.kv WHERE key = 'attached-identity'",
+            [], |row| row.get(0),
+        ).expect("read the actual target through the attached schema");
+        assert_eq!(sentinel, "actual-target-main");
+    }
+    let guard = acquire_automation_custody_recovery_guard(&db_path, &db)
+        .expect("the actual target main remains available");
+    guard.require_available(&db).expect("actual main recheck succeeds");
+    let other_guard = acquire_automation_custody_recovery_guard(&other_path, &other)
+        .expect("the other file owns authority only for its own main");
+    let original = database_bytes(&db_path);
+    let original_other = database_bytes(&other_path);
+    for (connection, expected_reason) in [
+        (&memory, "connection has no file identity"),
+        (&other, "connection belongs to another store"),
+    ] {
+        let error = acquire_automation_custody_recovery_guard(&db_path, connection)
+            .expect_err("an attached matching file cannot authorize a different main");
+        assert!(matches!(&error, AgentDbRecoveryError::AutomationCustodyUnavailable(reason)
+            if *reason == expected_reason), "{error}");
+        let error = guard.require_available(connection)
+            .expect_err("held guard must identify main, not an attached matching file");
+        assert!(matches!(&error, AgentDbRecoveryError::AutomationCustodyUnavailable(reason)
+            if *reason == expected_reason), "{error}");
+    }
+    guard.require_available(&db).expect("attached-file refusals preserve the real target authority");
+    other_guard.require_available(&other).expect("the other main retains its own authority");
+    assert_eq!(database_bytes(&db_path), original);
+    assert_eq!(database_bytes(&other_path), original_other);
+
+    drop(other_guard);
+    drop(guard);
+    drop(memory);
+    drop(other);
+    drop(db);
+    fs::remove_dir_all(root).expect("remove completed owned attached-main fixture");
+}
+
 #[test]
 fn every_regular_filesystem_marker_denies_new_and_held_availability() {
     for bytes in [b"automation custody unavailable\n".as_slice(), b"", b"{malformed\0marker"] {
