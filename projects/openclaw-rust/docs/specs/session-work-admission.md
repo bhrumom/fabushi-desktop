@@ -1696,6 +1696,20 @@ status is synthesized. Full unfinished-turn restoration, durable running/effect
 claims, arbitrary crash cuts without markers, cross-process recovery ownership,
 real providers/channels/devices and final OCRM G01–G12/AC01–AC24 remain required.
 
+### SWA-ADMISSION-ORACLE-01 — exact owner checks after terminal integration
+
+Decision **FIX / TEST_FLAW** against `0f3ed500d6ea7f389207782847fa797fa05f6f85`,
+Actions `41484007662`, Host job `125409914759`: the unchanged whole-file count
+expects ten admission-identity calls after original-turn integration added the
+required eleventh call in `capture_original_turn_terminal_fence`. Preserve all
+ten prior checks and the added terminal check. The contract must identify their
+eight exact function owners and enforce each owner's count, including the
+deferred result-commit implementation. Missing or duplicate owners, removing a
+guard, or moving one into another owner to preserve the total must fail. Existing
+malformed-admission, archived/deleting and source-wiring assertions remain.
+Use the already pinned Rust parser; this repair changes no production policy,
+dependency or completion flag. Exact integrated-H Actions execution is required.
+
 Bearing source review at fixed U: `src/agents/embedded-agent-runner/run/run-settlement.ts` blob
 `53f37c4adcbe109f748a9f34271803cd0370b2a4` (original/committed successor and
 settlement before retirement); `src/sessions/background-session-result.ts`

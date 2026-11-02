@@ -586,6 +586,276 @@ fn test_session_admission_rejects_rebound_owner_identity() {
     assert!(owner_source.contains("locked session admission read requires a non-empty agent identity"));
 }
 
+const SESSION_ADMISSION_GUARD_OWNERS: [(&str, &str, usize); 8] = [
+    ("", "capture_original_turn_terminal_fence", 1),
+    ("SandAgentDb", "commit_session_work_result_deferred", 2),
+    ("SandAgentDb", "append_transcript_entries_if_session_admitted", 1),
+    ("SandAgentDb", "append_spend_guard_card_if_session_admitted", 1),
+    ("SandAgentDb", "append_transcript_entries_and_release_media", 3),
+    ("SandAgentDb", "update_transcript_entry_if_session_admitted", 1),
+    ("SandAgentDb", "settle_transcript_entry_identity_if_session_admitted", 1),
+    ("", "update_persisted_transcript_entry_if_session_admitted", 1),
+];
+
+fn admission_guard_calls_in_block(block: &syn::Block) -> Option<usize> {
+    block.stmts.iter().try_fold(0, |count, statement| {
+        let calls = match statement {
+            syn::Stmt::Local(local) => match local.init.as_ref() {
+                Some(init) => admission_guard_calls_in_expr(&init.expr)?
+                    + match init.diverge.as_ref() {
+                        Some((_, expression)) => admission_guard_calls_in_expr(expression)?,
+                        None => 0,
+                    },
+                None => 0,
+            },
+            syn::Stmt::Expr(expression, _) => admission_guard_calls_in_expr(expression)?,
+            // A nested function or macro body is not this function owner's
+            // executable call site. Neither can compensate for a missing guard.
+            syn::Stmt::Item(_) | syn::Stmt::Macro(_) => 0,
+        };
+        Some(count + calls)
+    })
+}
+
+fn admission_guard_calls_in_expr(expression: &syn::Expr) -> Option<usize> {
+    use syn::Expr;
+
+    fn many<'a>(expressions: impl IntoIterator<Item = &'a Expr>) -> Option<usize> {
+        expressions.into_iter().try_fold(0, |count, expression| {
+            Some(count + admission_guard_calls_in_expr(expression)?)
+        })
+    }
+
+    fn optional(expression: Option<&Expr>) -> Option<usize> {
+        expression.map_or(Some(0), admission_guard_calls_in_expr)
+    }
+
+    match expression {
+        Expr::Call(call) => {
+            let named_guard = matches!(call.func.as_ref(), Expr::Path(function)
+                if function.qself.is_none()
+                    && function.path.is_ident("session_admission_identity_is_well_formed"));
+            let actual_admission = call.args.len() == 1
+                && matches!(call.args.first(), Some(Expr::Reference(argument))
+                    if argument.mutability.is_none()
+                        && matches!(argument.expr.as_ref(), Expr::Path(value)
+                            if value.qself.is_none() && value.path.is_ident("admission")));
+            Some(usize::from(named_guard && actual_admission)
+                + admission_guard_calls_in_expr(&call.func)? + many(&call.args)?)
+        }
+        Expr::MethodCall(call) => Some(
+            admission_guard_calls_in_expr(&call.receiver)? + many(&call.args)?,
+        ),
+        Expr::Array(array) => many(&array.elems),
+        Expr::Tuple(tuple) => many(&tuple.elems),
+        Expr::Assign(value) => many([value.left.as_ref(), value.right.as_ref()]),
+        Expr::Binary(value) => many([value.left.as_ref(), value.right.as_ref()]),
+        Expr::Index(value) => many([value.expr.as_ref(), value.index.as_ref()]),
+        Expr::Repeat(value) => many([value.expr.as_ref(), value.len.as_ref()]),
+        Expr::Range(value) => Some(
+            optional(value.start.as_deref())? + optional(value.end.as_deref())?,
+        ),
+        Expr::Struct(value) => Some(
+            many(value.fields.iter().map(|field| &field.expr))?
+                + optional(value.rest.as_deref())?,
+        ),
+        Expr::If(value) => Some(
+            admission_guard_calls_in_expr(&value.cond)?
+                + admission_guard_calls_in_block(&value.then_branch)?
+                + optional(value.else_branch.as_ref().map(|(_, branch)| branch.as_ref()))?,
+        ),
+        Expr::Match(value) => {
+            let arms = value.arms.iter().try_fold(0, |count, arm| {
+                Some(count + admission_guard_calls_in_expr(&arm.body)?
+                    + optional(arm.guard.as_ref().map(|(_, guard)| guard.as_ref()))?)
+            })?;
+            Some(admission_guard_calls_in_expr(&value.expr)? + arms)
+        }
+        Expr::ForLoop(value) => Some(
+            admission_guard_calls_in_expr(&value.expr)?
+                + admission_guard_calls_in_block(&value.body)?,
+        ),
+        Expr::While(value) => Some(
+            admission_guard_calls_in_expr(&value.cond)?
+                + admission_guard_calls_in_block(&value.body)?,
+        ),
+        Expr::Loop(value) => admission_guard_calls_in_block(&value.body),
+        Expr::Block(value) => admission_guard_calls_in_block(&value.block),
+        Expr::Async(value) => admission_guard_calls_in_block(&value.block),
+        Expr::Const(value) => admission_guard_calls_in_block(&value.block),
+        Expr::TryBlock(value) => admission_guard_calls_in_block(&value.block),
+        Expr::Unsafe(value) => admission_guard_calls_in_block(&value.block),
+        Expr::Closure(value) => admission_guard_calls_in_expr(&value.body),
+        Expr::Await(value) => admission_guard_calls_in_expr(&value.base),
+        Expr::Cast(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Field(value) => admission_guard_calls_in_expr(&value.base),
+        Expr::Group(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Let(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Paren(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Reference(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Try(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Unary(value) => admission_guard_calls_in_expr(&value.expr),
+        Expr::Break(value) => optional(value.expr.as_deref()),
+        Expr::Return(value) => optional(value.expr.as_deref()),
+        Expr::Yield(value) => optional(value.expr.as_deref()),
+        // Literals/comments and opaque macro input cannot establish a call.
+        Expr::Lit(_) | Expr::Path(_) | Expr::Infer(_) | Expr::Continue(_) | Expr::Macro(_) => Some(0),
+        _ => None,
+    }
+}
+
+fn check_session_admission_guard_owners(source: &str) -> Result<(), String> {
+    let file = syn::parse_file(source).map_err(|error| format!("invalid owner source: {error}"))?;
+    for (owner, name, expected) in SESSION_ADMISSION_GUARD_OWNERS {
+        let qualified = if owner.is_empty() { name.to_string() } else { format!("{owner}::{name}") };
+        let mut candidates = Vec::new();
+        for item in &file.items {
+            match item {
+                syn::Item::Fn(function) if owner.is_empty() && function.sig.ident == name => {
+                    candidates.push((&function.attrs, function.block.as_ref()));
+                }
+                syn::Item::Impl(implementation) if !owner.is_empty() => {
+                    let syn::Type::Path(ty) = implementation.self_ty.as_ref() else { continue; };
+                    if ty.qself.is_some() || !ty.path.is_ident(owner)
+                        || implementation.trait_.is_some()
+                        || !implementation.generics.params.is_empty()
+                        || implementation.generics.where_clause.is_some()
+                        || implementation.attrs.iter().any(|attribute| !attribute.path().is_ident("doc"))
+                    {
+                        continue;
+                    }
+                    for item in &implementation.items {
+                        if let syn::ImplItem::Fn(function) = item {
+                            if function.sig.ident == name {
+                                candidates.push((&function.attrs, &function.block));
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        if candidates.len() != 1 {
+            return Err(format!("{qualified} requires exactly one actual function owner; found {}", candidates.len()));
+        }
+        let (attributes, body) = candidates[0];
+        if attributes.iter().any(|attribute| !attribute.path().is_ident("doc")) {
+            return Err(format!("{qualified} has a conditional or unsupported owner attribute"));
+        }
+        let actual = admission_guard_calls_in_block(body)
+            .ok_or_else(|| format!("{qualified} has an unsupported expression in its owner body"))?;
+        if actual != expected {
+            return Err(format!("{qualified} requires {expected} admission guard calls; found {actual}"));
+        }
+    }
+    Ok(())
+}
+
+fn admission_guard_oracle_fixture() -> &'static str {
+    let source = include_str!("../src/extensions/session/agent_db.rs");
+    check_session_admission_guard_owners(source)
+        .expect("the actual source must satisfy all eight named owner boundaries before mutation");
+    source
+}
+
+fn replace_admission_guard_fixture_call(
+    source: &str,
+    function: &str,
+    ordinal: usize,
+    replacement: &str,
+) -> String {
+    const CALL: &str = "session_admission_identity_is_well_formed(&admission)";
+    let signature = format!("fn {function}(");
+    assert_eq!(source.matches(signature.as_str()).count(), 1, "the counterfactual requires one actual named declaration");
+    let start = source.find(signature.as_str()).expect("actual owner declaration");
+    let relative = source[start..].match_indices(CALL).nth(ordinal)
+        .expect("actual named owner's guard ordinal").0;
+    let mut changed = source.to_string();
+    changed.replace_range(start + relative..start + relative + CALL.len(), replacement);
+    changed
+}
+
+#[test]
+fn admission_guard_oracle_rejects_each_removed_transaction_and_terminal_guard() {
+    let source = admission_guard_oracle_fixture();
+    for (owner, function, count) in SESSION_ADMISSION_GUARD_OWNERS {
+        for ordinal in 0..count {
+            let changed = replace_admission_guard_fixture_call(source, function, ordinal, "true");
+            assert!(syn::parse_file(&changed).is_ok(), "removal must leave valid Rust syntax");
+            let error = check_session_admission_guard_owners(&changed)
+                .expect_err("deleting any one of the eleven real calls must fail its owner");
+            let qualified = if owner.is_empty() { function.to_string() } else { format!("{owner}::{function}") };
+            assert!(error.starts_with(&qualified), "wrong failed boundary for {function}/{ordinal}: {error}");
+        }
+    }
+}
+
+#[test]
+fn admission_guard_oracle_rejects_cross_owner_relocation_with_unchanged_total() {
+    const CALL: &str = "session_admission_identity_is_well_formed(&admission)";
+    let source = admission_guard_oracle_fixture();
+    for (index, (_, from, _)) in SESSION_ADMISSION_GUARD_OWNERS.iter().enumerate() {
+        let (_, to, _) = SESSION_ADMISSION_GUARD_OWNERS[(index + 1) % SESSION_ADMISSION_GUARD_OWNERS.len()];
+        let removed = replace_admission_guard_fixture_call(source, from, 0, "true");
+        let changed = replace_admission_guard_fixture_call(
+            &removed, to, 0, &format!("({CALL} && {CALL})"),
+        );
+        assert_eq!(changed.matches(CALL).count(), source.matches(CALL).count(),
+            "this negative specifically defeats a whole-file count oracle");
+        assert!(syn::parse_file(&changed).is_ok(), "relocation must leave valid Rust syntax");
+        assert!(check_session_admission_guard_owners(&changed).is_err(), "{from} -> {to}");
+    }
+}
+
+#[test]
+fn admission_guard_oracle_rejects_missing_duplicate_and_foreign_function_owners() {
+    let source = admission_guard_oracle_fixture();
+    for (owner, function, _) in SESSION_ADMISSION_GUARD_OWNERS {
+        let signature = format!("fn {function}(");
+        let missing = source.replacen(signature.as_str(), &format!("fn renamed_{function}("), 1);
+        assert!(syn::parse_file(&missing).is_ok());
+        assert!(check_session_admission_guard_owners(&missing).is_err(), "missing {owner}::{function}");
+
+        let extra = if owner.is_empty() {
+            format!("\nfn {function}() {{}}\n")
+        } else {
+            format!("\nimpl {owner} {{ fn {function}() {{}} }}\n")
+        };
+        let duplicate = format!("{source}{extra}");
+        assert!(syn::parse_file(&duplicate).is_ok());
+        assert!(check_session_admission_guard_owners(&duplicate).is_err(), "duplicate {owner}::{function}");
+
+        let foreign = if owner.is_empty() {
+            format!("{missing}\nmod unrelated {{ fn {function}() {{}} }}\n")
+        } else {
+            format!("{missing}\nimpl UnrelatedOwner {{ fn {function}() {{}} }}\n")
+        };
+        assert!(syn::parse_file(&foreign).is_ok());
+        assert!(check_session_admission_guard_owners(&foreign).is_err(), "foreign {owner}::{function}");
+    }
+}
+
+#[test]
+fn admission_guard_oracle_cannot_replace_terminal_guard_with_non_owner_text_or_code() {
+    const CALL: &str = "session_admission_identity_is_well_formed(&admission)";
+    let source = admission_guard_oracle_fixture();
+    for replacement in [
+        format!("{{ /* {CALL} */ true }}"),
+        format!("{{ let _ = \"{CALL}\"; true }}"),
+        format!("{{ let _ = stringify!({CALL}); true }}"),
+        format!("{{ fn nested(admission: SessionWorkAdmissionRecord) -> bool {{ {CALL} }} true }}"),
+        format!("unrelated::{CALL}"),
+        format!("unrelated.{CALL}"),
+    ] {
+        let changed = replace_admission_guard_fixture_call(
+            source, "capture_original_turn_terminal_fence", 0, &replacement,
+        );
+        assert_eq!(changed.matches(CALL).count(), source.matches(CALL).count());
+        assert!(syn::parse_file(&changed).is_ok(), "counterfactual syntax: {replacement}");
+        assert!(check_session_admission_guard_owners(&changed).is_err(), "{replacement}");
+    }
+}
+
 #[test]
 fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
@@ -597,6 +867,8 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
     assert!(owner_source.contains("admission.session_key == expected_session_key"));
     assert!(owner_source.contains("fn session_admission_identity_is_bound("));
     assert!(owner_source.contains("session archive transition owner identity is malformed or rebound"));
+    check_session_admission_guard_owners(owner_source)
+        .expect("all existing transaction edges and original-turn capture must retain their own admission guards");
     assert_eq!(
         owner_source
             .matches("session_admission_identity_is_well_formed(&admission)")
