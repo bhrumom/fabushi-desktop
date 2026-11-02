@@ -374,6 +374,15 @@ pub struct InboundAppendWork<T> {
     pub attempt: Option<ChannelInboundAppendAttempt>,
 }
 
+/// Retry is queue custody, never permission to dispatch a possibly written head.
+#[derive(Debug, Clone, PartialEq)]
+pub enum InboundAppendAction<T> {
+    Committed,
+    Retry(InboundAppendWork<T>),
+    Held,
+    Stale,
+}
+
 #[derive(Debug)]
 struct InboundAppendClaim<T> {
     claim_id: String,
@@ -381,10 +390,12 @@ struct InboundAppendClaim<T> {
     envelopes: Vec<T>,
     attempt: Option<ChannelInboundAppendAttempt>,
     state: InboundAppendState,
+    readiness_requested: bool,
 }
 
 #[derive(Debug, Default)]
 pub struct BackgroundWakes<T> {
+    closed: bool,
     pub pending_inbound: HashMap<String, Vec<T>>,
     pub reviving_inbound_agent_ids: HashSet<String>,
     inbound_append_claims: HashMap<String, InboundAppendClaim<T>>,
@@ -396,8 +407,25 @@ pub struct BackgroundWakes<T> {
 }
 
 impl<T> BackgroundWakes<T> {
+    pub fn is_closed(&self) -> bool {
+        self.closed
+    }
+
+    /// This object never reopens. A replacement manager owns a fresh object.
+    pub fn close(&mut self) {
+        self.closed = true;
+        self.pending_inbound.clear();
+        self.reviving_inbound_agent_ids.clear();
+        self.inbound_append_claims.clear();
+        self.pending_channel_failures.clear();
+        self.reviving_channel_failure_agent_ids.clear();
+        self.pending_event_wakes.clear();
+        self.reviving_event_agent_ids.clear();
+        self.dm_preempted_wake_agent_ids.clear();
+    }
+
     pub fn owns_inbound_append(&self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
-        self.inbound_append_claims.get(agent_id).is_some_and(|claim| {
+        !self.closed && self.inbound_append_claims.get(agent_id).is_some_and(|claim| {
             claim.claim_id == work.claim_id
                 && claim.worker_token.as_deref() == Some(work.worker_token.as_str())
                 && claim.state == InboundAppendState::Active
@@ -412,55 +440,18 @@ impl<T> BackgroundWakes<T> {
         self.inbound_append_claims.get(agent_id)?.attempt.as_ref()
     }
 
-    /// Pause before any append was attempted. The exact retained head precedes
-    /// future input; an existing later wake may reacquire it with a fresh token.
-    pub fn pause_inbound_append(&mut self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
-        let Some(claim) = self.inbound_append_claims.get_mut(agent_id) else {
-            return false;
-        };
-        if claim.claim_id != work.claim_id
-            || claim.worker_token.as_deref() != Some(work.worker_token.as_str())
-            || claim.state != InboundAppendState::Active
-        {
+    /// A failed launch never ran this ticket. Preserve the head for a later
+    /// actual signal, without recursively retrying a failed thread creation.
+    pub fn release_inbound_launch(&mut self, agent_id: &str, work: &InboundAppendWork<T>) -> bool {
+        if !self.owns_inbound_append(agent_id, work) {
             return false;
         }
+        let claim = self.inbound_append_claims.get_mut(agent_id).expect("owned inbound claim");
         claim.state = InboundAppendState::NotWritten;
         claim.worker_token = None;
+        claim.readiness_requested = false;
         self.reviving_inbound_agent_ids.remove(agent_id);
         true
-    }
-
-    /// Returns permission for exactly this worker to hand confirmed input to
-    /// Runner. Unknown and rolled-back heads remain owned by the queue.
-    pub fn record_inbound_append_outcome(
-        &mut self,
-        agent_id: &str,
-        work: &InboundAppendWork<T>,
-        attempt: Option<ChannelInboundAppendAttempt>,
-        outcome: &ChannelInboundAppendOutcome,
-    ) -> bool {
-        let Some(claim) = self.inbound_append_claims.get_mut(agent_id) else {
-            return false;
-        };
-        if claim.claim_id != work.claim_id
-            || claim.worker_token.as_deref() != Some(work.worker_token.as_str())
-            || claim.state != InboundAppendState::Active
-        {
-            return false;
-        }
-        claim.attempt = attempt;
-        claim.state = match outcome {
-            ChannelInboundAppendOutcome::Committed { .. } => InboundAppendState::Committed,
-            ChannelInboundAppendOutcome::NotWritten(_) => InboundAppendState::NotWritten,
-            ChannelInboundAppendOutcome::Unknown(_) => InboundAppendState::Unknown,
-        };
-        if claim.state == InboundAppendState::Committed {
-            true
-        } else {
-            claim.worker_token = None;
-            self.reviving_inbound_agent_ids.remove(agent_id);
-            false
-        }
     }
 
     /// The confirmed batch has finished the existing Runner path. Keep revival
@@ -477,6 +468,9 @@ impl<T> BackgroundWakes<T> {
         work: &InboundAppendWork<T>,
         redrive: Option<Vec<T>>,
     ) -> bool {
+        if self.closed {
+            return false;
+        }
         let Some(claim) = self.inbound_append_claims.get(agent_id) else {
             return false;
         };
@@ -508,6 +502,7 @@ impl<T> BackgroundWakes<T> {
                     entries: Some(Vec::new()),
                 }),
                 state: InboundAppendState::NotWritten,
+                readiness_requested: false,
             };
             self.inbound_append_claims.insert(agent_id.to_string(), continuation);
         } else {
@@ -536,6 +531,9 @@ impl<T> BackgroundWakes<T> {
     /// Call under the same lock as enqueue. After `None`, the worker must return
     /// without clearing revival again: a successor may already own it.
     pub fn take_pending_inbound_or_end_revival(&mut self, agent_id: &str) -> Option<Vec<T>> {
+        if self.closed {
+            return None;
+        }
         match self.pending_inbound.remove(agent_id) {
             Some(pending) if !pending.is_empty() => Some(pending),
             _ => {
@@ -547,10 +545,120 @@ impl<T> BackgroundWakes<T> {
 }
 
 impl<T: Clone> BackgroundWakes<T> {
+    /// Reserve the real head/token before the caller attempts to spawn. New
+    /// input is also a readiness hint, but can never bypass an Unknown head.
+    pub fn enqueue_inbound_and_claim(
+        &mut self,
+        agent_id: &str,
+        envelope: T,
+    ) -> Result<Option<InboundAppendWork<T>>, String> {
+        if self.closed {
+            return Err("Background wakes are closed".to_string());
+        }
+        Self::enqueue(&mut self.pending_inbound, agent_id, envelope);
+        Ok(self.request_inbound_readiness_for_agent(agent_id))
+    }
+
+    /// Coalesce active heads and claim idle retained heads as well as raw input.
+    /// Returned tickets contain snapshots; custody remains in this claim map.
+    pub fn request_inbound_readiness(&mut self) -> Vec<(String, InboundAppendWork<T>)> {
+        if self.closed {
+            return Vec::new();
+        }
+        let agent_ids = self.inbound_append_claims.keys()
+            .chain(self.pending_inbound.keys()).cloned().collect::<HashSet<_>>();
+        agent_ids.into_iter().filter_map(|agent_id| {
+            self.request_inbound_readiness_for_agent(&agent_id).map(|work| (agent_id, work))
+        }).collect()
+    }
+
+    fn request_inbound_readiness_for_agent(&mut self, agent_id: &str) -> Option<InboundAppendWork<T>> {
+        if let Some(claim) = self.inbound_append_claims.get_mut(agent_id) {
+            match claim.state {
+                InboundAppendState::Active => {
+                    claim.readiness_requested = true;
+                    return None;
+                }
+                InboundAppendState::Unknown | InboundAppendState::Committed => return None,
+                InboundAppendState::NotWritten => {}
+            }
+        }
+        // A committed worker may be between finish and its next take, including
+        // a retained displayed redrive. That worker still owns the drain.
+        if !Self::begin_revival(&mut self.reviving_inbound_agent_ids, agent_id) {
+            return None;
+        }
+        self.take_inbound_append_or_end_revival(agent_id)
+    }
+
+    /// Atomically consume a readiness request or relinquish this exact worker.
+    pub fn pause_inbound_append(
+        &mut self,
+        agent_id: &str,
+        work: &InboundAppendWork<T>,
+    ) -> InboundAppendAction<T> {
+        if !self.owns_inbound_append(agent_id, work) {
+            return InboundAppendAction::Stale;
+        }
+        self.hold_or_retry_inbound(agent_id)
+    }
+
+    /// Only Committed permits Runner dispatch. A confirmed rollback can consume
+    /// a readiness request, using the attempt just stored by this settlement.
+    pub fn record_inbound_append_outcome(
+        &mut self,
+        agent_id: &str,
+        work: &InboundAppendWork<T>,
+        attempt: Option<ChannelInboundAppendAttempt>,
+        outcome: &ChannelInboundAppendOutcome,
+    ) -> InboundAppendAction<T> {
+        if !self.owns_inbound_append(agent_id, work) {
+            return InboundAppendAction::Stale;
+        }
+        let claim = self.inbound_append_claims.get_mut(agent_id).expect("owned inbound claim");
+        claim.attempt = attempt;
+        match outcome {
+            ChannelInboundAppendOutcome::NotWritten(_) => self.hold_or_retry_inbound(agent_id),
+            ChannelInboundAppendOutcome::Committed { .. } => {
+                claim.state = InboundAppendState::Committed;
+                claim.readiness_requested = false;
+                InboundAppendAction::Committed
+            }
+            ChannelInboundAppendOutcome::Unknown(_) => {
+                claim.state = InboundAppendState::Unknown;
+                claim.readiness_requested = false;
+                claim.worker_token = None;
+                self.reviving_inbound_agent_ids.remove(agent_id);
+                InboundAppendAction::Held
+            }
+        }
+    }
+
+    fn hold_or_retry_inbound(&mut self, agent_id: &str) -> InboundAppendAction<T> {
+        let claim = self.inbound_append_claims.get_mut(agent_id).expect("owned inbound claim");
+        if claim.readiness_requested {
+            claim.readiness_requested = false;
+            let worker_token = uuid::Uuid::new_v4().to_string();
+            claim.worker_token = Some(worker_token.clone());
+            claim.state = InboundAppendState::Active;
+            InboundAppendAction::Retry(InboundAppendWork {
+                claim_id: claim.claim_id.clone(),
+                worker_token,
+                envelopes: claim.envelopes.clone(),
+                attempt: claim.attempt.clone(),
+            })
+        } else {
+            claim.state = InboundAppendState::NotWritten;
+            claim.worker_token = None;
+            self.reviving_inbound_agent_ids.remove(agent_id);
+            InboundAppendAction::Held
+        }
+    }
+
     /// Called under the same mutex as ingress. Preparation is never merged back
     /// into raw pending input, and Unknown can never be automatically retried.
     pub fn take_inbound_append_or_end_revival(&mut self, agent_id: &str) -> Option<InboundAppendWork<T>> {
-        if !self.reviving_inbound_agent_ids.contains(agent_id) {
+        if self.closed || !self.reviving_inbound_agent_ids.contains(agent_id) {
             return None;
         }
         if let Some(claim) = self.inbound_append_claims.get_mut(agent_id) {
@@ -565,6 +673,7 @@ impl<T: Clone> BackgroundWakes<T> {
             }
             claim.worker_token = Some(uuid::Uuid::new_v4().to_string());
             claim.state = InboundAppendState::Active;
+            claim.readiness_requested = false;
         } else {
             let Some(envelopes) = self.pending_inbound.remove(agent_id).filter(|items| !items.is_empty()) else {
                 self.reviving_inbound_agent_ids.remove(agent_id);
@@ -576,6 +685,7 @@ impl<T: Clone> BackgroundWakes<T> {
                 envelopes,
                 attempt: None,
                 state: InboundAppendState::Active,
+                readiness_requested: false,
             });
         }
         let claim = self.inbound_append_claims.get(agent_id)?;

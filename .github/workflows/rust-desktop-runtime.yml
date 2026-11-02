@@ -217,6 +217,18 @@ jobs:
               tests::channel_inbound_runner_admission_refuses_changed_binding_and_releases_work \
               tests::channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement \
               tests::channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding \
+              tests::channel_inbound_readiness_tests::settings_commit_rearms_retained_input_without_new_ingress \
+              tests::channel_inbound_readiness_tests::rejected_settings_cas_and_unrelated_fields_do_not_rearm \
+              tests::channel_inbound_readiness_tests::failed_settings_persistence_does_not_publish_readiness \
+              tests::channel_inbound_readiness_tests::committed_settings_signal_during_gate_check_survives_pause_once \
+              tests::channel_inbound_readiness_tests::notification_is_only_a_hint_and_does_not_invent_provider_configuration \
+              tests::channel_inbound_readiness_tests::active_hint_does_not_spin_while_upgrade_gate_remains_closed \
+              tests::channel_inbound_readiness_tests::rollback_signal_retries_latest_real_preparation_before_tail \
+              tests::channel_inbound_readiness_tests::unknown_commit_rejects_settings_resume_and_later_ingress \
+              tests::channel_inbound_readiness_tests::resume_rearms_before_later_pending_wake_restoration_failure \
+              tests::channel_inbound_readiness_tests::failed_launch_keeps_exact_head_and_stale_error_cannot_release_successor \
+              tests::channel_inbound_readiness_tests::dispose_refuses_snapshotted_settings_callback_and_reserved_ticket \
+              tests::channel_inbound_readiness_tests::disposal_after_real_append_prevents_late_handoff_without_replaying_rows \
               tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once \
               tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake \
               tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner \
@@ -607,6 +619,8 @@ jobs:
               "shipping_downstream_custody_tests": ["tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate"],
               "channel_append_custody_contract": "OCRM-CHANNEL-APPEND-CUSTODY-v1",
               "shipping_channel_append_custody_tests": ["tests::channel_inbound_append_commits_once_before_runner_and_displayed_redrive", "tests::channel_inbound_append_lost_ack_holds_real_commit_without_runner_or_replay", "tests::channel_inbound_append_rollback_retries_same_preparation_before_later_input", "tests::channel_inbound_checked_history_failure_keeps_binding_and_never_dispatches", "tests::channel_inbound_runner_admission_refuses_changed_binding_and_releases_work", "tests::channel_inbound_reply_nudge_keeps_generation_after_real_session_settlement", "tests::channel_inbound_displayed_redrive_refuses_archive_restore_without_rebinding"],
+              "channel_inbound_readiness_contract": "OCRM-CHANNEL-INBOUND-REARM-v1",
+              "channel_inbound_readiness_tests": ["tests::channel_inbound_readiness_tests::settings_commit_rearms_retained_input_without_new_ingress", "tests::channel_inbound_readiness_tests::rejected_settings_cas_and_unrelated_fields_do_not_rearm", "tests::channel_inbound_readiness_tests::failed_settings_persistence_does_not_publish_readiness", "tests::channel_inbound_readiness_tests::committed_settings_signal_during_gate_check_survives_pause_once", "tests::channel_inbound_readiness_tests::notification_is_only_a_hint_and_does_not_invent_provider_configuration", "tests::channel_inbound_readiness_tests::active_hint_does_not_spin_while_upgrade_gate_remains_closed", "tests::channel_inbound_readiness_tests::rollback_signal_retries_latest_real_preparation_before_tail", "tests::channel_inbound_readiness_tests::unknown_commit_rejects_settings_resume_and_later_ingress", "tests::channel_inbound_readiness_tests::resume_rearms_before_later_pending_wake_restoration_failure", "tests::channel_inbound_readiness_tests::failed_launch_keeps_exact_head_and_stale_error_cannot_release_successor", "tests::channel_inbound_readiness_tests::dispose_refuses_snapshotted_settings_callback_and_reserved_ticket", "tests::channel_inbound_readiness_tests::disposal_after_real_append_prevents_late_handoff_without_replaying_rows"],
               "channel_append_custody_result": "passed",
               "channel_append_commit_oracle_contract": "CA-COMMIT-ORACLE-01",
               "channel_append_commit_oracle_tests": ["openclaw_sessions_and_config_contract::test_agent_db_has_no_direct_commit_error_propagation", "openclaw_sessions_and_config_contract::test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"],
