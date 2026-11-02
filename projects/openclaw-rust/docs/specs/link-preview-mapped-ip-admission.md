@@ -76,3 +76,18 @@ DNS pinning, or replace macOS, platform-package, real-provider/channel and
 full OCRM acceptance. General-media restrictive host lists, redirect/DNS/proxy
 policy, complete link understanding, and all global completion gates remain
 open.
+
+## Review decision before correction
+
+LPIP-EVIDENCE-01 — **FIX / TEST_FLAW (missing positive evidence guard)**.
+Frozen tree `761c5e6379acab741fa4b3b402c1db509c4cdd86` preserves all current
+assertions, and its Linux receipt requires every new named control. The macOS
+command recorder only checks Cargo's exit code before the later summary emits
+`link_preview_ip_result: passed`. An ignored or no-longer-selected required test
+can therefore leave a successful command without its positive result. Require
+all seven MIP and seven LPIP controls exactly once in the macOS command log,
+and bind the observed names, command, exit record, subject and log digest in
+the existing diagnostics artifact before that step succeeds. Keep all targets,
+assertions and the Linux gate. This evidence correction changes no runtime
+policy or source-review status. No local executable check was run; exact-H
+Actions remains required after a fresh focused review of this correction.

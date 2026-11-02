@@ -375,6 +375,50 @@ jobs:
           set -euo pipefail
           source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
           run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess, sys
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          log = (root / "media-input-policy.log").read_bytes()
+          command = (root / "media-input-policy.command.txt").read_text().strip()
+          exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
+                   if line.split("\t")[0] == "media-input-policy"]
+          required = [
+              "gateway_file_extraction_rejects_every_malformed_explicit_policy",
+              "gateway_file_policy_errors_precede_base64_and_url_processing",
+              "gateway_file_extraction_preserves_omitted_and_null_default_policies",
+              "gateway_file_extraction_preserves_resolved_restrictive_policies",
+              "gateway_partial_file_policy_is_resolved_before_extraction",
+              "gateway_padding_only_sources_preserve_upstream_error_precedence",
+              "gateway_valid_padded_file_and_image_sources_preserve_byte_caps",
+              "mapped_ipv6_addresses_preserve_ipv4_admission_decisions",
+              "mapped_ip_url_literals_reject_private_dotted_and_hex_forms",
+              "mapped_ip_redirects_revalidate_private_and_public_destinations",
+              "dns_resolution_rejects_mapped_private_answers_in_every_order",
+              "public_mapped_dns_target_preserves_host_sni_and_https_port",
+              "mapped_ip_literal_targets_never_resolve_dns",
+              "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+          ]
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
+          missing = [name for name in required if passed.count(name) != 1]
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          accepted = (exits == [["media-input-policy", "0"]] and not missing
+                      and head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"])
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          receipt.update({
+              "contract": "MIP-v1/LPIP-v1", "command": command, "command_exit_records": exits,
+              "required_tests": required, "observed_passed_test_names": passed,
+              "missing_or_nonunique_positive_results": missing,
+              "log_sha256": hashlib.sha256(log).hexdigest(),
+              "result": "passed" if accepted else "failed",
+              "scope": "Named media input and mapped-IP preview admission controls through existing owners only; not full media, network, platform or OCRM acceptance.",
+          })
+          (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          sys.exit(0 if accepted else 1)
+          PY
       - name: Test shipping model, channel, compaction cancellation and Runner terminal contracts
         id: ocrm_app_contracts
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
