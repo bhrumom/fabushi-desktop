@@ -203,9 +203,9 @@ export function PluginsBrowser({
   }
 
   return (
-    <div className="sand-plugins">
+    <div className="sand-plugins sand-plugins--catalog">
       <header>
-        <h2 id="sand-plugins-modal-heading">Plugins</h2>
+        <div className="sand-plugins__heading"><h2 id="sand-plugins-modal-heading">Plugins</h2><p>Connect your apps. Extend what Fabushi can do.</p></div>
         <div aria-label="Plugins view" role="tablist">
           <button aria-selected={tab === "marketplace"} onClick={() => setTab("marketplace")} role="tab" type="button">Marketplace</button>
           <button aria-selected={tab === "yours"} onClick={() => setTab("yours")} role="tab" type="button">Yours</button>
@@ -222,14 +222,19 @@ export function PluginsBrowser({
 
       {githubAuth == null ? null : <PluginGitHubAuthBanner {...githubAuth} />}
 
+      <div className="sand-plugins__categories" aria-label="Plugin categories">
+        {([['all', 'All'], ['connectors', 'Connectors'], ['skills', 'Skills']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={activeFilter.type === value} onClick={() => setActiveFilter({ ...activeFilter, type: value })}>{label}</button>)}
+        <span aria-live="polite">{visible.length} plugins</span>
+      </div>
       <div className="sand-plugins__grid">
         {visible.length === 0 ? <p>{emptyPluginsMessage(tab, query, activeFilter.type !== "all" || activeFilter.ownership !== "all")}</p> : visible.map((item) => (
           <button className="sand-plugins-row sand-plugins-row__open" key={`${item.kind}:${item.id}`} onClick={() => setSelectedId(`${item.kind}:${item.id}`)} type="button">
-            <span aria-hidden="true">{item.kind === "plugin" ? "◇" : item.kind === "server" ? "⌁" : "⚡"}</span>
+            <span className="sand-plugins__tile" aria-hidden="true">{item.displayName.trim().slice(0, 2).toLocaleUpperCase()}</span>
             <span className="sand-plugins-row__main">
               <strong className="sand-plugins-row__name">{item.displayName}</strong>
+              {item.kind === "plugin" && item.publisher ? <span className="sand-plugins__publisher">{item.publisher}</span> : null}
               <span className="sand-plugins-row__subtitle">{item.description}</span>
-              <small>{pluginItemStatus(item)}</small>
+              <small className="sand-plugins__status">{pluginItemStatus(item)}</small>
             </span>
             <span aria-hidden="true">›</span>
           </button>

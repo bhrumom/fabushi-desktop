@@ -1,5 +1,7 @@
 # OCRM P0 — 全量 source baseline 与 existing-owner 审计
 
+> 执行修订（2026-11-02）：主 Spec Revision 2 §17 优先于下文旧快照和执行时机。完整来源核算、风险分层审查、产品闭环批次、Actions 及时验证；不要求所有文本逐行深读，也不因全局 P0 未完成阻止已满足相关来源/合同的实施。历史 pending/未初始化数字不得作为当前工作分支事实。
+
 Status: ready-to-start / not-executed  
 Task ID: OCRM-P0  
 Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)  
@@ -10,9 +12,9 @@ Last updated: 2026-10-22（Asia/Shanghai）
 
 建立可以驱动全部后续 Rust 等价实现的真实 source authority、无遗漏 inventory、逐责任 ledger/RTM、当前 owner 解析和首批可实施合同。任务结束后必须能回答任一上游文件“读到哪里、承担什么、由谁实现、还缺什么、如何验收”，不能只产生目录清单和 migration proposal。
 
-本任务不声称一轮已完成所有文件语义阅读。P0 必须完成全量集合与身份校验，并对下一实施单元完成逐文件阅读、依赖/owner/oracle 合同；剩余文件真实保持 unread。全部源码语义阅读、Rust 实现与验收由后续任务持续闭合，最终标准不降低。
+本任务不声称一轮已完成所有文件语义阅读。P0 必须完成全量集合与身份校验，并对下一实施单元按主 Spec §17 完成必要审查、依赖/owner/oracle 合同；剩余文件真实保持 unread。全部来源必要审查、Rust 实现与验收由后续任务持续闭合，最终标准不降低。
 
-完整枚举/取得来源由 `source_closure_ready` 表达；全部语义阅读与映射由 `responsibility_mapping_complete` 表达，正面谓词见主 Spec §15.1。P0 全局未退出时，满足 §11.1 的单元及其全部相关传递依赖仍可获得 scoped authority 并推进 Rust 实现；不把该单元结论升级为全项目通过。
+完整枚举/取得来源由 `source_closure_ready` 表达；全部必要审查与映射由 `responsibility_mapping_complete` 表达，正面谓词见主 Spec §15.1。P0 全局未退出时，满足 §11.1 的单元及其全部相关传递依赖仍可获得 scoped authority 并推进 Rust 实现；不把该单元结论升级为全项目通过。
 
 ## 2. 前置读取与并行工作保护
 
@@ -53,7 +55,7 @@ Last updated: 2026-10-22（Asia/Shanghai）
 
 复用现有 source-neutral authority/review/evidence 组件；必要扩展应有清晰任务，不复制一套 TDRP 源码扫描器或把 OpenClaw 条目塞入 Telegram ledger。
 
-按主 Spec §12.3 先在 Actions 生成候选机器文件，再将它们与 Spec/validator 等受验输入提交为 H、云端 read-back，随后对 H 执行 authority/coverage 验证。最终 `acceptance-receipt`、effective ledger/RTM、flags、artifact ID/digest 和 reviewer verdict 作为绑定 H 的不可变 Actions artifact/attestation 发布；不要求把 H 的结果写进 H 自身。未来证据索引提交须标明原 subject H 与新 carrier H2，并重新为 H2 取得适用证明，不自动继承历史通过。
+按主 Spec §12.3 按 §17 通过只读来源核对与编辑准备候选机器文件；需要执行生成器时仅在 Actions 运行，再将它们与 Spec/validator 等受验输入提交为 H、云端 read-back，随后对 H 执行 authority/coverage 验证。最终 `acceptance-receipt`、effective ledger/RTM、flags、artifact ID/digest 和 reviewer verdict 作为绑定 H 的不可变 Actions artifact/attestation 发布；不要求把 H 的结果写进 H 自身。未来证据索引提交须标明原 subject H 与新 carrier H2，并重新为 H2 取得适用证明，不自动继承历史通过。
 
 ## 5. 首批阅读与接线顺序
 
@@ -63,9 +65,9 @@ Last updated: 2026-10-22（Asia/Shanghai）
 2. `src/agents`、`packages/agent-core`/`llm-core`、session/transcript/context、provider/harness/tool/approval 与 Fabushi Runner/Inference/Session/Transcript 边界。
 3. `src/plugins`、`src/plugin-sdk`、`packages/plugin-sdk`/`plugin-package-contract`、skills、MCP/registry，先形成版本/权限/生命周期 conformance。
 4. `src/cron`/hooks/worker、memory、channels/routing 与当前 Automations/Memory/connectors 的逐责任差异；尤其验证 HostChannelDelivery default unregistered 的真实接线需求。
-5. 继续所有剩余模块、全部插件/skills、UI、平台/设备/服务、quality/build/release。按 file/symbol 稳定顺序与 dependency DAG 保留未完成 frontier。
+5. 继续所有剩余模块、全部插件/skills、UI、平台/设备/服务、quality/build/release。按产品价值/风险与 dependency DAG 保留未完成 frontier。
 
-这是实施依赖顺序，不是缩小源范围或按优先级豁免低频功能。某一来源/渠道/平台阻塞时，按主 Spec §11.1 的 scoped G01/G02、完整阅读和合同条件确定其他单元能否进入实现；依赖未满足的事项可继续只读研究/合同设计。缺账号/设备可以继续有 authority 的实现和其他验证，相关真实验收仍 blocked，不能虚构通过。
+这是实施依赖顺序，不是缩小源范围或按优先级豁免低频功能。某一来源/渠道/平台阻塞时，按主 Spec §11.1 的 §17 来源证据、必要审查和合同条件（verified 前取得 scoped G01/G02）确定其他单元能否进入实现；依赖未满足的事项可继续只读研究/合同设计。缺账号/设备可以继续有 authority 的实现和其他验证，相关真实验收仍 blocked，不能虚构通过。
 
 ## 6. 本任务退出标准
 
@@ -74,13 +76,13 @@ Last updated: 2026-10-22（Asia/Shanghai）
 | OCRM-P0-AC01 | 本任务 receipt 的 upstream、subject target/ref/tree、实际 checkout 与所有机器输入 provenance 一致；baseline/subject/carrier 明确区分，上游 drift 有显式处置。 |
 | OCRM-P0-AC02 | 全量路径集合与必要依赖闭包经过 Actions 校验，无静默截断/过滤；若外部闭包未获证据，P0 整体仍 blocked，已完成子任务可保留。 |
 | OCRM-P0-AC03 | 每文件已入 inventory 且状态诚实；未读项不冒领 read-complete，全部未知集合明确。 |
-| OCRM-P0-AC04 | 下一实施单元满足主 Spec §11.1：相关文件/传递依赖已取得并完整阅读，scoped authority、类型化责任/owner/oracle 与合同经审查；不宣称其他模块同步完成。 |
+| OCRM-P0-AC04 | 下一实施单元满足主 Spec §11.1：相关文件/传递依赖已取得且按 §17 完成必要审查，scoped authority、类型化责任/owner/oracle 与合同经审查；不宣称其他模块同步完成。 |
 | OCRM-P0-AC05 | G02 structural 接受诚实 unread/unclassified/not-started，拒绝漏项、断引用、错误类型/维度处置、身份漂移、伪 verified/accepted；仅已声明实施或验收状态要求对应真实 target/evidence，final 模式另要求未完成集合归零。 |
 | OCRM-P0-AC06 | 外部服务、账号、设备、包、许可证和平台矩阵有逐项 owner/证据/解除条件。 |
 | OCRM-P0-AC07 | 针对已提交 H 的 Actions 完整日志与不可变 receipt/artifact ID/digest 被读取，独立 reviewer 检查 P0 结论和首批任务；结论作为 H 的 receipt 发布，不以新增 carrier 提交冒领 H2 通过。 |
 | OCRM-P0-AC08 | 受验输入 H 已云端原子提交/read-back，随后完成 H 的验证及 receipt 发布；没有变更无关实现分支或他人文件；后续满足准入的任务可继续真实 Rust 实现。 |
 
-P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline identity/source closure 提供正面证据。剩余 unread 使 `responsibility_mapping_complete` 保持 false；`rust_implementation_complete`、`production_wiring_complete`、`ecosystem_compatibility_accepted`、`ui_accepted`、`release_accepted` 不因 P0 通过而改变。若 P0-AC02 受阻，项目级 closure 仍 false，满足 scoped authority 的单元按 §11.1 推进，不改变这一全局结论。
+P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline identity/source closure 提供正面证据。剩余未分类、必需审查或责任映射缺口使 `responsibility_mapping_complete` 保持 false；`rust_implementation_complete`、`production_wiring_complete`、`ecosystem_compatibility_accepted`、`ui_accepted`、`release_accepted` 不因 P0 通过而改变。若 P0-AC02 受阻，项目级 closure 仍 false，满足 scoped authority 的单元按 §11.1 推进，不改变这一全局结论。
 
 ## 7. 阻塞与支持请求
 

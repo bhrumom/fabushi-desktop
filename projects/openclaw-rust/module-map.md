@@ -1,7 +1,9 @@
 # OpenClaw 全源码责任域与 Fabushi owner 映射
 
+> 执行修订（2026-11-02）：主 Spec Revision 2 §17 优先于下文旧快照和执行时机。完整来源核算、风险分层审查、产品闭环批次、Actions 及时验证；不要求所有文本逐行深读，也不因全局 P0 未完成阻止已满足相关来源/合同的实施。历史 pending/未初始化数字不得作为当前工作分支事实。
+
 Status: active specification; all migration domains pending  
-Spec: [OCRM-001 Revision 1](../../docs/specs/openclaw-rust-equivalence-migration.md)  
+Spec: [OCRM-001 Revision 2](../../docs/specs/openclaw-rust-equivalence-migration.md)  
 Last updated: 2026-10-22（Asia/Shanghai）  
 Project: [SOURCE_OF_TRUTH.md](SOURCE_OF_TRUTH.md)
 

@@ -1,5 +1,7 @@
 # Telegram Desktop → Fabushi：逐文件逐模块等价重写迁移合同
 
+Execution amendment: 2026-11-02 / FMEP-001 Revision 2 — batch feedback supersedes development-wide zero CI; all product and final acceptance requirements remain applicable.
+
 Status: active  
 Spec ID: TDRP-001  
 Revision: 10
@@ -189,15 +191,15 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 3. 对每个文件/责任选择现有 Fabushi owner，必要新 owner 经最小 ADR 批准。
 4. 在 Fabushi 自有路径用选定语言实现，补齐真实服务端/平台依赖。
 5. 接入唯一 shipping composition，迁移数据/路由/权限，移除被替代的重复 ownership。
-6. 开发期编写并静态审查 unit/table、property/state-machine、contract、integration、真实 E2E、temporal/recovery、UI functional/visual/a11y 以及适用 performance/security/fault/soak 用例和 oracle；将每个模块的验证状态保持 `not-run`，继续闭合其他模块。
-7. 全部适用源责任、Rust/最合适语言实现、生产接线、服务和平台、UI 与数据迁移闭合后，冻结同一确切 Fabushi 提交 H。仅在此后统一于 GitHub Actions 执行适用验证，并对动态用户旅程生成 timeline trace/DOM manifest/screenshots/video，按 oracle 检查 terminal settlement、ordering、reconnect/restart 后一致性。
+6. 同步编写测试/oracle；冻结批次 H，在 Actions 执行受影响编译、关键合同/状态机和接线风险检查，记录结果并修复失败。
+7. 全范围实现闭合后冻结最终候选，集中完成全部适用门与动态用户旅程的 timeline/DOM/screenshots/video、settlement、ordering、reconnect/restart 验收。
 8. 更新 RTM、regression ledger、H 的执行证据，由独立 acceptance reviewer 复核后才能把责任标 verified。失败时修复、重新冻结 H 并重跑受影响验收；旧 H 的证据不能冒充新 H 通过。
 
 已批准且无依赖的模块可并行推进；缺权限、账号、服务或某个模块被阻塞时不停止其他安全可推进的任务。仍然不得跳过本模块的必要前置与既有 Bot 硬门。
 
 ## 8. Verification gates
 
-以下 gate 的合同与用例在开发阶段补齐，执行及真实结果统一推迟到全量实现闭包后冻结的同一 H；规范文字、静态审查和未运行用例不是 gate 已通过的证明：
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 - **G-INVENTORY:** accepted exact root tree + all recursive gitlinks/external acquisitions；0 unknown/unread/omitted source entries。
 - **G-FILE:** 每个文件及 non-UI responsibility 均有处置；0 directory-only placeholders；双向 target trace 无遗漏。
@@ -226,7 +228,7 @@ Telegram 中 dialog/history/people/media/username/filter 等搜索职责必须�
 
 所有可执行验证仅 GitHub Actions；本项目不沿用旧 htch-runtime allowance。禁止在用户 Mac、bhrum2 或 assistant container 执行 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance。
 
-**TDRP-EXEC-01 — 开发先行、一次冻结后集中验收。** 开发阶段不触发、等待、重复或轮询 TDRP/FBCP 迁移 CI，不做 `workflow_dispatch`，不推送实现分支或更新迁移 PR head 来触发自动 CI；在隔离分支本地提交、审读源码、完善账本、实现生产代码及编写测试。必要的只读 Git/API、文档编辑和静态审查允许。单个 helper、模块、用例或局部绿色旧结果不构成阶段出口。全量开发闭包后冻结 H，再集中安排适用 Actions、真实服务/设备/平台/安装包验收及独立复核。开发期所有 execution/verification/acceptance 均保持 `not-run`/`pending`/false；缺服务或签名的最终验收仍为 blocked，不能提前通过。此执行顺序优先于旧文档中逐模块运行 CI 或先取得执行证据才能继续其他模块的描述，不降低任何最终 gate。
+**TDRP-EXEC-01 — 批次及时验证。** 按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## 9. 完成定义
 
@@ -248,3 +250,7 @@ TDRP-001 只有以下同时成立才能 accepted：
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
 References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 8 ; current canonical Fabushi/Bot specifications.
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.

@@ -1,5 +1,7 @@
 # FBCP P0 — Exact-HEAD Current Owner Inventory
 
+> 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
+
 Status: evidence snapshot; P0 not yet passed
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03

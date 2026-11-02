@@ -1,9 +1,9 @@
 # P0 — Revision 9 source authority, inventory and traceability closure
 
 Status: active / fail-closed  
-Project: TDRP-001 Revision 9  
-Parent: FBCP-001 Revision 7  
-Execution: executable validation only in GitHub Actions.
+Project: TDRP-001 Revision 10
+Parent: FBCP-001 Revision 8
+Execution: FMEP-001 Revision 2; focused batch verification and final acceptance in GitHub Actions only.
 
 ## Goal
 
@@ -29,6 +29,8 @@ Tree enumeration is not semantic reading. Directory citation is not responsibili
 4. module dossiers containing symbols, state machines, lifecycle, failure semantics, ownership and behavior oracles.
 5. `projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md` — requirement/oracle/invariant/test/evidence/reviewer chain.
 6. GitHub Actions evidence from the same exact Fabushi HEAD.
+
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## Bidirectional gate
 
@@ -3347,3 +3349,4 @@ Direct callers are GitHub push/pull_request admission; dependencies/consumers in
 Existing-owner-first maps applicable responsibility to Fabushi repository build/toolchain + canonical Electron desktop package/update/release-process + repository security/provenance + shared quality/evidence governance. Current canonical surfaces include \`desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84\`, shipping \`source/electron-main/entry.ts@3c877893f5f6478251587a1130e08328c9cf15f7\`, updater wiring/service and Windows installer verifier. No copied Telegram workflow, second Windows package/update truth, product runtime or platform-core delta is introduced. Current exact-head still has no dedicated Windows release workflow; Windows electron-builder config does not force signing; \`win32-installer.ts@b337cd7ab8e9ca7d112dd9c18a309912b2de30d7\` still allowlists Anysphere signer names. Those are retained G-RELEASE/signing gaps, not silently treated as pass evidence.
 
 Authored only and not run: 33 contract, 1 integration, 18 fault/recovery and 15 security/provenance cases. Exactly one source entry closes: \`unknown 16099 -> 16098\`, \`unread 16072 -> 16071\`, \`omitted=0\`; responsibilities \`179 -> 180\`, unmapped 0. Next fixed-U entry is \`.github/workflows/winget.yml@0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390\`, tree index 136 zero-based. Existing upstream.lock/inventory metadata still lags active fixed-U identity with older \`351204f...\`. Stage A zero-CI discipline remained intact; no executable workflow/Action/cache/bootstrap/build/test/artifact/package/sign/release/deploy/install/runtime operation or Actions/check/status/workflow-run query occurred.
+

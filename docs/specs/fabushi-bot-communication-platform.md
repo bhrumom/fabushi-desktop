@@ -1,5 +1,7 @@
 # Fabushi Bot 全量通信能力等价重写与统一产品 Spec
 
+Execution amendment: 2026-11-02 / FMEP-001 Revision 2 — batch feedback supersedes development-wide zero CI; all product and final acceptance requirements remain applicable.
+
 Status: active  
 Spec ID: FBCP-001  
 Revision: 8
@@ -294,7 +296,7 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 **FBCP-QA-16 — Escaped defect feedback loop.** 人工后来发现但自动测试没发现的问题必须形成 gap analysis：为什么现有 oracle/case/gate 没抓到、在哪一层补 test、是否扩大同类风险扫描；不能只补当前单点。
 **FBCP-QA-17 — Test data/environment are controlled.** 关键测试使用版本化 fixture/seed/locale/theme/viewport/network/fault profile，避免随机时间/头像/账号数据让测试失去可重复性；真实 protected account 另按秘密与清理合同管理。
 **FBCP-QA-18 — All executable verification GitHub Actions only.** 对 FBCP/TDRP，unit/property/state-machine/contract/integration/E2E/visual/a11y/performance/soak/fault/package/acceptance 全部只在 GitHub Actions 运行。
-**FBCP-QA-19 — Development-first verification timing.** 开发期先完成全部适用能力的源责任闭包、现有 owner 下的实现与生产接线、UI/服务/数据/平台/包体路径，以及可证伪的正反测试和 oracle；此阶段不触发、等待或重复 FBCP/TDRP CI，不推送实现分支或更新迁移 PR head，不运行本机测试。全部开发闭包后冻结同一确切提交 H，集中执行适用 Actions、真实服务/设备/平台/安装包及独立验收。失败则修复并重新冻结；开发期和旧 H 的结果不能标为当前 H verified。
+**FBCP-QA-19 — 批次及时验证。** 按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 ## 9. 品牌、命名与来源记录
 
@@ -312,7 +314,7 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 1. P0：最新 exact upstream/target baseline、全量 inventory、逐文件 ledger、逐模块 dossier、current-owner resolution、接口/服务依赖、UI 路由和品牌替换清单。
 2. 第一生产闭环：既有 shell + 左竖栏 -> Human identity/contact -> 同一 conversation/composer -> Fabushi durable send/receive -> transcript -> 显式 Agent action -> Coordinator/Host/Runner -> 同一结果/产物 -> restart/reconnect。
-3. 按依赖闭合全部模块：群/频道/话题、消息长尾、媒体、通话、安全、Mini Apps/插件、商业、平台等；每条先完成 production wiring、测试用例和 oracle，执行证据待最终冻结 H 后统一取得。
+3. 按依赖闭合全部模块：群/频道/话题、消息长尾、媒体、通话、安全、Mini Apps/插件、商业、平台等；每条先完成 production wiring、测试用例和 oracle，受影响验证按批次及时取得，最终候选补齐完整验收。
 4. 全量开发闭包、品牌清理后冻结 H；集中进行全量回归、安装/升级/回滚、签名包、独立验收与发布。
 
 阶段是工作顺序，不是范围缩减或完成定义。某项依赖阻塞时记录 owner、原因、解除条件与已请求支持，继续下一项无依赖阻塞的研究、UI/接口设计、已批准模块实现或取证；不能伪造前置通过。需要用户支持时按用户指定通知渠道处理，先检查是否已有相同未解决通知，避免重复催告。
@@ -321,7 +323,7 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 
 本项目所有 build/test/lint/generator/schema/benchmark/fuzz/package/acceptance 等可执行验证只在 **GitHub Actions** 进行；本 Revision 对 FBCP/TDRP 的要求替代旧文档中允许 htch-runtime 验证的口径。不要在用户 Mac、bhrum2 或 assistant container 跑这些任务。只读调查、文档编辑及 Git/API 操作允许；非必要不占用用户设备存储，必要临时改动提交云端后清理。
 
-开发阶段依 TDRP-EXEC-01 只做源码审读、分流、实现、生产接线、测试/验收方案编写、静态审查及隔离分支本地提交；不触发或等待迁移 CI，不推送实现分支/更新迁移 PR head。全部适用功能与源责任闭包后才冻结 H 集中执行下列验证。任何未运行项保持 `not-run`/`pending`/false，不能把延后验证解释为降低最终验收标准。
+按 FMEP-001 Revision 2：阶段 A 以功能闭环成批实现，并在 GitHub Actions 执行受影响编译、合同/状态机及必要接线与风险验证；允许必要 push/PR/dispatch。无依赖批次并行，关键公共合同失败先修复。阶段 B 冻结最终候选完成所有适用完整验收，阶段 C 独立 ACCEPT 后发布。所有可执行验证仍仅 Actions；未运行项 not-run，局部通过不等于全产品 verified。
 
 验证包括：完整 source-tree/recursive dependency 闭合、逐文件/责任覆盖、语言与 owner 约束、真实 shipping wiring、module contract/行为对照、Unit/integration/property/fuzz、顺序/重复/恢复/取消、权限和安全、服务端 E2E、既有 Bot 回归、UI/可访问性、性能/功耗/磁盘增长、签名安装包与升级回滚。
 
@@ -406,3 +408,7 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 - Full source reference: https://github.com/telegramdesktop/tdesktop
 - Upstream README/license: https://github.com/telegramdesktop/tdesktop/blob/f23c37857220eb84f8559f0901ea26fb304b564b/README.md and LICENSE in the same exact tree.
 - Companion TDRP-001、当前 canonical Bot spec、原有 module dossiers/ledger/ADR 与 current-head production evidence。
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.
