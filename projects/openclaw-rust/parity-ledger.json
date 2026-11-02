@@ -10637,7 +10637,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_media_fetch_contract.rs",
-        "projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md"
+        "projects/openclaw-rust/dossiers/media-fetch-pipeline-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md"
       ],
       "existing_owner_candidates": [
         {
@@ -10647,17 +10648,19 @@
       ],
       "id": "OCRM-RESP-MEDIA-FETCH-PIPELINE-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/input_files.rs::read_input_source; source/host/src/extensions/attachments/media_store.rs::save_media_source; source/host/app/src/main.rs::dispatch_gateway_call",
-        "entrypoint": "source/host/src/extensions/attachments/input_files.rs::read_input_source -> media_fetch::read_remote_media_buffer; media_store.rs::save_media_source -> media_store::save_remote_media_for_store; attachments_service.rs::dispatch_gateway",
+        "consumer": "input_files.rs::read_input_source and AttachmentsService Gateway buffer/save callers consume results; successful save_response_media publishes through media_store.rs::save_media_buffer",
+        "entrypoint": "input_files.rs::read_input_source -> media_fetch::read_remote_media_buffer; AttachmentsService::dispatch_gateway -> media_fetch::{read_remote_media_buffer,save_remote_media}; outer Host HTTP registry omits these methods, so shipping reachability is still unproven",
         "owner": "source/host/src/extensions/attachments/media_fetch.rs",
-        "producer": "input file, media-store, and attachment gateway callers"
+        "producer": "input file/image URL extraction and attachment Gateway callers; media_store::save_remote_media_for_store is a separate fetch path"
       },
       "invariants": [
         "Content-Disposition filename* RFC 5987 extended values must be decoded with UTF-8 or ISO-8859-1, falling back to plain filename on malformed or unsupported charsets",
         "Unquoted filenames must preserve leading, trailing, and surrounding apostrophes",
         "Path separators in URL basenames or extended filenames must be replaced with underscores to prevent directory traversal",
-        "Malformed content-length header must reject with HttpError before remote buffer reads",
+        "On successful supplied responses, malformed content-length rejects with HttpError before success payload handling; known non-2xx status takes precedence over success limits",
         "Payload exceeding maxBytes must reject with MaxBytes and abort without persisting corrupt partial files",
+        "Failed remote responses consume at most 8192 diagnostic bytes without waiting for EOF after that budget; diagnostics retain at most 200 UTF-16 units without splitting a scalar and never publish store files",
+        "Diagnostic body read failure preserves the known HTTP status and omits unavailable body detail",
         "Telegram bot tokens in URLs and error messages must be redacted with 6-char prefix and 4-char suffix separated by ellipsis"
       ],
       "migration_rollback": "Reject remote media fetch requests and return MediaFetchError::fetch_failed",
@@ -10687,7 +10690,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Medium; handles external untrusted media downloads and Content-Disposition header interpretation",
+      "risk": "High; external untrusted response bodies affect resource bounds, HTTP failure recovery, diagnostic secrecy and store publication",
       "selected_owner": "source/host/src/extensions/attachments/media_fetch.rs",
       "source_refs": [
         {
@@ -10720,7 +10723,15 @@
         "source/host/tests/openclaw_media_fetch_contract.rs::test_ocrm_media_fetch_content_type_container_hint_and_charset",
         "source/host/tests/openclaw_media_fetch_contract.rs::test_ocrm_media_fetch_ssrf_and_redaction",
         "source/host/tests/openclaw_media_fetch_contract.rs::test_ocrm_media_fetch_gateway_dispatch",
-        "source/host/tests/openclaw_media_fetch_contract.rs::test_ocrm_media_fetch_empty_response_and_original_filename"
+        "source/host/tests/openclaw_media_fetch_contract.rs::test_ocrm_media_fetch_empty_response_and_original_filename",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_buffer_gateway_stops_at_prefix_without_eof",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_save_gateway_stops_at_prefix_without_eof",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_supplied_response_normalizes_unicode_and_whitespace",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_supplied_response_prioritizes_status_and_redacts",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_prioritizes_status_and_redacts",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_read_failure_preserves_status",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_empty_and_whitespace_omit_body",
+        "source/host/tests/openclaw_media_fetch_contract.rs::media_http_error_gateway_success_and_default_guard_controls"
       ],
       "typed_contracts": [
         "read_remote_media_buffer(options: &FetchMediaOptions) -> Result<FetchMediaResult, MediaFetchError>",

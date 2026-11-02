@@ -9,11 +9,17 @@
 //! - Telegram bot token redaction in URLs and error messages.
 //! - Empty body / 204 rejection without disk pollution.
 //! - Gateway dispatch integration for `readRemoteMediaBuffer` and `saveRemoteMedia`.
+//! - Bounded non-2xx diagnostics through real HTTP responses and Gateway calls.
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::io::{self, Read, Write};
+use std::net::TcpListener;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Arc};
+use std::thread;
+use std::time::Duration;
 
 use mahayana_host_runtime::extensions::attachments::attachments_service::{
     AttachmentsBox, AttachmentsService,
@@ -72,6 +78,187 @@ impl AttachmentsBox for MockBox {
     fn upload_file(&self, _agent_id: &str, _path: &str, _data: &[u8]) -> Result<(), String> {
         Ok(())
     }
+}
+
+struct MediaHttpFixture {
+    origin: String,
+    release: Option<mpsc::Sender<()>>,
+    prefix_sent: mpsc::Receiver<()>,
+    accepted: Arc<AtomicBool>,
+    suffix_released: Arc<AtomicBool>,
+    worker: Option<thread::JoinHandle<io::Result<()>>>,
+}
+
+impl MediaHttpFixture {
+    fn start(status: u16, body: Vec<u8>, declared_length: usize, suffix: Option<Vec<u8>>) -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind media HTTP fixture");
+        listener.set_nonblocking(true).unwrap();
+        let origin = format!("http://{}", listener.local_addr().unwrap());
+        let (release, released) = mpsc::channel();
+        let (prefix_ready, prefix_sent) = mpsc::channel();
+        let accepted = Arc::new(AtomicBool::new(false));
+        let worker_accepted = Arc::clone(&accepted);
+        let suffix_released = Arc::new(AtomicBool::new(false));
+        let worker_released = Arc::clone(&suffix_released);
+        let worker = thread::spawn(move || {
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                        match released.try_recv() {
+                            Ok(()) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
+                            Err(mpsc::TryRecvError::Empty) => {}
+                        }
+                        thread::park_timeout(Duration::from_millis(5));
+                    }
+                    Err(error) => return Err(error),
+                }
+            };
+            worker_accepted.store(true, Ordering::SeqCst);
+            stream.set_nonblocking(false)?;
+            stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+            stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+            let mut request = Vec::new();
+            let mut chunk = [0u8; 1024];
+            while !request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
+                let count = stream.read(&mut chunk)?;
+                if count == 0 || request.len() + count > 64 * 1024 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "missing request headers"));
+                }
+                request.extend_from_slice(&chunk[..count]);
+            }
+            if !request.starts_with(b"GET ") {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "expected media GET"));
+            }
+            write!(
+                stream,
+                "HTTP/1.1 {status} Fixture\r\nContent-Length: {declared_length}\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\n\r\n"
+            )?;
+            stream.write_all(&body)?;
+            stream.flush()?;
+            let _ = prefix_ready.send(());
+            if let Some(suffix) = suffix {
+                // No EOF or suffix reaches the client until the test releases
+                // this exact server, including assertion-failure cleanup.
+                let _ = released.recv();
+                worker_released.store(true, Ordering::SeqCst);
+                // A bounded reader has already dropped its response, so a
+                // closed peer during cleanup is expected.
+                let _ = stream.write_all(&suffix);
+                let _ = stream.flush();
+            }
+            Ok(())
+        });
+        Self {
+            origin,
+            release: Some(release),
+            prefix_sent,
+            accepted,
+            suffix_released,
+            worker: Some(worker),
+        }
+    }
+
+    fn args(&self, root: &Path) -> serde_json::Value {
+        serde_json::json!({
+            "url": format!("{}/media", self.origin),
+            "allowed_origins": [self.origin.clone()],
+            "timeout_ms": 20_000,
+            "max_bytes": 50 * 1024 * 1024,
+            "base_dir": root,
+            "subdir": "inbound"
+        })
+    }
+
+    fn release(&mut self) {
+        if let Some(release) = self.release.take() {
+            let _ = release.send(());
+        }
+        if let Some(worker) = &self.worker {
+            worker.thread().unpark();
+        }
+    }
+
+    fn finish(&mut self) -> io::Result<()> {
+        self.release();
+        match self.worker.take() {
+            Some(worker) => worker.join().unwrap_or_else(|_| {
+                Err(io::Error::new(io::ErrorKind::Other, "media HTTP fixture panicked"))
+            }),
+            None => Ok(()),
+        }
+    }
+}
+
+impl Drop for MediaHttpFixture {
+    fn drop(&mut self) {
+        let _ = self.finish();
+    }
+}
+
+fn media_gateway_call(method: &str, args: &serde_json::Value, root: &Path) -> Result<serde_json::Value, String> {
+    AttachmentsService::new(root, Arc::new(MockAuth), Arc::new(MockBox), None)
+        .dispatch_gateway(method, args)
+        .expect("registered media gateway method")
+}
+
+fn media_tree_snapshot(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+    fn visit(root: &Path, directory: &Path, snapshot: &mut BTreeMap<PathBuf, Option<Vec<u8>>>) {
+        for entry in fs::read_dir(directory).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let relative = path.strip_prefix(root).unwrap().to_path_buf();
+            if entry.file_type().unwrap().is_dir() {
+                snapshot.insert(relative, None);
+                visit(root, &path, snapshot);
+            } else {
+                snapshot.insert(relative, Some(fs::read(path).unwrap()));
+            }
+        }
+    }
+    let mut snapshot = BTreeMap::new();
+    visit(root, root, &mut snapshot);
+    snapshot
+}
+
+fn assert_media_gateway_stops_before_eof(method: &'static str) {
+    let temp = TempTestDir::new(method);
+    fs::write(temp.path.join("keep.bin"), b"existing media stays intact").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    let mut prefix = b"  diagnostic\t".to_vec();
+    prefix.resize(8191, b' ');
+    // The 8192nd byte starts a scalar whose remaining bytes are held back.
+    prefix.push(0xf0);
+    let suffix = [vec![0x9f, 0x98, 0x80], b"SUFFIX_MUST_NOT_BE_READ".to_vec()].concat();
+    let mut fixture = MediaHttpFixture::start(503, prefix, 8192 + suffix.len(), Some(suffix));
+    let args = fixture.args(&temp.path);
+    let expected = format!(
+        "MediaFetchError: Failed to fetch media from {}/media: HTTP 503; body: diagnostic…",
+        fixture.origin
+    );
+    let root = temp.path.clone();
+    let (result_tx, result_rx) = mpsc::channel();
+    let caller = thread::spawn(move || {
+        let _ = result_tx.send(media_gateway_call(method, &args, &root));
+    });
+
+    let prefix_sent = fixture.prefix_sent.recv_timeout(Duration::from_secs(5));
+    let result_before_release = result_rx.recv_timeout(Duration::from_secs(5));
+    let suffix_already_released = fixture.suffix_released.load(Ordering::SeqCst);
+    // Release and join both exact owned threads before any assertion can unwind.
+    fixture.release();
+    let caller_joined = caller.join();
+    let server_joined = fixture.finish();
+
+    assert!(prefix_sent.is_ok(), "server must deliver the complete diagnostic prefix");
+    assert!(!suffix_already_released, "the suffix gate must still be closed at settlement");
+    caller_joined.expect("media gateway caller did not panic");
+    server_joined.expect("media HTTP fixture completed");
+    assert_eq!(
+        result_before_release.expect("gateway must settle while suffix and EOF remain held").unwrap_err(),
+        expected
+    );
+    assert_eq!(media_tree_snapshot(&temp.path), before);
 }
 
 #[test]
@@ -330,4 +517,208 @@ fn test_ocrm_media_fetch_gateway_dispatch() {
     let res2 = result2.unwrap();
     assert!(res2.is_err());
     assert!(res2.unwrap_err().contains("Blocked hostname or private/internal/special-use IP address"));
+}
+
+#[test]
+fn media_http_error_buffer_gateway_stops_at_prefix_without_eof() {
+    assert_media_gateway_stops_before_eof("readRemoteMediaBuffer");
+}
+
+#[test]
+fn media_http_error_save_gateway_stops_at_prefix_without_eof() {
+    assert_media_gateway_stops_before_eof("saveRemoteMedia");
+}
+
+#[test]
+fn media_http_error_supplied_response_normalizes_unicode_and_whitespace() {
+    let temp = TempTestDir::new("diagnostic-normalization");
+    fs::write(temp.path.join("keep.bin"), b"existing media").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    let options = SaveResponseMediaOptions {
+        source_url: Some("https://example.test/error".into()),
+        max_bytes: Some(0),
+        base_dir: Some(temp.path.clone()),
+        ..Default::default()
+    };
+    let mut cases = vec![
+        ("empty", Vec::new(), None),
+        ("whitespace", "\t\n\u{000b}\u{000c}\r \u{00a0}\u{1680}\u{2000}\u{2001}\u{2002}\u{2003}\u{2004}\u{2005}\u{2006}\u{2007}\u{2008}\u{2009}\u{200a}\u{2028}\u{2029}\u{202f}\u{205f}\u{3000}\u{feff}".as_bytes().to_vec(), None),
+        ("ECMAScript whitespace", "\u{feff} hello\u{00a0}\t\n world \u{feff}".as_bytes().to_vec(), Some("hello world".to_string())),
+        ("0085 is not ECMAScript whitespace", "\u{0085}a\u{0085}\u{feff}b\u{0085}".as_bytes().to_vec(), Some("\u{0085}a\u{0085} b\u{0085}".to_string())),
+        ("malformed complete UTF-8", b"a\xffb\xe2\x82".to_vec(), Some("a�b�".to_string())),
+        ("UTF-8 BOM", b"\xef\xbb\xbfdiagnostic".to_vec(), Some("diagnostic".to_string())),
+        ("UTF-16 BOM does not switch encoding", b"\xff\xfeA".to_vec(), Some("��A".to_string())),
+        ("exact display budget", vec![b'a'; 200], Some("a".repeat(200))),
+        ("display overflow", vec![b'a'; 201], Some(format!("{}…", "a".repeat(200)))),
+        ("surrogate crosses display boundary", format!("{}😀tail", "a".repeat(199)).into_bytes(), Some(format!("{}…", "a".repeat(199)))),
+        ("surrogate fits display boundary", format!("{}😀", "a".repeat(198)).into_bytes(), Some(format!("{}😀", "a".repeat(198)))),
+    ];
+    let mut short_prefix = b"diagnostic".to_vec();
+    short_prefix.resize(8191, b' ');
+    cases.push(("below byte budget", short_prefix.clone(), Some("diagnostic".into())));
+    let mut exact_prefix = short_prefix.clone();
+    exact_prefix.push(b' ');
+    cases.push(("exact byte budget", exact_prefix, Some("diagnostic…".into())));
+    let mut cut_scalar = short_prefix;
+    cut_scalar.extend_from_slice("😀SUFFIX_MUST_NOT_APPEAR".as_bytes());
+    cases.push(("cut UTF-8 scalar", cut_scalar, Some("diagnostic…".into())));
+    let mut invalid_then_cut = b"a\xffb".to_vec();
+    invalid_then_cut.resize(8191, b' ');
+    invalid_then_cut.extend_from_slice("😀SUFFIX_MUST_NOT_APPEAR".as_bytes());
+    cases.push(("replace interior and drop cut tail", invalid_then_cut, Some("a�b…".into())));
+    let mut invalid_last_byte = b"diagnostic".to_vec();
+    invalid_last_byte.resize(8191, b' ');
+    invalid_last_byte.push(0xff);
+    cases.push(("malformed full byte at budget", invalid_last_byte, Some("diagnostic �…".into())));
+    let mut blank_prefix = vec![b' '; 8192];
+    blank_prefix.extend_from_slice(b"SUFFIX_MUST_NOT_APPEAR");
+    cases.push(("blank truncated prefix", blank_prefix, None));
+
+    for (label, body, snippet) in cases {
+        let error = save_response_media(&body, &BTreeMap::new(), 503, &options).unwrap_err();
+        assert_eq!(error.code, MediaFetchErrorCode::HttpError, "{label}");
+        assert_eq!(error.status, Some(503), "{label}");
+        let detail = snippet.map(|text| format!("; body: {text}")).unwrap_or_default();
+        assert_eq!(
+            error.message,
+            format!("Failed to fetch media from https://example.test/error: HTTP 503{detail}"),
+            "{label}"
+        );
+    }
+    assert_eq!(media_tree_snapshot(&temp.path), before);
+}
+
+#[test]
+fn media_http_error_supplied_response_prioritizes_status_and_redacts() {
+    let temp = TempTestDir::new("supplied-diagnostic-priority");
+    fs::write(temp.path.join("keep.bin"), b"existing media").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    let token = "123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    let source_url = format!("https://example.test/bot{token}/error");
+    let body = format!(" \t echoed bot{token}\n ");
+    let options = SaveResponseMediaOptions {
+        source_url: Some(source_url),
+        max_bytes: Some(0),
+        base_dir: Some(temp.path.clone()),
+        ..Default::default()
+    };
+    for status in [302, 401, 503] {
+        for content_length in ["1e9", "999999999"] {
+            let headers = BTreeMap::from([("content-length".into(), content_length.into())]);
+            let error = save_response_media(body.as_bytes(), &headers, status, &options).unwrap_err();
+            assert_eq!(error.code, MediaFetchErrorCode::HttpError);
+            assert_eq!(error.status, Some(status));
+            assert_eq!(error.message, format!(
+                "Failed to fetch media from https://example.test/bot123456…abcd/error: HTTP {status}; body: echoed bot123456…abcd"
+            ));
+            assert!(!error.message.contains(token));
+        }
+    }
+    assert_eq!(media_tree_snapshot(&temp.path), before);
+}
+
+#[test]
+fn media_http_error_gateway_prioritizes_status_and_redacts() {
+    let temp = TempTestDir::new("gateway-diagnostic-priority");
+    fs::write(temp.path.join("keep.bin"), b"existing media").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    let token = "123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    let body = format!(" \t echoed bot{token}\n ").into_bytes();
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        let mut fixture = MediaHttpFixture::start(401, body.clone(), body.len(), None);
+        let mut args = fixture.args(&temp.path);
+        args["url"] = serde_json::json!(format!("{}/bot{token}/media", fixture.origin));
+        args["max_bytes"] = serde_json::json!(1);
+        let result = media_gateway_call(method, &args, &temp.path);
+        fixture.finish().expect("media HTTP fixture completed");
+        assert!(fixture.accepted.load(Ordering::SeqCst));
+        let error = result.unwrap_err();
+        assert_eq!(error, format!(
+            "MediaFetchError: Failed to fetch media from {}/bot123456…abcd/media: HTTP 401; body: echoed bot123456…abcd",
+            fixture.origin
+        ));
+        assert!(!error.contains(token));
+        assert_eq!(media_tree_snapshot(&temp.path), before);
+    }
+}
+
+#[test]
+fn media_http_error_gateway_read_failure_preserves_status() {
+    let temp = TempTestDir::new("gateway-diagnostic-read-failure");
+    fs::write(temp.path.join("keep.bin"), b"existing media").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        // Closing before the declared length makes the real response reader
+        // fail after headers and some bytes have already arrived.
+        let body = b"PARTIAL_DIAGNOSTIC_MUST_BE_OMITTED".to_vec();
+        let mut fixture = MediaHttpFixture::start(502, body.clone(), body.len() + 32, None);
+        let result = media_gateway_call(method, &fixture.args(&temp.path), &temp.path);
+        fixture.finish().expect("interrupted media fixture completed");
+        assert!(fixture.accepted.load(Ordering::SeqCst));
+        assert_eq!(result.unwrap_err(), format!(
+            "MediaFetchError: Failed to fetch media from {}/media: HTTP 502",
+            fixture.origin
+        ));
+        assert_eq!(media_tree_snapshot(&temp.path), before);
+    }
+}
+
+#[test]
+fn media_http_error_gateway_empty_and_whitespace_omit_body() {
+    let temp = TempTestDir::new("gateway-empty-diagnostic");
+    fs::write(temp.path.join("keep.bin"), b"existing media").unwrap();
+    let before = media_tree_snapshot(&temp.path);
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        for body in [Vec::new(), " \t\r\n\u{feff}\u{00a0}".as_bytes().to_vec()] {
+            let mut fixture = MediaHttpFixture::start(404, body.clone(), body.len(), None);
+            let result = media_gateway_call(method, &fixture.args(&temp.path), &temp.path);
+            fixture.finish().expect("empty media fixture completed");
+            assert_eq!(result.unwrap_err(), format!(
+                "MediaFetchError: Failed to fetch media from {}/media: HTTP 404",
+                fixture.origin
+            ));
+            assert_eq!(media_tree_snapshot(&temp.path), before);
+        }
+    }
+}
+
+#[test]
+fn media_http_error_gateway_success_and_default_guard_controls() {
+    let temp = TempTestDir::new("gateway-success-and-guard");
+    fs::write(temp.path.join("keep.bin"), b"existing media").unwrap();
+    for method in ["readRemoteMediaBuffer", "saveRemoteMedia"] {
+        let before = media_tree_snapshot(&temp.path);
+        let mut refused = MediaHttpFixture::start(200, b"unreachable".to_vec(), 11, None);
+        let mut args = refused.args(&temp.path);
+        args.as_object_mut().unwrap().remove("allowed_origins");
+        let refusal = media_gateway_call(method, &args, &temp.path);
+        refused.finish().expect("refused fixture stopped without accepting");
+        assert!(!refused.accepted.load(Ordering::SeqCst));
+        assert!(refusal.unwrap_err().contains("Blocked hostname or private/internal/special-use IP address"));
+        assert_eq!(media_tree_snapshot(&temp.path), before);
+
+        let mut empty = MediaHttpFixture::start(204, Vec::new(), 0, None);
+        let result = media_gateway_call(method, &empty.args(&temp.path), &temp.path);
+        empty.finish().expect("204 fixture completed");
+        assert!(result.unwrap_err().contains("HTTP 204; empty response body"));
+        assert_eq!(media_tree_snapshot(&temp.path), before);
+
+        let body = b"unchanged successful media bytes".to_vec();
+        let mut success = MediaHttpFixture::start(200, body.clone(), body.len(), None);
+        let mut args = success.args(&temp.path);
+        args["max_bytes"] = serde_json::json!(body.len());
+        let result = media_gateway_call(method, &args, &temp.path);
+        success.finish().expect("successful media fixture completed");
+        let result = result.unwrap();
+        if method == "readRemoteMediaBuffer" {
+            let buffer: Vec<u8> = serde_json::from_value(result["buffer"].clone()).unwrap();
+            assert_eq!(buffer, body);
+            assert_eq!(media_tree_snapshot(&temp.path), before);
+        } else {
+            let saved_path = Path::new(result["path"].as_str().unwrap());
+            assert!(saved_path.starts_with(fs::canonicalize(&temp.path).unwrap()));
+            assert_eq!(fs::read(saved_path).unwrap(), body);
+        }
+        assert_eq!(fs::read(temp.path.join("keep.bin")).unwrap(), b"existing media");
+    }
 }

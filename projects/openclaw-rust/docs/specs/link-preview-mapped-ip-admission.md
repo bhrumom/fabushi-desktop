@@ -15,9 +15,14 @@ workflow/RTM integration receives a separate focused review.
 
 ## Existing owner and defect
 
-The renderer's `DesktopBridge.getLinkMetadata` passes through preload,
-Electron `main-edge` and the attachment/coordinator adapter to the existing
-Host `AttachmentsService::dispatch_gateway("fetchLinkMetadata")`.
+The renderer's `DesktopBridge.getLinkMetadata` is produced through preload,
+Electron `main-edge` and the attachment/coordinator adapter for the existing
+Host `AttachmentsService::dispatch_gateway("fetchLinkMetadata")` owner.
+Follow-up tracing at H `4e90f031aeeedb50efe4e265da084b99901478cd` found the
+outer Host HTTP registry omits this method and rejects it before that owner.
+The original end-to-end reachability statement was too broad: LPIP establishes
+the real service/cache contract only; shipping registration and its native
+authorization boundary require a separate correction.
 `fetch_link_metadata` validates the URL before reading the existing preview
 cache. HTML, preview-image and favicon downloads use the existing
 `safe_link_preview_fetch` owner. Its literal-URL parser, DNS answer validator

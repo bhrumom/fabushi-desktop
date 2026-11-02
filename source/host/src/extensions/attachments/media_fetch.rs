@@ -1,7 +1,7 @@
 //! Media fetch pipeline with SSRF guards, Content-Disposition parsing,
 //! streaming byte bounds, Content-Type/charset retention, and media store persistence.
 //!
-//! Ported with 100% behavioral equivalence from OpenClaw:
+//! Source-informed media owner; scoped contracts track remaining equivalence gaps:
 //! - `src/media/fetch.ts`
 //! - `src/media/fetch.read-scope.ts`
 
@@ -24,6 +24,8 @@ use crate::extensions::attachments::media_store_shared::{
 
 pub const DEFAULT_MEDIA_RESPONSE_HEADER_TIMEOUT_MS: u64 = 15 * 60_000;
 pub const MAX_DOCUMENT_BYTES: usize = 50 * 1024 * 1024; // 50MB
+const MAX_HTTP_ERROR_BODY_BYTES: usize = 8 * 1024;
+const MAX_HTTP_ERROR_SNIPPET_UTF16_UNITS: usize = 200;
 
 fn read_bounded_response(
     response: &mut reqwest::blocking::Response,
@@ -34,6 +36,89 @@ fn read_bounded_response(
         .take(max_bytes.saturating_add(1) as u64)
         .read_to_end(&mut bytes)?;
     Ok(bytes)
+}
+
+fn is_ecmascript_whitespace(character: char) -> bool {
+    matches!(
+        character,
+        '\u{0009}'..='\u{000d}'
+            | '\u{0020}'
+            | '\u{00a0}'
+            | '\u{1680}'
+            | '\u{2000}'..='\u{200a}'
+            | '\u{2028}'
+            | '\u{2029}'
+            | '\u{202f}'
+            | '\u{205f}'
+            | '\u{3000}'
+            | '\u{feff}'
+    )
+}
+
+fn http_error_body_snippet(bytes: &[u8]) -> Option<String> {
+    let byte_truncated = bytes.len() >= MAX_HTTP_ERROR_BODY_BYTES;
+    let prefix = &bytes[..bytes.len().min(MAX_HTTP_ERROR_BODY_BYTES)];
+    // Match TextDecoder's UTF-8-only BOM removal. With last=false, dropping
+    // this one-shot decoder discards only an unfinished trailing scalar.
+    let mut decoder = encoding_rs::UTF_8.new_decoder_with_bom_removal();
+    let mut decoded = String::with_capacity(decoder.max_utf8_buffer_length(prefix.len())?);
+    let (result, read, _) = decoder.decode_to_string(prefix, &mut decoded, !byte_truncated);
+    if !matches!(result, encoding_rs::CoderResult::InputEmpty) || read != prefix.len() {
+        return None;
+    }
+    let mut collapsed = String::new();
+    let mut pending_space = false;
+    for character in decoded.chars() {
+        if is_ecmascript_whitespace(character) {
+            pending_space = !collapsed.is_empty();
+        } else {
+            if pending_space {
+                collapsed.push(' ');
+                pending_space = false;
+            }
+            collapsed.push(character);
+        }
+    }
+    if collapsed.is_empty() {
+        return None;
+    }
+
+    let mut utf16_units = 0;
+    let display_end = collapsed.char_indices().find_map(|(offset, character)| {
+        utf16_units += character.len_utf16();
+        (utf16_units > MAX_HTTP_ERROR_SNIPPET_UTF16_UNITS).then_some(offset)
+    });
+    if let Some(end) = display_end {
+        collapsed.truncate(end);
+    }
+    if byte_truncated || display_end.is_some() {
+        collapsed.push('…');
+    }
+    Some(collapsed)
+}
+
+fn http_error_from_body(source_url: &str, status: u16, bytes: &[u8]) -> MediaFetchError {
+    let detail = http_error_body_snippet(bytes)
+        .map(|snippet| format!("body: {snippet}"))
+        .unwrap_or_default();
+    MediaFetchError::http_error(source_url, status, &detail)
+}
+
+fn read_http_error_response(
+    response: &mut reqwest::blocking::Response,
+    source_url: &str,
+    status: u16,
+) -> MediaFetchError {
+    let mut prefix = Vec::with_capacity(MAX_HTTP_ERROR_BODY_BYTES);
+    // Unlike successful payload reads, diagnostics stop at the budget itself:
+    // no extra byte or EOF is needed, and returning drops the owned response.
+    match response
+        .take(MAX_HTTP_ERROR_BODY_BYTES as u64)
+        .read_to_end(&mut prefix)
+    {
+        Ok(_) => http_error_from_body(source_url, status, &prefix),
+        Err(_) => MediaFetchError::http_error(source_url, status, ""),
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -82,6 +167,7 @@ impl MediaFetchError {
     }
 
     pub fn http_error(source_url: &str, status: u16, detail: &str) -> Self {
+        let detail = redact_sensitive_text(detail);
         let full = format!(
             "Failed to fetch media from {}: HTTP {}{}",
             redact_sensitive_text(source_url),
@@ -225,7 +311,7 @@ pub struct SaveResponseMediaOptions {
     pub base_dir: Option<PathBuf>,
 }
 
-/// Redact sensitive tokens (Telegram bot tokens, passwords, bearer secrets) from text and URLs.
+/// Redact the supported Telegram bot-token pattern from text and URLs.
 pub fn redact_sensitive_text(text: &str) -> String {
     let re = Regex::new(r"bot(\d{6,}:[A-Za-z0-9_-]{10,})").unwrap();
     re.replace_all(text, |caps: &regex::Captures| {
@@ -648,6 +734,10 @@ pub fn read_remote_media_buffer_with_headers(
     let status = res.status().as_u16();
     let final_url = res.url().as_str().to_string();
 
+    if !res.status().is_success() {
+        return Err(read_http_error_response(&mut res, source_url, status));
+    }
+
     let cl_header = res
         .headers()
         .get("content-length")
@@ -677,21 +767,6 @@ pub fn read_remote_media_buffer_with_headers(
             format!("HTTP 204; empty response body"),
             Some(204),
         ));
-    }
-
-    if !res.status().is_success() {
-        let snippet = res.text().unwrap_or_default();
-        let snippet_truncated = if snippet.len() > 8 * 1024 {
-            &snippet[..8 * 1024]
-        } else {
-            &snippet
-        };
-        let detail = if snippet_truncated.is_empty() {
-            String::new()
-        } else {
-            format!("body: {snippet_truncated}")
-        };
-        return Err(MediaFetchError::http_error(source_url, status, &detail));
     }
 
     let header_content_type = res
@@ -781,6 +856,10 @@ pub fn save_response_media(
     let effective_max_bytes = options.max_bytes.unwrap_or(MAX_DOCUMENT_BYTES);
     let source_url = options.source_url.as_deref().unwrap_or("response");
 
+    if status < 200 || status >= 300 {
+        return Err(http_error_from_body(source_url, status, bytes));
+    }
+
     let cl_header = headers.get("content-length").map(String::as_str);
     match parse_media_content_length(cl_header) {
         Ok(Some(cl)) => {
@@ -806,14 +885,6 @@ pub fn save_response_media(
             source_url,
             format!("HTTP 204; empty response body"),
             Some(204),
-        ));
-    }
-
-    if status < 200 || status >= 300 {
-        return Err(MediaFetchError::http_error(
-            source_url,
-            status,
-            &format!("body: {}", String::from_utf8_lossy(bytes)),
         ));
     }
 
@@ -911,6 +982,10 @@ pub fn save_remote_media(
 
     let status = res.status().as_u16();
     let final_url = res.url().as_str().to_string();
+
+    if !res.status().is_success() {
+        return Err(read_http_error_response(&mut res, &final_url, status));
+    }
 
     let mut headers = BTreeMap::new();
     for (k, v) in res.headers() {

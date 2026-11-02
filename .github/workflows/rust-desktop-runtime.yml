@@ -312,6 +312,10 @@ jobs:
               "source/host/src/extensions/attachments/safe_link_preview_fetch.rs",
               "source/host/tests/safe_link_preview_fetch_contract.rs",
               "source/host/tests/attachments_service_contract.rs",
+              "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+              "source/host/src/extensions/attachments/media_fetch.rs",
+              "source/host/src/extensions/attachments/media_store.rs",
+              "source/host/tests/openclaw_media_fetch_contract.rs",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -368,13 +372,13 @@ jobs:
             --test runner_production_bridge_contract \
             --test fabushi_model_identity_production_contract \
             --test fabushi_responses_credential_context_contract
-      - name: Test media input and link-preview admission through existing attachment owners
+      - name: Test media input, preview admission and HTTP failure diagnostics through existing attachment owners
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         run: |
           set -euo pipefail
           source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
-          run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract
+          run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract
           python3 - <<'PY'
           import hashlib, json, os, re, subprocess, sys
           from pathlib import Path
@@ -399,6 +403,14 @@ jobs:
               "public_mapped_dns_target_preserves_host_sni_and_https_port",
               "mapped_ip_literal_targets_never_resolve_dns",
               "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+              "media_http_error_buffer_gateway_stops_at_prefix_without_eof",
+              "media_http_error_save_gateway_stops_at_prefix_without_eof",
+              "media_http_error_supplied_response_normalizes_unicode_and_whitespace",
+              "media_http_error_supplied_response_prioritizes_status_and_redacts",
+              "media_http_error_gateway_prioritizes_status_and_redacts",
+              "media_http_error_gateway_read_failure_preserves_status",
+              "media_http_error_gateway_empty_and_whitespace_omit_body",
+              "media_http_error_gateway_success_and_default_guard_controls",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
@@ -408,12 +420,12 @@ jobs:
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({
-              "contract": "MIP-v1/LPIP-v1", "command": command, "command_exit_records": exits,
+              "contract": "MIP-v1/LPIP-v1/MHE-v1", "command": command, "command_exit_records": exits,
               "required_tests": required, "observed_passed_test_names": passed,
               "missing_or_nonunique_positive_results": missing,
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named media input and mapped-IP preview admission controls through existing owners only; not full media, network, platform or OCRM acceptance.",
+              "scope": "Named input policy, mapped-IP preview admission and bounded HTTP failure diagnostics through actual attachment service dispatch and controlled response fixtures only; not outer Host HTTP registration, full media, network, platform or OCRM acceptance.",
           })
           (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -936,6 +948,10 @@ jobs:
               "link_preview_ip_targets": ["safe_link_preview_fetch_contract", "attachments_service_contract"],
               "link_preview_ip_result": "passed",
               "link_preview_ip_scope": "Existing Fabushi preview owner applies its IPv4 rules to mapped IPv6 in literal, DNS-answer and redirect admission, and the real metadata gateway checks policy before using fresh cache entries. Public mapped and native controls remain. This is not real HTTP-loop/pinning execution, general-media or OpenClaw link-understanding equivalence, or platform acceptance.",
+              "media_http_error_contract": "MHE-v1",
+              "media_http_error_target": "openclaw_media_fetch_contract",
+              "media_http_error_result": "passed",
+              "media_http_error_scope": "Actual AttachmentsService buffer/save dispatch stops failed-response diagnostics at the bounded prefix without awaiting EOF, preserves remote status, formats Unicode safely, redacts the existing bot-token pattern and leaves the store unchanged. Controlled HTTP fixtures and supplied-byte cases do not establish outer Host HTTP registration, general SSRF, redirect/proxy, idle-timeout, redaction, chat-wiring or real provider parity.",
               "media_input_policy_scope": "Actual AttachmentsService file RPCs reject malformed explicit resolved policy before decoding or URL processing, preserve omitted/null defaults and valid restrictive limits, and shared file/image source handling rejects '=' and '==' without arithmetic panic or underflow-generated size errors. Longer malformed input retains upstream size-before-validation precedence. This does not establish URL allowlist/redirect/cancellation parity, real PDF or HEIC behavior, accepted-turn multimodal composition, or real service acceptance.",
               "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
               "config_public_secret_app_tests": ["tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization", "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests", "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers", "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry", "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret", "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization"],
@@ -1348,13 +1364,13 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
           PY
-      - name: Test media input and link-preview policy on the existing Linux Host cache
+      - name: Test media input, preview policy and HTTP failure diagnostics on the existing Linux Host cache
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .evidence/sqlite-native-path/media-input-policy
-          command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract)
+          command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract)
           set +e
           "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/tests.log
           pipeline_status=("${PIPESTATUS[@]}")
@@ -1379,6 +1395,14 @@ jobs:
               "public_mapped_dns_target_preserves_host_sni_and_https_port",
               "mapped_ip_literal_targets_never_resolve_dns",
               "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+              "media_http_error_buffer_gateway_stops_at_prefix_without_eof",
+              "media_http_error_save_gateway_stops_at_prefix_without_eof",
+              "media_http_error_supplied_response_normalizes_unicode_and_whitespace",
+              "media_http_error_supplied_response_prioritizes_status_and_redacts",
+              "media_http_error_gateway_prioritizes_status_and_redacts",
+              "media_http_error_gateway_read_failure_preserves_status",
+              "media_http_error_gateway_empty_and_whitespace_omit_body",
+              "media_http_error_gateway_success_and_default_guard_controls",
           ]
           passed = re.findall(r"^test (\S+) \.\.\. ok$", log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
@@ -1396,9 +1420,13 @@ jobs:
               "source/host/src/extensions/attachments/safe_link_preview_fetch.rs",
               "source/host/tests/safe_link_preview_fetch_contract.rs",
               "source/host/tests/attachments_service_contract.rs",
+              "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
+              "source/host/src/extensions/attachments/media_fetch.rs",
+              "source/host/src/extensions/attachments/media_store.rs",
+              "source/host/tests/openclaw_media_fetch_contract.rs",
           ]
           receipt = {
-              "contract": "MIP-v1/LPIP-v1", "subject_commit": head,
+              "contract": "MIP-v1/LPIP-v1/MHE-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -1409,7 +1437,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Linux execution of existing attachment owners: strict explicit input policy, default/restrictive controls, one-/two-padding underflow refusal and retained size-before-validation; mapped-IP preview classification, literal/DNS/redirect policy and real cached-metadata gateway consumer. Not macOS Host, real HTTP-loop/pinning execution, full URL/PDF/HEIC/multimodal/link-understanding parity, real service or whole-platform acceptance.",
+              "scope": "Linux execution of existing attachment owners: strict input policy and defaults/limits; mapped-IP literal/DNS/redirect preview policy and cached-metadata service; bounded HTTP failure diagnostics through actual buffer/save service dispatch with held-tail fixtures, Unicode/status/redaction/no-store controls. Not outer Host HTTP registration, macOS Host, preview HTTP-loop/pinning execution, general SSRF/redirect/proxy/idle-timeout/redaction/chat wiring, full URL/PDF/HEIC/multimodal/link-understanding parity, real provider or whole-platform acceptance.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))

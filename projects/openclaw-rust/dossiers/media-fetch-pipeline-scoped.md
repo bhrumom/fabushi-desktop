@@ -1,15 +1,19 @@
 # OCRM Technical Dossier — Unit 25: Media Fetch Pipeline, SSRF Guards & Content-Disposition Parsing (`OCRM-UNIT-MEDIA-012`)
 
 **Project ID**: OCRM-001  
-**Module**: OCRM-M24 (SSRF-Guarded Remote Media Fetch Pipeline, RFC 5987 / RFC 6266 Extended Content-Disposition Parser, Streaming Byte Bounds, Charset Retention & Disk Store Persistence)  
-**Upstream Target Authority**: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)  
+**Module (current map)**: OCRM-M23 (Media; the original dossier used OCRM-M24)  
+**Historical Upstream Target Authority**: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)  
 **Target Repository**: `bhrumom/fabushi-desktop`  
-**Working Branch**: `ocrm/round20-snapshot-lifecycle-audit-20261023`  
-**Reviewer**: `xuyao@ombhrum.com`  
+**Historical Working Branch**: `ocrm/round20-snapshot-lifecycle-audit-20261023`  
+**Historical Reviewer**: `xuyao@ombhrum.com`  
 
 ---
 
-## 1. Upstream Source Audit & Line-by-Line Reading
+## 1. Historical Upstream Source Audit & Line-by-Line Reading
+
+The following reading records are retained as history, not renewed whole-file
+credit for current U. Current bounded authority and changed source identities
+are recorded in [MHE-v1](../docs/specs/media-http-error-diagnostics.md).
 
 The locked-source pass re-read `src/media/fetch.read-scope.ts` in full (blob
 `3c90773b2de541ce60104d3c3ac3d6d3b7e9c508`, 39 lines). Its behavior keeps
@@ -37,14 +41,14 @@ The audited sources were mapped to 1 discrete Rust runtime responsibility regist
 1. **`OCRM-RESP-MEDIA-FETCH-PIPELINE-001` (NEW)**:
    - **Behavior**: SSRF-guarded remote media fetch and response buffering/persistence pipeline. Enforces Content-Disposition RFC 5987 / 6266 extended filenames (UTF-8, ISO-8859-1) with apostrophe retention and Windows path reduction, Content-Length header verification with early cancellation on malformed values, streaming payload maxBytes caps, audio/video container hint resolution, HTTP charset retention, bot token redaction, and empty body rejection.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_fetch.rs::read_remote_media_buffer, read_remote_media_buffer_with_headers, save_response_media, save_remote_media, parse_content_disposition_file_name, redact_sensitive_text`.
-   - **Production Call Chain**: `source/host/src/extensions/attachments/input_files.rs::read_input_source` → `media_fetch::read_remote_media_buffer`; `source/host/src/extensions/attachments/media_store.rs::save_media_source` → `media_store::save_remote_media_for_store` → `media_fetch`; and `source/host/app/src/main.rs::dispatch_gateway_call` → `AttachmentsService::dispatch_gateway` → `media_fetch`.
-   - **Wiring boundary**: These input-file, media-store, and gateway paths are live Rust production callers. The full OpenClaw chat attachment downlink and agent-loop attachment-fetch coverage is still absent, so the responsibility remains `wiring=not-wired` with `BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001`.
+   - **Owner Call Chain (rechecked at H `4e90f031aeeedb50efe4e265da084b99901478cd`)**: `input_files::read_input_source` → `media_fetch::read_remote_media_buffer`; `AttachmentsService::dispatch_gateway` → `media_fetch::{read_remote_media_buffer,save_remote_media}`. Successful `media_fetch::save_response_media` publishes through the existing `media_store::save_media_buffer` owner.
+   - **Wiring boundary**: The original dossier incorrectly listed `media_store::save_remote_media_for_store` as a caller of `media_fetch`; it has a separate request path. The owner/service calls above exist, but the outer Host HTTP registry omits the media-fetch and input-extraction methods, so the Host lane dispatcher does not make them shipping HTTP routes. Actual desktop/turn consumers and full OpenClaw chat attachment downlink coverage remain open. Preserve `wiring=not-wired` and `BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001`.
    - **Oracles**: `OCRM-FETCH-O01`, `OCRM-FETCH-O02`.
    - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run`, `blocker_ids=["BL-MEDIA-FETCH-PIPELINE-CHAT-WIRING-001"]`.
 
 ---
 
-## 3. Strict Conservation Invariant Verification
+## 3. Historical Conservation Snapshot (not current inventory totals)
 
 - **Total tracked repository paths**: **58,750** (strictly conserved, zero omitted/untracked paths).
 - **Mapped paths**: **225** (increased by 5 from 220).
@@ -58,7 +62,10 @@ The audited sources were mapped to 1 discrete Rust runtime responsibility regist
 
 ## 4. Behavioral Equivalence & Verification Oracles
 
-The native Rust implementation (`source/host/src/extensions/attachments/media_fetch.rs`) achieves 100% behavioral parity with upstream OpenClaw:
+The original dossier claimed full behavioral parity. That claim is not
+established by the historical evidence below. These are the recorded behavior
+intentions; current SSRF, timeout, read-scope, redaction and chat-wiring gaps
+remain open, and MHE-v1 corrects the bounded HTTP error path only.
 
 1. **Content-Disposition RFC 5987 / 6266 Extended Filenames**:
    - Extended tokens `filename*` are decoded under `UTF-8` and `ISO-8859-1`.
@@ -73,7 +80,7 @@ The native Rust implementation (`source/host/src/extensions/attachments/media_fe
    - Malformed percent escapes (e.g. `bad%E0%A4%A.pdf`) retain their raw basename string without panicking.
    - Decoded URL separators (e.g. `%5C`) are substituted with `_` (`reports_Q1.pdf`).
 4. **Content-Length & Streaming Byte Bounds**:
-   - Malformed `Content-Length` headers (e.g. `1e9`) reject with `HttpError` prior to reading buffers.
+   - On successful supplied responses, malformed `Content-Length` headers (e.g. `1e9`) reject with `HttpError` prior to success payload handling. Known non-2xx status takes precedence under MHE-v1.
    - Headers or streaming bodies exceeding `maxBytes` reject with `MaxBytes` without leaving corrupt partial files on disk.
 5. **MIME Container Hint & HTTP Charset Retention**:
    - Generic types (`application/octet-stream`, `binary/octet-stream`, `application/zip`) fall back to caller hint or MIME sniffing.
@@ -88,9 +95,10 @@ The native Rust implementation (`source/host/src/extensions/attachments/media_fe
 
 ---
 
-## 5. Automated Verification Evidence
+## 5. Historical Reported Verification (unbound to current H)
 
-The full contract test suite passes with zero failures:
+The original dossier reported this output without an exact commit or Actions
+receipt. It is preserved as history and is not current verification evidence:
 ```text
 running 7 tests
 test test_ocrm_media_fetch_content_type_container_hint_and_charset ... ok
@@ -103,4 +111,15 @@ test test_ocrm_media_fetch_empty_response_and_original_filename ... ok
 
 test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 ```
-Across all attachment and media test suites, all 39 contract tests pass with 100% success.
+The original report also stated 39 passing attachment/media tests; that
+unbound count does not establish current verification or complete parity.
+
+## 6. Current bounded correction
+
+[MHE-v1](../docs/specs/media-http-error-diagnostics.md) fixes non-2xx diagnostics
+inside the existing owner: bounded byte consumption, Unicode-safe display,
+status preservation, current bot-token redaction and no store publication.
+It records fixed U `1440bb1771372334bea23d7642bb52deb7db1845`, exact reviewed
+inputs and real service contract oracles. Current-H Actions remain required;
+no whole-unit verification, acceptance, source closure or global flag changes
+follow from this batch.
