@@ -1401,3 +1401,58 @@ UI failure notice/draft restoration was traced, not visually accepted.
 Fixed-U source review is limited to `PrepareMediaList` and `Uploader::readDocPart`
 sections; no complete upstream-file review, source/legal closure, deployed
 service/package/platform/Bot or independent ACCEPT is claimed.
+
+### NMR-50 follow-up — Human send and reaction admission retain their origin
+
+Discovery H: `15f19c4a16fee39865f74bf6b3aa2bc68fe172f1`. The real renderer send path can
+wait on attachment commit or Coordinator readiness across an account change.
+The root composer queue survives that change and currently resolves the target
+lane from the new roster. Human reaction also lacks the local frame precondition.
+Because the same participant pair and server message can be valid for both
+accounts, current Host account validation does not establish which UI account
+originated an unposted command. Review disposition: FIX within the existing
+composer queue, production renderer and Coordinator client owners.
+
+- **NMR-50e:** Capture the originating account generation, account slot and
+  Human/Agent destination lane at actual submit or resend admission, before
+  queueing and before attachment work. Preserve this local context with that
+  submission through queue callbacks. It is not an authorization credential and
+  must never enter the wire payload. A retired Human intent cannot be relabelled
+  as the new account or fall through to an Agent send when a roster changes.
+- **NMR-50f:** Account change, logout and root retirement retire pending renderer
+  presentation work. Add only the compatible local queue lifecycle needed to
+  release old queue records and allow new-account sends to the same conversation.
+  Reset must not send a Host cancellation or delete an accepted durable message,
+  transcript, journal, draft or attachment. Ordinary same-account navigation and
+  reconnect retain existing queue semantics; existing Agent, approval and resend
+  behavior remain supported. Preserve saved original-account drafts when an
+  unposted intent is retired.
+- **NMR-50g:** Send checks the original scope before attachment work, after the
+  attachment promise and at the actual Coordinator frame boundary. Check again
+  before authoritative projection, acknowledgement, roster read and roster
+  application. Phase, failure, retry completion and approval cleanup cannot
+  publish into a later account, including A-B-A. Already-posted work remains
+  owned by Host and may settle normally; only its retired presentation is ignored.
+- **NMR-50h:** A Human reaction binds its rendered account generation and retains
+  the original conversation/entry request while awaiting readiness. Use the same
+  local frame boundary predicate and suppress retired result projection.
+  Same-account conversation navigation is not a reason to cancel a valid
+  reaction. Logout, account replacement and root retirement are.
+
+Verification must exercise the production seam with the existing real composer
+queue and actual Coordinator client/controlled message port. Include offline and
+behind-an-active-send admission, delayed attachment commit, delayed readiness,
+A-B and A-B-A, logout/root retirement, old successful and failed completion, a
+new-account send to the same conversation while old work is unresolved, and
+same-account reconnect/navigation positive controls. Verify exact mutation-frame
+count, unchanged wire arguments/nonces, no Human-to-Agent fallback, no old
+draft/notice/acknowledgement/roster mutation, no cancellation frame after posting,
+and retained Agent/send-journal approval behavior. Use deterministic promise or
+port barriers; source-text matching alone is not a behavioral oracle.
+
+Extend only the affected existing Actions batch at frozen H; unchanged Host and
+shipping inputs remain covered by their still-pending original run and must not
+be represented as passed. This follow-up changes no server/public gateway
+contract or persistence schema. Independent source review and executed affected
+contract/wiring/typecheck evidence are required. Full migration and shipping
+acceptance remain open.

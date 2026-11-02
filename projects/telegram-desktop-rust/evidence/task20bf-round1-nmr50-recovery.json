@@ -2,7 +2,7 @@
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "NMR-50: forward recovery progress and original dispatch scope",
-  "state": "implemented-tests-authored-independent-source-review-complete-execution-pending",
+  "state": "implemented-partial-Actions-pass-Host-and-shipping-queued-follow-up-origin-fix-required",
   "source": {
     "repository": "telegramdesktop/tdesktop",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
@@ -170,8 +170,8 @@
   "source_review_contract": {
     "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
     "validator_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
-    "observed_success_run": 41514576605,
-    "observed_success_head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+    "observed_success_run": 41518451444,
+    "observed_success_head": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
     "claim": "Existing candidate/complete review states, exact recursive membership and acquisition closure guards are present; current source contract execution does not imply whole-source review.",
     "git_only_identities": 16381,
     "source_review_complete": 2,
@@ -180,13 +180,96 @@
     "global_unread": null
   },
   "execution": {
-    "status": "pending-containing-H-Actions",
+    "status": "partial-pass-host-and-shipping-queued",
     "workflow": ".github/workflows/native-service-contracts.yml",
     "local_execution": false,
     "htch_runtime_execution": false,
-    "head": null,
-    "runs": [],
-    "reuse": "94dcf7a2213808a8ded6baddaf069562d365c6d7 run41513767498 completed success for its predecessor code only; not NMR50 execution."
+    "head": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+    "runs": [
+      {
+        "run": 41518451444,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41518451444",
+        "status": "completed",
+        "conclusion": "success",
+        "source_contract_tests": 157,
+        "schema_tests": 37,
+        "fixed_source_candidate": "success"
+      },
+      {
+        "run": 41518451611,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41518451611",
+        "status": "in_progress",
+        "jobs": [
+          {
+            "id": 125527941098,
+            "name": "native-message-shipping-compile",
+            "status": "queued",
+            "conclusion": null
+          },
+          {
+            "id": 125527941378,
+            "name": "native-message-ui",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 125527941423,
+            "name": "native-message-electron",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 125527941499,
+            "name": "native-message-reconciliation",
+            "status": "queued",
+            "conclusion": null
+          },
+          {
+            "id": 125527941576,
+            "name": "windows-update-publisher",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 125527943185,
+            "name": "native-auth-and-journal",
+            "status": "completed",
+            "conclusion": "skipped"
+          }
+        ],
+        "ui": {
+          "renderer_build": "success",
+          "transcript": 18,
+          "forward_settlement": 5,
+          "chromium": 22
+        }
+      }
+    ],
+    "reuse": "94dcf7a2213808a8ded6baddaf069562d365c6d7 run41513767498 completed success for its predecessor code only; not NMR50 execution.",
+    "artifacts": [
+      {
+        "id": 13177415291,
+        "name": "native-message-ui-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+        "sha256": "d3765be6db92b595a07ba948188e207d220ef963d63749111c44fb604855223c",
+        "connector_downloaded": true,
+        "target_sha_checked": true,
+        "manual_review": {
+          "screenshots": 6,
+          "browser_diagnostic_files_empty": 24,
+          "scope": "actual wide/narrow/light/dark/retry fixture screenshots; no apparent clipping or overflow; not full accessibility or product acceptance"
+        }
+      },
+      {
+        "id": 13177330544,
+        "name": "tdrp-source-candidate-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+        "digest": "sha256:87efd75ae1803918d07ff093a9bc1ef40772769cb51e75d8366982feb0d1b118"
+      },
+      {
+        "id": 13177095822,
+        "name": "tdrp-source-review-contract-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+        "digest": "sha256:5b819c60cf389cf8fe44dc5328113bce1cf65dc6ce6c269cdeb039334c439a15"
+      }
+    ]
   },
   "requirement_checklist": [
     {
@@ -199,7 +282,7 @@
       "requirement": 2,
       "criterion": "Evidence-backed dispositions and risk-appropriate understanding; never infer reading from counts",
       "state": "partial",
-      "evidence": "current ledger six explicit reviews, two complete and four pending; unknown/unread null preserved; existing FMEP schema/validator tests pass at73cc6e1 but full review not closed"
+      "evidence": "At15f: six explicit reviews (two complete/four pending), unknown/unread null; source157/schema37/fixed candidate Actions success. Further four-body responsibility audit is a draft, not promoted review completion."
     },
     {
       "requirement": 3,
@@ -228,14 +311,14 @@
     {
       "requirement": 7,
       "criterion": "Freeze H; minimal required exact-H Actions only and tests alongside implementation",
-      "state": "pending",
-      "evidence": "No local executable verification. Existing workflows admit only the isolated batch branch in addition to their existing branches; source candidate and all product assertions remain. Required Human52, native-upload3, journal12/sharebox1, Agent4/private3, Transcript18/settlement5, Chromium22 and inherited actual shipping/Electron/Windows/CLI gates."
+      "state": "partial",
+      "evidence": "Exact15f source, renderer/Transcript18/settlement5/Chromium22, Electron and Windows pass. Host52 plus native upload/journal/Agent/private and actual shipping compile jobs remain queued. No local or htch-runtime execution."
     },
     {
       "requirement": 8,
       "criterion": "Continue independent work while waiting; fix actual failures without rerun-picking",
       "state": "in-progress",
-      "evidence": "source contract readback and independent review proceed during authored code; prior94dcf7a Actions success reused only as historical evidence"
+      "evidence": "During the unchanged macOS runner queue, completed exact-U responsibility audit and identified a separate production Human send/reaction origin P1; spec follow-up required before its implementation. No unchanged job rerun."
     },
     {
       "requirement": 9,
@@ -252,8 +335,8 @@
     {
       "requirement": "delivery",
       "criterion": "Push task-owned commits and read back SHA/content via GitHub; status next while any criterion open",
-      "state": "partial",
-      "evidence": "spec checkpoint3c9995a97c59d89824b2f6e0e49e72cef4825439 pushed with expected-head CAS and exact content readback; production batch not yet published"
+      "state": "implemented-scope",
+      "evidence": "Production 15f19c4a16fee39865f74bf6b3aa2bc68fe172f1 pushed to isolated migration branch and exact ref/commit/full changed-file contents read back through GitHub. Draft PR190 returns to existing migration line; concurrent target integration still required."
     }
   ],
   "remaining": [
@@ -268,5 +351,23 @@
     "final_candidate_frozen": false,
     "independent_ACCEPT": false,
     "complete": false
+  },
+  "delivery": {
+    "sha": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+    "connector_readback": true,
+    "pull_request": 190,
+    "pull_request_url": "https://github.com/bhrumom/fabushi-desktop/pull/190",
+    "draft": true,
+    "mergeable_at_creation": false
+  },
+  "follow_up": {
+    "scope": "NMR-50e-h",
+    "classification": "P1 implementation defect",
+    "discovery_head": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+    "state": "specified-not-implemented",
+    "entry": "ProductionRenderer submit/resend -> composer queue -> attachment commit -> actual Coordinator frame; Human reaction -> actual Coordinator frame",
+    "failure": "An old unposted Human intent and its callbacks can survive account switch, be relabelled by a later roster/Host and mutate new-account projections.",
+    "next_action": "Capture immutable original scope and target lane at admission, retire only local queue presentation on identity change and fence each async/frame/settlement boundary with real queue/client tests."
   }
 }
