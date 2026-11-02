@@ -935,6 +935,7 @@ jobs:
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire \
               tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair \
+              tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_legacy_slot_refusal_preserves_delivery_across_reopen_and_repair \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion \
@@ -1837,9 +1838,12 @@ jobs:
               "automation_admission_refusal_contract": "AUTO-BACKEND-ADMISSION-v1",
               "automation_fresh_custody_contract": "AUTO-FRESH-CUSTODY-v1",
               "automation_fresh_custody_app_test": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+              "automation_legacy_slot_custody_app_test": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_legacy_slot_refusal_preserves_delivery_across_reopen_and_repair",
+              "automation_legacy_slot_custody_contract": "AUTO-LEGACY-SLOT-CUSTODY-v1",
+              "automation_legacy_slot_custody_scope": "Actual first typed refusal may persist lastRunAt, while repeated and reopened no-revision deliveries retain checked absence without another launch, callback, terminal POST or ACK. Existing duplicate suppression, distinct revisioned execution and real stored-terminal replay remain. Ambiguous legacy-slot reconciliation and real backend acceptance remain open.",
               "automation_admission_refusal_app_tests": ["tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion"],
               "automation_admission_refusal_result": "passed",
-              "automation_admission_refusal_scope": "Actual typed pre-fresh-ID refusal reaches the shipping mapper and real backend None callback; no terminal POST/ACK for that attempted launch, with real competing claims, capacity, repair and executed/settlement error controls. Subsequent no-revision legacy covered-slot policy, late accepted-invalid mutation inputs, cross-process atomicity, unknown external effects and real backend acceptance remain open.",
+              "automation_admission_refusal_scope": "Actual typed pre-fresh-ID refusal reaches the shipping mapper and real backend None callback; no terminal POST/ACK for that attempted launch, with real competing claims, capacity, repair and executed/settlement error controls. Ambiguous no-revision legacy-slot reconciliation, late accepted-invalid mutation inputs, cross-process atomicity, unknown external effects and real backend acceptance remain open.",
               "automation_checked_delivery_app_tests": ["tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen"],
               "automation_checked_delivery_wiring_tests": ["shipping_backend_fire_returns_checked_owner_discovery_and_callback_boundary", "checked_backend_fire_wiring_oracle_rejects_bypasses_and_dead_calls"],
               "automation_checked_delivery_result": "passed",
@@ -2889,8 +2893,16 @@ jobs:
           memory_consumer = "production_memory_tool_refuses_corrupt_append_destinations_and_recovers_after_repair"
           passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
           memory_consumer_passed = passed.count(memory_consumer) == 1
+          legacy_slot_tests = [
+              "legacy_schedule_slot_without_custody_is_abandoned_at_timestamp_boundary",
+              "legacy_schedule_slot_custody_preserves_revisioned_and_event_admission",
+              "legacy_schedule_slot_uses_running_and_terminal_custody_before_bookkeeping",
+              "reopened_running_original_and_alias_never_execute_complete_or_ack",
+          ]
+          legacy_slot_occurrences = {name: passed.count(name) for name in legacy_slot_tests}
+          legacy_slot_passed = all(count == 1 for count in legacy_slot_occurrences.values())
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and head == os.environ["FABUSHI_TARGET_SHA"]
+          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and legacy_slot_passed and head == os.environ["FABUSHI_TARGET_SHA"]
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock",
@@ -2913,13 +2925,16 @@ jobs:
               "source/host/src/extensions/session/agent_session.rs", "source/host/src/extensions/session/production.rs",
               "source/host/src/extensions/automations/fire_delivery.rs",
               "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+              "source/host/src/extensions/automations/production.rs",
               "source/host/app/src/main.rs",
               "source/host/tests/automation_run_path_contract.rs",
               "source/host/tests/automation_run_production_wiring_contract.rs",
+              "source/host/tests/automations_fire_delivery_contract.rs",
+              "source/host/tests/automations_backend_contract.rs",
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/MWR-v1", "subject_commit": head,
+              "contract": "AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/MWR-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -2930,11 +2945,14 @@ jobs:
               "memory_consumer_required_test": memory_consumer,
               "memory_consumer_positive_occurrences": passed.count(memory_consumer),
               "memory_consumer_passed": memory_consumer_passed,
+              "legacy_slot_required_tests": legacy_slot_tests,
+              "legacy_slot_positive_occurrences": legacy_slot_occurrences,
+              "legacy_slot_passed": legacy_slot_passed,
               "target_and_owned_child_summaries": summaries, "summaries_pass": summaries_pass,
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Actual Linux RunPath/Runtime/Session/FileStore typed refusal, full raw-history fresh admission, observed nonregular input return, legacy/error/retained controls and shipping-source callback wiring; MWR-v1 additionally requires the actual composed Runner memory tool's corrupt-destination refusal and repair control. Owned-child receipts remain required by each bounded case. Not actual App execution, macOS/platform or real backend acceptance; legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux RunPath/Runtime/Session/FileStore typed refusal, full raw-history fresh admission, observed nonregular input return, legacy/error/retained controls and shipping-source callback wiring; ALS-v1 requires exact positive controls for covered-slot deferral and real custody priority. MWR-v1 additionally requires the actual composed Runner memory tool's corrupt-destination refusal and repair control. Owned-child receipts remain required by each bounded case. Not actual App execution, macOS/platform or real backend acceptance; ambiguous legacy-slot reconciliation, metadata/open races and unknown write effects remain open.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -2988,6 +3006,7 @@ jobs:
               "source/host/src/extensions/session/agent_session.rs", "source/host/src/extensions/session/production.rs",
               "source/host/src/extensions/automations/fire_delivery.rs",
               "source/host/src/extensions/automations/production.rs",
+              "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
               "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
               "source/host/src/extensions/inference/provider_session.rs",
@@ -2995,7 +3014,7 @@ jobs:
               "source/host/src/runner/routed_provider_runtime.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1",
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -3070,6 +3089,7 @@ jobs:
                   "backend_fire_checked_history_refuses_malformed_custody_across_reopen",
                   "backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
                   "backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+                  "backend_fire_legacy_slot_refusal_preserves_delivery_across_reopen_and_repair",
                   "backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
                   "backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
                   "backend_fire_typed_executed_failure_and_settlement_error_keep_completion",

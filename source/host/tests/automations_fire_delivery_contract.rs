@@ -236,18 +236,101 @@ fn stale_or_unverifiable_definition_never_executes() {
 }
 
 #[test]
-fn legacy_schedule_slot_covered_by_last_run_is_rejected() {
-    let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+fn legacy_schedule_slot_without_custody_is_abandoned_at_timestamp_boundary() {
+    for (last_run_at, covered) in [(None, false), (Some(99.0), false), (Some(100.0), true), (Some(101.0), true)] {
+        let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+        target.automation.last_run_at = last_run_at;
+        let before = target.clone();
+        let mut backend_fire = fire(None);
+        backend_fire.scheduled_for_ms = Some(90);
+        let checked_reads = Cell::new(0);
+        let prepared = prepare_backend_fire(std::slice::from_ref(&target), &backend_fire, |_| {
+            panic!("a legacy schedule has no definition revision to resolve")
+        }, |selected, run_id| {
+            assert_eq!(selected, &before);
+            assert_eq!(run_id, backend_fire.id.as_str());
+            checked_reads.set(checked_reads.get() + 1);
+            Ok(None)
+        });
+        let expected = if covered {
+            PreparedBackendFire::Abandon { reason: "legacy_slot_custody_unresolved" }
+        } else {
+            PreparedBackendFire::Schedule {
+                agent_id: "agent-1".into(), automation_id: "local-1".into(),
+                run_uuid: "run-1".into(), scheduled_for_ms: Some(90),
+            }
+        };
+        assert_eq!(prepared, expected, "last_run_at={last_run_at:?}");
+        assert_eq!(checked_reads.get(), 1, "slot policy requires checked identity absence");
+        assert_eq!(target, before, "preparation cannot rewrite bookkeeping or history");
+    }
+}
+
+#[test]
+fn legacy_schedule_slot_custody_preserves_revisioned_and_event_admission() {
+    let mut target = entry(json!({"type":"group","listeners":[
+        {"type":"cron","schedule":"0 * * * *"},
+        {"type":"github","repo":"openai/repo","events":["pr-opened"]}
+    ]}));
     target.automation.last_run_at = Some(101.0);
-    let mut backend_fire = fire(None);
-    backend_fire.scheduled_for_ms = Some(100);
-    assert!(matches!(
-        prepare_backend_fire(&[target], &backend_fire, |_| None, fixture_history),
-        PreparedBackendFire::Complete {
-            reason: "slot_already_covered",
-            ..
+    let before = target.clone();
+    let mut revisioned = fire(None);
+    revisioned.scheduled_for_ms = Some(90);
+    revisioned.definition_revision = Some("current-revision".into());
+    let revision_reads = Cell::new(0);
+    assert_eq!(prepare_backend_fire(std::slice::from_ref(&target), &revisioned, |_| {
+        revision_reads.set(revision_reads.get() + 1);
+        Some("current-revision".into())
+    }, fixture_history), PreparedBackendFire::Schedule {
+        agent_id: "agent-1".into(), automation_id: "local-1".into(),
+        run_uuid: "run-1".into(), scheduled_for_ms: Some(90),
+    });
+    assert_eq!(revision_reads.get(), 1, "current revision still requires validation");
+
+    let mut event_fire = fire(Some(json!({
+        "source":"github", "repo":"openai/repo", "kind":"pr-opened", "actor":"octocat"
+    })));
+    event_fire.scheduled_for_ms = Some(90);
+    assert!(matches!(prepare_backend_fire(std::slice::from_ref(&target), &event_fire, |_| {
+        panic!("event without a revision must not resolve one")
+    }, fixture_history), PreparedBackendFire::Event {
+        agent_id, automation_id, run_uuid, event,
+    } if agent_id == "agent-1" && automation_id == "local-1" && run_uuid == "run-1"
+        && event["source"] == "github" && event["repo"] == "openai/repo"));
+    assert_eq!(target, before);
+}
+
+#[test]
+fn legacy_schedule_slot_uses_running_and_terminal_custody_before_bookkeeping() {
+    for stored_id in ["run-1", "coalesced-parent"] {
+        for status in ["running", "ok", "error"] {
+            let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+            target.automation.last_run_at = Some(101.0);
+            target.automation.runs.push(AutomationRun {
+                id: stored_id.into(), trigger: "schedule".into(), started_at: 90.0,
+                finished_at: (status != "running").then_some(99.0), status: status.into(),
+                detail: (status == "error").then(|| "stored failure".into()), event: None,
+                coalesced_run_ids: (stored_id != "run-1").then(|| vec!["run-1".into()]),
+            });
+            let before = target.clone();
+            let mut backend_fire = fire(None);
+            backend_fire.scheduled_for_ms = Some(90);
+            let expected = match status {
+                "running" => PreparedBackendFire::Abandon { reason: "existing_run_unsettled" },
+                "ok" => PreparedBackendFire::Complete {
+                    completion: FireCompletion::succeeded(), reason: "existing_run",
+                },
+                "error" => PreparedBackendFire::Complete {
+                    completion: FireCompletion::failed("stored failure"), reason: "existing_run",
+                },
+                _ => unreachable!(),
+            };
+            assert_eq!(prepare_backend_fire(std::slice::from_ref(&target), &backend_fire, |_| {
+                panic!("checked run authority precedes definition and slot policy")
+            }, fixture_history), expected, "status={status}, stored_id={stored_id}");
+            assert_eq!(target, before);
         }
-    ));
+    }
 }
 
 #[test]

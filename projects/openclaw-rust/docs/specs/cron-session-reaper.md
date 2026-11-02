@@ -1230,11 +1230,12 @@ Session/FileStore directly, never re-enter Runtime or nest Session locks.
 Seed and deliberately stale the existing definition baseline, do not attach
 the directory watcher, and assert the one-shot event that causes the fault.
 Reuse existing bounded owned-child deadlines, receipts and failure artifacts.
-Repeated-redelivery oracles use the actual current definition revision to isolate
-admission refusal. The old no-revision covered-slot policy remains unchanged:
-a refused attempt's allowed lastRunAt write can cause that later legacy policy
-to complete a subsequent fire. This separate bookkeeping-versus-custody gap
-remains open, and no all-redelivery/no-ACK guarantee may be inferred here.
+The original BA repeated-redelivery oracles use the actual current definition
+revision to isolate admission refusal. At that batch's publication, the old
+no-revision covered-slot policy remained unchanged: a refused attempt's allowed
+lastRunAt write could cause that later legacy policy to complete a subsequent
+fire. The follow-on AUTO-LEGACY-SLOT-CUSTODY-v1 contract below repairs that false
+terminal inference while preserving refusal to replay the ambiguous slot.
 
 Implementation remains in `automation_run_path.rs`,
 `automation_runtime.rs` and root-owned Host composition; tests stay in their
@@ -1390,8 +1391,85 @@ and explicit repair are required for refused invalid history. Existing String
 error detail/typed stage provide diagnostics. This contract does not solve
 cross-process writes, path replacement, unknown write/cron outcomes, config
 revision races, post-admission normalization, historical data already lost,
-legacy covered-slot completion, crash durability, full reaper or final OCRM
+legacy covered-slot reconciliation, crash durability, full reaper or final OCRM
 acceptance. The fixed-U receipt/queue sources and exact existing owner chain
 are reconciled in this task's recorded source handoff; imported SQL/state-worker
 closure and global recursive/legal source closure remain open.
+
+## Legacy covered-slot custody — AUTO-LEGACY-SLOT-CUSTODY-v1
+
+Decision **AUTO-LEGACY-SLOT-01 — FIX / IMPL_BUG**, before implementation on
+H `74484facdac03260af2b5ca1bd7963dc2ce5c1c2`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. The actual RunPath writes
+`lastRunAt` before fresh history admission. A capacity or other typed admission
+refusal can therefore leave that timestamp without a history identity for the
+requested fire. On a later no-revision, no-event delivery, checked history can
+establish that UUID's absence while the existing covered-slot branch treats
+the timestamp as failed completion. The shipping helper then calls completion,
+and the existing backend consumer posts and ACKs a run that was never admitted.
+The source chain establishes the defect; exact-H execution is still required.
+
+- ALS-01: keep the existing checked history lookup and its precedence. When
+  exact primary/coalesced authority is absent and the existing legacy covered-
+  slot predicate matches, return `PreparedBackendFire::Abandon` with the stable
+  reason `legacy_slot_custody_unresolved`. A timestamp is neither an execution
+  receipt nor sufficient terminal evidence. Do not reset the timestamp, invent
+  history, retry execution, or infer that another run did or did not execute.
+- ALS-02: use the existing shipping helper and backend consumer's abandoned
+  admission path. Preparation returns false, starts no worker and invokes no
+  completion callback; the existing consumer releases its volatile Running
+  state without a completion POST or ACK. Every later poll and reopened owner
+  must preserve that disposition until real authority changes. No new queue,
+  completion store, scheduler, callback type or wire field is introduced.
+- ALS-03: preserve checked Running/invalid-history refusal and real terminal
+  primary/coalesced success/failure replay before definition/slot checks.
+  Genuine first-run legacy schedules, revisioned schedules, event matching,
+  missing/disabled/changed-definition policy and already-admitted failure
+  settlement retain their current behavior. An old covered timestamp still
+  prevents automatic re-execution; only its unsupported terminal inference is
+  removed. The prior unit expectation of `Complete(slot_already_covered)` is
+  superseded; retain and strengthen its valid no-execution assertion.
+- ALS-04: extend the real checked-backend App harness with a no-revision fire
+  whose first actual Runtime attempt meets full Running capacity. Observe
+  FreshHistory, one None callback, zero executor/terminal effects and the real
+  newly written lastRunAt. Re-poll and reopen owners/consumer: require no extra
+  launch/callback, no POST/ACK and unchanged config/history/cron. Repair capacity
+  and show the same ambiguous legacy slot remains held. A distinct revisioned
+  fire and actual stored terminal replay provide liveness/settlement controls.
+  Keep the existing revisioned capacity oracle and every valid BA/BH/FC assertion.
+- ALS-05: add bounded pure-owner controls for the timestamp boundary, absent
+  authority, current revision/event bypass and stored Running/terminal priority.
+  Select the new exact App case and required portable positives in the existing
+  Actions workflow/receipts; preserve executable, source and command binding.
+  Controlled backend/provider I/O is not real service compatibility evidence.
+
+Implementation is confined to the existing
+`extensions/automations/fire_delivery.rs` owner; tests stay in
+`automations_fire_delivery_contract.rs`, `automations_backend_contract.rs`, and the shipping App's existing
+`automation_terminal_custody_tests.rs`. Root integrates this spec and existing
+workflow. All paths already belong to the current OCRM Automation responsibility;
+no new owner, persisted schema, source-review status or acceptance flag is added.
+Reuse the recorded fixed-U receipt/finalization/queue review bounds, without
+claiming their protocol directly defines Fabushi's legacy wire policy. Freeze
+the complete batch for independent review and exact-H Actions only.
+
+This change deliberately retains an ambiguous delivery; it does not establish
+automatic legacy-slot reconciliation, reconstruct pruned/missing history,
+undo an admitted external effect, or resolve cross-process claims and unknown
+write/settlement outcomes. Those lifecycle, real-backend, reaper and full
+G01–G12/AC01–AC24 gates remain open. There is no data migration; rollback restores
+the unsupported completion/ACK risk without changing user data.
+
+### ALS-REVIEW-01 — preserve the reopened backend custody oracle
+
+Decision **FIX / TEST_FLAW**, before the review repair: the complete consumer
+review found `automations_backend_contract.rs::reopened_running_original_and_alias_never_execute_complete_or_ack`
+still requiring `Complete(slot_already_covered)` for its absent distinct-ID
+control. Its actual persisted lastRunAt and legacy fire timestamp are both 100,
+so ALS-01 correctly returns `Abandon(legacy_slot_custody_unresolved)`. Change only
+that superseded outcome. Preserve both reopened generations, every Running
+original/coalesced no-execution/no-callback/no-POST/no-ACK assertion, exact stored
+bytes/cron rows, and all disabled/revision/event controls. Require this existing
+case's positive result in the same portable receipt; no production gate is
+weakened and no executed failure is claimed from this source review.
 

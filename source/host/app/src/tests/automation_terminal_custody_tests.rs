@@ -729,8 +729,8 @@ mod checked_backend_delivery {
             }, None).expect("real current cloud definition revision");
             let mut fire = self.fire(run, &self.automation_id);
             // Admission may legitimately record lastRunAt before refusal. The
-            // separate no-revision covered-slot policy is deliberately unchanged
-            // and remains outside these revisioned redelivery assertions.
+            // no-revision slot-custody guard is covered separately; these
+            // revisioned redelivery assertions must still reach fresh admission.
             fire["definitionRevision"] = json!(definition.hash);
             fire
         }
@@ -1664,6 +1664,119 @@ mod checked_backend_delivery {
                 assert_eq!(after.iter().find(|row| row.run_id == retained.run_id), Some(retained));
             }
             assert!(!after.iter().any(|row| row.run_id == run), "refused UUID never acquired a cron row");
+        });
+    }
+
+    #[test]
+    fn backend_fire_legacy_slot_refusal_preserves_delivery_across_reopen_and_repair() {
+        bounded("tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_legacy_slot_refusal_preserves_delivery_across_reopen_and_repair", |root| {
+            let fixture = Fixture::create(root, "legacy-slot-capacity");
+            let owners = fixture.open();
+            fixture.enable(&owners);
+            let mut admitted_executions = 0;
+            for index in 1..AUTOMATION_MAX_RUN_HISTORY {
+                let result = owners.runtime.run_background_automation_attempt_with(
+                    &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                    Vec::new(), Some(format!("legacy-capacity-retained-{index}")), Vec::new(),
+                    100.0 + index as f64, None, |_| {
+                        admitted_executions += 1;
+                        Ok(AutomationExecutionResult::RetainedUnsettled {
+                            terminal: Box::new(AutomationExecutionResult::Completed),
+                        })
+                    },
+                );
+                assert_eq!(result, Ok(AutomationRunAttempt::Outcome(None)));
+            }
+            assert_eq!(admitted_executions, AUTOMATION_MAX_RUN_HISTORY - 1);
+            let full = AdmissionSnapshot::read(&fixture, &owners.workers);
+            let rows: Vec<Value> = serde_json::from_slice(&full.history).unwrap();
+            assert_eq!(rows.len(), AUTOMATION_MAX_RUN_HISTORY);
+            assert!(rows.iter().all(|row| row["status"] == "running" && row["finishedAt"].is_null()));
+            assert_eq!(full.cron.len(), AUTOMATION_MAX_RUN_HISTORY);
+            assert!(full.cron.iter().all(|row| row.state == "running" && !row.fence_state_known));
+            assert_no_attempt_effects(&fixture, &owners);
+
+            let run = "legacy-capacity-refused-fire";
+            let fire = fixture.fire(run, &fixture.automation_id);
+            assert!(fire.get("definitionRevision").is_none());
+            assert!(fire.get("event").is_none());
+            let timestamp = fire["timestampMs"].as_u64().unwrap() as f64;
+            let before_config: Value = serde_json::from_slice(&full.config).unwrap();
+            let before_last_run = before_config["lastRunAt"].as_f64().unwrap();
+            assert!(before_last_run < timestamp, "the initial fire must reach actual Runtime admission");
+            assert!(owners.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, run).unwrap().is_none());
+            full.preserve(&fixture, "legacy-before-refusal");
+
+            let backend = Backend::start_queued(&fixture, &owners, "legacy-first-refusal", vec![fire.clone()], None, None);
+            assert_eq!(backend.refused_attempt(run, AutomationAdmissionStage::FreshHistory, 1, 0),
+                "automation store io error: automation history has reached its unsettled run capacity");
+            full.assert_history_and_cron(&fixture, &owners.workers);
+            assert_no_attempt_effects(&fixture, &owners);
+            let held = AdmissionSnapshot::read(&fixture, &owners.workers);
+            let held_config: Value = serde_json::from_slice(&held.config).unwrap();
+            let held_last_run = held_config["lastRunAt"].as_f64().unwrap();
+            assert!(held_last_run >= timestamp);
+            assert!(held_last_run > before_last_run, "the refused attempt must have written the covering timestamp");
+            assert_ne!(held.config, full.config);
+            assert!(owners.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, run).unwrap().is_none());
+            assert!(!held.cron.iter().any(|row| row.run_id == run));
+            held.preserve(&fixture, "legacy-after-refusal");
+
+            // The first None callback released the backend claim. Each next
+            // real poll reaches preparation, which must hold the ambiguous
+            // slot without another launch, callback or terminal receipt.
+            for _ in 0..2 {
+                let after = backend.replay();
+                backend.later_preparation_refusal(run, 1, after);
+                assert_eq!(AdmissionSnapshot::read(&fixture, &owners.workers), held);
+                assert_no_attempt_effects(&fixture, &owners);
+            }
+            drop(backend);
+            drop(owners);
+
+            let reopened = fixture.open();
+            assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), held);
+            let backend = Backend::start_queued(&fixture, &reopened, "legacy-reopened", vec![fire.clone()], None, None);
+            backend.repeated_refusal(&[run]);
+            drop(backend);
+            assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), held);
+            assert_no_attempt_effects(&fixture, &reopened);
+
+            // Free actual capacity, retaining the timestamp and the absence of
+            // the requested identity. Neither fact authorizes legacy replay.
+            settle_existing(&fixture, &reopened.workers, ORIGINAL);
+            let repaired = AdmissionSnapshot::read(&fixture, &reopened.workers);
+            let repaired_rows: Vec<Value> = serde_json::from_slice(&repaired.history).unwrap();
+            assert_eq!(repaired_rows.iter().filter(|row| row["status"] == "running").count(),
+                AUTOMATION_MAX_RUN_HISTORY - 1);
+            assert_eq!(repaired.config, held.config, "capacity repair must not roll back bookkeeping");
+            assert!(reopened.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, run).unwrap().is_none());
+            repaired.preserve(&fixture, "legacy-capacity-repaired");
+            let backend = Backend::start_queued(&fixture, &reopened, "legacy-repaired-still-held", vec![fire], None, None);
+            backend.repeated_refusal(&[run]);
+            drop(backend);
+            assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), repaired);
+            assert_no_attempt_effects(&fixture, &reopened);
+
+            let distinct = "legacy-slot-distinct-valid-fire";
+            complete_distinct(&fixture, &reopened, "legacy-repaired-distinct", distinct);
+            let settled = AdmissionSnapshot::read(&fixture, &reopened.workers);
+            for retained in held.cron.iter().filter(|row| row.run_id != ORIGINAL) {
+                assert_eq!(settled.cron.iter().find(|row| row.run_id == retained.run_id), Some(retained));
+            }
+            assert!(!settled.cron.iter().any(|row| row.run_id == run), "the refused UUID never acquires a cron row");
+            assert!(reopened.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, run).unwrap().is_none());
+            let observed = reopened.observations.lock().unwrap().len();
+            assert_eq!(observed, 1, "only the distinct admitted run publishes an outcome");
+            let replay = Backend::start_queued(&fixture, &reopened, "legacy-real-terminal-replay",
+                vec![fixture.fire(distinct, &fixture.automation_id)], None, None);
+            replay.completed_and_acked(&[distinct], &FireCompletion::succeeded(), 0);
+            assert!(replay.counts.attempts.lock().unwrap().is_empty(), "real terminal custody precedes the legacy slot guard");
+            assert!(replay.counts.dropped.lock().unwrap().is_empty());
+            drop(replay);
+            assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), settled);
+            assert_eq!(reopened.observations.lock().unwrap().len(), observed);
+            assert!(!reopened.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
         });
     }
 

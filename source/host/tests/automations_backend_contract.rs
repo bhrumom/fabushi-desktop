@@ -800,7 +800,7 @@ fn reopened_running_original_and_alias_never_execute_complete_or_ack() {
                 RedeliveryCase::Event => matches!(distinct, PreparedBackendFire::Event { .. }),
                 RedeliveryCase::RevisionedSchedule => matches!(distinct, PreparedBackendFire::Schedule { .. }),
                 RedeliveryCase::LegacyCoveredSlot => matches!(distinct,
-                    PreparedBackendFire::Complete { reason: "slot_already_covered", .. }),
+                    PreparedBackendFire::Abandon { reason: "legacy_slot_custody_unresolved" }),
                 RedeliveryCase::Disabled => matches!(distinct,
                     PreparedBackendFire::Complete { reason: "automation_disabled", .. }),
                 RedeliveryCase::ChangedDefinition => matches!(distinct,

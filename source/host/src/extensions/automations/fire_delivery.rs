@@ -85,10 +85,11 @@ pub fn prepare_backend_fire(
             .last_run_at
             .is_some_and(|last_run_at| last_run_at >= fire.timestamp_ms as f64)
     {
-        return rejected(
-            "slot_already_covered",
-            "Legacy automation fire was already covered on the Sand box",
-        );
+        // Bookkeeping may precede a refused admission. Keep this slot from
+        // re-executing without treating its timestamp as a terminal receipt.
+        return PreparedBackendFire::Abandon {
+            reason: "legacy_slot_custody_unresolved",
+        };
     }
 
     if let Some(revision) = fire.definition_revision.as_deref() {
