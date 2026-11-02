@@ -1,0 +1,80 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 33,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "fixed_upstream_u": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "governing_docs": {
+    "FBCP": "Revision 8",
+    "TDRP": "Revision 10",
+    "FMEP": "Revision 2; §13 FMEP-SOURCE-01",
+    "upstream_lock": "fixed exact U, acceptance remains false"
+  },
+  "run_41526114480": {
+    "head": "c83039f9da8330560680a3efccc5ae83bf2db419",
+    "reconciliation_job": 125554157040,
+    "conclusion": "failure",
+    "human": "63 passed; 0 failed; 0 ignored; 15 filtered",
+    "compile_failure": [
+      "human_creation_tests.rs:747:87 usize: FromSql unsupported for PRAGMA page_size",
+      "human_creation_tests.rs:750:35 usize: FromSql unsupported for sqlite_schema.rootpage"
+    ],
+    "journal_job": 125554160029,
+    "journal": "skipped; no actual count/pass",
+    "shipping_job": 125554157576,
+    "status": "queued; no pass claimed",
+    "ui_job": 125554157593,
+    "ui": "failure; ten NMR-26 cases Expected 1 / Received 0; common observed issue was older-page RPC not being triggered",
+    "electron": "success",
+    "retained_ffi": "success",
+    "windows": "success; 11 native Authenticode fixture cases"
+  },
+  "confirmed_fixes": [
+    {
+      "commit": "f544e9b3161d758141e1b419bcdab22cc522952e",
+      "message": "test(session): read SQLite fixture integers with checked conversion",
+      "scope": "SQLite i64 read plus checked usize conversion for corruption fixture",
+      "exact_h_run": 41526852400,
+      "workflow_status": "queued at last observation; not verified"
+    },
+    {
+      "commit": "441425cd65a661f95d8b629c388281c77115d2b2",
+      "message": "fix(renderer): activate older-history effect when the cursor becomes ready",
+      "scope": "ProductionRenderer now passes cursor.kind === more to ConversationTranscript so the original older-page effect activates once a real cursor is available",
+      "exact_h_run": 41527189803,
+      "workflow_status": "queued at last observation; not verified"
+    },
+    {
+      "commit": "e4f91d1cae92ef32e6299c683248bf32ddafa073",
+      "message": "test(messaging): trigger real scroll before expecting older history",
+      "scope": "NMR-26 UI harness waits for effects and scrolls the real transcript viewport in open/reload/held-initial cases; keeps assertions intact",
+      "exact_h_run": 41527256827,
+      "workflow_status": "queued at last observation; not verified"
+    },
+    {
+      "commit": "5d38ddd12c2aea3a9e1701221c5ebaf28c652d23",
+      "message": "fix(session): reject unsettled or mismatched reaction targets",
+      "scope": "Production reaction admission/replay/settlement requires canonical row ID and sent delivery matching remote ID",
+      "exact_h_run": 41527025791,
+      "workflow_status": "queued at last observation; not verified"
+    }
+  ],
+  "nmr26_previous_two_assertions": [
+    "unloaded old row vs in-flight page",
+    "Human reaction settlement vs later event"
+  ],
+  "verification": "No exact-H workflow pass yet for any listed repair; queued workflows are not passes. The 415261 UI job had ten failures, and e4f91 addresses the observed scroll-trigger test-oracle gap while 441425 addresses production cursor readiness; exact-H Actions must determine remaining failures.",
+  "live_head_at_observation": "e4f91d1cae92ef32e6299c683248bf32ddafa073",
+  "backend_pr_137": {
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "read_only": true
+  },
+  "acceptance": {
+    "complete": false,
+    "release_authorized": false
+  },
+  "next": "Read exact-H logs for 41526852400, 41527025791, 41527189803 and 41527256827; repair only residual proven failures and revalidate affected gates at the new exact H."
+}
