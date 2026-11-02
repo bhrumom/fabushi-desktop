@@ -3999,7 +3999,9 @@
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
         "source/host/tests/canonical_checkpoint_recovery_contract.rs",
-        "source/host/tests/production_agent_store_contract.rs"
+        "source/host/tests/production_agent_store_contract.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/runner_effect_custody_contract.rs"
       ],
       "existing_owner_candidates": [
         {

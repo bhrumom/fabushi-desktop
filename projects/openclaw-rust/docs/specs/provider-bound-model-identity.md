@@ -131,6 +131,81 @@ avoid re-executing accepted tools. The production store currently has no disk
 load/resume ingress; this batch cannot claim process-restart turn resumption.
 True restart ingress, invalidation/expiry and upgrade recovery remain open.
 
+### Runner tool-effect retry custody
+
+Contract: `OCRM-RUNNER-EFFECT-CUSTODY-v1`. This necessary recovery increment
+is based on target `3ce1cd31898d090f38ba3a8c5b895da5b2de2892` and the same
+fixed U above. It closes an in-process duplicate-effect path before introducing
+disk recovery claims. The current adapter rearms its watchdog after a tool
+checkpoint, but tool-only progress does not invalidate that checkpoint. A later
+tool can finish after watchdog expiry; its stale checkpoint is ignored and the
+old checkpoint, or the original input, is retried. Cancellation between two
+tools can skip the next checkpoint entirely. The existing tool timeout also
+returns before its detached worker finishes, so error serialization cannot
+prove that the operation stopped.
+
+The existing `StreamAttemptRuntime`, production attempt adapter and routed
+executor own the control. The actual direct tool wrapper and the existing
+Claude MCP server are its producers; checkpoint acceptance and the existing
+retry policy are its consumers. Keep one per-run custody state with immutable
+attempt bindings, started-effect revision, pending completion receipts,
+checkpoint-covered revision and sticky unknown/result-loss state. No durable
+schema, scheduler, second tool ledger or provider loop is introduced.
+
+- REC-01: Before any actual tool delegate can execute, admit it against its
+  captured attempt and cancellation authority and register its effect receipt.
+  All direct provider tool routes and Claude's real MCP `tools/call` route use
+  the same handle. An old attempt's MCP endpoint cannot admit work into a newer
+  attempt; keep the existing server lifecycle bound to one immutable attempt.
+- REC-02: A definitive tool return ends execution custody, but cannot make an
+  earlier checkpoint safe. Started work remains uncheckpointed until its result
+  is covered by a durably accepted checkpoint. New attempts do not reset this
+  state. A missing checkpoint callback cannot bypass the fence.
+- REC-03: Timeout, worker loss and discarded results retain an explicit unknown
+  disposition independently of error text. Keep the worker's completion receipt
+  alive until actual return; a late return cannot clear a recorded result loss.
+  Do not claim that a timeout terminated the tool or automatically replay it.
+- REC-04: Capture the effect revision, persist the checkpoint, then accept it
+  only if the same attempt remains current, cancellation has not won, the
+  revision is unchanged and no pending or unknown effect remains. Failure,
+  stale callbacks and expiry during persistence leave prior evidence intact but
+  ineligible for replay of later work. Do not hold the custody lock across
+  external calls, persistence, callbacks or thread joins.
+- REC-05: Check custody before generic timeout/transport retry classification.
+  Pending, unknown or uncheckpointed effects prohibit automatic new attempts.
+  Preserve effect-free transient retries and accepted-checkpoint continuation
+  when no later effect or output invalidates it. Keep the frozen provider/model
+  and existing cancellation precedence. Watchdog deadlines remain bounded.
+- REC-06: Diagnostic retry reports distinguish ineligible effect custody from
+  retry exhaustion. A terminal response or cancellation acknowledgment is not
+  proof that a detached tool ended. This increment does not claim durable
+  custody after Host loss, original-turn disk recovery or external effect
+  reconciliation; those responsibilities remain open.
+
+Actions-only oracles must reach the real Responses tool loop and actual
+production checkpoint/attempt owners with controlled transport and a counted
+non-idempotent tool receipt. Cover C0 then tool B then watchdog expiry, no-C0
+expiry, cancellation between calls in one batch, expiry/failure during
+checkpoint persistence, timeout with an observed still-running worker, and a
+late worker result. Assert no duplicate tool or new provider attempt and no
+false checkpoint acceptance. Retain positive pre-effect retry and safe C0
+continuation with the same model. Exercise the actual local Claude MCP server
+and stale attempt admission; a mock executor alone cannot prove the producer
+wiring. Real provider/MCP compatibility remains separately blocked on service
+acceptance. Selected checks must pass on the final exact H before this bounded
+contract is called verified.
+
+Fixed-U support is bounded source review, not a new full-read claim:
+`packages/agent-core/src/agent-loop.ts`, blob
+`a3c3a0dc20d3a84a0d8c7fdc72b1a4cb23fae7fb`, lines 833–846 drains started
+tool work after persistence failure; `packages/agent-core/src/tool-batch-completion.ts`,
+blob `dab3cfd9ab2c61b8b42849557cb4905d5130335e`, lines 13–30 and 47–79
+awaits started outcomes, settles them and then disposes execution entries.
+Target source, control wiring and these bounded ranges are necessary authority
+for this repair, not full Runner/source closure. Rollback requires reverting
+the whole shared custody contract and its wiring together; retaining old raw
+checkpoint files never grants them recovery eligibility.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or

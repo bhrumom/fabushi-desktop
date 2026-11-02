@@ -11,6 +11,10 @@ use crate::extensions::inference::provider_session::{
 };
 
 use super::routed_provider_runtime::RoutedProviderCancellation;
+pub use super::stream_attempt::{
+    ToolEffectCustodySnapshot, ToolEffectReceipt, ToolEffectResultTracker,
+    ToolEffectUnknownResult,
+};
 use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::{
     AttemptCheckpoint, AttemptProgress, RetryDecision, StreamAttemptGeneration,
@@ -148,6 +152,7 @@ pub trait RoutedProviderCheckpointStore: Send + Sync {
 pub trait RoutedProviderAttemptExecutor {
     fn run_attempt(
         &mut self,
+        attempt: &RoutedProviderAttemptControl,
         resume_from: Option<&RoutedProviderCheckpoint>,
         on_text_delta: &mut dyn FnMut(&str, &str),
         on_checkpoint: &mut dyn FnMut(
@@ -155,6 +160,80 @@ pub trait RoutedProviderAttemptExecutor {
         ) -> Result<(), ProviderSessionError>,
         should_cancel: &dyn Fn() -> bool,
     ) -> Result<String, ProviderSessionError>;
+}
+
+/// Immutable attempt authority over the existing runtime's per-run custody.
+/// Tool workers may retain it, but a later attempt never adopts its authority.
+#[derive(Clone)]
+pub struct RoutedProviderAttemptControl {
+    runtime: Arc<StreamAttemptRuntime>,
+    generation: StreamAttemptGeneration,
+    cancellation: RoutedProviderCancellation,
+    admission_closed: Arc<AtomicBool>,
+}
+
+impl RoutedProviderAttemptControl {
+    pub fn new(
+        runtime: Arc<StreamAttemptRuntime>,
+        generation: StreamAttemptGeneration,
+        cancellation: RoutedProviderCancellation,
+    ) -> Self {
+        Self {
+            runtime, generation, cancellation,
+            admission_closed: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub fn is_current(&self) -> bool {
+        !self.cancellation.is_cancelled()
+            && !self.admission_closed.load(Ordering::Acquire)
+            && self.runtime.is_current(self.generation)
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancellation.is_cancelled()
+    }
+
+    pub fn close_admission(&self) {
+        self.admission_closed.store(true, Ordering::Release);
+    }
+
+    pub fn check(&self) -> Result<(), ProviderSessionError> {
+        if self.cancellation.is_cancelled() {
+            return Err(cancelled_error(&self.cancellation));
+        }
+        if self.admission_closed.load(Ordering::Acquire)
+            || !self.runtime.is_current(self.generation)
+        {
+            return Err(ProviderSessionError::Cancelled(
+                "Runner tool attempt is no longer current".into(),
+            ));
+        }
+        if self.runtime.effect_custody().unknown_result.is_some() {
+            return Err(ProviderSessionError::Tool(
+                "Runner tool result custody is unresolved".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn admit_tool(&self) -> Result<ToolEffectReceipt, ProviderSessionError> {
+        self.check()?;
+        self.runtime.admit_tool_effect(
+            self.generation, self.cancellation.flag(), &self.admission_closed,
+        )
+            .map_err(|reason| {
+                if !self.is_current() {
+                    ProviderSessionError::Cancelled(reason.into())
+                } else {
+                    ProviderSessionError::Tool(reason.into())
+                }
+            })
+    }
+
+    pub fn effect_custody(&self) -> ToolEffectCustodySnapshot {
+        self.runtime.effect_custody()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -275,8 +354,16 @@ impl ProductionTurnRunShellAdapter {
             if cancellation.is_cancelled() {
                 return Err(cancelled_error(cancellation));
             }
+            if let Some(reason) = runtime.effect_custody().retry_block_reason() {
+                return Err(ProviderSessionError::Tool(format!(
+                    "Runner cannot start another attempt: {reason}"
+                )));
+            }
 
             let generation = runtime.begin_attempt();
+            let attempt_control = RoutedProviderAttemptControl::new(
+                Arc::clone(&runtime), generation, cancellation.clone(),
+            );
             let attempt_done = Arc::new(AtomicBool::new(false));
             let watchdog_expired = Arc::new(AtomicBool::new(false));
             let watchdog_timeout = first_output_timeout_for_attempt(
@@ -315,6 +402,13 @@ impl ProductionTurnRunShellAdapter {
                     if !runtime_for_checkpoint.is_current(generation) {
                         return Ok(());
                     }
+                    let revision = runtime_for_checkpoint
+                        .checkpoint_effect_revision(
+                            generation, cancellation.flag(), &attempt_control.admission_closed,
+                        )
+                        .ok_or_else(|| ProviderSessionError::Tool(
+                            "Runner cannot checkpoint pending or unknown tool effects".into(),
+                        ))?;
                     let cursor = checkpoint_store.persist(checkpoint)?;
                     // A durable tool-boundary checkpoint is observable provider
                     // progress even when no text delta preceded it. It also
@@ -323,9 +417,13 @@ impl ProductionTurnRunShellAdapter {
                     // for the first output after that tool result. This keeps a
                     // post-tool SSE stall bounded without making an unpersisted
                     // checkpoint eligible for resume.
-                    runtime_for_checkpoint.mark_stream_output(generation);
-                    runtime_for_checkpoint
-                        .rearm_output_deadline_after_checkpoint(generation);
+                    if !runtime_for_checkpoint.accept_checkpoint_effect_revision(
+                        generation, revision, cancellation.flag(), &attempt_control.admission_closed,
+                    ) {
+                        return Err(ProviderSessionError::Tool(
+                            "Runner checkpoint lost its attempt or tool effect revision during persistence".into(),
+                        ));
+                    }
                     let mut progress = progress.borrow_mut();
                     progress.record_output(0);
                     progress.checkpoint = Some(AttemptCheckpoint::new(
@@ -342,17 +440,19 @@ impl ProductionTurnRunShellAdapter {
             let timed_out_for_attempt = Arc::clone(&watchdog_expired);
             let runtime_for_cancel = Arc::clone(&runtime);
             let should_cancel = || {
-                cancellation.is_cancelled()
+                !attempt_control.is_current()
                     || timed_out_for_attempt.load(Ordering::Acquire)
-                    || !runtime_for_cancel.is_current(generation)
+                    || runtime_for_cancel.effect_custody().unknown_result.is_some()
             };
             let result = executor.run_attempt(
+                &attempt_control,
                 resume_from.as_ref(),
                 &mut guarded_delta,
                 &mut accept_checkpoint,
                 &should_cancel,
             );
 
+            attempt_control.close_admission();
             attempt_done.store(true, Ordering::Release);
             if let Some(watchdog) = watchdog {
                 let _ = watchdog.join();
@@ -367,41 +467,27 @@ impl ProductionTurnRunShellAdapter {
                 watchdog_expired.load(Ordering::Acquire);
             let progress = progress.into_inner();
             resume_from = accepted_resume.into_inner();
+            let custody = runtime.effect_custody();
+            let result = if timed_out {
+                Err(ProviderSessionError::Transport(
+                    "Runner first-output watchdog timed out before provider output.".into(),
+                ))
+            } else if let Some(reason) = custody.unsettled_reason() {
+                Err(ProviderSessionError::Tool(format!(
+                    "Runner tool custody remains unresolved: {reason}"
+                )))
+            } else {
+                result
+            };
 
             match result {
-                Ok(value) if !timed_out => return Ok(value),
-                Ok(_) => {
-                    let error = ProviderSessionError::Transport(
-                        "Runner first-output watchdog timed out before provider output."
-                            .into(),
-                    );
-                    if !self.retry(
-                        runtime.policy(),
-                        &mut attempt,
-                        &progress,
-                        &error,
-                        true,
-                        cancellation,
-                        resume_from.as_ref(),
-                        on_retry,
-                        on_report,
-                    )? {
-                        return Err(error);
-                    }
-                }
+                Ok(value) => return Ok(value),
                 Err(error) => {
-                    let error = if timed_out {
-                        ProviderSessionError::Transport(
-                            "Runner first-output watchdog timed out before provider output."
-                                .into(),
-                        )
-                    } else {
-                        error
-                    };
                     if !self.retry(
                         runtime.policy(),
                         &mut attempt,
                         &progress,
+                        &custody,
                         &error,
                         timed_out,
                         cancellation,
@@ -421,6 +507,7 @@ impl ProductionTurnRunShellAdapter {
         policy: &StreamAttemptPolicy,
         attempt: &mut u32,
         progress: &AttemptProgress,
+        custody: &ToolEffectCustodySnapshot,
         error: &ProviderSessionError,
         watchdog_expired: bool,
         cancellation: &RoutedProviderCancellation,
@@ -428,6 +515,32 @@ impl ProductionTurnRunShellAdapter {
         on_retry: &mut dyn FnMut(&ProviderRetryEvent),
         on_report: &mut dyn FnMut(&ProviderRetryReport),
     ) -> Result<bool, ProviderSessionError> {
+        if cancellation.is_cancelled() {
+            return Err(cancelled_error(cancellation));
+        }
+        if let Some(reason) = custody.retry_block_reason() {
+            let cause = format!(
+                "{reason}; started revision {}, checkpoint revision {}, pending {}, unknown {:?}",
+                custody.started_revision, custody.checkpoint_revision,
+                custody.pending_effects, custody.unknown_result,
+            );
+            on_report(&ProviderRetryReport {
+                outcome: ProviderRetryOutcome::GaveUpIneligible,
+                attempt: *attempt,
+                max_attempts: policy.max_attempts,
+                delay_ms: None,
+                server_paced: false,
+                resume_from_checkpoint: false,
+                watchdog_expired,
+                error_type: "ToolEffectCustodyError".into(),
+                error_code: "SAND-E0407".into(),
+                cause: cause.clone(),
+                error: error.to_string(),
+            });
+            return Err(ProviderSessionError::Tool(format!(
+                "Runner refused automatic retry: {cause}. Provider failure: {error}"
+            )));
+        }
         let transient =
             classify_provider_failure(error, watchdog_expired);
         let decision = policy.retry_decision(*attempt, progress, &transient);
@@ -524,8 +637,9 @@ fn spawn_first_output_watchdog(
     cancellation: RoutedProviderCancellation,
 ) -> Option<thread::JoinHandle<()>> {
     if timeout.is_zero() {
-        expired.store(true, Ordering::Release);
-        runtime.settle_attempt(generation);
+        if runtime.settle_attempt(generation) {
+            expired.store(true, Ordering::Release);
+        }
         return None;
     }
     Some(thread::spawn(move || {
@@ -553,9 +667,11 @@ fn spawn_first_output_watchdog(
             }
             let elapsed = started.elapsed();
             if elapsed >= timeout {
-                expired.store(true, Ordering::Release);
-                runtime.settle_attempt(generation);
-                break;
+                if runtime.expire_output_deadline(generation, epoch) {
+                    expired.store(true, Ordering::Release);
+                    break;
+                }
+                continue;
             }
             let remaining = timeout.saturating_sub(elapsed);
             let sleep_for = if poll_interval.is_zero() {
@@ -691,6 +807,7 @@ mod tests {
     impl RoutedProviderAttemptExecutor for PostToolStallExecutor {
         fn run_attempt(
             &mut self,
+            _attempt: &RoutedProviderAttemptControl,
             resume_from: Option<&RoutedProviderCheckpoint>,
             on_text_delta: &mut dyn FnMut(&str, &str),
             on_checkpoint: &mut dyn FnMut(

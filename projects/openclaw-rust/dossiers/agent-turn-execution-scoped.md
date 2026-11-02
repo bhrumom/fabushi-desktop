@@ -717,3 +717,58 @@ consumer; silently flattening those rows is explicitly non-equivalent.
 - **Unread / Unclassified Paths**: 58,638
 - **Strict Conservation**: $112 + 58638 = 58750$.
 - **All Global Completion Flags**: `false` strictly preserved.
+
+## Runner effect retry custody — 2026-11-02 bounded increment
+
+Contract `OCRM-RUNNER-EFFECT-CUSTODY-v1` in
+`projects/openclaw-rust/docs/specs/provider-bound-model-identity.md` was frozen
+before implementation. The implementation source base is
+`3ce1cd31898d090f38ba3a8c5b895da5b2de2892`; its six Runner/test paths were
+unchanged through integration base `c7fc0decf452f7c5a34580479bc05e2fc9d070d1`.
+This section adds current bounded evidence and leaves the historical source
+and reading records above intact.
+
+Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`, tree
+`90c8aab39972da11cfad220361781d49e1bc6700`. Necessary behavior evidence is
+`packages/agent-core/src/agent-loop.ts`, blob
+`a3c3a0dc20d3a84a0d8c7fdc72b1a4cb23fae7fb`, lines 833–846, which drains
+started tool work after persistence failure, and
+`packages/agent-core/src/tool-batch-completion.ts`, blob
+`dab3cfd9ab2c61b8b42849557cb4905d5130335e`, lines 13–30 and 47–79, which
+awaits started outcomes, settles them, and disposes execution entries. These
+bounded ranges are not a replacement full-file audit or recursive closure.
+
+The concrete target defect was C0 acceptance followed by a later tool B and
+watchdog expiry: B could finish without an accepted C1, yet the adapter could
+retry C0 or the original input. The existing `StreamAttemptRuntime` now owns
+started/covered effect revisions, pending actual-worker receipts, and sticky
+unknown results. Both direct provider tools and Claude's existing MCP
+`tools/call` producer capture the same immutable attempt authority. The real
+MCP endpoint belongs to one attempt. Checkpoint acceptance captures a revision,
+persists without the custody lock, and fences generation, cancellation, closed
+admission, revision and quiescence after I/O. The existing retry consumer refuses
+pending, unknown or uncovered effects before generic timeout classification.
+Definitive completion without a checkpoint may finish a successful turn;
+failure cannot replay that uncheckpointed effect. No new queue, store,
+permission authority or provider loop is introduced. ProductionTurnDispatch
+remains the existing turn-admission owner in the canonical responsibility row.
+
+`source/host/tests/runner_effect_custody_contract.rs` supplies nine authored
+oracles covering actual Responses parsing and production checkpoint storage,
+expiry between tools and during persistence, failed/changed checkpoint coverage,
+pending timeout workers, late results, worker loss, cancellation, safe retry
+and model identity. Actual local MCP endpoints cover stale generation admission
+and retry refusal. A command-env-isolated child reaches the public Runner entry,
+private production executor and HTTP Responses transport, with one append/fsync
+effect receipt and PID/token completion evidence. These loopback fixtures are
+not external provider or Claude service acceptance. The existing adapter
+assertions are retained; the workflow selects these and affected provider,
+MCP-meta and stream-attempt regressions on one exact H in Actions only.
+
+Verification is pending until those selected commands pass on the immutable H.
+This increment is in-memory and does not establish durable custody after Host
+loss, original-turn checkpoint load/claim/settle, external-effect reconciliation,
+or physical termination of detached tools. The wider Runner responsibility,
+G01–G12, AC01–AC24 and independent acceptance remain open. OCRM ledger/RTM links
+are extended without changing coverage counts, historical reading status or
+the eight global completion flags.

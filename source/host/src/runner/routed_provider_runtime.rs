@@ -25,10 +25,10 @@ use crate::extensions::inference::provider_session::{
 use crate::host_request_context::HostRequestContext;
 use crate::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryReport,
-    RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
+    RoutedProviderAttemptControl, RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
 };
 use crate::runner::system_prompt_assembly::render_request_context_system_prompt_with_capabilities;
-use crate::runner::StreamAttemptRuntime;
+use crate::runner::{StreamAttemptPolicy, StreamAttemptRuntime};
 use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
@@ -53,6 +53,10 @@ impl RoutedProviderCancellation {
 
     pub fn is_cancelled(&self) -> bool {
         self.cancelled.load(Ordering::Acquire)
+    }
+
+    pub(crate) fn flag(&self) -> &AtomicBool {
+        &self.cancelled
     }
 
     pub fn reason(&self) -> Option<String> {
@@ -320,14 +324,9 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
     messages: &'a [ProviderMessage],
     typed_replay: Option<&'a [TypedReplayEntry]>,
     tools: &'a [RoutedToolDefinition],
-    mcp_server_url: Option<&'a str>,
     cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
-    execute_tool: &'a mut dyn FnMut(
-        &RoutedToolDefinition,
-        Value,
-        &str,
-    ) -> Result<Value, ProviderSessionError>,
-    on_partial_tool_call: &'a mut dyn FnMut(ProviderPartialToolCall) -> Result<(), ProviderSessionError>,
+    bridge: Arc<dyn RoutedToolBridge>,
+    is_computer_use_subagent: bool,
     usage_sink: Option<Arc<dyn Fn(ProviderTokenUsage) + Send + Sync>>,
     max_steps: usize,
     tool_step_reminder: Option<Arc<ProviderToolStepReminderHook>>,
@@ -336,6 +335,7 @@ struct ProductionRoutedProviderAttemptExecutor<'a> {
 impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'_> {
     fn run_attempt(
         &mut self,
+        attempt: &RoutedProviderAttemptControl,
         resume_from: Option<&RoutedProviderCheckpoint>,
         on_text_delta: &mut dyn FnMut(&str, &str),
         on_checkpoint: &mut dyn FnMut(
@@ -343,17 +343,34 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
         ) -> Result<(), ProviderSessionError>,
         should_cancel: &dyn Fn() -> bool,
     ) -> Result<String, ProviderSessionError> {
-        let mut options = RoutedProviderOptions {
-            data_dir: self.data_dir,
-            typed_replay: self.typed_replay,
-            fabushi_model: self.fabushi_model.as_deref(),
-            cursor_auth: self.cursor_auth.clone(),
-            tools: self.tools,
-            mcp_server_url: self.mcp_server_url,
-            execute_tool: &mut *self.execute_tool,
-            on_text_delta,
-            on_partial_tool_call: Some(&mut *self.on_partial_tool_call),
-            should_cancel,
+        attempt.check()?;
+        let mut mcp_server = if self.provider == RoutedProvider::ClaudeCode {
+            Some(start_routed_mcp_server_for_attempt(
+                Arc::clone(&self.bridge), attempt.clone(), self.is_computer_use_subagent,
+            )?)
+        } else {
+            None
+        };
+        let bridge = Arc::clone(&self.bridge);
+        let tool_attempt = attempt.clone();
+        let is_computer_use_subagent = self.is_computer_use_subagent;
+        let mut execute_tool = move |tool: &RoutedToolDefinition, args: Value, tool_call_id: &str| {
+            let operation_bridge = Arc::clone(&bridge);
+            let owned_tool = tool.clone();
+            let owned_tool_call_id = tool_call_id.to_string();
+            execute_routed_tool_with_timeout(
+                tool, &args, is_computer_use_subagent, &tool_attempt,
+                {
+                    let args = args.clone();
+                    move || operation_bridge.call_tool(&owned_tool, args, &owned_tool_call_id)
+                },
+            )
+        };
+        let partial_bridge = Arc::clone(&self.bridge);
+        let partial_attempt = attempt.clone();
+        let mut on_partial_tool_call = move |partial: ProviderPartialToolCall| {
+            partial_attempt.check()?;
+            partial_bridge.observe_partial_tool_call(&partial)
         };
         let usage_sink = self.usage_sink.clone();
         let mut on_usage = move |usage: ProviderTokenUsage| {
@@ -361,16 +378,36 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
                 sink(usage);
             }
         };
-        run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
-            self.provider,
-            self.messages,
-            &mut options,
-            resume_from,
-            on_checkpoint,
-            &mut on_usage,
-            self.max_steps,
-            self.tool_step_reminder.as_deref(),
-        )
+        let result = {
+            let mut options = RoutedProviderOptions {
+                data_dir: self.data_dir,
+                typed_replay: self.typed_replay,
+                fabushi_model: self.fabushi_model.as_deref(),
+                cursor_auth: self.cursor_auth.clone(),
+                tools: self.tools,
+                mcp_server_url: mcp_server.as_ref().map(RoutedMcpServer::url),
+                execute_tool: &mut execute_tool,
+                on_text_delta,
+                on_partial_tool_call: Some(&mut on_partial_tool_call),
+                should_cancel,
+            };
+            run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+                self.provider,
+                self.messages,
+                &mut options,
+                resume_from,
+                on_checkpoint,
+                &mut on_usage,
+                self.max_steps,
+                self.tool_step_reminder.as_deref(),
+            )
+        };
+        if let Some(server) = mcp_server.as_mut() {
+            // Retire this attempt's endpoint before the adapter can retry.
+            // Closing the listener is not evidence that detached tools ended.
+            server.close();
+        }
+        result
     }
 }
 
@@ -437,50 +474,6 @@ pub fn run_routed_provider_in_runner(
         run.cancellation.check()?;
         run.bridge.list_tools()?
     };
-    let mut mcp_server = if run.provider == RoutedProvider::ClaudeCode {
-        Some(start_routed_mcp_server_for_run(
-            Arc::clone(&run.bridge),
-            run.cancellation.clone(),
-            run.is_computer_use_subagent,
-        )?)
-    } else {
-        None
-    };
-    let mcp_url = mcp_server.as_ref().map(|server| server.url().to_string());
-    let bridge = Arc::clone(&run.bridge);
-    let tool_cancellation = run.cancellation.clone();
-    let mut execute_tool = move |
-        tool: &RoutedToolDefinition,
-        args: Value,
-        tool_call_id: &str,
-    | {
-        tool_cancellation.check()?;
-        let operation_bridge = Arc::clone(&bridge);
-        let operation_cancellation = tool_cancellation.clone();
-        let owned_tool = tool.clone();
-        let guard_tool = owned_tool.clone();
-        let guard_args = args.clone();
-        let owned_tool_call_id = tool_call_id.to_string();
-        execute_routed_tool_with_timeout(
-            &guard_tool,
-            &guard_args,
-            run.is_computer_use_subagent,
-            move || {
-                operation_cancellation.check()?;
-                operation_bridge.call_tool(
-                    &owned_tool,
-                    args,
-                    &owned_tool_call_id,
-                )
-            },
-        )
-    };
-    let partial_bridge = Arc::clone(&run.bridge);
-    let partial_cancellation = run.cancellation.clone();
-    let mut on_partial_tool_call = move |partial: ProviderPartialToolCall| {
-        partial_cancellation.check()?;
-        partial_bridge.observe_partial_tool_call(&partial)
-    };
     let delta_cancellation = run.cancellation.clone();
     let mut guarded_delta = |delta: &str, accumulated: &str| {
         if !delta_cancellation.is_cancelled() {
@@ -495,10 +488,9 @@ pub fn run_routed_provider_in_runner(
         messages: &provider_messages,
         typed_replay: run.typed_replay,
         tools: &direct_tools,
-        mcp_server_url: mcp_url.as_deref(),
         cursor_auth: run.cursor_auth.clone(),
-        execute_tool: &mut execute_tool,
-        on_partial_tool_call: &mut on_partial_tool_call,
+        bridge: Arc::clone(&run.bridge),
+        is_computer_use_subagent: run.is_computer_use_subagent,
         usage_sink: run.usage_sink.clone(),
         max_steps: run.max_steps.max(1),
         tool_step_reminder: run.tool_step_reminder.clone(),
@@ -536,9 +528,6 @@ pub fn run_routed_provider_in_runner(
         ),
     };
 
-    if let Some(server) = mcp_server.as_mut() {
-        server.close();
-    }
     run.cancellation.check()?;
     result
 }
@@ -547,6 +536,7 @@ pub struct RoutedMcpServer {
     url: String,
     stop: Arc<AtomicBool>,
     worker: Option<JoinHandle<()>>,
+    attempt: RoutedProviderAttemptControl,
 }
 
 impl RoutedMcpServer {
@@ -555,6 +545,7 @@ impl RoutedMcpServer {
     }
 
     pub fn close(&mut self) {
+        self.attempt.close_admission();
         self.stop.store(true, Ordering::Release);
         if let Some(worker) = self.worker.take() {
             let _ = TcpStream::connect(
@@ -587,14 +578,19 @@ pub fn start_routed_mcp_server_with_cancellation(
     bridge: Arc<dyn RoutedToolBridge>,
     cancellation: RoutedProviderCancellation,
 ) -> Result<RoutedMcpServer, ProviderSessionError> {
-    start_routed_mcp_server_for_run(bridge, cancellation, false)
+    let runtime = Arc::new(StreamAttemptRuntime::new(StreamAttemptPolicy::default()));
+    let generation = runtime.begin_attempt();
+    start_routed_mcp_server_for_attempt(
+        bridge, RoutedProviderAttemptControl::new(runtime, generation, cancellation), false,
+    )
 }
 
-fn start_routed_mcp_server_for_run(
+pub fn start_routed_mcp_server_for_attempt(
     bridge: Arc<dyn RoutedToolBridge>,
-    cancellation: RoutedProviderCancellation,
+    attempt: RoutedProviderAttemptControl,
     is_computer_use_subagent: bool,
 ) -> Result<RoutedMcpServer, ProviderSessionError> {
+    attempt.check()?;
     let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| {
         ProviderSessionError::Transport(format!("could not bind routed MCP server: {error}"))
     })?;
@@ -609,12 +605,12 @@ fn start_routed_mcp_server_for_run(
     let url = format!("http://{}{}", address, path);
     let stop = Arc::new(AtomicBool::new(false));
     let worker_stop = Arc::clone(&stop);
-    let worker_cancellation = cancellation.clone();
+    let worker_attempt = attempt.clone();
     let worker = thread::Builder::new()
         .name("mahayana-runner-routed-mcp".into())
         .spawn(move || {
             let mut tools = HashMap::<String, RoutedToolDefinition>::new();
-            while !worker_stop.load(Ordering::Acquire) && !worker_cancellation.is_cancelled() {
+            while !worker_stop.load(Ordering::Acquire) && !worker_attempt.is_cancelled() {
                 match listener.accept() {
                     Ok((stream, _)) => {
                         // A nonblocking listener can yield accepted sockets that are
@@ -630,7 +626,7 @@ fn start_routed_mcp_server_for_run(
                             &path,
                             &mut tools,
                             &bridge,
-                            &worker_cancellation,
+                            &worker_attempt,
                             is_computer_use_subagent,
                         );
                     }
@@ -649,6 +645,7 @@ fn start_routed_mcp_server_for_run(
         url,
         stop,
         worker: Some(worker),
+        attempt,
     })
 }
 
@@ -657,7 +654,7 @@ fn serve_request(
     expected_path: &str,
     tools: &mut HashMap<String, RoutedToolDefinition>,
     bridge: &Arc<dyn RoutedToolBridge>,
-    cancellation: &RoutedProviderCancellation,
+    attempt: &RoutedProviderAttemptControl,
     is_computer_use_subagent: bool,
 ) -> std::io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
@@ -714,7 +711,7 @@ fn serve_request(
     };
 
     let rpc_method = message.get("method").and_then(Value::as_str).unwrap_or("");
-    if cancellation.is_cancelled() {
+    if let Err(error) = attempt.check() {
         let id = message.get("id").cloned().unwrap_or(Value::Null);
         return write_json(
             &mut stream,
@@ -722,7 +719,7 @@ fn serve_request(
                 "jsonrpc":"2.0",
                 "id":id,
                 "result":tool_failure(
-                    cancellation.reason().unwrap_or_else(|| "Runner request cancelled".into())
+                    error.to_string()
                 )
             }),
         );
@@ -767,6 +764,7 @@ fn serve_request(
                         &guard_tool,
                         &guard_args,
                         is_computer_use_subagent,
+                        attempt,
                         move || operation_bridge.call_tool(
                             &owned_tool,
                             args,

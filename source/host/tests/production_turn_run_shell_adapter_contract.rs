@@ -10,7 +10,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryOutcome,
-    ProviderRetryReport, RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
+    ProviderRetryReport, RoutedProviderAttemptControl, RoutedProviderAttemptExecutor,
+    RoutedProviderCheckpointStore,
     first_output_timeout_for_attempt, run_production_turn_shell_lifecycle,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
@@ -80,6 +81,7 @@ fn tool_only_checkpoint() -> RoutedProviderCheckpoint {
 impl RoutedProviderAttemptExecutor for FakeExecutor {
     fn run_attempt(
         &mut self,
+        _attempt: &RoutedProviderAttemptControl,
         resume_from: Option<&RoutedProviderCheckpoint>,
         on_text_delta: &mut dyn FnMut(&str, &str),
         on_checkpoint: &mut dyn FnMut(

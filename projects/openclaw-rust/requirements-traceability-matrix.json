@@ -200,7 +200,9 @@
         "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
         "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
-        "source/host/tests/canonical_checkpoint_recovery_contract.rs"
+        "source/host/tests/canonical_checkpoint_recovery_contract.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/runner_effect_custody_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
@@ -1204,7 +1206,9 @@
         "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
         "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
-        "source/host/tests/canonical_checkpoint_recovery_contract.rs"
+        "source/host/tests/canonical_checkpoint_recovery_contract.rs",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/runner_effect_custody_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC05",
