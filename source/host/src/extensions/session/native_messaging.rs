@@ -162,6 +162,27 @@ struct SendEnvelope {
     error: Option<String>,
 }
 
+// Only an ambiguous transport/read failure may be reconciled to an independently
+// persisted acknowledgement. Invalid or rejected service responses stay errors.
+pub(super) enum FabushiHumanSendError {
+    Transport(String),
+    Rejected(String),
+}
+
+impl FabushiHumanSendError {
+    pub(super) fn into_message(self) -> String {
+        match self {
+            Self::Transport(message) | Self::Rejected(message) => message,
+        }
+    }
+}
+
+impl From<String> for FabushiHumanSendError {
+    fn from(message: String) -> Self {
+        Self::Rejected(message)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ListData {
@@ -404,6 +425,24 @@ impl FabushiNativeMessagingClient {
         path: &Path,
         name: &str,
     ) -> Result<FabushiRemoteHumanAttachment, String> {
+        self.upload_direct_message_resource_bound(path, name, None)
+    }
+
+    pub(super) fn upload_direct_message_resource_for_user(
+        &self,
+        path: &Path,
+        name: &str,
+        expected_user_id: &str,
+    ) -> Result<FabushiRemoteHumanAttachment, String> {
+        self.upload_direct_message_resource_bound(path, name, Some(expected_user_id))
+    }
+
+    fn upload_direct_message_resource_bound(
+        &self,
+        path: &Path,
+        name: &str,
+        expected_user_id: Option<&str>,
+    ) -> Result<FabushiRemoteHumanAttachment, String> {
         let name = required_trimmed(name, "attachment name")?;
         let bytes = fs::read(path)
             .map_err(|error| format!("Fabushi Human attachment could not be read from {}: {error}", path.display()))?;
@@ -411,6 +450,7 @@ impl FabushiNativeMessagingClient {
             return Err("Fabushi Human attachment is empty".into());
         }
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let part = reqwest::blocking::multipart::Part::bytes(bytes)
             .file_name(name.to_string())
             .mime_str("application/octet-stream")
@@ -427,10 +467,12 @@ impl FabushiNativeMessagingClient {
             .multipart(reqwest::blocking::multipart::Form::new().part("file", part))
             .send()
             .map_err(|error| format!("Fabushi Human attachment upload failed: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let status = response.status();
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human attachment response could not be read: {error}"))?;
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: ResourceEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human attachment response was invalid JSON (HTTP {}): {error}",
@@ -536,6 +578,22 @@ impl FabushiNativeMessagingClient {
         reply_to_message_id: Option<&str>,
         attachments: &[FabushiRemoteHumanAttachment],
     ) -> Result<FabushiRemoteHumanMessage, String> {
+        let expected_user_id = self.identity()?.user_id;
+        self.send_direct_message_for_settlement(
+            peer_human_id, text, client_request_id, reply_to_message_id, attachments,
+            &expected_user_id,
+        ).map_err(FabushiHumanSendError::into_message)
+    }
+
+    pub(super) fn send_direct_message_for_settlement(
+        &self,
+        peer_human_id: &str,
+        text: &str,
+        client_request_id: &str,
+        reply_to_message_id: Option<&str>,
+        attachments: &[FabushiRemoteHumanAttachment],
+        expected_user_id: &str,
+    ) -> Result<FabushiRemoteHumanMessage, FabushiHumanSendError> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let text = text.trim();
         let client_request_id = required_trimmed(client_request_id, "client request id")?;
@@ -543,9 +601,10 @@ impl FabushiNativeMessagingClient {
             .map(str::trim)
             .filter(|value| !value.is_empty());
         if text.is_empty() && attachments.is_empty() {
-            return Err("Fabushi Human message requires text or attachments".into());
+            return Err(FabushiHumanSendError::Rejected("Fabushi Human message requires text or attachments".into()));
         }
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, Some(expected_user_id))?;
         let response = self
             .client
             .post(self.endpoint("/api/social/messages")?)
@@ -567,12 +626,29 @@ impl FabushiNativeMessagingClient {
                     })
                     .collect(),
             })
-            .send()
-            .map_err(|error| format!("Fabushi Human message send failed: {error}"))?;
+            .send();
+        self.ensure_request_credential_stable(&credentials)?;
+        let response = response.map_err(|error| {
+            let message = format!("Fabushi Human message send failed: {error}");
+            if error.is_builder() {
+                FabushiHumanSendError::Rejected(message)
+            } else {
+                FabushiHumanSendError::Transport(message)
+            }
+        })?;
         let status = response.status();
-        let body = response
-            .text()
-            .map_err(|error| format!("Fabushi Human message response could not be read: {error}"))?;
+        let body = response.text();
+        self.ensure_request_credential_stable(&credentials)?;
+        let body = body.map_err(|error| {
+                let message = format!("Fabushi Human message response could not be read: {error}");
+                if status.is_success() {
+                    FabushiHumanSendError::Transport(message)
+                } else {
+                    // A known HTTP denial cannot become successful transport
+                    // recovery merely because its error body was truncated.
+                    FabushiHumanSendError::Rejected(message)
+                }
+        })?;
         let envelope: SendEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human message response was invalid JSON (HTTP {}): {error}",
@@ -580,15 +656,15 @@ impl FabushiNativeMessagingClient {
             )
         })?;
         if !status.is_success() || !envelope.success {
-            return Err(format!(
+            return Err(FabushiHumanSendError::Rejected(format!(
                 "Fabushi Human message send was rejected (HTTP {}): {}",
                 status.as_u16(),
                 envelope.error.unwrap_or_else(|| "unknown backend error".into())
-            ));
+            )));
         }
         envelope
             .message
-            .ok_or_else(|| "Fabushi Human message response omitted the persisted message.".to_string())
+            .ok_or_else(|| FabushiHumanSendError::Rejected("Fabushi Human message response omitted the persisted message.".to_string()))
     }
 
     pub fn set_direct_message_reaction(

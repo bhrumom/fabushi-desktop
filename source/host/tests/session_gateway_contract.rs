@@ -1250,7 +1250,10 @@ fn spawn_ambiguous_human_send_server() -> (String, thread::JoinHandle<Vec<String
 
         let (mut sync_stream, _) = listener.accept().expect("accept post-settlement sync");
         requests.push(read_fixture_http_request(&mut sync_stream));
-        let sync_body = json!({"success":true,"data":{"messages":[]}}).to_string();
+        assert!(requests.last().expect("history request").contains("&afterId=0"));
+        let sync_body = json!({"success":true,"data":{
+            "messages":[],"historyCursor":{"mode":"after-id","afterId":0},"nextAfterId":0
+        }}).to_string();
         write!(
             sync_stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -1610,6 +1613,13 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
 enum HumanMessageFixtureReply {
     Json(u16, serde_json::Value),
     Bytes(u16, Vec<u8>),
+    Disconnect,
+    Truncated(u16),
+    Deferred(
+        Box<HumanMessageFixtureReply>,
+        std::sync::mpsc::Sender<()>,
+        std::sync::mpsc::Receiver<()>,
+    ),
 }
 
 fn spawn_human_message_fixture(
@@ -1620,6 +1630,7 @@ fn spawn_human_message_fixture(
     let address = listener.local_addr().expect("Human fixture address");
     let handle = thread::spawn(move || {
         let mut requests = Vec::new();
+        let mut deferred = Vec::new();
         for (response_index, response) in responses.into_iter().enumerate() {
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
             let mut stream = loop {
@@ -1641,42 +1652,72 @@ fn spawn_human_message_fixture(
             let after_id = requests.last().and_then(|request| request.split("afterId=").nth(1))
                 .and_then(|tail| tail.split(|character: char| !character.is_ascii_digit()).next())
                 .and_then(|value| value.parse::<u64>().ok());
-            let (status, content_type, body) = match response {
-                HumanMessageFixtureReply::Json(status, mut body) => {
-                    // Existing pre-cursor cases model a compatible backend response.
-                    // Tests that explicitly supply null or a conflicting cursor
-                    // bypass this fixture default and assert fail-closed behavior.
-                    if status == 200 {
-                        if let (Some(after), Some(data)) = (
-                            after_id, body.get_mut("data").and_then(serde_json::Value::as_object_mut)
-                        ) {
-                            if let Some(messages) = data.get("messages").and_then(serde_json::Value::as_array) {
-                                let next = messages.last().and_then(|message| message.get("id"))
-                                    .cloned().unwrap_or(json!(after));
-                                data.entry("historyCursor").or_insert_with(|| json!({"mode":"after-id","afterId":after}));
-                                data.entry("nextAfterId").or_insert(next);
+            let (response, release) = match response {
+                HumanMessageFixtureReply::Deferred(response, accepted, release) => {
+                    accepted.send(()).expect("observe accepted deferred request");
+                    (*response, Some(release))
+                }
+                response => (response, None),
+            };
+            let is_deferred = release.is_some();
+            let respond = move || {
+                if let Some(release) = release {
+                    release.recv_timeout(std::time::Duration::from_secs(15))
+                        .expect("deferred Human response must be explicitly released");
+                }
+                let (status, content_type, body) = match response {
+                    HumanMessageFixtureReply::Json(status, mut body) => {
+                        // Existing pre-cursor cases model a compatible backend response.
+                        // Tests that explicitly supply null or a conflicting cursor
+                        // bypass this fixture default and assert fail-closed behavior.
+                        if status == 200 {
+                            if let (Some(after), Some(data)) = (
+                                after_id, body.get_mut("data").and_then(serde_json::Value::as_object_mut)
+                            ) {
+                                if let Some(messages) = data.get("messages").and_then(serde_json::Value::as_array) {
+                                    let next = messages.last().and_then(|message| message.get("id"))
+                                        .cloned().unwrap_or(json!(after));
+                                    data.entry("historyCursor").or_insert_with(|| json!({"mode":"after-id","afterId":after}));
+                                    data.entry("nextAfterId").or_insert(next);
+                                }
                             }
                         }
+                        (status, "application/json", body.to_string().into_bytes())
+                    },
+                    HumanMessageFixtureReply::Bytes(status, bytes) => (
+                        status, "application/octet-stream", bytes,
+                    ),
+                    HumanMessageFixtureReply::Disconnect => return,
+                    HumanMessageFixtureReply::Truncated(status) => {
+                        write!(stream, "HTTP/1.1 {status} Incomplete\r\nContent-Type: application/json\r\nContent-Length: 100\r\nConnection: close\r\n\r\n{{}}")
+                            .expect("write deliberately truncated response");
+                        stream.flush().expect("flush truncated response");
+                        return;
                     }
-                    (status, "application/json", body.to_string().into_bytes())
-                },
-                HumanMessageFixtureReply::Bytes(status, bytes) => (
-                    status, "application/octet-stream", bytes,
-                ),
+                    HumanMessageFixtureReply::Deferred(..) => panic!("nested deferred replies are unsupported"),
+                };
+                let reason = match status {
+                    200 => "OK",
+                    201 => "Created",
+                    503 => "Service Unavailable",
+                    _ => "Error",
+                };
+                write!(
+                    stream,
+                    "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                ).expect("write Human response headers");
+                stream.write_all(&body).expect("write Human response body");
+                stream.flush().expect("flush Human fixture response");
             };
-            let reason = match status {
-                200 => "OK",
-                201 => "Created",
-                503 => "Service Unavailable",
-                _ => "Error",
-            };
-            write!(
-                stream,
-                "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                body.len()
-            ).expect("write Human response headers");
-            stream.write_all(&body).expect("write Human response body");
-            stream.flush().expect("flush Human fixture response");
+            if is_deferred {
+                deferred.push(thread::spawn(respond));
+            } else {
+                respond();
+            }
+        }
+        for writer in deferred {
+            writer.join().expect("deferred Human response writer");
         }
         requests
     });
@@ -3496,6 +3537,7 @@ fn shipping_human_history_cursor_echo_rejects_legacy_and_conflicting_backend_pag
     for (label, cursor, next_after) in [
         ("no-cursor", serde_json::Value::Null, json!(1)),
         ("wrong-cursor", json!({"mode":"after-id","afterId":1}), json!(1)),
+        ("wrong-mode", json!({"mode":"latest","afterId":0}), json!(1)),
         ("wrong-next", json!({"mode":"after-id","afterId":0}), json!(42)),
     ] {
         let root = temp_root(label);
@@ -3538,6 +3580,9 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
         .as_str().expect("id").to_string();
     let rows = first.sync_human_conversation(&id).expect("bounded first sync");
     assert_eq!(rows.len(), 6400);
+    assert_eq!(rows.iter().map(|row| row["remoteMessageId"].as_str().expect("remote identity").to_string())
+        .collect::<Vec<_>>(), (1..=6400).map(|id| id.to_string()).collect::<Vec<_>>(),
+        "every row appears exactly once in canonical order across all 32 pages");
     let owner = first.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint"),
         Some(json!({"afterId":6400,"complete":false})));
@@ -3557,6 +3602,8 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     let resumed = human_message_fixture_runtime(&root, &resume_url);
     let resumed_rows = resumed.sync_human_conversation(&id).expect("resumed cursor");
     assert_eq!(resumed_rows.len(), 6401);
+    assert_eq!(&resumed_rows[..6400], rows.as_slice(), "restart preserves every previously covered row and its order");
+    assert_eq!(resumed_rows[6400]["id"], "human-server-message:6401");
     let owner = resumed.open_human_conversation_db_owner(&id).expect("owner");
     assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("complete checkpoint"),
         Some(json!({"afterId":6401,"complete":true})));
@@ -3567,5 +3614,439 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     resumed.shutdown();
     drop(owner);
     drop(resumed);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_concurrent_reactions_serialize_one_conversation_without_blocking_another() {
+    let root = temp_root("human-concurrent-reactions");
+    let (first_seen, first_wait) = std::sync::mpsc::channel();
+    let (first_release, first_resume) = std::sync::mpsc::channel();
+    let (second_seen, second_wait) = std::sync::mpsc::channel();
+    let (second_release, second_resume) = std::sync::mpsc::channel();
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Deferred(Box::new(HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":777,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        }))), first_seen, first_resume),
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":888,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        })),
+        HumanMessageFixtureReply::Deferred(Box::new(HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":777,"reactions":[]
+        }))), second_seen, second_resume),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let other = runtime.create_human_conversation("3", "Other").expect("other conversation")["id"]
+        .as_str().expect("other id").to_string();
+    for (conversation, entry, remote, author) in [
+        (id.as_str(), "human-server-message:777", "777", "2"),
+        (other.as_str(), "human-server-message:888", "888", "3"),
+    ] {
+        assert!(runtime.open_human_conversation_db_owner(conversation).expect("owner")
+            .append_transcript_entry(&json!({
+                "id":entry,"kind":"message","role":"user","authorKind":"human",
+                "authorId":author,"content":"target","timestampMs":1000.0,
+                "delivery":"sent","remoteMessageId":remote,"remoteReactions":[],"reactions":[]
+            })).expect("seed target"));
+    }
+    let first = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || runtime.toggle_human_message_reaction(&id, "human-server-message:777", "👍"))
+    };
+    first_wait.recv_timeout(std::time::Duration::from_secs(15)).expect("first POST is held");
+    let (started, waiting) = std::sync::mpsc::channel();
+    let second = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || {
+            started.send(()).expect("second toggle started");
+            runtime.toggle_human_message_reaction(&id, "human-server-message:777", "👍")
+        })
+    };
+    waiting.recv_timeout(std::time::Duration::from_secs(15)).expect("competing toggle invoked");
+    let other_settled = runtime.toggle_human_message_reaction(&other, "human-server-message:888", "👍")
+        .expect("unrelated conversation progresses while first POST is held");
+    assert_eq!(other_settled["reactions"], json!([{"emoji":"👍","by":"me"}]));
+    assert!(matches!(second_wait.recv_timeout(std::time::Duration::from_millis(150)),
+        Err(std::sync::mpsc::RecvTimeoutError::Timeout)), "second same-conversation POST must wait");
+    first_release.send(()).expect("release first settlement");
+    let activated = first.join().expect("first thread").expect("first toggle");
+    assert_eq!(activated["reactions"], json!([{"emoji":"👍","by":"me"}]));
+    second_wait.recv_timeout(std::time::Duration::from_secs(15)).expect("second POST starts after first settlement");
+    second_release.send(()).expect("release second settlement");
+    let deactivated = second.join().expect("second thread").expect("second toggle");
+    assert_eq!(deactivated["reactions"], json!([]));
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("settled intent"), Some(serde_json::Value::Null));
+    let requests = server.join().expect("concurrent fixture");
+    assert_eq!(requests.len(), 3);
+    assert!(requests[0].starts_with("POST /api/social/messages/777/reactions "));
+    assert!(requests[1].starts_with("POST /api/social/messages/888/reactions "));
+    assert!(requests[2].starts_with("POST /api/social/messages/777/reactions "));
+    assert_eq!(fixture_request_json(&requests[0]), json!({"emoji":"👍","active":true}));
+    assert_eq!(fixture_request_json(&requests[2]), json!({"emoji":"👍","active":false}));
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("durable serialized result"), vec![deactivated]);
+    assert_eq!(restarted.read_human_conversation_transcript(&other).expect("durable independent result"), vec![other_settled]);
+    restarted.shutdown(); drop(restarted);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_reaction_waits_for_inflight_history_before_deriving_desired_state() {
+    let root = temp_root("human-history-reaction-race");
+    let (history_seen, history_wait) = std::sync::mpsc::channel();
+    let (history_release, history_resume) = std::sync::mpsc::channel();
+    let (reaction_seen, reaction_wait) = std::sync::mpsc::channel();
+    let (reaction_release, reaction_resume) = std::sync::mpsc::channel();
+    let mut snapshot = fixture_remote_human_message(31, 2, 1, "history target", None, json!([]));
+    snapshot["reactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Deferred(Box::new(HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"data":{"messages":[snapshot]}}))), history_seen, history_resume),
+        HumanMessageFixtureReply::Deferred(Box::new(HumanMessageFixtureReply::Json(200,
+            json!({"success":true,"messageId":31,"reactions":[]}))), reaction_seen, reaction_resume),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    assert!(runtime.open_human_conversation_db_owner(&id).expect("owner")
+        .append_transcript_entry(&json!({
+            "id":"human-server-message:31","kind":"message","role":"user","authorKind":"human",
+            "authorId":"2","content":"history target","timestampMs":1000.0,
+            "delivery":"sent","remoteMessageId":"31","remoteReactions":[],"reactions":[]
+        })).expect("seed"));
+    let history = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || runtime.sync_human_conversation(&id))
+    };
+    history_wait.recv_timeout(std::time::Duration::from_secs(15)).expect("history is in flight");
+    let (started, waiting) = std::sync::mpsc::channel();
+    let reaction = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || {
+            started.send(()).expect("reaction started");
+            runtime.toggle_human_message_reaction(&id, "human-server-message:31", "👍")
+        })
+    };
+    waiting.recv_timeout(std::time::Duration::from_secs(15)).expect("reaction invoked");
+    assert!(matches!(reaction_wait.recv_timeout(std::time::Duration::from_millis(150)),
+        Err(std::sync::mpsc::RecvTimeoutError::Timeout)), "reaction must not overtake the pending snapshot");
+    history_release.send(()).expect("release snapshot");
+    let refreshed = history.join().expect("history thread").expect("history refresh");
+    assert_eq!(refreshed[0]["reactions"], json!([{"emoji":"👍","by":"me"}]));
+    reaction_wait.recv_timeout(std::time::Duration::from_secs(15)).expect("reaction follows snapshot");
+    reaction_release.send(()).expect("release reaction");
+    let settled = reaction.join().expect("reaction thread").expect("reaction settles");
+    assert_eq!(settled["reactions"], json!([]));
+    let requests = server.join().expect("ordered fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].contains("&afterId=0"));
+    assert_eq!(fixture_request_json(&requests[1]), json!({"emoji":"👍","active":false}));
+    runtime.shutdown(); drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("pure reopen"), vec![settled]);
+    restarted.shutdown(); drop(restarted);
+    let _ = fs::remove_dir_all(root);
+}
+
+fn exercise_late_human_send_response(
+    label: &str,
+    late_response: HumanMessageFixtureReply,
+    expected_error: Option<&str>,
+) {
+    let root = temp_root(label);
+    let (send_seen, send_wait) = std::sync::mpsc::channel();
+    let (send_release, send_resume) = std::sync::mpsc::channel();
+    let mut accepted = fixture_remote_human_message(77, 1, 2, "late receipt", Some("late-send"), json!([]));
+    accepted["readAt"] = json!("2026-10-05T01:05:00Z");
+    accepted["reactions"] = json!([{"emoji":"👍","count":1,"reactedByMe":false}]);
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Deferred(Box::new(late_response), send_seen, send_resume),
+        // Sync retries the same durable nonce before discovering the accepted
+        // history row; the original POST remains held throughout both steps.
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"deduplicated":true,"message":accepted.clone()})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[accepted]}})),
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":77,
+            "reactions":[{"emoji":"👍","count":2,"reactedByMe":true}]
+        })),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let sending = {
+        let runtime = Arc::clone(&runtime);
+        let id = id.clone();
+        thread::spawn(move || runtime.append_human_message(&id, "late receipt", "late-send", Some(1000.0), None, &[]))
+    };
+    send_wait.recv_timeout(std::time::Duration::from_secs(15)).expect("original POST in flight");
+    let synced = runtime.sync_human_conversation(&id).expect("idempotent retry and history settle independently");
+    assert_eq!(synced.len(), 1);
+    assert_eq!(synced[0]["id"], "human-server-message:77");
+    let reacted = runtime.toggle_human_message_reaction(&id, "human-server-message:77", "👍")
+        .expect("newer reaction is durably acknowledged before original POST");
+    assert_eq!(reacted["readAt"], "2026-10-05T01:05:00Z");
+    assert_eq!(reacted["reactions"], json!([{"emoji":"👍","by":"me"},{"emoji":"👍","by":"2"}]));
+    send_release.send(()).expect("release original response after newer settlement");
+    let result = sending.join().expect("send thread");
+    match expected_error {
+        Some(expected) => assert!(result.expect_err("conflicting or malformed acknowledgement stays rejected").contains(expected), "{label}"),
+        None => assert_eq!(result.expect("durable acknowledgement wins over late transport/state"), reacted, "{label}"),
+    }
+    assert_eq!(runtime.read_human_conversation_transcript(&id).expect("one settled row"), vec![reacted.clone()]);
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert!(owner.get_transcript_entry_by_id("human-message:late-send").expect("local intent lookup").is_none());
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("reaction acknowledged"), Some(serde_json::Value::Null));
+    let requests = server.join().expect("late acknowledgement fixture");
+    assert_eq!(requests.len(), 4);
+    assert!(requests[0].starts_with("POST /api/social/messages "));
+    assert!(requests[1].starts_with("POST /api/social/messages "));
+    assert_eq!(fixture_request_json(&requests[0]), fixture_request_json(&requests[1]), "retry preserves exact identity/body");
+    assert!(requests[2].contains("&afterId=0"));
+    assert_eq!(fixture_request_json(&requests[3]), json!({"emoji":"👍","active":true}));
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("restart cannot restore stale receipt"), vec![reacted]);
+    restarted.shutdown(); drop(restarted);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_late_send_acknowledgement_preserves_newer_reaction_and_read_receipt() {
+    let stale = fixture_remote_human_message(77, 1, 2, "late receipt", Some("late-send"), json!([]));
+    exercise_late_human_send_response("human-late-valid-send",
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"message":stale})), None);
+}
+
+#[test]
+fn shipping_human_late_send_transport_failure_returns_durable_settlement_after_restart() {
+    exercise_late_human_send_response("human-late-disconnected-send", HumanMessageFixtureReply::Disconnect, None);
+    exercise_late_human_send_response("human-late-truncated-success", HumanMessageFixtureReply::Truncated(200), None);
+}
+
+#[test]
+fn shipping_human_late_invalid_send_acknowledgements_stay_rejected_without_rolling_back_settlement() {
+    let mut wrong_nonce = fixture_remote_human_message(77, 1, 2, "late receipt", Some("other-send"), json!([]));
+    let mut wrong_identity = wrong_nonce.clone();
+    wrong_identity["clientRequestId"] = json!("late-send");
+    wrong_identity["id"] = json!(78);
+    wrong_nonce["reactions"] = json!([]);
+    let mut invalid_reactions = fixture_remote_human_message(77, 1, 2, "late receipt", Some("late-send"), json!([]));
+    invalid_reactions["reactions"] = json!([{"emoji":"👍","count":3,"reactedByMe":true}]);
+    let mut invalid_timestamp = fixture_remote_human_message(77, 1, 2, "late receipt", Some("late-send"), json!([]));
+    invalid_timestamp["createdAt"] = json!("not-a-timestamp");
+    let mut invalid_receipt = fixture_remote_human_message(77, 1, 2, "late receipt", Some("late-send"), json!([]));
+    invalid_receipt["readAt"] = json!("not-a-timestamp");
+    for (label, response, expected) in [
+        ("late-missing-message", HumanMessageFixtureReply::Json(201, json!({"success":true})), "omitted the persisted message"),
+        ("late-invalid-json", HumanMessageFixtureReply::Bytes(201, b"not-json".to_vec()), "invalid JSON"),
+        ("late-permission-rejection", HumanMessageFixtureReply::Json(403, json!({"success":false,"error":"denied"})), "send was rejected (HTTP 403)"),
+        ("late-truncated-auth-rejection", HumanMessageFixtureReply::Truncated(401), "response could not be read"),
+        ("late-truncated-permission-rejection", HumanMessageFixtureReply::Truncated(403), "response could not be read"),
+        ("late-wrong-nonce", HumanMessageFixtureReply::Json(201, json!({"success":true,"message":wrong_nonce})), "mismatched persisted content"),
+        ("late-wrong-identity", HumanMessageFixtureReply::Json(201, json!({"success":true,"message":wrong_identity})), "changed a settled remote identity"),
+        ("late-invalid-reactions", HumanMessageFixtureReply::Json(201, json!({"success":true,"message":invalid_reactions})), "inconsistent with direct participants"),
+        ("late-invalid-timestamp", HumanMessageFixtureReply::Json(201, json!({"success":true,"message":invalid_timestamp})), "timestamp is invalid"),
+        ("late-invalid-receipt", HumanMessageFixtureReply::Json(201, json!({"success":true,"message":invalid_receipt})), "read timestamp is invalid"),
+    ] {
+        exercise_late_human_send_response(label, response, Some(expected));
+    }
+}
+
+fn exercise_human_send_credential_change(
+    with_attachment: bool,
+    during_request: bool,
+    field: &str,
+    replacement: serde_json::Value,
+    expected_error: &str,
+) {
+    let root = temp_root(&format!("human-credential-{with_attachment}-{during_request}-{field}"));
+    let resource = json!({
+        "resourceId":"credential-resource","name":"private.bin","contentType":"application/octet-stream",
+        "size":4,"createdAt":"2026-10-05T01:00:00Z"
+    });
+    let remote = fixture_remote_human_message(91, 1, 2, "credential-bound send", Some("credential-send"),
+        if with_attachment { json!([resource.clone()]) } else { json!([]) });
+    let (seen, waiting) = std::sync::mpsc::channel();
+    let (release, resume) = std::sync::mpsc::channel();
+    let mut replies = Vec::new();
+    if during_request {
+        let first = if with_attachment {
+            HumanMessageFixtureReply::Json(201, json!({"success":true,"resource":resource.clone()}))
+        } else {
+            HumanMessageFixtureReply::Json(201, json!({"success":true,"message":remote.clone()}))
+        };
+        replies.push(HumanMessageFixtureReply::Deferred(Box::new(first), seen, resume));
+    }
+    if with_attachment {
+        replies.push(HumanMessageFixtureReply::Json(201, json!({"success":true,"resource":resource})));
+    }
+    replies.push(HumanMessageFixtureReply::Json(201, json!({"success":true,"message":remote})));
+    if with_attachment {
+        replies.push(HumanMessageFixtureReply::Bytes(200, vec![1, 2, 3, 4]));
+    }
+    let (url, server) = spawn_human_message_fixture(replies);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let attachment_path = root.join("private.bin");
+    fs::write(&attachment_path, [1, 2, 3, 4]).expect("attachment fixture");
+    let attachments = if with_attachment {
+        vec![json!({"path":attachment_path.to_string_lossy(),"name":"private.bin"})]
+    } else { vec![] };
+    let change_credentials = || {
+        let path = root.join("host-credential.json");
+        let mut credentials: serde_json::Value = serde_json::from_str(&fs::read_to_string(&path).expect("read private fixture credential"))
+            .expect("credential JSON");
+        credentials[field] = replacement.clone();
+        fs::write(path, credentials.to_string()).expect("replace same-issuer credential");
+    };
+    let failure = if during_request {
+        let sending = {
+            let runtime = Arc::clone(&runtime);
+            let id = id.clone();
+            let attachments = attachments.clone();
+            thread::spawn(move || runtime.append_human_message(&id, "credential-bound send", "credential-send", Some(1000.0), None, &attachments))
+        };
+        waiting.recv_timeout(std::time::Duration::from_secs(15)).expect("request accepted under original credential");
+        change_credentials();
+        release.send(()).expect("release response after credential change");
+        sending.join().expect("send thread").expect_err("changed credential response is rejected")
+    } else {
+        change_credentials();
+        runtime.append_human_message(&id, "credential-bound send", "credential-send", Some(1000.0), None, &attachments)
+            .expect_err("changed-account or invalid credential is rejected before dispatch")
+    };
+    assert!(failure.contains(expected_error), "{failure}");
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let pending = owner.get_transcript_entries().expect("recoverable outbox");
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["id"], "human-message:credential-send");
+    assert_eq!(pending[0]["delivery"], "pending");
+    assert!(pending[0].get("remoteMessageId").is_none());
+    assert!(pending[0].get("remoteDispatchAttachments").is_none(), "foreign/stale upload response is not reused");
+    runtime.shutdown(); drop(owner); drop(runtime);
+
+    // Reopen restores the original private account fixture. Retry keeps the
+    // same durable nonce and content; no stale response supplied a settlement.
+    let resumed = human_message_fixture_runtime(&root, &url);
+    let settled = resumed.append_human_message(&id, "credential-bound send", "credential-send", Some(1000.0), None, &attachments)
+        .expect("original account recovers pending send");
+    assert_eq!(settled["id"], "human-server-message:91");
+    assert_eq!(settled["delivery"], "sent");
+    let requests = server.join().expect("credential boundary fixture");
+    assert_eq!(requests.len(), (if with_attachment { 3 } else { 1 }) + usize::from(during_request));
+    let message_posts = requests.iter().filter(|request| request.starts_with("POST /api/social/messages ")).collect::<Vec<_>>();
+    assert_eq!(message_posts.len(), if during_request && !with_attachment { 2 } else { 1 });
+    assert!(message_posts.iter().all(|request| fixture_request_json(request)["clientRequestId"] == "credential-send"));
+    assert_eq!(requests.iter().filter(|request| request.starts_with("POST /api/social/message-resources ")).count(),
+        if with_attachment { 1 + usize::from(during_request) } else { 0 }, "pre-dispatch account rejection sends no bytes");
+    resumed.shutdown(); drop(resumed);
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(reopened.read_human_conversation_transcript(&id).expect("pure reopen"), vec![settled]);
+    reopened.shutdown(); drop(reopened);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_send_rejects_changed_account_before_message_or_resource_dispatch() {
+    for with_attachment in [false, true] {
+        exercise_human_send_credential_change(with_attachment, false, "userId", json!(3), "changed Human account");
+    }
+    exercise_human_send_credential_change(false, false, "accessToken", json!("invalid\nheader"), "send failed");
+}
+
+#[test]
+fn shipping_human_send_rejects_midflight_credential_changes_and_recovers_after_restart() {
+    for with_attachment in [false, true] {
+        for (field, replacement) in [("userId", json!(3)), ("deviceId", json!("device-b")), ("accessToken", json!("replacement-token"))] {
+            exercise_human_send_credential_change(with_attachment, true, field, replacement, "changed during Human request");
+        }
+    }
+}
+
+#[test]
+fn shipping_human_read_receipts_compare_rfc3339_instants_and_reject_invalid_ingress_before_resources() {
+    let root = temp_root("human-read-receipt-instants");
+    let make_row = |id, read_at| {
+        let mut row = fixture_remote_human_message(id, 2, 1, "receipt target", None, json!([]));
+        row["readAt"] = read_at;
+        row
+    };
+    let initial = "2026-10-05T00:20:00.500Z";
+    let advanced = "2026-10-04T20:20:00.750-04:00";
+    let precise = "2026-10-05T00:20:00.750000001Z";
+    let repaired = "2026-10-05T00:30:00.250Z";
+    let mut rows = vec![
+        make_row(81, json!(initial)),
+        make_row(81, json!("2026-10-05T01:10:00+01:00")),
+        make_row(81, json!("2026-10-05T01:20:00.5000+01:00")),
+        make_row(81, json!(advanced)),
+        make_row(81, json!(precise)),
+        make_row(81, serde_json::Value::Null),
+    ];
+    for id in [81, 82] {
+        let mut invalid = make_row(id, json!("not-rfc3339"));
+        invalid["attachments"] = json!([{
+            "resourceId":"forbidden-invalid-receipt-resource","name":"private.bin",
+            "contentType":"application/octet-stream","size":4,
+            "createdAt":"2026-10-05T01:00:00Z"
+        }]);
+        rows.push(invalid);
+    }
+    rows.push(make_row(81, serde_json::Value::Null));
+    rows.push(make_row(81, json!(repaired)));
+    let (url, server) = spawn_human_message_fixture(rows.into_iter().map(|row| {
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[row]}}))
+    }).collect());
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    for (stage, expected) in [("initial", initial), ("older offset", initial),
+        ("equivalent fractional instant", initial), ("newer offset", advanced),
+        ("nanosecond advancement", precise), ("omitted", precise)]
+    {
+        let current = runtime.sync_human_conversation(&id).expect(stage);
+        assert_eq!(current.len(), 1, "{stage}");
+        assert_eq!(current[0]["id"], "human-server-message:81", "{stage}");
+        assert_eq!(current[0]["readAt"], expected, "{stage}");
+    }
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let prior = owner.get_transcript_entries().expect("prior receipt");
+    let coverage = owner.get_metadata("humanHistoryCoverage").expect("prior coverage");
+    for stage in ["known row", "new row"] {
+        let error = runtime.sync_human_conversation(&id).expect_err("invalid receipt fails before resource access");
+        assert!(error.contains("read timestamp is invalid"), "{stage}: {error}");
+        assert_eq!(owner.get_transcript_entries().expect("no durable mutation"), prior, "{stage}");
+        assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("no coverage advance"), coverage, "{stage}");
+        assert!(!root.join("agents").join("human-message-resources").exists(), "{stage}");
+    }
+    let mut legacy = prior[0].clone();
+    legacy["readAt"] = json!("legacy-invalid-receipt");
+    owner.update_transcript_entry("human-server-message:81", &legacy).expect("legacy fixture").expect("target");
+    assert_eq!(runtime.sync_human_conversation(&id).expect("omitted field preserves legacy value"), vec![legacy.clone()]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("reopen preserves omitted legacy receipt"), vec![legacy]);
+    let repaired_rows = restarted.sync_human_conversation(&id).expect("valid receipt repairs legacy invalid value");
+    assert_eq!(repaired_rows.len(), 1);
+    assert_eq!(repaired_rows[0]["readAt"], repaired);
+    let requests = server.join().expect("receipt fixture");
+    assert_eq!(requests.len(), 10);
+    assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 ")),
+        "invalid timestamps never initiate resource requests");
+    restarted.shutdown(); drop(restarted);
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(reopened.read_human_conversation_transcript(&id).expect("pure reopen of repaired receipt"), repaired_rows);
+    reopened.shutdown(); drop(reopened);
     let _ = fs::remove_dir_all(root);
 }

@@ -1,0 +1,235 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 10,
+  "scope": "NMR-23..28 continuation: prior-gate audit and implementation handoff; not release acceptance",
+  "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "source_base": "d24783f4c000f765c8f65b58517f25753c5a20a3",
+  "desktop_main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "initial_run": {
+    "id": 41421314346,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41421314346",
+    "head_sha": "d24783f4c000f765c8f65b58517f25753c5a20a3",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "updated_at": "2026-11-02T09:46:10Z",
+    "jobs": [
+      {
+        "id": 125197251269,
+        "name": "native-message-shipping-compile",
+        "head_sha": "d24783f4c000f765c8f65b58517f25753c5a20a3",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "started_at": "2026-11-02T09:31:09Z",
+        "completed_at": "2026-11-02T09:46:09Z",
+        "runner_id": 0,
+        "steps": []
+      },
+      {
+        "id": 125197252063,
+        "name": "native-message-reconciliation",
+        "head_sha": "d24783f4c000f765c8f65b58517f25753c5a20a3",
+        "status": "completed",
+        "conclusion": "failure",
+        "started_at": "2026-11-02T09:36:14Z",
+        "completed_at": "2026-11-02T09:40:56Z",
+        "runner_id": 1000258846,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 125197253783,
+        "name": "native-auth-and-journal",
+        "head_sha": "d24783f4c000f765c8f65b58517f25753c5a20a3",
+        "status": "completed",
+        "conclusion": "skipped",
+        "started_at": "2026-11-02T09:31:09Z",
+        "completed_at": "2026-11-02T09:31:09Z",
+        "runner_id": null,
+        "steps": []
+      }
+    ],
+    "human_execution": {
+      "tests": 22,
+      "passed": 20,
+      "failed": 2,
+      "ignored": 0,
+      "filtered_out": 14,
+      "duration_seconds": 60.14,
+      "agent_nonce_executed": false,
+      "full_log_read": true,
+      "full_log_sha256": "8202b14f8c0950a8c26f6d8f9154f6698d1d66a04ceb0912d333a112c70bc0e7",
+      "artifact_id": 13129543860,
+      "artifact_sha256": "706d204a4dde1b3017f0fdc3197e45711853955818abbeaca82acf65de117b5c",
+      "failures": [
+        {
+          "case": "shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
+          "classification": "TEST_FLAW",
+          "observed": "custom restart GET fixture omitted required historyCursor",
+          "repair": "echo after-id / afterId 0 / nextAfterId 0 in the custom response; preserve restart and no-reupload assertions"
+        },
+        {
+          "case": "shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart",
+          "classification": "IMPLEMENTATION_DEFECT",
+          "observed": "fixture response 8 timed out after 8 requests; next GET attempted afterId=1600; whole transcript repeatedly read and parsed for each row",
+          "repair": "page-local snapshot under the existing conversation lock; update after durable row materialization; retain 15-second fixture inter-request bound and all 6400 exact-order/cursor/reopen assertions"
+        }
+      ]
+    },
+    "shipping_execution": {
+      "tests_executed": 0,
+      "compile_executed": false,
+      "full_log_read": false,
+      "log_fetch": {
+        "result": "404 BlobNotFound",
+        "observed_at": "2026-11-02T09:48:12Z"
+      },
+      "reason": "Job was cancelled with runner_id=0 and no steps; no log blob or shipping artifact was created. No compile/test pass is inferred."
+    }
+  },
+  "candidate_execution": {
+    "target_commit": null,
+    "status": "not-run",
+    "human_authored_count": 30,
+    "agent_nonce_required_count": 4,
+    "transcript_authored_count": 16,
+    "electron_carrier_authored_count": 10,
+    "acceptance": false,
+    "required_workflow": ".github/workflows/native-service-contracts.yml",
+    "required_jobs": [
+      "native-message-reconciliation",
+      "native-message-shipping-compile",
+      "native-message-ui",
+      "native-message-electron"
+    ],
+    "note": "This source receipt is written before the candidate commit exists. Authored counts are not execution evidence; use the exact commit's Actions jobs and artifacts."
+  },
+  "production_wiring": {
+    "owner": "ProductionSessionWorkers / existing SandAgentDb Session Transcript",
+    "calls": [
+      "ProductionRenderer existing Composer/reconnect",
+      "Electron production root and coordinator launcher",
+      "shipping rust-coordinator-carrier",
+      "node-agent-coordinator dispatch_gateway_command",
+      "AppHost dispatch_session_gateway_call",
+      "session gateway sendHumanMessage/reactHumanMessage/getHumanConversationTranscriptTail",
+      "FabushiNativeMessagingClient authenticated native HTTP",
+      "same durable Transcript and mutation events"
+    ],
+    "full_messaging_service_engine_is_human_owner": false,
+    "legacy_telegram_runtime_retired": false,
+    "user_data_deleted": false,
+    "carrier_case_limit": "Opaque bridge fixtures preserve explicit errors for Human edit/delete; the current Host gateway does not implement those commands.",
+    "ui_case_limit": "Real production projection and pagination modules with controlled bridge responses; no mounted DOM, packaged visual or accessibility acceptance."
+  },
+  "backend": {
+    "repository": "bhrumom/fabushi-backend",
+    "main_observed": "687718ce9e0083aa124d29005bcce4051d357919",
+    "compatible_checkpoint": "c056a342f1c5d2b10a7e5f434e2e58d6490291ea",
+    "compatible_friends_blob": "e12e1e18835efeba2a82a05346ce58b664745138",
+    "compatible_ci": {
+      "run_id": 41418538840,
+      "job_id": 125188210953,
+      "conclusion": "success",
+      "tests": 29,
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "full_log_read": true,
+      "artifact_id": 13128502463,
+      "artifact_sha256": "d9217e80fc1b9180cd1de7c63458da5f92c796cdb2db791fbbd57c8dd2fca713"
+    },
+    "last_observable_canonical_deployment": {
+      "run_id": 40047409890,
+      "job_id": 120732189309,
+      "source_commit": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "branch": "main",
+      "conclusion": "success",
+      "worker": "fabushi-flutter-web-prod",
+      "worker_version": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "full_log_read": true,
+      "artifact_id": 12542026010,
+      "artifact_sha256": "ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+      "friends_blob": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+      "compatible_after_id_zero": false,
+      "history_cursor_echo": false,
+      "limitation": "Latest observable canonical workflow among 171 manually dispatched runs; not an assertion about out-of-band deployments or current Cloudflare state."
+    },
+    "production_origin": "https://api.ombhrum.com",
+    "production_source_attestation_for_compatible_checkpoint": false,
+    "authenticated_after_id_zero_probe_executed": false,
+    "production_acceptance": "blocked",
+    "release_path": "Canonical backend production-worker-delivery workflow; main-only workflow_dispatch at exact github.sha, production environment, backup/migrations, existing credentials. No guard is bypassed.",
+    "unblock": "Land the reviewed compatible backend source through its approved main delivery process, obtain the resulting Worker version/source attestation and an authorized Human account/peer with multiple real pages, then execute and retain authenticated afterId=0 mode/order/uniqueness/scope evidence without credentials or message bodies."
+  },
+  "remaining_acceptance": [
+    "Exact candidate Actions executions and full logs are not present when this receipt is authored.",
+    "Older remote message mutations outside latest200 need a real change/history-refresh contract; cached UI event consumption alone does not provide it.",
+    "Server revision/freshness semantics and real Worker consistency remain unproven.",
+    "Crash between reaction row settlement and intent cleanup; SQLite busy/disk-full; request cancellation and in-flight shutdown need independent recovery evidence.",
+    "Visible receipts and native Human edit/delete are not implemented by the carrier fixtures.",
+    "Full fixed-U source/dependency/generator/resource/tool/legal closure and independent source acceptance remain open.",
+    "Real services, supported platform packages, visual/accessibility, timing/security/performance/soak, upgrade/rollback, complete Bot regression and independent ACCEPT remain open."
+  ]
+}

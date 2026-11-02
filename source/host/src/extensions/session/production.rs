@@ -81,7 +81,7 @@ use super::session_profile_files::{
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
-    FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
+    FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
     FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
     fabushi_identity_text,
 };
@@ -2022,6 +2022,12 @@ impl ProductionSessionWorkers {
         {
             return Err("remote Human message does not belong to the selected Human conversation".into());
         }
+        if let Some(read_at) = remote.read_at.as_deref()
+            .map(str::trim).filter(|value| !value.is_empty())
+        {
+            chrono::DateTime::parse_from_rfc3339(read_at)
+                .map_err(|error| format!("remote Human message read timestamp is invalid: {error}"))?;
+        }
 
         let canonical_id = format!("human-server-message:{remote_id}");
         let by_id = existing.iter().find(|row| {
@@ -2112,6 +2118,19 @@ impl ProductionSessionWorkers {
         owner: &SandAgentDb,
         remote: &FabushiRemoteHumanMessage,
     ) -> Result<serde_json::Value, String> {
+        let existing = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+        self.materialize_remote_human_message_with_snapshot(owner, remote, &existing)
+    }
+
+    // The caller owns the conversation mutation lane and updates this snapshot
+    // only after each durable write. Avoid reparsing the entire SQLite transcript
+    // for every row of a bounded history page.
+    fn materialize_remote_human_message_with_snapshot(
+        &self,
+        owner: &SandAgentDb,
+        remote: &FabushiRemoteHumanMessage,
+        existing: &[serde_json::Value],
+    ) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?;
         let remote_id = fabushi_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
@@ -2121,8 +2140,7 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
-        let existing = owner.get_transcript_entries().map_err(|error| error.to_string())?;
-        self.validate_remote_human_message(remote, local_human_id, &peer_human_id, &existing)?;
+        self.validate_remote_human_message(remote, local_human_id, &peer_human_id, existing)?;
         let timestamp_ms = chrono::DateTime::parse_from_rfc3339(&remote.created_at)
             .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
             .timestamp_millis() as f64;
@@ -2218,8 +2236,11 @@ impl ProductionSessionWorkers {
                 }
             }
             if let Some(read_at) = current.get("readAt").and_then(serde_json::Value::as_str) {
-                let newer = entry.get("readAt").and_then(serde_json::Value::as_str)
-                    .is_some_and(|value| value >= read_at);
+                let prior = chrono::DateTime::parse_from_rfc3339(read_at).ok();
+                let newer = remote.read_at.as_deref()
+                    .map(str::trim).filter(|value| !value.is_empty())
+                    .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok())
+                    .is_some_and(|incoming| prior.is_none_or(|prior| incoming > prior));
                 if !newer {
                     entry.as_object_mut().expect("entry is an object")
                         .insert("readAt".into(), serde_json::json!(read_at));
@@ -2294,6 +2315,23 @@ impl ProductionSessionWorkers {
             .or_insert_with(|| Arc::new(Mutex::new(())))))
     }
 
+    fn update_human_replay_snapshot(
+        snapshot: &mut Vec<serde_json::Value>,
+        settled: serde_json::Value,
+    ) {
+        let prior = snapshot.iter().position(|entry| {
+            entry.get("id") == settled.get("id")
+                || (settled.get("clientNonce").is_some()
+                    && entry.get("clientNonce") == settled.get("clientNonce")
+                    && entry.get("authorId") == settled.get("authorId"))
+        });
+        if let Some(index) = prior {
+            snapshot[index] = settled;
+        } else {
+            snapshot.push(settled);
+        }
+    }
+
     fn store_human_coverage(owner: &SandAgentDb, after_id: u64, complete: bool) -> Result<(), String> {
         if !owner.set_metadata(
             "humanHistoryCoverage",
@@ -2339,7 +2377,10 @@ impl ProductionSessionWorkers {
             let reply = entry.get("replyToId").and_then(serde_json::Value::as_str);
             let composed = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
             let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
-            let _ = self.append_human_message(conversation_id, text, nonce, composed, reply, &attachments);
+            let _ = self.append_human_message_with_context(
+                conversation_id, text, nonce, composed, reply, &attachments,
+                entry.get("forwardContext"), Some(&_exclusive),
+            );
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
         let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
@@ -2375,7 +2416,7 @@ impl ProductionSessionWorkers {
                 break;
             }
             let is_last = page.len() < PAGE_LIMIT;
-            let snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+            let mut snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
             let mut last = after;
             let mut accepted = Vec::new();
             for remote in &page {
@@ -2391,12 +2432,12 @@ impl ProductionSessionWorkers {
                 }
             }
             for remote in accepted {
-                let current = owner.get_transcript_entries().map_err(|error| error.to_string())?;
-                if let Err(error) = self.validate_remote_human_message(&remote, &local_human_id, &peer, &current) {
+                if let Err(error) = self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot) {
                     rejected.get_or_insert(error);
                     continue;
                 }
-                self.materialize_remote_human_message(&owner, &remote)?;
+                let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
+                Self::update_human_replay_snapshot(&mut snapshot, settled);
             }
             if rejected.is_none() { Self::store_human_coverage(&owner, last, is_last)?; }
             after = last;
@@ -2406,14 +2447,15 @@ impl ProductionSessionWorkers {
         // short or empty page. A latest-snapshot refresh may use only spare capacity.
         if reached_end && rejected.is_none() && pages_used < MAX_GAP_PAGES && after >= PAGE_LIMIT as u64 {
             let latest = client.list_direct_messages_for_user(&peer, &local_human_id, None, PAGE_LIMIT)?;
-            let snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+            let mut snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
-                .and_then(serde_json::Value::as_str)).collect::<BTreeSet<_>>();
+                .and_then(serde_json::Value::as_str).map(str::to_string)).collect::<BTreeSet<_>>();
             for remote in latest {
                 let remote_id = fabushi_identity_text(&remote.id)?;
                 if !known.contains(remote_id.as_str()) { continue; }
                 self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot)?;
-                self.materialize_remote_human_message(&owner, &remote)?;
+                let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
+                Self::update_human_replay_snapshot(&mut snapshot, settled);
             }
         }
         if let Some(error) = rejected { return Err(error); }
@@ -2853,6 +2895,7 @@ impl ProductionSessionWorkers {
                 None,
                 &attachments,
                 Some(&forward_context),
+                None,
             ) {
                 Ok(entry) => settlement.push(serde_json::json!({
                     "conversationId": destination_conversation_id,
@@ -2896,6 +2939,7 @@ impl ProductionSessionWorkers {
             reply_to_id,
             attachments,
             None,
+            None,
         )
     }
 
@@ -2908,6 +2952,7 @@ impl ProductionSessionWorkers {
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
         forward_context: Option<&serde_json::Value>,
+        held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
         let text = text.trim();
@@ -2921,6 +2966,12 @@ impl ProductionSessionWorkers {
         if client_nonce.len() > 200 {
             return Err("sendHumanMessage clientNonce is too long".into());
         }
+        let serial = self.human_message_lock(conversation_id)?;
+        let mut staging_guard = if held_conversation_guard.is_none() {
+            Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
+        } else {
+            None
+        };
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -3067,7 +3118,7 @@ impl ProductionSessionWorkers {
                             .ok_or_else(|| "sendHumanMessage attachment requires path".to_string())?;
                         let name = attachment.get("name").and_then(serde_json::Value::as_str)
                             .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
-                        uploaded.push(client.upload_direct_message_resource(std::path::Path::new(path), name)?);
+                        uploaded.push(client.upload_direct_message_resource_for_user(std::path::Path::new(path), name, sender_id)?);
                     }
                 }
                 if let Some(object) = pending_entry.as_object_mut() {
@@ -3083,7 +3134,44 @@ impl ProductionSessionWorkers {
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
 
-                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded)?;
+                // Initial staging is visible atomically to a history snapshot.
+                // Release before the message POST so sync can discover an
+                // accepted send while this request is still in flight.
+                drop(staging_guard.take());
+                let response = client.send_direct_message_for_settlement(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, sender_id);
+                // The POST may outlive a sync/reaction that already settled the
+                // same nonce. Rejoin the existing conversation mutation lane
+                // before inspecting or applying its eventual response. Sync
+                // supplies its guard when replaying a persisted send, avoiding
+                // recursive acquisition of the non-reentrant mutex.
+                let serial = self.human_message_lock(conversation_id)?;
+                let _settlement_guard = if held_conversation_guard.is_none() {
+                    Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
+                } else {
+                    None
+                };
+                let durable = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+                let settled = durable.iter().find(|entry| {
+                    let remote_id = entry.get("remoteMessageId").and_then(serde_json::Value::as_str);
+                    let resources = entry.get("attachments").and_then(serde_json::Value::as_array)
+                        .map(|items| items.iter().map(|item| item.get("resourceId").and_then(serde_json::Value::as_str))
+                            .collect::<Vec<_>>()).unwrap_or_default();
+                    remote_id.is_some_and(|id| entry.get("id").and_then(serde_json::Value::as_str)
+                        == Some(format!("human-server-message:{id}").as_str()))
+                        && entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+                        && entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
+                        && entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+                        && entry.get("content").and_then(serde_json::Value::as_str) == Some(text)
+                        && entry.get("remoteReplyToMessageId").and_then(serde_json::Value::as_str)
+                            == remote_reply_to_id.as_deref()
+                        && resources == uploaded.iter().map(|item| Some(item.resource_id.as_str())).collect::<Vec<_>>()
+                        && entry.get("forwardContext") == forward_context
+                });
+                let remote = match response {
+                    Ok(remote) => remote,
+                    Err(FabushiHumanSendError::Transport(error)) => return settled.cloned().ok_or(error),
+                    Err(FabushiHumanSendError::Rejected(error)) => return Err(error),
+                };
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
                 let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
                 let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
@@ -3102,10 +3190,31 @@ impl ProductionSessionWorkers {
                 {
                     return Err("Fabushi Human message backend returned mismatched persisted content".into());
                 }
+                self.validate_remote_human_message(&remote, sender_id, &peer_human_id, &durable)?;
+                chrono::DateTime::parse_from_rfc3339(&remote.created_at)
+                    .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?;
+                if let Some(settled) = settled {
+                    // Admission still rejects a changed canonical identity,
+                    // nonce, resources, reply or malformed reaction summary.
+                    // A valid late acknowledgement has no freshness authority
+                    // over reactions/receipts already persisted by sync or POST.
+                    return Ok(settled.clone());
+                }
                 self.materialize_remote_human_message(&owner, &remote)
             })();
+            // A resource/preflight failure may return before the POST release.
+            drop(staging_guard.take());
 
             if let Err(error) = dispatch_result.as_ref() {
+                // Settlement may have advanced while a transport/preflight
+                // error was returning. Serialize this lookup and pending-only
+                // update with sync so it cannot restore an obsolete row.
+                let serial = self.human_message_lock(conversation_id)?;
+                let _failure_guard = if held_conversation_guard.is_none() {
+                    Some(serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?)
+                } else {
+                    None
+                };
                 if let Ok(entries) = owner.get_transcript_entries() {
                     if let Some(mut pending) = entries.into_iter().find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(local_entry_id.as_str())) {
                         if let Some(object) = pending.as_object_mut() {

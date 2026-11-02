@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–7
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–10
 
 ## Context and goal
 
@@ -199,3 +199,90 @@ restart. The focused gate expands to 20 Human behaviors and preserves four
 Agent nonce cases. A separate saturation/32-page boundary, UI page-cache and
 late-ack competition batch remains required, as do service deployment and
 independent full acceptance. Old-H success is not evidence for this H.
+
+### Round 10 history, settlement and consumer continuity (NMR-23 through NMR-28)
+
+The starting candidate is `d24783f4c000f765c8f65b58517f25753c5a20a3`,
+run `41421314346`. Its run and job state must be read directly; a queued run
+has no passing evidence. Preserve the complete message-job logs and actual
+test counts. Repair a failed public contract before advancing dependent
+consumers. The following behavior is part of the existing Session/Transcript
+and Electron/renderer projections, without a new domain owner or data store.
+
+- NMR-23: Bind an ascending history response to the requested `afterId`,
+  `historyCursor` mode and page boundary. A missing, contradictory or
+  non-progressing cursor cannot advance durable coverage. Exactly 6,400 rows
+  in 32 full 200-row pages consumes the call budget without a 33rd request;
+  after restart, resume from the persisted highest covered ID, including the
+  final short/empty page. Duplicate rows do not change canonical identity or
+  order. Page application must not reread and parse the entire persisted
+  transcript for each row. A page-local snapshot may be reused only while
+  the existing conversation mutation lock excludes competing staging and
+  settlement writes; update that snapshot after each durable write. Retain
+  per-row admission/resource checks and advance coverage only after the page
+  has been applied successfully. The 6,400-row fixture retains its bounded
+  inter-request deadline so repeated full-history work is not hidden by a
+  relaxed timeout. A response contract test is not proof of Worker deployment.
+- NMR-24: History GET application and reaction read/intent/POST/settlement
+  for one Human conversation use the existing conversation mutation lock.
+  Two overlapping toggles must derive their desired states serially from
+  durable state; an intervening stale GET cannot undo the settled reaction.
+  Failed or mismatched acknowledgements retain the existing durable intent
+  for identical-state retry across restart. Other conversations remain
+  independent and all existing authorization checks stay in force.
+- NMR-25: A send POST may remain in flight while history discovers its
+  accepted canonical message. Reconcile its eventual success or transport
+  failure under the same existing conversation lock. A valid late reply
+  must still pass participant, nonce and immutable dispatch-identity checks,
+  but must not overwrite newer persisted receipts or reactions. A transport
+  failure after a matching durable send settlement must return that settled
+  entry without restoring failed/pending state. An unmatched send retains
+  ordinary durable error/retry behavior. A malformed/conflicting success
+  response remains an error, even if a row already exists; do not hide a
+  semantic admission failure as a successful transport recovery.
+  Bind dispatch to the Host's authenticated Human identity before any message
+  or resource POST and recheck the request credential before consuming its
+  response; a same-issuer account change must not send or settle another
+  account's content, including through late-transport recovery.
+  Compare receipt freshness as parsed RFC3339 instants, including offsets and
+  fractional seconds; lexical string ordering cannot establish monotonicity.
+  An invalid nonempty incoming receipt must fail admission before resource
+  access or any durable row/coverage change. A valid receipt may repair a
+  malformed legacy stored value; omitted receipts preserve stored state.
+- NMR-26: `ProductionRenderer` keeps one account/conversation-scoped
+  Transcript cache. Initial, latest-tail and older-page responses merge by
+  canonical entry ID and canonical order, preserving already loaded older
+  pages and live appends. Events received after a page request began take
+  precedence over that response for the affected entry. Refreshes of older
+  messages reach their cached page rather than requiring the message to be
+  in the tail. Clear, conversation deletion, account change and superseded
+  request generations fence every in-flight page result; they cannot
+  repopulate cleared or foreign state. A failed load preserves valid cached
+  content and remains retryable. Existing Agent entry and streaming behavior
+  continues through the same cache and component roots.
+- NMR-27: The shipping Electron carrier forwards the existing transcript
+  page cursors and native Human commands/events unchanged through the
+  canonical Host bridge. Its tests exercise actual carrier methods with
+  controlled bridge responses: pagination, stable IDs, edits/deletes,
+  reactions, read receipts, error propagation and subscription disposal.
+  Where a contract is deliberately unsupported, retain the existing explicit
+  error; do not invent fallback success or a second HTTP/store owner.
+- NMR-28: Reuse `native-service-contracts.yml` for focused renderer and
+  Electron behavior gates. Bind checkout, commands, logs and machine-readable
+  results to the exact H; require nonzero executed tests and fail on missing,
+  failed or skipped selected cases. Preserve the Human/Agent and shipping
+  compile gates. All executable checks remain GitHub Actions only.
+
+| Criterion | Required evidence |
+| --- | --- |
+| NMR-AC-16 | Actual Host/SQLite/loopback execution proves the 6,400/32-page restart boundary, cursor rejection, concurrent reaction ordering, delayed successful and failed send settlement, and pure-reopen persistence. Existing security/nonce negatives continue to execute. |
+| NMR-AC-17 | Renderer behavior tests exercise initial/older/tail merges, event-versus-page races, old-entry refresh, duplicate IDs, clear and account/conversation fencing, failed-load recovery and existing Agent state preservation. Carrier behavior tests prove the unchanged command/page/event boundary and error/disposal behavior. |
+| NMR-AC-18 | Both required native message jobs and the focused UI/Electron jobs terminate successfully at the frozen candidate, with full logs and actual nonzero passing case counts. Prior H, unexecuted authored cases and fixture-only evidence cannot close the new candidate. |
+| NMR-AC-19 | Separately bind the compatible backend source commit to an observed production Worker version/deployment record and execute authenticated `afterId=0` ascending multi-page traversal against that deployment. Record request mode/cursor/order/uniqueness and authorized participant scope without exposing credentials or private message bodies. Missing deployment identity, compatible source, authorized account or real pages remains not accepted; mocks and a backend CI pass do not qualify. |
+
+Rollback is a normal code revert on the same owners; no user database,
+credentials or resource deletion is authorized. These gates qualify this
+batch only. Packaged visual/a11y/platform evidence, source/legal closure,
+complete Bot regression, upgrade/rollback, soak and independent ACCEPT remain
+required for final FBCP/TDRP acceptance.
+

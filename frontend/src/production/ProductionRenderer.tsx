@@ -46,6 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
+import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -325,99 +326,6 @@ function optimisticAcknowledgementEntries(nonce: string, attachments: readonly {
     { id: `pending-${nonce}`, kind: "message" as const, clientNonce: nonce },
     ...attachments.map((_, index) => ({ id: `pending-${nonce}:attachment-${index}`, kind: "user-attachment" as const, clientNonce: nonce }))
   ];
-}
-
-function mergeTranscriptAttachments(
-  current: readonly DraftAttachment[] | undefined,
-  incoming: readonly DraftAttachment[] | undefined
-): DraftAttachment[] {
-  const merged = [...(current ?? [])];
-  for (const attachment of incoming ?? []) {
-    const index = merged.findIndex((candidate) => candidate.path === attachment.path);
-    if (index < 0) merged.push(attachment);
-    else merged[index] = { ...merged[index], ...attachment };
-  }
-  return merged;
-}
-
-function mergeAuthoritativeTranscriptMessage(
-  current: TranscriptMessage,
-  incoming: TranscriptMessage,
-  options: { preserveCurrentId?: boolean } = {}
-): TranscriptMessage {
-  return {
-    ...current,
-    ...incoming,
-    id: options.preserveCurrentId ? current.id : incoming.id,
-    text: incoming.text.length > 0 ? incoming.text : current.text,
-    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
-    clientNonce: incoming.clientNonce ?? current.clientNonce,
-    delivery: incoming.delivery ?? current.delivery,
-  };
-}
-
-function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
-  if (left.id === right.id) return true;
-  return left.kind === "message"
-    && right.kind === "message"
-    && left.clientNonce != null
-    && right.clientNonce != null
-    && left.clientNonce === right.clientNonce;
-}
-
-function reconcileAuthoritativeTranscriptBaseline(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-): ConversationTranscriptEntry[] {
-  const baseline = incoming.map((entry) => {
-    if (entry.kind !== "message") return entry;
-    const previous = current.find((candidate): candidate is TranscriptMessage =>
-      candidate.kind === "message"
-      && (
-        candidate.id === entry.id
-        || (entry.clientNonce != null && candidate.clientNonce === entry.clientNonce)
-      )
-    );
-    return previous == null ? entry : mergeAuthoritativeTranscriptMessage(previous, entry);
-  });
-  const unresolvedOptimistic = current.filter((entry): entry is TranscriptMessage =>
-    entry.kind === "message"
-    && entry.role === "user"
-    && entry.clientNonce != null
-    && entry.id.startsWith("pending-")
-    && !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, entry))
-  );
-  return [...baseline, ...unresolvedOptimistic];
-}
-
-/**
- * The transcript feed may deliver an appended/updated event before its initial
- * snapshot when the renderer subscribes during an active turn. A snapshot is
- * authoritative for older history, but it must not erase a newer live event
- * that this exact feed subscription already observed.
- */
-function reconcileTranscriptFeedBaseline(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-  preBaselineEntryIds: ReadonlySet<string>,
-): ConversationTranscriptEntry[] {
-  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedAfterSnapshot = current.filter((entry) =>
-    preBaselineEntryIds.has(entry.id)
-    && !baseline.some((candidate) => transcriptEntriesCorrelate(candidate, entry))
-  );
-  return [...baseline, ...arrivedAfterSnapshot];
-}
-
-function reconcileLateInitialTranscriptPage(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-): ConversationTranscriptEntry[] {
-  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedWhileLoading = current.filter((currentEntry) =>
-    !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, currentEntry))
-  );
-  return [...baseline, ...arrivedWhileLoading];
 }
 
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
@@ -1064,6 +972,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const pinnedStateVersionRef = useRef(0);
   const rebuildRevisionRef = useRef(0);
   const entriesByAgentRef = useRef(entriesByAgent);
+  // Rows remain in entriesByAgent; only the exclusive history cursor is cached here.
+  const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number }>());
+  const pendingTranscriptReadsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
   const transportRef = useRef<TransportState>(transport);
   transportRef.current = transport;
   activeAgentIdRef.current = activeAgentId;
@@ -1118,6 +1029,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         ? await client.call("getAgentTranscriptTail", { id, limit, beforeSeq })
         : await client.call("getHumanConversationTranscriptTail", { conversationId: id, limit, beforeSeq });
       return projectTranscriptPageResult(page, agentName, id);
+    },
+    onPageApplied: ({ accountSlot, agentId }, page) => {
+      const accountNow = accountRef.current;
+      const liveSlot = accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null;
+      if (accountSlot == null || liveSlot !== accountSlot) return;
+      transcriptHistoryCursorsRef.current.set(agentId, { accountSlot, nextBeforeSeq: page.nextBeforeSeq });
+      setEntriesByAgent((current) => ({
+        ...current,
+        [agentId]: mergeOlderTranscriptEntries(current[agentId] ?? [], page.entries),
+      }));
     }
   }));
   useStrictModeSafeDisposal(transcriptPaginationController);
@@ -1641,6 +1562,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   );
   useEffect(() => {
     transcriptPaginationController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
+    const cachedCursor = transcriptHistoryCursorsRef.current.get(activeAgentId);
+    if (cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot
+      && entriesByAgentRef.current[activeAgentId] != null
+      && transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
+      transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: cachedCursor.nextBeforeSeq });
+    }
   }, [activeAgentId, transcriptAccountSlot, transcriptPaginationController]);
   useEffect(() => {
     replyThreadController.setScope({ accountSlot: transcriptAccountSlot, agentId: activeAgentId.length > 0 ? activeAgentId : null });
@@ -2619,11 +2546,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           // leaving the workspace permanently unloaded until the user changes chats.
           void openAgentRef.current(activeHumanId);
         } else if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
+          const accountNow = accountRef.current;
+          const requestGeneration = openAgentRequestGenerationRef.current;
+          const pendingRead: TranscriptReadUpdateBuffer = {
+            accountSlot: accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null,
+            agentId: activeHumanId,
+            isCurrent: () => isCurrent()
+              && selectionStore.get().currentAgentId === activeHumanId
+              && openAgentRequestGenerationRef.current === requestGeneration,
+            updates: new Map(),
+          };
+          pendingTranscriptReadsRef.current.add(pendingRead);
           try {
+            const entriesAtRequest = entriesByAgentRef.current[activeHumanId] ?? [];
             const transcriptValue = await client.call("getHumanConversationTranscript", {
               conversationId: activeHumanId
             });
-            if (isCurrent() && activeAgentIdRef.current === activeHumanId) {
+            if (pendingRead.isCurrent()) {
               const projectedEntries = projectHumanConversationTranscript(
                 transcriptValue,
                 activeHuman.name,
@@ -2631,18 +2570,32 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               );
               setEntriesByAgent((current) => ({
                 ...current,
-                [activeHumanId]: reconcileAuthoritativeTranscriptBaseline(
+                [activeHumanId]: applyTranscriptReadUpdates(reconcileTranscriptRefresh(
                   current[activeHumanId] ?? [],
-                  projectedEntries
-                )
+                  projectedEntries,
+                  entriesAtRequest,
+                ), pendingRead.updates)
               }));
+              const accountNow = accountRef.current;
+              if (accountNow?.kind === "logged-in") {
+                transcriptHistoryCursorsRef.current.set(activeHumanId, {
+                  accountSlot: accountNow.authId ?? accountNow.email ?? "account",
+                });
+              }
+              // This command returns the complete durable transcript. Cancel an
+              // older/initial read and remove stale page copies; the root cache owns all rows.
+              openAgentRequestGenerationRef.current += 1;
+              pendingTranscriptReadsRef.current.clear();
+              transcriptPaginationController.installInitialPage({ entries: [] });
             }
           } catch (error) {
-            if (isCurrent()) {
+            if (pendingRead.isCurrent()) {
               setNotice(error instanceof Error
                 ? `Human transcript refresh unavailable: ${error.message}`
                 : `Human transcript refresh unavailable: ${String(error)}`);
             }
+          } finally {
+            pendingTranscriptReadsRef.current.delete(pendingRead);
           }
         }
       })();
@@ -2657,7 +2610,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } finally {
       if (isCurrent()) setIsRosterRetrying(false);
     }
-  }, [client, reconcileCompleteRosterSelection]);
+  }, [client, reconcileCompleteRosterSelection, selectionStore, transcriptPaginationController]);
 
   const [connectionController] = useState(() => client == null
     ? null
@@ -2699,24 +2652,46 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountScopeGeneration = accountScopeGenerationRef.current;
     const transportScopeGeneration = transportScopeGenerationRef.current;
     const requestGeneration = ++openAgentRequestGenerationRef.current;
+    pendingTranscriptReadsRef.current.clear();
     if (accountRef.current?.kind !== "logged-in") return;
     setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
-    const hasLoadedEntries = entriesByAgentRef.current[agentId] != null;
+    const cachedCursor = transcriptHistoryCursorsRef.current.get(agentId);
+    const hasLoadedEntries = entriesByAgentRef.current[agentId] != null
+      && cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot;
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
     selectionStore.select(agentId);
     setOverlay(null);
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
-    if (hasLoadedEntries) selectionStore.settle(agentId);
+    if (hasLoadedEntries) {
+      // Reopening a cached conversation must restore its next page as well as
+      // its rows. Scope changes deliberately discard only the active request.
+      transcriptPaginationController.installInitialPage({
+        entries: [],
+        nextBeforeSeq: cachedCursor?.nextBeforeSeq,
+      });
+      selectionStore.settle(agentId);
+    }
     if (hasLoadedEntries || client == null) {
       if (client == null) selectionStore.settle(agentId);
       return;
     }
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
     const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
+    const pendingRead: TranscriptReadUpdateBuffer = {
+      accountSlot: transcriptAccountSlot,
+      agentId,
+      isCurrent: () => accountScopeGenerationRef.current === accountScopeGeneration
+        && openAgentRequestGenerationRef.current === requestGeneration
+        && selectionStore.get().currentAgentId === agentId
+        && (humanConversation != null || transportScopeGenerationRef.current === transportScopeGeneration)
+        && accountRef.current?.kind === "logged-in",
+      updates: new Map(),
+    };
     try {
       let page: unknown;
       if (humanConversation == null) {
+        pendingTranscriptReadsRef.current.add(pendingRead);
         page = await client.call("openAgentTail", { id: agentId, limit: 200 });
       } else {
         if (transportRef.current === "connected") {
@@ -2726,36 +2701,38 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
           }
         }
+        if (!pendingRead.isCurrent()) return;
+        pendingTranscriptReadsRef.current.add(pendingRead);
         page = await client.call("getHumanConversationTranscriptTail", { conversationId: agentId, limit: 200 });
       }
       // Human conversations are read from the Host-local durable Session store.
       // A transport ready/reconnect notification may advance the Agent transport
       // generation while this local read is in flight; that must not discard an
       // otherwise current Human transcript. Agent tail reads remain transport-fenced.
-      if (accountScopeGenerationRef.current !== accountScopeGeneration
-        || openAgentRequestGenerationRef.current !== requestGeneration
-        || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
-        || accountRef.current?.kind !== "logged-in") return;
+      if (!pendingRead.isCurrent()) return;
       const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
       setEntriesByAgent((current) => ({
         ...current,
-        // Initial reads start only because this conversation had no loaded
-        // entries. Anything present now arrived while the request was in flight
-        // and must survive a stale initial page response.
-        [agentId]: reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries)
+        // Preserve canonical rows already projected by the feed, then apply
+        // events captured during this read over both snapshot projections.
+        [agentId]: applyTranscriptReadUpdates(reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries), pendingRead.updates)
       }));
-      transcriptPaginationController.installInitialPage(projectedPage);
+      if (transcriptAccountSlot != null) transcriptHistoryCursorsRef.current.set(agentId, {
+        accountSlot: transcriptAccountSlot,
+        nextBeforeSeq: projectedPage.nextBeforeSeq,
+      });
+      // The root projection already contains the tail and concurrent events.
+      transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: projectedPage.nextBeforeSeq });
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     } catch {
-      if (accountScopeGenerationRef.current !== accountScopeGeneration
-        || openAgentRequestGenerationRef.current !== requestGeneration
-        || (humanConversation == null && transportScopeGenerationRef.current !== transportScopeGeneration)
-        || accountRef.current?.kind !== "logged-in") return;
+      if (!pendingRead.isCurrent()) return;
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError({ agentId, accountScopeGeneration });
+    } finally {
+      pendingTranscriptReadsRef.current.delete(pendingRead);
     }
   }, [client, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
@@ -2842,6 +2819,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (projected != null) setAgents((current) => [projected, ...current.filter((agent) => agent.id !== projected.id)].sort((a, b) => b.updatedAt - a.updatedAt));
     });
     const transcriptBaselineSeen = new Set<string>();
+    const entriesAtFeedStart = entriesByAgentRef.current;
     const preBaselineFeedEntryIds = new Map<string, Set<string>>();
     const rememberPreBaselineFeedEntry = (ownerId: string, entryId: string) => {
       if (transcriptBaselineSeen.has(ownerId)) return;
@@ -2853,7 +2831,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       onBaseline: ({ agentId: ownerId, entries: rawEntries }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-        const projectedEntries = projectTranscriptFeedEntries(rawEntries, owner?.name ?? UI_TEXT.title, ownerId);
+        let projectedEntries = projectTranscriptFeedEntries(rawEntries, owner?.name ?? UI_TEXT.title, ownerId);
+        for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
+          projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
+        }
         for (const entry of projectedEntries) {
           if (entry.kind !== "message" || entry.clientNonce == null) continue;
           acknowledgementController.ingestTranscriptEvent({
@@ -2869,7 +2850,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const preserveEntryIds = new Set(preBaselineFeedEntryIds.get(ownerId) ?? []);
         setEntriesByAgent((current) => ({
           ...current,
-          [ownerId]: reconcileTranscriptFeedBaseline(current[ownerId] ?? [], projectedEntries, preserveEntryIds)
+          [ownerId]: reconcileTranscriptTail(current[ownerId] ?? [], projectedEntries, preserveEntryIds, entriesAtFeedStart[ownerId] ?? [])
         }));
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
@@ -2880,6 +2861,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
         if (projected == null || !ownerId) return;
         rememberPreBaselineFeedEntry(ownerId, projected.id);
+        for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
+          read.updates.set(projected.id, projected);
+        }
+        transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
         setEntriesByAgent((current) => {
           const existing = current[ownerId] ?? [];
           if (!existing.some((entry) => entry.id === projected.id)) return current;
@@ -2897,13 +2882,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
+        transcriptHistoryCursorsRef.current.delete(ownerId);
+        for (const read of pendingTranscriptReadsRef.current) {
+          if (read.agentId === ownerId) pendingTranscriptReadsRef.current.delete(read);
+        }
         setEntriesByAgent((current) => {
           if (!(ownerId in current)) return current;
           const next = { ...current };
           delete next[ownerId];
           return next;
         });
-        if (activeAgentIdRef.current !== ownerId) return;
+        if (activeAgentIdRef.current !== ownerId && transcriptPaginationController.getSnapshot().agentId !== ownerId) return;
         // A pending first-page response must never repopulate a cleared
         // transcript after its authoritative clear event.
         openAgentRequestGenerationRef.current += 1;
@@ -2916,6 +2905,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
       if (projected == null || !ownerId) return;
       rememberPreBaselineFeedEntry(ownerId, projected.id);
+      for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
+        read.updates.set(projected.id, projected);
+      }
+      transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
       const clientNonce = event && typeof event === "object" && "clientNonce" in event && typeof event.clientNonce === "string" ? event.clientNonce : null;
       const acknowledgementBefore = clientNonce == null ? null : acknowledgementController.getSnapshot().records.find((record) => record.nonce === clientNonce || record.priorNonces.includes(clientNonce));
       const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
@@ -3262,6 +3255,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         humanConversationsRef.current = [];
         setHumanConversations([]);
         setAgents([]); setHasLoadedAgents(false); setActiveAgentId(""); setEntriesByAgent({});
+        transcriptHistoryCursorsRef.current.clear();
+        pendingTranscriptReadsRef.current.clear();
+        transcriptPaginationController.reset();
         setPrivacyBlocked(false);
         setRosterLoadFailed(false);
         setRosterFailure(null);
@@ -3713,7 +3709,22 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const deleteAgentById = async (agentId: string) => {
     if (client == null) throw new Error("Coordinator unavailable");
+    const accountScopeGeneration = accountScopeGenerationRef.current;
     await client.call("deleteAgents", { ids: [agentId] });
+    if (accountScopeGenerationRef.current !== accountScopeGeneration) return;
+    transcriptHistoryCursorsRef.current.delete(agentId);
+    for (const read of pendingTranscriptReadsRef.current) {
+      if (read.agentId === agentId) pendingTranscriptReadsRef.current.delete(read);
+    }
+    setEntriesByAgent((current) => {
+      const next = { ...current };
+      delete next[agentId];
+      return next;
+    });
+    if (transcriptPaginationController.getSnapshot().agentId === agentId) {
+      openAgentRequestGenerationRef.current += 1;
+      transcriptPaginationController.reset();
+    }
     const remaining = agentsRef.current.filter((agent) => agent.id !== agentId);
     setAgents(remaining);
     const remainingConversations = [...humanConversationsRef.current, ...remaining].sort((left, right) => right.updatedAt - left.updatedAt);

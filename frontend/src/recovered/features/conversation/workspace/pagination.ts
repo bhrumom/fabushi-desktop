@@ -55,6 +55,7 @@ export interface TranscriptPaginationRootHandoff {
   subscribe(listener: () => void): () => void;
   setScope(accountSlot: string | null, agentId: string | null): void;
   installInitialPage(page: TranscriptHistoryPage): boolean;
+  ingestEntryUpdate(accountSlot: string | null, agentId: string, entry: ConversationTranscriptEntry): void;
   loadOlder(): Promise<void>;
   bindViewport(viewport: TranscriptViewport | null): void;
   onEntriesCommitted(): boolean;
@@ -67,6 +68,8 @@ export interface TranscriptPaginationControllerOptions {
   pageLimit?: number;
   accountSlot?: string | null;
   agentId?: string | null;
+  /** Commit accepted older rows to the root's existing conversation cache. */
+  onPageApplied?(scope: { accountSlot: string | null; agentId: string }, page: TranscriptHistoryPage): void;
 }
 
 const DEFAULT_PAGE_LIMIT = 200;
@@ -121,6 +124,7 @@ export function createTranscriptPaginationController(
   let pageGeneration = 0;
   let requestGeneration = 0;
   let inFlight: Promise<void> | null = null;
+  const updatesDuringRequest = new Map<string, ConversationTranscriptEntry>();
   let viewport: TranscriptViewport | null = null;
   let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number } | null = null;
   let disposed = false;
@@ -155,6 +159,7 @@ export function createTranscriptPaginationController(
     cursor = EMPTY_CURSOR;
     olderFailure = null;
     pendingAnchor = null;
+    updatesDuringRequest.clear();
   };
 
   return {
@@ -183,12 +188,21 @@ export function createTranscriptPaginationController(
       pageGeneration += 1;
       requestGeneration += 1;
       inFlight = null;
+      updatesDuringRequest.clear();
       entries = uniqueEntries(page.entries);
       cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
       olderFailure = null;
       pendingAnchor = null;
       emit();
       return true;
+    },
+
+    ingestEntryUpdate(updateAccountSlot, ownerId, entry) {
+      if (disposed || updateAccountSlot !== accountSlot || ownerId !== agentId) return;
+      if (inFlight != null) updatesDuringRequest.set(entry.id, entry);
+      if (!entries.some((candidate) => candidate.id === entry.id)) return;
+      entries = entries.map((candidate) => candidate.id === entry.id ? entry : candidate);
+      emit();
     },
 
     loadOlder() {
@@ -198,6 +212,7 @@ export function createTranscriptPaginationController(
       const requestId = ++requestGeneration;
       const requestPageGeneration = pageGeneration;
       const requestAgentId = agentId;
+      const requestAccountSlot = accountSlot;
       const beforeSeq = cursor.beforeSeq;
       if (viewport != null && Number.isFinite(viewport.scrollTop) && Number.isFinite(viewport.scrollHeight)) {
         pendingAnchor = {
@@ -208,14 +223,24 @@ export function createTranscriptPaginationController(
         };
       } else pendingAnchor = null;
       olderFailure = null;
+      updatesDuringRequest.clear();
 
       const request = (async () => {
+        // Defer invocation until inFlight is assigned, including synchronous
+        // fetch failures; a rejected read must remain retryable.
+        await Promise.resolve();
         try {
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
           const page = await options.fetchPage({ id: requestAgentId, limit: pageLimit, beforeSeq });
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
-          entries = mergeOlderTranscriptEntries(entries, page.entries);
+          const refreshedPage = page.entries.map((entry) => updatesDuringRequest.get(entry.id) ?? entry);
+          entries = mergeOlderTranscriptEntries(entries, refreshedPage);
           cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
           olderFailure = null;
+          options.onPageApplied?.({ accountSlot: requestAccountSlot, agentId: requestAgentId }, {
+            entries,
+            nextBeforeSeq: page.nextBeforeSeq,
+          });
           emit();
         } catch (error) {
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
@@ -228,6 +253,7 @@ export function createTranscriptPaginationController(
         } finally {
           if (requestId === requestGeneration) {
             inFlight = null;
+            updatesDuringRequest.clear();
             if (!disposed) emit();
           }
         }

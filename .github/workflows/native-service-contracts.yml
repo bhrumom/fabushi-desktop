@@ -7,6 +7,13 @@ on:
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
+      - 'frontend/src/production/ProductionRenderer.tsx'
+      - 'frontend/src/production/transcript-projection*'
+      - 'frontend/src/recovered/features/conversation/workspace/pagination*'
+      - 'source/electron-main/coordinator/rust-coordinator-carrier*'
+      - 'desktop/package.json'
+      - 'desktop/package-lock.json'
+      - 'desktop/scripts/build-electron-runtime.mjs'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
@@ -126,7 +133,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 22 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 30 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
       - name: Preserve Agent send nonce boundary
         shell: bash
         run: |
@@ -217,4 +224,101 @@ jobs:
           name: native-message-shipping-compile-${{ github.sha }}
           path: artifacts/native-message-shipping
           if-no-files-found: error
+  native-message-ui:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact renderer source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message-ui
+          git rev-parse HEAD > artifacts/native-message-ui/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-26; real projection/pagination modules with controlled bridge; packaged visual/a11y acceptance pending' > artifacts/native-message-ui/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Transcript pagination and refresh behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/transcript-projection.contract.test.ts 2>&1 | tee artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 16' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 16' artifacts/native-message-ui/transcript.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
+      - name: Compile actual production renderer
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          npm run build:renderer 2>&1 | tee ../artifacts/native-message-ui/renderer-build.log
+      - name: Preserve exact renderer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-ui-${{ github.sha }}
+          path: artifacts/native-message-ui
+          if-no-files-found: error
+  native-message-electron:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact Electron carrier source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/native-message-electron
+          git rev-parse HEAD > artifacts/native-message-electron/target-sha.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-27; actual carrier with controlled ports/child; no live Host/service or packaged acceptance claim' > artifacts/native-message-electron/scope.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Native carrier command, event and disposal contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap source/electron-main/coordinator/rust-coordinator-carrier.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/carrier.log
+          grep -Fx '# tests 10' artifacts/native-message-electron/carrier.log
+          grep -Fx '# pass 10' artifacts/native-message-electron/carrier.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/carrier.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/carrier.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/carrier.log
+      - name: Compile actual Electron main, preload and carrier
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          npm run build:electron 2>&1 | tee ../artifacts/native-message-electron/electron-build.log
+      - name: Preserve exact Electron evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-message-electron-${{ github.sha }}
+          path: artifacts/native-message-electron
+          if-no-files-found: error
+
 
