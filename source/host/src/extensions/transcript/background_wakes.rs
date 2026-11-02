@@ -531,13 +531,42 @@ impl<T> BackgroundWakes<T> {
     /// Call under the same lock as enqueue. After `None`, the worker must return
     /// without clearing revival again: a successor may already own it.
     pub fn take_pending_inbound_or_end_revival(&mut self, agent_id: &str) -> Option<Vec<T>> {
-        if self.closed {
+        Self::take_pending_or_end_revival(
+            self.closed,
+            &mut self.pending_inbound,
+            &mut self.reviving_inbound_agent_ids,
+            agent_id,
+        )
+    }
+
+    /// Claim the next delivery-failure batch or release idle revival ownership.
+    /// Call under the same lock as enqueue. After `None`, the worker must return
+    /// without clearing revival again: a successor may already own it.
+    pub fn take_pending_channel_failures_or_end_revival(
+        &mut self,
+        agent_id: &str,
+    ) -> Option<Vec<T>> {
+        Self::take_pending_or_end_revival(
+            self.closed,
+            &mut self.pending_channel_failures,
+            &mut self.reviving_channel_failure_agent_ids,
+            agent_id,
+        )
+    }
+
+    fn take_pending_or_end_revival(
+        closed: bool,
+        pending: &mut HashMap<String, Vec<T>>,
+        reviving: &mut HashSet<String>,
+        agent_id: &str,
+    ) -> Option<Vec<T>> {
+        if closed {
             return None;
         }
-        match self.pending_inbound.remove(agent_id) {
+        match pending.remove(agent_id) {
             Some(pending) if !pending.is_empty() => Some(pending),
             _ => {
-                self.reviving_inbound_agent_ids.remove(agent_id);
+                reviving.remove(agent_id);
                 None
             }
         }

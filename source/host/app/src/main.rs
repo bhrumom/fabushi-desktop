@@ -6909,7 +6909,7 @@ fn publish_channel_activity(
     }
 }
 
-fn drain_channel_inbound_batches<B>(
+fn drain_channel_revival_batches<B>(
     mut take_or_end: impl FnMut() -> Option<B>,
     mut process: impl FnMut(B) -> bool,
     stop_nonempty: impl FnOnce(),
@@ -6935,7 +6935,7 @@ fn run_channel_inbound_revival_worker(
     initial_work: InboundAppendWork<serde_json::Value>,
 ) {
     let mut initial_work = Some(initial_work);
-    drain_channel_inbound_batches(
+    drain_channel_revival_batches(
         || {
             if let Some(work) = initial_work.take() {
                 return Some(work);
@@ -7204,122 +7204,123 @@ fn run_channel_failure_revival_worker(
     wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
     agent_id: String,
 ) {
-    loop {
-        let mut failures = {
+    drain_channel_revival_batches(
+        || {
             let mut state = wakes
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            BackgroundWakes::take_pending(&mut state.pending_channel_failures, &agent_id)
-        };
-        if failures.is_empty() {
-            break;
-        }
-
-        let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
-            Ok(Some(summary)) => summary,
-            Ok(None) => {
+            state.take_pending_channel_failures_or_end_revival(&agent_id)
+        },
+        |mut failures| {
+            let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
+                Ok(Some(summary)) => summary,
+                Ok(None) => {
+                    clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+                    return true;
+                }
+                Err(error) => {
+                    eprintln!(
+                        "mahayana-host channel_failure_resolve_failed agent={} error={error}",
+                        agent_id
+                    );
+                    requeue_channel_failures(&wakes, &agent_id, failures);
+                    return false;
+                }
+            };
+            if summary.is_group {
                 clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
-                continue;
+                return true;
             }
-            Err(error) => {
+            if let Err(error) = filter_current_channel_failure_provenance(
+                &deps,
+                &agent_id,
+                &mut failures,
+            ) {
                 eprintln!(
-                    "mahayana-host channel_failure_resolve_failed agent={} error={error}",
+                    "mahayana-host channel_failure_provenance_resolve_failed agent={} error={error}",
                     agent_id
                 );
                 requeue_channel_failures(&wakes, &agent_id, failures);
-                break;
+                return false;
             }
-        };
-        if summary.is_group {
-            clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
-            continue;
-        }
-        if let Err(error) = filter_current_channel_failure_provenance(
-            &deps,
-            &agent_id,
-            &mut failures,
-        ) {
-            eprintln!(
-                "mahayana-host channel_failure_provenance_resolve_failed agent={} error={error}",
-                agent_id
-            );
-            requeue_channel_failures(&wakes, &agent_id, failures);
-            break;
-        }
-        if failures.is_empty() {
-            continue;
-        }
-        let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
-            requeue_channel_failures(&wakes, &agent_id, failures);
-            break;
-        };
-        if deps.transcript_runtime.is_quiescing_for_upgrade() {
-            requeue_channel_failures(&wakes, &agent_id, failures);
-            break;
-        }
+            if failures.is_empty() {
+                return true;
+            }
+            let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                return false;
+            };
+            if deps.transcript_runtime.is_quiescing_for_upgrade() {
+                requeue_channel_failures(&wakes, &agent_id, failures);
+                return false;
+            }
 
-        let prompt = build_channel_delivery_failure_wake_prompt(&failures);
-        let widget_prompts = deps
-            .transcript_manager
-            .widget_responses()
-            .collect_unanswered_question_prompts(&agent_id)
-            .unwrap_or_default();
-        match run_local_background_revival_turn_with_context(
-            deps.clone(),
-            provider,
-            &agent_id,
-            "connector",
-            &prompt,
-            false,
-            "continue",
-            BackgroundRevivalContext {
-                selected_images: Vec::new(),
-                skipped_question_prompts: widget_prompts.skipped_question_prompts,
-                dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
-                ..BackgroundRevivalContext::default()
-            },
-        ) {
-            Ok(execution)
-                if !execution.aborted
-                    && !execution.quiesced_for_upgrade
-                    && execution.sent_message_count > 0 =>
-            {
-                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
-                let _ = roster.emit_agent_update(&agent_id);
-            }
-            Ok(_) => {
-                requeue_channel_failures(&wakes, &agent_id, failures);
-                break;
-            }
-            Err(error) => {
-                let classified_error = ProviderSessionError::Tool(error.clone());
-                let report = AgentErrorReport {
-                    source: "channel_failure".into(),
-                    conversation_id: agent_id.clone(),
-                    request_id: None,
-                    error: classify_agent_error(&classified_error),
-                    detail: Some(sand_error_detail(&error)),
-                };
-                if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
-                    eprintln!(
-                        "mahayana-host channel_failure_telemetry_failed agent={} error={telemetry_error}",
-                        agent_id
-                    );
+            let prompt = build_channel_delivery_failure_wake_prompt(&failures);
+            let widget_prompts = deps
+                .transcript_manager
+                .widget_responses()
+                .collect_unanswered_question_prompts(&agent_id)
+                .unwrap_or_default();
+            match run_local_background_revival_turn_with_context(
+                deps.clone(),
+                provider,
+                &agent_id,
+                "connector",
+                &prompt,
+                false,
+                "continue",
+                BackgroundRevivalContext {
+                    selected_images: Vec::new(),
+                    skipped_question_prompts: widget_prompts.skipped_question_prompts,
+                    dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+                    ..BackgroundRevivalContext::default()
+                },
+            ) {
+                Ok(execution)
+                    if !execution.aborted
+                        && !execution.quiesced_for_upgrade
+                        && execution.sent_message_count > 0 =>
+                {
+                    clear_durable_channel_failure_markers(&deps, &agent_id, &failures);
+                    let _ = roster.emit_agent_update(&agent_id);
                 }
-                let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
-                tray.title = "Delivery-failure follow-up failed".into();
-                deps.trays.push_error(tray);
-                requeue_channel_failures(&wakes, &agent_id, failures);
-                break;
+                Ok(_) => {
+                    requeue_channel_failures(&wakes, &agent_id, failures);
+                    return false;
+                }
+                Err(error) => {
+                    let classified_error = ProviderSessionError::Tool(error.clone());
+                    let report = AgentErrorReport {
+                        source: "channel_failure".into(),
+                        conversation_id: agent_id.clone(),
+                        request_id: None,
+                        error: classify_agent_error(&classified_error),
+                        detail: Some(sand_error_detail(&error)),
+                    };
+                    if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+                        eprintln!(
+                            "mahayana-host channel_failure_telemetry_failed agent={} error={telemetry_error}",
+                            agent_id
+                        );
+                    }
+                    let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
+                    tray.title = "Delivery-failure follow-up failed".into();
+                    deps.trays.push_error(tray);
+                    requeue_channel_failures(&wakes, &agent_id, failures);
+                    return false;
+                }
             }
-        }
-    }
-    let mut state = wakes
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    BackgroundWakes::<serde_json::Value>::end_revival(
-        &mut state.reviving_channel_failure_agent_ids,
-        &agent_id,
+            true
+        },
+        || {
+            let mut state = wakes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            BackgroundWakes::<serde_json::Value>::end_revival(
+                &mut state.reviving_channel_failure_agent_ids,
+                &agent_id,
+            );
+        },
     );
 }
 
@@ -17213,6 +17214,8 @@ mod tests {
     mod original_turn_recovery_tests;
     #[path = "channel_host_lane_tests.rs"]
     mod channel_host_lane_tests;
+    #[path = "channel_failure_handoff_tests.rs"]
+    mod channel_failure_handoff_tests;
     #[path = "automation_terminal_custody_tests.rs"]
     mod automation_terminal_custody_tests;
 
@@ -17229,7 +17232,7 @@ mod tests {
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
         AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
         background_revival_admission_args, listener_connect_resume_prompt,
-        BackgroundWakes, drain_channel_inbound_batches,
+        BackgroundWakes, drain_channel_revival_batches,
         starts_new_local_tool_direction,
         project_forever_box_status, reaction_gateway_args,
         ProductionSessionWorkers, TranscriptRunnerRegistry,
@@ -18805,7 +18808,7 @@ mod tests {
         let (returned_tx, returned_rx) = mpsc::channel();
         let predecessor_wakes = Arc::clone(&wakes);
         let predecessor = std::thread::spawn(move || {
-            drain_channel_inbound_batches(
+            drain_channel_revival_batches(
                 || {
                     let claimed = predecessor_wakes.lock().unwrap()
                         .take_pending_inbound_or_end_revival("agent-a");
@@ -18843,7 +18846,7 @@ mod tests {
             "returning predecessor must not clear a successor's revival bit");
 
         let mut batches = Vec::new();
-        drain_channel_inbound_batches(
+        drain_channel_revival_batches(
             || wakes.lock().unwrap().take_pending_inbound_or_end_revival("agent-a"),
             |batch| { batches.push(batch); true },
             || panic!("idle release is already complete; no stop cleanup is allowed"),
@@ -18870,7 +18873,7 @@ mod tests {
         }
         let mut processed = 0;
         let mut stopped = 0;
-        drain_channel_inbound_batches(
+        drain_channel_revival_batches(
             || wakes.lock().unwrap().take_pending_inbound_or_end_revival("agent-a"),
             |batch| {
                 processed += 1;

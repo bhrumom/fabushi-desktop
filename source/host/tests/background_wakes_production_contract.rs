@@ -165,6 +165,181 @@ fn channel_failure_queue_is_agent_scoped_and_revival_fenced() {
     );
 }
 
+fn channel_failure_idle_handoff_batch() -> Vec<Value> {
+    vec![
+        json!({
+            "addressToken":"slack:C1", "deliveryOperationId":"entry-first",
+            "markedAtMs":1000, "sessionKey":"session-a", "reason":"first failure"
+        }),
+        json!({
+            "addressToken":"discord:C2", "deliveryOperationId":"entry-second",
+            "markedAtMs":1001, "sessionKey":"session-a", "reason":"second failure"
+        }),
+    ]
+}
+
+#[test]
+fn channel_failure_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once() {
+    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
+    let mut producer = wakes.lock().expect("failure producer owns queue");
+    assert!(BackgroundWakes::<Value>::begin_revival(
+        &mut producer.reviving_channel_failure_agent_ids, "agent-a",
+    ));
+
+    let (claiming_tx, claiming_rx) = mpsc::channel();
+    let (claimed_tx, claimed_rx) = mpsc::channel();
+    let worker_wakes = Arc::clone(&wakes);
+    let worker = thread::spawn(move || {
+        claiming_tx.send(()).expect("announce failure batch claim");
+        let batch = worker_wakes.lock().expect("failure worker queue")
+            .take_pending_channel_failures_or_end_revival("agent-a");
+        claimed_tx.send(batch).expect("report failure batch claim");
+    });
+
+    // The producer owns the real mutex before the worker can check for idle.
+    claiming_rx.recv_timeout(Duration::from_secs(10)).expect("worker ready to claim");
+    let failures = channel_failure_idle_handoff_batch();
+    for failure in &failures {
+        BackgroundWakes::enqueue(&mut producer.pending_channel_failures, "agent-a", failure.clone());
+        assert!(!BackgroundWakes::<Value>::begin_revival(
+            &mut producer.reviving_channel_failure_agent_ids, "agent-a",
+        ), "the current failure worker owns both arrivals");
+    }
+    drop(producer);
+
+    assert_eq!(claimed_rx.recv_timeout(Duration::from_secs(10)).expect("claimed ordered failures"), Some(failures));
+    worker.join().expect("failure worker");
+    let mut state = wakes.lock().expect("failure queue after claim");
+    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
+    assert!(!state.pending_channel_failures.contains_key("agent-a"));
+    assert_eq!(state.take_pending_channel_failures_or_end_revival("agent-a"), None,
+        "the same batch cannot be claimed twice");
+    assert!(!state.reviving_channel_failure_agent_ids.contains("agent-a"));
+}
+
+#[test]
+fn channel_failure_idle_handoff_idle_wins_admits_one_successor_and_claims_batch_once() {
+    let wakes = Arc::new(Mutex::new(BackgroundWakes::<Value>::default()));
+    let mut retiring = wakes.lock().expect("retiring worker owns queue");
+    assert!(BackgroundWakes::<Value>::begin_revival(
+        &mut retiring.reviving_channel_failure_agent_ids, "agent-a",
+    ));
+
+    let (enqueuing_tx, enqueuing_rx) = mpsc::channel();
+    let (enqueued_tx, enqueued_rx) = mpsc::channel();
+    let producer_wakes = Arc::clone(&wakes);
+    let failures = channel_failure_idle_handoff_batch();
+    let producer_failures = failures.clone();
+    let producer = thread::spawn(move || {
+        enqueuing_tx.send(()).expect("announce failure enqueue");
+        let mut state = producer_wakes.lock().expect("failure producer queue");
+        let starts: Vec<_> = producer_failures.into_iter().map(|failure| {
+            BackgroundWakes::enqueue(&mut state.pending_channel_failures, "agent-a", failure);
+            BackgroundWakes::<Value>::begin_revival(
+                &mut state.reviving_channel_failure_agent_ids, "agent-a",
+            )
+        }).collect();
+        enqueued_tx.send(starts).expect("report failure worker admissions");
+    });
+
+    // The predecessor makes the empty-to-idle decision before enqueue can lock.
+    enqueuing_rx.recv_timeout(Duration::from_secs(10)).expect("producer ready to enqueue");
+    assert_eq!(retiring.take_pending_channel_failures_or_end_revival("agent-a"), None);
+    assert!(!retiring.reviving_channel_failure_agent_ids.contains("agent-a"));
+    drop(retiring);
+
+    assert_eq!(enqueued_rx.recv_timeout(Duration::from_secs(10)).expect("successor admissions"), vec![true, false]);
+    producer.join().expect("failure producer");
+    let mut successor = wakes.lock().expect("successor failure queue");
+    assert!(successor.reviving_channel_failure_agent_ids.contains("agent-a"));
+    assert_eq!(successor.take_pending_channel_failures_or_end_revival("agent-a"), Some(failures));
+    assert!(successor.reviving_channel_failure_agent_ids.contains("agent-a"));
+    assert_eq!(successor.take_pending_channel_failures_or_end_revival("agent-a"), None);
+    assert!(!successor.pending_channel_failures.contains_key("agent-a"));
+    assert!(!successor.reviving_channel_failure_agent_ids.contains("agent-a"));
+}
+
+#[test]
+fn channel_failure_idle_handoff_treats_stored_empty_batch_as_idle() {
+    let wakes = Mutex::new(BackgroundWakes::<Value>::default());
+    let mut state = wakes.lock().expect("failure queue");
+    state.pending_channel_failures.insert("agent-a".into(), Vec::new());
+    assert!(BackgroundWakes::<Value>::begin_revival(
+        &mut state.reviving_channel_failure_agent_ids, "agent-a",
+    ));
+
+    assert_eq!(state.take_pending_channel_failures_or_end_revival("agent-a"), None);
+    assert!(!state.pending_channel_failures.contains_key("agent-a"));
+    assert!(!state.reviving_channel_failure_agent_ids.contains("agent-a"));
+    let failure = json!({"deliveryOperationId":"next", "reason":"later failure"});
+    BackgroundWakes::enqueue(&mut state.pending_channel_failures, "agent-a", failure.clone());
+    assert!(BackgroundWakes::<Value>::begin_revival(
+        &mut state.reviving_channel_failure_agent_ids, "agent-a",
+    ));
+    assert_eq!(state.take_pending_channel_failures_or_end_revival("agent-a"), Some(vec![failure]));
+    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
+}
+
+#[test]
+fn channel_failure_idle_handoff_closed_owner_does_not_claim_late_work() {
+    let wakes = Mutex::new(BackgroundWakes::<Value>::default());
+    let mut state = wakes.lock().expect("failure queue");
+    state.close();
+    assert!(state.is_closed());
+
+    // Legacy static producers can still reach the public collections. A closed
+    // owner must not turn that late data into executable work in either wrapper.
+    BackgroundWakes::enqueue(&mut state.pending_channel_failures, "agent-a", json!({"failure":"late"}));
+    BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", json!({"inbound":"late"}));
+    BackgroundWakes::<Value>::begin_revival(&mut state.reviving_channel_failure_agent_ids, "agent-a");
+    BackgroundWakes::<Value>::begin_revival(&mut state.reviving_inbound_agent_ids, "agent-a");
+    assert_eq!(state.take_pending_channel_failures_or_end_revival("agent-a"), None);
+    assert_eq!(state.take_pending_inbound_or_end_revival("agent-a"), None);
+    assert!(state.is_closed());
+}
+
+#[test]
+fn channel_failure_idle_handoff_preserves_other_agents_and_wake_families() {
+    let wakes = Mutex::new(BackgroundWakes::<Value>::default());
+    let mut state = wakes.lock().expect("failure queue");
+    let inbound_work = state.enqueue_inbound_and_claim("agent-a", json!({"inbound":"active"}))
+        .expect("inbound enqueue").expect("active inbound claim");
+    for agent_id in ["agent-a", "agent-b"] {
+        BackgroundWakes::enqueue(&mut state.pending_inbound, agent_id, json!({"inbound":agent_id}));
+        BackgroundWakes::<Value>::begin_revival(&mut state.reviving_inbound_agent_ids, agent_id);
+        BackgroundWakes::enqueue(&mut state.pending_channel_failures, agent_id, json!({"failure":agent_id}));
+        BackgroundWakes::<Value>::begin_revival(&mut state.reviving_channel_failure_agent_ids, agent_id);
+        BackgroundWakes::enqueue(&mut state.pending_event_wakes, agent_id, json!({"event":agent_id}));
+        BackgroundWakes::<Value>::begin_revival(&mut state.reviving_event_agent_ids, agent_id);
+        state.dm_preempted_wake_agent_ids.insert(agent_id.into());
+    }
+    let unrelated_state = |state: &BackgroundWakes<Value>| {
+        (
+            state.pending_channel_failures.get("agent-b").cloned(),
+            state.reviving_channel_failure_agent_ids.contains("agent-b"),
+            state.pending_inbound.clone(),
+            state.reviving_inbound_agent_ids.clone(),
+            state.pending_event_wakes.clone(),
+            state.reviving_event_agent_ids.clone(),
+            state.dm_preempted_wake_agent_ids.clone(),
+        )
+    };
+    let expected_unrelated = unrelated_state(&state);
+
+    assert_eq!(state.take_pending_channel_failures_or_end_revival("agent-a"),
+        Some(vec![json!({"failure":"agent-a"})]));
+    assert!(state.reviving_channel_failure_agent_ids.contains("agent-a"));
+    assert_eq!(unrelated_state(&state), expected_unrelated);
+    assert!(state.owns_inbound_append("agent-a", &inbound_work));
+    assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::Active));
+
+    assert_eq!(state.take_pending_channel_failures_or_end_revival("agent-a"), None);
+    assert!(!state.reviving_channel_failure_agent_ids.contains("agent-a"));
+    assert_eq!(unrelated_state(&state), expected_unrelated);
+    assert!(state.owns_inbound_append("agent-a", &inbound_work));
+    assert_eq!(state.inbound_append_state("agent-a"), Some(InboundAppendState::Active));
+}
+
 #[test]
 fn inbound_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once() {
     let wakes = Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
@@ -1506,9 +1681,112 @@ fn inbound_image_wiring_oracle_accepts_slice_calls_and_rejects_missing_or_wrong_
     ));
 }
 
+fn channel_failure_shipping_worker(source: &str) -> Option<syn::ItemFn> {
+    let mut workers = syn::parse_file(source).ok()?.items.into_iter().filter_map(|item| {
+        match item {
+            syn::Item::Fn(function) if function.sig.ident == "run_channel_failure_revival_worker" => Some(function),
+            _ => None,
+        }
+    });
+    let worker = workers.next()?;
+    workers.next().is_none().then_some(worker)
+}
+
+// This checks the shipping wrapper's placement, not the shared drain's behavior.
+// The real queue/control concurrency tests independently cover that behavior.
+fn channel_failure_worker_has_terminal_drain(worker: &syn::ItemFn) -> bool {
+    fn unconditional(attributes: &[syn::Attribute]) -> bool {
+        !attributes.iter().any(|attr| attr.path().is_ident("cfg") || attr.path().is_ident("cfg_attr"))
+    }
+    let [syn::Stmt::Expr(syn::Expr::Call(drain), _)] = worker.block.stmts.as_slice() else {
+        return false;
+    };
+    if !unconditional(&worker.attrs) || !unconditional(&drain.attrs) || drain.args.len() != 3 {
+        return false;
+    }
+    if !matches!(drain.func.as_ref(), syn::Expr::Path(path)
+        if unconditional(&path.attrs) && path.qself.is_none() && path.path.is_ident("drain_channel_revival_batches"))
+    {
+        return false;
+    }
+    let syn::Expr::Closure(take) = &drain.args[0] else { return false; };
+    let syn::Expr::Block(take_body) = take.body.as_ref() else { return false; };
+    let Some(syn::Stmt::Expr(syn::Expr::MethodCall(claim), None)) = take_body.block.stmts.last() else {
+        return false;
+    };
+    if !unconditional(&take.attrs) || !take.inputs.is_empty() || !unconditional(&take_body.attrs)
+        || !unconditional(&claim.attrs) || claim.method != "take_pending_channel_failures_or_end_revival"
+    {
+        return false;
+    }
+    let syn::Expr::Closure(stop) = &drain.args[2] else { return false; };
+    let syn::Expr::Block(stop_body) = stop.body.as_ref() else { return false; };
+    let Some(syn::Stmt::Expr(syn::Expr::Call(cleanup), _)) = stop_body.block.stmts.last() else {
+        return false;
+    };
+    unconditional(&stop.attrs) && stop.inputs.is_empty() && unconditional(&stop_body.attrs)
+        && unconditional(&cleanup.attrs) && cleanup.args.len() == 2
+        && matches!(cleanup.func.as_ref(), syn::Expr::Path(path)
+            if unconditional(&path.attrs) && path.qself.is_none()
+                && path.path.segments.len() == 2
+                && path.path.segments[0].ident == "BackgroundWakes"
+                && path.path.segments[1].ident == "end_revival")
+}
+
+#[test]
+fn channel_failure_wiring_oracle_rejects_cleanup_after_idle_return() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    let mut worker = channel_failure_shipping_worker(SHIPPING_HOST).expect("one shipping failure worker");
+    assert!(channel_failure_worker_has_terminal_drain(&worker));
+
+    // Move the actual cleanup, keeping its sole call and the other callbacks.
+    // The old occurrence-count check accepted this successor-erasing wrapper.
+    let moved_cleanup = {
+        let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[0] else {
+            panic!("actual terminal drain call");
+        };
+        let syn::Expr::Closure(stop) = &mut drain.args[2] else { panic!("actual cleanup callback"); };
+        let cleanup = std::mem::replace(stop.body.as_mut(), syn::parse_str("{}").expect("empty callback body"));
+        let syn::Expr::Block(cleanup) = cleanup else { panic!("actual cleanup block"); };
+        cleanup.block.stmts
+    };
+    assert!(!moved_cleanup.is_empty(), "move the real cleanup rather than an empty control");
+    worker.block.stmts.extend(moved_cleanup);
+    assert!(!channel_failure_worker_has_terminal_drain(&worker),
+        "cleanup after the common drain can clear a successor and must be rejected");
+}
+
 #[test]
 fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+
+    let worker = channel_failure_shipping_worker(SHIPPING_HOST).expect("one shipping failure worker");
+    assert!(channel_failure_worker_has_terminal_drain(&worker),
+        "the common drain must be terminal and own its nonempty cleanup callback");
+
+    // A bounded wiring supplement; the actual shared drain's idle and pause
+    // behavior is exercised by shipping app tests with the real queue owner.
+    let failure_worker = SHIPPING_HOST
+        .split_once("fn run_channel_failure_revival_worker(")
+        .expect("shipping failure worker").1
+        .split_once("\nfn queue_channel_delivery_failure(")
+        .expect("failure worker boundary").0
+        .split_whitespace().collect::<String>();
+    let inbound_worker = SHIPPING_HOST
+        .split_once("fn run_channel_inbound_revival_worker(")
+        .expect("shipping inbound worker").1
+        .split_once("\nfn requeue_channel_failures(")
+        .expect("inbound worker boundary").0
+        .split_whitespace().collect::<String>();
+    for worker in [&failure_worker, &inbound_worker] {
+        assert_eq!(worker.matches("drain_channel_revival_batches(").count(), 1,
+            "both shipping workers must use the common drain control");
+    }
+    assert!(failure_worker.contains("state.take_pending_channel_failures_or_end_revival(&agent_id)"));
+    assert!(!failure_worker.contains("BackgroundWakes::take_pending("),
+        "failure worker cannot restore the separate empty-take path");
+    assert_eq!(failure_worker.matches("::end_revival(").count(), 1,
+        "only the nonempty-stop callback may clear failure revival");
 
     let send_sink = SHIPPING_HOST
         .find("struct ProductionSendMessageSink")
@@ -1549,14 +1827,14 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(SHIPPING_HOST.contains(
         "return Err(\"channel failure session provenance is unavailable\".into());"
     ));
-    assert!(SHIPPING_HOST.contains(
-        "Ok(None) => {\n                clear_durable_channel_failure_markers(&deps, &agent_id, &failures);\n                continue;\n            }"
+    assert!(failure_worker.contains(
+        "Ok(None)=>{clear_durable_channel_failure_markers(&deps,&agent_id,&failures);returntrue;}"
     ));
-    assert!(SHIPPING_HOST.contains(
-        "!execution.aborted\n                    && !execution.quiesced_for_upgrade\n                    && execution.sent_message_count > 0"
+    assert!(failure_worker.contains(
+        "!execution.aborted&&!execution.quiesced_for_upgrade&&execution.sent_message_count>0"
     ));
     assert!(SHIPPING_HOST.contains("requeue_channel_failures(&wakes, &agent_id, failures)"));
-    assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\".into();\n                deps.trays.push_error(tray);\n                requeue_channel_failures(&wakes, &agent_id, failures);\n                break;"));
+    assert!(failure_worker.contains("tray.title=\"Delivery-failurefollow-upfailed\".into();deps.trays.push_error(tray);requeue_channel_failures(&wakes,&agent_id,failures);returnfalse;"));
     assert!(SHIPPING_HOST.contains("tray.title = \"Message not delivered\""));
     assert!(SHIPPING_HOST.contains("tray.title = \"Delivery-failure follow-up failed\""));
     assert!(SHIPPING_HOST.contains("summary.is_group || summary.remote_room.is_some()"));

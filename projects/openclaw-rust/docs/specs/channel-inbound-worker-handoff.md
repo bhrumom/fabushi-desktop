@@ -709,3 +709,57 @@ final owner release and Unknown custody. Reuse only those read extents. The
 upstream recovery sweep, provider-health events, joined shutdown, durable
 ingress/reconciliation and full delivery remain open. Final-H source authority,
 scoped contracts and full G01–G12/AC01–AC24 remain required; no global flag moves.
+
+## Delivery-failure idle handoff — `OCRM-CHANNEL-FAILURE-IDLE-HANDOFF-v1`
+
+Base: `350b87058a4944a58d04b75195fdcf8aa1d042d9`; fixed U is unchanged.
+Decision **CFH-01 — FIX / IMPL_BUG**, established by production source review:
+`queue_channel_delivery_failure` enqueues and begins revival under one existing
+`BackgroundWakes` mutex, but `run_channel_failure_revival_worker` removes an
+empty batch before separately clearing revival. A failure enqueued between
+those locks observes the old worker, starts none, and remains stranded after
+that worker exits. This is independent of the original-turn receipt contract;
+its pending exact-H checks are not treated as passing evidence.
+
+The flow remains SendMessage/Host delivery failure → existing failure marker
+and `BackgroundWakes` → existing connector follow-up Runner → exact marker
+settlement. Reuse IH-01..04's atomic handoff and production drain control.
+
+- CFH-02: `take_pending_channel_failures_or_end_revival(&mut self, agent_id)`
+  returns one ordered nonempty batch while retaining that agent's failure
+  revival bit, or removes the bit and returns `None` under the same queue mutex
+  as enqueue. A stored empty vector is idle. Share the existing take-or-end
+  operation with the inbound wrapper; do not change other agents or wake
+  families. A closed queue returns no executable work.
+- CFH-03: both shipping channel workers use the existing common drain control.
+  `None` returns without later cleanup: a successor may already own revival.
+  A nonempty failure batch keeps all current Session/provenance checks, prompt,
+  provider/quiesce gates, connector lane and exact durable-marker decisions.
+  Existing pause/error requeue preserves the original batch before newer input
+  and performs its existing cleanup once; no immediate replay or timer is added.
+  No Session I/O, provider, callback or telemetry runs while the queue is locked.
+- CFH-04: deterministic real-owner controls cover enqueue before idle, idle
+  before enqueue, exactly one successor, claim once, ordered batches, stored
+  empty vectors, closed owner and cross-agent/family isolation. The actual
+  production drain control must be paused after atomic idle release; a new
+  failure claims a successor before the predecessor returns, and its ownership
+  must survive that return. Preserve the nonempty pause/requeue control and
+  supplement with a bounded shipping-worker wiring check. Existing actual
+  Host-lane failure/marker tests remain selected; callbacks are not real external
+  channel or provider compatibility evidence.
+- CFH-05: keep delivery failure distinct from a remote no-effect receipt. No
+  transport retry, permission change, new queue, scheduler, state store or
+  runtime is introduced. Durable marker errors, unknown remote outcomes,
+  failure-readiness rearm, joined disposal/recreate, timeline-event handoff and
+  full restart recovery remain required subsequent work. No on-disk migration
+  is needed; rollback restores the race without deleting user state.
+
+Allowed paths are this existing specification, Transcript `background_wakes.rs`,
+its existing production contract target, shipping Host `main.rs` and its private
+tests, and the existing Actions selectors/receipt index. Root integrates shared
+composition and workflow; no schema, lockfile, source inventory or acceptance
+flag changes. Run affected compilation, real-owner concurrency, shipping drain
+and retained channel/Session contracts only in Actions on the final exact H.
+The fixed-U ingress-monitor source identities and bounded read extents already
+recorded in the channel dossier provide the final-repump/active-owner invariant;
+this native race repair does not promote historical reading or scoped authority.

@@ -117,7 +117,7 @@ impl ReadinessFixture {
 
     fn run_ticket(&self, work: InboundAppendWork<Value>) {
         let mut first = Some(work);
-        shipping::drain_channel_inbound_batches(
+        shipping::drain_channel_revival_batches(
             || first.take().or_else(|| self.wakes.lock().unwrap().take_inbound_append_or_end_revival(&self.agent_id)),
             |work| shipping::drive_channel_inbound_work(work, |work| self.process(work)),
             || {},

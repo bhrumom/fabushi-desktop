@@ -305,6 +305,8 @@ jobs:
               tests::upgrade_marker_startup_checks_all_rows_before_any_dispatch \
               tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership \
               tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order \
+              tests::channel_failure_handoff_tests::channel_failure_idle_predecessor_preserves_successor_and_exact_batch \
+              tests::channel_failure_handoff_tests::channel_failure_nonempty_pause_preserves_order_and_releases_once \
               tests::channel_inbound_commit_preserves_all_messages_before_continuation \
               tests::channel_inbound_commit_failure_never_enters_continuation \
               tests::channel_inbound_append_commits_once_before_runner_and_displayed_redrive \
@@ -744,6 +746,9 @@ jobs:
               "channel_idle_handoff_contract": "OCRM-CHANNEL-IDLE-HANDOFF-v1",
               "shipping_channel_handoff_tests": ["tests::channel_inbound_drain_idle_predecessor_preserves_successor_ownership", "tests::channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order"],
               "channel_idle_handoff_result": "passed",
+              "channel_failure_idle_handoff_contract": "OCRM-CHANNEL-FAILURE-IDLE-HANDOFF-v1",
+              "shipping_channel_failure_handoff_tests": ["tests::channel_failure_handoff_tests::channel_failure_idle_predecessor_preserves_successor_and_exact_batch", "tests::channel_failure_handoff_tests::channel_failure_nonempty_pause_preserves_order_and_releases_once"],
+              "channel_failure_idle_handoff_scope": "Existing BackgroundWakes and common shipping drain atomically release empty failure queues, retain successor custody, and preserve nonempty pause order. No blind transport retry, restart reconciliation, joined shutdown or real channel acceptance is claimed.",
               "channel_host_lane_delivery_contract": "OCRM-CHANNEL-HOST-LANE-DELIVERY-v1",
               "channel_host_lane_delivery_tests": ["tests::channel_host_lane_tests::channel_send_host_lane_reaches_existing_delivery_owner_once", "tests::channel_host_lane_tests::channel_send_host_lane_failure_reaches_tray_and_pending_wake", "tests::channel_host_lane_tests::channel_send_host_lane_unregistered_provider_uses_existing_failure_owner", "tests::channel_host_lane_tests::channel_send_host_lane_returns_before_transport_and_preserves_fallback", "tests::channel_host_lane_tests::channel_send_host_lane_preserves_projection_noop_and_no_retry"],
               "channel_host_lane_delivery_result": "passed",
