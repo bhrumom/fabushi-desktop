@@ -22130,7 +22130,10 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_mcp_channel_tools_contract.rs",
-        "projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md"
+        "projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md",
+        "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
       ],
       "existing_owner_candidates": [
         {

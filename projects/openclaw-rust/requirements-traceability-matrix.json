@@ -415,7 +415,10 @@
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
         "source/host/tests/settings_service_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
-        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
+        "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+        "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -1451,7 +1454,11 @@
     {
       "acceptance_status": "not-started",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC10",
       "kind": "acceptance-criterion",
@@ -1660,7 +1667,10 @@
         "source/host/tests/settings_service_contract.rs",
         "source/host/tests/extensions_local_exec_contract.rs",
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
