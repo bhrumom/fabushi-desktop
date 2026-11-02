@@ -24,6 +24,19 @@ not execution evidence. The separate Automation timeout, unknown-result custody,
 original-turn restart and all full migration acceptance remain open. Fixed U,
 source-read records and global completion flags are unchanged.
 
+CI recovery for the preceding cancellation batch: H
+`b3a3fd398d3057b264ac673fae1b352aaecf1c92`, runtime `41411715447`, job
+`125166533584` failed the valid
+`routed_provider_cancel_request_waits_for_worker_terminal` assertion that a
+superseded connector records its DM wake. **CS-01 — FIX / IMPL_BUG**:
+the actual channel producers emit `requestSource=connector`, but the existing
+dispatch classifier relabels it as `turn`. Preserve the failing assertion and
+repair source identity only; do not change its established User lane, routing
+authority or unknown-source fallback. Shipping compilation, 119 configuration
+tests, eight other selected app tests and 15 SDK/Host edge tests passed on that
+H; recovery/audit did not execute after the failure. Current source/runtime
+successors still require exact-H evidence. No local validation or retry-to-green.
+
 ### 2026-11-02 production batch: committed Plugin Skills admission
 
 `OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1` freezes the actual loader → Rust lifecycle/

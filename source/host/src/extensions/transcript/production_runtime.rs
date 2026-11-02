@@ -99,6 +99,8 @@ pub fn classify_send_dispatch(
             "human-handoff"
         } else if is_group_member {
             "group-member"
+        } else if request_source == Some("connector") {
+            "connector"
         } else if is_kickstart {
             "kickstart"
         } else {

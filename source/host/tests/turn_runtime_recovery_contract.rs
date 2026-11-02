@@ -21,6 +21,42 @@ fn message(id: &str, text: &str, confirmed: Option<bool>) -> RecoveryUserMessage
 }
 
 #[test]
+fn routed_admission_retains_connector_source_without_changing_dispatch_priority() {
+    use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
+    use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
+    use serde_json::json;
+
+    for (index, (source, lane, expected_source)) in [
+        (Some("connector"), RunLane::User, "connector"),
+        (None, RunLane::User, "turn"),
+        (Some("unrecognized-source"), RunLane::User, "turn"),
+        (Some("automation"), RunLane::Background, "automation"),
+    ].into_iter().enumerate() {
+        let runtime = ProductionTranscriptRuntime::new(None);
+        let agent_id = format!("source-agent-{index}");
+        let stream_id = format!("source-stream-{index}");
+        let mut args = json!({
+            "agentId":agent_id, "sessionKey":format!("agent:{agent_id}:main"),
+            "prompt":"continue admitted work", "streamId":stream_id,
+            "clientNonce":format!("source-nonce-{index}"),
+        });
+        if let Some(source) = source {
+            args["requestSource"] = json!(source);
+        }
+        let accepted = runtime.accept_routed_send(&args, |_| Ok(PersistedSendContext::default()))
+            .expect("real routed lease admission");
+        assert!(!accepted.duplicate);
+        assert!(runtime.has_routed_turn_lease(&agent_id, &stream_id));
+        assert_eq!(runtime.active_turn_lane(&agent_id), Some(lane));
+        assert_eq!(runtime.active_turn_source(&agent_id).as_deref(), Some(expected_source));
+        assert!(runtime.settle_routed_turn(&agent_id, &stream_id, 1)
+            .expect("exact lease settlement").is_some());
+        assert!(!runtime.has_routed_turn_lease(&agent_id, &stream_id));
+        assert_eq!(runtime.active_turn_source(&agent_id), None);
+    }
+}
+
+#[test]
 fn frozen_runner_prepend_eligibility_uses_order_and_confirmed_flag() {
     let recent = vec![
         message("m1", "one", Some(true)),

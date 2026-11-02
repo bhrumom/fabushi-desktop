@@ -237,6 +237,12 @@ so a late request can produce contradictory terminal facts for one turn.
   duplicate, missing-stream nor post-finalization requests publish a terminal
   event. Do not add `cancel_requested` to the existing event channel; current
   Coordinator parsing rejects unknown event types.
+- CANCEL-01a: preserve the actual `requestSource=connector` identity through
+  `classify_send_dispatch` and routed lease admission, so superseded channel
+  work reaches the existing DM-preempted wake/redrive consumer. Keep its
+  established `RunLane::User` priority, existing trusted Session selection,
+  other known sources and unknown-source fallback. A runtime admission/source/
+  settlement oracle must accompany the unchanged shipping cancellation test.
 - CANCEL-02: after final Human handoff persistence has made its last possible
   change to the provider result, capture cancellation, result and delivery
   counters once. The immutable terminal snapshot uses the existing
