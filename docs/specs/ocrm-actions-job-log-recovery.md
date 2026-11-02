@@ -100,3 +100,48 @@ including the carrier copy. A newer green collector proves evidence transport
 only. Actual failure classification, named counts and subsequent repair approval
 must use the original records. No current 61dc result is inferred from this
 563 collection; its own exact Runtime evidence remains separately required.
+
+
+## 2026-11-02: expose original 812 evidence before archive reconciliation
+
+The 563 collector at carrier `6ad3a36b403051d599e51be60a97269f041e0fdb`,
+Source run `41505439228`, job `125483431041`, failed with
+`source_upload_identity_missing` after downloading the original Host log and
+checking the Recovery artifact API identity and successful upload step. It
+emitted no original failure context. This is an evidence-instrument failure;
+the exact missing 563 log association remains unknown. The predicate also
+assumes only `Artifact ID: N`, while actual v4 output includes `Artifact ID N`
+and `Artifact ID is N`. Preserve exact ID/digest association and all source
+authority checks; recognize these three bounded formats with positive and
+different-ID/digest negative instrument controls.
+
+Reuse the same collector for original H
+`812bf3a47b7ab16e49545446bd25f5e5ce8da27d`, tree
+`597ea5e0406c9fb292652deb20002bca5b6b2552`, Runtime `41503643837`,
+attempt 1, failed Host job `125477225268`. Require Recovery artifact
+`13169974470`, 877133 bytes, SHA-256
+`28edec2e08eeb55d29117a69bb1a734ce1a637c0f195c7a3ff46437b71f6b738`,
+and Native artifact `13170956493`, 3603 bytes, SHA-256
+`c6029e3705906a2661be20b86ddfe99783f8855e3d3fa34747c1506d4b07b670`.
+The exact 812 Recovery receipt has eleven source inputs; retain the ten Native
+inputs and independently match every input to its exact-H Git bytes.
+
+After validating the source run/job/commit and complete original log download,
+save and emit its separate transport receipt and bounded failure context before
+archive reconciliation. Identify the source and carrier separately, retain
+the original failure, and mark product validation as not executed. Every
+incremental record is explicitly partial and bounded by the existing total
+output budget. Persist partial records even if a later artifact check fails;
+only the final complete collection receipt may report all requested evidence
+collected. A transport receipt proves its own download, never a successful
+Runtime or completed archive inspection. Keep the remaining API, upload,
+digest, ZIP, command completeness and input identity checks fail-closed.
+
+The marker `[ocrm-recover-812-command-evidence]` activates this read-only
+collection; exclude this marked push from the existing inventory writer just
+as for the historical 563 carrier. Preserve normal source-authority checks,
+all ordinary writer events, Runtime selectors and fixed U. The two-path
+workflow/spec change must not trigger a product retry; recheck the current
+branch lease and open-PR state before publication. Review the frozen delta,
+then run the collection controls only in Actions. The running 4ed product
+campaign retains its own subject and is neither restarted nor cancelled.

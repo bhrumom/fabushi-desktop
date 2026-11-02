@@ -176,7 +176,7 @@ jobs:
   persist-verified-inventory:
     # P0 source-derived files only; never overwrite a moved PR head.
     needs: source-authority
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]')) }}
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -285,8 +285,8 @@ jobs:
           PY
 
   recover-original-host-log:
-    # Recover completed 563 commands; this carrier never executes product validation.
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') }}
+    # Recover completed 812 commands; this carrier never executes product validation.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -304,9 +304,9 @@ jobs:
           from pathlib import Path, PurePosixPath
           
           repository = "bhrumom/fabushi-desktop"
-          subject = "56386a66a1f2944545cee35b58d10cb085e3c292"
-          subject_tree = "86f8fded50a54fc60b8f3a5d69af3af735e6c12a"
-          source_run, source_attempt, source_job = 41498228438, 1, 125459002378
+          subject = "812bf3a47b7ab16e49545446bd25f5e5ce8da27d"
+          subject_tree = "597ea5e0406c9fb292652deb20002bca5b6b2552"
+          source_run, source_attempt, source_job = 41503643837, 1, 125477225268
           upstream = {"repository": "openclaw/openclaw", "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
                       "tree": "90c8aab39972da11cfad220361781d49e1bc6700"}
           base = f"https://api.github.com/repos/{repository}"
@@ -317,20 +317,27 @@ jobs:
           lock_path = "projects/openclaw-rust/upstream.lock.json"
           runtime_root = "source/mahayana/mahayana-rs"
           input_paths = {
-              "recovery": {workflow_path, lock_path, "source/host/Cargo.toml", "source/host/Cargo.lock"},
+              "recovery": {workflow_path, lock_path, "source/host/Cargo.toml", "source/host/Cargo.lock",
+                           "source/host/build.rs",
+                           "source/packages/proto/generated/agent/v1/mcp_exec_pb.ts",
+                           "source/host/src/runner/generated_agent_turn_stream.rs",
+                           "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+                           "source/host/tests/generated_occurrence_codec_contract.rs",
+                           "source/host/tests/production_checkpoint_restart_contract.rs",
+                           "source/host/tests/routed_send_acceptance_contract.rs"},
               "native": {workflow_path, lock_path, f"{runtime_root}/Cargo.toml", f"{runtime_root}/Cargo.lock",
                          f"{runtime_root}/mahayana-runtime/Cargo.toml",
                          *[f"{runtime_root}/mahayana-runtime/src/{name}.rs" for name in
                            ("lib", "conversation_actor", "runtime_store", "dispatch_admission_tests", "acceptance_admission_tests")]},
           }
           artifacts = [
-              {"label": "recovery", "id": 13167684148, "size": 877191,
-               "sha256": "ee0c70b19203bd452d25510da83f4b7dd686968afd3b468cc13061e155d8c583",
+              {"label": "recovery", "id": 13169974470, "size": 877133,
+               "sha256": "28edec2e08eeb55d29117a69bb1a734ce1a637c0f195c7a3ff46437b71f6b738",
                "name": f"ocrm-recovery-commands-{subject}-{source_run}-{source_attempt}",
                "kind": "ocrm-recovery-command-diagnostics",
                "upload_step": "Preserve exact-subject Recovery command diagnostics"},
-              {"label": "native", "id": 13169190332, "size": 3605,
-               "sha256": "6fe5f43e03285d5516089e214bbc76510c914f7cad9b84f570e1913db7ae19f9",
+              {"label": "native", "id": 13170956493, "size": 3603,
+               "sha256": "c6029e3705906a2661be20b86ddfe99783f8855e3d3fa34747c1506d4b07b670",
                "name": f"ocrm-native-runtime-{subject}-{source_run}-{source_attempt}",
                "kind": "ocrm-native-runtime-command-diagnostics",
                "upload_step": "Preserve exact-subject native Runtime diagnostics"},
@@ -463,13 +470,27 @@ jobs:
               require(value <= 255, "invalid_exit_record")
               return value
           
+          def upload_identity_present(lines, artifact):
+              artifact_id = re.compile(r"\bArtifact ID(?::| is)?[ \t]+" + str(artifact["id"]) + r"\b")
+              digest = re.compile(r"(?<![0-9a-fA-F])" + re.escape(artifact["sha256"]) + r"(?![0-9a-fA-F])")
+              return (any(artifact_id.search(line) for line in lines)
+                      and any(digest.search(line) for line in lines))
+
           records, output_bytes = [], 0
           def emit(record):
               global output_bytes
+              record = {"collection_state": "partial", "source_subject": subject,
+                        "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
+                        "carrier_commit": os.environ["GITHUB_SHA"], "product_validation_executed_by_carrier": False,
+                        **record}
               encoded = json.dumps(record, ensure_ascii=True, sort_keys=True)
               output_bytes += len(("OCRM_EVIDENCE " + encoded + "\n").encode("utf-8"))
               require(len(records) < 12000 and output_bytes <= 2 * 1024 * 1024, "outcome_output_limit")
               records.append(encoded)
+              # Keep validated partial evidence readable even if a later source refuses.
+              with (evidence / "outcomes.jsonl").open("a", encoding="utf-8") as output:
+                  output.write(encoded + "\n")
+              print("OCRM_EVIDENCE " + encoded, flush=True)
           
           input_cache = {}
           def source_input(path):
@@ -508,7 +529,7 @@ jobs:
                   require(summaries > 0, "missing_successful_test_summary")
           
           try:
-              # These four controls exercise the collector only, never a product command.
+              # These controls exercise the collector only, never a product command.
               valid = {"kind": artifacts[0]["kind"], "verification_verdict": None, "subject_commit": subject,
                        "subject_tree": subject_tree, "upstream": upstream, "run_id": str(source_run),
                        "run_attempt": str(source_attempt), "runner_os": "macOS",
@@ -538,6 +559,21 @@ jobs:
                       controls.append({"control": reason, "result": "rejected"})
                   else:
                       raise CollectionRefusal("accepted_archive_control")
+              fixture_artifact = {"id": 123, "sha256": "a" * 64}
+              for separator in (": ", " ", " is "):
+                  require(upload_identity_present(
+                      [f"Artifact ID{separator}123", "digest " + fixture_artifact["sha256"]],
+                      fixture_artifact), "valid_upload_format_refused")
+                  controls.append({"control": "upload_id_format_" + repr(separator), "result": "accepted"})
+              for label, lines in (
+                      ("wrong_id", ["Artifact ID 124", "digest " + "a" * 64]),
+                      ("id_prefix", ["Artifact ID 1234", "digest " + "a" * 64]),
+                      ("wrong_digest", ["Artifact ID 123", "digest " + "b" * 64]),
+                      ("digest_prefix", ["Artifact ID 123", "digest " + "a" * 65]),
+                      ("missing_id", ["digest " + "a" * 64]),
+                      ("missing_digest", ["Artifact ID 123"])):
+                  require(not upload_identity_present(lines, fixture_artifact), "invalid_upload_identity_accepted")
+                  controls.append({"control": "upload_" + label, "result": "rejected"})
               save_json("instrument-controls.json", controls)
               emit({"kind": "instrument-controls", "controls": controls, "product_tests": False})
           
@@ -561,6 +597,32 @@ jobs:
               raw_log = download(f"/actions/jobs/{source_job}/logs", 100 * 1024 * 1024)
               (evidence / f"host-{source_job}.log").write_bytes(raw_log)
               host_lines = raw_log.decode("utf-8").splitlines()
+              transport = {
+                  "kind": "original-host-log-transport", "repository": repository,
+                  "source_subject": subject, "source_tree": subject_tree,
+                  "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
+                  "source_conclusion": "failure", "source_job_name": "rust-host",
+                  "carrier_commit": os.environ["GITHUB_SHA"], "carrier_run": int(os.environ["GITHUB_RUN_ID"]),
+                  "carrier_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+                  "product_validation_executed_by_carrier": False,
+                  "log_sha256": hashlib.sha256(raw_log).hexdigest(),
+                  "log_bytes": len(raw_log), "log_lines": len(host_lines),
+                  "log_collection_complete": True, "archive_collection_complete": False,
+              }
+              save_json("original-log-transport-receipt.json", transport)
+              emit(transport)
+
+              stage = "original_failure_context"
+              selected = set()
+              for number, line in enumerate(host_lines):
+                  if re.search(r"(?:panicked at|has overflowed its stack|fatal runtime error|assertion .*failed|error: test failed|Process completed with exit code)", line):
+                      selected.update(range(max(0, number - 2), min(len(host_lines), number + 9)))
+              require(bool(selected), "missing_original_failure_context")
+              for number in sorted(selected):
+                  emit({"kind": "original-failure-context", "file": f"host-{source_job}.log",
+                        "line": number + 1, "text": host_lines[number]})
+          
+              # Archive reconciliation cannot suppress the bound original failure above.
               archive_receipts = []
               for artifact in artifacts:
                   label = artifact["label"]
@@ -575,8 +637,7 @@ jobs:
                   upload_steps = [step for step in job["steps"] if step["name"] == artifact["upload_step"]]
                   require(len(upload_steps) == 1 and upload_steps[0]["status"] == "completed"
                           and upload_steps[0]["conclusion"] == "success", "source_upload_incomplete")
-                  require(any(f"Artifact ID: {artifact['id']}" in line for line in host_lines)
-                          and any(artifact["sha256"] in line for line in host_lines), "source_upload_identity_missing")
+                  require(upload_identity_present(host_lines, artifact), "source_upload_identity_missing")
                   stage = f"{label}_archive"
                   raw = download(f"/actions/artifacts/{artifact['id']}/zip", artifact["size"])
                   require(len(raw) == artifact["size"] and hashlib.sha256(raw).hexdigest() == artifact["sha256"],
@@ -625,16 +686,6 @@ jobs:
                   archive_receipts.append({"artifact_id": artifact["id"], "name": artifact["name"], "sha256": artifact["sha256"],
                                            "bytes": len(raw), "validated_inputs": identities})
           
-              stage = "original_failure_context"
-              selected = set()
-              for number, line in enumerate(host_lines):
-                  if re.search(r"(?:panicked at|has overflowed its stack|fatal runtime error|assertion .*failed|error: test failed|Process completed with exit code)", line):
-                      selected.update(range(max(0, number - 2), min(len(host_lines), number + 9)))
-              require(bool(selected), "missing_original_failure_context")
-              for number in sorted(selected):
-                  emit({"kind": "original-failure-context", "file": f"host-{source_job}.log",
-                        "line": number + 1, "text": host_lines[number]})
-          
               stage = "evidence_receipt"
               result = {"repository": repository, "source_subject": subject, "source_tree": subject_tree,
                         "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
@@ -648,9 +699,6 @@ jobs:
               require(len(records) + 1 <= 12000 and output_bytes + len(("OCRM_COLLECTION " + result_line + "\n").encode("utf-8")) <= 2 * 1024 * 1024,
                       "outcome_output_limit")
               save_json("recovered-log-receipt.json", result)
-              (evidence / "outcomes.jsonl").write_text("\n".join(records) + "\n", encoding="utf-8")
-              for record in records:
-                  print("OCRM_EVIDENCE " + record)
               print("OCRM_COLLECTION " + result_line)
           except Exception as error:
               # Never stringify an exception that could contain a token, signed URL or payload.
@@ -669,7 +717,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ocrm-original-host-log-56386a66a1f2944545cee35b58d10cb085e3c292-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ocrm-original-host-log-812bf3a47b7ab16e49545446bd25f5e5ce8da27d-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ocrm-original-host-log/
           if-no-files-found: error
           retention-days: 7
