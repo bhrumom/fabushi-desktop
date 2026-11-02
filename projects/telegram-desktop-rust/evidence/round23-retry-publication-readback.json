@@ -1,0 +1,92 @@
+{
+  "sha": "b318cffdebaba11186c627ca97797a0d46cd9b5e",
+  "parent": "742a5ee161686db4d8961ccb721004cc5cbe531a",
+  "tree": "4722392aec2af503dd7a0310361b08bfbcd23ec8",
+  "verifiedRef": true,
+  "observedHead": "b318cffdebaba11186c627ca97797a0d46cd9b5e",
+  "files": [
+    {
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "sha": "4e9ba078119d8875627ecaa73b4f210f0314d2ec",
+      "content_equal": true
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+      "sha": "b861f9d079f236acbba78cd3eaf60e58a5b3d933",
+      "content_equal": true
+    },
+    {
+      "path": "desktop/e2e/native-message-projection.spec.ts",
+      "sha": "e0b31573d5d3bf0dd934c75a813618fb977e3411",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-native-execution-f2903f.json",
+      "sha": "eccb3c9d2aa2f9c877379ab63e305bb8c3b31070",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-creation-preservation-failure-and-fix.json",
+      "sha": "30776cd7fb3da5e72e57b50e1df3dfd0782385b5",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-renderer-concurrent-fix-readback.json",
+      "sha": "fe4f068364626b6cac8d8fd531bb6b6208ad0f22",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-renderer-failure-state-review.json",
+      "sha": "721ed183b793b8dff494110dd4f9e69609cbad95",
+      "content_equal": true
+    },
+    {
+      "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "sha": "0bc906228977c0b3d93dd0e74ad4bf7c45a07438",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/STATUS.md",
+      "sha": "797efba2aec1b38706f82a2e5987f55361692100",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-owner-boundary-recovery.json",
+      "sha": "b53730773b1b14c363836c19d0801649b00b6221",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-native-execution-9b9cadd7.json",
+      "sha": "95b965647cd7c95280286468079d230064907380",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-source-fourteen-reviews.json",
+      "sha": "176aa624b73f5f29fdeff8be6fd1a009cd668d33",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-public-requirements-refresh.json",
+      "sha": "6665fe5e6e73658dcde3c33800b90d1c216f1820",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-native-short-header-f95a33b1.json",
+      "sha": "5c7b6ceb6f18479dbc7b5ef16d651df91d0c9fc5",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-reaction-hover-oracle-review.json",
+      "sha": "aba53d67f5e07de0dd603ce07661a0d2f8c5c4dd",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-unrelated-helper-recovery.json",
+      "sha": "f10c55439720a2e8bfb5294d9a3e36cd2c3bb10e",
+      "content_equal": true
+    }
+  ],
+  "local_executable_validation": false,
+  "verification": "GitHub commit parent/tree and complete per-file bytes read back after non-force expected_sha CAS",
+  "native_run": 41531061274
+}

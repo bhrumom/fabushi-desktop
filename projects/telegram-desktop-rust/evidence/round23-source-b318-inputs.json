@@ -1,0 +1,222 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "read_only": true,
+  "head": "b318cffdebaba11186c627ca97797a0d46cd9b5e",
+  "compared_executed_ancestor": "5c285452de88dcfba78bd5085f9833712eb3a459",
+  "later_ledger_introduction": "922ca5c05041a6212a75c2f2013d0cc0dd9199a8",
+  "before_ledger_blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+  "current_ledger_blob": "09ae58962a743d8010e94906190fc054f878c28f",
+  "complete_tree_readbacks": {
+    "source_5c285": {
+      "truncated": false,
+      "entries": 9982
+    },
+    "source_922": {
+      "truncated": false,
+      "entries": 9976
+    },
+    "b318": {
+      "truncated": false,
+      "entries": 9986
+    }
+  },
+  "core_inputs": [
+    {
+      "path": ".github/workflows/tdrp-source-review-contract.yml",
+      "before_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+      "after_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+      "source_922_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+      "before_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "after_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "source_922_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+      "before_blob": "d37247e17c2e965e3116ce3721f79d81da50dd6c",
+      "after_blob": "d37247e17c2e965e3116ce3721f79d81da50dd6c",
+      "source_922_blob": "d37247e17c2e965e3116ce3721f79d81da50dd6c",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/index.json",
+      "before_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+      "after_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+      "source_922_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/root-mutable-authorities.json",
+      "before_blob": "cf010d245bdba0bd04090bde807a8f551f4e1f23",
+      "after_blob": "cf010d245bdba0bd04090bde807a8f551f4e1f23",
+      "source_922_blob": "cf010d245bdba0bd04090bde807a8f551f4e1f23",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/root-tool-authorities.json",
+      "before_blob": "86f6becac9dd094e93181c3a3810eea7ae71539c",
+      "after_blob": "86f6becac9dd094e93181c3a3810eea7ae71539c",
+      "source_922_blob": "86f6becac9dd094e93181c3a3810eea7ae71539c",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/parity-ledger.json",
+      "before_blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+      "after_blob": "09ae58962a743d8010e94906190fc054f878c28f",
+      "source_922_blob": "09ae58962a743d8010e94906190fc054f878c28f",
+      "b318_equal_5c": false,
+      "b318_equal_922": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/upstream.lock.json",
+      "before_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+      "after_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+      "source_922_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/tdrp-nested-pin-identity.mjs",
+      "before_blob": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+      "after_blob": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+      "source_922_blob": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/tdrp-nested-pin-identity.test.mjs",
+      "before_blob": "da1d2f9146649f5f60a7cecdb7264d0c95746c86",
+      "after_blob": "da1d2f9146649f5f60a7cecdb7264d0c95746c86",
+      "source_922_blob": "da1d2f9146649f5f60a7cecdb7264d0c95746c86",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/tdrp-source-review-schema.test.py",
+      "before_blob": "bbe2384b30c294a44d1f41e581201f5342101936",
+      "after_blob": "bbe2384b30c294a44d1f41e581201f5342101936",
+      "source_922_blob": "bbe2384b30c294a44d1f41e581201f5342101936",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/tdrp-source-review.mjs",
+      "before_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "after_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "source_922_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/tdrp-source-review.test.mjs",
+      "before_blob": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "after_blob": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "source_922_blob": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/tdrp-summarize-protocol-artifact.py",
+      "before_blob": "0ec50cd95f324c5f2682d936a7b96253c552922c",
+      "after_blob": "0ec50cd95f324c5f2682d936a7b96253c552922c",
+      "source_922_blob": "0ec50cd95f324c5f2682d936a7b96253c552922c",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/validate-tdrp-revision9-authority.mjs",
+      "before_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "after_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "source_922_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    },
+    {
+      "path": "scripts/validate-tdrp-source-candidate.mjs",
+      "before_blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+      "after_blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+      "source_922_blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+      "b318_equal_5c": true,
+      "b318_equal_922": true
+    }
+  ],
+  "core_input_equality": {
+    "b318_vs_5c285": false,
+    "changed_paths": [
+      "projects/telegram-desktop-rust/parity-ledger.json"
+    ],
+    "b318_vs_922": true
+  },
+  "complete_ledger_patch": {
+    "additions": 32,
+    "deletions": 10,
+    "observed_plus": 32,
+    "observed_minus": 10,
+    "no_source_review_or_top_level_coverage_acceptance_change": true
+  },
+  "auxiliary_inputs": [
+    {
+      "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+      "b318_blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694",
+      "equal_5c_and_922": true,
+      "read_line": 66
+    },
+    {
+      "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+      "source_5c_blob": "3876af107746e6acbd7161537c7b21b7ede80f3f",
+      "source_922_blob": "eba372e60d5548b2bdc0b374b12a3f9e1bc01627",
+      "b318_blob": "0bc906228977c0b3d93dd0e74ad4bf7c45a07438",
+      "equal": false,
+      "regular_file_mode": "100644",
+      "read_line": 67,
+      "content_consumer_lines": [
+        585,
+        602
+      ]
+    }
+  ],
+  "exact_b318_commit": {
+    "parent": "742a5ee161686db4d8961ccb721004cc5cbe531a",
+    "files": 16,
+    "core_input_changed_by_this_commit": false,
+    "auxiliary_rtm_changed": true
+  },
+  "source_workflow_at_b318": {
+    "run_present": false,
+    "observed_runs": [
+      {
+        "id": 41531061274,
+        "path": ".github/workflows/native-service-contracts.yml"
+      }
+    ],
+    "input_trigger_gap_review": "final-resume/source-workflow-input-propagation-review.json"
+  },
+  "source_5c285_evidence": "final-resume/source-latest-ledger-5c285.json",
+  "source_922_execution": {
+    "run_id": 41530294271,
+    "contract_job": 125568428969,
+    "contract_status": "completed/success",
+    "contract_summary": {
+      "node": 158,
+      "python_schema": 37,
+      "ledger_schema_errors": 0
+    },
+    "candidate_job": 125572054858,
+    "candidate_observed_status": "queued",
+    "terminal_qualified": false
+  },
+  "reuse_limit": "5c285 cannot qualify the new09ae ledger instance. b318 shares the16 core repository source inputs with922 but has a different actual RTM input and no source execution. Only explicitly scoped unchanged-input facts and ancestor outcomes may be cited; no ancestor run may be relabelled as b318 execution."
+}
+

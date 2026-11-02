@@ -731,6 +731,9 @@ issuer, same-token session/device/expiry and secret binding changes, logout/inva
 anonymous/current positives, all platform methods, multipart and body/error barriers.
 The exact containing-H Actions gate requires5/5 plus69 successful scenario markers,
 HTTP owner6, native handoff7 and actual AppHost compilation; authoring is not execution.
+The existing Ubuntu lane also runs the same five completion tests and69 markers,
+with its own exact-H log; the macOS shipping copy and actual AppHost compilation
+remain independently required. See `projects/telegram-desktop-rust/evidence/round23-qualification-wiring.json`.
 Receipt: `projects/telegram-desktop-rust/evidence/round25-native-response-binding.json`.
 All independent/source/service/publisher/signed-package/full product ACCEPT gates remain open.
 

@@ -140,6 +140,14 @@ Check and record the existing openssl/mkfifo tools, bind AppHost test/library an
 Cargo inputs plus the relevant Host/FeatureHost/Runtime/Product inputs, and
 retain Cargo.lock unchanged. The child is the integration-test executable;
 this does not build or qualify the separately packaged shipping AppHost binary.
+Run the existing `mahayana-platform-client` `native_response_completion_` library
+cases in the same Linux lane: five passed, zero failed/ignored and exactly 69
+named scenarios. These Unix debug-assertion tests use private owned credentials,
+loopback HTTP and child test processes to prove completion fencing, unchanged
+and anonymous positives, error handling and no request replay. Bind
+`native_desktop_session.rs` with the existing Product source inputs and preserve
+its separate full log. Keep the same five cases in macOS shipping; Linux
+execution does not replace that shipping or real-service/package requirement.
 Record the exact checkout, source/lock/spec/workflow hashes, toolchain and full
 logs in an immutable artifact, including on failure. No retries or ignored cases
 may turn a missing result into success. This focused execution does not replace

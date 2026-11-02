@@ -16,6 +16,8 @@ on:
       - projects/telegram-desktop-rust/inventory/root-tool-authorities.json
       - projects/telegram-desktop-rust/contracts/parity-ledger.schema.json
       - projects/telegram-desktop-rust/parity-ledger.json
+      - docs/specs/telegram-desktop-rust-equivalence-migration.md
+      - projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md
       - .github/workflows/tdrp-source-review-contract.yml
   workflow_dispatch:
 permissions:
