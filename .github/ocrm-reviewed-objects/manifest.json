@@ -1,0 +1,12 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "base_commit": "f890002148f122aacdfc78fe39530a7e9c1bef6e",
+  "candidate_tree": "2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1",
+  "target_path": "projects/openclaw-rust/parity-ledger.json",
+  "before_blob": "9e7d16b92b16b3cddc6959005735dfbbd20927c1",
+  "after_blob": "9310ce5254aaec058266e4ba89e28f74997eef59",
+  "after_bytes": 1377257,
+  "patch_sha256": "97434961bd110313326a7e8d52762eceb32b563734309cf6c6c71fc399ba5331",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1
+}
