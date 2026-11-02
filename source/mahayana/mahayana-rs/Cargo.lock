@@ -9045,6 +9045,7 @@ name = "mahayana-app-host"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "fabushi-telegram-storage",
  "mahayana-core",
  "mahayana-feature-host",
  "mahayana-host",
@@ -17184,3 +17185,4 @@ dependencies = [
  "syn 3.0.9",
  "winnow 1.0.4",
 ]
+

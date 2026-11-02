@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–13
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–14
 
 ## Context and goal
 
@@ -346,6 +346,77 @@ Rollback is a normal code revert without deleting user data. Historical
 passed scopes remain recorded against their original SHA, and final
 production-service, source/legal, package and independent acceptance stay
 open.
+
+### Round 14 Native startup isolation and reversible legacy retention (NMR-31–33)
+
+At base `50b0a2048adce13f2281143e6c3f7449d56344d5`, Electron's
+`FabushiAuthService.writeHostCredential` always obtains a Telegram storage
+key and reads optional Telegram application credentials. On Unix with
+`FABUSHI_PRODUCT_MODE=1`, the Production AppHost opens a persistent legacy
+client when that key is present, restores its proxy state and hands its numeric
+client ID to `HostCreateConfig`. Host then registers a Telegram conversation
+provider. An unrelated corrupt legacy database or application secret can
+therefore prevent ordinary Fabushi startup. The lease is fixed at construction
+and is not rebound by the Native account owner's later logout/account switch.
+
+The target for this bounded batch is the existing Electron Native credential
+owner plus the shipping AppHost composition. Native Human messaging remains
+Session/Transcript → `FabushiNativeMessagingClient` → Fabushi service;
+Agent/FeatureHost and the existing account, resource, permission and search
+owners remain in place. No new owner, protocol, persistent schema or renderer
+flow is introduced.
+
+- NMR-31: Ordinary Native credential creation, refresh and account switching
+  must not read, create, rotate, delete or send Telegram storage/application
+  secrets. Preserve the existing Native v1 descriptor's authentication fields,
+  atomic replacement and private permissions. Existing secure-store keys stay
+  untouched, including malformed legacy values; they are retained data, not
+  inputs to Native authentication.
+- NMR-32: Every existing AppHost constructor composes the existing Host with
+  no Telegram lease/client-ID/self-ID. It must not open, create, migrate,
+  decrypt or delete any legacy database, including when an older Native v1
+  descriptor still contains valid optional Telegram fields. Existing legacy
+  auth methods fail through the unavailable-client error and cannot lazily
+  instantiate a provider. Native login, logout, issuer/account isolation,
+  Agent roster and restart continuity remain functional. Product settings
+  persist as before; no Telegram proxy publication is performed. This does
+  not claim that native-service proxy support is implemented.
+- NMR-33: Retention is a code-only, reversible composition transition, not a
+  data-format conversion. Keep `feature-host/telegram/<account-hash>.sqlite3`,
+  its existing auxiliary files and secure-store entries intact. Do not import
+  unverified legacy messages/auth into Native identity or transcript state.
+  Rollback is an ordinary reviewed revert restoring the old code and its
+  unchanged paths/keys/formats; it can reintroduce the old startup/lifetime
+  defect. Before actual data migration or deletion, require an account-bound
+  versioned conversion, backup, interrupted-write recovery and explicit scope.
+  Legacy crates, direct FFI client injection and default link dependencies are
+  separately open retirement work and are not declared absent by this batch.
+
+NMR-AC-22: In Actions, exercise the actual Electron account service against
+synthetic Native login/refresh credentials and an instrumented secure store.
+Prove the descriptor contains only Native auth fields, malformed/existing
+legacy secrets do not block login and all legacy key bytes are unchanged;
+prove ordinary logout/refresh behavior is preserved without exposing secrets.
+
+NMR-AC-23: In Actions, execute Production AppHost construction with old-format
+Native credentials carrying a Telegram key, an existing real legacy SQLite
+fixture, a corrupt legacy file and a missing legacy directory. Prove Native
+authentication and Agent create/list survive account/issuer changes and
+process restart, the legacy auth entry refuses calls, no absent directory is
+created and retained files remain byte-identical. A retained encrypted fixture
+must remain readable through the original storage API after AppHost shutdown.
+Require actual behavior rather than source-string matching. Preserve the
+existing Native account handoff cases and the Human/Agent/UI/Electron gates.
+
+NMR-AC-24: Compile the actual `source/host/app` shipping binary and execute
+the selected new tests at one frozen exact H. Persist command/log/count/source
+binding as Actions artifacts. Publish the code by non-force expected-SHA CAS
+and read back its complete remote SHA, parent/tree and changed blobs. Final
+source/legal, supported-platform package, real service, upgrade/rollback,
+full Bot regression and independent ACCEPT remain unqualified. Backend
+PR #137 may only be inspected until explicit merge/deployment authorization;
+no mock or old Worker artifact substitutes for production `afterId=0` evidence.
+
 
 
 

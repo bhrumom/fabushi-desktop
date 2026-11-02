@@ -3,6 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
+Current bounded refresh: round 14, inspected base `50b0a2048adce13f2281143e6c3f7449d56344d5`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older capture below is historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -12,6 +13,37 @@ PR state at capture: open, draft, base `main`, head `refactor/grok-018-architect
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
 
 ## Method
+
+### 2026-11-02 Native startup and message authority refresh
+
+Shipping launch is `source/electron-main/entry.ts` → production coordinator
+ports/executors → `rust-coordinator-carrier.ts` → Node Coordinator `spawn_host`
+→ `source/host/app/src/main.rs::main` → `UnifiedAppHost::new` → `AppHost::new`.
+Electron's account adapter sets Native product mode and the private credential
+file. At the inspected base, account-service unconditionally provisioned a
+Telegram key; Unix Production AppHost opened its account-hashed SQLite store
+and passed a live client ID into Host's conditional provider registration.
+Round 14 removes that automatic provisioning/open/handoff. Old secure-store
+entries, SQLite and auxiliary files are retained without conversion or deletion.
+
+| Responsibility | Observed Native path / state authority | Remaining boundary |
+| --- | --- | --- |
+| Identity | Fabushi service identity → Electron `FabushiAuthService` → atomic Native v1 credential; Rust `native_desktop_session` is a fresh read-only projection | Old descriptor optional Telegram fields stay readable for upgrade compatibility; they cannot activate a client. |
+| Conversation | `ProductionRenderer` / Session gateway → `ProductionSessionWorkers::create_human_conversation`; canonical participant-pair identity and existing conversation SQLite | Group/channel and the separate FeatureHost messaging path are not unified by this batch. |
+| Message | Session `append_human_message_with_context` / `sync_human_conversation` → `FabushiNativeMessagingClient` → `/api/social/messages`; stable local transcript/outbox plus service remote IDs | FeatureHost `feature.messaging.execute` still reaches an independent MessagingService state store; global single-authority closure remains open. |
+| Resource | Session attachment materialization/upload → `/api/social/message-resources` and existing local resource paths/provenance | FeatureHost messaging `blobs` remains a separate reachable persistence family; not migrated here. |
+| Permission | Native credential/issuer/user binding, participant-pair admission and service enforcement before local settlement | FeatureHost messaging access tokens/policy are a separate existing boundary, not evidence of one global permission authority. |
+| Search | Renderer `searchHumanMessages` → Session `search_human_messages` → the same authorized transcript | FeatureHost MessagingService constructs SearchIndex from its own state; canonical cross-surface search remains incomplete. |
+
+The residual path is publicly callable through AppHost
+`feature.messaging.execute/blob.read/access.issue` and typed
+`feature.execute` / `messaging.execute`. FeatureHost opens account-scoped
+`runtime/accounts/<account-hash>/agents/_messaging/snapshot.json` and `blobs`.
+This is reachable composition, not proof that Human Composer selects it.
+Legacy crates/default links and direct FFI `telegramClientId` injection also
+remain; stopping automatic Native startup is not their complete retirement.
+NMR-31–33 / AC-22–24 define behavior and retention tests; Actions evidence must
+bind the candidate SHA, and final acceptance remains false.
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
 
@@ -84,3 +116,4 @@ The existing channel connector path models outside platforms and delivery addres
 Before using this inventory for implementation, compare the live PR #20 head to `a538679392bc09531041030a98fa0880107e7d40`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
 
 PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected file-by-file at the ownership boundary. It advances send-pipeline/send-turn dispatch, workflow commands, runner registry/turn shell, Coordinator inference routing, and Session runtime behavior inside the same canonical Host Transcript/Runner/Coordinator architecture. `session-runtime.ts` now has a production Rust owner with focus/contact freshness, live-session ownership, deferred bounded-open activation/catch-up, snapshot/roster activation wiring, boot fallback ordering evidence, and focused contracts; `a5386793` is the first head that marks that row implemented, and only its own Actions may accept it. No FBCP product owner root moved in this delta.
+

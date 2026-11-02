@@ -135,7 +135,7 @@ test("Telegram storage secret scope follows the canonical Fabushi account and de
   assert.match(same, /^fabushi-telegram-storage-key-v1:[0-9a-f]{64}$/u);
 });
 
-test("Telegram application API credential is application-scoped and bounded before private Host handoff", () => {
+test("retained Telegram application credential decoder preserves the bounded legacy rollback format", () => {
   assert.equal(FABUSHI_TELEGRAM_APPLICATION_CREDENTIAL_SECRET, "fabushi-telegram-application-credential-v1");
   assert.deepEqual(
     normalizeTelegramApplicationCredential({
@@ -379,3 +379,4 @@ test("native usage projects token budgets without foreign weekly or currency sem
   await assert.rejects(fetchNativeUsageSummary({ baseUrl: "https://api2.cursor.sh", getAccessToken: async () => { throw new Error("must not request credentials"); } }));
   await assert.rejects(fetchNativeUsageSummary({ getAccessToken: async () => "native-test-token", fetchImpl: async () => new Response(null, { status: 503 }) }));
 });
+

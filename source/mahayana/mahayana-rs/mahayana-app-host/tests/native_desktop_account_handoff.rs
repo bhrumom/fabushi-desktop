@@ -2,8 +2,12 @@
 //! This is not signed-client, network authentication or factory acceptance.
 #![cfg(unix)]
 
+use base64::Engine as _;
+use fabushi_telegram_storage::{EncryptedSqliteStore, StorageKey};
 use mahayana_app_host::{AppHost, AppHostFeatureMode, HostRequest};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
@@ -21,6 +25,9 @@ const PUBLIC_ACCESS: &str = "public-unit-fixture-not-an-authentic-access-token-0
 const BOT_A: &str = "Public native fixture A";
 const BOT_B: &str = "Public native fixture B";
 const BOT_PRODUCTION: &str = "Public production fixture";
+const BOT_RETAINED: &str = "Public retained Native Agent";
+const LEGACY_KEY: [u8; 32] = [11; 32];
+const LEGACY_METADATA: &[u8] = b"public retained encrypted metadata; no real account";
 
 struct TestDirectory(PathBuf);
 
@@ -44,7 +51,12 @@ fn replace_native_credential(path: &Path, issuer: &str, user: &str) -> Vec<u8> {
         "expiresAtMs": expires,
         "userId": user,
         "sessionId": format!("public-fixture-session-{user}"),
-        "deviceId": "public-fixture-device"
+        "deviceId": "public-fixture-device",
+        // An already-written v1 descriptor can outlive the Electron upgrade.
+        // Its optional legacy material must never instantiate a second owner.
+        "telegramStorageKey": base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(LEGACY_KEY),
+        "telegramApiId": 12345,
+        "telegramApiHash": "0123456789abcdef0123456789abcdef"
     }))
     .expect("serialize public fixture");
     let next = path.with_extension("next");
@@ -75,7 +87,49 @@ fn auth(host: &AppHost) -> Value {
     );
     assert!(!encoded.contains("accessToken"));
     assert!(!encoded.contains("refreshToken"));
+    assert!(!encoded.contains("telegramStorageKey"));
+    assert!(!encoded.contains("telegramApiHash"));
     result
+}
+
+fn assert_legacy_unavailable(host: &AppHost) {
+    // A registered-but-unauthorized provider produces a different error. This
+    // exercises the actual production registry through the public command.
+    let response = host.dispatch(HostRequest {
+        id: None,
+        method: "feature.execute".into(),
+        params: json!({"command": {
+            "type": "conversation.open",
+            "requestId": "legacy-provider-absence",
+            "conversationId": "telegram:chat:42"
+        }}),
+    });
+    assert!(!response.ok);
+    assert!(
+        response.error.as_deref().unwrap_or("").contains("provider is unavailable: telegram"),
+        "must reject at the missing provider boundary: {:?}", response.error
+    );
+    for method in [
+        "telegramStatus", "telegramSendCode", "telegramSignIn", "telegramPassword",
+        "telegramRegistration", "telegramResendCode", "telegramCancelCode",
+        "telegramRequestPasswordRecovery", "telegramCheckRecoveryPassword",
+        "telegramSendVerifyEmailCode", "telegramVerifyEmail", "telegramRefreshPasswordChallenge",
+    ] {
+        let response = host.dispatch(HostRequest {
+            id: None,
+            method: format!("feature.auth.{method}"),
+            params: json!({
+                "phoneNumber": "+10000000000", "code": "public-fixture-code",
+                "password": "public-fixture-password", "firstName": "Public",
+                "email": "public-fixture@example.invalid"
+            }),
+        });
+        assert!(!response.ok, "legacy command cannot activate a client: {method}");
+        assert_eq!(response.error.as_deref(), Some(
+            "host operation failed: embedded Telegram client is unavailable for the current platform account"
+        ));
+    }
+    assert!(host.take_startup_native_shell_event().expect("startup event").is_none());
 }
 
 fn gateway(host: &AppHost, method: &str, args: Value) -> Value {
@@ -170,6 +224,7 @@ fn child_case(root: &Path, mode: &str) {
     let account = host.mini_app_account_port();
     let status = auth(&host);
     assert_eq!(status["loggedIn"], true);
+    assert_legacy_unavailable(&host);
     let first = account.current_scope().expect("Native account scope");
 
     if mode == "production" {
@@ -202,6 +257,7 @@ fn child_case(root: &Path, mode: &str) {
 
             let b_credential = replace_native_credential(&credential, ISOLATED, "456");
             assert_eq!(auth(&host)["loggedIn"], true);
+            assert_legacy_unavailable(&host);
             let second = account.current_scope().expect("replacement B scope");
             assert_ne!(first.account_id, second.account_id);
             assert_eq!(second.account_id, expected_isolated_id("456"));
@@ -213,6 +269,7 @@ fn child_case(root: &Path, mode: &str) {
 
             let returned_credential = replace_native_credential(&credential, ISOLATED, "123");
             assert_eq!(auth(&host)["loggedIn"], true);
+            assert_legacy_unavailable(&host);
             let returned = account.current_scope().expect("returned A scope");
             assert_eq!(returned.account_id, first.account_id);
             assert!(returned.generation > second.generation);
@@ -262,10 +319,43 @@ fn child_case(root: &Path, mode: &str) {
             .join("app-host/feature-host/account-session.json")
             .exists()
     );
+    assert!(
+        !root.join("app-host/feature-host/telegram").exists(),
+        "Native startup/account changes must not create a legacy directory"
+    );
+}
+
+fn legacy_child_case(root: &Path, restart: bool) {
+    let credential = root.join("native-credential.json");
+    let expected_credential = replace_native_credential(&credential, PRODUCTION, "123");
+    let host = production_host(root);
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("Native scope").account_id, "123");
+    assert_legacy_unavailable(&host);
+    if restart {
+        assert!(contains_bot(&host, BOT_RETAINED), "Native Agent must survive process restart");
+        let settings = host.dispatch(HostRequest {
+            id: None, method: "settings.snapshot".into(), params: json!({}),
+        });
+        assert!(settings.ok);
+        assert_eq!(settings.result.expect("retained settings")["network"]["proxy"]["mode"], "enabled");
+    } else {
+        assert!(!contains_bot(&host, BOT_RETAINED));
+        create(&host, BOT_RETAINED);
+        let changed = host.dispatch(HostRequest {
+            id: None, method: "settings.setNetworkProxyEnabled".into(),
+            params: json!({"proxyEnabled": true}),
+        });
+        assert!(changed.ok, "existing Settings owner must remain usable");
+        assert_eq!(changed.result.expect("settings result")["publication"]["available"], false);
+    }
+    assert_eq!(fs::read(credential).expect("retained Native credential"), expected_credential);
+    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    drop(host);
 }
 
 fn run_child(root: &Path, mode: &str) {
-    let issuer = if mode == "production" {
+    let issuer = if mode == "production" || mode.starts_with("legacy-") {
         PRODUCTION
     } else {
         ISOLATED
@@ -281,7 +371,7 @@ fn run_child(root: &Path, mode: &str) {
         .env("FABUSHI_API_BASE_URL", issuer)
         .env(
             "FABUSHI_ACCOUNT_ENVIRONMENT",
-            if mode == "production" {
+            if issuer == PRODUCTION {
                 "production"
             } else {
                 "ci-isolated"
@@ -322,21 +412,32 @@ fn run_child(root: &Path, mode: &str) {
 #[test]
 fn native_desktop_account_handoff() {
     if let Ok(mode) = std::env::var(CHILD_MODE) {
+        let root = PathBuf::from(std::env::var_os(TEST_ROOT).expect("owned test directory"));
+        if matches!(mode.as_str(), "legacy-first" | "legacy-restart") {
+            legacy_child_case(&root, mode == "legacy-restart");
+            return;
+        }
         assert!(matches!(
             mode.as_str(),
             "isolated" | "production" | "isolated-return"
         ));
-        let root = PathBuf::from(std::env::var_os(TEST_ROOT).expect("owned test directory"));
         child_case(&root, &mode);
         return;
     }
 
+    let root = test_directory("handoff");
+    for mode in ["isolated", "production", "isolated-return"] {
+        run_child(&root.0, mode);
+    }
+}
+
+fn test_directory(label: &str) -> TestDirectory {
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
     let root = TestDirectory(std::env::temp_dir().join(format!(
-        "native-app-host-handoff-{}-{nonce}",
+        "native-app-host-{label}-{}-{nonce}",
         std::process::id()
     )));
     fs::create_dir(&root.0).expect("new unique test directory");
@@ -358,7 +459,73 @@ fn native_desktop_account_handoff() {
             .file_type()
             .is_fifo()
     );
-    for mode in ["isolated", "production", "isolated-return"] {
+    root
+}
+
+fn retained_files(directory: &Path) -> BTreeMap<String, Vec<u8>> {
+    fs::read_dir(directory).expect("retained directory")
+        .map(|entry| {
+            let entry = entry.expect("retained file entry");
+            let name = entry.file_name().into_string().expect("fixture filename");
+            (name, fs::read(entry.path()).expect("read retained bytes"))
+        })
+        .collect()
+}
+
+fn retained_legacy_database_path(directory: &Path, account_id: &str) -> PathBuf {
+    // The old production namespace is retained as a rollback fixture, not as
+    // a Native startup path. Two account files below must survive unchanged.
+    let mut hasher = Sha256::new();
+    hasher.update(b"fabushi-telegram-account-v1\0");
+    hasher.update(account_id.as_bytes());
+    directory.join(format!("{:x}.sqlite3", hasher.finalize()))
+}
+
+fn retained_legacy_case(corrupt: bool) {
+    let root = test_directory(if corrupt { "legacy-corrupt" } else { "legacy-encrypted" });
+    let directory = root.0.join("app-host/feature-host/telegram");
+    fs::create_dir_all(&directory).expect("create legacy fixture directory");
+    let database = retained_legacy_database_path(&directory, "123");
+    if corrupt {
+        fs::write(&database, b"public corrupt legacy SQLite fixture\0\xff").expect("corrupt fixture");
+        // Sidecars and unknown files are retained, never cleaned at startup.
+        fs::write(database.with_extension("sqlite3-wal"), b"public retained WAL").expect("WAL fixture");
+        fs::write(database.with_extension("sqlite3-shm"), b"public retained SHM").expect("SHM fixture");
+    } else {
+        let mut store = EncryptedSqliteStore::open(
+            &database, StorageKey::from_slice(&LEGACY_KEY).expect("fixture key"),
+        ).expect("create real legacy encrypted SQLite");
+        store.commit_transition(&Default::default(), &[], 0, 1000).expect("encrypted snapshot");
+        store.save_private_metadata("retirement.fixture.v1", LEGACY_METADATA, 1000).expect("encrypted metadata");
+        drop(store);
+    }
+    fs::write(retained_legacy_database_path(&directory, "456"), b"public retained other-account database").expect("other account fixture");
+    fs::write(directory.join("preserved-user-data.bin"), b"public unclassified legacy data").expect("retained file");
+    let before = retained_files(&directory);
+    for mode in ["legacy-first", "legacy-restart"] {
         run_child(&root.0, mode);
+        assert!(retained_files(&directory) == before, "Native process must leave all legacy bytes unchanged");
+    }
+    if !corrupt {
+        // Rollback compatibility is checked with the original storage reader,
+        // only after both Native processes have terminated.
+        let store = EncryptedSqliteStore::open(
+            &database, StorageKey::from_slice(&LEGACY_KEY).expect("original fixture key"),
+        ).expect("reopen with original reader");
+        assert_eq!(store.load_private_metadata("retirement.fixture.v1").expect("decrypt metadata"), Some(LEGACY_METADATA.to_vec()));
+        let snapshot = store.load_snapshot().expect("decrypt snapshot").expect("retained snapshot");
+        assert_eq!(snapshot.revision, 1);
+        assert_eq!(snapshot.updated_at_unix_ms, 1000);
     }
 }
+
+#[test]
+fn native_startup_preserves_encrypted_legacy_storage_for_rollback() {
+    retained_legacy_case(false);
+}
+
+#[test]
+fn native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars() {
+    retained_legacy_case(true);
+}
+

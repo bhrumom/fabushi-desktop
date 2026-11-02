@@ -14,6 +14,7 @@ on:
       - 'frontend/src/production/transcript-projection*'
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
       - 'source/electron-main/coordinator/rust-coordinator-carrier*'
+      - 'source/product/fabushi/fabushi-account-service*'
       - 'desktop/package.json'
       - 'desktop/package-lock.json'
       - 'desktop/scripts/build-electron-runtime.mjs'
@@ -192,6 +193,14 @@ jobs:
         run: |
           set -euo pipefail
           cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-check.log
+      - name: Native startup isolation, retained data and account restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --lib telegram_composition_contract_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-composition.log
+          grep -Eq 'test result: ok\. 11 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/native-composition.log
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-startup-retention.log
+          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log
       - name: Verify DNS and special-config response normalization
         shell: bash
         run: |
@@ -297,7 +306,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.sha }}"
           mkdir -p artifacts/native-message-electron
           git rev-parse HEAD > artifacts/native-message-electron/target-sha.txt
-          printf '%s\n' 'FBCP-NMR-001/NMR-27; actual carrier with controlled ports/child; no live Host/service or packaged acceptance claim' > artifacts/native-message-electron/scope.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-27/31; actual carrier plus Native auth/secret-store owners with controlled Electron/HTTP boundaries; no live service, OS keychain or packaged acceptance claim' > artifacts/native-message-electron/scope.txt
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -316,6 +325,16 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/carrier.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/carrier.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/carrier.log
+      - name: Native auth lifecycle and retained legacy secret behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap source/product/fabushi/fabushi-account-service.behavior.test.mjs 2>&1 | tee artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# tests 8' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# pass 8' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/native-auth-retention.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/native-auth-retention.log
       - name: Compile actual Electron main, preload and carrier
         shell: bash
         working-directory: desktop
@@ -329,6 +348,7 @@ jobs:
           name: native-message-electron-${{ github.sha }}
           path: artifacts/native-message-electron
           if-no-files-found: error
+
 
 
 

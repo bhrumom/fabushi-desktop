@@ -1,9 +1,35 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-Date: 2026-10-19  
-Spec: TDRP-001 Revision 9  
-Parent: FBCP-001 Revision 7  
+Date: 2026-11-02  
+Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2  
+Parent: FBCP-001 Revision 8  
 Complete: false
+
+## Current bounded batch (round 14)
+
+Authoritative lock remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`, tree
+`91f2b083ab2877c0a17d07868eabec362a5cfca6`; it is not source-accepted. The older
+discovery and rebaseline observations below are historical, not a new request
+to follow floating upstream. Current ledger source-review/schema contracts
+support FMEP-SOURCE-01 risk/depth categories; this batch does not promote source
+coverage, legal status or whole-product acceptance.
+
+From checkpoint `50b0a2048adce13f2281143e6c3f7449d56344d5`, NMR-31–33 remove
+Native startup's automatic old-client instantiation in the existing Electron
+account and AppHost owners, preserving original keys, databases and settings.
+Auth lifecycle, actual Production provider absence, encrypted/corrupt data
+retention and original-reader compatibility tests are authored. Execution must
+bind the new containing commit through `native-service-contracts.yml`; the
+receipt `evidence/round14-native-startup-retention.json` records preparation
+and backend evidence, not a successful future run. Live main was reread at
+`5528062177e3865eef60a073a066cca144f9e3e8` and is untouched.
+
+FeatureHost's separate persisted MessagingService and public legacy FFI/link
+paths still require caller/data disposition. Backend #137 remains draft with
+no review/production authorization, and production `afterId=0` evidence is
+missing. Full migration and independent ACCEPT remain blocked.
+
+## Historical planning snapshot (2026-10-19)
 
 | Area | Status | Note |
 | --- | --- | --- |
@@ -46,3 +72,4 @@ Report separately:
 - independent release acceptance.
 
 Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
+

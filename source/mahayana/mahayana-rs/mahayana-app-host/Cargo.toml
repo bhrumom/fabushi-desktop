@@ -24,6 +24,10 @@ sha2.workspace = true
 rusqlite.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+# Exercise retention with the original encrypted storage reader in Actions.
+fabushi-telegram-storage = { path = "../providers/telegram-storage" }
+
 [target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
 mahayana-feature-host = { workspace = true, features = ["mobile-embedded"] }
 mahayana-host = { workspace = true, features = ["mobile-embedded"] }
@@ -31,3 +35,4 @@ mahayana-host = { workspace = true, features = ["mobile-embedded"] }
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 mahayana-feature-host = { workspace = true, features = ["desktop-full"] }
 mahayana-host = { workspace = true, features = ["desktop-full"] }
+

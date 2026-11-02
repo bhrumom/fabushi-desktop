@@ -139,6 +139,27 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 
 ### FBCP-NMR-001 native Human admission and settlement
 
+#### Round 14 extension — Native startup isolation and retained legacy data
+
+The following extends the same responsibility; the older exact95 evidence
+below retains its historical scope and does not qualify this candidate.
+
+| Requirement / oracle | Existing owner and executable case | Execution / acceptance boundary |
+| --- | --- | --- |
+| NMR-31 / NMR-AC-22 | `FabushiAuthService.writeHostCredential`; `source/product/fabushi/fabushi-account-service.behavior.test.mjs`: real Native descriptor, legacy-secret no-access/retention and login/refresh/restart/logout/account-isolation behavior | Actions `native-message-electron`; authored, execution pending at commit preparation. |
+| NMR-32 / NMR-AC-23 | `AppHost::new_with_feature_mode_and_storage_passphrase` → `create_feature_host`; `native_desktop_account_handoff` with old v1 optional legacy fields, actual provider rejection and Native account/Agent positive controls | Actions `native-message-shipping-compile`; Production mode and subprocess restart, not Test-mode substitution. |
+| NMR-33 / NMR-AC-23 | `native_startup_preserves_encrypted_legacy_storage_for_rollback`; `native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars` in the existing account-handoff test target | Compare retained files after each process; decrypt retained metadata/snapshot with the original storage API after shutdown. No data migration or package rollback claim. |
+| NMR-AC-24 | Existing workflow compiles shipping `source/host/app`, runs the three AppHost cases and Electron behaviors; preserves Human33, Agent4, private settlement3, UI16 and Electron carrier10 | Complete logs/counts/artifacts must bind `github.sha`; final FBCP/TDRP ACCEPT remains false. |
+
+The canonical ledger's existing FBCP-NMR-001 row records this target delta
+without changing source review/category/depth or source counters. FMEP-SOURCE-01
+is already represented by `source_reviews` in the current schema and
+`scripts/tdrp-source-review.mjs`; the existing Actions source-review contract
+also validates the current ledger shape. No invented read-complete or new
+schema state is needed for this composition correction. Global single-state
+authority remains open because the separate FeatureHost MessagingService and
+legacy FFI/default links remain reachable; see the current owner inventory.
+
 Scope and authority: `docs/specs/fbcp-native-message-reconciliation.md` NMR-01/02/03/04/05/06/09/18/19/20 and NMR-AC-01/02/03/04/05/12. The bounded responsibility is recorded in the existing TDRP ledger as `FBCP-NMR-001`, with existing owner anchors `MSG-SEND-SETTLEMENT`, `MSG-REACTION` and `NETWORK-SYNC-REALTIME`; no new message owner or parallel ledger is introduced.
 
 The actual shipping route is `ProductionRenderer::sendComposerPrompt` / reconnect-open -> `session/gateway.rs` Human commands -> `ProductionSessionWorkers` -> issuer/account-bound `FabushiNativeMessagingClient` and `/api/social/messages` -> existing `SandAgentDb` transcript/dispatch state -> existing transcript mutation and renderer projection. The complete `MessagingService` engine is not asserted to be the native Human send/sync path. Existing forwarding and recipient authorization reuse their shared policy functions independently.
@@ -174,3 +195,4 @@ Authorship/evidence boundary: the original strengthened ten-case blob `127700079
 The bounded Host gate passed at exact95/run41403643662. Every subsequent message change remains gated by NMR-AC-06/07/08/09/10/11/12: both named message jobs on one exact H, actual thirteen Human and four Agent nonce cases, locked AppHost compilation, response normalization, both bare future-salts library fixtures, full protocol/TCP including its live case, proxy rejection and credential-schema cases. A skipped step, diagnostic lock generation, test authorship or old-H result is not a pass. Use the existing round3 evidence receipt for execution records; no second result ledger.
 
 Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-message application and identity-transition sections recorded in `research/native-message-known-overlap-fixed-u.md`. It does not close whole upstream files or change inventory/source_reviews/unknown/unread/source acceptance. Known-message refresh, durable history-range coverage, read-state/visible receipt behavior, distinct-emoji/whole-payload bounds and stale mutation/refresh ordering remain separate open work. Full native-service, UI/package/platform, performance/soak, complete Bot regression and independent ACCEPT remain open.
+
