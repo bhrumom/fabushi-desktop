@@ -17,7 +17,9 @@
           "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
           "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
           "desktop/transcript-test.html",
-          "desktop/transcript-test.ts"
+          "desktop/transcript-test.ts",
+          "source/host/src/extensions/session/human_creation_tests.rs",
+          "source/host/src/extensions/session/agent_db_recovery.rs"
         ],
         "ui_functional_case_ids": [
           "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-OLDER-RETRY-001",
@@ -44,7 +46,9 @@
           ".github/workflows/native-service-contracts.yml#native-message-ui:exact-H:actual ProductionRenderer Chromium Transcript8; GitHub-hosted only"
         ],
         "requirement_ids": [
-          "NMR-26a"
+          "NMR-26a",
+          "NMR-CREATE-01",
+          "NMR-AC-CREATE-01"
         ],
         "test_execution_evidence": [
           "exactc83039f9da8330560680a3efccc5ae83bf2db419:run41526114480:Human125554157040 actual63 passed then resource lib test compilation E0277 stopped later cases; UI125554157593 projection33/cursor17/settlement5/Forward16 passed, existing root11 executed1pass10fail at pending older=0, new Transcript8 skipped/executed0. Electron100/Windows11/FFI15pass1live-DCignored are separately scoped, not overall acceptance.",
