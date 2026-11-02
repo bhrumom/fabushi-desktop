@@ -37,6 +37,12 @@ on:
       - 'frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts'
       - 'frontend/src/production/coordinator-client.ts'
       - 'frontend/src/production/transcript-projection*'
+      - 'frontend/src/recovered/features/conversation/workspace/draft-state.ts'
+      - 'frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts'
+      - 'source/shared/client-persistence-store*'
+      - 'frontend/src/recovered/features/conversation/workspace/reply-thread-controller*'
+      - 'desktop/e2e/native-message-author-recovery.spec.ts'
+      - 'desktop/e2e/fixtures/native-message-author-recovery.tsx'
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
       - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
       - 'source/electron-main/coordinator/rust-coordinator-carrier*'
@@ -822,7 +828,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.sha }}"
           mkdir -p artifacts/native-message-ui
           git rev-parse HEAD > artifacts/native-message-ui/target-sha.txt
-          printf '%s\n' 'FBCP-NMR-001/NMR-26; real projection/pagination modules with controlled bridge; packaged visual/a11y acceptance pending' > artifacts/native-message-ui/scope.txt
+          printf '%s\n' 'FBCP-NMR-001/NMR-26/NMR-UI-01/NMR-DRAFT-01; actual projection/pagination/draft/reply/persistence owners and production root with controlled external boundaries; packaged visual/a11y acceptance pending' > artifacts/native-message-ui/scope.txt
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -837,11 +843,47 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 34' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 34' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 42' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 42' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
+      - name: Persisted Human draft binding and retired owner recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/draft-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/draft-recovery-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/draft-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# tests 14' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# pass 14' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/draft-recovery.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/draft-recovery.log
+      - name: Existing client persistence owner I/O and ordering contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild source/shared/client-persistence-store.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/client-persistence.test.mjs 2>&1 | tee artifacts/native-message-ui/client-persistence-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/client-persistence.test.mjs 2>&1 | tee artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# tests 5' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# pass 5' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/client-persistence.log
+      - name: Restored reply scope and explicit cancellation contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/reply-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/reply-recovery-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/reply-recovery.test.mjs 2>&1 | tee artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# tests 5' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# pass 5' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/reply-recovery.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/reply-recovery.log
       - name: Durable Human cursor and canonical pagination consumers
         shell: bash
         run: |
@@ -873,6 +915,7 @@ jobs:
           grep -Fx '# skipped 0' artifacts/native-message-ui/human-retry.log
           grep -Fx '# todo 0' artifacts/native-message-ui/human-retry.log
       - name: Compile actual production renderer
+        id: renderer-build
         shell: bash
         working-directory: desktop
         run: |
@@ -888,9 +931,11 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log
       - name: Install locked Chromium for actual forward dialog
+        id: browser-install
         working-directory: desktop
         run: npx --no-install playwright install --with-deps chromium
       - name: Actual forward dialog account and lifetime behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -901,6 +946,7 @@ jobs:
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
       - name: Actual ProductionRenderer history, account and restart projection behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
         shell: bash
         working-directory: desktop
         env:
@@ -928,6 +974,7 @@ jobs:
           console.log('actual ProductionRenderer: 13 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Actual ProductionRenderer Transcript cache and continuation behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -938,6 +985,35 @@ jobs:
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# todo 0' artifacts/native-message-ui/production-transcript.log
+      - name: Actual ProductionRenderer author and draft recovery behaviors
+        if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
+        shell: bash
+        working-directory: desktop
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../artifacts/native-message-ui/author-recovery.json
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/native-message-author-recovery.spec.ts --output=author-recovery-results --retries=0 --workers=1 --reporter=line,json 2>&1 | tee ../artifacts/native-message-ui/author-recovery.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/author-recovery.json', 'utf8'));
+          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 21, actual: report.stats, errors: report.errors }, null, 2) + '\n');
+          assert.equal(report.stats.expected, 21, 'all twenty-one author and recovery cases must actually pass');
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 21);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('actual ProductionRenderer author/recovery: 21 passed, 0 failed, 0 skipped, 0 retries');
+          NODE
       - name: Preserve exact renderer evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -946,6 +1022,7 @@ jobs:
           path: |
             artifacts/native-message-ui
             desktop/test-results
+            desktop/author-recovery-results
           if-no-files-found: error
   native-message-electron:
     if: github.event_name == 'push' || inputs.message_batch

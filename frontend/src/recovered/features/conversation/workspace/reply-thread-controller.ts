@@ -38,9 +38,9 @@ export interface ReplyThreadController {
   selectReply(targetId: string): boolean;
   clearReply(): void;
   navigate(targetId: string): ReplyTargetResolution;
-  applyReplyToDraft(draft: ComposerDraft): ComposerDraft;
+  applyReplyToDraft(draft: ComposerDraft, draftScope?: ReplyThreadScope): ComposerDraft;
   clearReplyFromDraft(draft: ComposerDraft): ComposerDraft;
-  projectSubmission(submission: ComposerSubmission): ComposerSubmission;
+  projectSubmission(submission: ComposerSubmission, draftScope?: ReplyThreadScope): ComposerSubmission;
   setScope(scope: ReplyThreadScope): void;
   dispose(): void;
 }
@@ -148,19 +148,28 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       }
       return resolution;
     },
-    applyReplyToDraft(draft) {
-      if (selection == null || !sameScope(selection.scope, scope)) return { ...draft };
+    applyReplyToDraft(draft, draftScope) {
+      // A new render can precede setScope. Never overlay the retired account's
+      // in-memory selection on an explicitly scoped persisted draft.
+      if (disposed || draftScope != null && !sameScope(draftScope, scope)
+        || selection == null || !sameScope(selection.scope, scope)) return { ...draft };
       return { ...draft, replyToId: selection.targetId };
     },
     clearReplyFromDraft(draft) {
       const { replyToId: _replyToId, ...withoutReply } = draft;
       return withoutReply;
     },
-    projectSubmission(submission) {
-      const { replyToId: _replyToId, ...withoutReply } = submission;
-      return selection != null && sameScope(selection.scope, scope) && submission.agentId === scope.agentId
-        ? { ...withoutReply, replyToId: selection.targetId }
-        : withoutReply;
+    projectSubmission(submission, draftScope) {
+      const { replyToId, ...withoutReply } = submission;
+      if (disposed || draftScope != null && (draftScope.accountSlot == null || draftScope.agentId == null
+        || !sameScope(draftScope, scope) || submission.agentId !== draftScope.agentId)) return withoutReply;
+      if (selection != null && sameScope(selection.scope, scope) && submission.agentId === scope.agentId) {
+        return { ...withoutReply, replyToId: selection.targetId };
+      }
+      // Legacy callers still require a current selection. Only the mounted
+      // owner may provide the exact account/conversation of its restored draft.
+      return draftScope != null && typeof replyToId === "string" && replyToId.trim().length > 0
+        ? { ...withoutReply, replyToId } : withoutReply;
     },
     setScope(nextScope) {
       if (disposed || sameScope(scope, nextScope)) return;

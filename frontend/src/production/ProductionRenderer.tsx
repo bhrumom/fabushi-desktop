@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, recordTranscriptReadUpdate, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, isSettledTranscriptMessage, localTranscriptClientNonce, recordTranscriptReadUpdate, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -307,6 +307,39 @@ type TranscriptLoadErrorState = {
   readonly agentId: string;
   readonly accountScopeGeneration: number;
 };
+type TranscriptOperationScope = {
+  readonly accountSlot: string;
+  readonly accountGeneration: number;
+  readonly agentId: string;
+  readonly conversationGeneration: number;
+  readonly humanAuthorId: string | null | undefined;
+};
+
+type TranscriptDraftOwnership = {
+  draft: ComposerDraft | null;
+  draftIdentity: { agentId: string; draftId: string } | null;
+  recovery: ComposerDraft | null;
+  recoveryIdentity: { agentId: string; recoveryId: string } | null;
+  settled: boolean;
+};
+
+type TranscriptSubmissionScope = TranscriptOperationScope & {
+  readonly nonce: string;
+  readonly cancelled: Promise<void>;
+  invalidate(): void;
+  invalidated: boolean;
+  canonicalSettled: boolean;
+  draftOwnership?: TranscriptDraftOwnership;
+  /** Acknowledged Agent attachment commits stay with the existing queue scope. */
+  agentCommittedAttachments?: DraftAttachment[];
+  onSettled?(): void;
+};
+
+type ScopedComposerSubmission = ComposerSubmission & { readonly transcriptScope: TranscriptSubmissionScope };
+
+function submissionScope(submission: ComposerSubmission): TranscriptSubmissionScope | undefined {
+  return (submission as Partial<ScopedComposerSubmission>).transcriptScope;
+}
 type SettingsComputerActionState = {
   scope: string;
   pending: SettingsComputerActionKind | null;
@@ -330,13 +363,6 @@ function optimisticAcknowledgementEntries(nonce: string, attachments: readonly {
     { id: `pending-${nonce}`, kind: "message" as const, clientNonce: nonce },
     ...attachments.map((_, index) => ({ id: `pending-${nonce}:attachment-${index}`, kind: "user-attachment" as const, clientNonce: nonce }))
   ];
-}
-
-function localTranscriptNonce(entry: ConversationTranscriptEntry, account: CursorAuthStatus | null): string | null {
-  if (entry.kind !== "message" || entry.role !== "user") return null;
-  if ((entry.authorKind === "human" || entry.authorId != null)
-    && (account?.kind !== "logged-in" || !account.authId || entry.authorId !== account.authId)) return null;
-  return entry.clientNonce ?? null;
 }
 
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
@@ -893,6 +919,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [entriesByAgent, setEntriesByAgent] = useState<Record<string, ConversationTranscriptEntry[]>>({});
   const [transcriptLoadError, setTranscriptLoadError] = useState<TranscriptLoadErrorState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingSendScopes, setPendingSendScopes] = useState<ReadonlyMap<string, TranscriptSubmissionScope>>(() => new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
@@ -969,7 +996,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const resendSubmissionNoncesRef = useRef(new Set<string>());
   const accountIdentityRef = useRef<string | null>(null);
   const accountScopeGenerationRef = useRef(0);
-  const submissionScopesRef = useRef(new Map<string, { generation: number; accountSlot: string | null }>());
   const renderedAccountScopeGeneration = accountScopeGenerationRef.current;
   const accountObservationGenerationRef = useRef(0);
   const accountRef = useRef<CursorAuthStatus | null>(account);
@@ -1010,6 +1036,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   // Rows remain in entriesByAgent; only the exclusive history cursor is cached here.
   const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number; nextBeforeCursor?: string }>());
   const pendingTranscriptReadsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
+  const pendingTranscriptReceiptsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
+  const transcriptConversationGenerationsRef = useRef(new Map<string, number>());
+  const submissionScopesRef = useRef(new Map<string, TranscriptSubmissionScope>());
   const transportRef = useRef<TransportState>(transport);
   transportRef.current = transport;
   activeAgentIdRef.current = activeAgentId;
@@ -1020,6 +1049,148 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   hasLoadedAgentsRef.current = hasLoadedAgents;
   pinnedAgentIdsRef.current = pinnedAgentIds;
   entriesByAgentRef.current = entriesByAgent;
+
+  const isTranscriptScopeCurrent = useCallback((scope: TranscriptOperationScope) => {
+    const current = accountRef.current;
+    return current?.kind === "logged-in"
+      && (current.authId ?? current.email ?? "account") === scope.accountSlot
+      && accountIdentityRef.current === `logged-in:${scope.accountSlot}`
+      && accountScopeGenerationRef.current === scope.accountGeneration
+      && (transcriptConversationGenerationsRef.current.get(scope.agentId) ?? 0) === scope.conversationGeneration;
+  }, []);
+
+  const captureTranscriptScope = useCallback((agentId: string): TranscriptOperationScope | null => {
+    const current = accountRef.current;
+    if (current?.kind !== "logged-in") return null;
+    if (accountIdentityRef.current !== `logged-in:${current.authId ?? current.email ?? "account"}`) return null;
+    return {
+      accountSlot: current.authId ?? current.email ?? "account",
+      accountGeneration: accountScopeGenerationRef.current,
+      agentId,
+      conversationGeneration: transcriptConversationGenerationsRef.current.get(agentId) ?? 0,
+      humanAuthorId: humanConversationsRef.current.some((conversation) => conversation.id === agentId)
+        ? current.authId || null : undefined,
+    };
+  }, []);
+
+  const settlePersistedHumanDraft = useCallback((operation: TranscriptOperationScope, nonce: string) => {
+    if (typeof operation.humanAuthorId !== "string" || !isTranscriptScopeCurrent(operation)) return;
+    void composerDraftStore.settleHumanSubmission({
+      accountSlot: operation.accountSlot, agentId: operation.agentId, authorId: operation.humanAuthorId, nonce,
+    }).then(({ clearedDraft, clearedRecovery }) => {
+      if (!isTranscriptScopeCurrent(operation) || (!clearedDraft && !clearedRecovery)) return;
+      const current = composerDraftStore.snapshotsFor(operation.agentId).get();
+      // An edit made while the durable write was pending owns the mounted editor.
+      if (current.draft != null || current.recovery != null || activeAgentIdRef.current !== operation.agentId) return;
+      setComposerClearGeneration((generation) => {
+        const latest = composerDraftStore.snapshotsFor(operation.agentId).get();
+        return isTranscriptScopeCurrent(operation) && activeAgentIdRef.current === operation.agentId
+          && latest.draft == null && latest.recovery == null ? generation + 1 : generation;
+      });
+    }).catch((error: unknown) => {
+      if (isTranscriptScopeCurrent(operation)) setNotice(`Human draft recovery unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    });
+  }, [composerDraftStore, isTranscriptScopeCurrent]);
+
+  const settleTranscriptDraft = useCallback((scope: TranscriptSubmissionScope) => {
+    if (scope.invalidated || !isTranscriptScopeCurrent(scope)) return;
+    if (typeof scope.humanAuthorId === "string") {
+      if (scope.canonicalSettled) settlePersistedHumanDraft(scope, scope.nonce);
+      return;
+    }
+    const ownership = scope.draftOwnership;
+    if (ownership == null || ownership.settled || scope.invalidated || !isTranscriptScopeCurrent(scope)) return;
+    ownership.settled = true;
+    const currentDraft = composerDraftStore.snapshotsFor(scope.agentId).get();
+    const clearsRecovery = ownership.recovery != null && currentDraft.recovery === ownership.recovery;
+    if (clearsRecovery) composerDraftStore.clearRecovery(scope.agentId);
+    const cleared = ownership.draftIdentity != null
+      ? composerDraftStore.clearDraftIfCurrent(ownership.draftIdentity)
+      : ownership.draft != null && currentDraft.draft === ownership.draft
+        && composerDraftStore.clearDraftIfMatches({ agentId: scope.agentId, draft: ownership.draft });
+    if ((cleared || clearsRecovery && currentDraft.draft == null) && activeAgentIdRef.current === scope.agentId) {
+      setComposerClearGeneration((current) => scope.invalidated || !isTranscriptScopeCurrent(scope) ? current : current + 1);
+    }
+  }, [composerDraftStore, isTranscriptScopeCurrent, settlePersistedHumanDraft]);
+
+  const scopeComposerSubmission = useCallback((submission: ComposerSubmission): ScopedComposerSubmission | null => {
+    const operation = captureTranscriptScope(submission.agentId);
+    if (operation == null || operation.humanAuthorId === null) return null;
+    let cancel = () => {};
+    const scope: TranscriptSubmissionScope = {
+      ...operation,
+      nonce: submission.nonce,
+      cancelled: new Promise<void>((resolve) => { cancel = resolve; }),
+      invalidated: false,
+      canonicalSettled: false,
+      invalidate() { scope.invalidated = true; cancel(); },
+      onSettled() { settleTranscriptDraft(scope); },
+    };
+    submissionScopesRef.current.set(submission.nonce, scope);
+    return { ...submission, transcriptScope: scope };
+  }, [captureTranscriptScope, settleTranscriptDraft]);
+
+  const markTranscriptSubmissionSettled = useCallback((scope: TranscriptSubmissionScope) => {
+    if (scope.invalidated || !isTranscriptScopeCurrent(scope)) return;
+    scope.canonicalSettled = true;
+    acknowledgementController.reconcileEcho({
+      accountSlot: scope.accountSlot, agentId: scope.agentId, nonce: scope.nonce, echoedNonce: scope.nonce,
+    });
+    scope.onSettled?.();
+  }, [acknowledgementController, isTranscriptScopeCurrent]);
+
+  const observeTranscriptSettlement = useCallback((agentId: string, entry: ConversationTranscriptEntry) => {
+    const current = accountRef.current;
+    if (current?.kind !== "logged-in") return;
+    const scope = entry.kind === "message" && entry.clientNonce != null
+      ? submissionScopesRef.current.get(entry.clientNonce) : undefined;
+    const human = humanConversationsRef.current.some((conversation) => conversation.id === agentId)
+      || (scope?.agentId === agentId && scope.humanAuthorId !== undefined)
+      || (entry.kind === "message" && entry.authorKind === "human");
+    const nonce = localTranscriptClientNonce(entry, human ? current.authId || null : undefined);
+    if (nonce == null) return;
+    if (scope?.agentId === agentId && (scope.invalidated || !isTranscriptScopeCurrent(scope)
+      || localTranscriptClientNonce(entry, scope.humanAuthorId) !== scope.nonce)) return;
+    // A durable dispatching row is not a send receipt. Agent attachment echoes
+    // retain the existing acknowledgement controller's multi-attachment rule.
+    const attachmentEcho = "sourceKind" in entry && entry.sourceKind === "user-attachment";
+    if (!isSettledTranscriptMessage(entry) && (human || !attachmentEcho)) return;
+    if (scope != null && scope.agentId === agentId
+      && localTranscriptClientNonce(entry, scope.humanAuthorId) === scope.nonce
+      && isSettledTranscriptMessage(entry)) markTranscriptSubmissionSettled(scope);
+    else if (human && isSettledTranscriptMessage(entry)) {
+      const operation = captureTranscriptScope(agentId);
+      if (operation != null) settlePersistedHumanDraft({ ...operation, humanAuthorId: current.authId || null }, nonce);
+    }
+    acknowledgementController.ingestTranscriptEvent({
+      accountSlot: current.authId ?? current.email ?? "account", agentId,
+      entry: { id: entry.id, kind: attachmentEcho ? "user-attachment" : "message", clientNonce: nonce },
+    });
+  }, [acknowledgementController, captureTranscriptScope, isTranscriptScopeCurrent, markTranscriptSubmissionSettled, settlePersistedHumanDraft]);
+
+  const invalidateTranscriptConversation = useCallback((agentId: string) => {
+    const operation = captureTranscriptScope(agentId);
+    if (operation != null) composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId });
+    transcriptConversationGenerationsRef.current.set(agentId, (transcriptConversationGenerationsRef.current.get(agentId) ?? 0) + 1);
+    for (const [nonce, scope] of submissionScopesRef.current) {
+      if (scope.agentId !== agentId) continue;
+      scope.invalidate();
+      acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce });
+      composerSubmissionQueueRef.current?.cancelQueued(nonce);
+      composerSubmissionQueueRef.current?.discard(nonce);
+      submissionScopesRef.current.delete(nonce);
+    }
+    for (const read of pendingTranscriptReceiptsRef.current) {
+      if (read.agentId === agentId) pendingTranscriptReceiptsRef.current.delete(read);
+    }
+    setPendingSendScopes((current) => {
+      const scope = current.get(agentId);
+      if (scope == null || (!scope.invalidated && isTranscriptScopeCurrent(scope))) return current;
+      const next = new Map(current);
+      next.delete(agentId);
+      return next;
+    });
+  }, [acknowledgementController, captureTranscriptScope, composerDraftStore, isTranscriptScopeCurrent]);
 
   const reconcileCompleteRosterSelection = useCallback((projected: readonly RendererAgent[]) => {
     const allAgentIds = projected.map((agent) => agent.id);
@@ -1072,12 +1243,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const accountNow = accountRef.current;
       const liveSlot = accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null;
       if (accountSlot == null || liveSlot !== accountSlot) return;
+      const scope = captureTranscriptScope(agentId);
+      if (scope == null) return;
+      for (const entry of page.entries) observeTranscriptSettlement(agentId, entry);
       transcriptHistoryCursorsRef.current.set(agentId, {
         accountSlot,
         nextBeforeSeq: page.nextBeforeSeq,
         nextBeforeCursor: page.nextBeforeCursor,
       });
-      setEntriesByAgent((current) => ({
+      setEntriesByAgent((current) => !isTranscriptScopeCurrent(scope) ? current : ({
         ...current,
         [agentId]: mergeOlderTranscriptEntries(current[agentId] ?? [], page.entries),
       }));
@@ -1154,59 +1328,89 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const sendComposerPrompt = async (submission: ComposerSubmission, admission?: ComposerSubmissionAdmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
-    const scope = submissionScopesRef.current.get(submission.nonce);
-    const isCurrent = () => scope != null && scope.generation === accountScopeGenerationRef.current
-      && accountRef.current?.kind === "logged-in" && admission?.isCurrent?.() !== false;
-    if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
+    const scope = submissionScope(submission);
+    if (scope == null) throw new Error("Transcript send scope was cleared");
+    const isCurrent = () => !scope.invalidated && isTranscriptScopeCurrent(scope)
+      && admission?.isCurrent?.() !== false;
+    if (!isCurrent()) throw new Error("Transcript send scope was cleared");
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
-    if (humanConversation != null) {
-      const result = await sendHumanComposerSubmission(submission, {
-        client, bridge, isCurrent,
-        onCommitted: (originalPath) => { if (isCurrent()) stagedPaths.current.delete(originalPath); },
+    if (scope.humanAuthorId !== undefined) {
+      if (humanConversation == null) throw new Error("Human send conversation is unavailable");
+      if (typeof scope.humanAuthorId !== "string") throw new Error("Human send author is unavailable");
+      await composerDraftStore.bindHumanSubmission({
+        accountSlot: scope.accountSlot, agentId: scope.agentId, authorId: scope.humanAuthorId, nonce: scope.nonce,
+        draftId: scope.draftOwnership?.draftIdentity?.draftId ?? null,
+        recoveryId: scope.draftOwnership?.recoveryIdentity?.recoveryId ?? null,
       });
-      if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
-      const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
-      if (authoritative != null) {
+      if (!isCurrent()) throw new Error("Transcript send scope was cleared");
+      const receipt: TranscriptReadUpdateBuffer = {
+        accountSlot: scope.accountSlot, agentId: scope.agentId, isCurrent, updates: new Map(),
+      };
+      pendingTranscriptReceiptsRef.current.add(receipt);
+      try {
+        const result = await sendHumanComposerSubmission(submission, {
+          client, bridge, isCurrent,
+          onCommitted: (originalPath) => { if (isCurrent()) stagedPaths.current.delete(originalPath); },
+        });
+        if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
+        const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
+        if (authoritative == null || !isSettledTranscriptMessage(authoritative)
+          || localTranscriptClientNonce(authoritative, scope.humanAuthorId) !== submission.nonce) {
+          throw new Error("Human send settlement returned an invalid transcript entry");
+        }
+        const settled = applyTranscriptReadUpdates([authoritative], receipt.updates)[0];
+        markTranscriptSubmissionSettled(scope);
         setEntriesByAgent((current) => {
-          if (!isCurrent()) return current;
+          if (!receipt.isCurrent()) return current;
           return {
             ...current,
-            [submission.agentId]: reconcileTranscriptMutation(current[submission.agentId] ?? [], authoritative, {
+            [submission.agentId]: reconcileTranscriptMutation(current[submission.agentId] ?? [], settled, {
               previousId: `pending-${submission.nonce}`, appendIfMissing: true, preserveSettled: true,
             }),
           };
         });
-        acknowledgementController.reconcileEcho({
-          accountSlot: scope!.accountSlot,
-          agentId: submission.agentId,
-          nonce: submission.nonce,
-          echoedNonce: submission.nonce
-        });
-      }
-      try {
-        const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-        if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
-        humanConversationsRef.current = projectedHumans;
-        setHumanConversations(projectedHumans);
-      } catch (error) {
-        if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
-        // The Host has already settled this send. A roster read failure must
-        // not restore its draft or turn that canonical message into a retry.
-        setNotice((current) => !isCurrent() ? current : error instanceof Error
-          ? `Human roster refresh unavailable: ${error.message}`
-          : `Human roster refresh unavailable: ${String(error)}`);
+        try {
+          const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
+          if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
+          humanConversationsRef.current = projectedHumans;
+          setHumanConversations(projectedHumans);
+        } catch (error) {
+          if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
+          // The Host has already settled this send; roster refresh cannot fail it.
+          setNotice((current) => !receipt.isCurrent() ? current : error instanceof Error
+            ? `Human roster refresh unavailable: ${error.message}`
+            : `Human roster refresh unavailable: ${String(error)}`);
+        }
+      } finally {
+        pendingTranscriptReceiptsRef.current.delete(receipt);
       }
       return;
     }
-    const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
-    const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
-    if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
-    for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
-    setEntriesByAgent((current) => ({
+    const committed = scope.agentCommittedAttachments ??= [];
+    if (committed.length > submission.attachments.length
+      || committed.some((attachment, index) => attachment.name !== submission.attachments[index]?.name)) {
+      throw new Error("Agent attachment progress conflicts with its original submission");
+    }
+    // The existing bridge can commit one file before a later file fails.
+    // Retain each acknowledged path on this queue scope before continuing.
+    for (let index = committed.length; index < submission.attachments.length; index += 1) {
+      if (!isCurrent()) throw new Error("Transcript send scope was cleared");
+      const original = submission.attachments[index];
+      const attachment = bridge == null ? { ...original }
+        : (await commitComposerAttachments(bridge, [{ ...original }]))[0];
+      if (attachment == null || typeof attachment.path !== "string" || attachment.path.length === 0) {
+        throw new Error("The desktop bridge did not return a committed Agent attachment");
+      }
+      committed.push(attachment);
+      if (!isCurrent()) throw new Error("Transcript send scope was cleared");
+      stagedPaths.current.delete(original.path);
+    }
+    const attachments = committed.map((attachment) => ({ ...attachment }));
+    setEntriesByAgent((current) => !isTranscriptScopeCurrent(scope) ? current : ({
       ...current,
-      [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && entry.clientNonce === submission.nonce
-        ? { ...entry, attachments, text: submission.prompt }
-        : entry)
+      [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message"
+        && localTranscriptClientNonce(entry, scope.humanAuthorId) === submission.nonce && !isSettledTranscriptMessage(entry)
+          ? { ...entry, attachments, text: submission.prompt } : entry)
     }));
     await client.call("sendPrompt", {
       agentId: submission.agentId,
@@ -1221,7 +1425,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
       ...(submission.isFork === undefined ? {} : { isFork: submission.isFork })
     });
-    if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
+    if (scope.invalidated || !isTranscriptScopeCurrent(scope)) throw new Error("Transcript send scope was cleared");
   };
   const [sendJournalApprovalLifecycle] = useState(() => createSendJournalApprovalLifecycle<
     ComposerSubmission,
@@ -1243,7 +1447,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         try {
           const result = queue.submit(input.submission);
           const phase = await result.completion;
-          if (phase === "sent") input.onJournaled?.({ nonce: input.submission.nonce });
+          const scope = submissionScope(input.submission);
+          if (phase === "sent" && scope != null && !scope.invalidated && isTranscriptScopeCurrent(scope)) {
+            input.onJournaled?.({ nonce: input.submission.nonce });
+          }
           return phase;
         } finally {
           resendSubmissionNoncesRef.current.delete(input.submission.nonce);
@@ -1257,29 +1464,43 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [composerSubmissionQueue] = useState(() => {
     const queue = createComposerSubmissionQueue({
       isTransportDown: () => transportRef.current !== "connected",
-      send: async (submission, admission) => {
-        const scope = submissionScopesRef.current.get(submission.nonce);
-        if (scope == null || scope.generation !== accountScopeGenerationRef.current
-          || accountRef.current?.kind !== "logged-in") {
-          throw new Error("Composer submission is outside its account scope");
-        }
-        return admission != null || resendSubmissionNoncesRef.current.has(submission.nonce)
-          ? sendComposerPrompt(submission, admission)
-          : sendJournalApprovalLifecycle.sendPrompt(submission);
+      send: (submission, admission) => {
+        const scope = submissionScope(submission);
+        if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope)) return Promise.resolve();
+        const sending = admission != null || resendSubmissionNoncesRef.current.has(submission.nonce)
+          ? sendComposerPrompt(submission, admission) : sendJournalApprovalLifecycle.sendPrompt(submission);
+        return Promise.race([sending, scope.cancelled.then(() => { throw new Error("Transcript send scope was cleared"); })]);
       },
     onPhase: (submission) => {
-      const scope = submissionScopesRef.current.get(submission.nonce);
-      if (scope == null || scope.generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false) return;
-      if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
-      if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
-      if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
-      if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
+      const scope = submissionScope(submission);
+      if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false) return;
+      const composerBusy = composerSubmissionBusyState(submission);
+      setPendingSendScopes((current) => {
+        if (composerBusy === undefined || submission.isCurrentAttempt?.() === false) return current;
+        if (composerBusy) {
+          if (scope.invalidated || !isTranscriptScopeCurrent(scope) || current.get(scope.agentId) === scope) return current;
+          return new Map(current).set(scope.agentId, scope);
+        }
+        // A late completion may release only its own pending send. Other
+        // conversations and a replacement scope keep their independent state.
+        if (current.get(scope.agentId) !== scope) return current;
+        const next = new Map(current);
+        next.delete(scope.agentId);
+        return next;
+      });
+      if (!scope.canonicalSettled) {
+        if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
+        if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
+        if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
+        if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
+      }
       setEntriesByAgent((current) => {
-        if (scope.generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false) return current;
+        if (scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false) return current;
+        const matches = (entry: ConversationTranscriptEntry) => localTranscriptClientNonce(entry, scope.humanAuthorId) === submission.nonce;
         if (submission.phase === "cancelled") {
           return {
             ...current,
-            [submission.agentId]: (current[submission.agentId] ?? []).filter((entry) => entry.id !== `pending-${submission.nonce}`)
+            [submission.agentId]: (current[submission.agentId] ?? []).filter((entry) => !matches(entry) || isSettledTranscriptMessage(entry))
           };
         }
         const delivery: "pending" | "queued" | "failed" | "sent" = submission.phase === "pending" || submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent"
@@ -1287,32 +1508,62 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           : "pending";
         return {
           ...current,
-          [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && entry.id === `pending-${submission.nonce}`
+          [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && matches(entry)
+            && !scope.canonicalSettled && !isSettledTranscriptMessage(entry)
             ? { ...entry, delivery }
             : entry)
         };
       });
-      const composerBusy = composerSubmissionBusyState(submission);
-      if (composerBusy !== undefined) setBusy(composerBusy);
-      if (submission.phase === "sent" || submission.phase === "cancelled") submissionScopesRef.current.delete(submission.nonce);
+      if (submission.phase === "sent" || submission.phase === "cancelled") {
+        if (submissionScopesRef.current.get(submission.nonce) === scope) submissionScopesRef.current.delete(submission.nonce);
+      }
     },
     onFailure: (submission, error) => {
-      if (submissionScopesRef.current.get(submission.nonce)?.generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false) return;
+      if (submission.isCurrentAttempt?.() === false) return;
+      const scope = submissionScope(submission);
+      if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope) || scope.canonicalSettled) {
+        // The queue has already released its active slot before this callback.
+        // Discard the stale/settled failure so it cannot block new queued work.
+        composerSubmissionQueueRef.current?.discard(submission.nonce);
+        composerSubmissionQueueRef.current?.flush();
+        if (scope != null && !scope.invalidated && isTranscriptScopeCurrent(scope) && scope.canonicalSettled) {
+          markTranscriptSubmissionSettled(scope);
+          if (submissionScopesRef.current.get(submission.nonce) === scope) submissionScopesRef.current.delete(submission.nonce);
+          if (!submission.isRetry) setNotice(error instanceof Error ? error.message : String(error));
+        }
+        return;
+      }
       if (submission.isRetry) {
-        const generation = accountScopeGenerationRef.current;
         setNotice((current) => {
-          if (generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false
-            || entriesByAgentRef.current[submission.agentId]?.some((entry) => entry.kind === "message"
-              && entry.authorKind === "human" && entry.clientNonce === submission.nonce
-              && entry.remoteMessageId != null && entry.delivery === "sent")) return current;
+          if (scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false
+            || scope.canonicalSettled || entriesByAgentRef.current[submission.agentId]?.some((entry) =>
+              localTranscriptClientNonce(entry, scope.humanAuthorId) === submission.nonce && isSettledTranscriptMessage(entry))) return current;
           return error instanceof Error ? error.message : String(error);
         });
         return;
       }
+      const beforeRecovery = composerDraftStore.snapshotsFor(submission.agentId).get();
       composerDraftStore.recoverDraft(submission.agentId, {
         prompt: submission.prompt,
-        attachments: [...submission.attachments]
-      });
+        attachments: [...submission.attachments],
+        ...(submission.richText === undefined ? {} : { richText: submission.richText }),
+        ...(submission.replyToId === undefined ? {} : { replyToId: submission.replyToId }),
+        ...(submission.isFork === undefined ? {} : { isFork: submission.isFork }),
+      }, typeof scope.humanAuthorId === "string" ? {
+        accountSlot: scope.accountSlot, authorId: scope.humanAuthorId, nonce: submission.nonce,
+      } : undefined);
+      const recovered = composerDraftStore.snapshotsFor(submission.agentId).get();
+      const ownership = scope.draftOwnership ??= { draft: null, draftIdentity: null, recovery: null, recoveryIdentity: null, settled: false };
+      if (beforeRecovery.draft == null || beforeRecovery.draft === ownership.draft) {
+        ownership.draft = recovered.draft;
+        ownership.draftIdentity = recovered.draft == null ? null
+          : composerDraftStore.identifyDraft({ agentId: submission.agentId, draft: recovered.draft });
+      }
+      if (beforeRecovery.draft != null) {
+        ownership.recovery = recovered.recovery;
+        ownership.recoveryIdentity = recovered.recovery == null ? null
+          : composerDraftStore.identifyRecovery({ agentId: submission.agentId, draft: recovered.recovery });
+      }
       setNotice(error instanceof Error ? error.message : String(error));
       }
     });
@@ -1334,6 +1585,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const transcriptAccountSlot = account?.kind === "logged-in"
     ? account.authId ?? account.email ?? "account"
     : null;
+  const activeSendScope = pendingSendScopes.get(activeAgentId);
+  const isActiveSendPending = activeSendScope != null
+    && !activeSendScope.invalidated && isTranscriptScopeCurrent(activeSendScope);
   const renderedRetrySelection = selectionStore.get();
   const renderedRetrySelectionGeneration = openAgentRequestGenerationRef.current;
   const [humanMessageRetryController] = useState(() => createHumanMessageRetryController({
@@ -1355,10 +1609,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setNotice,
     onAuthoritativeEntry: (scope, conversationId, entry, isCurrent) => {
       if (!isCurrent()) return;
-      for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, scope.accountSlot, conversationId)) {
-        read.updates.set(entry.id, entry);
+      for (const reads of [pendingTranscriptReadsRef.current, pendingTranscriptReceiptsRef.current]) {
+        for (const read of currentTranscriptReadBuffers(reads, scope.accountSlot, conversationId)) {
+          recordTranscriptReadUpdate(read.updates, entry);
+        }
       }
-      if (isCurrent()) transcriptPaginationController.ingestEntryUpdate(scope.accountSlot, conversationId, entry);
+      if (!isCurrent()) return;
+      observeTranscriptSettlement(conversationId, entry);
+      transcriptPaginationController.ingestEntryUpdate(scope.accountSlot, conversationId, entry);
     },
   }));
   useStrictModeSafeDisposal(humanMessageRetryController);
@@ -1455,6 +1713,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (activeIsHuman) {
       if (humanReactionTransport == null || activeAgentId.length === 0) return null;
       return <ReactionPills
+        key={`${accountScopeGenerationRef.current}:${transcriptConversationGenerationsRef.current.get(activeAgentId) ?? 0}:${props.entry.id}`}
         agentId={activeAgentId}
         entryId={props.entry.id}
         reactions={reactions}
@@ -1481,6 +1740,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (activeIsHuman) {
       if (humanReactionTransport == null || activeAgentId.length === 0) return null;
       return <MessageReactionAction
+        key={`${accountScopeGenerationRef.current}:${transcriptConversationGenerationsRef.current.get(activeAgentId) ?? 0}:${props.entry.id}`}
         agentId={activeAgentId}
         entryId={props.entry.id}
         myReactions={myReactions}
@@ -2258,10 +2518,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   useEffect(() => {
     replyThreadController.replaceEntries(entries);
   }, [entries, replyThreadController]);
+  const selectComposerReply = useCallback((targetId: string) => {
+    const currentScope = replyThreadController.getScope();
+    if (currentScope.accountSlot !== transcriptAccountSlot || currentScope.agentId !== activeAgentId
+      || !replyThreadController.selectReply(targetId)) return;
+    const snapshot = activeDraftSnapshotStore.get();
+    const current = snapshot.draft ?? snapshot.recovery;
+    if (current == null) return;
+    composerDraftStore.setDraft(activeAgentId, replyThreadController.applyReplyToDraft(current, currentScope));
+    if (snapshot.draft == null && snapshot.recovery != null) composerDraftStore.clearRecovery(activeAgentId);
+  }, [activeAgentId, activeDraftSnapshotStore, composerDraftStore, replyThreadController, transcriptAccountSlot]);
   const transcriptCardInteractions = useMemo<TranscriptCardInteractionContext>(() => ({
     threadRootId: null,
     isReadOnly: activeAgent == null || activeAgent.isGroup || activeIsHuman,
-    onReply: (entryId) => { replyThreadController.selectReply(entryId); },
+    onReply: selectComposerReply,
     onThread: (entryId) => { replyThreadController.navigate(entryId); },
     getThreadSummary: () => null,
     openThread: (targetId) => { replyThreadController.navigate(targetId); },
@@ -2276,7 +2546,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       row?.scrollIntoView({ block: "center", behavior: "smooth" });
     },
     isEntryInScope: (targetId) => replyThreadController.resolve(targetId).isInScope,
-  }), [activeAgent, activeIsHuman, entries, replyThreadController]);
+  }), [activeAgent, activeIsHuman, entries, replyThreadController, selectComposerReply]);
   const handoffHumanConversationToAgent = useCallback(async () => {
     if (client == null || activeAgent == null || !activeIsHuman || humanHandoffAgentId.length === 0) return;
     const targetAgent = agentsRef.current.find((agent) => agent.id === humanHandoffAgentId);
@@ -2329,16 +2599,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     void linkMetadataProvider.setUrls(paletteLinks.map((link) => link.url));
   }, [linkMetadataProvider, paletteLinks]);
   const baseDraft = activeDraftSnapshot.draft ?? activeDraftSnapshot.recovery ?? EMPTY_DRAFT;
-  const draft = replyThreadController.applyReplyToDraft(baseDraft);
+  const composerReplyScope = { accountSlot: transcriptAccountSlot, agentId: activeAgentId.length > 0 ? activeAgentId : null };
+  const draft = replyThreadController.applyReplyToDraft(baseDraft, composerReplyScope);
   const clearReplyTarget = useCallback(() => {
+    const currentScope = replyThreadController.getScope();
+    if (currentScope.accountSlot !== transcriptAccountSlot || currentScope.agentId !== activeAgentId) return;
     replyThreadController.clearReply();
-    if (activeAgentId.length > 0 && activeDraftSnapshot.draft != null) {
-      composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(activeDraftSnapshot.draft));
+    const snapshot = activeDraftSnapshotStore.get();
+    const current = snapshot.draft ?? snapshot.recovery;
+    if (activeAgentId.length > 0 && current != null) {
+      // Cancelling a restored recovery is a new draft edit. Retire only that
+      // visible recovery so its old reply cannot return when the editor clears.
+      composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(current));
+      if (snapshot.draft == null && snapshot.recovery != null) composerDraftStore.clearRecovery(activeAgentId);
     }
-  }, [activeAgentId, activeDraftSnapshot.draft, composerDraftStore, replyThreadController]);
-  const replyTarget: ComposerReplyTarget | undefined = replySelection == null
+  }, [activeAgentId, activeDraftSnapshotStore, composerDraftStore, replyThreadController, transcriptAccountSlot]);
+  const currentReplyScope = replyThreadController.getScope();
+  const replyScopeCurrent = currentReplyScope.accountSlot === transcriptAccountSlot
+    && currentReplyScope.agentId === activeAgentId;
+  const replyTarget: ComposerReplyTarget | undefined = !replyScopeCurrent || draft.replyToId == null
     ? undefined
-    : { targetId: replySelection.targetId, preview: replySelection.preview };
+    : { targetId: draft.replyToId, preview: replySelection?.targetId === draft.replyToId
+      && replySelection.scope.accountSlot === transcriptAccountSlot && replySelection.scope.agentId === activeAgentId
+      ? replySelection.preview : replyThreadController.resolve(draft.replyToId).preview };
   const transcribeAudio = useCallback((audio: Uint8Array, mimeType: string, language?: string) => bridge.transcribeAudio(audio, mimeType, language), [bridge]);
   const resolveAttachmentMedia = useCallback((source: string) => bridge.resolveAttachmentMedia(source), [bridge]);
   const computer = useComputerExperience({ activeAgentId: activeAgent == null || activeAgent.isGroup || activeIsHuman ? null : activeAgent.id, bridge, client });
@@ -2665,11 +2948,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         } else if (activeHuman != null && entriesByAgentRef.current[activeHumanId] != null) {
           const accountNow = accountRef.current;
           const requestGeneration = openAgentRequestGenerationRef.current;
+          const conversationGeneration = transcriptConversationGenerationsRef.current.get(activeHumanId) ?? 0;
           const pendingRead: TranscriptReadUpdateBuffer = {
             accountSlot: accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null,
             agentId: activeHumanId,
             isCurrent: () => isCurrent()
               && selectionStore.get().currentAgentId === activeHumanId
+              && (transcriptConversationGenerationsRef.current.get(activeHumanId) ?? 0) === conversationGeneration
               && openAgentRequestGenerationRef.current === requestGeneration,
             updates: new Map(),
           };
@@ -2685,7 +2970,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 activeHuman.name,
                 activeHumanId
               );
-              setEntriesByAgent((current) => ({
+              for (const entry of projectedEntries) observeTranscriptSettlement(activeHumanId, entry);
+              setEntriesByAgent((current) => !isCurrent()
+                || (transcriptConversationGenerationsRef.current.get(activeHumanId) ?? 0) !== conversationGeneration ? current : ({
                 ...current,
                 [activeHumanId]: applyTranscriptReadUpdates(reconcileTranscriptRefresh(
                   current[activeHumanId] ?? [],
@@ -2727,7 +3014,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } finally {
       if (isCurrent()) setIsRosterRetrying(false);
     }
-  }, [client, reconcileCompleteRosterSelection, selectionStore, transcriptPaginationController]);
+  }, [client, observeTranscriptSettlement, reconcileCompleteRosterSelection, selectionStore, transcriptPaginationController]);
 
   const [connectionController] = useState(() => client == null
     ? null
@@ -2766,6 +3053,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [client]);
 
   const openAgent = useCallback(async (agentId: string) => {
+    const conversationGeneration = transcriptConversationGenerationsRef.current.get(agentId) ?? 0;
     const accountScopeGeneration = accountScopeGenerationRef.current;
     const transportScopeGeneration = transportScopeGenerationRef.current;
     if (accountRef.current?.kind !== "logged-in") return;
@@ -2809,6 +3097,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       agentId,
       isCurrent: () => accountScopeGenerationRef.current === accountScopeGeneration
         && openAgentRequestGenerationRef.current === requestGeneration
+        && (transcriptConversationGenerationsRef.current.get(agentId) ?? 0) === conversationGeneration
         && selectionStore.get().currentAgentId === agentId
         && (humanConversation != null || transportScopeGenerationRef.current === transportScopeGeneration)
         && accountRef.current?.kind === "logged-in",
@@ -2841,11 +3130,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       // otherwise current Human transcript. Agent tail reads remain transport-fenced.
       if (!pendingRead.isCurrent()) return;
       const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
+      const projectedEntries = applyTranscriptReadUpdates(projectedPage.entries, pendingRead.updates);
+      for (const entry of projectedEntries) observeTranscriptSettlement(agentId, entry);
       setEntriesByAgent((current) => !pendingRead.isCurrent() ? current : ({
         ...current,
         // Preserve canonical rows already projected by the feed, then apply
         // events captured during this read over both snapshot projections.
-        [agentId]: applyTranscriptReadUpdates(reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries), pendingRead.updates)
+        [agentId]: applyTranscriptReadUpdates(reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedEntries), pendingRead.updates)
       }));
       if (transcriptAccountSlot != null) transcriptHistoryCursorsRef.current.set(agentId, {
         accountSlot: transcriptAccountSlot,
@@ -2870,7 +3161,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       pendingTranscriptReadsRef.current.delete(pendingRead);
       if (initialTranscriptRequestRef.current?.requestGeneration === requestGeneration) initialTranscriptRequestRef.current = null;
     }
-  }, [client, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+  }, [client, observeTranscriptSettlement, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   const openGroupMemberChat = useCallback((agentId: string) => {
     setGroupInfoPaneOpen(false);
@@ -2963,31 +3254,42 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ids.add(entryId);
       preBaselineFeedEntryIds.set(ownerId, ids);
     };
+    const rememberTranscriptUpdate = (ownerId: string, entry: ConversationTranscriptEntry, previousId?: string) => {
+      // Each in-flight read/receipt owns its overlay. Completing one cannot
+      // consume an event still needed by a concurrent read or delayed receipt.
+      for (const reads of [pendingTranscriptReadsRef.current, pendingTranscriptReceiptsRef.current]) {
+        for (const read of currentTranscriptReadBuffers(reads, transcriptAccountSlot, ownerId)) {
+          recordTranscriptReadUpdate(read.updates, entry, previousId);
+        }
+      }
+    };
+    const resolveAgentRetryEcho = (ownerId: string, entry: ConversationTranscriptEntry): ConversationTranscriptEntry => {
+      if (humanConversationsRef.current.some((conversation) => conversation.id === ownerId)) return entry;
+      const nonce = localTranscriptClientNonce(entry, undefined);
+      if (nonce == null || entry.kind !== "message") return entry;
+      const record = acknowledgementController.getSnapshot().records.find((candidate) => candidate.agentId === ownerId
+        && (candidate.nonce === nonce || candidate.priorNonces.includes(nonce)));
+      return record == null || record.nonce === nonce ? entry : { ...entry, clientNonce: record.nonce };
+    };
     const stopTranscript = reactionRoot?.feed.observeEntriesFeed({
       onBaseline: ({ agentId: ownerId, entries: rawEntries }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+        const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
         let projectedEntries = projectTranscriptFeedEntries(rawEntries, owner?.name ?? UI_TEXT.title, ownerId);
-        for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
-          projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
+        for (const reads of [pendingTranscriptReadsRef.current, pendingTranscriptReceiptsRef.current]) {
+          for (const read of currentTranscriptReadBuffers(reads, transcriptAccountSlot, ownerId)) {
+            projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
+          }
         }
         for (const entry of projectedEntries) {
           humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
           humanMessageRetryController.observeEntry(ownerId, entry);
-          const clientNonce = localTranscriptNonce(entry, accountRef.current);
-          if (clientNonce == null) continue;
-          acknowledgementController.ingestTranscriptEvent({
-            accountSlot: acknowledgementScopeRef.current.accountSlot,
-            agentId: ownerId,
-            entry: {
-              id: entry.id,
-              kind: "sourceKind" in entry && entry.sourceKind === "user-attachment" ? "user-attachment" : "message",
-              clientNonce,
-            },
-          });
+          observeTranscriptSettlement(ownerId, entry);
         }
         const preserveEntryIds = new Set(preBaselineFeedEntryIds.get(ownerId) ?? []);
-        setEntriesByAgent((current) => ({
+        setEntriesByAgent((current) => !isCurrent()
+          || (transcriptConversationGenerationsRef.current.get(ownerId) ?? 0) !== conversationGeneration ? current : ({
           ...current,
           [ownerId]: reconcileTranscriptTail(current[ownerId] ?? [], projectedEntries, preserveEntryIds, entriesAtFeedStart[ownerId] ?? [])
         }));
@@ -2997,35 +3299,35 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       onUpdated: ({ agentId: ownerId, before, after: event }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-        const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
-        if (projected == null || !ownerId) return;
+        const rawProjected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
+        if (rawProjected == null || !ownerId) return;
+        const projected = resolveAgentRetryEcho(ownerId, rawProjected);
         humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
         humanMessageRetryController.observeEntry(ownerId, projected);
+        const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
         rememberPreBaselineFeedEntry(ownerId, projected.id);
         const previousId = before != null && typeof before === "object" && "id" in before && typeof before.id === "string" ? before.id : undefined;
         if (previousId != null) {
           humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: previousId });
           rememberPreBaselineFeedEntry(ownerId, previousId);
         }
-        for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
-          recordTranscriptReadUpdate(read.updates, projected, previousId);
-        }
+        rememberTranscriptUpdate(ownerId, projected, previousId);
+        observeTranscriptSettlement(ownerId, projected);
         transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected, previousId);
-        const clientNonce = localTranscriptNonce(projected, accountRef.current);
-        const isAttachmentEcho = projected.kind === "message" && "sourceKind" in projected && projected.sourceKind === "user-attachment";
-        if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({
-          accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId,
-          entry: { id: projected.id, kind: isAttachmentEcho ? "user-attachment" : "message", clientNonce },
-        });
         setEntriesByAgent((current) => {
+          if (!isCurrent() || (transcriptConversationGenerationsRef.current.get(ownerId) ?? 0) !== conversationGeneration) return current;
           const existing = current[ownerId] ?? [];
-          const next = reconcileTranscriptMutation(existing, projected, { previousId, preserveCurrentId: isAttachmentEcho });
+          const isAgentAttachment = localTranscriptClientNonce(projected, undefined) != null
+            && "sourceKind" in projected && projected.sourceKind === "user-attachment";
+          const next = reconcileTranscriptMutation(existing, projected, { previousId, preserveCurrentId: isAgentAttachment });
           return next === existing ? current : { ...current, [ownerId]: next };
         });
       },
       onCleared: (ownerId) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         humanReactionSettlement.clearConversation(ownerId);
+        invalidateTranscriptConversation(ownerId);
+        sendJournalApprovalLifecycle.reset();
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
         transcriptHistoryCursorsRef.current.delete(ownerId);
@@ -3033,6 +3335,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           if (read.agentId === ownerId) pendingTranscriptReadsRef.current.delete(read);
         }
         setEntriesByAgent((current) => {
+          if (!isCurrent()) return current;
           if (!(ownerId in current)) return current;
           const next = { ...current };
           delete next[ownerId];
@@ -3052,29 +3355,22 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       onAppended: ({ agentId: ownerId, entry: event }) => {
       if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
       const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-      const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
-      if (projected == null || !ownerId) return;
+      const rawProjected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
+      if (rawProjected == null || !ownerId) return;
+      const projected = resolveAgentRetryEcho(ownerId, rawProjected);
       humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
       humanMessageRetryController.observeEntry(ownerId, projected);
+      const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
       rememberPreBaselineFeedEntry(ownerId, projected.id);
-      for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
-        recordTranscriptReadUpdate(read.updates, projected);
-      }
+      rememberTranscriptUpdate(ownerId, projected);
+      observeTranscriptSettlement(ownerId, projected);
       transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
-      const clientNonce = localTranscriptNonce(projected, accountRef.current);
-      const acknowledgementBefore = clientNonce == null ? null : acknowledgementController.getSnapshot().records.find((record) => record.nonce === clientNonce || record.priorNonces.includes(clientNonce));
-      const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
-      const acknowledgementEntryKind = event && typeof event === "object" && "kind" in event && event.kind === "user-attachment" ? "user-attachment" as const : "message" as const;
-      if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({ accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId, entry: { id: projected.id, kind: acknowledgementEntryKind, clientNonce } });
-      const isAttachmentEcho = projected.kind === "message" && "sourceKind" in projected && projected.sourceKind === "user-attachment";
       setEntriesByAgent((current) => {
-        const existing = current[ownerId] ?? [];
-        const correlationTarget = projected.kind !== "message" || resolvedNonce == null
-          ? projected : { ...projected, clientNonce: resolvedNonce };
-        const previousId = existing.find((entry) => transcriptEntriesCorrelate(entry, correlationTarget))?.id
-          ?? (resolvedNonce == null ? undefined : `pending-${resolvedNonce}`);
-        return { ...current, [ownerId]: reconcileTranscriptMutation(existing, projected, {
-          previousId, preserveCurrentId: isAttachmentEcho, appendIfMissing: true,
+        if (!isCurrent() || (transcriptConversationGenerationsRef.current.get(ownerId) ?? 0) !== conversationGeneration) return current;
+        const isAgentAttachment = localTranscriptClientNonce(projected, undefined) != null
+          && "sourceKind" in projected && projected.sourceKind === "user-attachment";
+        return { ...current, [ownerId]: reconcileTranscriptMutation(current[ownerId] ?? [], projected, {
+          appendIfMissing: true, preserveCurrentId: isAgentAttachment,
         }) };
       });
       }
@@ -3090,7 +3386,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanMessageRetryController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanMessageRetryController, humanReactionSettlement, invalidateTranscriptConversation, observeTranscriptSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot, transcriptPaginationController]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -3122,9 +3418,21 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [account?.kind, pinnedAccountKey, reconcileCompleteRosterSelection, selectionStore]);
 
   useEffect(() => {
+    let active = true;
     const accountSlot = account?.kind === "logged-in" ? pinnedAccountKey : null;
-    void composerDraftStore.restore(accountSlot);
-  }, [account?.kind, composerDraftStore, pinnedAccountKey]);
+    const accountGeneration = accountScopeGenerationRef.current;
+    void composerDraftStore.restore(accountSlot).then(() => {
+      if (!active || accountSlot == null || accountScopeGenerationRef.current !== accountGeneration) return;
+      for (const [agentId, entries] of Object.entries(entriesByAgentRef.current)) {
+        for (const entry of entries) observeTranscriptSettlement(agentId, entry);
+      }
+    }).catch((error: unknown) => {
+      if (active && accountScopeGenerationRef.current === accountGeneration) {
+        setNotice(`Draft recovery unavailable: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
+    return () => { active = false; };
+  }, [account?.kind, composerDraftStore, observeTranscriptSettlement, pinnedAccountKey]);
 
   useEffect(() => {
     void uiLayoutStore.restore();
@@ -3375,7 +3683,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         accountScopeGenerationRef.current += 1;
         // Notices may contain destination names from the retired account.
         setNotice(null);
+        for (const scope of submissionScopesRef.current.values()) scope.invalidate();
         submissionScopesRef.current.clear();
+        pendingTranscriptReceiptsRef.current.clear();
+        transcriptConversationGenerationsRef.current.clear();
+        setPendingSendScopes(new Map());
         // Invalidate approval cleanup before completing abandoned queue work.
         // Host requests already in flight retain their own durable settlement.
         sendJournalApprovalLifecycle.reset();
@@ -3660,74 +3972,93 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (activeAgent == null || client == null) return;
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
-    const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft);
+    const draftScope = { accountSlot: transcriptAccountSlot, agentId: activeAgent.id };
+    const replyScope = replyThreadController.getScope();
+    if (draftScope.accountSlot == null || replyScope.accountSlot !== draftScope.accountSlot
+      || replyScope.agentId !== draftScope.agentId) {
+      setNotice("This conversation is still loading. Try sending again.");
+      return;
+    }
+    const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft, draftScope);
     const clientNonce = makeClientNonce();
     const enteredAt = Date.now();
     const prompt = liveDraft.prompt.trim();
-    const attachments = liveDraft.attachments.map(({ path, name }) => ({ path, name }));
+    const attachments = liveDraft.attachments.map((attachment) => ({ ...attachment }));
     if (prompt.length === 0 && attachments.length === 0) return;
-    const submission = replyThreadController.projectSubmission({
+    const submission = scopeComposerSubmission(replyThreadController.projectSubmission({
       nonce: clientNonce,
       agentId: activeAgent.id,
       prompt,
       ...(liveDraft.richText == null ? {} : { richText: liveDraft.richText }),
       attachments,
       createdAtMs: enteredAt,
-      ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork })
-    });
-    const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
-    const submissionAccountGeneration = accountScopeGenerationRef.current;
-    const authorId = accountRef.current?.kind === "logged-in" ? accountRef.current.authId : undefined;
-    submissionScopesRef.current.set(clientNonce, { generation: submissionAccountGeneration, accountSlot: submissionAccountSlot });
-    const draftIdentity = composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft });
+      ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork }),
+      ...(liveDraft.replyToId === undefined ? {} : { replyToId: liveDraft.replyToId }),
+    }, draftScope));
+    if (submission == null) { setNotice("The authenticated Human identity is unavailable for this send"); return; }
+    const scope = submission.transcriptScope;
+    scope.draftOwnership = {
+      draft: liveDraftSnapshot.draft === liveBaseDraft ? liveBaseDraft : null,
+      draftIdentity: composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft }),
+      recovery: liveDraftSnapshot.recovery === liveBaseDraft ? liveBaseDraft : null,
+      recoveryIdentity: liveDraftSnapshot.recovery === liveBaseDraft
+        ? composerDraftStore.identifyRecovery({ agentId: activeAgent.id, draft: liveBaseDraft }) : null,
+      settled: false,
+    };
     replyThreadController.clearReply();
     acknowledgementController.insertOptimistic({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
+      accountSlot: scope.accountSlot,
       agentId: activeAgent.id,
       nonce: clientNonce,
       entries: optimisticAcknowledgementEntries(clientNonce, attachments),
       phase: transportRef.current === "connected" ? "pending" : "queued"
     });
-    setEntriesByAgent((current) => accountScopeGenerationRef.current !== submissionAccountGeneration ? current : ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
+    setEntriesByAgent((current) => scope.invalidated || !isTranscriptScopeCurrent(scope) ? current : ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
       kind: "message", id: `pending-${clientNonce}`, role: "user", author: "You", text: prompt, timestampMs: enteredAt, attachments, delivery: "pending", clientNonce,
-      ...(activeIsHuman ? { authorKind: "human", ...(authorId ? { authorId } : {}) } : {}),
+      ...(typeof scope.humanAuthorId === "string" ? { authorKind: "human" as const, authorId: scope.humanAuthorId } : {}),
       ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
     }] }));
     const queuedSubmission = composerSubmissionQueue.submit(submission);
     void queuedSubmission.completion.then((phase) => {
-      if (phase !== "sent") return;
-      if (accountScopeGenerationRef.current !== submissionAccountGeneration || activeAgentIdRef.current !== submission.agentId || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
-      const cleared = draftIdentity == null
-        ? composerDraftStore.clearDraftIfMatches({ agentId: submission.agentId, draft: liveBaseDraft })
-        : composerDraftStore.clearDraftIfCurrent(draftIdentity)
-          || composerDraftStore.clearDraftIfMatches({ agentId: submission.agentId, draft: liveBaseDraft });
-      if (!cleared) return;
-      composerDraftStore.clearRecovery(submission.agentId);
-      setComposerClearGeneration((current) => current + 1);
+      if (phase === "sent") scope.onSettled?.();
     });
     setNotice(null);
   };
 
   const removeTranscriptMessage = useCallback((entry: TranscriptMessage) => {
     const agentId = activeAgentIdRef.current;
-    if (!agentId) return;
-    if (entry.clientNonce != null) acknowledgementController.removeOptimistic({ accountSlot: acknowledgementScopeRef.current.accountSlot, nonce: entry.clientNonce });
-    setEntriesByAgent((current) => ({
+    const operation = captureTranscriptScope(agentId);
+    if (!agentId || operation == null || entry.delivery !== "failed") return;
+    const nonce = localTranscriptClientNonce(entry, operation.humanAuthorId);
+    if (nonce == null) return;
+    const currentEntry = (entriesByAgentRef.current[agentId] ?? []).find((candidate) => candidate.id === entry.id);
+    if (currentEntry == null || isSettledTranscriptMessage(currentEntry)) return;
+    const scope = submissionScopesRef.current.get(nonce);
+    if (scope?.canonicalSettled === true) return;
+    if (scope != null && scope.agentId === agentId) { scope.invalidate(); submissionScopesRef.current.delete(nonce); }
+    composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId, nonce });
+    composerSubmissionQueueRef.current?.discard(nonce);
+    acknowledgementController.removeOptimistic({ accountSlot: operation.accountSlot, nonce });
+    setEntriesByAgent((current) => !isTranscriptScopeCurrent(operation) ? current : ({
       ...current,
       [agentId]: (current[agentId] ?? []).filter((candidate) => candidate.kind !== "message" || candidate.id !== entry.id)
     }));
-  }, [acknowledgementController]);
+  }, [acknowledgementController, captureTranscriptScope, composerDraftStore, isTranscriptScopeCurrent]);
 
   const resendFailedSend = useCallback(async (entry: TranscriptMessage) => {
     if (activeIsHuman) {
+      const operation = captureTranscriptScope(activeAgentId);
+      if (operation == null || localTranscriptClientNonce(entry, operation.humanAuthorId) == null
+        || isSettledTranscriptMessage(entry)) return;
       // A pre-frame failure still belongs to the original Composer record.
       // Once any request may have posted, only the durable Host retry is safe.
       const original = composerSubmissionQueue.snapshot().find((record) => record.agentId === activeAgentId
         && record.nonce === entry.clientNonce && (record.phase === "pending" || record.phase === "queued"
           || record.humanDispatch?.requestPosted !== true));
       const originalScope = entry.clientNonce == null ? null : submissionScopesRef.current.get(entry.clientNonce);
-      const retryIsCurrent = () => originalScope != null
-        && originalScope.generation === renderedAccountScopeGeneration
+      const retryIsCurrent = () => originalScope != null && !originalScope.invalidated
+        && isTranscriptScopeCurrent(originalScope)
+        && originalScope.accountGeneration === renderedAccountScopeGeneration
         && renderedAccountScopeGeneration === accountScopeGenerationRef.current
         && accountRef.current?.kind === "logged-in"
         && (accountRef.current.authId ?? accountRef.current.email ?? "account") === transcriptAccountSlot
@@ -3739,6 +4070,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const retry = composerSubmissionQueue.retryFailed(original.nonce, { isCurrent: retryIsCurrent });
         if (retry != null) { await retry.completion; return; }
       }
+      try {
+        await composerDraftStore.bindHumanSubmission({
+          accountSlot: operation.accountSlot, agentId: activeAgentId, authorId: operation.humanAuthorId!, nonce: entry.clientNonce!,
+          draftId: originalScope?.draftOwnership?.draftIdentity?.draftId ?? null,
+          recoveryId: originalScope?.draftOwnership?.recoveryIdentity?.recoveryId ?? null,
+        });
+      } catch (error) {
+        if (isTranscriptScopeCurrent(operation)) setNotice(error instanceof Error ? error.message : String(error));
+        return;
+      }
+      if (!isTranscriptScopeCurrent(operation)) return;
       await humanMessageRetryController.retry({
         scope: {
           accountGeneration: renderedAccountScopeGeneration,
@@ -3754,61 +4096,105 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
     const agentId = activeAgentIdRef.current;
     if (client == null || !agentId) return;
+    const operation = captureTranscriptScope(agentId);
+    if (operation == null || entry.delivery !== "failed") return;
+    const failedNonce = localTranscriptClientNonce(entry, operation.humanAuthorId);
+    if (failedNonce == null) return;
+    const currentEntry = (entriesByAgentRef.current[agentId] ?? []).find((candidate) => candidate.id === entry.id);
+    if (currentEntry == null || isSettledTranscriptMessage(currentEntry)) return;
+    const previousScope = submissionScopesRef.current.get(failedNonce);
+    if (previousScope?.canonicalSettled === true) return;
+    const retained = previousScope != null && !previousScope.invalidated && isTranscriptScopeCurrent(previousScope)
+      ? composerSubmissionQueue.snapshot().find((record) => record.nonce === failedNonce && record.agentId === agentId
+        && record.phase === "failed" && submissionScope(record) === previousScope)
+      : undefined;
     const clientNonce = makeClientNonce();
     const pendingId = `pending-${clientNonce}`;
     const enteredAt = Date.now();
-    composerSubmissionQueue.discard(entry.clientNonce ?? "");
-    const retryAttachments = (entry.attachments ?? []).map(({ path, name }) => ({ path, name }));
-    const retried = entry.clientNonce != null && acknowledgementController.retryFailed({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
+    const retryAttachments = (retained?.attachments ?? entry.attachments ?? []).map((attachment) => ({ ...attachment }));
+    const retryRichText = retained == null ? entry.richText : retained.richText;
+    const retryReplyToId = retained == null ? entry.replyToId : retained.replyToId;
+    const retrySubmission = scopeComposerSubmission({
+      nonce: clientNonce,
       agentId,
-      nonce: entry.clientNonce,
+      prompt: retained?.prompt ?? entry.text.trim(),
+      attachments: retryAttachments,
+      createdAtMs: enteredAt,
+      ...(retryRichText === undefined ? {} : { richText: retryRichText }),
+      ...(retryReplyToId === undefined ? {} : { replyToId: retryReplyToId }),
+      ...(retained?.isFork === undefined ? {} : { isFork: retained.isFork }),
+    });
+    if (retrySubmission == null) return;
+    const retryScope = retrySubmission.transcriptScope;
+    // Retry inherits the original submit/recovery identity. Equal text cannot
+    // authorize clearing a draft the user edited or recreated after failure.
+    if (previousScope?.agentId === agentId && !previousScope.invalidated && isTranscriptScopeCurrent(previousScope)) {
+      retryScope.draftOwnership = previousScope.draftOwnership;
+      retryScope.agentCommittedAttachments = previousScope.agentCommittedAttachments?.map((attachment) => ({ ...attachment }));
+    }
+    if (retained == null) {
+      // Without an in-memory Composer input these are durable transcript
+      // resources, not staging paths to upload for a second time.
+      retryScope.agentCommittedAttachments = retryAttachments.map((attachment) => ({ ...attachment }));
+    }
+    if (previousScope != null && previousScope.agentId === agentId) {
+      previousScope.invalidate();
+      if (submissionScopesRef.current.get(failedNonce) === previousScope) submissionScopesRef.current.delete(failedNonce);
+    }
+    composerSubmissionQueue.discard(failedNonce);
+    const retried = acknowledgementController.retryFailed({
+      accountSlot: retryScope.accountSlot,
+      agentId,
+      nonce: failedNonce,
       freshNonce: clientNonce,
       entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments)
     });
     if (!retried) acknowledgementController.insertOptimistic({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
+      accountSlot: retryScope.accountSlot,
       agentId,
       nonce: clientNonce,
       entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments),
       phase: "pending"
     });
-    setEntriesByAgent((current) => ({
+    setEntriesByAgent((current) => retryScope.invalidated || !isTranscriptScopeCurrent(retryScope) ? current : ({
       ...current,
       [agentId]: (current[agentId] ?? []).map((candidate) => candidate.kind === "message" && candidate.id === entry.id
-        ? { ...candidate, id: pendingId, clientNonce, delivery: "pending", composedAtMs: undefined }
+        ? { ...candidate, id: pendingId, clientNonce, delivery: "pending", composedAtMs: undefined, remoteMessageId: undefined }
         : candidate)
     }));
-    const retrySubmission = {
-      nonce: clientNonce,
-      agentId,
-      prompt: entry.text.trim(),
-      attachments: retryAttachments,
-      createdAtMs: enteredAt
-    };
-    const retryAccountSlot = acknowledgementScopeRef.current.accountSlot;
-    const retryAccountGeneration = accountScopeGenerationRef.current;
-    submissionScopesRef.current.set(clientNonce, { generation: retryAccountGeneration, accountSlot: retryAccountSlot });
     const journaledRetry = sendJournalApprovalLifecycle.resendFailed({ submission: retrySubmission, onJournaled: () => {} });
     void journaledRetry.then((phase) => {
-      if (phase !== "sent") return;
-      if (accountScopeGenerationRef.current !== retryAccountGeneration || activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
-      composerDraftStore.clearRecovery(retrySubmission.agentId);
+      if (phase === "sent") retryScope.onSettled?.();
     });
-  }, [activeAgent?.name, activeAgentId, activeIsHuman, client, composerDraftStore, composerSubmissionQueue, humanMessageRetryController, renderedAccountScopeGeneration, renderedRetrySelection, renderedRetrySelectionGeneration, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot]);
+  }, [activeAgent?.name, activeAgentId, activeIsHuman, acknowledgementController, captureTranscriptScope, client, composerDraftStore, composerSubmissionQueue, humanMessageRetryController, isTranscriptScopeCurrent, renderedAccountScopeGeneration, renderedRetrySelection, renderedRetrySelectionGeneration, scopeComposerSubmission, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot]);
 
   const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
-    if (entry.clientNonce != null && composerSubmissionQueue.cancelQueued(entry.clientNonce)) {
-      const agentId = activeAgentIdRef.current;
-      acknowledgementController.removeOptimistic({ accountSlot: acknowledgementScopeRef.current.accountSlot, nonce: entry.clientNonce });
+    const agentId = activeAgentIdRef.current;
+    const operation = captureTranscriptScope(agentId);
+    if (operation == null) return;
+    const nonce = localTranscriptClientNonce(entry, operation.humanAuthorId);
+    if (nonce == null) return;
+    const currentEntry = (entriesByAgentRef.current[agentId] ?? []).find((candidate) => candidate.id === entry.id);
+    if (currentEntry == null || isSettledTranscriptMessage(currentEntry)) return;
+    if (submissionScopesRef.current.get(nonce)?.canonicalSettled === true) return;
+    const queuedSubmission = composerSubmissionQueue.snapshot().find((submission) =>
+      submission.nonce === nonce && submission.agentId === agentId && submission.phase === "queued");
+    if (composerSubmissionQueue.cancelQueued(nonce)) {
+      composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId, nonce });
+      acknowledgementController.removeOptimistic({ accountSlot: operation.accountSlot, nonce });
       if (agentId.length > 0) composerDraftStore.recoverDraft(agentId, {
-        prompt: entry.text.trim(),
-        attachments: (entry.attachments ?? []).map(({ path, name }) => ({ path, name }))
+        prompt: queuedSubmission?.prompt ?? entry.text,
+        attachments: queuedSubmission == null
+          ? (entry.attachments ?? []).map(({ path, name }) => ({ path, name }))
+          : [...queuedSubmission.attachments],
+        ...(queuedSubmission?.richText === undefined ? {} : { richText: queuedSubmission.richText }),
+        ...(queuedSubmission?.replyToId === undefined ? {} : { replyToId: queuedSubmission.replyToId }),
+        ...(queuedSubmission?.isFork === undefined ? {} : { isFork: queuedSubmission.isFork }),
       });
       return;
     }
     removeTranscriptMessage(entry);
-  }, [acknowledgementController, composerDraftStore, composerSubmissionQueue, removeTranscriptMessage]);
+  }, [acknowledgementController, captureTranscriptScope, composerDraftStore, composerSubmissionQueue, removeTranscriptMessage]);
 
   const setAgentHiddenFromSidebar = useCallback((agentId: string, isHidden: boolean) => {
     void hiddenChatsMutationController.setAgentHiddenFromSidebar(agentId, isHidden).catch((error: unknown) => {
@@ -3894,6 +4280,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     await client.call("deleteAgents", { ids: [agentId] });
     if (accountScopeGenerationRef.current !== accountScopeGeneration) return;
     humanReactionSettlement.clearConversation(agentId);
+    invalidateTranscriptConversation(agentId);
+    sendJournalApprovalLifecycle.reset();
     transcriptHistoryCursorsRef.current.delete(agentId);
     for (const read of pendingTranscriptReadsRef.current) {
       if (read.agentId === agentId) pendingTranscriptReadsRef.current.delete(read);
@@ -4356,7 +4744,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                     setForwardTarget({ sourceConversationId: activeAgent.id, message: entry, accountScopeGeneration });
                   }
                 } : undefined}
-                onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
+                onReply={(entry) => { selectComposerReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
                 onResendFailedSend={(entry) => void resendFailedSend(entry)}
                 renderMessageReactionActions={renderReactionActions}
@@ -4378,7 +4766,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>

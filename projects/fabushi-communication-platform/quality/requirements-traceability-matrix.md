@@ -787,3 +787,26 @@ Bounded changes, exact inputs, causal old failures and subsequent execution:
 `projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json`.
 Real services, full source/legal/platform/Bot/quality and independent ACCEPT/release
 remain open; Backend PR137 is read-only.
+
+
+## Round8 NMR-UI-01 / NMR-DRAFT-01 / NMR-ELECTRON-01
+
+| Requirement | Existing production owner and wiring | Required batch evidence |
+| --- | --- | --- |
+| NMR-UI-01 / NMR-AC-UI-01 | ProductionRenderer, current Transcript projection/cache, original Human retry and Agent queue/approval owners | Preserve current opaque-page, attachment, reaction pointer-corridor and named-forwarding work. Require pure42, current cursor19/retry40/Forward9+17/history13/Transcript8 and author/recovery21 with compiled production Renderer. |
+| NMR-DRAFT-01 | Existing V1 composer-drafts account owner -> awaited identity binding -> existing send/retry RPC -> local-author canonical observer -> ID-specific persisted retirement | Draft14, scoped reply5 and existing Sand persistence5, including binding failure zero RPC, malformed binding/legacy preservation, field merge, canonical-before-restore, same-text new ID, ABA/disposal and I/O refusal/order. Full Composer reply/rich-text/fork recovery must be consumed at actual send, not just stored. |
+| NMR-ELECTRON-01 | Actual Electron/main/preload/utility/Rust Coordinator/AppHost Session/Native HTTP/SQLite | Existing two process cases: complete canonical row survives offline same-directory reopen; held-receipt outbox replay retires original A before any new edit and preserves same-text B/new ID through the third lifetime. Retain original Plugins2 and Agent Network case. |
+
+The current input is checkpoint `6e2f1c3728ac29cae3b460e2a4ec7deb7719d01b`;
+root integrates only the reviewed delta and preserves concurrent contracts.
+The original requested H5d534898/run41413368942 passed Human20/Agent4 and
+shipping at that H. Review H375936fb/run41531580905 compiled and passed
+pure41/cursor17/Forward5+16, but historical browser11 was 10 passed/1 failed
+(pointer path); later browser groups were skipped. Concurrent 7d57aa fixes
+the real hover corridor and current13 cases. Electron H608f0d49/run41530756868
+failed Renderer TS2698 before any Plugins/Human case; the broad type guard is
+corrected in this batch. No failed or skipped execution is promoted to success.
+Full containing-H evidence belongs to the existing round8 renderer/Electron
+receipts; preparation and blob transport are not product verification.
+Source/legal, active afterId=0 deployment, signed platforms, full Bot/UI/a11y,
+security/performance/soak/upgrade/rollback and independent ACCEPT remain open.

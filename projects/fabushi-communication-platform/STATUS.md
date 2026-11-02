@@ -355,3 +355,37 @@ qualified exact59f5fa/run41508537631 are recorded separately in
 `projects/telegram-desktop-rust/evidence/round25-native-response-binding.json`.
 This batch does not merge/deploy Backend PR137, qualify a formal publisher or signed
 installation, close complete source/legal review, or grant independent ACCEPT.
+
+
+## Round8 durable draft recovery integration (2026-11-02)
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+This batch reuses the existing ProductionRenderer/Session and account Composer
+draft owner. It adds durable author/nonce-to-original-draft IDs, an awaited
+pre-send write barrier, canonical re-observation after restore, scoped settlement,
+field-level restore merging and retired-instance fencing. The process-owned
+SandClientPersistenceStore must propagate non-ENOENT I/O errors and retain failed
+removals; its existing queue supplies admitted-write/read ordering. No new
+message, draft or persistence authority is introduced.
+
+The current checkpoint's original-nonce Human retry, partial attachment commits,
+opaque history, pointer corridor, named forward feedback and all Agent owners
+are preserved. Authored gates are projection42/draft14/persistence5/reply5,
+current cursor19/retry40/Forward9+17/history13/Transcript8, author/recovery21,
+and two actual Electron Human process cases alongside existing Plugins2.
+These counts are requirements until the containing commit's Actions terminal
+logs establish actual execution.
+
+Original H5d534898/run41413368942 message and shipping gates passed. Review
+H375936fb compiled and passed pure41/cursor17/Forward5+16, but historical
+browser11 was 10 pass/1 fail and dependent groups skipped; Electron H608f0d49
+compiled native inputs but failed Renderer TS2698 before browser execution.
+Current batch fixes retain those failed records. The two existing round8
+evidence receipts record full source/file/run identities and subsequent results.
+
+Canonical inventory remains 16,381 recursive entries/184 responsibility rows,
+unknown/unread null and two unmapped responsibilities at the observed input.
+There are 16 source-review records (2 complete/14 pending), not complete
+source coverage. Backend compatible active deployment, full source/legal,
+supported signed packages, complete Bot/UI/a11y/security/performance/soak and
+independent ACCEPT remain open; this is not full migration acceptance.

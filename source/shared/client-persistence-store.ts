@@ -1,3 +1,5 @@
+import { findSystemErrno } from "./system-errno.js";
+
 export const ALLOWED_CLIENT_PERSISTENCE_KEY_PREFIX = "sand.";
 export const CLIENT_PERSISTENCE_MAX_VALUE_BYTES = 8 * 1024 * 1024;
 export const CLIENT_PERSISTENCE_MAX_TOTAL_BYTES = 256 * 1024 * 1024;
@@ -99,7 +101,11 @@ export class SandClientPersistenceStore {
       const blobs = await this.ledger();
       if (!blobs.has(name)) return null;
       try { return await this.files.readTextFile(this.files.joinPath(this.dir, name)); }
-      catch { return null; }
+      catch (error) {
+        if (findSystemErrno(error) !== "ENOENT") throw error;
+        blobs.delete(name);
+        return null;
+      }
     });
   }
 
@@ -113,8 +119,8 @@ export class SandClientPersistenceStore {
     return this.run(async () => {
       const blobs = await this.ledger();
       if (!blobs.has(name)) return;
-      blobs.delete(name);
       await this.files.removeFile(this.files.joinPath(this.dir, name));
+      blobs.delete(name);
     });
   }
 
@@ -163,7 +169,11 @@ export class SandClientPersistenceStore {
     const blobs = new Map<string, BlobFact>();
     let names: string[];
     try { names = await this.files.listFiles(this.dir); }
-    catch { this.blobs = blobs; return blobs; }
+    catch (error) {
+      if (findSystemErrno(error) !== "ENOENT") throw error;
+      this.blobs = blobs;
+      return blobs;
+    }
     for (const name of names) {
       if (name.endsWith(TEMP_FILE_SUFFIX)) {
         await this.files.removeFile(this.files.joinPath(this.dir, name));
@@ -173,7 +183,10 @@ export class SandClientPersistenceStore {
       if (key == null) continue;
       let size: number | null;
       try { size = await this.files.fileSize(this.files.joinPath(this.dir, name)); }
-      catch { size = null; }
+      catch (error) {
+        if (findSystemErrno(error) !== "ENOENT") throw error;
+        size = null;
+      }
       if (size != null) blobs.set(name, { key, size });
     }
     this.blobs = blobs;
