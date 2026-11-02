@@ -104,7 +104,7 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: round22-ledger-object-${{ github.sha }}
+          name: round22-ledger-object-${{ github.sha }}-${{ github.run_attempt }}
           path: round22-ledger-object-receipt.json
           if-no-files-found: error
       - name: Prepare immutable integration commit without changing any ref

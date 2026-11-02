@@ -5,7 +5,7 @@
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
   "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
-  "expected_input_blob": "2364fe3b43be1d07fbf576e674191044397bbcb2",
+  "expected_input_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
   "append": {
     "additional_source_identities": [
       {
@@ -67,10 +67,10 @@
       ]
     }
   ],
-  "expected_output_blob": "331b8230d56fbafacc84ff6d0e2d8a606b222d39",
+  "expected_output_blob": "6cd94eeda37de8cfa061b7c5c71452a656086150",
   "review_summary": {
     "before": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six source review records comprise two complete option contracts and four pending draft/feedback mappings; global review counts remain undetermined and acceptance is false.",
     "after": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Eight source review records comprise two complete option contracts, four pending draft/feedback mappings and two pending updater selected-section reviews; global review counts remain undetermined and acceptance is false."
   },
-  "integration_evidence_blob": "d585d924d4bbab2a142842671338111c2109d6a9"
+  "integration_evidence_blob": "de840b5bdd129b4711b32283b003ce8962731ae7"
 }
