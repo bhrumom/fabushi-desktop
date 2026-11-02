@@ -109,6 +109,6 @@ packaged/real-service/full Bot/independent ACCEPT are not claimed.
 - Agent-native typed events remain typed and coexist with Human communication in the same transcript/workspace.
 - An owner-resolution row is not accepted until production wiring, focused contracts, integration/E2E and applicable packaged evidence exist.
 
+### NETWORK-SYNC-REALTIME increment — NMR-PAGING-01 / NMR-ACTIVITY-01
 
-
-
+The current Session/Transcript owner remains the only Human row writer. The added persisted pagination state is an index over its immutable physical sequence identities in the same conversation KV, scoped to existing conversation/participant metadata; message payloads remain in Transcript. The existing unified projection/pagination/root cache consumes the opaque cursor and current events. Activity reconciliation and Agent handoff share the existing message lane. This preserves the current afterId coverage, desired-reaction recovery, full-credential fences, reply repair and forward journal CAS. It does not establish an older-message changefeed or live backend/platform/full-migration acceptance; execution is bound to the containing-H Actions receipt.

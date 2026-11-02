@@ -1,4 +1,4 @@
-import { _electron as electron, expect, test, type Page } from '@playwright/test';
+import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -293,6 +293,125 @@ async function measuredGeometry(network: ReturnType<Page['getByRole']>) {
       parentWidth: parentRect?.width ?? 0,
       parentHeight: parentRect?.height ?? 0,
     };
+  });
+}
+
+async function withPluginsDeadline<T>(label: string, task: Promise<T>, timeoutMs = 5_000): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} exceeded ${timeoutMs}ms`)), timeoutMs); }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function pluginsPointerGeometry(page: Page) {
+  return withPluginsDeadline('Plugins pointer geometry', page.evaluate(() => {
+    const describe = (element: Element | null) => {
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        tag: element.tagName,
+        classes: [...element.classList],
+        bounds: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        style: {
+          zIndex: style.zIndex, pointerEvents: style.pointerEvents,
+          appRegion: style.getPropertyValue('-webkit-app-region') || style.getPropertyValue('app-region'),
+        },
+      };
+    };
+    const dialog = document.querySelector('[role="dialog"][aria-label="Plugins"]');
+    const buttons = dialog?.querySelectorAll('button[aria-label="Close"]') ?? [];
+    const close = buttons[0] ?? null;
+    const rect = close?.getBoundingClientRect();
+    const point = rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null;
+    const hit = point ? document.elementFromPoint(point.x, point.y) : null;
+    const windowControls = [...document.querySelectorAll('.sand-window-controls button')].map((control) => {
+      const box = control.getBoundingClientRect();
+      const target = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return { ...describe(control), centerHitsControl: target != null && (target === control || control.contains(target)) };
+    });
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      closeCount: buttons.length, close: describe(close), dialog: describe(dialog), frame: describe(dialog?.parentElement ?? null),
+      drag: describe(document.querySelector('.sand-cover-drag')),
+      header: describe(document.querySelector('.sand-chat-header')),
+      hit: describe(hit), point, windowControls,
+      windowControlEvidence: {
+        domControlCount: windowControls.length,
+        nativeButtonActionsExecuted: 0,
+        scope: windowControls.length > 0 ? 'DOM-hit-test-and-reserved-band-geometry' : 'reserved-band-geometry-only',
+      },
+      centerHitsClose: close != null && hit != null && (hit === close || close.contains(hit)),
+      hitStack: point ? document.elementsFromPoint(point.x, point.y).slice(0, 8).map(describe) : [],
+    };
+  }));
+}
+
+// FPM-UI-CLOSE-01: use the shipping renderer, its real WindowChrome and the
+// controlled Host/auth backend above. No isolated PluginsBrowser imitation and
+// no credential or marketplace readiness gate may stand in for the Close path.
+for (const viewport of [{ width: 1024, height: 684 }, { width: 1280, height: 900 }]) {
+  test(`shipping Plugins close ${viewport.width}x${viewport.height} uses a real pointer and preserves the window-control band`, async () => {
+    const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-plugins-close-'));
+    let app: ElectronApplication | null = null;
+    let page: Page | null = null;
+    try {
+      app = await launchDesktopApp(appDataDir);
+      page = await app.firstWindow();
+      await completeBrowserLogin(page);
+      await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
+      await app.evaluate(({ BrowserWindow }, size) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (!win) throw new Error('Shipping BrowserWindow is absent');
+        win.setContentSize(size.width, size.height, false);
+      }, viewport);
+      await expect.poll(() => page!.evaluate(() => ({ width: innerWidth, height: innerHeight }))).toEqual(viewport);
+
+      const plugins = page.getByRole('button', { name: 'Plugins', exact: true });
+      const dialog = page.getByRole('dialog', { name: 'Plugins', exact: true });
+      for (const phase of ['initial', 'reopened']) {
+        await plugins.click({ timeout: 5_000 });
+        await expect(dialog).toBeVisible({ timeout: 5_000 });
+        const geometry = await pluginsPointerGeometry(page);
+        await test.info().attach(`plugins-pointer-${phase}`, { body: Buffer.from(JSON.stringify(geometry, null, 2)), contentType: 'application/json' });
+        expect(geometry.closeCount).toBe(1);
+        expect(geometry.close).not.toBeNull();
+        expect(geometry.frame).not.toBeNull();
+        expect(geometry.drag).not.toBeNull();
+        expect(geometry.centerHitsClose, 'Close must receive the normal pointer before any click is sent').toBe(true);
+        expect(geometry.close!.style.appRegion).toBe('no-drag');
+        expect(geometry.frame!.bounds.y).toBeGreaterThanOrEqual(geometry.drag!.bounds.y + geometry.drag!.bounds.height);
+        expect(geometry.close!.bounds.y).toBeGreaterThanOrEqual(geometry.drag!.bounds.y + geometry.drag!.bounds.height);
+        expect(geometry.close!.bounds.y + geometry.close!.bounds.height).toBeLessThanOrEqual(viewport.height);
+        expect(Number(geometry.frame!.style.zIndex)).toBeGreaterThan(Number(geometry.drag!.style.zIndex));
+        if (geometry.header) expect(Number(geometry.frame!.style.zIndex)).toBeGreaterThan(Number(geometry.header.style.zIndex));
+        for (const control of geometry.windowControls) expect(control.centerHitsControl, 'Native window control remains reachable').toBe(true);
+        await page.screenshot({ path: test.info().outputPath(`plugins-${phase}-${viewport.width}x${viewport.height}.png`), timeout: 4_000 });
+        await dialog.getByRole('button', { name: 'Close', exact: true }).click({ timeout: 5_000 });
+        await expect(dialog).toBeHidden({ timeout: 5_000 });
+      }
+      await expect(plugins).toBeVisible();
+    } catch (error) {
+      if (page) {
+        const geometry = await pluginsPointerGeometry(page).catch((failure) => ({ captureError: String(failure) }));
+        await test.info().attach('plugins-pointer-failure', { body: Buffer.from(JSON.stringify({ error: error instanceof Error ? error.stack : String(error), geometry }, null, 2)), contentType: 'application/json' });
+        await withPluginsDeadline('Plugins failure screenshot', page.screenshot({ path: test.info().outputPath('plugins-failure.png'), timeout: 4_000 })).catch(() => undefined);
+      }
+      throw error;
+    } finally {
+      if (app) {
+        const ownedProcess = app.process();
+        await withPluginsDeadline('Plugins Electron shutdown', app.close(), 10_000).catch(() => {
+          if (ownedProcess.exitCode == null && ownedProcess.signalCode == null) ownedProcess.kill('SIGKILL');
+        });
+      }
+      await rm(appDataDir, { recursive: true, force: true });
+    }
   });
 }
 

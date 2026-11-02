@@ -16,6 +16,19 @@ export interface CoordinatorTranscriptWindowResponse {
   readonly threadCounts: Readonly<Record<string, number>>;
 }
 
+export interface CoordinatorHumanTranscriptPageRequest {
+  readonly conversationId: string;
+  readonly beforeSeq?: number;
+  readonly beforeCursor?: string;
+  readonly limit?: number;
+}
+
+export interface CoordinatorHumanTranscriptPageResponse {
+  readonly entries: readonly CoordinatorTranscriptEntry[];
+  readonly nextBeforeSeq?: number;
+  readonly nextBeforeCursor?: string;
+}
+
 export interface CoordinatorAgentThreadRequest {
   readonly id: string;
   readonly rootId: string;
@@ -191,6 +204,33 @@ export function parseCoordinatorTranscriptWindowResponse(value: unknown): Coordi
   };
 }
 
+export function parseCoordinatorHumanTranscriptPageResponse(value: unknown): CoordinatorHumanTranscriptPageResponse | null {
+  if (!isRecord(value) || !Array.isArray(value.entries) || !value.entries.every(isTranscriptEntry)) return null;
+  const seq = value.nextBeforeSeq;
+  const cursor = value.nextBeforeCursor;
+  if (seq != null && (typeof seq !== "number" || !Number.isSafeInteger(seq) || seq <= 0)) return null;
+  if (cursor != null && (typeof cursor !== "string" || cursor.length === 0 || cursor.length > 256 || seq == null)) return null;
+  return {
+    entries: value.entries,
+    ...(seq == null ? {} : { nextBeforeSeq: seq as number }),
+    ...(cursor == null ? {} : { nextBeforeCursor: cursor as string }),
+  };
+}
+
+export function parseCoordinatorHumanTranscriptPageRequest(value: unknown): CoordinatorHumanTranscriptPageRequest | null {
+  if (!isRecord(value) || typeof value.conversationId !== "string" || value.conversationId.trim().length === 0) return null;
+  const { beforeSeq, beforeCursor, limit } = value;
+  if (beforeSeq != null && (typeof beforeSeq !== "number" || !Number.isSafeInteger(beforeSeq) || beforeSeq <= 0)) return null;
+  if (beforeCursor != null && (typeof beforeCursor !== "string" || beforeCursor.length === 0 || beforeCursor.length > 256)) return null;
+  if (limit !== undefined && (typeof limit !== "number" || !Number.isSafeInteger(limit))) return null;
+  return {
+    conversationId: value.conversationId,
+    ...(beforeSeq == null ? {} : { beforeSeq: beforeSeq as number }),
+    ...(beforeCursor == null ? {} : { beforeCursor: beforeCursor as string }),
+    ...(limit === undefined ? {} : { limit: limit as number }),
+  };
+}
+
 export function parseCoordinatorTranscriptWindowRequest(value: unknown): CoordinatorTranscriptWindowRequest | null {
   if (!isRecord(value)) return null;
   const id = value.id;
@@ -228,6 +268,9 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   if (method === "getAgentThread" && parseCoordinatorAgentThreadResponse(value) == null) {
     throw new Error("getAgentThread returned a malformed agent thread");
   }
+  if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageResponse(value) == null) {
+    throw new Error("getHumanConversationTranscriptTail returned a malformed Human transcript page");
+  }
   return value;
 }
 
@@ -247,6 +290,7 @@ export const COORDINATOR_METHOD_TABLE = {
   getAgentTranscriptWindow: { args: "object", reply: "transcript-window" },
   getAgentThread: { args: "object", reply: "agent-thread" },
   getAgentTranscriptTail: { args: "object", reply: "transcript-page" },
+  getHumanConversationTranscriptTail: { args: "object", reply: "human-transcript-page" },
   openAgentTail: { args: "object", reply: "transcript-page" },
   sendPrompt: { args: "object", reply: "send-result" },
   interruptAgent: { args: "object", reply: "interrupt-result" },

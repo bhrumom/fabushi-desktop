@@ -10,6 +10,7 @@ use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     persist_accepted_send_prompt,
 };
+use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::HumanTranscriptPageQuery;
 use mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeMessagingClient;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use serde_json::json;
@@ -2135,7 +2136,11 @@ fn shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_re
     assert_eq!(sent["delivery"], "sent");
     assert!(sent.get("lastDispatchError").is_none());
     let entries = restarted.read_human_conversation_transcript(&id).expect("settled transcript");
-    assert_eq!(entries, vec![sent, peer_rows[1].clone()], "settlement retains the local slot and the peer row");
+    assert_eq!(entries, vec![peer_rows[1].clone(), sent.clone()],
+        "canonical Human order follows authoritative timestamps without merging the peer nonce");
+    assert_eq!(restarted.open_human_conversation_db_owner(&id).expect("physical owner")
+        .get_transcript_entries().expect("stable physical identities"), vec![sent, peer_rows[1].clone()],
+        "settlement retains the original physical slot and the complete peer row");
     restarted.shutdown();
     drop(restarted);
 
@@ -2585,8 +2590,12 @@ fn shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_over
         drop(runtime);
 
         let restarted = human_message_fixture_runtime(&root, &base_url);
+        let mut chronological = vec![rows[0].clone(), rows[199].clone()];
+        chronological.extend_from_slice(&rows[1..199]);
         assert_eq!(restarted.read_human_conversation_transcript(&id)
-            .expect("pure reopen after independent progress"), rows, "{label}");
+            .expect("pure reopen after independent progress"), chronological, "{label}");
+        assert_eq!(restarted.open_human_conversation_db_owner(&id).expect("reopened physical owner")
+            .get_transcript_entries().expect("every original row remains byte-equivalent"), rows, "{label}");
         assert!(!resource_root.join(&forbidden_id).exists());
         restarted.shutdown();
         drop(restarted);
@@ -3509,7 +3518,11 @@ fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
 #[test]
 fn shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page() {
     let root = temp_root("human-coverage-restart");
-    let first_page = (1..=200).map(|n| fixture_remote_human_message(n, 2, 1, &format!("row-{n}"), None, json!([]))).collect::<Vec<_>>();
+    let first_page = (1..=200).map(|n| {
+        let mut row = fixture_remote_human_message(n, 2, 1, &format!("row-{n}"), None, json!([]));
+        row["createdAt"] = json!("2026-10-05T01:00:00Z");
+        row
+    }).collect::<Vec<_>>();
     let (base_url, first_server) = spawn_human_message_fixture(vec![
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":first_page}})),
         HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"retryable disconnect"})),
@@ -3533,12 +3546,14 @@ fn shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_co
     // Same address and private credential, but new Host instance.
     // The second server gets its own address; replacing the issuer-bound
     // credential is intentional because only the active service origin changed.
+    let mut resumed_row = fixture_remote_human_message(201, 2, 1, "row-201", None, json!([]));
+    resumed_row["createdAt"] = json!("2026-10-05T01:00:00Z");
     let (resume_url, second_server) = spawn_human_message_fixture(vec![
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[
-            fixture_remote_human_message(201, 2, 1, "row-201", None, json!([]))
+            resumed_row.clone()
         ]}})),
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[
-            fixture_remote_human_message(201, 2, 1, "row-201", None, json!([]))
+            resumed_row.clone()
         ]}})),
     ]);
     let resumed = human_message_fixture_runtime(&root, &resume_url);
@@ -3767,7 +3782,11 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     let root = temp_root("human-6400-page-budget");
     let responses = (0..32_u64).map(|page| {
         let rows = (page * 200 + 1..=(page + 1) * 200)
-            .map(|id| fixture_remote_human_message(id, 2, 1, &format!("row-{id}"), None, json!([])))
+            .map(|id| {
+                let mut row = fixture_remote_human_message(id, 2, 1, &format!("row-{id}"), None, json!([]));
+                row["createdAt"] = json!("2026-10-05T01:00:00Z");
+                row
+            })
             .collect::<Vec<_>>();
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":rows}}))
     }).collect::<Vec<_>>();
@@ -3791,7 +3810,8 @@ fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restar
     assert!(requests.first().expect("first").contains("&afterId=0"));
     assert!(requests.last().expect("last").contains("&afterId=6200"));
 
-    let row = fixture_remote_human_message(6401, 2, 1, "row-6401", None, json!([]));
+    let mut row = fixture_remote_human_message(6401, 2, 1, "row-6401", None, json!([]));
+    row["createdAt"] = json!("2026-10-05T01:00:00Z");
     let (resume_url, second_server) = spawn_human_message_fixture(vec![
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[row.clone()]}})),
         HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[row]}})),
@@ -5852,6 +5872,16 @@ fn shipping_human_historical_reply_aliases_require_unique_local_canonical_parent
         if variant == "conflicting-dispatch" { pending["remoteReplyToMessageId"] = json!("895099"); }
         assert!(owner.append_transcript_entry(&pending).unwrap());
         let before = owner.get_transcript_entries().unwrap();
+        // All fixture rows start at one timestamp. Canonical Human reads order
+        // remote 895001, then 895003 when present, then peer 895101, then the
+        // pending child. Physical insertion slots remain an independent oracle.
+        let chronological_before = if variant == "ambiguous" {
+            vec![before[1].clone(), before[2].clone(), before[0].clone(), before[3].clone()]
+        } else if matches!(variant, "valid" | "conflicting-id" | "unsettled" | "conflicting-dispatch" | "non-human-parent" | "non-human-local-parent") {
+            vec![before[1].clone(), before[0].clone(), before[2].clone()]
+        } else {
+            before.clone()
+        };
         drop(owner); drop(foreign); runtime.shutdown(); drop(runtime);
         let recovered = human_message_fixture_runtime(&root, &url);
         let reply = if variant == "valid" { "human-server-message:895001" } else { old_parent.as_str() };
@@ -5871,10 +5901,17 @@ fn shipping_human_historical_reply_aliases_require_unique_local_canonical_parent
         } else {
             let error = result.expect_err("unsafe alias must remain rejected");
             assert!(matches!(error, SessionGatewayError::Internal(message) if message.contains("reply")), "{variant}");
-            assert_eq!(recovered.read_human_conversation_transcript(&id).unwrap(), before, "{variant}: rejected ingress changes no row");
+            assert_eq!(recovered.open_human_conversation_db_owner(&id).unwrap()
+                .get_transcript_entries().unwrap(), before, "{variant}: rejected ingress changes no physical row");
+            assert_eq!(recovered.read_human_conversation_transcript(&id).unwrap(), chronological_before,
+                "{variant}: rejected ingress preserves every complete canonical row");
         }
         let rows = recovered.sync_human_conversation(&id).expect("independent authenticated history still progresses");
-        if variant != "valid" { assert_eq!(rows, before, "{variant}: retry retains its exact durable intent"); }
+        if variant != "valid" {
+            assert_eq!(recovered.open_human_conversation_db_owner(&id).unwrap()
+                .get_transcript_entries().unwrap(), before, "{variant}: retry retains its exact durable physical intent");
+            assert_eq!(rows, chronological_before, "{variant}: retry retains every canonical row in its specified order");
+        }
         if variant != "missing" && variant != "foreign-only" {
             assert!(rows.iter().any(|row| row == &peer), "{variant}: never borrow or rewrite peer nonce");
         }
@@ -5892,6 +5929,55 @@ fn shipping_human_historical_reply_aliases_require_unique_local_canonical_parent
             assert!(requests.iter().all(|request| request.starts_with("GET ")), "{variant}: no unsafe POST or resource access");
         }
         fs::remove_dir_all(root).expect("remove historical alias fixture");
+    }
+}
+
+#[test]
+fn shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging() {
+    for variant in ["canonical-non-message","canonical-agent","canonical-pending","canonical-no-remote","canonical-conflicting-remote","canonical-missing-author","canonical-empty-author","canonical-corrupt-remote","local-non-message","local-agent","local-peer-author","local-mismatched-nonce","local-empty-nonce","local-has-remote","local-failed","local-missing-author-kind","local-unsupported-delivery"] {
+        let root = temp_root(&format!("nmr49-direct-{variant}"));
+        let (url, server) = spawn_human_message_fixture(vec![]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").unwrap()["id"].as_str().unwrap().to_owned();
+        let nonce = format!("nmr49-parent-{variant}");
+        let mut parent = if variant.starts_with("canonical-") {
+            settled_reply_fixture_row(&nonce, "parent", 895701)
+        } else { pending_reply_fixture_row(&nonce, "parent", None) };
+        match variant {
+            "canonical-non-message" | "local-non-message" => parent["kind"] = json!("event"),
+            "canonical-agent" | "local-agent" => parent["authorKind"] = json!("agent"),
+            "canonical-pending" => parent["delivery"] = json!("pending"),
+            "canonical-no-remote" => { parent.as_object_mut().unwrap().remove("remoteMessageId"); }
+            "canonical-conflicting-remote" => parent["remoteMessageId"] = json!("895702"),
+            "canonical-missing-author" => { parent.as_object_mut().unwrap().remove("authorId"); }
+            "canonical-empty-author" => parent["authorId"] = json!(""),
+            "canonical-corrupt-remote" => parent["remoteMessageId"] = json!({"unexpected":1}),
+            "local-peer-author" => parent["authorId"] = json!("2"),
+            "local-mismatched-nonce" => parent["clientNonce"] = json!("different"),
+            "local-empty-nonce" => parent["clientNonce"] = json!(""),
+            "local-has-remote" => parent["remoteMessageId"] = json!("895701"),
+            "local-failed" => parent["delivery"] = json!("failed"),
+            "local-missing-author-kind" => { parent.as_object_mut().unwrap().remove("authorKind"); }
+            "local-unsupported-delivery" => parent["delivery"] = json!("queued"),
+            _ => unreachable!(),
+        }
+        let reply_id = parent["id"].as_str().unwrap().to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).unwrap();
+        assert!(owner.append_transcript_entry(&parent).unwrap());
+        let before = owner.get_transcript_entries().unwrap();
+        let result = dispatch_production_session_gateway_call(&runtime, "sendHumanMessage", &json!({
+            "conversationId":id,"text":"child","clientNonce":format!("child-{variant}"),
+            "replyToId":reply_id,"attachments":[],"composedAtMs":1234.0
+        })).expect("registered Human gateway");
+        assert!(matches!(result, Err(SessionGatewayError::Internal(message)) if message.contains("reply")),
+            "{variant}: invalid parent must be rejected");
+        assert_eq!(owner.get_transcript_entries().unwrap(), before, "{variant}: no child staged");
+        drop(owner); runtime.shutdown(); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).unwrap(), before);
+        reopened.shutdown(); drop(reopened);
+        assert!(server.join().expect("unexpected HTTP fixture").is_empty());
+        fs::remove_dir_all(root).expect("cleanup direct identity fixture");
     }
 }
 
@@ -5961,10 +6047,16 @@ fn shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_af
     drop(db); drop(owner); runtime.shutdown(); drop(runtime);
 
     let recovered = human_message_fixture_runtime(&root, &url);
-    assert_eq!(recovered.read_human_conversation_transcript(&id).unwrap(), before);
+    let recovered_owner = recovered.open_human_conversation_db_owner(&id).unwrap();
+    assert_eq!(recovered_owner.get_transcript_entries().unwrap(), before,
+        "reopen preserves all seven physical slots after each failed transaction");
+    assert_eq!(recovered.read_human_conversation_transcript(&id).unwrap(), vec![
+        before[4].clone(), before[0].clone(), before[1].clone(), before[2].clone(),
+        before[3].clone(), before[5].clone(), before[6].clone(),
+    ], "the existing remote child sorts before equal-time pending rows");
     dispatch(&recovered, "sendHumanMessage", json!({"conversationId":id,"text":"atomic parent",
         "clientNonce":"nmr49-atomic-a","attachments":[],"composedAtMs":1234.0}));
-    let repaired = recovered.read_human_conversation_transcript(&id).unwrap();
+    let repaired = recovered_owner.get_transcript_entries().unwrap();
     child_row["replyToId"] = json!("human-server-message:896001");
     sibling_row["replyToId"] = json!("human-server-message:896001");
     assert_eq!(repaired[1], child_row, "child keeps nonce, content, resources, forwarding and local metadata");
@@ -5973,18 +6065,28 @@ fn shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_af
     assert_eq!(repaired[4], sent_row, "canonical child is immutable");
     assert_eq!(repaired[5], damaged_canonical, "a canonical ID is not an unsent local identity even without its remote field");
     assert_eq!(repaired[6], non_human, "another author kind is outside the Human repair scope");
+    assert_eq!(recovered.read_human_conversation_transcript(&id).unwrap(), vec![
+        repaired[4].clone(), repaired[1].clone(), repaired[2].clone(), repaired[3].clone(),
+        repaired[5].clone(), repaired[6].clone(), repaired[0].clone(),
+    ], "canonical reads retain every repaired payload while the settled parent acquires its authoritative time");
     assert!(events.lock().unwrap().iter().any(|event| event["entries"].as_array().is_some_and(|entries| {
         entries.len() == 3 && entries[0]["id"] == "human-server-message:896001"
             && entries[1] == child_row && entries[2] == sibling_row
     })), "committed parent and both repaired children reach the mounted projection together");
     let rows = recovered.sync_human_conversation(&id).expect("repaired children replay through shipping HTTP");
     assert_eq!(rows.len(), 7);
-    assert_eq!(rows[1]["id"], "human-server-message:896002");
-    assert_eq!(rows[1]["forwardContext"], child_row["forwardContext"]);
-    assert_eq!(rows[2]["id"], "human-server-message:896003");
-    assert_eq!(rows[3], peer_row); assert_eq!(rows[4], sent_row);
-    assert_eq!(rows[5], damaged_canonical); assert_eq!(rows[6], non_human);
-    drop(subscription); recovered.shutdown(); drop(recovered);
+    let physical = recovered_owner.get_transcript_entries().unwrap();
+    assert_eq!(physical.len(), 7);
+    assert_eq!(physical[1]["id"], "human-server-message:896002");
+    assert_eq!(physical[1]["forwardContext"], child_row["forwardContext"]);
+    assert_eq!(physical[2]["id"], "human-server-message:896003");
+    assert_eq!(physical[3], peer_row); assert_eq!(physical[4], sent_row);
+    assert_eq!(physical[5], damaged_canonical); assert_eq!(physical[6], non_human);
+    assert_eq!(rows, vec![
+        physical[4].clone(), physical[3].clone(), physical[5].clone(), physical[6].clone(),
+        physical[0].clone(), physical[1].clone(), physical[2].clone(),
+    ], "canonical history keeps old equal-time rows followed by the three real HTTP settlements");
+    drop(subscription); recovered.shutdown(); drop(recovered_owner); drop(recovered);
     let reopened = human_message_fixture_runtime(&root, &url);
     assert_eq!(reopened.sync_human_conversation(&id).expect("second restart cannot duplicate sends"), rows);
     reopened.shutdown(); drop(reopened);
@@ -6268,3 +6370,541 @@ fn shipping_human_roster_rejects_six_credential_rotations_during_response_body()
     }
 }
 
+
+
+// NMR-PAGING-01: the existing Human SQLite owner fixes walk membership,
+// while each page reads current canonical payloads after real mutations.
+fn fixture_saved_human_message(id: u64, peer: &str, text: &str) -> serde_json::Value {
+    json!({
+        "id":format!("human-server-message:{id}"),"kind":"message","role":"user",
+        "authorKind":"human","authorId":peer,"content":text,"timestampMs":1791162000000.0,
+        "delivery":"sent","remoteMessageId":id.to_string(),"remoteCreatedAt":"2026-10-05T01:00:00Z",
+        "reactions":[],"remoteReactions":[],"retainedLocalMetadata":{"keep":true}
+    })
+}
+
+#[test]
+fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_time_inserts() {
+    let root = temp_root("nmr-human-stable-tail");
+    let runtime = human_message_fixture_runtime(&root, "http://127.0.0.1:1");
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let mut physical = Vec::new();
+    for (remote_id, timestamp) in [(200, 3000.0), (10, 1000.0), (20, 2000.0), (30, 2000.0)] {
+        let mut row = fixture_saved_human_message(remote_id, "2", "ordered");
+        row["timestampMs"] = json!(timestamp);
+        physical.push(row);
+    }
+    physical.push(json!({"id":"human-message:pending-tail","kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","content":"pending","timestampMs":2000.0,"delivery":"pending"}));
+    let mut row25 = fixture_saved_human_message(25, "2", "equal time");
+    row25["timestampMs"] = json!(2000.0);
+    physical.push(row25);
+    assert_eq!(owner.append_transcript_entries(&physical).expect("physical rows"), physical.len());
+    let first = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery { before_seq:None, before_cursor:None, limit:2 })
+        .expect("newest human tail");
+    assert_eq!(first.entries.iter().map(|row| row["id"].as_str().unwrap()).collect::<Vec<_>>(),
+        vec!["human-message:pending-tail", "human-server-message:200"]);
+    assert_eq!(first.next_before_seq, Some(5), "return the real physical seq, not the sorted index");
+    let cursor = first.next_before_cursor.clone().expect("immutable history snapshot cursor");
+    for (remote_id, timestamp) in [(15, 1500.0), (29, 2000.0)] {
+        let mut row = fixture_saved_human_message(remote_id, "2", "backfilled");
+        row["timestampMs"] = json!(timestamp);
+        assert!(owner.append_transcript_entry(&row).expect("late insertion"));
+        physical.push(row);
+    }
+    let second = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:first.next_before_seq,before_cursor:Some(cursor.clone()),limit:3
+    }).expect("older relative to the immutable pending anchor");
+    assert_eq!(second.entries.iter().map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["20","25","30"],
+        "late inserts belong to the next snapshot, not the in-progress stable traversal");
+    assert_eq!(second.next_before_seq, Some(3));
+    let third = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:second.next_before_seq,before_cursor:second.next_before_cursor.clone(),limit:3
+    }).expect("oldest relative to ID 20");
+    assert_eq!(third.entries.iter().map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["10"]);
+    assert_eq!(third.next_before_seq, None);
+    assert_eq!(third.next_before_cursor, None);
+    assert_eq!(owner.get_transcript_entries().expect("legacy Agent sequence semantics"), physical);
+    let all = runtime.read_human_conversation_transcript(&id).expect("one human ordering");
+    assert_eq!(all.iter().map(|row| row["id"].as_str().unwrap()).collect::<Vec<_>>(), vec![
+        "human-server-message:10","human-server-message:15","human-server-message:20","human-server-message:25",
+        "human-server-message:29","human-server-message:30","human-message:pending-tail","human-server-message:200"
+    ]);
+    let stable = third.entries.into_iter().chain(second.entries.clone()).chain(first.entries).collect::<Vec<_>>();
+    assert_eq!(stable.iter().map(|row| row["id"].as_str().unwrap()).collect::<Vec<_>>(), vec![
+        "human-server-message:10","human-server-message:20","human-server-message:25",
+        "human-server-message:30","human-message:pending-tail","human-server-message:200"
+    ]);
+    assert!(runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:Some(9999),before_cursor:Some(cursor.clone()),limit:2
+    }).is_err(), "a mismatched physical anchor cannot reinterpret the token");
+    assert!(runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:None,before_cursor:Some("not-a-history-token".into()),limit:2
+    }).is_err(), "malformed cursor fails closed");
+    let original_participants = owner.get_metadata("participantIds").expect("original participants")
+        .expect("Human participants exist");
+    assert!(owner.set_metadata("participantIds", json!(["1", "9"])).expect("changed conversation scope"));
+    let wrong_scope = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+    });
+    assert!(owner.set_metadata("participantIds", original_participants).expect("restore exact scope"));
+    assert!(wrong_scope.is_err(), "a token cannot be reinterpreted for changed participants");
+    let snapshot_id = cursor.split(':').nth(1).expect("snapshot identity in cursor");
+    let anchor_position = cursor.split(':').nth(2).expect("snapshot position in cursor")
+        .parse::<usize>().expect("numeric snapshot position");
+    let snapshot_key = format!("humanTranscriptSnapshot:v1:{snapshot_id}");
+    let snapshot_raw = owner.read_kv(&snapshot_key).expect("read persisted snapshot")
+        .expect("snapshot exists until eviction");
+    let snapshot: serde_json::Value = serde_json::from_str(&snapshot_raw).expect("snapshot JSON");
+    let unread_position = anchor_position + 1;
+    let seqs = snapshot["seqs"].as_array().expect("physical sequence index");
+    assert!(unread_position + 1 < seqs.len(), "fixture has multiple unread identities");
+    let unread_seq = seqs[unread_position].as_i64().expect("physical integer identity");
+    for (label, corrupt_seq) in [
+        ("duplicate", seqs[unread_position + 1].clone()),
+        ("string-alias", json!(unread_seq.to_string())),
+        ("float-alias", json!(unread_seq as f64)),
+        ("missing-seq", json!(999_999_i64)),
+    ] {
+        let mut corrupt_snapshot = snapshot.clone();
+        corrupt_snapshot["seqs"][unread_position] = corrupt_seq;
+        let corrupt_raw = corrupt_snapshot.to_string();
+        assert!(owner.write_kv(&snapshot_key, &corrupt_raw).expect("persist corrupt unread index"));
+        assert!(runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+            before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+        }).is_err(), "{label}: corrupt unread identities must not silently repeat or disappear");
+        assert_eq!(owner.read_kv(&snapshot_key).expect("corrupt index is retained"), Some(corrupt_raw), "{label}");
+        assert!(owner.write_kv(&snapshot_key, &snapshot_raw).expect("restore original snapshot"));
+        let restored = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+            before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+        }).expect("restored index resumes the same page");
+        assert_eq!(restored.entries, second.entries, "{label}: recovery preserves every unread row exactly once");
+        assert_eq!(restored.next_before_seq, second.next_before_seq, "{label}");
+        assert_eq!(restored.next_before_cursor, second.next_before_cursor, "{label}");
+    }
+    runtime.shutdown();
+    assert!(owner.get_human_transcript_entries().is_err(), "closed Human storage is not an empty history");
+    assert!(owner.get_human_transcript_tail(HumanTranscriptPageQuery {
+        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+    }).is_err(), "closed Human storage cannot fabricate a terminal page");
+    drop(owner);
+    drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, "http://127.0.0.1:1");
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("reopened order"), all);
+    let repeated = restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+    }).expect("replay exact persisted snapshot after restart");
+    assert_eq!(repeated.entries, second.entries);
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("snapshot cache owner");
+    let mut newest = None;
+    for index in 0_u64..16 {
+        let mut row = fixture_saved_human_message(1000 + index, "2", "new snapshot input");
+        row["timestampMs"] = json!(6000.0 + index as f64);
+        assert!(owner.append_transcript_entry(&row).expect("new stable set"));
+        newest = Some(restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+            before_seq:None,before_cursor:None,limit:2
+        }).expect("new snapshot"));
+    }
+    assert!(restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:Some(5),before_cursor:Some(cursor),limit:3
+    }).is_err(), "the bounded cache rejects an expired token instead of silently restarting");
+    let registry: serde_json::Value = serde_json::from_str(
+        &owner.read_kv("humanTranscriptSnapshots:v1").expect("bounded registry")
+            .expect("registry exists")
+    ).expect("registry JSON");
+    assert_eq!(registry["snapshots"].as_array().expect("snapshot identities").len(), 16);
+    assert!(owner.read_kv(&snapshot_key).expect("evicted original index").is_none());
+    let newest = newest.expect("latest snapshot");
+    assert!(!restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
+        before_seq:newest.next_before_seq,before_cursor:newest.next_before_cursor,limit:2
+    }).expect("most recent token survives eviction").entries.is_empty());
+    restarted.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_anchor_refresh() {
+    let root = temp_root("nmr-mutable-human-tail-anchor");
+    let sent = fixture_remote_human_message(3, 1, 2, "pending anchor", Some("cursor-pending"), json!([]));
+    let mut refreshed = Vec::new();
+    for remote_id in [1_u64, 2, 5] {
+        let mut row = fixture_remote_human_message(remote_id, 2, 1, &format!("remote-{remote_id}"), None, json!([]));
+        row["createdAt"] = json!(format!("1970-01-01T00:00:{remote_id:02}Z"));
+        refreshed.push(row);
+    }
+    refreshed.push(sent.clone());
+    let mut new_anchor = fixture_remote_human_message(4, 2, 1, "remote-4", None, json!([]));
+    new_anchor["createdAt"] = json!("2026-10-05T01:00:10Z");
+    refreshed.push(new_anchor);
+    refreshed.sort_by_key(|row| row["id"].as_u64().expect("positive service identity"));
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"deduplicated":false,"message":sent})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{
+            "messages":refreshed,"historyCursor":{"mode":"after-id","afterId":0},"nextAfterId":5
+        }})),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    for remote_id in 1_u64..=5 {
+        let row = if remote_id == 3 {
+            json!({"id":"human-message:cursor-pending","kind":"message","role":"user",
+                "authorKind":"human","authorId":"1","clientNonce":"cursor-pending",
+                "content":"pending anchor","composedAtMs":3000.0,"timestampMs":3000.0,"delivery":"pending"})
+        } else {
+            let mut row = fixture_saved_human_message(remote_id, "2", &format!("remote-{remote_id}"));
+            row["timestampMs"] = json!(remote_id as f64 * 1000.0);
+            row["remoteCreatedAt"] = json!(format!("1970-01-01T00:00:{remote_id:02}Z"));
+            row
+        };
+        assert!(owner.append_transcript_entry(&row).expect("original chronological set"));
+    }
+    let first = dispatch(&runtime, "getHumanConversationTranscriptTail", json!({"conversationId":id,"limit":2}));
+    assert_eq!(first["entries"].as_array().expect("first page").iter()
+        .map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["4","5"]);
+    assert_eq!(first["nextBeforeSeq"], 4);
+    assert!(first["nextBeforeCursor"].as_str().is_some());
+    let settled = runtime.append_human_message(&id, "pending anchor", "cursor-pending", Some(3000.0), None, &[])
+        .expect("real native settlement moves the pending row's presentation timestamp");
+    assert_eq!(settled["id"], "human-server-message:3");
+    let fresh = runtime.sync_human_conversation(&id).expect("authoritative refresh moves the old page anchor's timestamp");
+    assert_eq!(fresh.iter().map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["1","2","5","3","4"]);
+    let continuation_args = json!({"conversationId":id,"limit":3,
+        "beforeSeq":first["nextBeforeSeq"],"beforeCursor":first["nextBeforeCursor"]});
+    let older = dispatch(&runtime, "getHumanConversationTranscriptTail", continuation_args.clone());
+    assert_eq!(older["entries"].as_array().expect("stable older page").iter()
+        .map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["1","2","3"],
+        "a moved timestamp cannot repeat already-returned 4/5 or lose the now-settled former pending row");
+    assert_eq!(older["entries"][2], settled);
+    assert_eq!(older["nextBeforeCursor"], serde_json::Value::Null);
+    assert_eq!(older["nextBeforeSeq"], serde_json::Value::Null);
+    assert_eq!(owner.get_transcript_entries().expect("physical identities retained").iter()
+        .map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["1","2","3","4","5"]);
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(dispatch(&restarted, "getHumanConversationTranscriptTail", continuation_args), older,
+        "stable continuation and refreshed payload survive restart");
+    restarted.shutdown();
+    let requests = server.join().expect("settlement and refresh fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("POST /api/social/messages "));
+    assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_agent_handoff_and_history_download_keep_activity_monotonic() {
+    let root = temp_root("nmr-agent-handoff-history-activity");
+    let remote = fixture_remote_human_message(71, 2, 1, "older resource message", None, json!([{
+        "resourceId":"handoff-race-resource","name":"history.txt","contentType":"text/plain",
+        "size":4,"createdAt":"2026-10-05T01:00:00Z"
+    }]));
+    let (resource_seen, resource_wait) = std::sync::mpsc::channel();
+    let (resource_release, resource_resume) = std::sync::mpsc::channel();
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{
+            "messages":[remote],"historyCursor":{"mode":"after-id","afterId":0},"nextAfterId":71
+        }})),
+        HumanMessageFixtureReply::Deferred(
+            Box::new(HumanMessageFixtureReply::Bytes(200, vec![1,2,3,4])),
+            resource_seen, resource_resume,
+        ),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert!(owner.set_metadata("lastActivityAt", json!(1000.0)).expect("historic activity baseline"));
+    let worker = runtime.clone();
+    let conversation = id.clone();
+    let sync = thread::spawn(move || worker.sync_human_conversation(&conversation));
+    resource_wait.recv_timeout(std::time::Duration::from_secs(10))
+        .expect("materializer is waiting for resource bytes");
+    let worker = runtime.clone();
+    let conversation = id.clone();
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (completed_tx, completed_rx) = std::sync::mpsc::channel();
+    let handoff = thread::spawn(move || {
+        started_tx.send(()).expect("Agent handoff started");
+        let result = worker.append_human_agent_message(
+            &conversation, "fixture-agent", "history-race-stream", "new Agent result", 1900000000000.0,
+        );
+        completed_tx.send(result).expect("Agent handoff result");
+    });
+    started_rx.recv_timeout(std::time::Duration::from_secs(10)).expect("Agent handoff caller entered");
+    let handoff_waited = matches!(completed_rx.recv_timeout(std::time::Duration::from_millis(200)),
+        Err(std::sync::mpsc::RecvTimeoutError::Timeout));
+    // Release the held HTTP body before asserting the concurrency result, so
+    // an implementation regression cannot leave either worker stuck in CI.
+    resource_release.send(()).expect("release delayed resource");
+    let sync_result = sync.join().expect("history worker");
+    let handoff_result = if handoff_waited {
+        Some(completed_rx.recv_timeout(std::time::Duration::from_secs(10)).expect("handoff after history"))
+    } else {
+        None
+    };
+    handoff.join().expect("Agent handoff worker");
+    sync_result.expect("history finishes");
+    assert!(handoff_waited,
+        "Agent handoff uses the same conversation mutation boundary while history materializes");
+    let agent_entry = handoff_result.expect("handoff observed after release").expect("Agent handoff succeeds");
+    assert_eq!(agent_entry["authorKind"], "agent");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("new activity"), Some(json!(1900000000000.0)));
+    runtime.append_human_agent_message(&id, "fixture-agent", "older-completion-stream", "late older Agent result", 1800000000000.0)
+        .expect("older completed stream still materializes");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("monotonic older completion"), Some(json!(1900000000000.0)));
+    let rows = runtime.read_human_conversation_transcript(&id).expect("Human and Agent rows share owner");
+    assert_eq!(rows.len(), 3);
+    for timestamp in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        assert!(runtime.append_human_agent_message(&id, "fixture-agent", "invalid-clock", "invalid clock", timestamp).is_err(),
+            "non-finite activity must fail before persistence");
+    }
+    assert_eq!(runtime.read_human_conversation_transcript(&id).expect("unchanged after invalid clocks"), rows);
+    let saved_remote = rows.iter().find(|row| row["remoteMessageId"] == "71").expect("downloaded remote row");
+    assert_eq!(fs::read(saved_remote["attachments"][0]["path"].as_str().expect("download path"))
+        .expect("materialized bytes"), vec![1,2,3,4]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("restart shared transcript"), rows);
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("reopened activity"), Some(json!(1900000000000.0)));
+    assert_eq!(restarted.append_human_agent_message(&id, "fixture-agent", "history-race-stream", "new Agent result", 0.0)
+        .expect("idempotent Agent replay retains original completion"), agent_entry);
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("replay cannot regress activity"), Some(json!(1900000000000.0)));
+    restarted.shutdown(); drop(owner); drop(restarted);
+    let requests = server.join().expect("history and resource fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
+    assert!(requests[1].starts_with("GET /api/social/message-resources/handoff-race-resource "));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart() {
+    let root = temp_root("nmr-activity-metadata-recovery");
+    let remote = fixture_remote_human_message(78, 2, 1, "durable before activity", None, json!([]));
+    let page = json!({"success":true,"data":{
+        "messages":[remote],"historyCursor":{"mode":"after-id","afterId":0},"nextAfterId":78
+    }});
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, page.clone()),
+        HumanMessageFixtureReply::Json(200, page),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("initial activity"), Some(json!(0.0)));
+    let db = rusqlite::Connection::open(forward_db_path(&root, &id)).expect("independent SQLite fault injector");
+    db.busy_timeout(std::time::Duration::from_secs(5)).expect("bounded SQLite fixture");
+    let reject_activity = "CREATE TRIGGER reject_human_activity BEFORE UPDATE OF value ON kv
+        WHEN NEW.key = 'metadata' BEGIN SELECT RAISE(ABORT, 'NMR-ACTIVITY injected persistence failure'); END;";
+    db.execute_batch(reject_activity).expect("reject real metadata persistence");
+    let error = runtime.sync_human_conversation(&id).expect_err("history cannot acknowledge failed activity persistence");
+    assert!(error.contains("NMR-ACTIVITY injected persistence failure"), "{error}");
+    let committed = owner.get_transcript_entries().expect("row commit precedes failed metadata commit");
+    assert_eq!(committed.len(), 1);
+    assert_eq!(committed[0]["remoteMessageId"], "78");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("failed activity retained"), Some(json!(0.0)));
+    assert!(owner.get_metadata("humanHistoryCoverage").expect("no premature coverage checkpoint").is_none());
+    db.execute_batch("DROP TRIGGER reject_human_activity;").expect("remove precise injected fault");
+    drop(db); runtime.shutdown(); drop(owner); drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    assert_eq!(restarted.read_human_conversation_transcript(&id).expect("row survived pure reopen"), committed);
+    assert_eq!(restarted.sync_human_conversation(&id).expect("known-row replay repairs activity"), committed);
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("reopened owner");
+    let remote_timestamp = committed[0]["timestampMs"].clone();
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("repaired native activity"), Some(remote_timestamp.clone()));
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint only after repair"),
+        Some(json!({"afterId":78,"complete":true})));
+    let db = rusqlite::Connection::open(forward_db_path(&root, &id)).expect("Agent activity fault injector");
+    db.busy_timeout(std::time::Duration::from_secs(5)).expect("bounded second SQLite fixture");
+    db.execute_batch(reject_activity).expect("reject Agent activity persistence");
+    let error = restarted.append_human_agent_message(
+        &id, "fixture-agent", "durable-agent-stream", "durable Agent result", 1900000000000.0,
+    ).expect_err("Agent handoff must report its failed metadata commit");
+    assert!(error.contains("NMR-ACTIVITY injected persistence failure"), "{error}");
+    let both = owner.get_transcript_entries().expect("both durable rows");
+    assert_eq!(both.len(), 2);
+    assert_eq!(both[0], committed[0]);
+    assert_eq!(both[1]["id"], "human-agent-message:durable-agent-stream");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("Agent metadata write failed"), Some(remote_timestamp));
+    db.execute_batch("DROP TRIGGER reject_human_activity;").expect("restore metadata writes");
+    drop(db); restarted.shutdown(); drop(owner); drop(restarted);
+
+    let recovered = human_message_fixture_runtime(&root, &url);
+    assert_eq!(recovered.append_human_agent_message(
+        &id, "fixture-agent", "durable-agent-stream", "durable Agent result", 1900000001000.0,
+    ).expect("idempotent Agent replay repairs the interrupted metadata write"), both[1]);
+    assert_eq!(recovered.read_human_conversation_transcript(&id).expect("no duplicated replay row"), both);
+    let owner = recovered.open_human_conversation_db_owner(&id).expect("recovered owner");
+    assert_eq!(owner.get_metadata("lastActivityAt").expect("original committed completion time repaired"),
+        Some(json!(1900000000000.0)));
+    recovered.shutdown(); drop(owner); drop(recovered);
+    let requests = server.join().expect("two actual history attempts");
+    assert_eq!(requests.len(), 2, "Agent replay cannot dispatch another HTTP message");
+    assert!(requests.iter().all(|request| request.starts_with(
+        "GET /api/social/messages?contactId=2&limit=200&afterId=0 ")));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources() {
+    let root = temp_root("forward-pending-ownership");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post(); child.terminate(); server.release_first_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let target_owner = runtime.open_human_conversation_db_owner(first).unwrap();
+    let original = target_owner.get_transcript_entries().unwrap().remove(0);
+    assert_eq!(original["delivery"], "dispatching");
+    assert_eq!(original["forwardBatchOwned"], true, "ownership must be durable before the first POST");
+    let original_id = original["id"].as_str().unwrap();
+    let admitted = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    assert!(source_owner.set_metadata("participantIds", json!(["2", "9"])).unwrap());
+    // The current source scan includes revoked sources and persists their
+    // policy denial. Establish that legitimate journal transition first;
+    // the damaged destination markers must not mutate this denied intent.
+    let denied = forward_gateway_result(&runtime, &args).expect("persist revoked-source policy denial");
+    assert!(denied["destinations"].as_array().unwrap().iter().all(|target|
+        target["status"] == "failed" && target["error"].as_str().unwrap().contains("participant")));
+    let journal = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    for field in ["version", "accountId", "issuer", "requestId", "sourceConversationId",
+        "sourceEntryId", "text", "attachments", "context"] {
+        assert_eq!(journal[0][field], admitted[0][field], "denial retains immutable {field}");
+    }
+    for (before, after) in admitted[0]["destinations"].as_array().unwrap().iter()
+        .zip(journal[0]["destinations"].as_array().unwrap()) {
+        assert_eq!(after["conversationId"], before["conversationId"]);
+        assert_eq!(after["clientNonce"], before["clientNonce"]);
+        assert_eq!(after["completed"], false);
+        assert!(after["error"].as_str().unwrap().contains("participant"));
+    }
+    assert_eq!(server.post_count(), 1);
+    for case in ["future-version", "missing-version", "changed-request", "marker-only",
+        "missing-context", "unrelated-context"] {
+        let mut pending = original.clone();
+        if case == "marker-only" {
+            pending.as_object_mut().unwrap().remove("forwardContext");
+        } else {
+            // Model persisted v1 rows written before the extra ownership marker
+            // existed, so the journal lookup must stand on its own.
+            pending.as_object_mut().unwrap().remove("forwardBatchOwned");
+            if case == "missing-context" {
+                pending.as_object_mut().unwrap().remove("forwardContext");
+            } else if case == "unrelated-context" {
+                pending["forwardContext"] = json!({"preserve":"unrelated retained metadata"});
+            } else {
+                let context = pending["forwardContext"].as_object_mut().unwrap();
+                if case == "future-version" {
+                    context.insert("batchVersion".into(), json!(2));
+                } else {
+                    context.remove("batchVersion");
+                    if case == "changed-request" {
+                        context.insert("requestId".into(), json!("corrupted-request-marker"));
+                    }
+                }
+            }
+        }
+        target_owner.update_transcript_entry(original_id, &pending).unwrap().unwrap();
+        runtime.sync_human_conversation(first).expect("owned pending row cannot starve independent history");
+        assert_eq!(server.post_count(), 1, "{case}: source ownership cannot be bypassed by generic replay");
+        let rows = target_owner.get_transcript_entries().unwrap();
+        assert_eq!(rows.len(), 1, "{case}");
+        let mut preserved = rows[0].clone();
+        // Adoption may add an ownership marker, but cannot alter the original
+        // payload, nonce, context, or pending settlement state.
+        preserved.as_object_mut().unwrap().remove("forwardBatchOwned");
+        pending.as_object_mut().unwrap().remove("forwardBatchOwned");
+        assert_eq!(preserved, pending, "{case}: retain the original pending intent");
+        assert_eq!(source_owner.get_metadata("humanForwardBatches").unwrap(), Some(journal.clone()));
+    }
+    assert_eq!(server.history_count(), 6);
+    let mut markerless = original.clone();
+    markerless.as_object_mut().unwrap().remove("forwardBatchOwned");
+    markerless["forwardContext"].as_object_mut().unwrap().remove("batchVersion");
+    target_owner.update_transcript_entry(original_id, &markerless).unwrap().unwrap();
+    assert!(source_owner.set_metadata("humanForwardBatches", json!({"invalid":"not a journal array"})).unwrap());
+    assert!(runtime.sync_human_conversation(first).is_err(), "malformed source journal is not proof of legacy ownership");
+    assert_eq!(server.post_count(), 1);
+    assert_eq!(target_owner.get_transcript_entries().unwrap(), vec![markerless.clone()]);
+    assert!(source_owner.set_metadata("humanForwardBatches", journal.clone()).unwrap());
+    let source_path = forward_db_path(&root, source);
+    let unavailable_path = source_path.with_extension("temporarily-unavailable");
+    for case in ["source-context", "missing-context", "unrelated-context"] {
+        let mut pending = markerless.clone();
+        if case == "missing-context" {
+            pending.as_object_mut().unwrap().remove("forwardContext");
+        } else if case == "unrelated-context" {
+            pending["forwardContext"] = json!({"preserve":"unrelated retained metadata"});
+        }
+        target_owner.update_transcript_entry(original_id, &pending).unwrap().unwrap();
+        // The directory scan may skip an absent SQLite file. Neither a lost
+        // source pointer nor unrelated metadata establishes legacy ownership
+        // of this pre-marker forwarding nonce when its source is unreadable.
+        fs::rename(&source_path, &unavailable_path).expect("make the exact source store unavailable");
+        let unavailable = runtime.sync_human_conversation(first);
+        fs::rename(&unavailable_path, &source_path).expect("restore owned source store");
+        assert!(unavailable.is_err(), "{case}: unreadable source cannot authorize markerless generic replay");
+        assert_eq!(server.post_count(), 1, "{case}: preserve the single previously accepted POST");
+        assert_eq!(target_owner.get_transcript_entries().unwrap(), vec![pending],
+            "{case}: failed source lookup cannot mutate the retained pending intent");
+        assert_eq!(source_owner.get_metadata("humanForwardBatches").unwrap(), Some(journal.clone()),
+            "{case}: the exact denied source journal remains recoverable");
+    }
+    runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime); drop(child);
+    server.finish(); fs::remove_dir_all(root).expect("remove ownership negative fixture");
+
+    // Genuine pre-journal intent uses a readable source with no source-owned
+    // batch. Preserve this compatibility path without manufacturing a missing
+    // journal for the v1 batch exercised above.
+    let legacy_root = temp_root("forward-genuine-legacy");
+    let legacy_server = ForwardHttpFixture::start(false);
+    let legacy_args = prepare_forward_process(&legacy_root, &legacy_server.url);
+    let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
+    let legacy_source = legacy_args["sourceConversationId"].as_str().unwrap();
+    let legacy_target = legacy_args["destinationConversationIds"][0].as_str().unwrap();
+    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    // Reproduce the actual pre-journal production nonce: SHA256 of the
+    // request ID, one NUL byte, then this destination conversation ID.
+    use sha2::Digest;
+    let legacy_request_id = "pre-journal-request";
+    let mut legacy_digest = sha2::Sha256::new();
+    legacy_digest.update(legacy_request_id.as_bytes());
+    legacy_digest.update([0u8]);
+    legacy_digest.update(legacy_target.as_bytes());
+    let legacy_nonce = format!("human-forward-{:x}", legacy_digest.finalize());
+    let context = json!({
+        "requestId":legacy_request_id,"sourceConversationId":legacy_source,
+        "sourceEntryId":legacy_args["sourceEntryId"],
+        "privacy":{"dropSenderNames":false,"dropCaptions":false}
+    });
+    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap()
+        .append_transcript_entry(&json!({
+            "id":format!("human-message:{legacy_nonce}"),"kind":"message","role":"user",
+            "authorKind":"human","authorId":"1","content":"legacy forward content",
+            "clientNonce":legacy_nonce.as_str(),"timestampMs":1000.0,
+            "delivery":"pending","forwardContext":context
+        })).unwrap());
+    let legacy_rows = legacy_runtime.sync_human_conversation(legacy_target)
+        .expect("readable genuine legacy forward remains replayable");
+    assert_eq!(legacy_server.post_count(), 1);
+    assert_eq!(legacy_rows.len(), 1);
+    assert_eq!(legacy_rows[0]["delivery"], "sent");
+    assert_eq!(legacy_rows[0]["clientNonce"].as_str(), Some(legacy_nonce.as_str()));
+    assert_eq!(legacy_rows[0]["forwardContext"], context);
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    legacy_runtime.shutdown(); drop(legacy_owner); drop(legacy_runtime);
+    legacy_server.finish(); fs::remove_dir_all(legacy_root).expect("remove genuine legacy fixture");
+}

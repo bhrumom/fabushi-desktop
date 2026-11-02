@@ -32,7 +32,9 @@ use super::agent_db_serde::{
     resolve_spend_guard_state, serialize_spend_guard_state,
 };
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
+    read_human_transcript_entries, read_human_transcript_tail,
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
 
@@ -52,6 +54,8 @@ pub enum AgentDbProjectionError {
     LatestRootHex(String),
     #[error("agent db owner mutex poisoned")]
     OwnerPoisoned,
+    #[error("Human transcript page could not be durably prepared")]
+    HumanTranscriptUnavailable,
 }
 
 const KV_PROFILE: &str = "sandProfile";
@@ -1469,6 +1473,22 @@ impl SandAgentDb {
         Ok(read_transcript_entries_from_db(db)?)
     }
 
+    pub fn get_human_transcript_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        };
+        Ok(read_human_transcript_entries(db)?)
+    }
+
     pub fn get_transcript_page(
         &self,
         query: TranscriptPageQuery,
@@ -1548,6 +1568,26 @@ impl SandAgentDb {
             });
         };
         Ok(read_transcript_tail(db, query)?)
+    }
+
+    pub fn get_human_transcript_tail(
+        &self,
+        query: HumanTranscriptPageQuery,
+    ) -> Result<HumanTranscriptPage, AgentDbProjectionError> {
+        // Preparing the first page durably records its sequence index. Reuse
+        // the same write/recovery owner and reject its closed/busy no-op result.
+        let page = self.run_write_value("humanTranscriptTail", |db| {
+            let metadata = read_metadata_json(db).map_err(|error| match error {
+                AgentDbProjectionError::Sqlite(error) => error,
+                error => rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    error.to_string(),
+                ))),
+            })?.unwrap_or(serde_json::Value::Null);
+            read_human_transcript_tail(db, &query, &metadata)
+                .map(|(page, changed)| (Some(page), changed))
+        })?;
+        page.ok_or(AgentDbProjectionError::HumanTranscriptUnavailable)
     }
 
     pub fn get_transcript_entry_by_id(

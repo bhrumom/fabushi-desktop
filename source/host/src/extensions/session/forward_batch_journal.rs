@@ -798,27 +798,56 @@ mod tests {
         let context = serde_json::json!({"batchVersion":1,"requestId":"r","sourceConversationId":"s","sourceEntryId":"e","privacy":{"dropSenderNames":false,"dropCaptions":false}});
         let original = HumanForwardBatch::new("a".into(),"prod".into(),"r".into(),"s".into(),"e".into(),"text".into(),vec![],context,&["b".into(),"c".into()]);
         store_forward_batch(&first, &original).unwrap();
+        let unrelated = serde_json::json!({"keep":"unchanged"});
+        assert!(first.set_metadata("unrelated", unrelated.clone()).unwrap());
+        let mut other_context = original.context.clone();
+        other_context["requestId"] = serde_json::json!("other");
+        other_context["sourceEntryId"] = serde_json::json!("other-entry");
+        let mut other = HumanForwardBatch::new("a".into(),"prod".into(),"other".into(),"s".into(),"other-entry".into(),"unrelated text".into(),vec![],other_context,&["d".into()]);
+        other.destinations[0].error = Some("unrelated retryable failure".into());
+        store_forward_batch(&second, &other).unwrap();
         let mut settled = original.clone();
         settled.destinations[0].completed = true;
         store_forward_batch(&second, &settled).unwrap();
+        let settled_raw = first.read_kv("metadata").unwrap().expect("committed metadata");
         let error = store_forward_batch(&first, &original).unwrap_err();
         assert!(error.contains("stale"), "{error}");
-        assert_eq!(load_forward_batches(&first, "s").unwrap(), vec![settled.clone()]);
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), settled_raw);
+        assert_eq!(load_forward_batches(&first, "s").unwrap(), vec![settled.clone(), other.clone()]);
         // A stale whole-batch writer cannot trade back a completed first
         // target for progress on the second target. Reject all of that write.
         let mut mixed = original.clone();
         mixed.destinations[1].completed = true;
         let error = store_forward_batch(&first, &mixed).unwrap_err();
         assert!(error.contains("stale"), "{error}");
-        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![settled.clone()]);
+        assert_eq!(second.read_kv("metadata").unwrap().unwrap(), settled_raw);
+        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![settled.clone(), other.clone()]);
+        // Fresh pending failures remain writable and recoverable while the
+        // already completed target and the other valid batch stay intact.
         let mut fresh = load_forward_batches(&first, "s").unwrap().remove(0);
-        fresh.destinations[1].completed = true;
+        fresh.destinations[1].error = Some("retryable second destination failure".into());
         store_forward_batch(&first, &fresh).unwrap();
+        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![fresh.clone(), other.clone()]);
+        let pending_second = fresh.clone();
+        let mut fresh = load_forward_batches(&second, "s").unwrap().remove(0);
+        fresh.destinations[1].completed = true;
+        fresh.destinations[1].error = None;
+        store_forward_batch(&second, &fresh).unwrap();
+        assert_eq!(load_forward_batches(&first, "s").unwrap(), vec![fresh.clone(), other.clone()]);
+        let terminal_raw = first.read_kv("metadata").unwrap().unwrap();
+        let error = store_forward_batch(&first, &pending_second).unwrap_err();
+        assert!(error.contains("stale"), "{error}");
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), terminal_raw);
+        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![fresh.clone(), other.clone()]);
+        store_forward_batch(&first, &fresh).expect("identical terminal replay stays idempotent");
+        assert_eq!(second.read_kv("metadata").unwrap().unwrap(), terminal_raw);
         first.close(false);
         second.close(false);
         drop(first); drop(second);
         let reopened = SandAgentDb::open(&db_path, 500).unwrap();
-        assert_eq!(load_forward_batches(&reopened, "s").unwrap(), vec![fresh]);
+        assert_eq!(reopened.read_kv("metadata").unwrap().unwrap(), terminal_raw);
+        assert_eq!(load_forward_batches(&reopened, "s").unwrap(), vec![fresh, other]);
+        assert_eq!(reopened.get_metadata("unrelated").unwrap(), Some(unrelated));
         reopened.close(false); drop(reopened);
         std::fs::remove_dir_all(dir).unwrap();
     }

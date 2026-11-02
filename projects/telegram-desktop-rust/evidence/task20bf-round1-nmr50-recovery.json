@@ -2,7 +2,7 @@
   "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "NMR-50: forward recovery progress and original dispatch scope",
-  "state": "NMR50a-d-partial-Actions-pass-NMR50e-h-implemented-reviewed-execution-pending",
+  "state": "predecessor-batches-qualified-with-explicit-scope-integration-execution-pending",
   "source": {
     "repository": "telegramdesktop/tdesktop",
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
@@ -96,11 +96,11 @@
     }
   ],
   "frozen_code_blobs": {
-    "source/host/src/extensions/session/production.rs": "c2d39cd5e47b5cc9678fc8ae135efb625944288e",
+    "source/host/src/extensions/session/production.rs": "7f5cf98383035f56ea5c420a3e5e92d0954d51a2",
     "source/host/src/extensions/session/native_messaging.rs": "37a216c3a92ffc696a604d0d94260cffb6a92908",
-    "source/host/tests/session_gateway_contract.rs": "708d07322029115c8d4da97ec0441f36dde0c449",
-    "frontend/src/production/coordinator-client.ts": "3fdd53e62afebcbdda9b9c37514aecdfb8c13fa9",
-    "frontend/src/production/ProductionRenderer.tsx": "880688acaa84747386c74cda50de0ed903758801",
+    "source/host/tests/session_gateway_contract.rs": "536b6e55fcfa7a0c162335ab0d7be896aca9840a",
+    "frontend/src/production/coordinator-client.ts": "ee604805c6d90f641591c5faba8a9e43ddadac1b",
+    "frontend/src/production/ProductionRenderer.tsx": "d9de1c412181fe9d1c6d51aee27282236326bb68",
     "frontend/src/production/ForwardMessageDialog.tsx": "869510a4fda80b6feaa249877918f552d51818e2",
     "frontend/src/production/ForwardMessageDialog.fixture.tsx": "84b7839837550865ac150d455249d137086aac77",
     "frontend/src/production/ForwardMessageDialog.behavior.test.mjs": "d7b61e5c4b0908be2c53640b6637e48c0c36538c",
@@ -211,7 +211,7 @@
     }
   },
   "execution": {
-    "status": "partial-pass-host-and-shipping-queued",
+    "status": "completed-success-selected-NMR50a-d-batch",
     "workflow": ".github/workflows/native-service-contracts.yml",
     "local_execution": false,
     "htch_runtime_execution": false,
@@ -229,13 +229,13 @@
       {
         "run": 41518451611,
         "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41518451611",
-        "status": "in_progress",
+        "status": "completed",
         "jobs": [
           {
             "id": 125527941098,
             "name": "native-message-shipping-compile",
-            "status": "queued",
-            "conclusion": null
+            "status": "completed",
+            "conclusion": "success"
           },
           {
             "id": 125527941378,
@@ -252,8 +252,8 @@
           {
             "id": 125527941499,
             "name": "native-message-reconciliation",
-            "status": "queued",
-            "conclusion": null
+            "status": "completed",
+            "conclusion": "success"
           },
           {
             "id": 125527941576,
@@ -273,6 +273,25 @@
           "transcript": 18,
           "forward_settlement": 5,
           "chromium": 22
+        },
+        "conclusion": "success",
+        "host": {
+          "human": 52,
+          "native_upload": 3,
+          "sharebox": 1,
+          "journal": 12,
+          "agent": 4,
+          "credential": 3,
+          "http": 1
+        },
+        "shipping": {
+          "job": 125527941098,
+          "status": "success",
+          "actual_apphost_and_cli_gateway_build": true,
+          "actual_cli_gateway_process_controls": 4,
+          "package_copy_tests": 4,
+          "expected_rejecting_controls": 3,
+          "signed_installed_product_acceptance": false
         }
       }
     ],
@@ -299,6 +318,20 @@
         "id": 13177095822,
         "name": "tdrp-source-review-contract-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
         "digest": "sha256:5b819c60cf389cf8fe44dc5328113bce1cf65dc6ce6c269cdeb039334c439a15"
+      },
+      {
+        "id": 13177139188,
+        "name": "native-message-shipping-compile-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+        "published_digest": "sha256:16dbedddf81001adbc15c4fbac345c3f1739435c10873fa96d42de9eab80c2ff",
+        "downloaded_verification": false,
+        "head": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1"
+      },
+      {
+        "id": 13176874700,
+        "name": "native-message-reconciliation-15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+        "published_digest": "sha256:ad8363d2179d332b405df9b2d436f4dddaa8a3fe465e7ae8a5b7314b45222dc2",
+        "downloaded_verification": false,
+        "head": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1"
       }
     ],
     "code_blobs": {
@@ -353,19 +386,19 @@
       "requirement": 7,
       "criterion": "Freeze H; minimal required exact-H Actions only and tests alongside implementation",
       "state": "partial",
-      "evidence": "Exact15f source and renderer/Transcript18/settlement5/Chromium22/Electron/Windows pass. Host52 and complete shipping job still in progress as of preparation. New e-h18 and current renderer require containing-H Actions. No local or htch-runtime execution."
+      "evidence": "Exact15f all selected message/source/shipping jobs passed. Exact30ef composer18 and retained UI/source/Electron/Windows passed; two Native jobs pending. Merge with frozen222371 adds Host/paging inputs and requires independent containing-H Human58/projection20/cursor17/composer18/Chromium22 and retained gates."
     },
     {
       "requirement": 8,
       "criterion": "Continue independent work while waiting; fix actual failures without rerun-picking",
       "state": "in-progress",
-      "evidence": "During original Host/shipping execution, completed exact-U13-group source decomposition and implemented/reviewed confirmed Human mutation origin P1 with real-owner recovery tests. No unchanged job was rerun to pick green."
+      "evidence": "During independent Actions waits, closed the Human origin P1 and four-body source mapping draft, then integrated complementary exact shared changes instead of overwriting parallel work. No rerun-picking or local execution."
     },
     {
       "requirement": 9,
       "criterion": "Use unique inventory/ledger/RTM and distinguish implementation/wiring/test/execution/acceptance",
       "state": "in-progress",
-      "evidence": "Canonical NMR row e-h append prepared at1a531f4/run41520915374 and read back as4b1dd4c21554bd666157338bbd92b06957d731b7; only declared requirement/evidence/notes changed, all source reviews/acceptance preserved. Existing RTM/current status updated, same dossier gains scoped source mapping."
+      "evidence": "Unique ledger union from shared e88c758 to03297bb prepared in Actions41522239181 and exact-content read back; only our declared fields on FBCP-NMR/forward-privacy are appended, all shared other rows/fields/source_reviews/coverage preserved. Existing RTM/current status and dossier updated."
     },
     {
       "requirement": 10,
@@ -394,13 +427,13 @@
     "complete": false
   },
   "delivery": {
-    "sha": "15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
-    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/15f19c4a16fee39865f74bf6b3aa2bc68fe172f1",
+    "sha": "30ef36f528c54de25a86ef05371fd5ec6f814394",
+    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/30ef36f528c54de25a86ef05371fd5ec6f814394",
     "connector_readback": true,
     "pull_request": 190,
     "pull_request_url": "https://github.com/bhrumom/fabushi-desktop/pull/190",
     "draft": true,
-    "mergeable_at_creation": false
+    "scope": "Latest verified production predecessor at authoring; containing merged SHA is supplied by its actual Actions target-sha artifact and GitHub commit."
   },
   "follow_up": {
     "scope": "NMR-50e-h",
@@ -432,12 +465,31 @@
       "local_execution": false
     },
     "execution": {
-      "head": null,
-      "status": "pending-containing-H-Actions",
+      "head": "30ef36f528c54de25a86ef05371fd5ec6f814394",
+      "status": "affected-UI-source-Electron-Windows-pass-Native-jobs-pending",
       "workflow": ".github/workflows/native-service-contracts.yml",
       "required_job": "native-message-ui",
       "required_contract_tests": 18,
-      "retained_gates": "renderer tsc/build, Transcript18, settlement5, Chromium22; current workflow also retains Host/shipping/Electron/Windows gates"
+      "retained_gates": "renderer tsc/build, Transcript18, settlement5, Chromium22; current workflow also retains Host/shipping/Electron/Windows gates",
+      "source_run": 41521532523,
+      "product_run": 41521532903,
+      "ui_job": 125538504489,
+      "renderer_tsc_build": "success",
+      "composer_contracts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "transcript": 18,
+      "settlement": 5,
+      "chromium": 22,
+      "source_contract": 157,
+      "schema": 37,
+      "fixed_source_candidate": "success",
+      "native_reconciliation_job": 125538504514,
+      "shipping_job": 125538504699
     },
     "evidence_scope": "This is implementation and independent source-review evidence. An already-posted request remains Host-owned. No new message or credential authority, wire schema, data deletion, source-review completion or shipping acceptance is claimed.",
     "attachment_owner_trace": {
@@ -450,5 +502,72 @@
       "finding": "commitStaged copies original bytes into local content-addressed agent storage and does not delete the staged original; box upload is separate. The existing live main-leg placement boundary is not newly fenced by this renderer patch."
     }
   },
-  "frozen_code_blobs_context": "Containing follow-up commit. The execution section records first-batch15f only; new e-h execution is separately pending below."
+  "frozen_code_blobs_context": "Containing merged candidate. Prior15f and30ef executions remain separately tied to their own code. The merged candidate execution is pending at authoring.",
+  "integration": {
+    "common_base": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+    "ours": "30ef36f528c54de25a86ef05371fd5ec6f814394",
+    "shared": "222371af3d0c2241697c5a57b0160ecb336edbab",
+    "shared_tree": "42eaadd56042b9002fe5b3c3942b09c48b1a6e86",
+    "strategy": "Use complete shared tree plus our one-sided blobs and independently reviewed overlapping-file unions; two-parent merge, no force update of shared migration branch.",
+    "preserved": [
+      "NMR47g strict pending-forward ownership, readable source and actual legacy nonce proof",
+      "NMR49 corrupted parent identity checks before staging/HTTP",
+      "NMR-PAGING-01 canonical durable walks, client/RPC cursor validation and committed-update overlay",
+      "NMR-ACTIVITY-01 monotonic activity and interrupted-persistence repair",
+      "Shared dependency pins, Plugins close layering, other owners and every canonical ledger field outside the declared union"
+    ],
+    "ledger": {
+      "source_blob": "e88c75896bd0dce29b2d8b89e949c9231dad872c",
+      "preparation_head": "4d5ab5f371396cdbbfd1d4ead23125c752ffeb00",
+      "run": 41522239181,
+      "job": 125540903207,
+      "prepared_blob": "03297bb69589e45215f12fe6a87ce27d9cb85efd",
+      "connector_readback": true,
+      "exact_declared_union_only": true,
+      "source_reviews_preserved": true,
+      "acceptance_changed": false
+    },
+    "execution": {
+      "status": "pending-containing-merge-H-Actions",
+      "head": null,
+      "required_human": 58,
+      "required_projection": 20,
+      "required_cursor_rpc": 17,
+      "required_composer_scope": 18,
+      "required_forward_settlement": 5,
+      "required_chromium": 22,
+      "all_retained_gates": true
+    },
+    "independent_source_review": {
+      "host": {
+        "reviewer": "nmr50_host_merge_review",
+        "decision": "NO_BLOCKER",
+        "production_blob": "7f5cf98383035f56ea5c420a3e5e92d0954d51a2",
+        "tests_blob": "536b6e55fcfa7a0c162335ab0d7be896aca9840a",
+        "scope": "Complete B/O/S and merged product differences, ten added actual Host cases, locks/CAS, full credential boundary and shared DB/paging/gateway/journal consumers.",
+        "authored_human_count": 58
+      },
+      "renderer": {
+        "reviewer": "nmr50_origin_independent",
+        "decision": "NO_BLOCKER",
+        "renderer_blob": "d9de1c412181fe9d1c6d51aee27282236326bb68",
+        "client_blob": "ee604805c6d90f641591c5faba8a9e43ddadac1b",
+        "workflow_blob": "259806eca4bbf4272271e070bb1cbee43d00a52b",
+        "scope": "Complete O/shared diffs and shared model/projection/pagination/RPC contracts; origin plus author correlation, cursor cache/reopen, frame predicate plus validation, retained Plugins layering and all gates."
+      },
+      "effort": "xhigh",
+      "execution_performed": false,
+      "independent_ACCEPT": false
+    },
+    "inherited_dependency_identities": {
+      "source/host/src/extensions/session/native_messaging.rs": "37a216c3a92ffc696a604d0d94260cffb6a92908",
+      "source/host/src/extensions/session/agent_db.rs": "3a1b90441f06be317e39fba9cdb4d713eace3936",
+      "source/host/src/extensions/session/agent_db_transcript_pages.rs": "64594be7a1e0311cc8fdcecf126b6381cac46068",
+      "source/host/src/extensions/session/forward_batch_journal.rs": "ad000f575f846d612485aff645f7a1af69eb8424",
+      "source/host/src/extensions/session/gateway.rs": "be17d7b34ee8ee50afc23745feaeb2b0c483516d",
+      "source/shared/rpc/coordinator.ts": "231aa38463524e9caab891b26917a454f4eaa248",
+      "frontend/src/production/transcript-projection.ts": "3dabb9eccc7fab7f662bad21495e737d89d5c5a2",
+      "frontend/src/recovered/features/conversation/workspace/pagination.ts": "93f9134a627fbe3fb1c049640cff2e0847e2690c"
+    }
+  }
 }

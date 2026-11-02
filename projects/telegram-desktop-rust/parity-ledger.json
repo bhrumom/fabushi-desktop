@@ -1732,7 +1732,7 @@
         "native/mahayana-messaging/src/message.rs",
         "native/mahayana-messaging/src/engine.rs"
       ],
-      "existing_owner": "Fabushi canonical MessagingService idempotency boundary",
+      "existing_owner": "Existing shipping Session/Transcript forward intent and destination settlement; native service remote identity; historical MessagingService replay is supporting domain behavior",
       "rejected_existing_owners": [
         "ShareBox-local duplicate guard: would not protect protocol retries or other clients",
         "Renderer debounce only: cannot provide durable idempotency"
@@ -1741,19 +1741,29 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/service.rs",
-        "native/mahayana-messaging/tests/service_contract.rs"
+        "native/mahayana-messaging/tests/service_contract.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/forward_batch_journal.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/native_messaging.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        "frontend/src/production/ForwardMessageDialog.tsx"
       ],
       "fabushi_target_symbols": [
         "stable_message_id",
         "fn idempotent_send_replay(",
-        "fn project_command("
+        "fn project_command(",
+        "ProductionSessionWorkers::forward_human_message",
+        "ProductionSessionWorkers::resume_human_forward_batches",
+        "ProductionSessionWorkers::pending_human_forward_is_batch_owned",
+        "store_forward_batch"
       ],
       "target_language": "Rust",
       "language_rationale": "Idempotency is canonical message service state and must be enforced below the renderer.",
       "command_event_contracts": [
         "ClientCommand::ForwardMessage + authenticated actor + client_message_id -> stable_message_id -> compatible existing MessageChanged replay or IdempotencyConflict"
       ],
-      "state_owner": "Canonical destination Message keyed by actor-scoped stable client message identity",
+      "state_owner": "Existing source SandAgentDb owns submitted humanForwardBatches; destination Session/Transcript owns pending/canonical messages. Native service owns remote message identity; no independent forwarding store.",
       "lifecycle_owner": "MessagingService request/replay lifecycle",
       "persistence_and_restart": "The replay lookup uses persisted canonical Message state, so compatible retries remain idempotent after service reload.",
       "concurrency_and_cancellation": "Actor-scoped stable identity collapses duplicate submissions onto one canonical destination key; conflicting payload reuse fails closed before executing another forward.",
@@ -1770,15 +1780,21 @@
         "Multi-recipient fan-out settlement and forward privacy option semantics remain open"
       ],
       "production_entrypoints": [
-        "ClientCommand::ForwardMessage -> MessagingService::idempotent_send_replay -> canonical forward execution/replay"
+        "ClientCommand::ForwardMessage -> MessagingService::idempotent_send_replay -> canonical forward execution/replay",
+        "ProductionRenderer -> ForwardMessageDialog -> authenticated Session gateway forwardHumanMessage -> ProductionSessionWorkers -> source SandAgentDb journal -> native HTTP/destination Transcript -> renderer mutation projection",
+        "Ordinary syncHumanConversation -> source batch recovery -> source-owned pending classification -> existing canonical history settlement"
       ],
       "production_evidence": [
         "commit:b598bd9f98903f245842ac81547bd6d5bfdf0acc",
-        "path:native/mahayana-messaging/src/service.rs#idempotent_send_replay"
+        "path:native/mahayana-messaging/src/service.rs#idempotent_send_replay",
+        "path:source/host/src/extensions/session/production.rs#forward_human_message",
+        "path:source/host/src/extensions/session/production.rs#pending_human_forward_is_batch_owned",
+        "path:projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json"
       ],
       "test_evidence": [
         "commit:e4494def67715379e619ba5882078347c00c08e8",
-        "native/mahayana-messaging/tests/service_contract.rs#forward_retries_are_idempotent_and_option_conflicts_fail_closed"
+        "native/mahayana-messaging/tests/service_contract.rs#forward_retries_are_idempotent_and_option_conflicts_fail_closed",
+        "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources"
       ],
       "target_commit": "b598bd9f98903f245842ac81547bd6d5bfdf0acc",
       "workflow_run": null,
@@ -1849,7 +1865,10 @@
       "design_reviewer": null,
       "quality_risk": "high",
       "requirement_ids": [
-        "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001"
+        "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001",
+        "NMR-47",
+        "NMR-47g",
+        "NMR-AC-38"
       ],
       "oracle_ids": [
         "ORA-TDRP-SHARE-FORWARD-IDEMPOTENCY-001"
@@ -1905,7 +1924,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox forward submission semantics using canonical Fabushi MessagingService/Message identity owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "This row closes only single-destination forward replay/conflict behavior. Multi-recipient fan-out settlement, privacy options, paid-send revalidation, UI duplicate-click fencing, and exact-head runtime evidence remain open, so global unknown does not decrement."
+      "notes": "This row closes only single-destination forward replay/conflict behavior. Multi-recipient fan-out settlement, privacy options, paid-send revalidation, UI duplicate-click fencing, and exact-head runtime evidence remain open, so global unknown does not decrement.\nRound27 target-owner reconciliation: the desktop route is the existing Session/Transcript chain listed above; the old native/mahayana-messaging entry and historical target_commit remain domain evidence and are not a second shipping writer. Existing whole-batch journaling and deterministic target nonces survive restart; NMR-47g prevents damaged version/context markers from escaping that source owner through generic outbox replay. This batch does not replace concurrent attachment/reply/NMR-50 changes. New case execution remains not-run until exact-H Actions; full source/legal/product/platform/independent acceptance remains blocked. See projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -28806,10 +28825,10 @@
       "behavior_contract": "Fixed-U owns proxy mode, selected proxy, ordered list, IPv6/call flags, IP-warning state and rotation options/preferences in one Core::SettingsProxy embedded in Core::Settings. Its mutation invariants preserve preferred-index meaning under list changes; its append-compatible serializer/deserializer is persisted through Core::Settings -> encrypted dbiApplicationSettings. connection_box and ProxyRotationManager consume/update this owner but do not own a second durable settings truth.",
       "state_machine": "restore unified application settings -> one canonical ProxySettings state -> typed list/selection/mode/rotation mutations -> durable settings persistence -> selected-proxy/settings events projected to network and rotation consumers; proxy checks/timers remain transient runtime state.",
       "side_effects": [
-        "Unified Settings load reads the authoritative ProductSettingsOwner snapshot through the existing renderer/Main/Coordinator/Host chain.",
-        "UI edits call the authoritative ProductSettingsOwner mutation API; owner persistence/publication semantics remain unchanged.",
-        "Only mode-derived proxyEnabled may republish to the pre-existing telegram.refreshSpecialConfig boundary; selected/list are not connected to a carrier.",
-        "No Telegram-specific Settings root/store, UI persistence owner, second runtime, proxy checker, timer, or selected-proxy transport side effect is introduced."
+        "Existing SettingsDesktopSurface -> renderer/Main -> Coordinator/Host -> ProductSettingsOwner is the single durable Settings route.",
+        "Changed complete state is persisted before in-memory replacement; failed persistence retains prior state.",
+        "Native AppHost no longer constructs the old carrier. Four typed publication variants and boolean compatibility calls return available=false/reason=telegramClientUnavailable; other typed mutations return publication=null.",
+        "No new settings store, proxy checker, timer or Native carrier is introduced."
       ],
       "failure_cases": [
         "malformed or truncated legacy settings stream",
@@ -28881,7 +28900,6 @@
         "settings.snapshot",
         "settings.mutateNetworkProxy",
         "settings.setNetworkProxyEnabled",
-        "TelegramClientLease::refresh_special_config",
         "SettingsDesktopSurface",
         "GeneralSettingsPanel",
         "NetworkProxySettingsPanel",
@@ -28892,13 +28910,13 @@
       "target_language": "Rust for source-neutral settings state/persistence + existing React/TypeScript Settings projection",
       "language_rationale": "The fixed-U non-UI state/mutation/persistence responsibility belongs in the canonical product Settings owner, not Telegram runtime/network code; UI remains a projection of that source-neutral state.",
       "command_event_contracts": [
-        "settings.mutateNetworkProxy { mutation } -> serialized canonical ProductProxySettings mutation -> durable product-settings.json",
-        "setSelectedAndMode applies selection+mode as one owner mutation before persistence/publication",
-        "mode mutation -> derived proxyEnabled=(mode==Enabled) -> existing telegram.refreshSpecialConfig boundary",
-        "settings.setNetworkProxyEnabled remains a source-neutral compatibility projection and republishes on same-value retry"
+        "settings.mutateNetworkProxy updates the existing canonical snapshot and persists product-settings.json before publication; persistence failure preserves current state.",
+        "setSelectedAndMode atomically changes mode/selection in the existing owner.",
+        "Four typed publication variants and settings.setNetworkProxyEnabled return the stable unavailable descriptor; same-value compatibility retries preserve this contract.",
+        "Other typed mutations return publication=null; selected/list remain unconnected to Native proxy transport."
       ],
       "state_owner": "Canonical source-neutral ProductSettingsOwner composed by the existing shipping AppHost; full proxy mode/list/selection/rotation expansion remains in this same owner.",
-      "lifecycle_owner": "Existing AppHost owns product Settings lifecycle/persistence; TelegramClientLease/RuntimeClient consume only the authoritative proxyEnabled projection.",
+      "lifecycle_owner": "Existing AppHost owns ProductSettingsOwner lifecycle/persistence; Native composition has no TelegramClientLease/RuntimeClient. A Native carrier must consume this owner in a separately qualified batch.",
       "persistence_and_restart": "ProductSettingsOwner version 2 is the single durable source. Existing Fabushi version 1 {network.proxyEnabled} is migrated in place on open: true -> Enabled, false -> System, with all other fields initialized to fixed-U defaults. The migrated v2 document is persisted before the owner becomes available. Malformed/missing/unsupported versions fail closed. Historical TDesktop outer Core::Settings bytes are not guessed without an explicit import source/version boundary.",
       "concurrency_and_cancellation": "The owner serializes mutations under its existing mutex and persists the complete next state before publishing the only currently supported downstream projection. No socket/checker/timer/carrier lifecycle is stored in Settings. setSelectedAndMode prevents a torn selection/mode write.",
       "security_boundary": "Durable proxy endpoint records include fixed-U host/port/user/password fields because they are product settings; no proxy secret is logged, copied into ui_state, or persisted in Telegram runtime storage. Runtime resolved IPs/expiry, sockets, checker state and timers are excluded.",
@@ -28910,14 +28928,13 @@
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Stage B executable validation has not run."
+        "Exact59/run41508537631 composition12/Native7 passed current Settings and proxy16orders/48removals/48repeat noops/all6 complete permutations. Preserve this later coverage; do not apply the superseded42-case proposal.",
+        "Native proxy/rotation transport, complete Settings UI/a11y/platform acceptance, secret-at-rest and full data migration/rollback acceptance remain open."
       ],
       "production_entrypoints": [
         "settings.snapshot",
         "settings.mutateNetworkProxy",
         "settings.setNetworkProxyEnabled",
-        "TelegramClientLease::refresh_special_config",
-        "telegram.refreshSpecialConfig",
         "SettingsDesktopSurface",
         "getNetworkProxySettings",
         "mutateNetworkProxySettings"
@@ -28965,7 +28982,8 @@
         "desktop-round99-preload-blob:ed4e49ae6f6ef4ae4af3086ddf30716f22d95b51",
         "desktop-round99-settings-surface-blob:f5450c500e7b5429f030a561b9c8804700a28deb",
         "desktop-round99-settings-panel-blob:1cb5508daf79ea12458124b09ee497c4c08fd618",
-        "desktop-round99-network-proxy-ui-blob:cacc51a80b52af034354a170dc42645144cd6717"
+        "desktop-round99-network-proxy-ui-blob:cacc51a80b52af034354a170dc42645144cd6717",
+        "projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json"
       ],
       "test_evidence": [
         "Authored contract vectors are recorded in docs/specs/telegram-proxy-settings-state-persistence.md@e31a0d4f4d9f9286f7af35562c7d9edac6687487; no executable contract was run.",
@@ -28978,12 +28996,12 @@
         "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_proxy_rotation_timeout_and_promotion_match_fixed_u at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2343. Oracle: Clamps timeout, promotes a proxy and observes duplicate promotion returning false without duplicate ordering. Limits:  No execution/ACCEPT asserted by this binding.",
         "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_settings_owner_fails_closed_on_malformed_persistence at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2369. Oracle: Opening an actually malformed on-disk settings file returns an error. Limits:  No execution/ACCEPT asserted by this binding."
       ],
-      "target_commit": "a9cece6754710ab4f91dd9089e3d4eee9ffb4e57",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
+      "workflow_run": 41508537631,
+      "run_attempt": 1,
+      "job": 125494011097,
+      "artifact_id": 13173112803,
+      "artifact_digest": "sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
       "composition_root": "Canonical Fabushi AppHost product Settings root",
       "composition_slot": "Network/proxy settings state and persistence",
       "capability_component": "Proxy list/selection/mode/rotation settings state",
@@ -29069,7 +29087,11 @@
       "design_reviewer": null,
       "quality_risk": "high",
       "requirement_ids": [
-        "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001"
+        "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001",
+        "NMR-38",
+        "NMR-41",
+        "NMR-AC-28",
+        "NMR-AC-32"
       ],
       "oracle_ids": [
         "ORA-TDRP-PROXY-SETTINGS-STATE-PERSISTENCE-001"
@@ -29116,7 +29138,9 @@
       ],
       "soak_case_ids": [],
       "exploratory_charter_ids": [],
-      "regression_ids": [],
+      "regression_ids": [
+        "REG-NMR-PROXY-REMOVE-ADJACENT-001"
+      ],
       "release_gate_ids": [
         "G-TRACEABILITY",
         "G-ARCHITECTURE",
@@ -29130,12 +29154,15 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
-      "release_gate_status": "pending",
+      "release_gate_status": "blocked",
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral provenance is fixed-U Core::SettingsProxy/Core::Settings/localstorage/connection_box/application/proxy_rotation_manager. No upstream C++ copied and no parallel settings store introduced.",
-      "notes": "Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[114]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: Current source has genuine migration/reopen/list-state tests in the existing ProductSettingsOwner. The historical round130 dossier's then-unwired comment must not override the later implementation now present. This establishes authored owner/state/persistence cases; it is not full native-shell restart/UI/platform acceptance or secret-at-rest qualification. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.",
-      "test_execution_evidence": []
+      "notes": "Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[114]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: Current source has genuine migration/reopen/list-state tests in the existing ProductSettingsOwner. The historical round130 dossier's then-unwired comment must not override the later implementation now present. This establishes authored owner/state/persistence cases; it is not full native-shell restart/UI/platform acceptance or secret-at-rest qualification. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.\nResumed round18 current readback replaces the former active not-run/old-carrier description. Initial99/run41456371872 actually passed30 subcases, with missing complete permutations recorded as TEST_FLAW. Subsequent independent work at59 already expanded this to16orders/48removals/48repeats/all6 permutations and passed composition12/Native7; that implementation is retained unchanged. Settings17 typed calls cover15 variants; compatibility, invalid input, failed-write/recovery and subprocess restart passed within that bounded harness. Full Native proxy transport/UI/platform/secret-at-rest/independent acceptance remain open. Original source/counters and historical records stay unchanged. projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json\n\nRound19 resumed full-log verification closes the requested six-permutation execution evidence at exact94dcf7a while preserving current ProductSettingsOwner, retained data and all other responsibility fields. Complete Native profile consumption, full Settings/platform/security/upgrade/rollback and independent ACCEPT are not inferred from the matrix. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+      "test_execution_evidence": [
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:completed/success:composition12/proxy16orders48removals48repeatedNoops/all6permutations; Native7/FeatureHost7/SocialRecovery9/SocialHttp6/Host6/ABI7/CLI3/gatewayExecutable5/gatewayLibrary11/normalization6/futureSalts2/protocol122/TCP9/proxy4/credential1/actualAppHostCopy4; three deliberate copy failures correctly rejected; artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
+        "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 shipping125511939405 composition12 passed; proxy matrix16 ordered subsets/48 removals/48 repeated no-ops, all6 full permutations/18 full-permutation deletions,48 actual per-case markers. This is one existing Rust matrix test, not48 top-level cases. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -50147,7 +50174,7 @@
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md",
       "behavior_contract": "Bounded source-informed Human direct-message admission and settlement in the existing Fabushi Session/Transcript owner. Before resource access, transcript mutation, acknowledgement settlement or overlap use, a returned row must match the authenticated local/selected-peer pair. Only a local-authored request nonce may settle its local intent; canonical-ID and nonce lookup both preserve immutable sender, text, dispatched reply and resource identities. Peer request provenance remains separate. Independent deterministic rejections may coexist with valid progress, but retryable resource/storage failure stops ordered replay. These selected target security and durability rules are not a claim of identical Telegram API semantics or full history/reaction parity. NMR-18/19/20 additionally admit only direct-pair reaction summaries (0,false), (1,false), (1,true), (2,true), reject duplicate exact emoji strings, and project at most one local and one peer actor per item. Incoming message validation precedes peer early-return, overlap and resource access; reaction POST validation precedes legacy nonce changes, durable writes and publication.",
-      "state_machine": "Existing Human conversation -> durable local pending -> persisted dispatching/resource references -> native HTTP result -> validated canonical server identity settles the existing transcript row; ambiguous failure retains pending retry data. Sync first retries pending work, fetches bounded pages, admits peer-scoped rows, reverses page windows for ordered materialization and stops at retryable resource/storage failure. Current known-ID overlap cutoff and pre-retry anchor risks remain open; this row does not claim they are repaired.",
+      "state_machine": "The current qualified Session/Transcript route persists pending intent/resources before dispatch, admits acknowledgements into the same durable row and projects entries-upserted. afterId/historyCursor coverage advances only after admitted/materialized monotonic pages; known IDs do not end gap traversal. ReadAt merges by RFC3339 instant and desired-active reaction intent survives ambiguous POST/restart. Existing forwarding now journals whole immutable batches with expected-value CAS and typed source-denial recovery; exact59 Human38/sharebox1/journal3 exercise these bounded paths. Native CLI/gateway remain direct existing Host consumers; NMR-CLI-HOST-01 restores their native feature selection rather than adding another owner.",
       "side_effects": [
         "Authenticated direct-message list/send and message-resource HTTP calls through the existing FabushiNativeMessagingClient.",
         "Existing SandAgentDb transcript append/update/identity settlement and metadata writes.",
@@ -50208,7 +50235,15 @@
         "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs",
         "frontend/src/production/model.ts",
         "frontend/src/production/transcript-projection.contract.test.ts",
-        "source/host/src/extensions/session/forward_batch_journal.rs"
+        "source/host/src/extensions/session/forward_batch_journal.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+        "bhrumom/fabushi-desktop:source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+        "bhrumom/fabushi-desktop:.github/workflows/release-macos-main.yml",
+        "source/host/src/extensions/session/agent_db_transcript_pages.rs",
+        "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+        "frontend/src/production/transcript-projection.ts",
+        "source/shared/rpc/coordinator.ts"
       ],
       "fabushi_target_symbols": [
         "validate_remote_human_message",
@@ -50233,7 +50268,14 @@
         "projectTranscriptEntry",
         "read_human_resource_upload_file",
         "read_human_resource_upload_bytes",
-        "validate_human_resource_upload_size"
+        "validate_human_resource_upload_size",
+        "mahayana-cli::RuntimeHandle(MahayanaHost)",
+        "mahayana-gateway::RuntimeHandle(MahayanaHost)",
+        "mahayana-host::build_runtime",
+        "snapshot_forward_attachments",
+        "read_forward_attachment_bytes",
+        "read_forward_journal_value",
+        "upload_direct_message_resource_bytes_for_user"
       ],
       "target_language": "Rust Host/service boundary with existing TypeScript renderer projection",
       "language_rationale": "Extend the existing production owners in their current implementation languages; no upstream C++ runtime copy, alternate message engine or new owner is introduced.",
@@ -50245,8 +50287,8 @@
       ],
       "state_owner": "SandAgentDb opened by ProductionSessionWorkers::open_human_conversation_db_owner owns the canonical local Human transcript and retry intent. The authenticated Fabushi service owns remote message/resource identity and service authorization. Renderer state is a projection.",
       "lifecycle_owner": "Existing Host Session production lifecycle; existing account binding and private native credential lifecycle supply the local identity and issuer-bound HTTP client. No additional process or persistent owner.",
-      "persistence_and_restart": "Persist pending before dispatch, persist dispatch resource identities before send, and settle through the existing transcript identity mutation. Ambiguous dispatch and resource failures retain retryable state; current authored reopen cases verify recovery without a second upload and byte preservation. Known-ID presence is not yet durable evidence of a completely synchronized history interval.",
-      "concurrency_and_cancellation": "Existing DB writes serialize per owner; this does not serialize the preceding HTTP read/modify/write interval. This batch preserves existing cancellation boundaries and does not close stale refresh versus local reaction races, rapid supersession, arbitrary pending-send concurrency or cancellation recovery.",
+      "persistence_and_restart": "Existing Session/Transcript persists send resources, reaction intent and bounded history coverage. The forwarding journal resides in the same source-conversation metadata and resumes via existing sync. Known-row omitted/empty reaction semantics and monotonic readAt are already implemented; old statements below that these are entirely absent are historical. Wider server-version freshness, old-history refresh and final migration/rollback remain unqualified.",
+      "concurrency_and_cancellation": "Existing per-conversation serialization and durable desired-active intent address the tested sync/reaction/retry boundary; forwarding metadata CAS rejects stale merged writes. These results do not establish arbitrary multi-AppHost initial dispatch uniqueness, global cancellation, causal server generations or all temporal behavior.",
       "security_boundary": "Authenticated local identity and selected conversation participant metadata constrain ingress; request nonces are author-scoped correlation values, never authorization credentials. Reject mismatched acknowledgements before downloading untrusted attachments. Private bearer/device credentials remain inside the native client, and this row grants no permission to log credentials or message bodies. Untrusted reaction counts are validated before any count expansion; each admitted summary item projects at most the authenticated local and selected peer actor. This does not establish a whole-payload or distinct-emoji bound. Production Electron FeatureHost's separate MessagingService execution, blob and access issuance refuse before IO; direct Host/FFI injected legacy clients reject before origin/credential or store access. Other platform features and legacy direct C exports are still unqualified.",
       "network_service_dependencies": [
         "Existing authenticated /api/social/messages GET/POST contract",
@@ -50259,20 +50301,24 @@
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "The bounded NMR-18/19/20 Host gates passed at exact95/run41403643662; full product/independent acceptance and the open behaviors below remain unqualified. Evidence for later code must be bound to its own H.",
-        "Known-overlap refresh/coverage, snapshot-versus-mutation freshness, monotonic receipt semantics, distinct-emoji/whole-payload bounds and read-receipt UI remain separate open work.",
-        "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open.",
-        "NMR-34/35 bounded production boundary passed 98e51b31b5a296065190f665696b2ffe11a3efe1/run41443460672; NMR-36 Host/FFI explicit legacy-handoff refusal and tests are authored but require exact containing-H Actions with Host6/ABI7 and all retained gates.",
-        "Round20 exact151 run41465224038 is terminal failure in persistent gateway approval fixture (TEST_FLAW) and cross-platform compressed blockmap comparison (IMPLEMENTATION_DEFECT). Gateway lib9, protocol122, TCP9, actual AppHost resource copy4 and Electron build were skipped; cannot count as verified.",
-        "NMR-43/45 repaired existing owner/test fixtures and authored metadata18/gateway executable5; containing-H GitHub Actions and historical DMG immutable-byte repair required before bounded acceptance. Signed installation, update/rollback, full source/legal and independent ACCEPT still open.",
-        "Round21 exact H8ce/run41471743677 shipping job125366805190 unassigned/cancelled; lib11/protocol122/TCP9/real AppHost copy4 and two negative controls not executed. See round21-update-source-authority.json.",
-        "NMR-49/AC-40 implementation and five new behavior tests are authored; current containing-H Human47/Transcript18 and retained Actions gates are not-run at preparation. No production afterId=0 authorization or final independent ACCEPT."
+        "NMR-49/AC-40 implementation and five new behavior tests are authored; current containing-H Human47/Transcript18 and retained Actions gates are not-run at preparation. No production afterId=0 authorization or final independent ACCEPT.",
+        "Exact59/run41508537631 passed all five selected jobs and their actual artifacts; no execution failure is invented. Source-contract was not triggered at59. New NMR-CLI-HOST-01/49 changes and current canonical ledger require their containing-H native/source-contract execution.",
+        "Source-discovered implementation defect: CLI normal Host edge lost desktop-full/local-only after FFI removal. Status/Ready/provider names still succeed through UnavailableAgentBackend; NMR-CLI-HOST-01 restores features and adds real MCP inventory positive controls plus actual production binary/feature/HTTPS-construction gates. New tests/processes are authored, not yet executed.",
+        "Source-discovered installer producer/consumer mismatch: RUNNER_TEMP final metadata receipt changes installer archive root and violates promotion members. NMR-PACKAGE-DELIVERY-01 moves only that receipt to existing acceptance evidence; consumer whitelist unchanged. Six existing contracts do not qualify a real newly signed archive.",
+        "Current active compatible backend Worker source/version and authenticated afterId=0 pagination/empty/denial/recovery remain unverified; PR137 is read-only/open/draft at013c5460049f2f75843ebc0c8c736e287d32789c on reread.",
+        "Server-version freshness, continuous older-history refresh, full outgoing read-ack/receipt UI, response-byte bounds, general multi-device/cancellation and forwarding service provenance/attachment recovery remain open.",
+        "Complete fixed-U source/legal and product scope, external FFI/data-safe migration/rollback, signed installed supported-platform packages, full Bot/visual/a11y/security/performance/soak and independent ACCEPT remain open.",
+        "Current qualifier: exact94/run41513767498 passed the bounded NMR48 and retained message suites. Historical pending statements remain historical; later UI16, cached identity, reply/NMR49 and upload-limit/NMR51 code must be qualified at their own exact H.",
+        "Current backend source bhrumom/fabushi-backend@687718ce9e0083aa124d29005bcce4051d357919 friends.js@6179f3ce8e223f4e0bd9664885871e134f4488a8 has upload25MiB. Exact94 used32MiB based on the earlier repository source; the byte-identity tests pass but do not prove production upload-limit compatibility. Preserve concurrent NMR51 correction and require its containing-H results.",
+        "Snapshot power-loss/filesystem/lifetime and remote provenance/cache authenticity, real authenticated Native service, full fixed-U/generated/external/legal review, signed platforms/UI/a11y/security/performance/soak/upgrade/rollback/complete Bot regression and independent ACCEPT remain open."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
         "ProductionRenderer reconnect/open -> syncHumanConversation(s) -> ProductionSessionWorkers::sync_human_conversation -> FabushiNativeMessagingClient::list_direct_messages -> per-row admission -> ordered materialization -> existing SandAgentDb update/append.",
         "Existing Human reaction action -> reactHumanMessage -> toggle_human_message_reaction -> service response -> same transcript row; legacy peer nonce metadata is separated without changing stored content.",
-        "mahayana-ffi::mahayana_runtime_create (legacy JSON) -> MahayanaHost::create -> ensure_native_host_handoff returns explicit error before origin, file or runtime access; direct Rust Host and test-support constructor share same guard."
+        "mahayana-ffi::mahayana_runtime_create (legacy JSON) -> MahayanaHost::create -> ensure_native_host_handoff returns explicit error before origin, file or runtime access; direct Rust Host and test-support constructor share same guard.",
+        "CLI with_runtime and stdio gateway run -> existing RuntimeHandle -> MahayanaHost with explicit desktop-full/local-only",
+        "Existing release artifact producer -> unchanged promote-miniapp-candidate installer whitelist; final metadata receipt belongs to acceptance evidence"
       ],
       "production_evidence": [
         "path:source/host/src/extensions/session/production.rs@c9a486af86b252ca4c7a025452928caf66439563#validate_remote_human_message",
@@ -50295,6 +50341,16 @@
         "authored-fixture:source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs@e8c93f3dff4f96a1ee25957700e0a261ddaa13e0#ApprovalFixture; production default unchanged",
         "NMR-49 production path: existing Reply action -> Session gateway -> append_human_message_with_context/native HTTP -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation events -> projectTranscriptEntry. Exact changed blobs and containing-H qualification are recorded in projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-recovery.json; no parallel owner/schema.",
         "NMR-51 authored: existing sendHumanMessage -> ProductionSessionWorkers -> FabushiNativeMessagingClient::upload_direct_message_resource_bound -> read_human_resource_upload_file; 25MiB metadata/open-file/actual-read boundary before multipart and HTTP; projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json",
+        "projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json",
+        "exact-production:1b0e674b3e39292ae715a3eb50435d83e2cb8577:CLI Host features ea55cc299e16a6cc309d17a118a654f83be47be2; main e15f6f75da0bd29581fe629585a64f4edad7c013; gateway57994430a95dad45a0deb5ca879623e40b98c592; release artifact owner a0473d226f9d71153080a4559e82ee3f8f4aa278; API contents read back, no new-H pass implied.",
+        "authored-not-run: resumed-round6 NMR-PAGING-01 extends existing SandAgentDb Human-only reads with deterministic canonical ordering and bounded persistent physical-row traversal indices; no new message store; Gateway/Coordinator/Renderer/cache propagate the opaque continuation. Exact containing-H Actions required.",
+        "authored-not-run: resumed-round6 NMR-ACTIVITY-01 reconciles finite lastActivityAt by max after durable rows and replay, and joins Agent handoff to the existing per-conversation lane. Preserve later full credential fencing, concurrent send settlement, forwarding journal CAS and read-receipt instant semantics.",
+        "path:source/host/src/extensions/session/production.rs#pending_human_forward_is_batch_owned; strict source/nonce ownership prevents generic replay of damaged forwarding context",
+        "path:projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json",
+        "exact94dcf7a2213808a8ded6baddaf069562d365c6d7:ProductionRenderer/ForwardMessageDialog -> Session forwardHumanMessage -> source SandAgentDb snapshot+CAS journal -> target outbox -> credential-bound Native byte upload -> message POST -> same Transcript settlement. Startup/ordinary sync resumes the original source-owned batch.",
+        "exact94dc blobs:production d1cca2fdb8ee228456deb1f16b3ee691022ea28a; native bb370aed54715c3001c75ae681bfb1ce95cc8bc9; journal416012a301d70a3e0cedebe74bb1d600c7b92a05; tests8376aff33882d0aa9b29029319e28b30226633ac; all nine delivered file contents and full commit/tree/parent remotely read back.",
+        "NMR48 retains same authorized source bytes across cache replacement/deletion, verifies all target pins before new uploads and submits those exact buffers. Missing/corrupt/legacy unpinned attachment intent is retained with per-target failure; uploaded remote resource IDs may settle ambiguous sends. No user data deletion or second owner.",
+        "NMR47e narrow same-batch guard rejects completed->pending stale snapshots; read_forward_journal_value requires an object for both load/store, including cached owner. Concurrent strict scanner and tests retained. Later cached-source identity/reply/UI/25MiB changes have separate containing-H obligations.",
         "path:source/host/src/extensions/session/production.rs#deliver_forward_batch; NMR-50 automatic recovery skips an active batch while explicit delivery remains serialized",
         "path:source/host/src/extensions/session/production.rs#sync_human_conversation_history; NMR-50 top-level roster recovers only once",
         "path:source/host/src/extensions/session/native_messaging.rs#list_friends_for_user; expected account plus complete response-body credential fence",
@@ -50332,6 +50388,28 @@
         "authored-in-concurrent-4f-not-run-at-preparation:source/host/src/extensions/session/forward_batch_journal.rs#concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
         "authored-in-concurrent-06fb-not-run-at-preparation:source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
         "NMR-AC-42 authored-not-run: source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce; three private resource-bound contracts; containing-H GitHub Actions required; projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json",
+        "NMR-CLI-HOST-01 authored-not-run: existing CLI3/gatewayExecutable5 positive Host tests now execute real mahayana.mcp.servers and require empty local inventory in isolated roots; UnavailableAgentBackend errors. Existing gateway library11 retained.",
+        "NMR-CLI-HOST-01 authored-not-run: one normal/build/feature root builds actual ci-profile mahayana and mahayana-gateway; four actual child-process construction controls, hashes/format/symbol/dylib and source receipt must pass. No injected EngineBackend or public test RPC.",
+        "NMR-PACKAGE-DELIVERY-01 authored-not-run: existing6 promotion consumer contracts (5 behavior/1 source-shape) added to Electron job; manual producer/consumer path review, real future archive/install acceptance separate.",
+        "authored-not-run: source/host/tests/session_gateway_contract.rs; stable same-time/backfill/restart/corrupt-index/eviction traversal, real Native settlement moving the page anchor, and blocked history plus Agent handoff/activity recovery. All existing Human/forwarding/Agent/credential gates retained; exact containing-H run/log counts remain required.",
+        "authored-not-run: source/shared/rpc/coordinator.contract.test.ts and frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts; opaque Human request/reply/cache/retry scope and existing Agent compatibility; existing renderer/projection/Chromium/Electron/shipping suites retained.",
+        "NMR-47e authored oracle extension: source/host/src/extensions/session/forward_batch_journal.rs#tests::stale_same_batch_snapshot_cannot_regress_completed_destination; two independent SQLite handles, exact raw metadata preservation after stale initial/mixed/second-terminal refusals, second valid batch/unrelated metadata preservation, fresh incomplete-error recovery, identical terminal replay and close/reopen. Existing test name and journal12 count retained; containing-H Actions required. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+        "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/tests/session_gateway_contract.rs#shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/tests/session_gateway_contract.rs#shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/tests/session_gateway_contract.rs#shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_capture_keeps_original_bytes_and_metadata_after_source_loss_and_reopen",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_reader_rejects_missing_or_corrupt_snapshots_without_source_fallback",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_publication_never_overwrites_and_cleans_only_its_owned_temporary",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_capture_bounds_count_size_and_regular_file_inputs_before_acceptance",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_exact_resource_byte_limit_remains_supported",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_paths_are_account_scoped_and_reject_aliases_and_symlinks",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_legacy_journal_remains_loadable_without_fabricating_byte_evidence",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::stale_same_batch_snapshot_cannot_regress_completed_destination",
+        "authored-and-executed:exact94dcf7a2213808a8ded6baddaf069562d365c6d7:run41513767498:source/host/src/extensions/session/forward_batch_journal.rs#tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
         "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_forward_active_batch_allows_destination_and_unrelated_history",
         "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_forward_recovery_runs_once_per_invocation",
         "authored-not-run:source/host/tests/session_gateway_contract.rs#shipping_human_roster_rejects_wrong_user_before_http",
@@ -50339,12 +50417,12 @@
         "authored-not-run:frontend/src/production/ForwardMessageDialog.behavior.test.mjs; six actual Coordinator readiness/request-frame cases, 22 total picker tests",
         "authored-not-run:frontend/src/production/composer-dispatch-scope.contract.test.ts; 18 real Coordinator/queue/approval/draft lifecycle contracts; execution remains separately bound to containing H in projects/telegram-desktop-rust/evidence/task20bf-round1-nmr50-recovery.json"
       ],
-      "target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
-      "workflow_run": 41403643662,
+      "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
+      "workflow_run": 41508537631,
       "run_attempt": 1,
-      "job": 125140696528,
-      "artifact_id": 13122423309,
-      "artifact_digest": "sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d",
+      "job": 125494011040,
+      "artifact_id": 13173116303,
+      "artifact_digest": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22",
       "composition_root": "Existing Host Session production composition beneath ProductionRenderer",
       "composition_slot": "Existing Human conversation command, durable transcript and native HTTP boundary",
       "capability_component": "Human message admission, author-scoped reconciliation and ordered failure recovery",
@@ -50475,6 +50553,32 @@
         "NMR-AC-38",
         "NMR-51",
         "NMR-AC-42",
+        "NMR-37",
+        "NMR-38",
+        "NMR-39",
+        "NMR-40",
+        "NMR-46",
+        "NMR-47",
+        "NMR-CLI-HOST-01",
+        "NMR-PACKAGE-DELIVERY-01",
+        "NMR-AC-28",
+        "NMR-AC-29",
+        "NMR-AC-30",
+        "NMR-AC-31",
+        "NMR-AC-37",
+        "NMR-AC-CLI-HOST-01",
+        "NMR-AC-PACKAGE-DELIVERY-01",
+        "NMR-PAGING-01",
+        "NMR-PAGING-01a",
+        "NMR-PAGING-01b",
+        "NMR-PAGING-01c",
+        "NMR-ACTIVITY-01",
+        "NMR-AC-PAGING-01",
+        "NMR-47g",
+        "NMR-48a",
+        "NMR-48b",
+        "NMR-48c",
+        "NMR-AC-39",
         "NMR-50a",
         "NMR-50b",
         "NMR-50c",
@@ -50520,7 +50624,16 @@
       "unit_case_ids": [
         "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected",
         "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one",
-        "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http"
+        "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_capture_keeps_original_bytes_and_metadata_after_source_loss_and_reopen",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_reader_rejects_missing_or_corrupt_snapshots_without_source_fallback",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_publication_never_overwrites_and_cleans_only_its_owned_temporary",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_capture_bounds_count_size_and_regular_file_inputs_before_acceptance",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_exact_resource_byte_limit_remains_supported",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_paths_are_account_scoped_and_reject_aliases_and_symlinks",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::forward_attachment_legacy_journal_remains_loadable_without_fabricating_byte_evidence",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::stale_same_batch_snapshot_cannot_regress_completed_destination",
+        "source/host/src/extensions/session/forward_batch_journal.rs#tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover"
       ],
       "property_state_case_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
@@ -50564,7 +50677,14 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen",
         "source/host/src/extensions/session/forward_batch_journal.rs#stale_same_batch_snapshot_cannot_regress_completed_destination",
         "source/host/src/extensions/session/forward_batch_journal.rs#concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
+        "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs#direct_cli_host_contract_tests::native_cli_host_executes_status_and_receives_ready_without_ffi",
+        "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#tests::direct_gateway_host_status_and_ready_without_ffi",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy"
       ],
       "integration_case_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50596,7 +50716,13 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order",
         "source/host/tests/session_gateway_contract.rs#shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
@@ -50632,7 +50758,12 @@
         "source/host/src/extensions/session/forward_batch_journal.rs#stale_same_batch_snapshot_cannot_regress_completed_destination",
         "source/host/src/extensions/session/forward_batch_journal.rs#concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
         "source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy"
       ],
       "ui_functional_case_ids": [
         "frontend/src/production/transcript-projection.contract.test.ts#NMR-49 dispatching Human text and attachments stay pending until settlement",
@@ -50663,7 +50794,12 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_historical_reply_aliases_require_unique_local_canonical_parent",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen",
         "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
-        "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one"
+        "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal"
       ],
       "regression_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50705,7 +50841,10 @@
         "NMR-AC-33",
         "NMR-AC-34",
         "NMR-AC-35",
-        "NMR-AC-36"
+        "NMR-AC-36",
+        "NMR-AC-CLI-HOST-01",
+        "NMR-AC-PACKAGE-DELIVERY-01",
+        "NMR-AC-PAGING-01"
       ],
       "test_fixture_ids": [
         "source/host/tests/session_gateway_contract.rs#spawn_human_message_fixture",
@@ -50744,30 +50883,94 @@
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011040:completed/success:Human38 Agent4 settlement-credential3 sharebox1 journal3 forward-HTTP1; full log and actual artifact13173116303 inspected, sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22; prerequisite only, NMR-49 is not executed by this run",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494010641:completed/success:Transcript16 forward-projection5 Chromium12 renderer build; actual artifact13172281518 sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998; NMR-49 projection18 remains pending",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:completed/success:locked actual AppHost compile composition12 Native-startup7 FeatureHost7 Social9 HTTP-owner6 Host6 FFI7 CLI3 gateway5+11 normalization6 salts2 protocol122 TCP9 proxy4 credential1 actual-package-copy4 and three expected negative controls; actual artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
-        "Prerequisite exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1 all five applicable message jobs terminal success; Human38/Agent4/private3/sharebox1/journal3/HTTP1; shipping locked AppHost/protocol122/TCP9 including live/proxy4/credential1/actual package-copy4 plus three required rejecting controls; UI transcript16/settlement5/browser12; Electron10/8/3/16/28/18; Windows11. Counts and artifact digests scoped in projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json. This historical result does not execute the new NMR-51 implementation/tests."
+        "Prerequisite exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1 all five applicable message jobs terminal success; Human38/Agent4/private3/sharebox1/journal3/HTTP1; shipping locked AppHost/protocol122/TCP9 including live/proxy4/credential1/actual package-copy4 plus three required rejecting controls; UI transcript16/settlement5/browser12; Electron10/8/3/16/28/18; Windows11. Counts and artifact digests scoped in projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json. This historical result does not execute the new NMR-51 implementation/tests.",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:completed/success:composition12/proxy16orders48removals48repeatedNoops/all6permutations; Native7/FeatureHost7/SocialRecovery9/SocialHttp6/Host6/ABI7/CLI3/gatewayExecutable5/gatewayLibrary11/normalization6/futureSalts2/protocol122/TCP9/proxy4/credential1/actualAppHostCopy4; three deliberate copy failures correctly rejected; artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011040:completed/success:Human38/sharebox1/journalCAS3/AgentNonce4/privateSettlementCredential3/authenticatedForwardHttp1; zero selected failures/ignored; artifact13173116303 sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41456371872@99c49cebfcb76aee5731da78b12e88e09d7baff8:attempt1:completed/success:full reconciliation125313971290 and shipping125313971615 logs plus all4 ZIP digests inspected in resumed round18; composition12/Native6/auth125 internal requests/Settings17 typed calls15variants/original30proxy subcases/actualAppHostCopy4+two deliberate failures. This initial requested H is retained separately from later59 and the new feature correction.",
+        "round19-resumption-20261102: exact5281b87d878c9223dc9cd1c100c0f56186c81173/run41460570824 attempt1 completed/failure; full reconciliation125328236617 Human33/Agent4/private3 and UI125328237237 Transcript16 passed. shipping125328237120 composition12/Native6/FeatureHost7/Host6/ABI7 then gateway E0004; CLI3/gateway5/approval2 and all later gates were not executed. Full log digests in projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+        "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 attempt1 completed/success. Reconciliation125511939428 Human44/sharebox1/journal12/Agent4/credential3/HTTP1; shipping125511939405 CLI3/gateway5/library11, six proxy permutations, protocol122/TCP9/actualcopy4+3 expected negatives; actual AppHost160158128bytes SHA256708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b. This does not qualify later Human47 or expanded journal assertions. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498@94dcf7a2213808a8ded6baddaf069562d365c6d7:attempt1:job125511939428:completed/success:Human44 (original10 and five NMR48 plus corrupted-journal case actually named ok),sharebox1,journal12,Agent4,private-credential3,forwardHTTP1; all0failed/ignored; artifact13174787047 sha256:afe4bce96fa0acfaddea9f4c634186a16ed4b02dc64b85747d2d2cbf2b67f5df",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498@94dcf7a2213808a8ded6baddaf069562d365c6d7:attempt1:job125511939405:completed/success:actual locked AppHost build,composition12,startup7,FeatureHost7,Social9,HTTP-owner6,Host6,FFI7,CLI3,gateway5/lib11,DNS6,salts2,protocol122,TCP9 including actual live authkey/encrypted ping/get_future_salts,proxy4,Nativecredential1,actual-resource-copy4 and three expected negatives; artifact13175452350 sha256:612ff0e24e7f3bb83ba5a7b68c9a5da9e09236ad787582edf0d00249ff177953",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498@94dcf7a2213808a8ded6baddaf069562d365c6d7:attempt1:UI125511939353 success Transcript16/settlement5/Chromium12 artifact13173602759 sha256:0cf51ee47519896bd0854efd8fa466ea52cae853eff51463e62a5680415c53ef; Electron125511938976 success carrier10/auth8/copy3/update16/publisher28/macOS18 artifact13173338903 sha256:74d55b79059c3c163a94ad30cd17b3569180bb889fd9aff7967c0e5dfdaf33f5; Windows125511939226 success nativeAPI11 artifact13174018193 sha256:07d1bc9e00d13584c449a4c670301acf7606499b058fce2730a61c154aaa8a1c",
+        "Exact94 actual CI-profile macOS AppHost resource copy source=destination sha256:708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b,160158128bytes,0755,11excluded controls. Complete five job logs retrieved and artifact API/upload digests matched. This is not signed-package or full independent ACCEPT."
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
       "reviewer": null,
-      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution.\nRound20: preserve prior historical target_commit/workflow fields. At exact151/run41465224038 Human33/Agent4/private3, AppHost12/proxy48 repeats48 all6 permutations, Native6, FeatureHost7, Host6, ABI7, CLI3, UI16 and Electron metadata15 actually passed. Gateway executable4/5 failed due shared persistent fixture file (TEST_FLAW), and historical installer metadata experiment failed due compressed map byte comparison (IMPLEMENTATION_DEFECT). Existing post-staple verifier now compares bounded decompressed blockmap content; receipts hash actual sidecars, metadata18 authored. Existing gateway approval fixtures use isolated real persistence, duplicate/reopen/independent-store oracles; production default unchanged. Required containing-H gates include gateway executable5/lib9, DNS6 future_salts2 protocol122 TCP9 proxy4 native credential1 actual package-copy4+2 negatives, Electron build and immutable historical DMG test. Prior failures/skips not passes. Evidence projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json. No source/legal or independent acceptance promotion. Round21 adds only an independently scoped Electron update source responsibility and new Actions checks; source/product completeness remains unaccepted. Round22 original exact8f shipping11/122/9/copy4 and reconciliation33/4/3 successful after target runner cancellation was recovered. New positive-format mismatching AppHost hash negative authored at 5d271ff0c03d8f01368ca44026d14cd7519ad6bd requires containing-H execution. Full signed package and independent ACCEPT still blocked.\nNMR-49 / AC-40, task round12: implementation source base94dcf7a2213808a8ded6baddaf069562d365c6d7 retains all concurrent NMR-48 attachment snapshots, strict source/journal metadata admission and monotonic completion checks. This batch extends only the existing Session/Transcript/SQLite and real renderer projection: dispatching maps to pending; parent canonical settlement atomically rewrites same-author Human unsent local reply edges with row-count and transaction rollback guarantees; replay reloads each durable row; historical alias normalization requires a unique same-conversation local Human canonical sent parent and preserves dispatched remote reply identity. Three new real HTTP/SQLite/reopen cases cover A-B-C with resources, eleven alias variants and four parent/child ABORT/IGNORE faults, including malformed/nonHuman isolation. Two new actual renderer projection cases preserve normal/Agent behavior. Required containing-H counts are Human47 (retained44 plus3), journal12 and Transcript18; all retained Agent/credential/forwarding/shipping gates remain required. These are authored/not-run at preparation, not acceptance. The prior local NMR-48 reply label and unpublished journal guard were superseded before any branch update; the latest attachment NMR-48 contract and journal blob416012a301d70a3e0cedebe74bb1d600c7b92a05 are unchanged by this batch. Historical exact95 row target fields and separately scoped exact59 prerequisite results remain historical. Fixed source identities, source_reviews, unknown/unread and acceptance are not promoted. Receipt: projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-recovery.json.\nNMR-51 / NMR-AC-42: same existing Native Human resource owner now enforces the backend 25MiB limit before multipart/HTTP, with metadata and opened-file checks plus limit+1 bounded reading. The actual Human composer admits shared Agent videos larger than the service limit, so this repairs a reachable production boundary. Single-invalid-attachment gateway recovery and reader limits are authored, not executed at freeze. Same nonce, durable pending/error and restart/correction are required; multi-attachment atomic upload, immutable forward bytes, full UI visual/a11y and real-service acceptance are not claimed. Shared Agent200MiB and download32MiB budgets are unchanged. Selected fixed-U PrepareMediaList and Uploader::readDocPart sections were read only; no whole-file source_reviews/read-complete, inventory or acceptance promotion. Historical target_commit/workflow fields remain scoped to their earlier evidence; new execution is recorded only when exact containing-H Actions finish. release_gate_status stays blocked. After the interrupted full-file upload, integrate on3c9995a with all later forward snapshots/validators/source_reviews retained. NMR-48 now belongs to concurrent immutable forwarding work; this boundary correction is NMR-51/AC-42. The existing32MiB Native/forward upload bound differs from the current Backend25MiB contract; only the upload bound is corrected. Download32MiB remains. Required Human count is48 and private resource-bound count3, preserving journal12 and Chromium16 current gates. Known UI fresh-nonce/reply/committed-path retry remains an explicit next consumer gap.\nTask20bf round1 NMR-50: existing Session automatic recovery skips actively executing batches so destination/unrelated history can progress, and one roster invocation recovers once. Bound friends retrieval fences all six private credential fields after body consumption. The existing picker passes its original local lifetime to the actual Coordinator frame boundary; retired unposted intent cannot be reinterpreted after account change, while posted durable intent is retained. Four Host behaviors and six actual-client Chromium cases are authored; execution is recorded separately in projects/telegram-desktop-rust/evidence/task20bf-round1-nmr50-recovery.json. Historical target/run fields are not this batch's execution. Source identities, source_reviews, unknown/unread and all acceptance states are unchanged.\nTask20bf round1 NMR-50e-h follow-up: the production composer captures immutable local account generation/slot and target lane before queueing, preserving it through phase/failure callbacks and actual frame admission. Account/root retirement resets only local tracking and approval presentation; new-account same-conversation sends proceed while old work cannot dispatch, clear drafts, publish results or refresh roster. Human reactions retain the same account boundary while ordinary navigation stays valid. Root teardown no longer deletes original staged files referenced by persisted drafts; explicit removal and rejected staging retain cleanup. Existing Agent wire fields and approval lifecycle are retained. Eighteen behavior contracts authored; containing-H execution and independent ACCEPT remain separate. No source identity, source review, schema, coverage or acceptance promotion."
+      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution.\nRound20: preserve prior historical target_commit/workflow fields. At exact151/run41465224038 Human33/Agent4/private3, AppHost12/proxy48 repeats48 all6 permutations, Native6, FeatureHost7, Host6, ABI7, CLI3, UI16 and Electron metadata15 actually passed. Gateway executable4/5 failed due shared persistent fixture file (TEST_FLAW), and historical installer metadata experiment failed due compressed map byte comparison (IMPLEMENTATION_DEFECT). Existing post-staple verifier now compares bounded decompressed blockmap content; receipts hash actual sidecars, metadata18 authored. Existing gateway approval fixtures use isolated real persistence, duplicate/reopen/independent-store oracles; production default unchanged. Required containing-H gates include gateway executable5/lib9, DNS6 future_salts2 protocol122 TCP9 proxy4 native credential1 actual package-copy4+2 negatives, Electron build and immutable historical DMG test. Prior failures/skips not passes. Evidence projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json. No source/legal or independent acceptance promotion. Round21 adds only an independently scoped Electron update source responsibility and new Actions checks; source/product completeness remains unaccepted. Round22 original exact8f shipping11/122/9/copy4 and reconciliation33/4/3 successful after target runner cancellation was recovered. New positive-format mismatching AppHost hash negative authored at 5d271ff0c03d8f01368ca44026d14cd7519ad6bd requires containing-H execution. Full signed package and independent ACCEPT still blocked.\nNMR-49 / AC-40, task round12: implementation source base94dcf7a2213808a8ded6baddaf069562d365c6d7 retains all concurrent NMR-48 attachment snapshots, strict source/journal metadata admission and monotonic completion checks. This batch extends only the existing Session/Transcript/SQLite and real renderer projection: dispatching maps to pending; parent canonical settlement atomically rewrites same-author Human unsent local reply edges with row-count and transaction rollback guarantees; replay reloads each durable row; historical alias normalization requires a unique same-conversation local Human canonical sent parent and preserves dispatched remote reply identity. Three new real HTTP/SQLite/reopen cases cover A-B-C with resources, eleven alias variants and four parent/child ABORT/IGNORE faults, including malformed/nonHuman isolation. Two new actual renderer projection cases preserve normal/Agent behavior. Required containing-H counts are Human47 (retained44 plus3), journal12 and Transcript18; all retained Agent/credential/forwarding/shipping gates remain required. These are authored/not-run at preparation, not acceptance. The prior local NMR-48 reply label and unpublished journal guard were superseded before any branch update; the latest attachment NMR-48 contract and journal blob416012a301d70a3e0cedebe74bb1d600c7b92a05 are unchanged by this batch. Historical exact95 row target fields and separately scoped exact59 prerequisite results remain historical. Fixed source identities, source_reviews, unknown/unread and acceptance are not promoted. Receipt: projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-recovery.json.\nNMR-51 / NMR-AC-42: same existing Native Human resource owner now enforces the backend 25MiB limit before multipart/HTTP, with metadata and opened-file checks plus limit+1 bounded reading. The actual Human composer admits shared Agent videos larger than the service limit, so this repairs a reachable production boundary. Single-invalid-attachment gateway recovery and reader limits are authored, not executed at freeze. Same nonce, durable pending/error and restart/correction are required; multi-attachment atomic upload, immutable forward bytes, full UI visual/a11y and real-service acceptance are not claimed. Shared Agent200MiB and download32MiB budgets are unchanged. Selected fixed-U PrepareMediaList and Uploader::readDocPart sections were read only; no whole-file source_reviews/read-complete, inventory or acceptance promotion. Historical target_commit/workflow fields remain scoped to their earlier evidence; new execution is recorded only when exact containing-H Actions finish. release_gate_status stays blocked. After the interrupted full-file upload, integrate on3c9995a with all later forward snapshots/validators/source_reviews retained. NMR-48 now belongs to concurrent immutable forwarding work; this boundary correction is NMR-51/AC-42. The existing32MiB Native/forward upload bound differs from the current Backend25MiB contract; only the upload bound is corrected. Download32MiB remains. Required Human count is48 and private resource-bound count3, preserving journal12 and Chromium16 current gates. Known UI fresh-nonce/reply/committed-path retry remains an explicit next consumer gap.\nResumed round18 after concurrent work: the unconfirmed99-based write was not published and its42-case/dev-FFI proposal was not applied over later work. Current product evidence binds exact59/run41508537631: all5 logs/ZIP hashes checked, Human38, CLI3/gateway5/library11 and actualAppHost copy4; current proxy48/48/all6 permutations preserved. Row execution fields now denote this qualified59. Native7 is a Production AppHost library harness, not full installed AppHost acceptance. The former29 typed-row description is not the executed count: initial exact99 has125 auth parameter requests (119 known+6 unknown) and17 typed calls covering15 variants. NMR-CLI-HOST-01 repairs native Host feature loss identified in actual single-root manifests/Host cfg branches; retained provider names did not prove availability. MCP positive assertions and actual production process/binary evidence remain new-H gates. NMR-PACKAGE-DELIVERY-01 preserves final metadata receipt outside installer delivery members. Source-only concurrent43d70a62 changes are retained; source review counters/schema/locks/acceptance not promoted. Original failures and historical notes remain in evidence/Git. Receipt: projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json.\nLive73cc6e1cc9fa871e5f80931979606ac9ee810551 already supplies the concurrent completed-progress guard, pinned attachment recovery and frozen picker retry work. The local round18 duplicate guard proposal was not published. Human44/journal12/Chromium16 remain containing-H gates, not qualified59 counts. Preserve all6 newly introduced source_reviews and all concurrent source identities. NMR-CLI-HOST-01 / NMR-PACKAGE-DELIVERY-01 and NMR-AC-CLI-HOST-01 / NMR-AC-PACKAGE-DELIVERY-01 are the distinct CLI-feature and installer-artifact corrections. Backend PR137 at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23 remains open/draft/unmerged: exact head29 handler/10SQLite/24 injected readiness tests pass; actual production readiness jobs were skipped. No backend mutation or production access.\nRound18 production is actually published at1b0e674b3e39292ae715a3eb50435d83e2cb8577 with force=false expected_sha CAS and full API commit/file readback. The named CLI/installer requirements are distinct from concurrent numeric NMR49/50/51. This merge preserves the complete NMR49 appended requirement, owner and test records from ledger eddd11c7db0e8be8cfa26a58fb177901ce09b55e. Current code run41517540804 awaits its actual exact-H results; the row's execution identity remains qualified59, not new-H acceptance.\nResumed task20bf9475 round6: interruption left the older21-file candidate unpublished. Remote had advanced through1b0116fe; preserve every later message, credential, forwarding, source-review and shipping change rather than replacing current owners. Only the remaining persistent Human traversal and monotonic activity/recovery changes are integrated. Physical-row snapshots live in existing conversation KV, bound to participant identity, limited to16 and reject corrupt/missing/reused anchors; current Human production has no transcript delete/clear entry, which must invalidate walks before any future exposure. Existing metadata, credentials, forward journals, schema, six source reviews, historical exact execution fields and acceptance states stay intact. This append records authored implementation intent, not new-H execution or source/product acceptance. Actual containing-H results must be read from GitHub Actions and the task receipt. Real Worker provenance/authenticated afterId=0, old-message changefeed, complete source/legal/recursive acquisition, signed platforms, complete Bot/UI/a11y/temporal/performance/soak and independent ACCEPT remain open.\n\nRound19 resumed verification preserves all concurrent code, source reviews and ledger fields. Original gateway/permutation/metadata repairs are already present; they are not reapplied from stale preparation. Current completed-to-pending protection is NMR-47e, already delivered in4f1070d and qualified in94dcf7a. Only the existing journal case receives additional independent persistence oracles; no new message owner/schema/state or production guard is introduced. Exact936 UI18/settlement5/Chromium16, Electron10/8/3/16/28/18 and Windows11 passed, while its two macOS Rust jobs were queued at20:18:05UTC. Full source/platform/package/service/Bot/independent ACCEPT remains open. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json\nRound27 NMR-47g: new/pre-marker v1 destination rows persist independent forwardBatchOwned before resource upload/POST. Unsupported/missing context versions and replaced context retain source-batch ownership through strict direct source/request or stored target-nonce lookup. Read/decode failures cannot establish legacy ownership. The same current-durable-row replay keeps NMR-49 replies and NMR-48 pinned resources; unrelated ordinary reply metadata and genuine prefixed legacy intent remain supported. One actual child-kill/SQLite/HTTP matrix is authored and must run at the containing exact H. Preserve concurrent NMR-50 nonblocking work, all prior source_reviews, source counts and acceptance fields. See projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json.\nRound4 current-fact qualification: NMR48 is delivered at94dcf7a2213808a8ded6baddaf069562d365c6d7 and all five required run41513767498 jobs plus their actual named suites passed. Source bytes are captured before durable batch intent, all target buffers validated before upload, and the same buffers reach the Native multipart client. Real killed-process/SQLite/multipart cases preserve original cache-loss bytes, refuse a bad second pin before any new POST, retain legacy intent and recover after exact repair. Same-batch stale completion and cached non-object metadata defects were minimally repaired in the existing owner. No local executable validation occurred. This append preserves all concurrent NMR49/source review fields and historical execution tuples; it does not promote whole-source or independent ACCEPT. Current authoritative Backend upload25MiB differs from the original94 local32MiB bound; NMR51 corrects that separate service contract, so94 is bounded behavior evidence, not full production acceptance. Later Human47/48, Transcript18 and Chromium16 obligations are not counted as executed by44/16/12 at94. See projects/telegram-desktop-rust/evidence/fbcp-native-message-round4-20261102.json.\nTask20bf round1 NMR-50: existing Session automatic recovery skips actively executing batches so destination/unrelated history can progress, and one roster invocation recovers once. Bound friends retrieval fences all six private credential fields after body consumption. The existing picker passes its original local lifetime to the actual Coordinator frame boundary; retired unposted intent cannot be reinterpreted after account change, while posted durable intent is retained. Four Host behaviors and six actual-client Chromium cases are authored; execution is recorded separately in projects/telegram-desktop-rust/evidence/task20bf-round1-nmr50-recovery.json. Historical target/run fields are not this batch's execution. Source identities, source_reviews, unknown/unread and all acceptance states are unchanged.\nTask20bf round1 NMR-50e-h follow-up: the production composer captures immutable local account generation/slot and target lane before queueing, preserving it through phase/failure callbacks and actual frame admission. Account/root retirement resets only local tracking and approval presentation; new-account same-conversation sends proceed while old work cannot dispatch, clear drafts, publish results or refresh roster. Human reactions retain the same account boundary while ordinary navigation stays valid. Root teardown no longer deletes original staged files referenced by persisted drafts; explicit removal and rejected staging retain cleanup. Existing Agent wire fields and approval lifecycle are retained. Eighteen behavior contracts authored; containing-H execution and independent ACCEPT remain separate. No source identity, source review, schema, coverage or acceptance promotion."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
       "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "source_path": ".github/workflows/mac_packaged.yml",
-      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
-      "additional_source_identities": [],
-      "source_kind": "packaging",
-      "module_id": "tdesktop.packaging.update-source-trust",
+      "source_path": "Telegram/SourceFiles/core/update_checker.cpp",
+      "source_blob_sha": "73eee14f179d769854237640b246858959808736",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_checker.h",
+          "object": "458ffc75a972bcf39039413ec1e22e854cce2cc3"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/storage/localstorage.cpp",
+          "object": "d71385083c0e940580398612fb65e522afc768b1"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+          "object": "d25fe3b72298fab371854f80186ee8e4777ea087"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_channel.h",
+          "object": "342e385f07b771303a112a15895e7cfb2bb612de"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/cmake/telegram_options.cmake",
+          "object": "049f39cc92d6c798ab9c6df6aa9829ee2ae2a02c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/application.cpp",
+          "object": "7172206f5c1e540e19c90798e9a9e5721276cc53"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/settings/sections/settings_advanced.cpp",
+          "object": "e06c1cc267c9b6ad63475bf6cf3caf75f4179246"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": ".github/workflows/mac_packaged.yml",
+          "object": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc"
+        }
+      ],
+      "source_kind": "source",
+      "module_id": "tdesktop.core.update-discovery-authority",
       "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
       "source_symbols": [
-        "on.push.branches-ignore: public-canary/private-canary",
-        "on.push.paths-ignore",
-        "on.pull_request.paths-ignore",
-        "jobs.macos.runs-on conditional depot-macos-latest/macos-latest",
-        "strategy.matrix.defines: empty",
-        "TDE2E/TLOTTIE/WALLET_ENGINE/RUST_PATCHES/RUST_TOOLCHAIN pin set"
+        "core/update_checker.cpp::GetUpdaterInstance (298-305): shared updater authority",
+        "core/update_checker.cpp::LookupCanaryPrivateSession (307-325): configured private source membership",
+        "core/update_checker.cpp::HttpChecker::{start,gotResponse,handleResponse,clearSentRequest,gotFailure,parseOldResponse,parseResponse,validateLatestUrl,~HttpChecker} (734-878)",
+        "core/update_checker.cpp::MtpChecker::{start,startCanary} (1010-1040,1128-1189): source-mode selection and canary admission",
+        "core/update_checker.cpp::Updater::{handleReady,handleFailed,handleChecking,scheduleNext,stop,start,startImplementation,checkerDone,checkerFail,handleTimeout,tryLoaders} (1624-1886)",
+        "storage/localstorage.cpp::{AutoupdatePrefix,autoupdatePrefixFile,readAutoupdatePrefixRaw,writeAutoupdatePrefix,readAutoupdatePrefix} (528-586)",
+        "mtproto/mtp_instance.cpp::configLoadDone autoupdate_url_prefix forwarding (930-961)",
+        "core/update_channel.h::{BuildUpdateChannel,BuildIsCanary,RunningUpdateVersion} and canary configuration (1-89)",
+        "Telegram/cmake/telegram_options.cmake update channel/canary option validation (50-115)",
+        "core/application.cpp::activeSessionChanges -> UpdateChecker::setMtproto (196-226)",
+        "settings/sections/settings_advanced.cpp updater controls and event consumers (1035-1245; incomplete enclosing apply callback)",
+        "core/update_checker.h::UpdateChecker (1-61)"
       ],
       "capability_ids": [
         "UPDATE-INSTALL-ROLLBACK"
@@ -50777,8 +50980,8 @@
         "Fabushi approved Native issuer origin policy",
         "Existing update Settings and apply marker"
       ],
-      "source_analysis_path": "docs/specs/electron-update-source-authority.md",
-      "behavior_contract": "Separate upstream Mac package/update provenance from the recovered Electron updater's unauthorized third-party default. Existing Electron owner requires explicit approved main-process source and fails closed before network I/O for absent/invalid sources. The source packaging workflow is contextual upstream provenance only, not asserted as the origin of Cursor URL logic.",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round21-update-source-authority.json",
+      "behavior_contract": "Fixed-U core/update_checker.cpp and the exact additional source ranges supply a partial product contract for update-source configuration, selection, admission and single-updater lifecycle. The recovered Cursor default is a target defect, not an upstream endpoint to inherit. The existing Electron owner requires an explicit approved main-process source, uses the explicit compatibility variable only when primary is absent, and fails closed before network I/O for missing/invalid selected sources. A present blank or invalid primary never falls back. The prior macOS workflow remains build/provenance context only. Existing Windows exact-subject/certificate-pin authorization and apply-marker recovery remain intact. Full upstream updater, official service, artifact provenance, signed supported-platform install/upgrade/rollback and independent ACCEPT remain open.",
       "state_machine": "Electron startup -> immutable explicit main-process feed config -> shared Fabushi origin validation -> disabled reason or existing track/timer/check state machine -> approved manifest GET with redirect refusal -> existing download/stage/install owner. Unconfigured start still settles previously persisted apply marker before returning.",
       "side_effects": [
         "Remove historical api2.cursor.sh implicit default; no outbound update check when unconfigured.",
@@ -50829,7 +51032,10 @@
         "source/electron-main/update/update-telemetry.ts",
         "frontend/src/recovered/contracts/desktop-bridge.ts",
         "frontend/src/recovered/features/settings/overlay/updates.ts",
-        "source/electron-main/update/update-source.contract.test.mjs"
+        "source/electron-main/update/update-source.contract.test.mjs",
+        "source/electron-main/update/win32-installer.ts",
+        "source/electron-main/update/windows-publisher.contract.test.mjs",
+        "source/electron-main/update/windows-publisher.native.test.mjs"
       ],
       "fabushi_target_symbols": [
         "configuredUpdateFeedBaseUrl",
@@ -50866,7 +51072,6 @@
       "blockers": [
         "Real authorized update feed service/publisher deployment and metadata/artifact provenance not verified.",
         "Signed Mac/Windows platform package, real install, restart and rollback not accepted.",
-        "Actions execution of 16 new contracts and actual Electron/renderer build pending at new containing H.",
         "Full fixed-U source/legal review and independent FBCP/TDRP ACCEPT open."
       ],
       "production_entrypoints": [
@@ -50893,12 +51098,12 @@
         "exact-base:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:attempt1:electron125384978181:16 update-source pass; no Windows publisher test in base",
         "authored-not-run:5d271ff0c03d8f01368ca44026d14cd7519ad6bd:windows-publisher.contract.test.mjs 28; windows-publisher.native.test.mjs 11; real-AppHost well-formed unequal hash negative"
       ],
-      "target_commit": "5d271ff0c03d8f01368ca44026d14cd7519ad6bd",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+      "workflow_run": 41514576570,
+      "run_attempt": 1,
+      "job": 125514709195,
+      "artifact_id": 13174044080,
+      "artifact_digest": "sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042",
       "composition_root": "Existing production Electron main update service (no second updater)",
       "composition_slot": "Explicit source configuration and validated update-feed request under existing installer",
       "capability_component": "Updater feed-source authorization, disabled-state projection and marker-safe recovery",
@@ -51072,13 +51277,16 @@
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
       "test_execution_evidence": [
-        "historical-only:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:electron125384978181 success:source16 carrier10 auth8 fixture-copy3 metadata18"
+        "historical-only:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:electron125384978181 success:source16 carrier10 auth8 fixture-copy3 metadata18",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709195:completed/success:carrier10/auth8/fixture-copy3/EUS-source16/controlled-publisher28/metadata18; all zero fail/cancel/skip; actual Electron build and historical immutable ZIP/DMG metadata experiment; artifact13174044080 sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042; bounded component proof, no formal release ACCEPT",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709141:completed/success:Transcript16/forward-settlement5/actual Chromium forward-dialog16; all zero fail/cancel/skip; actual renderer build; artifact13174992345 sha256:5e74e7f2364d4617535fb3679349e98e3903701e2f0eb89a402bbe40b7df4bc5; bounded component proof, no formal release ACCEPT",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709410:completed/success:native Authenticode/PowerShell/Unicode11; all zero fail/cancel/skip; CI-only inert fixture, capturedSpawns1/executedFixtureExecutables0/remainingOwnedCertificates0; artifact13173833468 sha256:d73ab6369a98dc748f955e8a1642af28a2dffbed3d9727e7e526b20eeb1147a5; bounded component proof, no formal release ACCEPT"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
-      "license_and_provenance": "Source identity is the fixed-U macOS packaged workflow as updater/release provenance context, not evidence that upstream code supplied Cursor's default feed. Recovered updater origin is the live Fabushi implementation; no upstream code copy or new license closure is claimed. Full source-review evidence is pending.",
+      "license_and_provenance": "Primary product source is telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/core/update_checker.cpp@73eee14f179d769854237640b246858959808736. Exact additional identities and actual selected deep-read ranges are in the partial audit in projects/telegram-desktop-rust/evidence/round21-update-source-authority.json. Prior mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc was read fully as tooling context; its floating build acquisitions remain open. No whole-file or full-updater review, legal closure, Telegram endpoint/key authorization or formal Fabushi release acceptance is asserted. All earlier recovered-source and Windows provenance remains.",
       "reviewer": null,
-      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json."
+      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json.\nRound21 source/evidence reconciliation: primary mapping now names the actual partial core discovery logic; macOS packaging remains contextual provenance. Fixed-U selected ranges were deeply read, without claiming the full source file/updater complete. Exact73cc/run41514576570 supplies actual EUS16/publisher28/native-Windows11 and Electron/renderer build evidence. Earlier authored/pending statements remain dated history; target_commit now binds the executed Electron component, not a complete migration or later checkpoint execution. Existing six source_reviews (two complete, four pending), other183 responsibility rows, counters, source candidate, locks and acceptance states are unchanged. Current Rust recovery changes after73cc require their own exact-H evidence. This source-map correction is not another product feature. Official feed/publisher authorization, package provenance, signed install/upgrade/rollback, full source/legal closure and independent ACCEPT remain open. See resumption in the same receipt."
     }
   ],
   "rebaseline_candidate": {

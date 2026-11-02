@@ -17,6 +17,10 @@ on:
       - 'frontend/src/production/forward-recipient-navigation.ts'
       - 'frontend/src/recovered/runtime/coordinator-source.ts'
       - 'source/shared/rpc/coordinator.ts'
+      - 'source/shared/rpc/coordinator.contract.test.ts'
+      - 'frontend/src/production/model.ts'
+      - 'frontend/src/recovered/features/conversation/workspace/model.ts'
+      - 'frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts'
       - 'frontend/src/production/coordinator-client.ts'
       - 'frontend/src/production/composer-dispatch-scope*'
       - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
@@ -132,7 +136,7 @@ jobs:
           echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
   native-message-reconciliation:
     if: github.event_name == 'push' || inputs.message_batch
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
@@ -154,12 +158,18 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Linux Host native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
       - name: Human ingress, settlement and restart contracts
         shell: bash
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 52 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 58 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -572,11 +582,27 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 18' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 18' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 20' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 20' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
+      - name: Durable Human cursor and canonical pagination consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -e "$GITHUB_WORKSPACE/node_modules" ]; then
+            ln -s "$GITHUB_WORKSPACE/desktop/node_modules" "$GITHUB_WORKSPACE/node_modules"
+          fi
+          ./desktop/node_modules/.bin/esbuild source/shared/rpc/coordinator.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-cursor-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/pagination-cursor-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/coordinator-cursor.test.mjs artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# tests 17' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# pass 17' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/human-cursors.log
       - name: Compile actual production renderer
         shell: bash
         working-directory: desktop
@@ -865,4 +891,5 @@ jobs:
           name: windows-update-publisher-${{ github.sha }}
           path: artifacts/windows-update-publisher
           if-no-files-found: error
+
 

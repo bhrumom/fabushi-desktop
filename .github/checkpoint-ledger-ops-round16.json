@@ -1,0 +1,160 @@
+{
+  "format_version": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_delta_base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
+  "operations": [
+    {
+      "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc"
+      },
+      "scalars": {},
+      "remove_exact": {},
+      "append": {
+        "blockers": [
+          "Round16 resumed auxiliary-input qualification: capture is input acquisition only. The containing pinned commit must include reviewed locks/checksums, disable capture, preserve production --locked/-mod=readonly consumers and obtain exact-H actual macOS binary/owner results. Other platforms, complete signed packages, dependency legal/source review and independent acceptance remain open."
+        ],
+        "production_entrypoints": [
+          "desktop/package.json build:host/build:host:ci -> existing independent AppHost/Coordinator/Box Cargo roots -> stage-host.mjs",
+          ".github/workflows/release-macos-main.yml -> existing pure-Go network worker -> existing desktop package resource slot"
+        ],
+        "test_evidence": [
+          "Existing executable owner targets, required in the containing pinned-H Actions: Coordinator production_protocol1 + gateway_https1 + host_supervisor_health4; these start the Cargo-built real coordinator, not the copied artifact.",
+          "Existing Box --lib13 and source/host box_exec_daemon_process_contract3; pinned-H workflow sets FABUSHI_BOX_EXEC_DAEMON_TEST_BIN to this batch's copied actual binary so the real-daemon case cannot be excused by an absent fixture path.",
+          "Existing Go encrypted-state/protocol top-level13, -count=1, CGO_ENABLED=0, synthetic data; no production enrollment is claimed.",
+          "Actual pinned-H normal/build graphs, module checksums, executable hashes and positive symbol controls plus legacy FFI/Telegram symbol/library negatives; not-run at commit preparation."
+        ],
+        "requirement_ids": [
+          "FMEP-SOURCE-01",
+          "NMR-AC-30"
+        ],
+        "test_environment_ids": [
+          ".github/workflows/staged-runtime-source-contracts.yml:Ubuntu acquisition only; pinned macos-15 Rust1.97.1/Go1.27.1 owner and actual-binary gates"
+        ],
+        "test_execution_evidence": [
+          "exact:565a4639f1b7efbd15937aff93f4e14168322389:run41514329200:attempt1:job125513870853:success:dependency input acquisition only; artifact13175461007 sha256:85488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b; Coordinator91/Box68 package metadata identities and checksums match captured locks; Go609 module sums match1219 unique go.sum records. Capture-mode macOS jobs skipped, not binary/test acceptance."
+        ],
+        "fabushi_target_paths": [
+          ".github/workflows/staged-runtime-source-contracts.yml",
+          ".github/workflows/release-macos-main.yml",
+          ".github/workflows/rust-desktop-runtime.yml",
+          "desktop/package.json",
+          "desktop/scripts/stage-host.mjs",
+          "source/node-agent-coordinator/Cargo.toml",
+          "source/node-agent-coordinator/Cargo.lock",
+          "source/box-exec-daemon/Cargo.toml",
+          "source/box-exec-daemon/Cargo.lock",
+          "source/fabushi-network-worker/go.mod",
+          "source/fabushi-network-worker/go.sum"
+        ]
+      },
+      "note": "\n\nRound16 resumption: bind only the three existing auxiliary package producers and their input consumers under the existing build/toolchain owner. This is a bounded build-input implementation, not product-feature progress or completion of the historical macOS source responsibility. Existing mapped/pending and release-blocked values remain unchanged. The original source-derived symbolic case plans above remain unexecuted unless tied to real cases. Actual targets and capture/pinned-mode limits are documented in round16-apphost-package-boundary.json; U, inventory identity set, source_reviews, unknown/unread and all acceptance states are unchanged.\nCapture completion: exact565a4639 run41514329200 artifact13175461007 was independently read and hash-matched; four committed input bytes are taken unchanged from it. Rust1.97.1/Go1.27.1/Tailscale1.104.1 and original direct manifests remain fixed. Generated go.mod adds43 indirect requirements; no replacement or Git/path anomaly observed. Pin-mode source/binary/owner execution remains required at the containing H; this is not complete mature-dependency source/security/legal review. Original capture metadata/module graph and full log remain in the artifact and round16-apphost-package-boundary.json."
+    },
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "scalars": {
+        "target_commit": {
+          "from": "95b29df688f718a35574fa36ef4ca75df437ed30",
+          "to": "59f5fa24827812f78336c464995d161f403dedfb"
+        },
+        "workflow_run": {
+          "from": 41403643662,
+          "to": 41508537631
+        },
+        "job": {
+          "from": 125140696528,
+          "to": 125494011040
+        },
+        "artifact_id": {
+          "from": 13122423309,
+          "to": 13173116303
+        },
+        "artifact_digest": {
+          "from": "sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d",
+          "to": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22"
+        },
+        "run_attempt": {
+          "from": 1,
+          "to": 1
+        }
+      },
+      "remove_exact": {
+        "blockers": [
+          "NMR-34/35 bounded production boundary passed 98e51b31b5a296065190f665696b2ffe11a3efe1/run41443460672; NMR-36 Host/FFI explicit legacy-handoff refusal and tests are authored but require exact containing-H Actions with Host6/ABI7 and all retained gates.",
+          "Round20 exact151 run41465224038 is terminal failure in persistent gateway approval fixture (TEST_FLAW) and cross-platform compressed blockmap comparison (IMPLEMENTATION_DEFECT). Gateway lib9, protocol122, TCP9, actual AppHost resource copy4 and Electron build were skipped; cannot count as verified.",
+          "NMR-43/45 repaired existing owner/test fixtures and authored metadata18/gateway executable5; containing-H GitHub Actions and historical DMG immutable-byte repair required before bounded acceptance. Signed installation, update/rollback, full source/legal and independent ACCEPT still open.",
+          "Round21 exact H8ce/run41471743677 shipping job125366805190 unassigned/cancelled; lib11/protocol122/TCP9/real AppHost copy4 and two negative controls not executed. See round21-update-source-authority.json."
+        ]
+      },
+      "append": {
+        "fabushi_target_paths": [
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs"
+        ],
+        "test_evidence": [
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close",
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_execute_rejects_null_non_utf8_and_invalid_json",
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage"
+        ],
+        "requirement_ids": [
+          "NMR-38",
+          "NMR-39",
+          "NMR-AC-28",
+          "NMR-AC-29",
+          "NMR-AC-30"
+        ],
+        "unit_case_ids": [
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_execute_rejects_null_non_utf8_and_invalid_json",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage"
+        ],
+        "fault_recovery_case_ids": [
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close"
+        ],
+        "security_case_ids": [
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_execute_rejects_null_non_utf8_and_invalid_json",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage"
+        ],
+        "regression_ids": [
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_client_restores_committed_state_after_close",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_execute_rejects_null_non_utf8_and_invalid_json",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
+          "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage"
+        ],
+        "test_environment_ids": [
+          ".github/workflows/native-service-contracts.yml#retained-direct-ffi-compatibility:ubuntu-24.04:Rust1.97.1:locked runtime_ffi target15 non-live plus original1 ignored live-DC; synthetic owned buffers/stores only"
+        ],
+        "test_execution_evidence": [
+          "exact:adf15caadac5775fdd8582227cad3bbf9c93cf0f:run41447812811:attempt1:completed/success:full logs read; Host direct dependency negative, Host6/CABI7/Human33/Agent4/private3/AppHost11/Native6/FeatureHost7/protocol122/TCP9 passed. This is prerequisite evidence only.",
+          "exact:23f737faba69b4f60eecb6ec1a031602f87f60dc:run41451598911:attempt1:completed/success:actual AppHost build/graph/symbol/library and fixture-copy3 passed. Original Native6 passed, but the local twelve-route/seven-parameter matrix was NOT in this commit. Full delivery reconciliation and all artifact ZIP hashes are in round16-apphost-package-boundary.json.",
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1:reconciliation125494011040 success Human38/sharebox1/journal3/Agent4/private3/authenticated-forward-HTTP1; artifact13173116303 sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22.",
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:shipping125494011097 success AppHost actual build/composition12/Native7/FeatureHost7/Social9/HTTP6/Host6/ABI7/CLI3/gateway-executable5/library11/DNS6/future-salts2/protocol122/TCP9/proxy4/native-credential1/actual-copy4; missing-input/invalid-hash/unequal-valid-hash controls each rejected. Artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f; built and copied AppHost sha256:5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb.",
+          "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 success transcript16/settlement5/Chromium12; Electron125494011030 success carrier10/auth8/fixture-copy3/update-source16/publisher28/metadata18 and actual Electron compile; Windows125494011118 native Authenticode11 temporary inert fixtures, not production publisher acceptance. Native-auth-and-journal was conditionally skipped."
+        ],
+        "blockers": [
+          "The latest independently read qualified message H is59f5fa24827812f78336c464995d161f403dedfb. Later concurrent 4f1070/06fb24/94dcf7 forwarding changes and their new Human/journal cases require their own exact-H gates; these results are not inherited from59.",
+          "Original round16 local frozen Native matrix, ledger and owner-matrix changes were not all delivered at23f737f. Use the actual twelve-file commit/artifact reconciliation; do not call the eight-file local review an exact-byte review of that commit. Later Native7 execution is separately bound to59.",
+          "Round16 direct legacy C wrapper cases are authored and require containing-H Actions; the original live-DC case remains unexecuted. Wrapper tests do not prove a final staticlib/cdylib producer, installed external caller, external mobile ABI, original user data migration or final retirement."
+        ]
+      },
+      "note": "\n\nRound16 delivery reconciliation and later live-state read: the row's primary execution pointers now identify the verified59f5fa reconciliation, not the old95 snapshot. Prior pointers retained here: {\"target_commit\":\"95b29df688f718a35574fa36ef4ca75df437ed30\",\"workflow_run\":41403643662,\"run_attempt\":1,\"job\":125140696528,\"artifact_id\":13122423309,\"artifact_digest\":\"sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d\"}. Superseded historical blocker observations, preserved as history rather than current failures: [\"NMR-34/35 bounded production boundary passed 98e51b31b5a296065190f665696b2ffe11a3efe1/run41443460672; NMR-36 Host/FFI explicit legacy-handoff refusal and tests are authored but require exact containing-H Actions with Host6/ABI7 and all retained gates.\",\"Round20 exact151 run41465224038 is terminal failure in persistent gateway approval fixture (TEST_FLAW) and cross-platform compressed blockmap comparison (IMPLEMENTATION_DEFECT). Gateway lib9, protocol122, TCP9, actual AppHost resource copy4 and Electron build were skipped; cannot count as verified.\",\"NMR-43/45 repaired existing owner/test fixtures and authored metadata18/gateway executable5; containing-H GitHub Actions and historical DMG immutable-byte repair required before bounded acceptance. Signed installation, update/rollback, full source/legal and independent ACCEPT still open.\",\"Round21 exact H8ce/run41471743677 shipping job125366805190 unassigned/cancelled; lib11/protocol122/TCP9/real AppHost copy4 and two negative controls not executed. See round21-update-source-authority.json.\"]. The full old23f737f and later59 artifacts were read and hash-matched; exact counts and deliberately failing negative controls are distinguished in round16-apphost-package-boundary.json. Subsequent Session production changes and the auxiliary lock batch remain unqualified until their own containing-H Actions. No implementation/source/independent release acceptance is promoted, no data or rollback reader is removed, and Backend PR137 remains read-only.\nResumed round16 retained-wrapper scope: Desktop CLI/gateway now directly use MahayanaHost; separate legacy RuntimeClient/CLIENTS ownership and its C exports remain explicit compatibility only. Add five actual C wrapper tests using allocated caller buffers, owned response freeing and temporary encrypted close/reopen, while preserving the original11 including1 ignored live-DC case. New target15-pass/1-ignore oracle is authored, not executed at preparation. Source-observed external installer library-producer and Android JNI argument mismatches are separate unqualified consumers, not Desktop shipping proof and not an observed crash. No external repository, user database/key/sidecar or rollback reader changed; no final source/service/release ACCEPT."
+    }
+  ],
+  "purpose": "Merge only frozen reviewed two-row delta into the exact Actions checkout; fail on scalar/source conflict. Create an unattached Git blob only. Root must API-read input/output and require fresh current canonical input equality before force=false expected-head CAS."
+}

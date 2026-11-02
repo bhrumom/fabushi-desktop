@@ -20,9 +20,9 @@ permissions:
   contents: read
 
 env:
-  # One acquisition checkpoint only. Set false when the reviewed inputs are pinned.
-  # Capture success is not locked-input or release acceptance.
-  FBCP_CAPTURE_MISSING_INPUTS: 'true'
+  # Inputs were captured at 565a4639 and are now pinned in the same source tree.
+  # Missing or mutated inputs must fail; capture evidence was not acceptance.
+  FBCP_CAPTURE_MISSING_INPUTS: 'false'
   FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
@@ -151,7 +151,21 @@ jobs:
           evidence="artifacts/staged-runtime/$RUNTIME_BINARY"
           mkdir -p "$evidence"
           printf '%s\n' "$FABUSHI_TARGET_SHA" > "$evidence/target-sha.txt"
-          { rustc -Vv; cargo -V; uname -a; } > "$evidence/toolchain.txt"
+          {
+            rustc -Vv
+            cargo -V
+            uname -a
+            xcodebuild -version
+            xcrun --find clang
+            xcrun clang --version
+            xcrun --show-sdk-path
+            xcrun --show-sdk-version
+            if command -v cmake; then
+              cmake --version
+            else
+              printf '%s\n' 'cmake=unavailable (optional runner inventory)'
+            fi
+          } > "$evidence/toolchain.txt"
           if git ls-files --error-unmatch "$RUNTIME_ROOT/Cargo.lock" > /dev/null 2>&1; then
             printf '%s\n' locked > "$evidence/input-mode.txt"
           else

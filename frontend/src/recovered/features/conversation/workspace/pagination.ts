@@ -1,9 +1,12 @@
 import type { ConversationTranscriptEntry } from "./model";
+import { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
+export { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
 
 /**
  * Cursor and viewport state for the shipped transcript older-history flow.
  * The coordinator returns entries in chronological order and uses
- * `nextBeforeSeq` as the exclusive older-page cursor.
+ * `nextBeforeSeq` as the exclusive older-page cursor. Human pages also carry
+ * an opaque `nextBeforeCursor` for a stable walk across message updates.
  *
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5692943 (cursor/page merge helpers)
  * @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5705748 (loadOlder request fencing and error state)
@@ -12,19 +15,21 @@ import type { ConversationTranscriptEntry } from "./model";
 
 export type TranscriptHistoryCursor =
   | { kind: "unprobed" }
-  | { kind: "more"; beforeSeq: number }
+  | { kind: "more"; beforeSeq: number; beforeCursor?: string }
   | { kind: "exhausted" }
   | { kind: "unavailable" };
 
 export interface TranscriptHistoryPage {
   entries: readonly ConversationTranscriptEntry[];
   nextBeforeSeq?: number;
+  nextBeforeCursor?: string;
 }
 
 export interface TranscriptHistoryRequest {
   id: string;
   limit: number;
   beforeSeq: number;
+  beforeCursor?: string;
 }
 
 export type TranscriptHistoryFetcher = (request: TranscriptHistoryRequest) => Promise<TranscriptHistoryPage>;
@@ -76,9 +81,15 @@ const DEFAULT_PAGE_LIMIT = 200;
 
 const EMPTY_CURSOR: TranscriptHistoryCursor = { kind: "unprobed" };
 
-function cursorFromNextBeforeSeq(nextBeforeSeq: number | undefined): TranscriptHistoryCursor {
+function cursorFromPage({ nextBeforeSeq, nextBeforeCursor }: TranscriptHistoryPage): TranscriptHistoryCursor {
   return typeof nextBeforeSeq === "number" && Number.isFinite(nextBeforeSeq)
-    ? { kind: "more", beforeSeq: nextBeforeSeq }
+    ? {
+      kind: "more",
+      beforeSeq: nextBeforeSeq,
+      ...(typeof nextBeforeCursor === "string" && nextBeforeCursor.length > 0
+        ? { beforeCursor: nextBeforeCursor }
+        : {}),
+    }
     : { kind: "exhausted" };
 }
 
@@ -98,14 +109,6 @@ function uniqueEntries(entries: readonly ConversationTranscriptEntry[], excluded
     result.push(entry);
   }
   return result;
-}
-
-export function mergeOlderTranscriptEntries(
-  currentEntries: readonly ConversationTranscriptEntry[],
-  olderEntries: readonly ConversationTranscriptEntry[]
-): ConversationTranscriptEntry[] {
-  const currentIds = new Set(currentEntries.map((entry) => entry.id));
-  return [...uniqueEntries(olderEntries, currentIds), ...uniqueEntries(currentEntries)];
 }
 
 export function createTranscriptPaginationController(
@@ -147,10 +150,16 @@ export function createTranscriptPaginationController(
     for (const listener of [...listeners]) listener();
   };
 
-  const isCurrentRequest = (requestId: number, requestPageGeneration: number, requestAgentId: string | null): boolean => (
+  const isCurrentRequest = (
+    requestId: number,
+    requestPageGeneration: number,
+    requestAccountSlot: string | null,
+    requestAgentId: string | null,
+  ): boolean => (
     !disposed
     && requestId === requestGeneration
     && requestPageGeneration === pageGeneration
+    && requestAccountSlot === accountSlot
     && requestAgentId === agentId
   );
 
@@ -190,7 +199,7 @@ export function createTranscriptPaginationController(
       inFlight = null;
       updatesDuringRequest.clear();
       entries = uniqueEntries(page.entries);
-      cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
+      cursor = cursorFromPage(page);
       olderFailure = null;
       pendingAnchor = null;
       emit();
@@ -199,7 +208,9 @@ export function createTranscriptPaginationController(
 
     ingestEntryUpdate(updateAccountSlot, ownerId, entry) {
       if (disposed || updateAccountSlot !== accountSlot || ownerId !== agentId) return;
-      if (inFlight != null) updatesDuringRequest.set(entry.id, entry);
+      // A failed page can be retried with an older snapshot. Keep the latest
+      // committed overlay for that read until a successful page consumes it.
+      if (inFlight != null || updatesDuringRequest.has(entry.id)) updatesDuringRequest.set(entry.id, entry);
       if (!entries.some((candidate) => candidate.id === entry.id)) return;
       entries = entries.map((candidate) => candidate.id === entry.id ? entry : candidate);
       emit();
@@ -214,6 +225,7 @@ export function createTranscriptPaginationController(
       const requestAgentId = agentId;
       const requestAccountSlot = accountSlot;
       const beforeSeq = cursor.beforeSeq;
+      const beforeCursor = cursor.beforeCursor;
       if (viewport != null && Number.isFinite(viewport.scrollTop) && Number.isFinite(viewport.scrollHeight)) {
         pendingAnchor = {
           generation,
@@ -223,37 +235,43 @@ export function createTranscriptPaginationController(
         };
       } else pendingAnchor = null;
       olderFailure = null;
-      updatesDuringRequest.clear();
 
       const request = (async () => {
         // Defer invocation until inFlight is assigned, including synchronous
         // fetch failures; a rejected read must remain retryable.
         await Promise.resolve();
         try {
-          if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
-          const page = await options.fetchPage({ id: requestAgentId, limit: pageLimit, beforeSeq });
-          if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
+          const page = await options.fetchPage({
+            id: requestAgentId,
+            limit: pageLimit,
+            beforeSeq,
+            ...(beforeCursor === undefined ? {} : { beforeCursor }),
+          });
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           const refreshedPage = page.entries.map((entry) => updatesDuringRequest.get(entry.id) ?? entry);
           entries = mergeOlderTranscriptEntries(entries, refreshedPage);
-          cursor = cursorFromNextBeforeSeq(page.nextBeforeSeq);
+          cursor = cursorFromPage(page);
           olderFailure = null;
           options.onPageApplied?.({ accountSlot: requestAccountSlot, agentId: requestAgentId }, {
             entries,
             nextBeforeSeq: page.nextBeforeSeq,
+            ...(page.nextBeforeCursor === undefined ? {} : { nextBeforeCursor: page.nextBeforeCursor }),
           });
+          updatesDuringRequest.clear();
           emit();
         } catch (error) {
-          if (!isCurrentRequest(requestId, requestPageGeneration, requestAgentId)) return;
+          if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           if (isCapabilityUnavailableFailure(error)) {
             cursor = { kind: "unavailable" };
             olderFailure = null;
+            updatesDuringRequest.clear();
           } else olderFailure = error;
           pendingAnchor = null;
           emit();
         } finally {
           if (requestId === requestGeneration) {
             inFlight = null;
-            updatesDuringRequest.clear();
             if (!disposed) emit();
           }
         }
@@ -302,3 +320,4 @@ export function createTranscriptPaginationController(
     }
   };
 }
+
