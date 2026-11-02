@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "audit": "reconciliation recovery cleanup ownership compile failure",
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "source/host/tests/session_gateway_contract.rs",
+  "original_failure": {
+    "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "run_id": 41522324008,
+    "job_id": 125541192099,
+    "conclusion": "failure",
+    "stage": "Rust compilation",
+    "error": "E0382: borrowed old runtime after drop(runtime)",
+    "affected_test": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+    "test_line": 6889,
+    "earlier_drop_line": 6878,
+    "human62_executed": false,
+    "complete_log": "native-logs/41522324008-125541192099.log",
+    "complete_log_sha256": "97a39a2aa67414f594eb25b434455ec3c60e1101a31c93342b1dcb855ce9d0eb"
+  },
+  "original_patch": {
+    "base_head": "6660b6516f8936160496496814c298124d09e953",
+    "base_blob_sha": "b84f6a3eec2994a8be84006823366a7f29f082d7",
+    "old": "    runtime.shutdown(); drop(owner); drop(restarted);",
+    "new": "    restarted.shutdown(); drop(owner); drop(restarted);",
+    "context_before": "        \"recovery never publishes an inactive or partial intermediate row\");",
+    "context_after": "    let reopened = human_message_fixture_runtime(&root, &url);"
+  },
+  "current_resolution": {
+    "status": "already_applied_remotely_by_concurrent_work_do_not_reapply",
+    "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+    "parent_sha": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+    "blob_sha": "2e032c705fcec8256dd66476807dd1fd683625db",
+    "verified_with": [
+      "GitHub exact commit patch",
+      "GitHub exact file lines 6854-6905"
+    ],
+    "patch": "@@ -6886,7 +6886,7 @@ fn shipping_human_reaction_restart_replays_already_applied_intent_without_retogg\n         Some(json!({\"afterId\":4_000_777,\"complete\":true})));\n     assert!(events.lock().expect(\"events\").iter().all(|event| event[\"entries\"] == json!([applied.clone()])),\n         \"recovery never publishes an inactive or partial intermediate row\");\n-    runtime.shutdown(); drop(owner); drop(restarted);\n+    restarted.shutdown(); drop(owner); drop(restarted);\n     let reopened = human_message_fixture_runtime(&root, &url);\n     assert_eq!(reopened.read_human_conversation_transcript(&id).expect(\"pure reopen\"), vec![applied]);\n     subscription.unsubscribe();",
+    "replacement_run": 41523018920,
+    "replacement_run_status": "queued",
+    "replacement_run_conclusion": null,
+    "pass_claim": false
+  },
+  "mutations": {
+    "production": false,
+    "github": false,
+    "tests_run_locally": false,
+    "only_scratch_evidence": true
+  }
+}

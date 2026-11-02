@@ -1,4 +1,4 @@
-//! NMR-48 / NMR-AC-37: recovery must preserve retired social records while
+//! NMR-SOCIAL-OWNER-03 / NMR-SOCIAL-AC-02: preserve retained social records while
 //! continuing ordinary Agent recovery. These fixtures use the real SQLite
 //! RuntimeStore; registered providers are in-process recorders, never services.
 

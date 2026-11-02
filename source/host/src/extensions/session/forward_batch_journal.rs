@@ -346,23 +346,10 @@ impl HumanForwardBatch {
             || self.context.get("requestId").and_then(Value::as_str) != Some(self.request_id.as_str())
             || self.context.get("sourceConversationId").and_then(Value::as_str) != Some(self.source_conversation_id.as_str())
             || self.context.get("sourceEntryId").and_then(Value::as_str) != Some(self.source_entry_id.as_str())
+            || self.context.pointer("/privacy/dropSenderNames").and_then(Value::as_bool).is_none()
+            || self.context.pointer("/privacy/dropCaptions").and_then(Value::as_bool).is_none()
         {
             return Err("persisted Human forward batch is invalid or has an unsupported version".into());
-        }
-        let (Some(drop_sender_names), Some(drop_captions)) = (
-            self.context.pointer("/privacy/dropSenderNames").and_then(Value::as_bool),
-            self.context.pointer("/privacy/dropCaptions").and_then(Value::as_bool),
-        ) else {
-            return Err("persisted Human forward batch has invalid privacy fields".into());
-        };
-        let privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions };
-        // A recovered intent must already satisfy the new-request contract.
-        // Repairing it here would silently change an accepted immutable batch.
-        if privacy != privacy.normalized()
-            || (privacy.drop_sender_names && self.context.get("origin").is_some())
-            || (privacy.drop_captions && !self.attachments.is_empty() && !self.text.is_empty())
-        {
-            return Err("persisted Human forward batch contradicts its privacy snapshot".into());
         }
         for target in &self.destinations {
             if target.conversation_id.is_empty()
@@ -437,6 +424,15 @@ pub(super) fn store_forward_batch(owner: &SandAgentDb, batch: &HumanForwardBatch
     // observation and this merge; the SandAgentDb conditional CAS detects
     // that interleaving instead of erasing another batch's journal.
     let observed = read_forward_journal_value(owner)?;
+    store_forward_batch_observed(owner, batch, observed)
+}
+
+fn store_forward_batch_observed(
+    owner: &SandAgentDb,
+    batch: &HumanForwardBatch,
+    observed: Option<Value>,
+) -> Result<(), String> {
+    batch.validate(&batch.source_conversation_id)?;
     let mut batches = decode_forward_batches(observed.clone(), &batch.source_conversation_id)?;
     if let Some(existing) = batches.iter_mut().find(|prior|
         prior.account_id == batch.account_id && prior.issuer == batch.issuer && prior.request_id == batch.request_id
@@ -743,48 +739,54 @@ mod tests {
 
     #[test]
     fn stale_forward_metadata_observation_cannot_erase_other_batch() {
-        let dir = std::env::temp_dir().join(format!(
-            "forward-metadata-cas-{}", uuid::Uuid::new_v4()
-        ));
-        std::fs::create_dir_all(&dir).expect("cas fixture dir");
+        let dir = std::env::temp_dir().join(format!("forward-metadata-cas-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
         let db_path = dir.join("store.db");
-        let first = SandAgentDb::open(&db_path, 500).expect("first owner");
-        let second = SandAgentDb::open(&db_path, 500).expect("independent owner");
-        let first_observed = second.get_metadata(FORWARD_BATCHES_KEY).expect("observe absence");
-        assert!(first_observed.is_none(), "absence is not JSON null");
-        let first_value = serde_json::json!([{"requestId": "first"}]);
-        assert!(first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, first_observed.as_ref(), first_value.clone()
-        ).expect("commit first value"));
-        let stale_second = serde_json::json!([{"requestId": "second"}]);
-        assert!(!second.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, first_observed.as_ref(), stale_second
-        ).expect("reject stale merge"));
-        assert_eq!(first.get_metadata(FORWARD_BATCHES_KEY).unwrap(), Some(first_value.clone()));
+        let first = SandAgentDb::open(&db_path, 2_000).unwrap();
+        let second = SandAgentDb::open(&db_path, 2_000).unwrap();
+        let make_batch = |request: &str| HumanForwardBatch::new(
+            "a".into(), "prod".into(), request.into(), "s".into(), "e".into(),
+            "text".into(), vec![],
+            serde_json::json!({"batchVersion":1,"requestId":request,
+                "sourceConversationId":"s","sourceEntryId":"e",
+                "privacy":{"dropSenderNames":false,"dropCaptions":false}}),
+            &["b".into(), "c".into()],
+        );
+        let mut first_batch = make_batch("first");
+        let second_batch = make_batch("second");
+        store_forward_batch(&first, &first_batch).unwrap();
+        let stale = read_forward_journal_value(&first).unwrap();
+        store_forward_batch(&second, &second_batch).unwrap();
+        let committed = read_forward_journal_value(&second).unwrap();
+        let committed_raw = second.read_kv("metadata").unwrap().unwrap();
 
-        // An unrelated metadata update must not invalidate a journal writer
-        // that has observed the same journal value.
-        assert!(first.set_metadata("unrelated", serde_json::json!(5)).unwrap());
-        let second_value = serde_json::json!([{"requestId": "first"}, {"requestId": "second"}]);
-        assert!(second.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, Some(&first_value), second_value.clone()
-        ).expect("retry from fresh journal"));
-        assert_eq!(first.get_metadata(FORWARD_BATCHES_KEY).unwrap(), Some(second_value.clone()));
+        first_batch.destinations[0].completed = true;
+        assert!(store_forward_batch_observed(&first, &first_batch, stale).is_err(),
+            "a journal writer paused after its read must not erase another committed batch");
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), committed_raw);
+        // Expected-value admission must precede even the no-change shortcut.
         assert!(!first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, None, serde_json::Value::Null
-        ).expect("absent differs from present"));
-        assert!(!first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, Some(&serde_json::Value::Null), serde_json::Value::Null
-        ).expect("null differs from journal"));
-        assert!(first.set_metadata_if_unchanged(
-            FORWARD_BATCHES_KEY, Some(&second_value), second_value.clone()
-        ).expect("idempotent no-change journal"));
+            FORWARD_BATCHES_KEY, None, committed.clone().unwrap()
+        ).unwrap());
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), committed_raw);
+
+        let observed = read_forward_journal_value(&first).unwrap();
+        assert!(second.set_metadata("unrelated", serde_json::json!(5)).unwrap());
+        store_forward_batch_observed(&first, &first_batch, observed).unwrap();
         assert_eq!(first.get_metadata("unrelated").unwrap(), Some(serde_json::json!(5)));
+        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![first_batch, second_batch]);
+
+        assert!(second.set_metadata(FORWARD_BATCHES_KEY, Value::Null).unwrap());
+        let corrupt_raw = first.read_kv("metadata").unwrap().unwrap();
+        assert!(store_forward_batch(&first, &make_batch("third")).is_err(),
+            "explicit null is corrupt, not an absent journal");
+        assert_eq!(first.read_kv("metadata").unwrap().unwrap(), corrupt_raw);
+        assert_eq!(read_forward_journal_value(&first).unwrap(), Some(Value::Null));
         first.close(false);
         second.close(false);
         drop(first);
         drop(second);
-        std::fs::remove_dir_all(&dir).expect("cleanup fixture");
+        std::fs::remove_dir_all(&dir).unwrap();
     }
     #[test]
     fn bad_forward_journal_versions_and_destinations_fail_closed() {
@@ -801,50 +803,6 @@ mod tests {
         invalid.destinations[1].conversation_id = "b".into();
         assert!(invalid.validate("s").is_err());
     }
-
-    #[test]
-    fn forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent() {
-        let fixture = SnapshotFixture::new();
-        let original = HumanForwardBatch::new(
-            "account".into(), "issuer".into(), "original".into(), "source".into(), "entry".into(),
-            "retained body".into(), vec![], snapshot_context("original"), &["target".into()],
-        );
-        store_forward_batch(&fixture.owner, &original).expect("preserve the valid original intent");
-        let original_journal = fixture.owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
-        for fault in ["not-normalized", "hidden-origin", "null-origin", "retained-caption"] {
-            let mut context = snapshot_context(fault);
-            context["privacy"] = serde_json::json!({
-                "dropSenderNames": fault != "not-normalized",
-                "dropCaptions": matches!(fault, "not-normalized" | "retained-caption"),
-            });
-            if fault == "hidden-origin" {
-                context["origin"] = serde_json::json!({"authorId": "private-author"});
-            } else if fault == "null-origin" {
-                context["origin"] = Value::Null;
-            }
-            let invalid = HumanForwardBatch::new(
-                "account".into(), "issuer".into(), fault.into(), "source".into(), "entry".into(),
-                if fault == "not-normalized" { String::new() } else { "retained caption".into() },
-                vec![serde_json::json!({"name": "retained.bin", "path": "retained-legacy-path"})],
-                context, &["target".into()],
-            );
-            assert!(invalid.validate("source").unwrap_err().contains("privacy"), "{fault}");
-            // Each invalid request is new: without admission checks it would
-            // append to the journal instead of hitting immutable-replay refusal.
-            assert!(store_forward_batch(&fixture.owner, &invalid).is_err(), "{fault}");
-            assert_eq!(fixture.owner.get_metadata(FORWARD_BATCHES_KEY).unwrap(), original_journal);
-            assert_eq!(load_forward_batches(&fixture.owner, "source").unwrap(), vec![original.clone()]);
-        }
-        let mut context = snapshot_context("text-only");
-        context["privacy"] = serde_json::json!({"dropSenderNames": true, "dropCaptions": true});
-        let text_only = HumanForwardBatch::new(
-            "account".into(), "issuer".into(), "text-only".into(), "source".into(), "entry".into(),
-            "plain text is not a media caption".into(), vec![], context, &["target".into()],
-        );
-        store_forward_batch(&fixture.owner, &text_only).expect("both hide options preserve a text-only body");
-        assert_eq!(load_forward_batches(&fixture.owner, "source").unwrap(), vec![original, text_only]);
-    }
-
     #[test]
     fn stale_same_batch_snapshot_cannot_regress_completed_destination() {
         let dir = std::env::temp_dir().join(format!("forward-stale-progress-{}", uuid::Uuid::new_v4()));
@@ -912,23 +870,65 @@ mod tests {
     #[test]
     fn concurrent_forward_metadata_writers_have_one_durable_winner_and_recover() {
         use std::sync::{Arc, Barrier};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        fn read_committed_metadata(path: &Path) -> (String, Value) {
+            let db = rusqlite::Connection::open_with_flags(
+                path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+            ).expect("independent read-only SQLite connection");
+            let raw: String = db.query_row(
+                "SELECT value FROM kv WHERE key = 'metadata'", [], |row| row.get(0),
+            ).expect("committed metadata row");
+            assert_eq!(raw.len() % 2, 0);
+            let bytes = (0..raw.len()).step_by(2).map(|offset|
+                u8::from_str_radix(&raw[offset..offset + 2], 16).expect("metadata hex")
+            ).collect::<Vec<_>>();
+            let metadata = serde_json::from_slice(&bytes).expect("committed metadata JSON");
+            (raw, metadata)
+        }
+
         let dir = std::env::temp_dir().join(format!("forward-parallel-cas-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("store.db");
         let seed = SandAgentDb::open(&path, 5000).unwrap();
         assert!(seed.set_metadata("unrelated", serde_json::json!(19)).unwrap());
         seed.close(false); drop(seed);
+
+        let busy_errors = Arc::new(AtomicUsize::new(0));
+        let observed_busy_errors = Arc::clone(&busy_errors);
+        let mut options = super::super::agent_db::SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = 5000;
+        options.on_busy_error = Some(Arc::new(move |_, _| {
+            observed_busy_errors.fetch_add(1, Ordering::SeqCst);
+        }));
+        let batches = (0..2).map(|index| {
+            let request_id = index.to_string();
+            let context = serde_json::json!({
+                "batchVersion": 1, "requestId": request_id,
+                "sourceConversationId": "s", "sourceEntryId": "e",
+                "privacy": {"dropSenderNames": false, "dropCaptions": false},
+            });
+            HumanForwardBatch::new(
+                "a".into(), "prod".into(), request_id, "s".into(), "e".into(),
+                "text".into(), vec![], context, &["b".into(), "c".into()],
+            )
+        }).collect::<Vec<_>>();
+        // Finish fallible owner setup, stale observations and encoding before
+        // spawning either participant, so setup failure cannot strand a waiter.
+        let prepared = batches.iter().map(|batch| {
+            let owner = SandAgentDb::open_with_options(&path, options.clone()).unwrap();
+            let observed = owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
+            assert!(observed.is_none());
+            let value = serde_json::to_value(vec![batch]).unwrap();
+            (owner, observed, value)
+        }).collect::<Vec<_>>();
         let barrier = Arc::new(Barrier::new(3));
-        let threads = (0..2).map(|index| {
-            let path = path.clone();
+        let threads = prepared.into_iter().map(|(owner, observed, value)| {
             let barrier = Arc::clone(&barrier);
             std::thread::spawn(move || {
-                let owner = SandAgentDb::open(&path, 5000).unwrap();
-                let observed = owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
-                assert!(observed.is_none());
                 barrier.wait();
                 let result = owner.set_metadata_if_unchanged(
-                    FORWARD_BATCHES_KEY, observed.as_ref(), serde_json::json!([{"winner":index}])
+                    FORWARD_BATCHES_KEY, observed.as_ref(), value,
                 );
                 owner.close(false);
                 result
@@ -936,13 +936,46 @@ mod tests {
         }).collect::<Vec<_>>();
         barrier.wait();
         let outcomes = threads.into_iter().map(|thread| thread.join().unwrap()).collect::<Vec<_>>();
-        assert!(outcomes.iter().all(Result::is_ok), "SQLite busy is not a CAS rejection: {outcomes:?}");
+        assert_eq!(busy_errors.load(Ordering::SeqCst), 0,
+            "SQLite busy/locked must not masquerade as a CAS loser");
+        assert!(outcomes.iter().all(Result::is_ok), "SQLite write errors are not a CAS rejection: {outcomes:?}");
         assert_eq!(outcomes.iter().filter(|item| *item.as_ref().unwrap()).count(), 1);
-        let reopened = SandAgentDb::open(&path, 5000).unwrap();
+        let reopened = SandAgentDb::open_with_options(&path, options.clone()).unwrap();
         let winner = reopened.get_metadata(FORWARD_BATCHES_KEY).unwrap().unwrap();
-        assert!(winner == serde_json::json!([{"winner":0}]) || winner == serde_json::json!([{"winner":1}]));
+        let winner_id = winner[0]["requestId"].as_str().unwrap();
+        assert!(winner_id == "0" || winner_id == "1");
+        let winner_index: usize = winner_id.parse().unwrap();
+        assert!(*outcomes[winner_index].as_ref().unwrap());
+        assert_eq!(winner, serde_json::to_value(vec![batches[winner_index].clone()]).unwrap());
         assert_eq!(reopened.get_metadata("unrelated").unwrap(), Some(serde_json::json!(19)));
+        let (winner_raw, metadata) = read_committed_metadata(&path);
+        assert_eq!(metadata[FORWARD_BATCHES_KEY], winner);
+        assert_eq!(metadata["unrelated"], serde_json::json!(19));
+        assert_eq!(load_forward_batches(&reopened, "s").unwrap(), vec![batches[winner_index].clone()]);
+
+        let loser = &batches[1 - winner_index];
+        assert!(!reopened.set_metadata_if_unchanged(
+            FORWARD_BATCHES_KEY, None, serde_json::to_value(vec![loser]).unwrap(),
+        ).expect("old observation remains rejected after reopen"));
+        assert_eq!(read_committed_metadata(&path).0, winner_raw,
+            "stale loser must preserve the complete committed metadata row");
+        store_forward_batch(&reopened, loser).expect("fresh journal retry recovers the losing batch");
+        let recovered = load_forward_batches(&reopened, "s").unwrap();
+        assert_eq!(recovered.len(), 2);
+        for batch in &batches {
+            assert!(recovered.contains(batch), "both immutable intents must survive recovery");
+        }
+        assert_eq!(busy_errors.load(Ordering::SeqCst), 0,
+            "recovery controls must not be explained by a SQLite lock error");
         reopened.close(false); drop(reopened);
+        let (recovered_raw, metadata) = read_committed_metadata(&path);
+        assert_eq!(metadata[FORWARD_BATCHES_KEY], serde_json::to_value(&recovered).unwrap());
+        assert_eq!(metadata["unrelated"], serde_json::json!(19));
+        let restored = SandAgentDb::open(&path, 5000).unwrap();
+        assert_eq!(load_forward_batches(&restored, "s").unwrap(), recovered);
+        assert_eq!(restored.get_metadata("unrelated").unwrap(), Some(serde_json::json!(19)));
+        assert_eq!(read_committed_metadata(&path).0, recovered_raw);
+        restored.close(false); drop(restored);
         std::fs::remove_dir_all(dir).unwrap();
     }
 

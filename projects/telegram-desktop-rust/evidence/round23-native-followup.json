@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "audit": "Round23 additive native Actions followup",
+  "reviewer": "/root/resume_current_native",
+  "read_only": true,
+  "local_build_test_validator": false,
+  "production_or_github_edits": false,
+  "observations": [
+    {
+      "observed_at": "2026-11-02 20:56:10 UTC",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "run_id": 41523018920,
+      "run_status": "queued",
+      "run_conclusion": null,
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 125543544935,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success",
+          "step_count": 19
+        },
+        {
+          "id": 125543545349,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "step_count": 18
+        },
+        {
+          "id": 125543545357,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null,
+          "step_count": 0
+        },
+        {
+          "id": 125543545453,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "success",
+          "step_count": 15
+        },
+        {
+          "id": 125543545542,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success",
+          "step_count": 10
+        },
+        {
+          "id": 125543547583,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped",
+          "step_count": 0
+        }
+      ],
+      "reconciliation": {
+        "job_id": 125543545349,
+        "status": "completed",
+        "conclusion": "success",
+        "full_log": {
+          "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41523018920-125543545349.log",
+          "bytes": 353176,
+          "sha256": "c10ca945da98d697a489463898f1f20fe522982bf25a1a32fe6c9c76e2715435",
+          "encoding": "Exact UTF-8 of full connector-decoded log, preserving CR and final newline"
+        },
+        "actual_passed_counts": {
+          "human": 62,
+          "resource_upload_bounds": 3,
+          "forward_sharebox": 1,
+          "forward_batches": 12,
+          "agent_send_nonce": 4,
+          "settlement_credential": 3,
+          "forward_http": 1
+        },
+        "failed": 0,
+        "ignored": 0,
+        "fixed_case": {
+          "name": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling",
+          "result": "ok",
+          "log_timestamp": "2026-11-02T20:52:52.2297180Z"
+        },
+        "resolves": {
+          "head_sha": "afb34b49c5964524a887088f1095070b75cfdf8b",
+          "run_id": 41522324008,
+          "job_id": 125541192099,
+          "error": "E0382: borrowed moved runtime",
+          "fix_commit": "106bb95ba97ef7722e9523285783824393039bc0",
+          "fixed_file_blob": "2e032c705fcec8256dd66476807dd1fd683625db"
+        },
+        "artifact": {
+          "id": 13178302134,
+          "name": "native-message-reconciliation-106bb95ba97ef7722e9523285783824393039bc0",
+          "size_in_bytes": 35255,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178302134",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178302134/zip",
+          "expired": false,
+          "created_at": "2026-11-02T20:54:00Z",
+          "expires_at": "2027-01-31T20:51:27Z",
+          "updated_at": "2026-11-02T20:54:00Z",
+          "digest": "sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+          "workflow_run": {
+            "id": 41523018920,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "106bb95ba97ef7722e9523285783824393039bc0"
+          }
+        }
+      },
+      "shipping": {
+        "job_id": 125543545357,
+        "status": "queued",
+        "conclusion": null,
+        "steps": 0,
+        "log_fetched": false,
+        "reason": "No terminal shipping job exists; no pass claim."
+      },
+      "other_completed_jobs_scope": "UI, Electron and Windows conclusions were read from job API. Their complete logs were not fetched in this followup; this record does not invent new per-test execution counts for them.",
+      "acceptance_limits": [
+        "106bb95 predates root's new Feature10 integration; it cannot cover those additional cases.",
+        "The workflow is still queued because shipping is queued; no full native pass or current shipping acceptance is claimed.",
+        "This historical evidence is stored separately and does not change the frozen native-current.json.",
+        "Formal publisher, real signed package acceptance and independent ACCEPT remain unfulfilled."
+      ]
+    }
+  ]
+}

@@ -119,6 +119,73 @@ Required for this slice:
    `resolve_network_worker_executable`, and its packaged acceptance records that
    resource before any production release promotion.
 
+### Bounded listener ownership (FDN-WORKER-LISTEN-01)
+
+At `e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e`, `streamListen` transfers an
+Accept result through a buffered channel. If the timeout branch wins after
+Accept succeeds, the connection can remain in that channel, outside `streams`;
+closing the listener does not reclaim an already accepted connection. This is
+a source-observed ownership defect, not an executed pre-fix reproduction.
+
+The existing worker must own the listener until a matching connection is
+admitted or the bounded attempt fails. Cancellation/deadline closes the listener
+and unblocks Accept. Every non-nil connection that is not transferred to the
+existing session map must be closed, including results arriving after cancellation
+and a connection returned together with an Accept error. Accept errors end the
+attempt rather than spin until its deadline. Wrong peers are closed and may be
+followed by another accept only within the same deadline. The cancellation check
+before successful admission is the transfer boundary; cancellation after transfer
+must not close the caller-owned connection. Close the listener on every exit.
+
+Keep the existing tailnet peer/port checks, session limits, wire event/error codes,
+private stdin protocol, process owner and pinned dependencies. Do not add a
+parallel transport, change authorization or make unrelated command scheduling
+asynchronous. Existing parent-EOF and real-service qualification remain required.
+
+FDN-WORKER-LISTEN-AC-01 requires deterministic Actions-only cases for an expired
+attempt before Accept, cancellation of a blocked Accept, a successful connection
+returned after cancellation, wrong-peer rejection followed by a usable matching
+connection, and terminal Accept failure with or without a returned connection.
+Use controlled listener scheduling and actual connection EOF/read/write observations;
+timeouts in tests are hang guards, not probabilistic race timing. Preserve the
+existing 13 Go cases and execute the resulting 18-case suite at the containing H.
+Run the existing cross-platform worker and Host supervisor checks, plus the actual
+macOS binary source check. These bounded tests do not grant live-network, signed
+package, source/legal or independent acceptance. Rollback changes code only and
+does not migrate or delete worker state.
+
+### Whole-frame receive budget (FDN-HOST-FRAME-01)
+
+At `e711505dbc44bde087595c10a060f5ae6deb5847`, the production
+`RemoteComputerTarget` reader gives every private-frame fragment a new 15-second
+timeout. A peer sending incomplete fragments can therefore hold the supervisor
+inside one poll across many such windows, delaying normal Host shutdown and
+stream cleanup. This is a source-observed defect, not an executed pre-fix run.
+
+The existing reader must create one monotonic 15-second deadline for the whole
+frame. Each read receives only the remaining whole-millisecond budget; less than
+one millisecond remaining fails closed before another read. Check the same
+deadline after a response and reject even a complete frame received too late.
+Fragments and empty reads must never refresh that deadline. Preserve the 32 KiB
+bound, newline/trailing-whitespace rules, peer and generation checks, authorization
+and operation claims. Timeout follows the existing transport-error and
+`serve_private_request*` stream-close path, before parsing or executing a request.
+
+The worker response wait retains its existing one-second IPC allowance and stream
+close retains its existing bounded wait. This change bounds frame admission; it
+does not promise instantaneous supervisor stop or replace the separate handling
+needed for an unknown listen/dial outcome. Do not introduce a new transport owner,
+modify the wire schema, change dependency versions or migrate network state.
+
+FDN-HOST-FRAME-AC-01 requires Actions-only behavioral tests of the production frame
+reader with a controlled monotonic clock and read responses: decreasing fragment
+budgets, exhaustion despite continued fragments, rejection of a late complete
+frame, expiry before any read, accepted bounded framing and rejected malformed or
+oversized framing. Keep the existing Host owner, IPC, authorization/journal and
+native wiring suites. Record actual tests and exact H; source-string checks alone
+do not satisfy the new behavior gate. Live-network, package, full shutdown and
+independent acceptance remain separate requirements.
+
 ## Non-goals / still pending
 
 This slice does not satisfy G02/G03/G05/G16 by itself. Still pending:

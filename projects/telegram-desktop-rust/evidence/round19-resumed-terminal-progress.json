@@ -663,7 +663,31 @@
     "integration_note": "Use authored_blobad000f575f846d612485aff645f7a1af69eb8424, not previousf247cd7. Root must re-read the latest checkpoint and compare the remote source blob before non-force expected-head CAS.",
     "containing_source_sha": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
     "exact_head_native_run": 41519648699,
-    "exact_head_execution_status": "pending; authored assertions are not acceptance evidence"
+    "exact_head_execution_status": "pending; authored assertions are not acceptance evidence",
+    "qualified_execution": {
+      "head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+      "run_id": 41520997949,
+      "job_id": 125536673830,
+      "source_blob": "ad000f575f846d612485aff645f7a1af69eb8424",
+      "counts": {
+        "Human": 54,
+        "resource_bounds": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "Agent": 4,
+        "credential": 3,
+        "authenticated_forward_HTTP": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "expanded_cases": {
+        "source_blob": "ad000f575f846d612485aff645f7a1af69eb8424",
+        "stale_same_batch_snapshot_cannot_regress_completed_destination": "passed",
+        "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover": "passed",
+        "exact_head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f"
+      },
+      "scope": "Current journal assertions executed; other pending jobs and full product acceptance remain separate."
+    }
   },
   "real_package": {
     "discovery": "Latest package run returned in descending main-branch run list, as read during this audit; package-source predates audited current H.",
@@ -1840,7 +1864,7 @@
     "agent_network_file_total_cases": 3,
     "packaged_file_total_cases": 1,
     "local_executable_validation": false,
-    "execution": "pending containing-commit Actions",
+    "execution": "completed/success; actual archive bytes, JSON, geometry, traces and four PNGs verified",
     "signed_package_acceptance": false,
     "macos_window_controls_limit": "When controls are native and absent from DOM, report reserved-band-geometry-only and nativeButtonActionsExecuted=0; no native button click claim.",
     "static_review": {
@@ -1849,6 +1873,2273 @@
       "execution_performed": false
     },
     "ledger_anchor": "Existing FBCP-NMR-001 test evidence already references this same receipt; this is release regression evidence, not new source-review completion.",
-    "independent_ACCEPT": false
+    "independent_ACCEPT": false,
+    "independent_static_review": {
+      "schema": "fabushi.static-review.v1",
+      "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 19,
+      "reviewer": "/root/final_journal",
+      "scope": "Read-only independent static review of six frozen Plugins Close candidate diffs and their production, Electron harness, and CI dependencies",
+      "candidateManifest": "current-r19-plugins/delivery-manifest.json",
+      "candidateBaseHead": "59b0351133d487ded771f0e23dcecf480813f721",
+      "candidatePatchSha256": "ee2a3c24a9da555bbe6b4d79af5ff4af6d785458fed498191cabbc30f42cf961",
+      "parentReportedLaterBaseCheck": {
+        "head": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+        "allSixBaseBlobsUnchanged": true,
+        "independentlyRepeatedByThisReviewer": false
+      },
+      "candidateBlobs": [
+        {
+          "path": "frontend/src/production/ProductionRenderer.tsx",
+          "base": "1f46fbaa9d75e4375298b144f7c505e3f83aa9f5",
+          "candidate": "1c527e9f1bf25001eaa000db7b9a1736341f4344"
+        },
+        {
+          "path": "frontend/src/recovered/features/plugins/overlay/browser.css",
+          "base": "2bf5345b56700c8c4c1d890155f0a9d1c7890812",
+          "candidate": "1590e2dccf7a1158f102a8433554da1bf8f7ff9f"
+        },
+        {
+          "path": "desktop/e2e/agent-network-responsive.spec.ts",
+          "base": "0954a11147b77275e1dc2043921141f6d397ed3c",
+          "candidate": "77f3e036ad582881cc8b1819d4d9402d6456a7e8"
+        },
+        {
+          "path": "desktop/e2e/openbot-packaged-acceptance.spec.ts",
+          "base": "4075f76ec7e4b74e2e219cb3f49e984bd96132a6",
+          "candidate": "968c74e42785c492cd90c7b88ec6f99e5f37194b"
+        },
+        {
+          "path": "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
+          "base": "325de5754ef1cb2667365447a4ec189a1dcc5bf3",
+          "candidate": "b45cbf781bbdb428648f94a23e3c9cc2f96de227"
+        },
+        {
+          "path": ".github/workflows/plugins-window-close.yml",
+          "base": null,
+          "candidate": "4f9eb1703e9a85f530777c42c32c96fd755ac8d4"
+        }
+      ],
+      "reviewedDependencies": [
+        {
+          "path": "desktop/package.json",
+          "blob": "1e42e3f84156dfebbf272123812f87154efae80d"
+        },
+        {
+          "path": "desktop/playwright.config.ts",
+          "blob": "5d93cc52f2d73dbaf60b52458ce494d1255817b7"
+        },
+        {
+          "path": "desktop/scripts/stage-host.mjs",
+          "blob": "83c1f868d3df62683a216e1523e2a9ef5cc01ae2"
+        },
+        {
+          "path": ".github/workflows/desktop-chat-parity-ci.yml",
+          "blob": "c47e05a23ec9d8643a1e7ade0b8e3a53ecfc6484"
+        },
+        {
+          "path": "frontend/src/recovered/features/window-chrome/model.ts",
+          "blob": "6bd46aa4ff172a29afad7926d789b66da88685ec"
+        },
+        {
+          "path": "frontend/src/recovered/features/window-chrome/view.tsx",
+          "blob": "2c2668290ba69f9b70f91322ff81e6b72bdb22e5"
+        },
+        {
+          "path": "frontend/src/recovered/features/window-chrome/view.css",
+          "blob": "9f50cbcd9aa6da8d8b56cb291b627fe427165f72"
+        },
+        {
+          "path": "frontend/src/production/production.css",
+          "blob": "6a3738d98a07a7b2a81194c6666a2fe868ace80a"
+        },
+        {
+          "path": "frontend/src/recovered/features/plugins/overlay/view.tsx",
+          "blob": "d1b80a3c0d850b9c637faf3ca4e9f98ada004625"
+        },
+        {
+          "path": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+          "blob": "1a1efe486dd1bdabe4e1a93e11d1a430f439cedb"
+        }
+      ],
+      "findings": [
+        {
+          "id": "STACKING",
+          "result": "no-static-blocker",
+          "anchors": [
+            "ProductionRenderer.tsx:351-371,4090-4108,4403-4406",
+            "window-chrome/view.css:3-26",
+            "production.css:361-380"
+          ],
+          "claim": "The Plugins frame and WindowChrome share the sand-shell root; the actual frame, not merely the dialog child, receives fixed inset 52px 0 0, z-index 5002, and no-drag. Existing drag carrier is 4999 and chat header 5000. Plugins is the only overlay switched to this frame; existing setOverlay(null) and PluginsDesktopSurface owner remain unchanged. Reviewed shell styling does not introduce a different ancestor stacking context for these siblings."
+        },
+        {
+          "id": "POINTER_ORACLE",
+          "result": "no-static-blocker-execution-required",
+          "anchors": [
+            "agent-network-responsive.spec.ts:298-416"
+          ],
+          "claim": "Two generated top-level cases at 1024x684 and 1280x900 launch actual Electron, complete the existing loopback-auth/controlled-Host flow, assert the canonical production workspace, set and verify BrowserWindow content size, inspect center-hit/drag-band geometry, and normally click Close at most 5s. Both initial and reopened dialogs must disappear. No force click, DOM-dispatched click, or isolated replacement Plugins UI is introduced."
+        },
+        {
+          "id": "NATIVE_CONTROLS_SCOPE",
+          "result": "explicit-limitation-not-blocker",
+          "anchors": [
+            "window-chrome/view.tsx:50-54",
+            "agent-network-responsive.spec.ts:332-349,393"
+          ],
+          "claim": "Darwin returns only the drag region; Windows also has no active DOM control buttons. The macos-14 job consequently proves reserved-band geometry plus actual Plugins pointer close, not native traffic-light operations. The candidate explicitly records nativeButtonActionsExecuted=0 and reserved-band-geometry-only when no DOM controls exist. Even the DOM-control branch checks hit testing, not minimize/maximize/close actions."
+        },
+        {
+          "id": "HOST_BUILD_DEPENDENCIES",
+          "result": "no-static-blocker",
+          "anchors": [
+            "desktop/package.json:scripts.build:host:ci",
+            "desktop/scripts/stage-host.mjs",
+            "plugins-window-close.yml:46-74"
+          ],
+          "claim": "build:host:ci builds AppHost, node-agent-coordinator, and box-exec-daemon using locked CI profiles, then stage-host requires all three plus network worker. The new workflow builds network-worker first to source/fabushi-network-worker/target/ci/fabushi-network-worker, matching the staging default. Host path passed to the actual Electron harness is the staged AppHost. Runtime and renderer builds and runtime verification precede tests."
+        },
+        {
+          "id": "COUNTS_AND_BINDING",
+          "result": "no-static-blocker-execution-required",
+          "anchors": [
+            "plugins-window-close.yml:3-12,23-38,75-106",
+            "desktop/playwright.config.ts"
+          ],
+          "claim": "Checkpoint push is path-scoped; checkout and explicit equality bind github.sha. Grep selects only the two added Plugins cases, workers=1 and retries=0 override the existing CI retry default. JSON gate requires expected=2, unexpected/flaky/skipped=0 and errors=[]; always-upload preserves exact-H artifacts. Source-level counts are 2 new, 3 total in Agent Network file, 1 packaged acceptance case. No run/pass count is claimed by this static review. Focused per-test timeout stays 45000ms; workflow timeout 45 minutes; packaged global timeout stays 1200000ms."
+        },
+        {
+          "id": "PACKAGED_FAILURE_EVIDENCE",
+          "result": "parent-finding-fixed-statically",
+          "anchors": [
+            "openbot-packaged-acceptance.spec.ts:685-767,1054-1108"
+          ],
+          "claim": "Close uses a normal 10s click bounded by a 12s Node deadline, then hidden assertion. Geometry capture, screenshot and failure writes are bounded. Failure identity is written before trace flush; a trace-flush error now receives its own bounded trace-error.json and runtime log entry; final runtime.log flush occurs after cleanup. This closes the reviewed lost-last-trace-error diagnostic gap. The exact owned process is terminated if cleanup fails. Promise deadlines bound waiting rather than cancel work; process cleanup provides the final bound."
+        },
+        {
+          "id": "ACCEPTANCE_BOUNDARY",
+          "result": "remain-unaccepted",
+          "anchors": [
+            "fabushi-plugins-marketplace-open-ecosystem.md:FPM-UI-CLOSE-01",
+            "plugins-window-close.yml:scope.txt",
+            "openbot-packaged-acceptance.spec.ts:771-779"
+          ],
+          "claim": "Controlled Host/auth UI evidence is not live-service or signed-package acceptance. Actual signed candidate Close, Windows/Linux behavior, native controls, package provenance, DMG stapling metadata, and independent ACCEPT remain outside this review and require their own exact-H evidence. The prior failed signed candidate is not promoted by this static review."
+        }
+      ],
+      "verdict": "NO_STATIC_BLOCKER_FOR_INTEGRATION; EXACT_H_ACTIONS_AND_SIGNED_PACKAGE_REVALIDATION_PENDING",
+      "execution": {
+        "localTests": 0,
+        "localCompiles": 0,
+        "localValidators": 0,
+        "remoteMutations": 0,
+        "productOrGovernanceFilesEdited": 0
+      },
+      "independentAccept": false,
+      "readingScope": "All six candidate diffs and targeted affected production/harness/CI bindings. Large unchanged production files were not represented as fully deeply reviewed."
+    },
+    "containing_source_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+    "exact_head_pointer_run": 41520998019,
+    "exact_head_pointer_job": 125536673032,
+    "actual_pointer_count": 2
+  },
+  "execution_at_682": {
+    "schema_version": 1,
+    "repository": "bhrumom/fabushi-desktop",
+    "exact_head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+    "observed_at": "2026-11-02 20:54:47 UTC",
+    "native_run": 41520997949,
+    "pointer_run": 41520998019,
+    "jobs": [
+      {
+        "id": 125536673464,
+        "name": "native-message-electron",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "completed",
+        "conclusion": "success",
+        "runner": "GitHub Actions 1000259683",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "step_count": 18,
+        "active_steps": [],
+        "completed_at": "2026-11-02T20:39:55Z"
+      },
+      {
+        "id": 125536673715,
+        "name": "native-message-ui",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "completed",
+        "conclusion": "success",
+        "runner": "GitHub Actions 1000259684",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "step_count": 15,
+        "active_steps": [],
+        "completed_at": "2026-11-02T20:39:19Z"
+      },
+      {
+        "id": 125536673830,
+        "name": "native-message-reconciliation",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "completed",
+        "conclusion": "success",
+        "runner": "GitHub Actions 1000259682",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "step_count": 18,
+        "active_steps": [],
+        "completed_at": "2026-11-02T20:43:06Z"
+      },
+      {
+        "id": 125536673874,
+        "name": "windows-update-publisher",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "completed",
+        "conclusion": "success",
+        "runner": "GitHub Actions 1000259685",
+        "labels": [
+          "windows-2025"
+        ],
+        "step_count": 10,
+        "active_steps": [],
+        "completed_at": "2026-11-02T20:39:32Z"
+      },
+      {
+        "id": 125536674079,
+        "name": "native-message-shipping-compile",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "queued",
+        "conclusion": null,
+        "runner": "",
+        "labels": [
+          "macos-15"
+        ],
+        "step_count": 0,
+        "active_steps": [],
+        "completed_at": null
+      },
+      {
+        "id": 125536675994,
+        "name": "native-auth-and-journal",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "completed",
+        "conclusion": "skipped",
+        "runner": null,
+        "labels": [],
+        "step_count": 0,
+        "active_steps": [],
+        "completed_at": "2026-11-02T20:38:03Z"
+      }
+    ],
+    "pointer_jobs": [
+      {
+        "id": 125536673032,
+        "name": "plugins-close-pointer",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "status": "completed",
+        "conclusion": "success",
+        "runner": "GitHub Actions 1000259737",
+        "labels": [
+          "macos-14"
+        ],
+        "step_count": 22,
+        "active_steps": [],
+        "completed_at": "2026-11-02T20:49:57Z"
+      }
+    ],
+    "actual_completed_counts": {
+      "native_ui": {
+        "Transcript": 20,
+        "Human_cursor": 17,
+        "forward_settlement": 5,
+        "Chromium_dialog": 16,
+        "production_renderer_compile": "success"
+      },
+      "Electron": {
+        "carrier": 10,
+        "native_auth": 8,
+        "package_resource_fixture": 3,
+        "update_source": 16,
+        "Windows_publisher_policy": 28,
+        "macos_metadata": 18,
+        "promotion_consumer": 6,
+        "main_preload_compile": "success"
+      },
+      "Windows_native_publisher": 11,
+      "reconciliation": {
+        "Human": 54,
+        "resource_bounds": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "Agent": 4,
+        "credential": 3,
+        "authenticated_forward_HTTP": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "journal_expanded_cases": {
+        "source_blob": "ad000f575f846d612485aff645f7a1af69eb8424",
+        "stale_same_batch_snapshot_cannot_regress_completed_destination": "passed",
+        "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover": "passed",
+        "exact_head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f"
+      },
+      "Plugins_pointer": {
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "retries": 0,
+        "normal_pointer_Close_clicks": 4,
+        "initial_reopened_geometry_records": 4
+      }
+    },
+    "actual_Plugins_pointer_count": 2,
+    "pointer_result_status": "completed/success; actual archive bytes, JSON, geometry, traces and four PNGs verified",
+    "pending_native": {
+      "shipping": {
+        "status": "queued",
+        "job_id": 125536674079,
+        "runner": "",
+        "step_count": 0,
+        "actual_production_process_controls4": "not-run",
+        "six_proxy_permutations": "not-run",
+        "actual_AppHost_copy": "not-run"
+      }
+    },
+    "source_blobs": {
+      "native_workflow": "c73f272907aedcd8672a3138391e2f5c6eb1171c",
+      "pointer_workflow": "4f9eb1703e9a85f530777c42c32c96fd755ac8d4",
+      "journal": "ad000f575f846d612485aff645f7a1af69eb8424",
+      "Plugins_test": "77f3e036ad582881cc8b1819d4d9402d6456a7e8",
+      "ProductionRenderer": "1c527e9f1bf25001eaa000db7b9a1736341f4344",
+      "Plugins_CSS": "1590e2dccf7a1158f102a8433554da1bf8f7ff9f",
+      "Human_test_source": "d2811b959140086091d62971ee945448ead57578"
+    },
+    "authored_Human_functions": {
+      "count": 54,
+      "note": "Read-only source count; never substituted for actual cargo results."
+    },
+    "scope": "Native UI and Plugins pointer results are separately executed at this exact H. Plugins actual Electron/controlled Host/loopback auth cases passed; signed package, real service, native window button actions and independent ACCEPT remain unaccepted.",
+    "artifacts_metadata_only": [
+      {
+        "id": 13177407850,
+        "name": "native-message-reconciliation-682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "size_in_bytes": 40111,
+        "digest": "sha256:3149f5fcef6f802c34ec1e568539774347b72b7b91f5c57c47c90a93a6af1896"
+      },
+      {
+        "id": 13177358046,
+        "name": "native-message-electron-682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "size_in_bytes": 14005,
+        "digest": "sha256:da985b0807488e850ab1d594575002881fc71def6a3b6575d84d6d2167779323"
+      },
+      {
+        "id": 13177028845,
+        "name": "native-message-ui-682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "size_in_bytes": 226754,
+        "digest": "sha256:3033b506f72b5f92d25119938594c440f841f9a6e52043730363d30153be37bc"
+      },
+      {
+        "id": 13176459324,
+        "name": "windows-update-publisher-682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "size_in_bytes": 1824,
+        "digest": "sha256:2a2781430ebe752f4b6c23f62d6128d280a2457705d884a14d12ae0cbe622e74"
+      }
+    ],
+    "full_logs": [
+      "job-125536673464.log",
+      "job-125536673715.log",
+      "job-125536673874.log",
+      "job-125536673830.log",
+      "job-125536673032.log"
+    ],
+    "identities": "log-identities.json",
+    "no_old_head_reuse": true,
+    "no_remote_mutations": true,
+    "no_reruns_or_cancellations": true,
+    "no_local_product_validation": true,
+    "acceptance": false,
+    "counting_rule": "Actual test summaries counted once; command echo and grep output are not additional test runs.",
+    "observation_history": [
+      {
+        "observed_at": "2026-11-02 20:44:10 UTC",
+        "pointer_result_status": "in_progress building controlled network worker; actual two pointer cases remain pending",
+        "actual_Plugins_pointer_count": 0,
+        "pending_native": {
+          "shipping": {
+            "status": "queued; no runner or steps",
+            "actual_production_process_controls4": "not-run",
+            "six_proxy_permutations": "not-run",
+            "actual_AppHost_copy": "not-run"
+          }
+        }
+      }
+    ],
+    "pointer_artifact_verification": "pointer-artifact-verification.json",
+    "pointer_artifact_actual_archive_sha256": "c1eb66fd578f8321ca2f776d0566e2476f5990eaaf63aae435514efd52ae8f10",
+    "native_run_state": "queued",
+    "shipping_latest": {
+      "id": 125536674079,
+      "name": "native-message-shipping-compile",
+      "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+      "status": "queued",
+      "conclusion": null,
+      "runner": "",
+      "labels": [
+        "macos-15"
+      ],
+      "step_count": 0,
+      "active_steps": [],
+      "completed_at": null
+    },
+    "pointer_artifact_metadata": {
+      "id": 13177399337,
+      "node_id": "MDg6QXJ0aWZhY3QxMzE3NzM5OTMzNw==",
+      "name": "plugins-close-pointer-682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+      "size_in_bytes": 347040,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177399337",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13177399337/zip",
+      "expired": false,
+      "digest": "sha256:c1eb66fd578f8321ca2f776d0566e2476f5990eaaf63aae435514efd52ae8f10",
+      "created_at": "2026-11-02T20:48:18Z",
+      "updated_at": "2026-11-02T20:48:18Z",
+      "expires_at": "2027-01-31T20:38:03Z",
+      "workflow_run": {
+        "id": 41520998019,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f"
+      }
+    },
+    "pointer_artifact_archive_downloaded_and_verified": true,
+    "complete_log_identities": [
+      {
+        "job_id": 125536673464,
+        "decoded_utf8_bytes": 86517,
+        "sha256": "a5a662ea61d85bda9c590e68b6678e02e017558cbbf70d178eb072bdbe6d6f32",
+        "file": "job-125536673464.log"
+      },
+      {
+        "job_id": 125536673715,
+        "decoded_utf8_bytes": 83057,
+        "sha256": "6a3a8b20879791a83e690fe3607ce4d479586e9f9b47f065bf13df92571629a2",
+        "file": "job-125536673715.log"
+      },
+      {
+        "job_id": 125536673874,
+        "decoded_utf8_bytes": 35987,
+        "sha256": "8f4bbe8154c1a6326a2b879c955cda7ed6516659f96acf379d662a75a05eb744",
+        "file": "job-125536673874.log"
+      },
+      {
+        "job_id": 125536673830,
+        "decoded_utf8_bytes": 406343,
+        "sha256": "92a13d99978eabaa97f2ad4de086007222e833932e35a18323d866786415e7a8",
+        "file": "job-125536673830.log"
+      },
+      {
+        "job_id": 125536673032,
+        "decoded_utf8_bytes": 255981,
+        "sha256": "c84aac825cb32d70cdf1cb0d4532eac5ed99af3ae4b06fc46c0d301c6ca97b89",
+        "file": "job-125536673032.log"
+      }
+    ],
+    "latest_shipping_observation": {
+      "repository": "bhrumom/fabushi-desktop",
+      "exact_head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+      "run_id": 41520997949,
+      "observed_at": "2026-11-02 21:00:09 UTC",
+      "endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41520997949/jobs?per_page=100",
+      "job": {
+        "id": 125536674079,
+        "run_id": 41520997949,
+        "workflow_name": "Native service contracts",
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41520997949",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUfmb_c8AAAAdOpGhHw",
+        "head_sha": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125536674079",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41520997949/job/125536674079",
+        "status": "queued",
+        "conclusion": null,
+        "created_at": "2026-11-02T20:38:04Z",
+        "started_at": "2026-11-02T20:38:04Z",
+        "completed_at": null,
+        "name": "native-message-shipping-compile",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125536674079",
+        "labels": [
+          "macos-15"
+        ],
+        "runner_id": 0,
+        "runner_name": "",
+        "runner_group_id": 0,
+        "runner_group_name": ""
+      }
+    }
+  },
+  "external_ffi_read_only_audit": {
+    "schemaVersion": 1,
+    "task": "round19 bounded FFI consumer audit",
+    "repository": "bhrumom/fabushi-desktop",
+    "head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+    "mode": "read-only source audit",
+    "acceptanceGranted": false,
+    "scope": {
+      "cargoManifestsReviewed": 68,
+      "cargoScope": "Tracked Cargo.toml outside source/mahayana/codex-rs; exact member list retained in source-manifest.json",
+      "sourceSnapshots": 95,
+      "allSnapshotBytesMatchGitHubBlobs": true,
+      "shippingPaths": "Desktop package/build/stage and Electron Coordinator/AppHost launcher chain; CLI and stdio gateway; FFI exports/tests; separate mobile ABI",
+      "swiftPaths": [
+        "desktop/scripts/macos-session-video.swift"
+      ],
+      "nonVendoredCHeaderPaths": [],
+      "excluded": "No unrelated vendor traversal, other repository audit, external native consumer inventory, credential files, running services or package execution. Default-branch code-search zero results were discarded as exact-H absence evidence."
+    },
+    "conclusions": [
+      {
+        "classification": "production consumers of direct Rust Host, not FFI",
+        "component": "CLI and stdio gateway",
+        "finding": "Both RuntimeHandle structs own MahayanaHost and create it directly; CLI manifest selects desktop-full/local-only on mahayana-host and declares no mahayana-ffi dependency.",
+        "evidence": [
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml",
+            "blob": "ea55cc299e16a6cc309d17a118a654f83be47be2",
+            "lines": "26-44",
+            "symbol": "dependencies",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+            "blob": "e15f6f75da0bd29581fe629585a64f4edad7c013",
+            "lines": "1858-1925",
+            "symbol": "RuntimeHandle/create_with_config",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-cli/src/main.rs"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+            "blob": "57994430a95dad45a0deb5ca879623e40b98c592",
+            "lines": "302-370",
+            "symbol": "RuntimeHandle/create_with_config",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs"
+          }
+        ]
+      },
+      {
+        "classification": "shipping production composition",
+        "component": "Electron to AppHost",
+        "finding": "The emitted Electron utility carrier spawns a Rust Coordinator, passing an AppHost executable path. The Coordinator spawns that binary with pipes. AppHost constructs UnifiedAppHost -> AppHost -> FeatureHostController; the Electron production branch creates MahayanaHost::create_with_session_transcript_owner. This inspected path does not call or load the C ABI.",
+        "evidence": [
+          {
+            "path": "source/electron-main/entry.ts",
+            "blob": "3c877893f5f6478251587a1130e08328c9cf15f7",
+            "lines": "48-59",
+            "symbol": "production Coordinator binding",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/electron-main/entry.ts"
+          },
+          {
+            "path": "source/electron-main/coordinator/production-provider.ts",
+            "blob": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+            "lines": "337-342,445-497",
+            "symbol": "createProductionCoordinatorAdapter/createCoordinatorRuntime",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/electron-main/coordinator/production-provider.ts"
+          },
+          {
+            "path": "source/electron-main/coordinator/coordinator-runtime.ts",
+            "blob": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+            "lines": "128-139",
+            "symbol": "launchCoordinator",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/electron-main/coordinator/coordinator-runtime.ts"
+          },
+          {
+            "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+            "blob": "1b6192d01594e691171c36397a63dda154b41565",
+            "lines": "57-63",
+            "symbol": "dependencies.fork",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/electron-main/coordinator/coordinator-launcher.ts"
+          },
+          {
+            "path": "source/electron-main/coordinator/rust-coordinator-carrier.ts",
+            "blob": "89865fc448dc715225953c811cba11c7a3c33572",
+            "lines": "42-60,114-127",
+            "symbol": "appHostExecutablePath/spawn",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/electron-main/coordinator/rust-coordinator-carrier.ts"
+          },
+          {
+            "path": "source/node-agent-coordinator/src/main.rs",
+            "blob": "279dc93569effbba8f49918d9293325dbb0c4ac8",
+            "lines": "1418-1455",
+            "symbol": "spawn_host/Command::new",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/node-agent-coordinator/src/main.rs"
+          },
+          {
+            "path": "source/host/app/src/main.rs",
+            "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+            "lines": "11402-11417",
+            "symbol": "UnifiedAppHost::new",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/host/app/src/main.rs"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+            "blob": "4f0b2d72fc07817de401bb5d378bf5312554e731",
+            "lines": "179-183",
+            "symbol": "AppHost::new",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+            "blob": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+            "lines": "732-755,1868-1955",
+            "symbol": "create_feature_host",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+            "blob": "56cc9788ae104e1acce98841efab7274f5548f8b",
+            "lines": "430-490",
+            "symbol": "production creation and explicit Test-backend branch",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs"
+          }
+        ]
+      },
+      {
+        "classification": "shipping build/package declarations",
+        "component": "Desktop resource path",
+        "finding": "package.json builds source/host/app, node-agent-coordinator and box-exec-daemon. stage-host copies those executables plus the network worker. The bin resource allowlist contains these executable names, without libmahayana_runtime. The inspected Electron build script bundles JS carrier entries and declares no FFI loader. AppHost Cargo.lock has no mahayana-ffi package. These are source/configuration facts; no H-bound binary inspection was performed by this audit.",
+        "evidence": [
+          {
+            "path": "desktop/package.json",
+            "blob": "1e42e3f84156dfebbf272123812f87154efae80d",
+            "lines": "15-23,83-101",
+            "symbol": "build scripts and extraResources bin allowlist",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/desktop/package.json"
+          },
+          {
+            "path": "desktop/scripts/stage-host.mjs",
+            "blob": "83c1f868d3df62683a216e1523e2a9ef5cc01ae2",
+            "lines": "19-81",
+            "symbol": "executable sources and copyFileSync",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/desktop/scripts/stage-host.mjs"
+          },
+          {
+            "path": "desktop/scripts/build-electron-runtime.mjs",
+            "blob": "da8187a7da30fc4770988adfd3b44407028d3a53",
+            "lines": "39-70",
+            "symbol": "Electron main and Rust carrier bundle entries",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/desktop/scripts/build-electron-runtime.mjs"
+          },
+          {
+            "path": "source/host/app/Cargo.lock",
+            "blob": "c42f818db188c0b11f8ddf411f8dadc82f45fa69",
+            "lines": "whole manifest package-name lookup",
+            "symbol": "no mahayana-ffi package",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/host/app/Cargo.lock"
+          }
+        ]
+      },
+      {
+        "classification": "retained compatibility ABI producer",
+        "component": "mahayana-ffi",
+        "finding": "The crate remains a workspace member and defaults to rlib; comments mention explicit staticlib/cdylib bundle builds, but those comments do not establish a current shipping consumer. No other inspected Cargo manifest declares a dependency on this crate. It exposes ten C/JSON symbols and still directly depends on fabushi-telegram-runtime. force_link takes addresses of five Telegram C symbols, so retained source-level legacy compatibility exists even though the inspected Desktop/CLI/gateway chain bypasses it.",
+        "exports": [
+          "mahayana_runtime_create",
+          "mahayana_runtime_execute",
+          "mahayana_runtime_receive",
+          "mahayana_runtime_interrupt",
+          "mahayana_runtime_resolve_approval",
+          "mahayana_runtime_close",
+          "mahayana_runtime_last_error",
+          "mahayana_product_execute",
+          "mahayana_runtime_force_link",
+          "mahayana_runtime_free_string"
+        ],
+        "legacyAnchorSymbols": [
+          "fabushi_telegram_create_client",
+          "fabushi_telegram_create_persistent_client",
+          "fabushi_telegram_execute",
+          "fabushi_telegram_close_client",
+          "fabushi_telegram_free_string"
+        ],
+        "evidence": [
+          {
+            "path": "source/mahayana/mahayana-rs/Cargo.toml",
+            "blob": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+            "lines": "2-60",
+            "symbol": "workspace members",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/Cargo.toml"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml",
+            "blob": "8b0d6b7671cacbb52760057d15edd72349716bf0",
+            "lines": "1-35",
+            "symbol": "rlib/dependencies/features",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+            "blob": "1fd7fa7d8881477de368172af73f7210e09c060c",
+            "lines": "39-250",
+            "symbol": "exported C ABI and force_link",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs"
+          }
+        ]
+      },
+      {
+        "classification": "development/ABI contracts, not product consumers",
+        "component": "in-crate tests and Actions gate",
+        "finding": "Concrete calls to the exported FFI functions are present in three lifecycle/error tests in lib.rs plus four legacy-handoff tests. The existing Actions workflow selects this seven-test library gate. Seven is an authored source count here, not a new execution result.",
+        "authoredTopLevelTests": 7,
+        "testsExecutedByAudit": 0,
+        "evidence": [
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+            "blob": "1fd7fa7d8881477de368172af73f7210e09c060c",
+            "lines": "310-360",
+            "symbol": "cfg(test) tests",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs",
+            "blob": "9c9fd7da789bc84450653bc9e207e721d1f4246b",
+            "lines": "1-202",
+            "symbol": "four exported-ABI tests",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs"
+          },
+          {
+            "path": ".github/workflows/native-service-contracts.yml",
+            "blob": "c73f272907aedcd8672a3138391e2f5c6eb1171c",
+            "lines": "310-311",
+            "symbol": "FFI --lib test command and seven-test count oracle",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/.github/workflows/native-service-contracts.yml"
+          }
+        ]
+      },
+      {
+        "classification": "separate native ABI producer, not an old-FFI consumer",
+        "component": "mahayana-app-host-mobile",
+        "finding": "The mobile crate builds mahayana_app_host cdylib/staticlib and exports mahayana_app_host_* entry points over UnifiedAppHost directly. It does not depend on mahayana-ffi. This does not prove that external iOS/Android apps have migrated from the older ABI.",
+        "evidence": [
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-app-host-mobile/Cargo.toml",
+            "blob": "3243b1bda7feadd4e11135142021b6bf6928c9fd",
+            "lines": "10-20",
+            "symbol": "artifact types/direct dependencies",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-app-host-mobile/Cargo.toml"
+          },
+          {
+            "path": "source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs",
+            "blob": "03b52043164e6039f929e4c5c02cd261e57a06b7",
+            "lines": "1-165",
+            "symbol": "independent create/dispatch/destroy/free ABI",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs"
+          }
+        ]
+      },
+      {
+        "classification": "repository-local non-production Swift",
+        "component": "macos-session-video.swift",
+        "finding": "The single tracked Swift file in this snapshot is the session-video helper; its imports and source contain no Mahayana FFI loading/calls. No non-vendored C headers are present in the exact tree. Neither fact establishes absence of external application wrappers or generated/private headers.",
+        "evidence": [
+          {
+            "path": "desktop/scripts/macos-session-video.swift",
+            "blob": "9cee416603834fef04ab88fbe8ce59fc43efccdd",
+            "lines": "1-215",
+            "symbol": "recording helper",
+            "url": "https://github.com/bhrumom/fabushi-desktop/blob/682aea58b4fbac7b1b509c30fd565a12c4af5a2f/desktop/scripts/macos-session-video.swift"
+          }
+        ]
+      }
+    ],
+    "unknowns": [
+      {
+        "id": "external-ffi-consumers",
+        "status": "unknown",
+        "detail": "External native apps, private/generated headers, build scripts, published archives, plugin/native integrations and deployed older versions were not inspected. No repo-local match is not evidence of global absence.",
+        "releaseCondition": "Identify each actual external consumer/build/link step and exact source/artifact version; prove migration or approved ABI compatibility/deprecation and retained-data/rollback requirements."
+      }
+    ],
+    "abiRetentionAssessment": {
+      "knownNeedForCurrentInspectedDesktopGraph": "not demonstrated; that graph uses direct Rust Host",
+      "needOutsideThisRepository": "unknown",
+      "removalJustifiedByThisAudit": false,
+      "decision": "Preserve the existing ABI pending named external-consumer and migration evidence; do not claim all legacy runtime paths have exited."
+    },
+    "evidenceLimits": {
+      "localBuildsTestsValidators": 0,
+      "productRuntimeLaunches": 0,
+      "credentialMaterialRead": false,
+      "productServiceRequests": 0,
+      "remoteMutations": 0,
+      "codeLedgerRtmChanges": 0,
+      "independentAccept": false,
+      "workflowStatements": "Only workflow source was read; this receipt does not claim a new Actions run, binary/package pass or test execution."
+    },
+    "source_manifest": {
+      "repository": "bhrumom/fabushi-desktop",
+      "head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+      "readOnly": true,
+      "reviewMethod": "Targeted caller/transport/packaging excerpts and 68 non-vendored Cargo manifests; capture does not imply every unrelated product line was deeply reviewed.",
+      "sources": [
+        {
+          "path": ".github/workflows/native-service-contracts.yml",
+          "gitBlob": "c73f272907aedcd8672a3138391e2f5c6eb1171c",
+          "snapshotGitBlob": "c73f272907aedcd8672a3138391e2f5c6eb1171c",
+          "exactBytes": true
+        },
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "gitBlob": "fd314b8971ee4bc0ff755636dfff1b9ba1c2b9b2",
+          "snapshotGitBlob": "fd314b8971ee4bc0ff755636dfff1b9ba1c2b9b2",
+          "exactBytes": true
+        },
+        {
+          "path": "desktop/package.json",
+          "gitBlob": "1e42e3f84156dfebbf272123812f87154efae80d",
+          "snapshotGitBlob": "1e42e3f84156dfebbf272123812f87154efae80d",
+          "exactBytes": true
+        },
+        {
+          "path": "desktop/scripts/build-electron-runtime.mjs",
+          "gitBlob": "da8187a7da30fc4770988adfd3b44407028d3a53",
+          "snapshotGitBlob": "da8187a7da30fc4770988adfd3b44407028d3a53",
+          "exactBytes": true
+        },
+        {
+          "path": "desktop/scripts/check-electron-runtime-bundle.mjs",
+          "gitBlob": "279082ad89215229e3dd2d219dbf5602c73ee358",
+          "snapshotGitBlob": "279082ad89215229e3dd2d219dbf5602c73ee358",
+          "exactBytes": true
+        },
+        {
+          "path": "desktop/scripts/macos-session-video.swift",
+          "gitBlob": "9cee416603834fef04ab88fbe8ce59fc43efccdd",
+          "snapshotGitBlob": "9cee416603834fef04ab88fbe8ce59fc43efccdd",
+          "exactBytes": true
+        },
+        {
+          "path": "desktop/scripts/stage-host.mjs",
+          "gitBlob": "83c1f868d3df62683a216e1523e2a9ef5cc01ae2",
+          "snapshotGitBlob": "83c1f868d3df62683a216e1523e2a9ef5cc01ae2",
+          "exactBytes": true
+        },
+        {
+          "path": "native/mahayana-messaging/Cargo.toml",
+          "gitBlob": "9cbcc72222ca6ba4bc5252fa837756528b3fdee7",
+          "snapshotGitBlob": "9cbcc72222ca6ba4bc5252fa837756528b3fdee7",
+          "exactBytes": true
+        },
+        {
+          "path": "source/box-exec-daemon/Cargo.toml",
+          "gitBlob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+          "snapshotGitBlob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/adapters/coordinator-native.ts",
+          "gitBlob": "319a06fcca678e546b594abe40ebf5a895570299",
+          "snapshotGitBlob": "319a06fcca678e546b594abe40ebf5a895570299",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+          "gitBlob": "1b6192d01594e691171c36397a63dda154b41565",
+          "snapshotGitBlob": "1b6192d01594e691171c36397a63dda154b41565",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/coordinator/coordinator-runtime.ts",
+          "gitBlob": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+          "snapshotGitBlob": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/coordinator/production-provider.ts",
+          "gitBlob": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+          "snapshotGitBlob": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/coordinator/production-root-provider.ts",
+          "gitBlob": "24e924f3d52d41a0900314aa7c21d98804a9dc19",
+          "snapshotGitBlob": "24e924f3d52d41a0900314aa7c21d98804a9dc19",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/coordinator/rust-coordinator-carrier.ts",
+          "gitBlob": "89865fc448dc715225953c811cba11c7a3c33572",
+          "snapshotGitBlob": "89865fc448dc715225953c811cba11c7a3c33572",
+          "exactBytes": true
+        },
+        {
+          "path": "source/electron-main/entry.ts",
+          "gitBlob": "3c877893f5f6478251587a1130e08328c9cf15f7",
+          "snapshotGitBlob": "3c877893f5f6478251587a1130e08328c9cf15f7",
+          "exactBytes": true
+        },
+        {
+          "path": "source/host/Cargo.toml",
+          "gitBlob": "ebaa0140df01d0221fd35d0213b4ffce48bef9b9",
+          "snapshotGitBlob": "ebaa0140df01d0221fd35d0213b4ffce48bef9b9",
+          "exactBytes": true
+        },
+        {
+          "path": "source/host/app/Cargo.lock",
+          "gitBlob": "c42f818db188c0b11f8ddf411f8dadc82f45fa69",
+          "snapshotGitBlob": "c42f818db188c0b11f8ddf411f8dadc82f45fa69",
+          "exactBytes": true
+        },
+        {
+          "path": "source/host/app/Cargo.toml",
+          "gitBlob": "8ea5854eed44651d4692f4e97e69102a3bb00726",
+          "snapshotGitBlob": "8ea5854eed44651d4692f4e97e69102a3bb00726",
+          "exactBytes": true
+        },
+        {
+          "path": "source/host/app/src/main.rs",
+          "gitBlob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+          "snapshotGitBlob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/Cargo.toml",
+          "gitBlob": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+          "snapshotGitBlob": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-agent-codex/Cargo.toml",
+          "gitBlob": "d56fabdaa5c945be2a3747ce7170ecaf12e4f986",
+          "snapshotGitBlob": "d56fabdaa5c945be2a3747ce7170ecaf12e4f986",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-agent-kernel-bridge/Cargo.toml",
+          "gitBlob": "7a6e0a9b736afe56a684adcef96d8232034e9198",
+          "snapshotGitBlob": "7a6e0a9b736afe56a684adcef96d8232034e9198",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-agent-responses/Cargo.toml",
+          "gitBlob": "8e2193f10198e3c9d9d10a51932cd3efe8b746a9",
+          "snapshotGitBlob": "8e2193f10198e3c9d9d10a51932cd3efe8b746a9",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-agent/Cargo.toml",
+          "gitBlob": "a3d60f3037ace556d9f19e397469d9f928a00358",
+          "snapshotGitBlob": "a3d60f3037ace556d9f19e397469d9f928a00358",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-app-host-desktop/Cargo.toml",
+          "gitBlob": "539e1502d1664bfb77ecd78694e7d0ff8b2df90e",
+          "snapshotGitBlob": "539e1502d1664bfb77ecd78694e7d0ff8b2df90e",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-app-host-desktop/src/main.rs",
+          "gitBlob": "9b6b359c5ca35e9e4ccd66e0487ec741b7a662dc",
+          "snapshotGitBlob": "9b6b359c5ca35e9e4ccd66e0487ec741b7a662dc",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-app-host-mobile/Cargo.toml",
+          "gitBlob": "3243b1bda7feadd4e11135142021b6bf6928c9fd",
+          "snapshotGitBlob": "3243b1bda7feadd4e11135142021b6bf6928c9fd",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs",
+          "gitBlob": "03b52043164e6039f929e4c5c02cd261e57a06b7",
+          "snapshotGitBlob": "03b52043164e6039f929e4c5c02cd261e57a06b7",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+          "gitBlob": "0cbab8c597fcff83fc4dedd19c6ab71dbbf79efb",
+          "snapshotGitBlob": "0cbab8c597fcff83fc4dedd19c6ab71dbbf79efb",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+          "gitBlob": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+          "snapshotGitBlob": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-auth/Cargo.toml",
+          "gitBlob": "6d397d195c74e76b9e548f5b038380a52da102bf",
+          "snapshotGitBlob": "6d397d195c74e76b9e548f5b038380a52da102bf",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml",
+          "gitBlob": "ea55cc299e16a6cc309d17a118a654f83be47be2",
+          "snapshotGitBlob": "ea55cc299e16a6cc309d17a118a654f83be47be2",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs",
+          "gitBlob": "57994430a95dad45a0deb5ca879623e40b98c592",
+          "snapshotGitBlob": "57994430a95dad45a0deb5ca879623e40b98c592",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-cli/src/main.rs",
+          "gitBlob": "e15f6f75da0bd29581fe629585a64f4edad7c013",
+          "snapshotGitBlob": "e15f6f75da0bd29581fe629585a64f4edad7c013",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-commerce-control-worker/Cargo.toml",
+          "gitBlob": "b6b46042f6cf4f3be8b0a6dfb7b62c9b1781bb02",
+          "snapshotGitBlob": "b6b46042f6cf4f3be8b0a6dfb7b62c9b1781bb02",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-computer/Cargo.toml",
+          "gitBlob": "6c655664d3cab8620e72f039dcb0b2597b96838a",
+          "snapshotGitBlob": "6c655664d3cab8620e72f039dcb0b2597b96838a",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-conversation/Cargo.toml",
+          "gitBlob": "9fe4085a4b7453a2542ef1f3928d40e335c35e88",
+          "snapshotGitBlob": "9fe4085a4b7453a2542ef1f3928d40e335c35e88",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-core/Cargo.toml",
+          "gitBlob": "bb7d78ae834a8d24c90ae2e31ecf5dcc8b49f3c4",
+          "snapshotGitBlob": "bb7d78ae834a8d24c90ae2e31ecf5dcc8b49f3c4",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-feature-host/Cargo.toml",
+          "gitBlob": "63ce5d23c88b90ea6891f2768ea16e3f4e6f4eca",
+          "snapshotGitBlob": "63ce5d23c88b90ea6891f2768ea16e3f4e6f4eca",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+          "gitBlob": "56cc9788ae104e1acce98841efab7274f5548f8b",
+          "snapshotGitBlob": "56cc9788ae104e1acce98841efab7274f5548f8b",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/lib.rs",
+          "gitBlob": "a8ef28bd1c99129d0287490ca0086d4aea448de2",
+          "snapshotGitBlob": "a8ef28bd1c99129d0287490ca0086d4aea448de2",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml",
+          "gitBlob": "8b0d6b7671cacbb52760057d15edd72349716bf0",
+          "snapshotGitBlob": "8b0d6b7671cacbb52760057d15edd72349716bf0",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs",
+          "gitBlob": "9c9fd7da789bc84450653bc9e207e721d1f4246b",
+          "snapshotGitBlob": "9c9fd7da789bc84450653bc9e207e721d1f4246b",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs",
+          "gitBlob": "1fd7fa7d8881477de368172af73f7210e09c060c",
+          "snapshotGitBlob": "1fd7fa7d8881477de368172af73f7210e09c060c",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway-peer/Cargo.toml",
+          "gitBlob": "7c3a58464a76c0c2157fc115d8210f015d7837b1",
+          "snapshotGitBlob": "7c3a58464a76c0c2157fc115d8210f015d7837b1",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway-protocol/Cargo.toml",
+          "gitBlob": "8aa89b48d0df6750577ed28c10fc9b384b361a2f",
+          "snapshotGitBlob": "8aa89b48d0df6750577ed28c10fc9b384b361a2f",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-gateway/Cargo.toml",
+          "gitBlob": "a784885099d9bf5cd29160285fd314a111b95ab0",
+          "snapshotGitBlob": "a784885099d9bf5cd29160285fd314a111b95ab0",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-harness-adapters/Cargo.toml",
+          "gitBlob": "64bf68199e06f86d5aab15fc99476818e17872c3",
+          "snapshotGitBlob": "64bf68199e06f86d5aab15fc99476818e17872c3",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-harness-advanced/Cargo.toml",
+          "gitBlob": "d5bbe43415d71c31060d1c4895b9b36cba9895c4",
+          "snapshotGitBlob": "d5bbe43415d71c31060d1c4895b9b36cba9895c4",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-harness-agent/Cargo.toml",
+          "gitBlob": "1229afb700909d8f5a87f2145a5df55393d93904",
+          "snapshotGitBlob": "1229afb700909d8f5a87f2145a5df55393d93904",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-harness-protocol/Cargo.toml",
+          "gitBlob": "e69ed91b074d4a634a439acd924da0170e41dfcd",
+          "snapshotGitBlob": "e69ed91b074d4a634a439acd924da0170e41dfcd",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-harness-services/Cargo.toml",
+          "gitBlob": "333107fc1b3e036fa319369a0b7124fdce0c9ed4",
+          "snapshotGitBlob": "333107fc1b3e036fa319369a0b7124fdce0c9ed4",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-harness/Cargo.toml",
+          "gitBlob": "efd0f3029036253294bc693f6c163309ad0cbb19",
+          "snapshotGitBlob": "efd0f3029036253294bc693f6c163309ad0cbb19",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-host-protocol/Cargo.toml",
+          "gitBlob": "c0e15907d10f844c84bf9c51e6934d5865b981f5",
+          "snapshotGitBlob": "c0e15907d10f844c84bf9c51e6934d5865b981f5",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-host/Cargo.toml",
+          "gitBlob": "b90bba87f9157b9d3d3153cd7af2cc68260e2213",
+          "snapshotGitBlob": "b90bba87f9157b9d3d3153cd7af2cc68260e2213",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-js-runtime/Cargo.toml",
+          "gitBlob": "891dd40a017bba77d30537219597377f3d3a5ba1",
+          "snapshotGitBlob": "891dd40a017bba77d30537219597377f3d3a5ba1",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-kernel/Cargo.toml",
+          "gitBlob": "984c102aef9e8dbacf24463461414ee5628b3fdf",
+          "snapshotGitBlob": "984c102aef9e8dbacf24463461414ee5628b3fdf",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-mcp-runtime/Cargo.toml",
+          "gitBlob": "17bea95e071476983b0ea8cd53f2cef82bfd07c9",
+          "snapshotGitBlob": "17bea95e071476983b0ea8cd53f2cef82bfd07c9",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-miniapp-bridge/Cargo.toml",
+          "gitBlob": "76a108af7eb07688d3b585a48785421ddbea700d",
+          "snapshotGitBlob": "76a108af7eb07688d3b585a48785421ddbea700d",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-miniapp-protocol/Cargo.toml",
+          "gitBlob": "fa3a7e748beea081b4f020ba239cc720608fa0e8",
+          "snapshotGitBlob": "fa3a7e748beea081b4f020ba239cc720608fa0e8",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-miniapp/Cargo.toml",
+          "gitBlob": "adcce10fd13965b6576e244822f062e381b1ba7d",
+          "snapshotGitBlob": "adcce10fd13965b6576e244822f062e381b1ba7d",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-model/Cargo.toml",
+          "gitBlob": "2bd61ec188f47ba7500ad496a64a2b98e3e802f1",
+          "snapshotGitBlob": "2bd61ec188f47ba7500ad496a64a2b98e3e802f1",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-native-agent/Cargo.toml",
+          "gitBlob": "e32f4835b2222fd75386bcadf2b201d1232159ed",
+          "snapshotGitBlob": "e32f4835b2222fd75386bcadf2b201d1232159ed",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-native-engine/Cargo.toml",
+          "gitBlob": "9fed3f2bb54706a6e47d9f474927bc6be40df54f",
+          "snapshotGitBlob": "9fed3f2bb54706a6e47d9f474927bc6be40df54f",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-orchestrator/Cargo.toml",
+          "gitBlob": "49046b9f943d6485df37f03f601e9b8175d3cdb6",
+          "snapshotGitBlob": "49046b9f943d6485df37f03f601e9b8175d3cdb6",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-pay-worker/Cargo.toml",
+          "gitBlob": "778d1f54a13dd21a3a4fc3f9996001542a818139",
+          "snapshotGitBlob": "778d1f54a13dd21a3a4fc3f9996001542a818139",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-pay-worker/worker-compat/Cargo.toml",
+          "gitBlob": "9a30c0d24f8ea5c5f77344c3c9f5fcf0ffc34cb0",
+          "snapshotGitBlob": "9a30c0d24f8ea5c5f77344c3c9f5fcf0ffc34cb0",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-platform-core/Cargo.toml",
+          "gitBlob": "4adb3881603747aa739df409d9465f0ac60edd42",
+          "snapshotGitBlob": "4adb3881603747aa739df409d9465f0ac60edd42",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-platform-worker/Cargo.toml",
+          "gitBlob": "5fbdcfd47bf8940eded51069fd3a574cc86d17f8",
+          "snapshotGitBlob": "5fbdcfd47bf8940eded51069fd3a574cc86d17f8",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-plugin-archive-compat/Cargo.toml",
+          "gitBlob": "a7356ffdb8d5249637a8d1716b8e0a0d4d8e36d2",
+          "snapshotGitBlob": "a7356ffdb8d5249637a8d1716b8e0a0d4d8e36d2",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-plugin-host/Cargo.toml",
+          "gitBlob": "c149a6753f4abe9020a40b3578d9308ff51bfb9d",
+          "snapshotGitBlob": "c149a6753f4abe9020a40b3578d9308ff51bfb9d",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-plugin-runtime/Cargo.toml",
+          "gitBlob": "1c4d90a23e4927b00edb963b0637287663a33aa0",
+          "snapshotGitBlob": "1c4d90a23e4927b00edb963b0637287663a33aa0",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-product/Cargo.toml",
+          "gitBlob": "7c5895e323bd5727462a587429ec2c393e36b092",
+          "snapshotGitBlob": "7c5895e323bd5727462a587429ec2c393e36b092",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-runtime/Cargo.toml",
+          "gitBlob": "e06b7657a99fb61366c8ee974c035da586a30d2e",
+          "snapshotGitBlob": "e06b7657a99fb61366c8ee974c035da586a30d2e",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-secrets/Cargo.toml",
+          "gitBlob": "e0dfb3bacd6f1eca0ac3def90922219c0efc9ee0",
+          "snapshotGitBlob": "e0dfb3bacd6f1eca0ac3def90922219c0efc9ee0",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-social/Cargo.toml",
+          "gitBlob": "5a279afe9c067c78d1dc9460047c4360a0426262",
+          "snapshotGitBlob": "5a279afe9c067c78d1dc9460047c4360a0426262",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml",
+          "gitBlob": "f43109356f1f486a82a2d0120f6e78808c431c40",
+          "snapshotGitBlob": "f43109356f1f486a82a2d0120f6e78808c431c40",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-test-driver-protocol/Cargo.toml",
+          "gitBlob": "025808036a174e45632d9208e123dd108d40d317",
+          "snapshotGitBlob": "025808036a174e45632d9208e123dd108d40d317",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-tool-host/Cargo.toml",
+          "gitBlob": "21d1b358b13486e0376a98adabec72551c0be135",
+          "snapshotGitBlob": "21d1b358b13486e0376a98adabec72551c0be135",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-tui-compat/Cargo.toml",
+          "gitBlob": "190448a2fc6f83e6c93ff625a89a4bc13d937809",
+          "snapshotGitBlob": "190448a2fc6f83e6c93ff625a89a4bc13d937809",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml",
+          "gitBlob": "4c3aaad130be4a5c8e1439da9cbca71b9cfdd902",
+          "snapshotGitBlob": "4c3aaad130be4a5c8e1439da9cbca71b9cfdd902",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+          "gitBlob": "4f0b2d72fc07817de401bb5d378bf5312554e731",
+          "snapshotGitBlob": "4f0b2d72fc07817de401bb5d378bf5312554e731",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-web/Cargo.toml",
+          "gitBlob": "cce019c96379defe51ac70940427e6cf3e6eb5f6",
+          "snapshotGitBlob": "cce019c96379defe51ac70940427e6cf3e6eb5f6",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/mahayana-workspace-engine/Cargo.toml",
+          "gitBlob": "4d2ddf5276da6e83145fafab270f2bce0c9d1874",
+          "snapshotGitBlob": "4d2ddf5276da6e83145fafab270f2bce0c9d1874",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/official-miniapps/Cargo.toml",
+          "gitBlob": "dcfcc00c0fff9abebb68a7ec8f9c7a81bdffa816",
+          "snapshotGitBlob": "dcfcc00c0fff9abebb68a7ec8f9c7a81bdffa816",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-core/Cargo.toml",
+          "gitBlob": "6e56220b168135f9f7e168ac2a5e23ab9671b2d0",
+          "snapshotGitBlob": "6e56220b168135f9f7e168ac2a5e23ab9671b2d0",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-media/Cargo.toml",
+          "gitBlob": "5432507c42f70f67bbe18490ca8c464ac1c1378c",
+          "snapshotGitBlob": "5432507c42f70f67bbe18490ca8c464ac1c1378c",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-network/Cargo.toml",
+          "gitBlob": "ff97a5cccd853c6e73a75e3e7a3f0d2a56654d7c",
+          "snapshotGitBlob": "ff97a5cccd853c6e73a75e3e7a3f0d2a56654d7c",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-protocol/Cargo.toml",
+          "gitBlob": "a13cd0c123f9347b657f892b88d354d8542ae536",
+          "snapshotGitBlob": "a13cd0c123f9347b657f892b88d354d8542ae536",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-runtime/Cargo.toml",
+          "gitBlob": "0fc8ee357ef5c00074e5fdcd1d7594860e289bd1",
+          "snapshotGitBlob": "0fc8ee357ef5c00074e5fdcd1d7594860e289bd1",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-storage/Cargo.toml",
+          "gitBlob": "6c76fd3ae6ea96fc11b95b19928f6e699d528a1e",
+          "snapshotGitBlob": "6c76fd3ae6ea96fc11b95b19928f6e699d528a1e",
+          "exactBytes": true
+        },
+        {
+          "path": "source/mahayana/mahayana-rs/providers/telegram-wasm/Cargo.toml",
+          "gitBlob": "8f81b1f32d141c98700c951ff6b00cae85e10b95",
+          "snapshotGitBlob": "8f81b1f32d141c98700c951ff6b00cae85e10b95",
+          "exactBytes": true
+        },
+        {
+          "path": "source/node-agent-coordinator/Cargo.toml",
+          "gitBlob": "7205ee428e18bdd4ba82e3f98147698058e07f22",
+          "snapshotGitBlob": "7205ee428e18bdd4ba82e3f98147698058e07f22",
+          "exactBytes": true
+        },
+        {
+          "path": "source/node-agent-coordinator/src/main.rs",
+          "gitBlob": "279dc93569effbba8f49918d9293325dbb0c4ac8",
+          "snapshotGitBlob": "279dc93569effbba8f49918d9293325dbb0c4ac8",
+          "exactBytes": true
+        }
+      ],
+      "allSnapshotBytesMatch": true
+    }
+  },
+  "pointer_artifact_verification": {
+    "schema_version": 1,
+    "repository": "bhrumom/fabushi-desktop",
+    "exact_head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+    "run_id": 41520998019,
+    "job_id": 125536673032,
+    "artifact_id": 13177399337,
+    "artifact_name": "plugins-close-pointer-682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+    "archive_path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/plugins-close-pointer-682.zip",
+    "archive_bytes": 347040,
+    "archive_sha256": "c1eb66fd578f8321ca2f776d0566e2476f5990eaaf63aae435514efd52ae8f10",
+    "metadata_digest": "sha256:c1eb66fd578f8321ca2f776d0566e2476f5990eaaf63aae435514efd52ae8f10",
+    "archive_digest_matches_metadata": true,
+    "archive_size_matches_metadata": true,
+    "artifact_target_sha_matches": true,
+    "playwright_report": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/artifacts/plugins-close/playwright.json",
+    "playwright_report_sha256": "fc6bdf91971ff239f502ea6d54e69ed67af302e32a48dd2810bf2259bd912452",
+    "actual_counts": {
+      "executed": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0
+    },
+    "playwright_stats": {
+      "startTime": "2026-11-02T20:47:54.346Z",
+      "duration": 21234.463,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "title": "shipping Plugins close 1024x684 uses a real pointer and preserves the window-control band",
+        "viewport": {
+          "width": 1024,
+          "height": 684
+        },
+        "status": "passed",
+        "retry": 0,
+        "duration_ms": 16730,
+        "phases": [
+          "initial",
+          "reopened"
+        ]
+      },
+      {
+        "title": "shipping Plugins close 1280x900 uses a real pointer and preserves the window-control band",
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        },
+        "status": "passed",
+        "retry": 0,
+        "duration_ms": 3704,
+        "phases": [
+          "initial",
+          "reopened"
+        ]
+      }
+    ],
+    "geometry_checks": [
+      {
+        "viewport": {
+          "width": 1024,
+          "height": 684
+        },
+        "phase": "initial",
+        "file": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/geometry/1024x684-initial.json",
+        "sha256": "2280812d8ea9feb7f6a7bdfc779c4b7c6023e7db5dd54941ef751d068a790c03",
+        "closeCount": 1,
+        "centerHitsClose": true,
+        "close_bounds": {
+          "x": 968.875,
+          "y": 85,
+          "width": 20.125,
+          "height": 20.1875
+        },
+        "close_app_region": "no-drag",
+        "close_pointer_events": "auto",
+        "frame_bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 1024,
+          "height": 632
+        },
+        "reserved_band_bottom": 52,
+        "frame_zindex": "5002",
+        "drag_zindex": "4999",
+        "header_zindex": "5000",
+        "window_control_evidence": {
+          "domControlCount": 0,
+          "nativeButtonActionsExecuted": 0,
+          "scope": "reserved-band-geometry-only"
+        }
+      },
+      {
+        "viewport": {
+          "width": 1024,
+          "height": 684
+        },
+        "phase": "reopened",
+        "file": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/geometry/1024x684-reopened.json",
+        "sha256": "2280812d8ea9feb7f6a7bdfc779c4b7c6023e7db5dd54941ef751d068a790c03",
+        "closeCount": 1,
+        "centerHitsClose": true,
+        "close_bounds": {
+          "x": 968.875,
+          "y": 85,
+          "width": 20.125,
+          "height": 20.1875
+        },
+        "close_app_region": "no-drag",
+        "close_pointer_events": "auto",
+        "frame_bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 1024,
+          "height": 632
+        },
+        "reserved_band_bottom": 52,
+        "frame_zindex": "5002",
+        "drag_zindex": "4999",
+        "header_zindex": "5000",
+        "window_control_evidence": {
+          "domControlCount": 0,
+          "nativeButtonActionsExecuted": 0,
+          "scope": "reserved-band-geometry-only"
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        },
+        "phase": "initial",
+        "file": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/geometry/1280x900-initial.json",
+        "sha256": "d368f9f8bdbdd41bc390a247c7345aafdd2f7b1ceadc52d3f507abf9d26e5243",
+        "closeCount": 1,
+        "centerHitsClose": true,
+        "close_bounds": {
+          "x": 1144.875,
+          "y": 109,
+          "width": 20.125,
+          "height": 20.1875
+        },
+        "close_app_region": "no-drag",
+        "close_pointer_events": "auto",
+        "frame_bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 1280,
+          "height": 848
+        },
+        "reserved_band_bottom": 52,
+        "frame_zindex": "5002",
+        "drag_zindex": "4999",
+        "header_zindex": "5000",
+        "window_control_evidence": {
+          "domControlCount": 0,
+          "nativeButtonActionsExecuted": 0,
+          "scope": "reserved-band-geometry-only"
+        }
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        },
+        "phase": "reopened",
+        "file": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/geometry/1280x900-reopened.json",
+        "sha256": "d368f9f8bdbdd41bc390a247c7345aafdd2f7b1ceadc52d3f507abf9d26e5243",
+        "closeCount": 1,
+        "centerHitsClose": true,
+        "close_bounds": {
+          "x": 1144.875,
+          "y": 109,
+          "width": 20.125,
+          "height": 20.1875
+        },
+        "close_app_region": "no-drag",
+        "close_pointer_events": "auto",
+        "frame_bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 1280,
+          "height": 848
+        },
+        "reserved_band_bottom": 52,
+        "frame_zindex": "5002",
+        "drag_zindex": "4999",
+        "header_zindex": "5000",
+        "window_control_evidence": {
+          "domControlCount": 0,
+          "nativeButtonActionsExecuted": 0,
+          "scope": "reserved-band-geometry-only"
+        }
+      }
+    ],
+    "screenshots": [
+      {
+        "viewport": {
+          "width": 1024,
+          "height": 684
+        },
+        "phase": "initial",
+        "path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/screenshots/plugins-initial-1024x684.png",
+        "original_artifact_path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/desktop/test-results/agent-network-responsive-s-f4784-ves-the-window-control-band/plugins-initial-1024x684.png",
+        "bytes": 85018,
+        "sha256": "c6c214cb9bcae898ef560cf43ceb2d6cf54b62427fce4776dbd3fb1e6b855bbd",
+        "pixel_dimensions": {
+          "width": 1024,
+          "height": 684
+        },
+        "visual_review_by_this_agent": false
+      },
+      {
+        "viewport": {
+          "width": 1024,
+          "height": 684
+        },
+        "phase": "reopened",
+        "path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/screenshots/plugins-reopened-1024x684.png",
+        "original_artifact_path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/desktop/test-results/agent-network-responsive-s-f4784-ves-the-window-control-band/plugins-reopened-1024x684.png",
+        "bytes": 49170,
+        "sha256": "78bdce0b7c7c485d0987e9192fa9a049a18f3ab80fa6e9cf7e308051daa6726e",
+        "pixel_dimensions": {
+          "width": 1024,
+          "height": 684
+        },
+        "visual_review_by_this_agent": false
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        },
+        "phase": "initial",
+        "path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/screenshots/plugins-initial-1280x900.png",
+        "original_artifact_path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/desktop/test-results/agent-network-responsive-s-09f93-ves-the-window-control-band/plugins-initial-1280x900.png",
+        "bytes": 123202,
+        "sha256": "fc6d887a2906e8bdff3f70d122197fcbcb9ebe09cb550d03a836b04fd6c9c12a",
+        "pixel_dimensions": {
+          "width": 1280,
+          "height": 900
+        },
+        "visual_review_by_this_agent": false
+      },
+      {
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        },
+        "phase": "reopened",
+        "path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/screenshots/plugins-reopened-1280x900.png",
+        "original_artifact_path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/desktop/test-results/agent-network-responsive-s-09f93-ves-the-window-control-band/plugins-reopened-1280x900.png",
+        "bytes": 57866,
+        "sha256": "db3cb897e8a0353382932175957077cf657ae0d095c2176065698c23f30e31ef",
+        "pixel_dimensions": {
+          "width": 1280,
+          "height": 900
+        },
+        "visual_review_by_this_agent": false
+      }
+    ],
+    "trace_checks": [
+      {
+        "path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/desktop/test-results/agent-network-responsive-s-09f93-ves-the-window-control-band/trace.zip",
+        "close_pointer_click_count": 2,
+        "all_clicks_unforced": true,
+        "click_call_ids": [
+          "pw:api@85",
+          "pw:api@103"
+        ],
+        "successful_plugins_hidden_assertion_count": 2,
+        "hidden_assertion_call_ids": [
+          "expect@86",
+          "expect@104"
+        ],
+        "all_matching_calls_have_successful_after_records": true
+      },
+      {
+        "path": "/workspace/scratch/fb9a51bd6fc9/audit-r19/plugins682-actions/artifact/desktop/test-results/agent-network-responsive-s-f4784-ves-the-window-control-band/trace.zip",
+        "close_pointer_click_count": 2,
+        "all_clicks_unforced": true,
+        "click_call_ids": [
+          "pw:api@98",
+          "pw:api@116"
+        ],
+        "successful_plugins_hidden_assertion_count": 2,
+        "hidden_assertion_call_ids": [
+          "expect@99",
+          "expect@117"
+        ],
+        "all_matching_calls_have_successful_after_records": true
+      }
+    ],
+    "normal_close_pointer_clicks": 4,
+    "successful_plugins_hidden_assertions": 4,
+    "scope": "Actual production Electron renderer; controlled Host and loopback auth. Initial and reopened phases at two viewport sizes. All windowControlEvidence records are reserved-band-geometry-only with zero DOM controls and zero native button actions.",
+    "independent_visual_review": "Parent inspected all four PNGs for the bounded Close/frame presentation; full visual/accessibility acceptance remains open.",
+    "signed_package_or_live_service_acceptance": false,
+    "independent_ACCEPT": false,
+    "parent_visual_review": {
+      "method": "Read-only inspection of all four unmodified artifact PNGs through the image viewer.",
+      "viewports": [
+        "1024x684",
+        "1280x900"
+      ],
+      "phases": [
+        "initial",
+        "reopened"
+      ],
+      "observations": [
+        "Close is visible at the upper right of each dialog and not visibly clipped.",
+        "The application header remains above the Plugins frame at both dimensions.",
+        "Initial images contain marketplace cards; reopened images capture Loading the marketplace before catalog content has returned.",
+        "Underlying application content remains visible through the surface; this bounded pointer review does not qualify contrast, complete layout, accessibility or final visual fidelity."
+      ],
+      "native_window_button_actions": 0,
+      "full_visual_acceptance": false,
+      "independent_ACCEPT": false
+    }
+  },
+  "latest_authority_refresh": {
+    "kind": "read-only-authority-refresh",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 19,
+    "repository": "bhrumom/fabushi-desktop",
+    "fixed_audit_head": "bc2d2f2f8e4c098381275c0a647b937df4e56254",
+    "observed_utc": "2026-11-02 20:57:55 UTC",
+    "comparison_receipt": "audit-r19/authority29/receipt.json",
+    "comparison_head": "29c4f4eec8b5928f674d20107e041eee7c5a081b",
+    "result": "No content changes in the six requested authority documents or the seven inspected lock/inventory/schema/validator identities.",
+    "method": {
+      "remote": "GitHub connector Primary; fetch_file with the exact fixed_audit_head for each of 13 paths.",
+      "reading": "Full contents were retrieved. FMEP was reread in full; the other authority documents were reread at relevant spec-first, revision, frozen-baseline, batch-verification, precedence and acceptance sections. Unchanged blob identities permit reuse of the earlier broader audit.",
+      "machine_contract": "Lock/index facts were read; schema/validator/helper identity comparison reuses the prior source inspection. No schema or validator was executed.",
+      "branch_limit": "This is an exact-H refresh, not a new live branch/main observation."
+    },
+    "source_identities": [
+      {
+        "path": "AGENTS.md",
+        "blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+        "previous_blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+        "unchanged": true,
+        "role": "normative-authority",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/AGENTS.md"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+        "previous_blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+        "unchanged": true,
+        "role": "normative-authority",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "blob": "da3455bff35978b41027d940213bf3fc6d9a496a",
+        "previous_blob": "da3455bff35978b41027d940213bf3fc6d9a496a",
+        "unchanged": true,
+        "role": "normative-authority",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md"
+      },
+      {
+        "path": "docs/specs/fabushi-bot-communication-platform.md",
+        "blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42",
+        "previous_blob": "93c543fafda43a0f84ecc13808dba9dd2ef71b42",
+        "unchanged": true,
+        "role": "normative-authority",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/docs/specs/fabushi-bot-communication-platform.md"
+      },
+      {
+        "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694",
+        "previous_blob": "2b3873eb34a5e31ed2460c1a9f6b72df51583694",
+        "unchanged": true,
+        "role": "normative-authority",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      },
+      {
+        "path": "docs/specs/fabushi-deferred-ci-migration.md",
+        "blob": "51b7fbd535fc3e72a9fb2f046214c689506b56c1",
+        "previous_blob": "51b7fbd535fc3e72a9fb2f046214c689506b56c1",
+        "unchanged": true,
+        "role": "normative-authority",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/docs/specs/fabushi-deferred-ci-migration.md"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/upstream.lock.json",
+        "blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+        "previous_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/projects/telegram-desktop-rust/upstream.lock.json"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/inventory/index.json",
+        "blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+        "previous_blob": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/projects/telegram-desktop-rust/inventory/index.json"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+        "blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+        "previous_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/projects/telegram-desktop-rust/contracts/parity-ledger.schema.json"
+      },
+      {
+        "path": "scripts/tdrp-source-review.mjs",
+        "blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+        "previous_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/scripts/tdrp-source-review.mjs"
+      },
+      {
+        "path": "scripts/validate-tdrp-source-candidate.mjs",
+        "blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+        "previous_blob": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/scripts/validate-tdrp-source-candidate.mjs"
+      },
+      {
+        "path": "scripts/validate-tdrp-revision9-authority.mjs",
+        "blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+        "previous_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/scripts/validate-tdrp-revision9-authority.mjs"
+      },
+      {
+        "path": "scripts/tdrp-nested-pin-identity.mjs",
+        "blob": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+        "previous_blob": "175400b628fe02f4a4d73f18ac6af5dc7a631bc3",
+        "unchanged": true,
+        "role": "source-contract-identity",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/bc2d2f2f8e4c098381275c0a647b937df4e56254/scripts/tdrp-nested-pin-identity.mjs"
+      }
+    ],
+    "changes": {
+      "authoritative_documents": [],
+      "fixed_upstream_changed": false,
+      "lock_inventory_schema_validator_identities_changed": false,
+      "no_product_progress_inferred": true
+    },
+    "current_rules": {
+      "versions": {
+        "FBCP": 8,
+        "TDRP": 10,
+        "FMEP": 2
+      },
+      "precedence": "Latest explicit user instruction and FMEP Revision 2 including sections 12/13 remain authoritative. Historical zero-CI Stage-A and blanket equal-depth/unread=0 prose does not override these amendments.",
+      "batches": "Implement coherent current-owner product batches and tests together; freeze batch H; run minimum affected compilation, contracts/state machines, wiring and risk checks only in GitHub Actions. Fix failed shared contracts before dependent work and reuse valid same-H/same-input results.",
+      "source_review": "Every exact source identity needs evidence-backed disposition. Product/mixed/high-risk/uncertain logic needs deep review; generated/dependency inputs and interfaces use the applicable contract review; resources/docs/tooling use evidenced disposition. Enumeration is not semantic reading or product completion.",
+      "owner_and_retirement": "Use current shipping owners and explicit logical/state/write authorities. A library/test/member does not prove shipping reachability. Legacy caller/platform/data inventory and migration/recovery/rollback remain prerequisites to safe retirement.",
+      "final_acceptance": "All applicable production, real-service, platform package, UI/accessibility/temporal/security/performance/soak/upgrade/rollback/Bot gates and independent ACCEPT remain required. Partial batch passes never establish whole-product acceptance.",
+      "anchors": [
+        {
+          "path": "AGENTS.md",
+          "lines": "5-33,341-377,1621-1623"
+        },
+        {
+          "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+          "lines": "16-37,65-85"
+        },
+        {
+          "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+          "lines": "16-48,85-112"
+        },
+        {
+          "path": "docs/specs/fabushi-bot-communication-platform.md",
+          "lines": "1-16,299,311-330,395,412-414"
+        },
+        {
+          "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+          "lines": "1-31,185-220,244-256"
+        },
+        {
+          "path": "docs/specs/fabushi-deferred-ci-migration.md",
+          "lines": "1-127"
+        }
+      ]
+    },
+    "fixed_source": {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+      "selection_policy": "Frozen exact commit. Historical discovery refs do not authorize tracking or reopening floating upstream.",
+      "lock_status": "fixed-upstream-unaccepted-git-and-build-input-candidate",
+      "baseline_ready": false,
+      "accepted": false,
+      "root_non_directory_identities": 6895,
+      "recursive_non_directory_identities": 16381,
+      "unknown_minimum": null,
+      "unread_minimum": null,
+      "omitted_known": 0,
+      "build_input_status": "unaccepted-build-input-observations",
+      "meaning": "The unchanged recorded Git inventory is not external/build/generated/LFS/legal, semantic responsibility, production or independent acceptance closure."
+    },
+    "unchanged_machine_contract_reuse": {
+      "schema": "Existing format_version 3/spec_revision 9 schema retains FMEP-SOURCE-01 source_reviews contracts; normative TDRP remains Revision 10.",
+      "validators": "Prior identity-based review/depth/mapping checks, immutable upstream handling, strict unaccepted candidate contract and accepted-mode acquisition/generated/LFS/legal rejection conditions remain the same source code.",
+      "compatibility": "Existing mandatory UI/design fields remain required until schema/validator conditional applicability is implemented; no gate was removed by this refresh.",
+      "remaining_boundary": "The previously recorded historical build-reachability pins and fixed-U external/build classification gap are not newly closed by unchanged code or this refresh."
+    },
+    "not_refreshed": [
+      "Current parity-ledger rows, source_review record counts, RTM, STATUS, product implementation/wiring or their target/execution SHAs; old authority29 dynamic values are not restated as current.",
+      "Live main/checkpoint refs, uncommitted workspace changes, Backend PR #137, deployment/service state, workflow runs/jobs/artifacts and package signatures/stapling.",
+      "Other source authority files in the older receipt not included in these 13 paths, nested AGENTS files, unrelated root AGENTS dossiers and full owner/product code graph.",
+      "No upstream acquisition/artifact download, external/build/generated/LFS/legal closure or independent ACCEPT was rerun."
+    ],
+    "activity": {
+      "local_builds_tests_validators": 0,
+      "product_runtime_launches": 0,
+      "remote_mutations": 0,
+      "code_ledger_rtm_changes": 0,
+      "acceptance_granted": false
+    }
+  },
+  "latest_canonical_ledger_observation": {
+    "head": "bc2d2f2f8e4c098381275c0a647b937df4e56254",
+    "ledger_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+    "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "ledger_target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
+    "coverage": {
+      "source_entries_total": 16381,
+      "unknown": null,
+      "unread": null,
+      "omitted": 0,
+      "responsibilities_total": 184,
+      "unmapped_responsibilities": 0
+    },
+    "source_reviews": [
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
+        "object": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+        "status": "complete",
+        "review_depth": "deep"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
+        "object": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
+        "status": "complete",
+        "review_depth": "deep"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+        "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+        "status": "pending",
+        "review_depth": "deep"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+        "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+        "status": "pending",
+        "review_depth": "deep"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+        "object": "86865db47439dbce848fc812df2554335d3e004c",
+        "status": "pending",
+        "review_depth": "deep"
+      },
+      {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+        "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+        "status": "pending",
+        "review_depth": "deep"
+      }
+    ],
+    "existing_responsibility_rows": [
+      {
+        "responsibility_id": "TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001",
+        "source_identity": {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/core_settings_proxy.cpp",
+          "blob": "18e7ab8ce60865409dbaff267ee192e272622d26"
+        },
+        "receipt_links_present": true,
+        "implementation_status": "implemented",
+        "release_gate_status": "blocked",
+        "acceptance_reviewer": null,
+        "evidence_references": [
+          "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 shipping125511939405 composition12 passed; proxy matrix16 ordered subsets/48 removals/48 repeated no-ops, all6 full permutations/18 full-permutation deletions,48 actual per-case markers. This is one existing Rust matrix test, not48 top-level cases. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+        ]
+      },
+      {
+        "responsibility_id": "FBCP-NMR-001",
+        "source_identity": {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/api/api_updates.cpp",
+          "blob": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+        },
+        "receipt_links_present": true,
+        "implementation_status": "implemented",
+        "release_gate_status": "blocked",
+        "acceptance_reviewer": null,
+        "evidence_references": [
+          "NMR-47e authored oracle extension: source/host/src/extensions/session/forward_batch_journal.rs#tests::stale_same_batch_snapshot_cannot_regress_completed_destination; two independent SQLite handles, exact raw metadata preservation after stale initial/mixed/second-terminal refusals, second valid batch/unrelated metadata preservation, fresh incomplete-error recovery, identical terminal replay and close/reopen. Existing test name and journal12 count retained; containing-H Actions required. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+          "round19-resumption-20261102: exact5281b87d878c9223dc9cd1c100c0f56186c81173/run41460570824 attempt1 completed/failure; full reconciliation125328236617 Human33/Agent4/private3 and UI125328237237 Transcript16 passed. shipping125328237120 composition12/Native6/FeatureHost7/Host6/ABI7 then gateway E0004; CLI3/gateway5/approval2 and all later gates were not executed. Full log digests in projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
+          "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 attempt1 completed/success. Reconciliation125511939428 Human44/sharebox1/journal12/Agent4/credential3/HTTP1; shipping125511939405 CLI3/gateway5/library11, six proxy permutations, protocol122/TCP9/actualcopy4+3 expected negatives; actual AppHost160158128bytes SHA256708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b. This does not qualify later Human47 or expanded journal assertions. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"
+        ]
+      }
+    ],
+    "scope": "Read actual current canonical ledger after concurrent changes; no ledger edits and no schema/validator execution in this refresh."
+  },
+  "backend_final_read_only_observation": {
+    "number": 137,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "merged_at": null,
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "base": "687718ce9e0083aa124d29005bcce4051d357919",
+    "updated_at": "2026-11-02T19:32:19Z",
+    "html_url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+    "observed_at": "2026-11-02 20:57 UTC",
+    "mode": "read-only; no merge, deployment, credential or product-service request"
+  },
+  "package_latest_run_observation": {
+    "schema_version": 1,
+    "repository": "bhrumom/fabushi-desktop",
+    "workflow_path": ".github/workflows/release-macos-main.yml",
+    "workflow_id": 362459599,
+    "observation_started_at": "2026-11-02T20:58:43Z",
+    "observation_completed_at": "2026-11-02T20:59:33Z",
+    "baseline": {
+      "id": 41365802839,
+      "head_sha": "6f770fb00e9f74f787a49a05b82eadebe585d75b",
+      "head_branch": "main",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-11-02T00:11:27Z",
+      "updated_at": "2026-11-02T00:57:54Z",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41365802839"
+    },
+    "read_only_scope": {
+      "workflow_specific_listing": "Connector rejected actions/workflows and actions/workflows/362459599/runs as outside its approved fetch endpoint set; no bypass attempted.",
+      "fallback_main": {
+        "endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs?branch=main&per_page=30",
+        "returned_runs": 30,
+        "total_main_runs": 1619,
+        "newest_returned_created_at": "2026-11-02T00:11:27Z",
+        "oldest_returned_created_at": "2026-10-26T23:40:27Z",
+        "matching_workflow_runs": 6,
+        "newer_than_baseline_matching_runs": 0
+      },
+      "fallback_dispatch": {
+        "endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs?event=workflow_dispatch&created=%3E2026-11-02T00%3A11%3A27Z&per_page=20",
+        "returned_runs": 10,
+        "total_matching_query": 10,
+        "complete_query_page": true,
+        "matching_release_workflow_runs": 0
+      },
+      "package_archives_downloaded": 0,
+      "job_logs_downloaded": 0,
+      "dispatches": 0,
+      "cancellations": 0,
+      "reruns": 0,
+      "publish_or_deploy_actions": 0
+    },
+    "latest_matching_main_workflow_runs": [
+      {
+        "id": 41365802839,
+        "head_sha": "6f770fb00e9f74f787a49a05b82eadebe585d75b",
+        "head_branch": "main",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-02T00:11:27Z",
+        "updated_at": "2026-11-02T00:57:54Z",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41365802839"
+      },
+      {
+        "id": 41365590244,
+        "head_sha": "57fb159d3f7ded37d1aabde384d93d994ff49828",
+        "head_branch": "main",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "created_at": "2026-11-02T00:09:06Z",
+        "updated_at": "2026-11-02T00:12:22Z",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41365590244"
+      },
+      {
+        "id": 41327420143,
+        "head_sha": "9993ca8e107f7e019a8201e5ab74fa54e82159f2",
+        "head_branch": "main",
+        "event": "workflow_dispatch",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-01T16:39:09Z",
+        "updated_at": "2026-11-01T17:23:17Z",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41327420143"
+      }
+    ],
+    "newer_dispatch_run_ids_and_paths": [
+      {
+        "id": 41411261652,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T08:11:45Z"
+      },
+      {
+        "id": 41411258666,
+        "path": ".github/workflows/ocrm-p0-authority.yml",
+        "created_at": "2026-11-02T08:11:44Z"
+      },
+      {
+        "id": 41397755419,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T06:05:21Z"
+      },
+      {
+        "id": 41397220913,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T06:00:00Z"
+      },
+      {
+        "id": 41395146479,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T05:37:50Z"
+      },
+      {
+        "id": 41384534729,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T03:42:23Z"
+      },
+      {
+        "id": 41384019149,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T03:36:30Z"
+      },
+      {
+        "id": 41383249411,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T03:27:56Z"
+      },
+      {
+        "id": 41381875376,
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "created_at": "2026-11-02T03:13:14Z"
+      },
+      {
+        "id": 41381873559,
+        "path": ".github/workflows/ocrm-p0-authority.yml",
+        "created_at": "2026-11-02T03:13:13Z"
+      }
+    ],
+    "latest_observed_package_job": [
+      {
+        "id": 125025586976,
+        "head_sha": "6f770fb00e9f74f787a49a05b82eadebe585d75b",
+        "status": "completed",
+        "conclusion": "failure",
+        "completed_at": "2026-11-02T00:57:54Z",
+        "steps": [
+          {
+            "name": "Require Apple signing secrets",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Package signed and notarized macOS installer",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Notarize and staple DMG",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify desktop updater metadata",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind packaged candidate executable",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run real signed packaged acceptance",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "name": "Upload packaged acceptance evidence",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload workflow artifacts",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Keep accepted installer private until binary-bound factory promotion",
+            "status": "completed",
+            "conclusion": "skipped"
+          }
+        ]
+      }
+    ],
+    "promotion_jobs": [
+      {
+        "id": 125025588206,
+        "name": "promote",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 125025588357,
+        "name": "miniapp-iteration",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "baseline_artifacts_metadata_only": [
+      {
+        "id": 13109111366,
+        "name": "fabushi-macos-6f770fb00e9f",
+        "size_in_bytes": 349510929,
+        "digest": "sha256:02913f7d8fdeac5175c0ffd727a11b8fcfef85040f14354a69da74634c853b02",
+        "expired": false,
+        "head_sha": "6f770fb00e9f74f787a49a05b82eadebe585d75b"
+      },
+      {
+        "id": 13108967053,
+        "name": "fabushi-candidate-acceptance-6f770fb00e9f",
+        "size_in_bytes": 13855372,
+        "digest": "sha256:c1628e8d21de288eb5481d520aaa0bf35a14fee4b1db42ea39430b83e36d8176",
+        "expired": false,
+        "head_sha": "6f770fb00e9f74f787a49a05b82eadebe585d75b"
+      }
+    ],
+    "assessment": {
+      "newer_actual_signed_installer_observed": false,
+      "scope": "No newer release-macos-main run appeared in the latest30 main runs or in all10 workflow_dispatch runs newer than baseline. This is the bounded allowed-endpoint observation, not a claim to have obtained the unsupported global per-workflow listing.",
+      "latest_observed_source_sha": "6f770fb00e9f74f787a49a05b82eadebe585d75b",
+      "latest_observed_run_id": 41365802839,
+      "baseline_packaging_signing_notarization_stapling_metadata_steps": "success in job metadata",
+      "baseline_real_signed_packaged_acceptance": "failure",
+      "baseline_promotion": "skipped",
+      "package_bytes_reverified_this_refresh": false,
+      "current_checkpoint_installer_acceptance": false,
+      "independent_ACCEPT": false
+    }
+  },
+  "delivery_scope": {
+    "code_batch_head": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+    "evidence_preparation_base": "bc2d2f2f8e4c098381275c0a647b937df4e56254",
+    "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "scope": "This update records actual completed Actions and bounded read-only audits; it does not qualify later concurrent production commits or pending shipping.",
+    "concurrent_work": "Preserve all remote production changes, source reviews and other receipts. Check both edited base blobs before force=false expected_sha CAS."
   }
 }

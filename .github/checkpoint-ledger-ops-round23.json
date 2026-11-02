@@ -1,0 +1,57 @@
+{
+  "format_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "append": {
+        "requirement_ids": [
+          "NMR-SOCIAL-OWNER-01",
+          "NMR-SOCIAL-OWNER-02",
+          "NMR-SOCIAL-OWNER-03",
+          "NMR-SOCIAL-OWNER-04",
+          "NMR-SOCIAL-AC-01",
+          "NMR-SOCIAL-AC-02"
+        ],
+        "fabushi_target_paths": [
+          "docs/specs/fbcp-desktop-social-owner-boundary.md",
+          "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs"
+        ],
+        "integration_case_ids": [
+          "desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+          "desktop_social_refusal_does_not_lock_state_or_touch_retained_context",
+          "social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces"
+        ],
+        "security_case_ids": [
+          "desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+          "desktop_social_refusal_does_not_lock_state_or_touch_retained_context"
+        ],
+        "test_evidence": [
+          "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs: existing seven cases plus three Social public-dispatch controls; containing-H Feature10 Actions required"
+        ],
+        "production_evidence": [
+          "projects/telegram-desktop-rust/evidence/round23-native-current.json: exact106bb95 owner source readback; existing AppHost/Host/FeatureHost/Runtime/Product Social policy unchanged from qualified59f"
+        ],
+        "test_execution_evidence": [
+          "projects/telegram-desktop-rust/evidence/round23-baseline-audit.json: exact44f5203 native41484767335 failed Windows shared hook setup; UI/Electron controlled28/reconciliation/shipping and valid64 wrong AppHost digest negative succeeded; source41484767424 succeeded",
+          "projects/telegram-desktop-rust/evidence/round23-native-current.json: exact94dcf7a native41513767498 success includes Feature7/Runtime9/HTTP6, Windows11/controlled28 and AppHost copy positive4/three expected negative failures; not execution of new Feature10",
+          "projects/telegram-desktop-rust/evidence/round23-concurrent-reconciliation-fix.json: afb34b49/run41522324008/job125541192099 E0382 prevented Human execution; existing106bb95 concurrent commit fixes reopened runtime cleanup, new exact-H execution required",
+          "projects/telegram-desktop-rust/evidence/round23-backend-pr137-readonly.json: PR137 exact52fbf874 two63-case jobs success, production-readiness skipped; no Backend mutation or production request",
+          "projects/telegram-desktop-rust/evidence/round23-native-followup.json: exact106bb95/run41523018920/job125543545349 succeeded Human62/resource3/sharebox1/journal12/Agent4/credential3/forwardHTTP1, including the repaired reaction-restart cleanup; that result does not cover new Feature10 or macOS shipping."
+        ]
+      },
+      "note": "\nRound23 Social boundary qualification: named NMR-SOCIAL-OWNER-01..04 / NMR-SOCIAL-AC-01..02 preserve concurrent numeric forwarding/reply requirements. Three missing real FeatureHost public-command tests are authored, requiring Feature10 on their containing H; unchanged Runtime9/HTTP6/composition evidence keeps its actual source scope. No full owner/source/package acceptance is granted. This append preserves source identities, all source_reviews, current execution scalar pointers and every existing record. See round23-owner-boundary-recovery.json for explicit gaps."
+    },
+    {
+      "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+      "append": {
+        "test_execution_evidence": [
+          "projects/telegram-desktop-rust/evidence/round23-baseline-audit.json: exact44f5203 Windows native job125412051125 had11 shared-hook failures and zero native assertions due setup timeout; controlled28 passed in Electron125412051252",
+          "projects/telegram-desktop-rust/evidence/round23-native-current.json: exact59f5fa and94dcf7a native Windows11/controlled28 succeeded after the actual ephemeral-runner trust fixture correction; first ten use default probe, Unicode case observes actual CP437 prelude, fixture EXE never launched. CurrentUser/My private key plus public LocalMachine/Root and TrustedPublisher cleanup verified. Formal publisher and real signed-package install/upgrade/rollback remain open"
+        ]
+      },
+      "note": "\nRound23 preserves the original Windows hook-timeout evidence and later actual native11 success under their exact SHAs. The spec's obsolete CurrentUser-only description is corrected to the current reviewed three-store fixture. No production identity, certificate approval, real package installation, deployment or independent ACCEPT is supplied."
+    }
+  ]
+}

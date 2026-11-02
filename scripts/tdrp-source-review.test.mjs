@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {readRecoveredCandidateDocuments, main as sourceCandidateMain} from './validate-tdrp-source-candidate.mjs';
 import {
   assertNoOpenSourceCandidate,
@@ -236,6 +238,80 @@ test('pre-acceptance mapping rejects missing collections and malformed Git ident
     assert.throws(() => validateResponsibilitySources([source, secondSource], [rowFor(invalid)]),
       /invalid source identity: responsibility/);
   }
+});
+
+test('authority CLI enforces actual acquisition closure before later checks or network access', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'tdrp-acquisition-entrypoint-'));
+  t.after(() => fs.rm(directory, {recursive: true, force: true}));
+  const checker = fileURLToPath(new URL('./validate-tdrp-revision9-authority.mjs', import.meta.url));
+  const forbidNetwork = path.join(directory, 'forbid-network.mjs');
+  await fs.writeFile(forbidNetwork,
+    "globalThis.fetch = () => { throw Error('unexpected network before acquisition guard'); };\n");
+  const writeFixture = async fixture => {
+    fixture.lock.project_id = 'TDRP-001';
+    fixture.lock.spec_revision = 9;
+    // The deliberate schema sentinel is the next check after acquisition closure.
+    // It bounds the positive control without inventing a complete accepted source tree.
+    const files = {
+      'projects/telegram-desktop-rust/upstream.lock.json': JSON.stringify(fixture.lock),
+      'projects/telegram-desktop-rust/contracts/parity-ledger.schema.json':
+        JSON.stringify({properties: {spec_revision: {const: 8}}}),
+      'projects/telegram-desktop-rust/parity-ledger.json': JSON.stringify({
+        project_id: 'TDRP-001', spec_revision: 9, format_version: 3,
+        upstream_commit: fixture.lock.upstream.commit,
+        source_reviews: [review], rows,
+      }),
+      'projects/telegram-desktop-rust/inventory/build-time-acquisitions.json':
+        JSON.stringify(fixture.acquisition),
+      'docs/specs/telegram-desktop-rust-equivalence-migration.md': 'Fixture specification.\n',
+      'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md':
+        'Fixture traceability matrix.\n',
+    };
+    for (const [relative, contents] of Object.entries(files)) {
+      const file = path.join(directory, relative);
+      await fs.mkdir(path.dirname(file), {recursive: true});
+      await fs.writeFile(file, contents);
+    }
+  };
+  const execute = () => {
+    const result = spawnSync(process.execPath,
+      ['--import', forbidNetwork, checker, '--require-accepted'],
+      {cwd: directory, encoding: 'utf8', timeout: 10_000});
+    assert.ifError(result.error);
+    assert.equal(result.signal, null);
+    assert.equal(result.status, 1);
+    const output = result.stdout + result.stderr;
+    assert.doesNotMatch(output, /Error: unexpected network before acquisition guard/);
+    assert.doesNotMatch(output, /Error: accepted source accounting cannot contain a rebaseline candidate/);
+    return output;
+  };
+
+  await writeFixture(closedAcquisitionFixture());
+  assert.match(execute(), /Error: ledger schema is not Revision 9/);
+  for (const [name, mutate, expected] of [
+    ['open lock closure', f => { f.lock.build_time_acquisition_inventory.closure_status = 'open'; },
+      'closure_status must be explicitly complete'],
+    ['historical current source', f => { f.acquisition.current_source_status = 'historical-pending-fixed-u-revalidation'; },
+      'current_source_status must be explicitly complete'],
+    ['different acquired upstream', f => { f.acquisition.upstream_commit = 'c'.repeat(40); },
+      'authority differs from frozen upstream identity'],
+    ['candidate pointer', f => { f.lock.build_time_acquisition_inventory.json_pointer = '/rebaseline_candidate'; },
+      'acquisition pointer must select the current root authority'],
+    ['false acquisition candidate marker', f => { f.acquisition.rebaseline_candidate = false; },
+      'candidate marker remains'],
+    ['unfinished generated inputs', f => { f.acquisition.generated_inputs_complete = false; },
+      'generated_inputs_complete remains unresolved'],
+    ['unclassified actual input', f => { f.acquisition.discovery.candidate_lines_pending_classification = 1; },
+      'candidate_lines_pending_classification must be integer zero'],
+  ]) {
+    const fixture = closedAcquisitionFixture();
+    mutate(fixture);
+    await writeFixture(fixture);
+    const output = execute();
+    assert.ok(output.includes('Error: source acquisition closure: ' + expected), name + ': ' + output);
+    assert.doesNotMatch(output, /Error: ledger schema is not Revision 9/, name);
+  }
+  assert.equal(await fs.stat(path.join(directory, 'artifacts')).then(() => true, () => false), false);
 });
 
 test('product deep review follows the primary source and returns source counts only', () => {

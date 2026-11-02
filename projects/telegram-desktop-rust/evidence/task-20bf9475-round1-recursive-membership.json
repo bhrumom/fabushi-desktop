@@ -53,6 +53,492 @@
     "unread": null,
     "accepted": false
   },
-  "pending_product_work": "The independent canonical forward dialog assessment found retained request identities with editable retry privacy/destinations; a production UI fix is in progress under NMR-46/47c in this task.",
-  "acceptance": false
+  "acceptance": false,
+  "product_gap_observed_at_original_freeze": "The independent canonical forward dialog assessment found retained request identities with editable retry privacy/destinations; a production UI fix is in progress under NMR-46/47c in this task.",
+  "execution_completed": {
+    "sha": "43d70a62d6fd47785f15b85a70e9e3350a17cef4",
+    "run": 41511543050,
+    "attempt": 1,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41511543050",
+    "conclusion": "success",
+    "jobs": {
+      "contract": 125504328895,
+      "fixed_source_candidate": 125504576376
+    },
+    "actual_results": {
+      "node_contract": 150,
+      "python_schema": 37,
+      "canonical_ledger_schema_errors": 0,
+      "selected_failures": 0,
+      "candidate_consistency": "success",
+      "accepted_mode": "expected rejection of open candidate; no positive full acceptance"
+    },
+    "artifacts": [
+      {
+        "id": 13172928502,
+        "sha256": "247d49b60857a97bdef4000ecbb474add48289468f755f173aa9d0cf74941aa0"
+      },
+      {
+        "id": 13173123944,
+        "sha256": "0740fba6bb079f8119ce8959ceee9aa93d6784123f1a1229c890e997d57d32ba"
+      }
+    ],
+    "remote_delivery": {
+      "sha": "43d70a62d6fd47785f15b85a70e9e3350a17cef4",
+      "verified": true,
+      "files": [
+        {
+          "path": "scripts/tdrp-source-review.mjs",
+          "sha": "f61848d4573ff2215a495f2878f08b8333ffe6cf",
+          "content_match": true
+        },
+        {
+          "path": "scripts/tdrp-source-review.test.mjs",
+          "sha": "ff74ba1fd1c5a3ce2c7aba85ad159678e8317c29",
+          "content_match": true
+        },
+        {
+          "path": "scripts/validate-tdrp-revision9-authority.mjs",
+          "sha": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+          "content_match": true
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/task-20bf9475-round1-recursive-membership.json",
+          "sha": "5e20cc5f55485420d80de02766270e964445c7a2",
+          "content_match": true
+        }
+      ],
+      "tree": "883f4efaa211441e908487968cccd88aa968aaf2",
+      "parents": [
+        "59308cf3cee48213278c52e4ad60bfd9250fb545"
+      ],
+      "branch_observed": "43d70a62d6fd47785f15b85a70e9e3350a17cef4"
+    },
+    "full_log_identities": [
+      {
+        "job_id": 125504328895,
+        "file": "125504328895.log",
+        "utf8_bytes": 87270,
+        "lines": 1246,
+        "sha256": "88c06bec3efe6aa49351c75e59618a6b8840d4c4d4a2b559038b29e0f3a5f2c0",
+        "prior_evidence_copy_already_exact": true
+      },
+      {
+        "job_id": 125504576376,
+        "file": "125504576376.log",
+        "utf8_bytes": 145993,
+        "lines": 1151,
+        "sha256": "8b8baa6c69dce0579343b68a76feb3c7b5a653cdca8c8cfdd167db28c639d2a6",
+        "prior_evidence_copy_already_exact": true
+      }
+    ],
+    "binding": "These actual results qualify the containingH43 helperf61848/testff74ba/caller2b828 delta. Later helper ad5d071 and its tests have separate execution identities."
+  },
+  "current_source_contract_review": {
+    "head": "eacc5f348a7e02a2c8d9181f8e7259967d0c8d20",
+    "kind": "independent static current-source/schema/authority-caller review",
+    "result": "No concrete schema/validator wiring defect found in the scoped current inputs.",
+    "input_identities": {
+      "docs/specs/fabushi-deferred-ci-migration.md": "51b7fbd535fc3e72a9fb2f046214c689506b56c1",
+      "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "projects/telegram-desktop-rust/inventory/index.json": "d9a721c0ac1f94c50b562202fcdd1345ef4487ca",
+      "scripts/validate-tdrp-revision9-authority.mjs": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "scripts/tdrp-source-review.mjs": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "scripts/tdrp-source-review.test.mjs": "09dea53a4967b39439c04302c71e040b1c0bf475",
+      "scripts/tdrp-source-review-schema.test.py": "bbe2384b30c294a44d1f41e581201f5342101936",
+      ".github/workflows/tdrp-source-review-contract.yml": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+      ".github/workflows/tdrp-revision9-authority.yml": "5831cae60f59088212b4bba8417c028d98f7ae18",
+      "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md": "da3455bff35978b41027d940213bf3fc6d9a496a",
+      "scripts/validate-tdrp-source-candidate.mjs": "85dac7c60ef8add19c998f0b7a6ba4b7028599b0",
+      "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md": "7e69ee5bc0261a9812bac252c64fa7a0621c9228",
+      "projects/telegram-desktop-rust/parity-ledger.json": "f716580b22c6b6791b2e535e2b286df4f9257444"
+    },
+    "source_reviews": {
+      "records": 6,
+      "complete": 2,
+      "pending": 4,
+      "scope": "Existing forward-options header/implementation complete; forward-panel and phrase-factory header/implementation pending. This review checked record/schema/identity/dossier relations, not a new full read of those six C++ sources."
+    },
+    "actual_authority": "Shared exact recursive responsibility identity relations remain unconditionally called after actual full recursive acquisition/count and before artifact writes; accepted review gate requires the complete unique actual source identity set.",
+    "candidate_boundary": "Schema plus semantic candidate checks permit valid pending rows without counting them complete. Open-candidate expected rejection is not positive accepted authority execution.",
+    "source_count": 16381,
+    "unknown": null,
+    "unread": null,
+    "source_accepted": false,
+    "execution": "Actual Hafb34/run41522324060 qualifies unchanged checker/schema/ledgerf716 inputs at later static reviewHeacc. Separately, actual H9329/run41523623907 qualifies its changed ledger260c from its own full logs: Node157/Python37/schema0, candidate consistency and expected open-candidate rejection. Keep both real execution SHAs; neither is positive full accepted authority or product acceptance.",
+    "matching_input_execution": {
+      "execution_head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+      "run": 41522324060,
+      "attempt": 1,
+      "conclusion": "success",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41522324060",
+      "input_identity_comparison": [
+        {
+          "path": "scripts/tdrp-source-review.mjs",
+          "execution_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+          "frozen_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+          "equal": true
+        },
+        {
+          "path": "scripts/tdrp-source-review.test.mjs",
+          "execution_blob": "09dea53a4967b39439c04302c71e040b1c0bf475",
+          "frozen_blob": "09dea53a4967b39439c04302c71e040b1c0bf475",
+          "equal": true
+        },
+        {
+          "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+          "execution_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+          "frozen_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+          "equal": true
+        },
+        {
+          "path": "scripts/validate-tdrp-revision9-authority.mjs",
+          "execution_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+          "frozen_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+          "equal": true
+        },
+        {
+          "path": "projects/telegram-desktop-rust/parity-ledger.json",
+          "execution_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+          "frozen_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+          "equal": true
+        }
+      ],
+      "scope": "Actual full job logs acquired at execution_head. Same-input historical qualification for unchanged checker/schema/current ledger bytes; not a new execution at frozen_head, not successful full accepted authority, not product/source/legal ACCEPT."
+    },
+    "current_ledger_execution": {
+      "scope": "Read-only verification of actual GitHub Actions execution for current ledger input; no local tests, parser, validator, compilation, browser, remote writes, reruns or dispatch.",
+      "repository": "bhrumom/fabushi-desktop",
+      "run": {
+        "id": 41523623907,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523623907",
+        "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "ledger": {
+        "path": "projects/telegram-desktop-rust/parity-ledger.json",
+        "blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+        "provenance": "GitHub fetch_file metadata at exact execution H; API omits content due size. Full ledger byte read was not repeated for this execution review.",
+        "different_from_earlier_eacc_and_afb_blob": "f716580b22c6b6791b2e535e2b286df4f9257444"
+      },
+      "checker_inputs": [
+        {
+          "path": "scripts/tdrp-source-review.mjs",
+          "blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7"
+        },
+        {
+          "path": "scripts/tdrp-source-review.test.mjs",
+          "blob": "09dea53a4967b39439c04302c71e040b1c0bf475"
+        },
+        {
+          "path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+          "blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae"
+        },
+        {
+          "path": "scripts/validate-tdrp-revision9-authority.mjs",
+          "blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7"
+        },
+        {
+          "path": ".github/workflows/tdrp-source-review-contract.yml",
+          "blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5"
+        }
+      ],
+      "jobs": [
+        {
+          "id": 125545612283,
+          "name": "contract",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523623907/job/125545612283",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "all_reported_steps_succeeded": true
+        },
+        {
+          "id": 125546001645,
+          "name": "fixed-source-candidate",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523623907/job/125546001645",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "all_reported_steps_succeeded": true
+        }
+      ],
+      "actual_contract_results": {
+        "node": {
+          "tests": 157,
+          "pass": 157,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "python": {
+          "tests": 37,
+          "result": "OK",
+          "jsonschema": "4.25.1"
+        },
+        "canonical_ledger": {
+          "schema_errors": 0,
+          "source_accepted": false
+        },
+        "authority_node_check": "success (syntax check only)"
+      },
+      "actual_candidate_result": {
+        "status": "unaccepted-candidate-consistent",
+        "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "counts_by_scope": {
+          "pinned-cmake-component": 2,
+          "legacy-root-paths": 331
+        },
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "target_commit": "9329aced33343e8e356ba34dfd0f474f3e767914",
+        "reused_git_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "artifact_id": 13118749668,
+          "run_id": 41397005716,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+        },
+        "reused_build_input_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "artifact_id": 13121721589,
+          "run_id": 41401970993,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+        }
+      },
+      "actual_accepted_negative": {
+        "expected_error": "Error: accepted source accounting cannot contain a rebaseline candidate",
+        "check": "CLI returned nonzero; workflow matched this exact diagnostic; job step succeeded",
+        "scope": "Proves this open candidate is rejected. Does not prove full accepted-mode positive validation or accepted source closure."
+      },
+      "artifacts": [
+        {
+          "id": 13179520156,
+          "name": "tdrp-source-review-contract-9329aced33343e8e356ba34dfd0f474f3e767914",
+          "size_in_bytes": 6772,
+          "digest": "sha256:4e213a1eee4d4d0cc9b85a21f02c1b4d5b7a50df70d3871e746fca26e9cacc8d",
+          "expired": false,
+          "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523623907/artifacts/13179520156"
+        },
+        {
+          "id": 13178008810,
+          "name": "tdrp-source-candidate-9329aced33343e8e356ba34dfd0f474f3e767914",
+          "size_in_bytes": 79140,
+          "digest": "sha256:c2acb943a6b15ce62751ab3e32e6fd70699c104f2b61909229db7b82c6efa720",
+          "expired": false,
+          "head_sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+          "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523623907/artifacts/13178008810"
+        }
+      ],
+      "saved_complete_job_logs": [
+        {
+          "path": "contract.log",
+          "bytes": 89848,
+          "sha256": "832a528a5704b46fdccb79be295f93f888e5ca556e070a021a7e67be2717912b"
+        },
+        {
+          "path": "candidate.log",
+          "bytes": 146054,
+          "sha256": "db0c0c832c0c8ab712c0390ccec2af7027b8ecedd00eee953d0a6221fa50da9e"
+        }
+      ],
+      "assessment": "The 260c5dac current ledger was actually exercised at exact H9329 by both current source-contract jobs. These results are directly read from run 41523623907, not borrowed from afb/f716 or SOURCE43. They support current contract/schema/candidate consistency and the open-candidate rejection boundary. Source/product/independent acceptance remain false. Complete accepted-mode positive execution, complete source understanding and final shipping acceptance are not established.",
+      "evidence_limits": [
+        "Artifact metadata and upload diagnostics were read and agree; artifact ZIP contents were not downloaded or independently rehashed.",
+        "This review does not grant acceptance or validate changed inputs at a later H."
+      ]
+    }
+  },
+  "current_message_integration": {
+    "read_head": "9329aced33343e8e356ba34dfd0f474f3e767914",
+    "production_owner": "Existing ProductionRenderer/ForwardMessageDialog -> Coordinator -> Session gateway -> ProductionSessionWorkers -> native messaging service and SandAgentDb journal/outbox -> existing Transcript/event projection.",
+    "preserved_behavior": "Current immutable forwarding intent, ordered original recipient/privacy constraints, strict source ownership, pinned resource bytes and monotonic completion are retained. No parallel message authority, service, database or user-data deletion.",
+    "superseded_unpublished_candidates": {
+      "ui": "4997c6efeb3353bf2fdf3c0730ed8493704c10b9",
+      "journal": "12a479b04f0a5069be41b9874afd6d063783d1e6",
+      "ledger": "29c51a2f4eb33256c789c679cc40168b104bb098",
+      "temporary_object_workflow": "6fbbec0354f01076d86e1e23efcd9a8c1c8e8a0f",
+      "disposition": "Not published as a commit. Current immutable UI16 and the stronger merged CAS fixture supersede them. Do not replay whole old ledger/workflow/spec objects or redefine current NMR-47g; the CAS requirement remains NMR-47e / NMR-AC-38."
+    },
+    "merged_cas_oracle": {
+      "commit": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+      "blob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+      "contents_saved": "forward_batch_journal.beaf.rs",
+      "oracle": "Both real owners/options/observations/encoding prepared before barrier; shared Atomic busy counter must remain0 after joins and fresh recovery; actual valid HumanForwardBatch winner is bound to the true CAS result; independent raw SQLite metadata and unrelated key survive stale rejection, fresh loser recovery and reopen."
+    },
+    "failed_first_execution": {
+      "sha": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "run": 41522952938,
+      "attempt": 1,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41522952938",
+      "reconciliation_job": 125543328873,
+      "job_conclusion": "failure",
+      "job_completed_at": "2026-11-02T20:52:59Z",
+      "failure_class": "TEST_FLAW: integration fixture compile error; not a proved message-production/journal failure and not a runner failure.",
+      "failure": "E0382 at tests/session_gateway_contract.rs:6889: runtime.shutdown() borrows the Arc after drop(runtime) at6878.",
+      "journal_cases_executed": 0,
+      "no_borrowed_success": true,
+      "complete_log": "job-125543328873.log",
+      "log_chars": 106228,
+      "failed_artifact_from_upload_log": {
+        "id": 13178133035,
+        "bytes": 5405,
+        "sha256": "793e73250aea5d417872c65bc481e1544ecae7265a74d426eab188b49c497b5b"
+      },
+      "full_log_sha256": "980b04b5ba43cf3397b0dab19c2560bb61e88233776a87f665c015ad3e98ae0a",
+      "full_log_bytes": 106230
+    },
+    "minimal_fixture_fix": {
+      "sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "parent": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "changed_path": "source/host/tests/session_gateway_contract.rs",
+      "blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+      "exact_delta": "runtime.shutdown(); drop(owner); drop(restarted); -> restarted.shutdown(); drop(owner); drop(restarted);",
+      "all_other_source_unchanged_from_parent": true,
+      "evidence": "compare-beaf-106bb95.json",
+      "classification": "Minimal cleanup-handle fixture repair; no product change, deleted assertion, altered journal oracle or rerun-for-green."
+    },
+    "actual_journal_execution": {
+      "sha": "106bb95ba97ef7722e9523285783824393039bc0",
+      "run": 41523018920,
+      "attempt": 1,
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523018920",
+      "reconciliation_job": 125543545349,
+      "status": "completed",
+      "conclusion": "success",
+      "completed_at": "2026-11-02T20:54:03Z",
+      "journal_blob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+      "counts": {
+        "human": 62,
+        "resource_upload_bounds": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "agent_nonce": 4,
+        "settlement_credentials": 3,
+        "authenticated_forward_http": 1
+      },
+      "selected_positive_executions": 86,
+      "all_selected_result_summaries": "0 failed; 0 ignored",
+      "actual_case_lines": {
+        "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover": "2026-11-02T20:53:56.0088675Z ... ok",
+        "stale_same_batch_snapshot_cannot_regress_completed_destination": "2026-11-02T20:53:56.0446682Z ... ok",
+        "repaired_reaction_fixture": "shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling ... ok"
+      },
+      "complete_log": "job-125543545349.log",
+      "log_chars": 353174,
+      "artifact": {
+        "id": 13178302134,
+        "bytes": 35255,
+        "digest": "sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+        "metadata_and_upload_log_match": true,
+        "archive_downloaded_here": false
+      },
+      "scope": "New busy-counter/real-batch/raw-byte CAS fixture is actually executed at H106. Counts are selected positive execution totals, not functionality progress.",
+      "shipping_job": 125543545357,
+      "shipping_status": "queued",
+      "full_native_run_accepted": false,
+      "full_log_sha256": "c10ca945da98d697a489463898f1f20fe522982bf25a1a32fe6c9c76e2715435",
+      "full_log_bytes": 353176
+    },
+    "later_head_observation": {
+      "sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+      "commits_after_beaf": 8,
+      "ancestor_relation": "beaf is the ancestor through106 and seven later commits; API compare statusahead",
+      "journal_path_changed_since_beaf": false,
+      "source_journal_blob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+      "run": 41523624057,
+      "reconciliation_job": 125545613305,
+      "reconciliation_status": "in_progress",
+      "reconciliation_conclusion": null,
+      "observed_step": "Human ingress, settlement and restart contracts still in progress at20:58:57UTC; later journal step pending.",
+      "workflow_blob": "e60ec6e6f2d5c9e489e8200fa1bda10b3a4f4c1d",
+      "no_current_head_success_claim": true,
+      "shipping_job": 125545613231,
+      "shipping_status": "queued",
+      "shipping_runner_id": 0,
+      "evidence": "compare-beaf-9329.json; jobs-9329.latest.json",
+      "full_native_run_accepted": false,
+      "observed_at_utc": "2026-11-02 20:58:57 UTC"
+    },
+    "ui_qualification": {
+      "sha": "78c375cef3f27e4a355cb8c206681c2b7edc9c66",
+      "run": 41521877281,
+      "job": 125539690888,
+      "conclusion": "success",
+      "renderer_build": "success",
+      "transcript": 20,
+      "human_cursors": 17,
+      "settlement": 5,
+      "chromium": 16,
+      "artifact": 13177822745,
+      "bytes": 226734,
+      "sha256": "d65482a7883d055364d3a5d279aa6a8423f346cc87b6ff028557668988917ea0",
+      "independent_archive_digest_and_target_sha_verified": true,
+      "visual_review": "Six actual PNGs inspected: four initial light/dark wide/narrow and two light retry wide/narrow. No observed clipping; privacy locks, settled target, count and close/delivery wording visible. No dark-retry, complete accessibility or installed-package acceptance claimed.",
+      "binding": "H78 is historical UI execution, not proof for subsequent changed renderer/projection inputs."
+    },
+    "full_native_run_passed": false,
+    "independent_product_acceptance": false,
+    "subsequent_job_metadata_read": {
+      "observed_at_utc": "2026-11-02 21:02:38 UTC",
+      "sha": "9329aced33343e8e356ba34dfd0f474f3e767914",
+      "run": 41523624057,
+      "jobs": {
+        "reconciliation125545613305": "completed/success",
+        "ui125545613328": "completed/success",
+        "electron125545613591": "completed/success",
+        "windows125545613654": "completed/success",
+        "retained_ffi125545613103": "completed/success",
+        "macos_shipping125545613231": "queued"
+      },
+      "scope": "Fresh job metadata only at this refresh; actual new CAS named-case execution remains bound to the fully read H106 log. No whole-run success or signed/package acceptance."
+    }
+  },
+  "current_accounting_preserved": {
+    "head": "9329aced33343e8e356ba34dfd0f474f3e767914",
+    "ledger_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+    "source_reviews": 6,
+    "source_entries": 16381,
+    "responsibilities": 184,
+    "unknown": null,
+    "unread": null,
+    "changes_in_this_receipt_update": "Evidence only; no inventory, ledger, RTM, schema, production, workflow, source-review status or acceptance field is replaced."
+  },
+  "remaining_requirements": {
+    "fixed_source": "U remains fixed; complete semantic/risk disposition and generated/external/LFS/build/legal closure are open.",
+    "production": "All applicable communication behaviors and all preserved Agent/Coordinator/Host/Runner/Tools/approval/task/artifact/Plugins/MCP/Computer/Automations paths still require complete closure.",
+    "known_owned_batch": "At the read head, NMR-50d Coordinator readiness-to-request-frame lifetime fencing remains a separate already-owned concurrent implementation; inspect live source before integrating or extending it.",
+    "validation": "Newer containing-H native jobs must finish. macOS shipping remains queued/unassigned in the observed runs; no substitute platform, lowered gate or rerun-for-green.",
+    "real_services": "Active Worker source/version plus authorized authenticated pagination/resource/forwarding evidence, accounts/devices/services/signing where required remain unproved.",
+    "final_acceptance": "Supported signed packages, installed runtime, UI/visual/a11y/locale, temporal/security/performance/soak, upgrade/rollback, complete Bot regression and independent ACCEPT remain open."
+  },
+  "resumption_policy": "Continue on the current migration branch with fresh API content/HEAD reads and non-force expected_sha CAS. Historical snapshots and uncommitted candidates are not current deliveries; preserve parallel commits and reuse only actual same-input evidence.",
+  "last_branch_observation": {
+    "head": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "observed_at_utc": "2026-11-02 21:02:38 UTC",
+    "journal_blob": "0a5d1923742a3c55b1bc5eacbfb21238a7ca4335",
+    "ledger_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+    "boundary": "Later branch commits include another journal fixture revision and ledger changes. H106/H9329 qualify their own exact inputs; their success is not copied to H83. This evidence-only update must be CAS-appended to a fresh live parent without replacing those files."
+  },
+  "resumption_scope": "Close the already published source repair with actual execution evidence, preserve stronger concurrent product/test changes, and record precise remaining validation boundaries. Unpublished superseded candidates are not product delivery."
 }

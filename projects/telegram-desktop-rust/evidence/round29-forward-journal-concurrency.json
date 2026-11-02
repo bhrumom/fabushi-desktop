@@ -1,0 +1,851 @@
+{
+  "format": "FBCP_TDRP_ROUND29_SQLITE_CAS_QUALIFICATION_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 29,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "initialRequestedHead": "59f5fa24827812f78336c464995d161f403dedfb",
+  "initialPrerequisite": {
+    "head": "59f5fa24827812f78336c464995d161f403dedfb",
+    "run": 41508537631,
+    "attempt": 1,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631",
+    "status": "completed",
+    "conclusion": "success",
+    "completedObservedAt": "2026-11-02T19:31:07Z",
+    "fullJobLogsRead": [
+      125494010641,
+      125494011030,
+      125494011040,
+      125494011097,
+      125494011118
+    ],
+    "jobs": [
+      {
+        "id": 125494011040,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "counts": {
+          "Human": 38,
+          "sharebox": 1,
+          "journal": 3,
+          "AgentNonce": 4,
+          "privateCredentialSettlement": 3,
+          "authenticatedForwardGatewayHTTP": 1
+        },
+        "failed": 0,
+        "ignored": 0,
+        "individuallyObservedForwardCases": [
+          {
+            "name": "shipping_human_forward_process_kill_preserves_complete_intent_before_first_post",
+            "result": "ok"
+          },
+          {
+            "name": "shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot",
+            "result": "ok"
+          },
+          {
+            "name": "shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations",
+            "result": "ok"
+          },
+          {
+            "name": "shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope",
+            "result": "ok"
+          },
+          {
+            "name": "shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch",
+            "result": "ok"
+          }
+        ],
+        "journalScope": "The original stale-observation case uses two independent SQLite handles in sequence; it is not the new simultaneous-writer test."
+      },
+      {
+        "id": 125494010641,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "counts": {
+          "Transcript": 16,
+          "forwardSettlement": 5,
+          "Chromium": 12
+        },
+        "rendererBuild": "success",
+        "limits": "Controlled real Chromium dialog execution; no independent packaged visual/accessibility acceptance is inferred."
+      },
+      {
+        "id": 125494011030,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "counts": {
+          "carrier": 10,
+          "authRetention": 8,
+          "fixtureResourceCopy": 3,
+          "updateSource": 16,
+          "WindowsPublisherPolicy": 28,
+          "macOSMetadata": 18
+        },
+        "electronBuild": "success",
+        "historicalInstallerExperiment": "Original immutable ZIP/DMG bytes retained while metadata/blockmap verified; historical artifact13093546572 at source9d16483f70df9af06db97b17bb02a24dc507e459, not a newly signed shipping candidate."
+      },
+      {
+        "id": 125494011118,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "counts": {
+          "nativeAuthenticode": 11
+        },
+        "limits": "Actual Windows APIs and Unicode publisher cases using an ephemeral CI signer; no formal publisher authorization or release."
+      },
+      {
+        "id": 125494011097,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success",
+        "actualAppHostBuild": "success",
+        "counts": {
+          "composition": 12,
+          "nativeAccountHandoff": 7,
+          "featureHost": 7,
+          "retainedSocial": 9,
+          "socialHTTPOwner": 6,
+          "directHost": 6,
+          "C_ABI": 7,
+          "CLI": 3,
+          "gatewayExecutable": 5,
+          "gatewayLibrary": 11,
+          "DNS": 6,
+          "futureSalts": 2,
+          "protocol": 122,
+          "TCP": 9,
+          "proxy": 4,
+          "nativeCredentialSchema": 1,
+          "actualPackageResourceCopy": 4
+        },
+        "failed": 0,
+        "ignored": 0,
+        "TCPIncludesLiveServiceRPC": true,
+        "resourceCopy": {
+          "sourceSHA256": "5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb",
+          "destinationSHA256": "5681ae74e541dcc73144504a5c82f17530c45b84830469653180b145b1526dbb",
+          "bytes": 160061040,
+          "mode": 493,
+          "excludedControlCount": 11
+        },
+        "rejectedNegativeControls": [
+          "missing binary input",
+          "invalid hash format",
+          "valid-format hash unequal to the actual built binary"
+        ],
+        "inspection": "Dependency tree, defined symbols and linked libraries were checked for the forbidden legacy boundary before and after actual package-slot copy.",
+        "limits": "A copied real AppHost and compatibility/live-TCP tests are not full supported-platform installation/update/rollback acceptance."
+      },
+      {
+        "id": 125494013875,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "reason": "Existing focused-workflow condition; not counted as executed or as a selected message prerequisite."
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13173116303,
+        "name": "native-message-reconciliation-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22",
+        "size": 28844,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631/artifacts/13173116303",
+        "head": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13173112803,
+        "name": "native-message-shipping-compile-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
+        "size": 81430492,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631/artifacts/13173112803",
+        "head": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13172586742,
+        "name": "native-message-electron-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1",
+        "size": 13384,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631/artifacts/13172586742",
+        "head": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13172281518,
+        "name": "native-message-ui-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998",
+        "size": 110471,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631/artifacts/13172281518",
+        "head": "59f5fa24827812f78336c464995d161f403dedfb"
+      },
+      {
+        "id": 13171043513,
+        "name": "windows-update-publisher-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25",
+        "size": 1831,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631/artifacts/13171043513",
+        "head": "59f5fa24827812f78336c464995d161f403dedfb"
+      }
+    ],
+    "fullJobLogSHA256": {
+      "125494010641": "e1da37cdcf5c98cc620cc09827246decdd63c4b01b987d0f58630927f11507dd",
+      "125494011030": "ba82cc050d7129052cee4226f0cbc816ac44ef7fde6b5f11a696c93b6af09486",
+      "125494011040": "2738f30344ec997b7abf6e7ab00e150e5fab774d040651e52eaa0da0d632fd54",
+      "125494011097": "421d8b8bd330b4da20dad67d03445a937e065cbe6d3fd535c45d38d61886d624",
+      "125494011118": "4ce87a174821eb9ed5d789c0d652fcf0a7ab866d8b7a52903412ac870d8e7fa5"
+    }
+  },
+  "currentIntegration": {
+    "inspectedParent": "6660b6516f8936160496496814c298124d09e953",
+    "tree": "86e96793c72d34892673d4f92692403158295e87",
+    "journalBaseBlob": "ad000f575f846d612485aff645f7a1af69eb8424",
+    "journalCandidateBlob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+    "workflowBlob": "963e16e7fbade71fbe4869096b87b6e62abb3bee",
+    "ledgerBaseBlob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+    "mainObserved": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "concurrentWorkPreserved": "The checkpoint advanced through source-acquisition/recursive-membership guards, attachment pinning, immutable picker retries, cached-source identity checks, pending reply recovery, resource limits, CLI/auxiliary locks and later message/UI batches. The initial whole-file/whole-row drafts were not published over them. Integrate only the existing CAS test and this receipt into the fresh tree.",
+    "alreadyImplementedAtCurrentHead": "Same-batch completed-progress monotonicity, strict metadata-object admission and corruption recovery are already present. Their production code and all other eleven journal tests remain byte-for-byte unchanged by this patch.",
+    "currentSelectedCounts": {
+      "Human": 62,
+      "resourceBound": 3,
+      "sharebox": 1,
+      "journal": 12,
+      "AgentNonce": 4,
+      "credentialSettlement": 3,
+      "forwardGatewayHTTP": 1,
+      "Transcript": 29,
+      "paginationCursors": 17,
+      "forwardSettlement": 5,
+      "Chromium": 16
+    },
+    "countScope": "These are current workflow assertions, not a claim of current-H execution.",
+    "published": {
+      "head": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "expectedParent": "558487b2faa4260453f81567b0f46591a77f7b4e",
+      "force": false,
+      "readback": [
+        {
+          "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+          "sha": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+          "contentEqual": true
+        },
+        {
+          "path": "projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json",
+          "sha": "5030b3d29e309024cf5cec1e0c2d383c6cb8eef1",
+          "contentEqual": true
+        }
+      ],
+      "commit": {
+        "sha": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+        "parents": [
+          "558487b2faa4260453f81567b0f46591a77f7b4e"
+        ],
+        "tree": "b085982baf5db0df5e988d9a7de1556f58451a87"
+      },
+      "branchHead": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+      "runs": [
+        {
+          "id": 41522952938,
+          "name": "Native service contracts",
+          "status": "queued",
+          "conclusion": null,
+          "head": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a"
+        }
+      ]
+    }
+  },
+  "change": {
+    "classification": "TEST_ORACLE_DEFECT",
+    "path": "source/host/src/extensions/session/forward_batch_journal.rs",
+    "case": "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
+    "finding": "SandAgentDb converts SQLite busy/locked into Ok(false). The old test's Result::is_ok check could misclassify storage contention as a stale CAS loser. Its worker-side fallible setup could also fail before joining the barrier; its [{winner:index}] candidates were not valid forwarding journals.",
+    "implemented": [
+      "Open both independent SQLite owners, observe the journal and serialize valid HumanForwardBatch candidates in the parent before either thread waits.",
+      "Record on_busy_error callbacks shared by both owners and require zero before interpreting one-winner CAS outcomes.",
+      "Retain requestId0/1 winner identification and unrelated=19; bind the durable winner to the corresponding successful return.",
+      "Read complete committed metadata through an independent read-only SQL connection; check full stale-loser rejection leaves the raw row unchanged.",
+      "Retry the losing valid batch only from the fresh durable journal, then close/reopen and independently prove both original intents and unrelated metadata survive."
+    ],
+    "productionOwner": "Existing Session/Transcript -> source SandAgentDb humanForwardBatches -> native HTTP -> destination transcript. No new owner, schema, service, dependency or migration.",
+    "testsAdded": 0,
+    "journalCount": 12,
+    "limits": "The test proves concurrent API-call single-winner behavior and fresh recovery; it does not force every scheduler interleaving inside the setter or establish multi-AppHost cross-source uniqueness.",
+    "noLocalExecutableValidation": true,
+    "staticReview": "Current base source, updated test, and busy-return implementation were read. Source identity hashing and file edits only; no local cargo, formatter, validator or product execution."
+  },
+  "candidateExecution": {
+    "state": "bounded-affected-oracle-passed",
+    "head": "106bb95ba97ef7722e9523285783824393039bc0",
+    "run": 41523018920,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523018920",
+    "reconciliation": {
+      "job": 125543545349,
+      "conclusion": "success",
+      "fullLogRead": true,
+      "fullLogSHA256": "c10ca945da98d697a489463898f1f20fe522982bf25a1a32fe6c9c76e2715435",
+      "counts": {
+        "Human": 62,
+        "resourceBound": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "AgentNonce": 4,
+        "credentialSettlement": 3,
+        "forwardGatewayHTTP": 1
+      },
+      "failed": 0,
+      "ignored": 0
+    },
+    "oracleBinding": {
+      "journalBlob": "0eb499fd4e47a37b8791425b7319694cccc6cef5",
+      "exactRemoteContentEqualsAuthoredFile": true,
+      "case": "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
+      "result": "ok",
+      "assertions": [
+        "zero busy callbacks",
+        "two independent prepared owner calls",
+        "valid immutable batches and the correct winner",
+        "independent raw SQL and unchanged stale-loser row",
+        "fresh retry and two intents after reopen"
+      ]
+    },
+    "originalFiveForwardCases": [
+      {
+        "name": "shipping_human_forward_process_kill_preserves_complete_intent_before_first_post",
+        "result": "ok at106"
+      },
+      {
+        "name": "shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot",
+        "result": "ok at106"
+      },
+      {
+        "name": "shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations",
+        "result": "ok at106"
+      },
+      {
+        "name": "shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope",
+        "result": "ok at106"
+      },
+      {
+        "name": "shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch",
+        "result": "ok at106"
+      }
+    ],
+    "corruptionCase": "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok",
+    "ui": {
+      "job": 125543545453,
+      "conclusion": "success",
+      "fullLogRead": true,
+      "counts": {
+        "Transcript": 29,
+        "paginationCursor": 17,
+        "forwardSettlement": 5,
+        "Chromium": 16
+      },
+      "rendererBuild": "success"
+    },
+    "electron": {
+      "job": 125543544935,
+      "conclusion": "success",
+      "fullLogRead": true,
+      "counts": {
+        "carrier": 10,
+        "auth": 8,
+        "fixtureResourceCopy": 3,
+        "updateSource": 16,
+        "WindowsPublisherPolicy": 28,
+        "macOSMetadata": 18,
+        "packageScope": 10,
+        "promotionConsumer": 7
+      },
+      "build": "success"
+    },
+    "windows": {
+      "job": 125543545542,
+      "conclusion": "success",
+      "fullLogRead": true,
+      "Authenticode": 11,
+      "scope": "CI-only signer and native Windows API; no formal publisher authorization"
+    },
+    "shipping": {
+      "job": 125543545357,
+      "status": "queued",
+      "conclusion": null,
+      "fullLogAvailable": false,
+      "limit": "Do not attribute59/06fb shipping or protocol/package results to106. No completed all-jobs claim."
+    },
+    "artifacts": [
+      {
+        "id": 13178302134,
+        "name": "native-message-reconciliation-106bb95ba97ef7722e9523285783824393039bc0",
+        "digest": "sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6",
+        "bytes": 35255
+      },
+      {
+        "id": 13178197604,
+        "name": "windows-update-publisher-106bb95ba97ef7722e9523285783824393039bc0",
+        "digest": "sha256:0250f74f9bfae47441b52b57ea3edb7f6af0ab7649ab317abc08a3c0d8d0435d",
+        "bytes": 1830
+      },
+      {
+        "id": 13177893490,
+        "name": "native-message-electron-106bb95ba97ef7722e9523285783824393039bc0",
+        "digest": "sha256:a99d09534076db006a7994168d789ab95bf019fe505eaabca35eba9c0016ee00",
+        "bytes": 14810
+      },
+      {
+        "id": 13177349232,
+        "name": "native-message-ui-106bb95ba97ef7722e9523285783824393039bc0",
+        "digest": "sha256:50f70023d81daebde007f7ee6aba9b0e6a6353b340c72ea08b88d6b9cd9757ef",
+        "bytes": 229005
+      }
+    ],
+    "binding": "This is exact106 execution of the identical beaf-authored CAS test after the inherited fixture compile repair. Later heads retain their own scope and required checks."
+  },
+  "sourceAccounting": {
+    "fixedGitRootIdentities": 6895,
+    "fixedRecursiveIdentities": 16381,
+    "responsibilityRows": 184,
+    "sourceReviews": 6,
+    "completeReviews": 2,
+    "pendingReviews": 4,
+    "unknown": null,
+    "unread": null,
+    "accepted": false,
+    "authorityRead": [
+      "AGENTS.md",
+      "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+      "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+      "docs/specs/fabushi-bot-communication-platform.md",
+      "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+      "docs/specs/fabushi-deferred-ci-migration.md",
+      "docs/specs/fbcp-native-message-reconciliation.md"
+    ],
+    "currentGuardFacts": "Latest FMEP-SOURCE-01/schema/checker preserve exact risk-tier source identity and candidate review checks, acquired recursive membership and explicit acquisition closure; open candidate still cannot enter accepted mode.",
+    "ledgerPolicy": "Only append this round's scoped receipt/oracle evidence to FBCP-NMR-001. Preserve all existing rows, source_reviews, requirement IDs, current scalar execution pointers and acceptance state. NMR-47g is already assigned to later forward ownership and is not reassigned here.",
+    "largeWriteInterruption": "Two full-ledger connector create_blob calls were interrupted without success; API lookup confirmed intended blob2f4d5c23c02638ed1ddc7e57f13593f6fb3f458d absent. That obsolete draft is not delivered. Any later ledger transport must use fresh canonical input and create only an unattached Git object, followed by root force=false expected_sha CAS.",
+    "transport": {
+      "reason": "Full-file connector writes were interrupted; use a scoped reviewed GitHub Actions blob-only transfer, then root fresh expected_sha CAS.",
+      "inputBlob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+      "reviewedOutputBlob": "d6e634a2c08509d454fc134097fa80599f24fc60",
+      "onlyResponsibility": "FBCP-NMR-001",
+      "changedFields": [
+        "property_state_case_ids",
+        "test_evidence",
+        "test_execution_evidence",
+        "notes"
+      ],
+      "preserve": "All other NMR fields, all other rows, six source reviews, coverage, source/legal identities and acceptance",
+      "state": "prepared-not-yet-executed",
+      "inspectedBase": "07ea477f0312398f04e55110934dbd2ff5ab3727"
+    }
+  },
+  "backendPR137": {
+    "repository": "bhrumom/fabushi-backend",
+    "observedAt": "2026-11-02T19:34:18Z",
+    "pr": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "base_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "review_count": 0,
+      "merge_or_deploy_authorization_observed": false,
+      "head_rechecked_after_log_reads": true
+    },
+    "ci": {
+      "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "check_runs": 4,
+      "current_head_runs": [
+        {
+          "id": 41510861859,
+          "event": "pull_request",
+          "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41510861859",
+          "status": "completed",
+          "conclusion": "success",
+          "contract_job": {
+            "id": 125502035909,
+            "name": "human-messaging-contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "full_log_read": true,
+            "exact_checkout_read": true,
+            "log_file": "backend-audit-logs/125502035909.log",
+            "saved_log_sha256": "882aae040a139734ebacd755a3973e974016ed480d76fdfbf0d51467c81949f4",
+            "test_groups": [
+              {
+                "name": "existing handler/source contracts",
+                "tests": 29,
+                "passed": 29,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "actual SQLite-backed handler integration",
+                "tests": 10,
+                "passed": 10,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "injected-fetch read-only readiness verifier behavior",
+                "tests": 24,
+                "passed": 24,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              }
+            ]
+          },
+          "production_job": {
+            "id": 125502139541,
+            "name": "production-readonly-readiness",
+            "status": "completed",
+            "conclusion": "skipped",
+            "execution_evidence": false
+          }
+        },
+        {
+          "id": 41510852280,
+          "event": "push",
+          "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41510852280",
+          "status": "completed",
+          "conclusion": "success",
+          "contract_job": {
+            "id": 125502003031,
+            "name": "human-messaging-contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "full_log_read": true,
+            "exact_checkout_read": true,
+            "log_file": "backend-audit-logs/125502003031.log",
+            "saved_log_sha256": "19d991efc0086605bb53f1839b80f08806df26768084808d1acceb27a9975fe7",
+            "test_groups": [
+              {
+                "name": "existing handler/source contracts",
+                "tests": 29,
+                "passed": 29,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "actual SQLite-backed handler integration",
+                "tests": 10,
+                "passed": 10,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "injected-fetch read-only readiness verifier behavior",
+                "tests": 24,
+                "passed": 24,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              }
+            ]
+          },
+          "production_job": {
+            "id": 125502117517,
+            "name": "production-readonly-readiness",
+            "status": "completed",
+            "conclusion": "skipped",
+            "execution_evidence": false
+          }
+        }
+      ],
+      "intermediate_head_runs": [
+        {
+          "id": 41509996583,
+          "event": "pull_request",
+          "head_sha": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41509996583",
+          "status": "completed",
+          "conclusion": "success",
+          "contract_job": {
+            "id": 125499061610,
+            "name": "human-messaging-contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "full_log_read": true,
+            "exact_checkout_read": true,
+            "log_file": "backend-audit-logs/125499061610.log",
+            "saved_log_sha256": "8b9a6756088117cf8d84cd7e2f71684baa80517c4a585a479e99ede89a759ada",
+            "test_groups": [
+              {
+                "name": "existing handler/source contracts",
+                "tests": 29,
+                "passed": 29,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "actual SQLite-backed handler integration",
+                "tests": 10,
+                "passed": 10,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "injected-fetch read-only readiness verifier behavior",
+                "tests": 24,
+                "passed": 24,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              }
+            ]
+          },
+          "production_job": {
+            "id": 125499303769,
+            "name": "production-readonly-readiness",
+            "status": "completed",
+            "conclusion": "skipped",
+            "execution_evidence": false
+          }
+        },
+        {
+          "id": 41509986961,
+          "event": "push",
+          "head_sha": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41509986961",
+          "status": "completed",
+          "conclusion": "success",
+          "contract_job": {
+            "id": 125499030813,
+            "name": "human-messaging-contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "full_log_read": true,
+            "exact_checkout_read": true,
+            "log_file": "backend-audit-logs/125499030813.log",
+            "saved_log_sha256": "d84829845e43802a07c48042cee734bb8bbad90a215a3aade3a9cf2eaf5214f7",
+            "test_groups": [
+              {
+                "name": "existing handler/source contracts",
+                "tests": 29,
+                "passed": 29,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "actual SQLite-backed handler integration",
+                "tests": 10,
+                "passed": 10,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              {
+                "name": "injected-fetch read-only readiness verifier behavior",
+                "tests": 24,
+                "passed": 24,
+                "failed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              }
+            ]
+          },
+          "production_job": {
+            "id": 125499162925,
+            "name": "production-readonly-readiness",
+            "status": "completed",
+            "conclusion": "skipped",
+            "execution_evidence": false
+          }
+        }
+      ],
+      "scope": "Four complete Actions job logs independently fetched; exact checkouts and actual 29+10+24 totals read at each head. The 24 readiness cases use injected fetch and establish verifier behavior only. All real production-readonly-readiness jobs were skipped, not passed. Old 06047d3 29+10 evidence remains historical and was not applied to the new heads."
+    },
+    "main": {
+      "sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "rechecked_at": "2026-11-02T19:34:18Z",
+      "handler_path": "fabushi/web/src/handlers/friends.js",
+      "handler_blob": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+      "source_finding": "Main SHA unchanged from the earlier exact file read: explicit afterId=0 still rejects and historyCursor is absent."
+    },
+    "sourceDeltaFromPrior": {
+      "base_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "ahead_by": 2,
+      "commits": [
+        {
+          "sha": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "message": "test(messages): bind read-only history readiness to actual Worker provenance\n\nAdd a gated canonical Actions consumer for deployment/run/log/version identity, authorized afterId=0 pages, empty pages, noncontact denial and checkpoint reread. Ordinary push and PR execute 24 injected-fetch contracts only; preserve 29 existing and 10 real SQLite cases. Production access remains disabled without explicit protected authorization, approved source and existing dedicated fixtures. No merge, deploy or production data mutation."
+        },
+        {
+          "sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+          "message": "docs(messages): record exact-H readiness contracts and production blockers\n\nRecord the two completed 63-case runs, full-log hashes and verified artifact contents for H013c546. Preserve the production job's skipped result and separate live Worker/account/fixture/recovery requirements. Runtime, tests and workflow bytes are unchanged."
+        }
+      ],
+      "files": [
+        {
+          "path": ".github/scripts/human-messaging-production-readiness.mjs",
+          "blob": "55afecc1c1d9d8192b11a74b62c439513d673740",
+          "status": "added"
+        },
+        {
+          "path": ".github/scripts/human-messaging-production-readiness.test.mjs",
+          "blob": "11bbfd22721622d791439fdd817597f575af8244",
+          "status": "added"
+        },
+        {
+          "path": ".github/workflows/human-messaging-ci.yml",
+          "blob": "9c129977c1b88c13972ceeb46e8565cc1de1caa6",
+          "status": "modified"
+        },
+        {
+          "path": "docs/evidence/human-messaging-readiness-round12-20261102.json",
+          "blob": "a4af534dfbba900d0dd92fb7b2250847ddfc9b98",
+          "status": "added"
+        },
+        {
+          "path": "docs/specs/human-direct-messaging-extensions.md",
+          "blob": "0d2b0a0fec5c1852e1e8ea389054153a55aa2ce8",
+          "status": "modified"
+        }
+      ],
+      "runtime_handler_changed": false,
+      "delta_scope": "Adds read-only production readiness verifier and 24 injected-fetch tests, gated workflow path, spec/evidence updates. Runtime friends.js and SQLite migration/tests unchanged in these two commits."
+    },
+    "productionEvidence": {
+      "run_id": 40047409890,
+      "job_id": 120732189309,
+      "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890",
+      "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-24T00:56:05Z",
+      "worker_name": "fabushi-flutter-web-prod",
+      "worker_version": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "scope": "Historical canonical deployment observation only; current active Cloudflare version remains unverified.",
+      "later_run_scan": {
+        "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?per_page=100&created=%3E2026-10-24T00%3A56%3A05Z",
+        "total_count": 76,
+        "fetched": 76,
+        "canonical_production_worker_delivery_runs": 0,
+        "observed_at": "2026-11-02T19:34:18Z"
+      },
+      "new_readiness_workflow_gate": "Only workflow_dispatch with production_readiness=true on refs/heads/main; requires production environment, explicit protected authorization/approved source, separate existing account/noncontact/Cloudflare read credentials and approved fixture. No such job executed in the four inspected runs."
+    },
+    "remainingBlockers": [
+      "PR remains draft and unmerged with zero submitted reviews; no formal merge/deploy authorization observed.",
+      "Current active Worker source/version is not established by live provider inspection.",
+      "No real authenticated production afterId=0 multi-page/empty-page/noncontact denial/checkpoint-reread evidence; production readiness jobs explicitly skipped.",
+      "Real Cloudflare D1 migration/rollback recovery acceptance remains unverified; read-only checkpoint reread cannot establish D1 restore."
+    ],
+    "writes": 0,
+    "merges": 0,
+    "deployments": 0,
+    "scope": "Read-only observations; independent concurrent backend work is preserved. New verifier mock tests are not production evidence."
+  },
+  "requirementsCheckpoint": [
+    {
+      "id": 1,
+      "state": "partial",
+      "evidence": "Fixed U retained; complete source/build/generated/LFS/legal closure is open."
+    },
+    {
+      "id": 2,
+      "state": "partial",
+      "evidence": "Six exact source reviews retained, two complete/four pending; no unread/unknown zero claim."
+    },
+    {
+      "id": 3,
+      "state": "bounded-path-preserved",
+      "evidence": "Existing Session/SandAgentDb/native HTTP/Transcript remains authoritative and production wired; new patch changes only its real concurrency oracle."
+    },
+    {
+      "id": 4,
+      "state": "bounded-regression-implemented",
+      "evidence": "The losing valid batch is rejected without data loss and recovers after fresh read/reopen; initial five integration cases were individually confirmed at59f5."
+    },
+    {
+      "id": 5,
+      "state": "preserved",
+      "evidence": "Current concurrent product work and all production/other journal tests unchanged. No new module or user-data deletion."
+    },
+    {
+      "id": 6,
+      "state": "satisfied-for-batch",
+      "evidence": "One isolated existing test path, fresh remote base and root-only CAS; no public contract or identifier reassignment."
+    },
+    {
+      "id": 7,
+      "state": "bounded-executed-shipping-pending",
+      "evidence": "Exact106 full logs show62/3/1/12/4/3/1 and all retained UI/Electron/Windows groups passed after the recorded beaf compile failure; shipping is still queued."
+    },
+    {
+      "id": 8,
+      "state": "independent-work-continued",
+      "evidence": "Full base log audit, current source/backend reads and fresh-head reconciliation continued; no failed/cancelled run called a pass or rerun merely to select green."
+    },
+    {
+      "id": 9,
+      "state": "append-pending",
+      "evidence": "Existing canonical ledger/schema/RTM preserved. Reviewed evidence append must be integrated without replacing concurrent updates."
+    },
+    {
+      "id": 10,
+      "state": "blocked",
+      "evidence": "Final services/signed platform packages/UI/a11y/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain incomplete."
+    }
+  ],
+  "remaining": [
+    "Exact106 shipping125543545357 and all later changed scopes still need their own terminal logs",
+    "Integrate scoped evidence in the fresh canonical ledger and verify its source/schema/candidate rejection gates",
+    "Complete source/build/generated/LFS/legal review and all applicable production behavior",
+    "Authenticated live backend paging/recovery and real remote migration/restore evidence; Backend PR137 remains read-only",
+    "Supported signed installation/UI/visual/a11y/upgrade/rollback and full Bot/security/performance/soak acceptance",
+    "Final shipping SHA/artifact qualification and independent ACCEPT"
+  ],
+  "acceptance": {
+    "complete": false,
+    "sourceAccepted": false,
+    "releaseAuthorized": false,
+    "independentACCEPT": false
+  },
+  "observedFailedAttempt": {
+    "head": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a",
+    "run": 41522952938,
+    "job": 125543328873,
+    "conclusion": "failure",
+    "classification": "TEST_FLAW",
+    "error": "E0382 in shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling: runtime.shutdown() after drop(runtime), instead of shutting down restarted",
+    "testBlob": "b84f6a3eec2994a8be84006823366a7f29f082d7",
+    "fullLogSHA256": "0036cb523723253c7636f5ee7f921c67cd33a9dd96fd232c6633df39074e1254",
+    "executedHuman": 0,
+    "executedJournal": 0,
+    "repairCommit": "106bb95ba97ef7722e9523285783824393039bc0",
+    "repairTestBlob": "2e032c705fcec8256dd66476807dd1fd683625db",
+    "repairScope": "A concurrent session published the exact one-line runtime.shutdown -> restarted.shutdown cleanup repair; root read its current remote content and preserved it without replaying the stale file."
+  }
+}

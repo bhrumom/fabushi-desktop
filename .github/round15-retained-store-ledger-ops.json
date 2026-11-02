@@ -1,0 +1,48 @@
+{
+  "format_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 15,
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "responsibility_id": "FBCP-NMR-001",
+  "source_identity": {
+    "source_repository": "telegramdesktop/tdesktop",
+    "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+    "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+  },
+  "append": {
+    "requirement_ids": [
+      "NMR-DATA-ADMISSION-01",
+      "NMR-AC-DATA-ADMISSION-01"
+    ],
+    "fabushi_target_paths": [
+      "source/host/src/extensions/session/production.rs",
+      "source/host/tests/session_gateway_contract.rs"
+    ],
+    "fabushi_target_symbols": [
+      "ProductionSessionWorkers::find_forward_request",
+      "ProductionSessionWorkers::resume_human_forward_batches",
+      "ProductionSessionWorkers::open_human_conversation_db_owner"
+    ],
+    "production_entrypoints": [
+      "Existing Session forward staging and ordinary sync -> complete retained-source discovery before requestId reuse or network dispatch; same SandAgentDb source journals and native HTTP owner"
+    ],
+    "production_evidence": [
+      "Recovery round15 strict retained-source discovery extends the existing Session production owner. Current concurrent FBCP-HUMAN-CREATE implementation and creation12/storage3 remain owned by their original batch. Exact target Blobs and containing-H results belong to projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json; no local execution or independent ACCEPT."
+    ],
+    "test_evidence": [
+      "source/host/tests/session_gateway_contract.rs#shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+    ],
+    "fault_recovery_case_ids": [
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+    ],
+    "security_case_ids": [
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+    ],
+    "regression_ids": [
+      "shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy"
+    ]
+  },
+  "note": "\nRecovery round15 strict retained-source discovery: initial request lookup and ordinary forwarding recovery must inspect retained source journals before dispatch and propagate missing/unreadable state; unavailable data cannot free a request identity for a different source. Preserve own revoked-source durable denial, other-account isolation, compatible roster behavior, existing canonical metadata/journal and all concurrent CREATE01..04 creation12/storage3, reply/history/resource/UI work. The broader unpublished seven-case admission draft and its readonly_shm/raw-header approach are withdrawn from this integration after pinned SQLite3.51.3 corrupt-WAL risk was confirmed; no unsafe preflight, duplicate initializer, generic Agent recovery change or dependency upgrade is introduced. Those authored-only draft cases and exact source rationale remain reconstructable in the round15 receipt; they are not executed or accepted. Current selected case counts are frozen in the containing workflow; all current gates must execute at the exact containing H. Arbitrary corrupt WAL/hot-journal/zero-main preservation, multi-AppHost forward uniqueness, all source/legal/service/package/Bot/upgrade/rollback and independent ACCEPT remain unqualified. Acceptance fields and historical execution pointers are untouched."
+}

@@ -1,0 +1,62 @@
+{
+  "format_version": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_delta_base_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "scalars": {},
+      "remove_exact": {},
+      "append": {
+        "requirement_ids": [
+          "NMR-NATIVE-RESPONSE-01",
+          "AC-NATIVE-RESPONSE-01"
+        ],
+        "oracle_ids": [
+          "AC-NATIVE-RESPONSE-01"
+        ],
+        "fabushi_target_paths": [
+          "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+          "source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs"
+        ],
+        "fabushi_target_symbols": [
+          "ProductClient::native_send",
+          "ProductClient::complete_native_response",
+          "ProductClient::platform_request_with_owner",
+          "ProductClient::get_json",
+          "ProductClient::post_json",
+          "ProductClient::publish_plugin",
+          "NativeCredential::same_binding"
+        ],
+        "production_entrypoints": [
+          "Existing desktop AppHost -> Session-owned ProductClient platform path/target admission -> actual native credential dispatch -> bounded response -> existing NativeCredential::same_binding -> result; native JSON and multipart publication share the completion guard. No second message/identity owner."
+        ],
+        "production_evidence": [
+          "Reviewed exact19df1199779fa7fd66547ba095c277e0306d4c93 libf0fdddef00af4e5750b0b498037f611c21856f3f and credential8202caa3317d57def98d84b7a7f793edcd612d6c. Native platform/get/post/multipart discarded the complete dispatch binding before publishing a body; source repair and scoped execution receipt: projects/telegram-desktop-rust/evidence/round25-native-response-binding.json"
+        ],
+        "test_evidence": [
+          "authored-not-run:source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs#native_response_completion_platform_bindings; containing-H Actions required",
+          "authored-not-run:source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs#native_response_completion_json_bindings; containing-H Actions required",
+          "authored-not-run:source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs#native_response_completion_multipart_bindings; containing-H Actions required",
+          "authored-not-run:source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs#native_response_completion_unchanged_and_anonymous; containing-H Actions required",
+          "authored-not-run:source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs#native_response_completion_body_boundary_and_errors; containing-H Actions required"
+        ],
+        "test_environment_ids": [
+          ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:native_response_completion_:macos-15:exact-H"
+        ],
+        "test_execution_evidence": [
+          "exact9737673603862eca59349067760ce8dc177b5830 run41493248135: Human33/Agent4/credential3 and Social9 passed; wrong Cargo package selector prevented HTTPowner6 and actualAppHostcopy4/all3 negatives; Windows11 hook failures before signature assertions.",
+          "exact59f5fa24827812f78336c464995d161f403dedfb run41508537631 completed/success: Human38/sharebox1/journal3/Agent4/credential3/Gateway1; Transcript16/settlement5/Chromium12; Windows11 actual Authenticode/Unicode/cleanup0; shipping Social9/HTTPowner6/actualAppHostcopy4 and all3 negative controls passed. Not evidence for later modified heads or new response completion code."
+        ]
+      },
+      "note": " Native-response task round25: retain actual dispatch NativeCredential through bounded platform/JSON/multipart response completion and compare full existing same_binding before returning success or error; stale/invalid/logout returns fixed NATIVE_CREDENTIAL_CHANGED. Anonymous requests do not load later credentials; no network retry or rollback of an already-dispatched server operation. Five parent tests/69 real subprocess-HTTP scenarios are authored, not executed at authoring time. Preserve all concurrent source reviews, reply/forward/resource/CLI work and accepted=false/full release blockers. See projects/telegram-desktop-rust/evidence/round25-native-response-binding.json."
+    }
+  ]
+}

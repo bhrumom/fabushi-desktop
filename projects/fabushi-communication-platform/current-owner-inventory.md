@@ -65,14 +65,6 @@ Oracle: ORA-TDRP-FORWARD-INTENT-UI-001. Exact-H execution is recorded by the
 existing native-service-contracts Actions artifacts; source reviews and final
 service/package/Bot/independent acceptance remain separate.
 
-Follow-up at `73cc6e1cc9fa871e5f80931979606ac9ee810551`: ordinary sync and
-same-nonce retry already call `load_forward_batches` → `decode_forward_batches`
-→ `HumanForwardBatch::validate`. NMR-48d extends that existing admission gate to
-reject contradictory persisted privacy before target I/O, without changing the
-journal or introducing a writer. `store_forward_batch` consumes the same check.
-Snapshot resource bytes, completed targets and exact original metadata remain
-available for recovery; text-only hide-caption state stays valid.
-
 ### 2026-11-03 Windows updater publisher authority (round 22; narrow owner)
 
 At base `8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`, production main-process update wiring constructed the existing `SandWindowsInstaller` without a publisher override, accepting inherited Anysphere common names by default. Neither product metadata nor historical signer names establishes formal Fabushi publisher authority. The round-22 implementation at `5d271ff0c03d8f01368ca44026d14cd7519ad6bd` retains the existing `entry.ts` → production binding → `update-wiring.ts` → `SandUpdateService` → `win32-installer.ts` → apply-marker/Settings path; it removes the default, requires trusted `FABUSHI_WINDOWS_UPDATE_PUBLISHERS_JSON` exact certificate subject plus DER SHA-256, checks valid embedded Authenticode and candidate bytes, and consumes the launch receipt once. Missing/invalid policy disables updates; persistent data and staged failure recovery remain untouched. No new updater, identity owner, or renderer authorization surface is created.
@@ -229,3 +221,18 @@ PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected
 ### Resumed round 6: existing Human history owner extension
 
 NMR-PAGING-01 uses `SandAgentDb` and `agent_db_transcript_pages` for both canonical full reads and durable bounded traversal indices; `ProductionSessionWorkers` and the existing gateway admit the scoped cursor. The existing renderer pagination/root-cache/projection owners carry it and preserve committed updates across failed older-page retries. NMR-ACTIVITY-01 keeps activity and Agent handoff in the existing per-conversation mutation lane and repairs interrupted row/metadata persistence on replay. No additional message owner or user-data migration is introduced. Later credential, reply/forward, legacy-retention and source work remains intact. These authored changes require containing-H Actions; this inventory is not an acceptance claim.
+
+
+
+### Round23 resumed: desktop Social ownership boundary
+
+At inspected106bb95ba97ef7722e9523285783824393039bc0, Production Electron
+AppHost selects the existing Session host policy; ordinary/Codex registries
+omit generic Social. FeatureHost rejects contact ConversationOpen/ChatSend
+before auth/runtime/state/I/O/events; Runtime retains nonempty Social records
+before recovery writes, and the existing desktop platform client blocks generic
+message/resource HTTP before credentials. Human message writes remain in the
+existing Session/native_messaging path. No owner or user-data migration is added.
+The named NMR-SOCIAL-OWNER spec adds three missing real FeatureHost dispatch
+controls and keeps existing Agent, automation, non-desktop and Test boundaries.
+Exact-H execution remains required; no whole-owner acceptance is promoted.

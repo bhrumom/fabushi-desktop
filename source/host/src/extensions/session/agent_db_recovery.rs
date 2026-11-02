@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OpenFlags, params};
 use serde_json::{Map, Value};
 
 use crate::storage::sqlite_busy::{is_sqlite_corrupt_error, is_sqlite_io_error};
@@ -117,6 +117,44 @@ pub fn is_store_db_healthy(db: &Connection) -> bool {
     db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))
         .map(|value| value == "ok")
         .unwrap_or(false)
+}
+
+/// Reject an existing corrupt main database before journal-mode/schema writes.
+/// A WAL or rollback journal may contain the current snapshot, so those stores
+/// are left to the existing WAL-aware opener; this probe is never their authority.
+pub(super) fn probe_human_conversation_store(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<(), AgentDbRecoveryError> {
+    for suffix in ["-wal", "-journal"] {
+        let mut path = db_path.as_os_str().to_os_string();
+        path.push(suffix);
+        match std::fs::metadata(PathBuf::from(path)) {
+            Ok(metadata) if metadata.len() > 0 => return Ok(()),
+            Ok(_) => {},
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+            Err(error) => return Err(error.into()),
+        }
+    }
+    match std::fs::metadata(db_path) {
+        Ok(_) => {},
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    }
+    let mut uri = url::Url::from_file_path(db_path).map_err(|_| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid Human store path")
+    })?;
+    uri.query_pairs_mut().append_pair("mode", "ro").append_pair("immutable", "1");
+    let db = Connection::open_with_flags(
+        uri.as_str(),
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
+    )?;
+    db.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
+    let status = db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
+    if status != "ok" {
+        return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+    }
+    Ok(())
 }
 
 fn sqlite_error(error: &AgentDbRecoveryError) -> Option<&rusqlite::Error> {

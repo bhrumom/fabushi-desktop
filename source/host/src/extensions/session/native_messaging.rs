@@ -725,11 +725,12 @@ impl FabushiNativeMessagingClient {
         active: bool,
         expected_user_id: Option<&str>,
     ) -> Result<Vec<FabushiRemoteHumanReaction>, String> {
-        let message_id = required_trimmed(message_id, "message id")?;
+        let canonical_message_id = required_trimmed(message_id, "message id")?;
         if message_id
             .parse::<u64>()
             .ok()
-            .filter(|value| *value > 0)
+            .filter(|value| *value > 0 && *value <= 9_007_199_254_740_991
+                && value.to_string() == message_id && canonical_message_id == message_id)
             .is_none()
         {
             return Err("Fabushi Human reaction requires a positive canonical message id".into());
@@ -928,7 +929,7 @@ impl FabushiNativeMessagingClient {
             let next = data.next_after_id.as_ref().and_then(Value::as_u64)
                 .ok_or_else(|| "Fabushi Human history response omitted a valid nextAfterId".to_string())?;
             let expected_next = data.messages.last().map(|message| {
-                fabushi_identity_text(&message.id)?.parse::<u64>()
+                fabushi_message_identity_text(&message.id)?.parse::<u64>()
                     .map_err(|_| "Fabushi Human history nextAfterId is not a numeric message id".to_string())
             }).transpose()?.unwrap_or(requested_after_id);
             if next != expected_next || next > 9_007_199_254_740_991 {
@@ -1416,6 +1417,20 @@ pub fn fabushi_identity_text(value: &Value) -> Result<String, String> {
         Value::Number(value) => Ok(value.to_string()),
         _ => Err("Fabushi messaging userId is invalid.".into()),
     }
+}
+
+// Message primary keys share the service's positive JavaScript-safe integer
+// domain. Unlike display/user identities, their raw text must be canonical:
+// accepting "01" or padded input would create a second local transcript key.
+pub(super) fn fabushi_message_identity_text(value: &Value) -> Result<String, String> {
+    let parsed = match value {
+        Value::String(raw) => raw.parse::<u64>().ok().filter(|id| id.to_string() == *raw),
+        Value::Number(number) => number.as_u64(),
+        _ => None,
+    };
+    parsed.filter(|id| *id > 0 && *id <= 9_007_199_254_740_991)
+        .map(|id| id.to_string())
+        .ok_or_else(|| "Fabushi Human message identity is not a canonical positive safe integer".to_string())
 }
 
 fn classify_identity_http_status(

@@ -1,0 +1,265 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "code_delivery": {
+    "sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "parent": "f60515165b7bf382c1e38c0b6feeff2feb64bd92",
+    "tree": "a07a6d7325588c0740c73d646cef728d7a549326",
+    "verifiedRef": true
+  },
+  "remote_file_readback": [
+    {
+      "path": ".github/checkpoint-ledger-ops-round23.json",
+      "blob_sha": "4ced3fa719b21903c0c69e063d93a7c1dde25a74",
+      "content_equal": true
+    },
+    {
+      "path": ".github/workflows/checkpoint-ledger-object-round23.yml",
+      "blob_sha": "96f1ba7cb6bf5244a993866494dfd4aeff6b0b1d",
+      "content_equal": true
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob_sha": "87a40da25eb5bfb3c49a5c8d5115f96090f6abe5",
+      "content_equal": true
+    },
+    {
+      "path": "docs/specs/electron-update-source-authority.md",
+      "blob_sha": "c5e91a07d713dacdeefe092b317e314b619d8b32",
+      "content_equal": true
+    },
+    {
+      "path": "docs/specs/fbcp-desktop-social-owner-boundary.md",
+      "blob_sha": "e98b4f72c18ec8766eed545bdbafac09b8ec68a4",
+      "content_equal": true
+    },
+    {
+      "path": "projects/fabushi-communication-platform/current-owner-inventory.md",
+      "blob_sha": "9474034c18457086caaf25393b054345118c8248",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-backend-pr137-readonly.json",
+      "blob_sha": "28a8109812bec97df22b97ad103ffefb1e07b209",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-baseline-audit.json",
+      "blob_sha": "447beb3eb3a9555b3fc5b10628fb436ee187e0a4",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-concurrent-reconciliation-fix.json",
+      "blob_sha": "20c99707aa61c391704f73167d6eede90e9bbea7",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-feature-social-source-review.json",
+      "blob_sha": "669a7d44a3d4202ebc979f51d628d7691e6bd15c",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-native-current.json",
+      "blob_sha": "d3d839802887679495a664a6b6a4e0ae8bdb3018",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-owner-boundary-recovery.json",
+      "blob_sha": "e93e49b48a4a5599d5c01b9cb4daa882c55e9c03",
+      "content_equal": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+      "blob_sha": "0aebff41e55f58921742440e9f0b896a03d25638",
+      "content_equal": true
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs",
+      "blob_sha": "ea8f8e5092e126e62b2dc671438f25b106dce493",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-integration-feature-review.json",
+      "blob_sha": "60afa8457e0602ec23dc0e448dea592ddd9ee16f",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-source-current.json",
+      "blob_sha": "f8ace0d5b062f07d47f6205b96d5790fb18033c5",
+      "content_equal": true
+    },
+    {
+      "path": "projects/telegram-desktop-rust/evidence/round23-native-followup.json",
+      "blob_sha": "9572cb3a8fee33909caeb3afeba015a1d07a2fab",
+      "content_equal": true
+    }
+  ],
+  "ledger_object": {
+    "repository": "bhrumom/fabushi-desktop",
+    "ref": "refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "harness_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "run_id": "41524660486",
+    "run_attempt": "1",
+    "ledger_path": "projects/telegram-desktop-rust/parity-ledger.json",
+    "payload_path": ".github/checkpoint-ledger-ops-round23.json",
+    "input_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+    "payload_blob": "4ced3fa719b21903c0c69e063d93a7c1dde25a74",
+    "output_blob": "4dd736bd8d7f836f4105ad4b359e2eb8b7829c81",
+    "input_sha256": "36d7285291259ef8ede3eb91e41bf1f9e06ba1687b07d234f79d3beb0c873b17",
+    "payload_sha256": "66935addfcce5418b32c207ca776802e063bcc13a65d452fc2d0442f3b92a599",
+    "output_sha256": "2f9385808fbb769d97b801acdd86518644338606274f63c4421674296bbedef9",
+    "input_bytes": 3614993,
+    "payload_bytes": 4535,
+    "output_bytes": 3618798,
+    "row_count": 184,
+    "source_reviews_count": 6,
+    "operations_count": 2,
+    "counts": {
+      "requested_values": 21,
+      "appended_values": 21,
+      "requested_notes": 2,
+      "appended_notes": 2
+    },
+    "rows": [
+      {
+        "id": "FBCP-NMR-001",
+        "arrays": {
+          "requirement_ids": {
+            "before": 88,
+            "requested": 6,
+            "appended": 6,
+            "after": 94
+          },
+          "fabushi_target_paths": {
+            "before": 26,
+            "requested": 2,
+            "appended": 2,
+            "after": 28
+          },
+          "integration_case_ids": {
+            "before": 49,
+            "requested": 3,
+            "appended": 3,
+            "after": 52
+          },
+          "security_case_ids": {
+            "before": 33,
+            "requested": 2,
+            "appended": 2,
+            "after": 35
+          },
+          "test_evidence": {
+            "before": 75,
+            "requested": 1,
+            "appended": 1,
+            "after": 76
+          },
+          "production_evidence": {
+            "before": 37,
+            "requested": 1,
+            "appended": 1,
+            "after": 38
+          },
+          "test_execution_evidence": {
+            "before": 36,
+            "requested": 4,
+            "appended": 4,
+            "after": 40
+          }
+        },
+        "note_appended": true
+      },
+      {
+        "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+        "arrays": {
+          "test_execution_evidence": {
+            "before": 4,
+            "requested": 2,
+            "appended": 2,
+            "after": 6
+          }
+        },
+        "note_appended": true
+      }
+    ],
+    "changed_rows": [
+      "FBCP-NMR-001",
+      "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+    ],
+    "product_validation": false,
+    "source_acceptance": false,
+    "independent_acceptance": false,
+    "commit_created": false,
+    "ref_updated": false,
+    "integration_condition": "Root API reads the exact input/output and scoped delta, requires current canonical ledger input equality, then integrates with force=false and expected_sha CAS. A changed ledger input requires regeneration.",
+    "github_blob": "4dd736bd8d7f836f4105ad4b359e2eb8b7829c81"
+  },
+  "object_readback_diff": {
+    "changedRows": [
+      {
+        "id": "FBCP-NMR-001",
+        "fields": [
+          "fabushi_target_paths",
+          "production_evidence",
+          "test_evidence",
+          "requirement_ids",
+          "integration_case_ids",
+          "security_case_ids",
+          "test_execution_evidence",
+          "notes"
+        ]
+      },
+      {
+        "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+        "fields": [
+          "test_execution_evidence",
+          "notes"
+        ]
+      }
+    ],
+    "topLevelChanged": [],
+    "rowCounts": [
+      184,
+      184
+    ],
+    "reviews": [
+      6,
+      6
+    ]
+  },
+  "artifact": {
+    "id": 13178967430,
+    "name": "round23-ledger-object-83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "size_in_bytes": 549513,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178967430",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178967430/zip",
+    "expired": false,
+    "created_at": "2026-11-02T21:02:34Z",
+    "expires_at": "2027-01-31T21:02:24Z",
+    "updated_at": "2026-11-02T21:02:34Z",
+    "digest": "sha256:89fe24056ac7478d84034a447ea120d666ae453c6b7565232e113cf41de77881",
+    "workflow_run": {
+      "id": 41524660486,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345"
+    }
+  },
+  "native_run": {
+    "id": 41524660245,
+    "head": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "shipping_job": 125549179025,
+    "shipping_status": "queued at this observation; no Feature10 execution result yet"
+  },
+  "requirements": {
+    "source_closure": false,
+    "product_accepted": false,
+    "independent_accept": false,
+    "formal_publisher": false,
+    "real_signed_package_install_upgrade_rollback": false,
+    "backend_readonly": true
+  },
+  "delivery_policy": "Integrate only while the latest canonical ledger equals the producer input; preserve fresh canonical documents and other sessions. Non-forced expected_sha CAS followed by exact SHA/file content readback. Object preparation success is not source-schema or product execution approval."
+}
