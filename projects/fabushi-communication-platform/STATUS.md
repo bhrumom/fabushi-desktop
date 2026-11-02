@@ -6,6 +6,31 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
+## Round5 caption and covered-history refresh — exact-H execution pending
+
+The existing picker now hides its caption control for plain text and media
+without caption text, sends false for that flag on new intents, and keeps sender
+hiding independently available. Captioned-media coupling and frozen retries
+remain intact through the real transcript projection. Original16 Chromium cases
+are preserved with3 new contrasts, requiring19. No new owner/wire field or data
+migration is introduced. Retained reaction/credential qualification and shared
+checkpoint integration remain required; no pending or old-H result is a pass.
+
+NMR-R5-04 also addresses old messages outside the latest200: a separate persisted
+refresh cursor with a fixed covered upper bound receives one of the existing32
+history requests, preserving new-message coverage and all existing message
+owners. Row persistence precedes cursor CAS; failures and restart cannot skip
+an unfinished page. Row and cursor admission follow SQLite write-lock acquisition
+and recheck the original Native credential and current owner scope. This adds
+no background owner or visual read-receipt UI.
+Six added real Host cases bring the required Human gate to56; private5,
+resource3, journal12 and all retained gates still require containing-H Actions.
+
+Exact25/run41518902093 job125529507403 now has complete-log success for
+Human50/resource3/sharebox1/journal12/Agent4/private4/forwardHTTP1. This scoped
+prerequisite includes the R5 atomic reaction cases; it does not execute the
+new refresh/caption code. Exact25 shipping was still queued at observation.
+
 ## Current round5 reaction recovery qualification — NMR-R5-01/02
 
 Existing Session/Transcript remains the only Human message owner. This batch

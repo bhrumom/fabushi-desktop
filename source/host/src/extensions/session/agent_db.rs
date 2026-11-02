@@ -458,6 +458,50 @@ impl SandAgentDb {
         Ok(changed)
     }
 
+    /// Admit a metadata-key CAS after acquiring SQLite's write reservation.
+    /// The callback receives the metadata read inside that transaction; it
+    /// must not re-enter this owner. Even an unchanged value is admitted.
+    pub fn set_metadata_if_unchanged_with_admission(
+        &self,
+        key: &str,
+        expected: Option<&serde_json::Value>,
+        value: serde_json::Value,
+        before_write: impl FnOnce(&serde_json::Value) -> Result<(), String>,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let (admitted, changed) = self.run_admitted_write_value(
+            "setMetadataIfUnchangedWithAdmission",
+            |transaction| {
+                let raw = transaction
+                    .query_row(GET_KV_SQL, params!["metadata"], |row| row.get::<_, String>(0))
+                    .optional()?;
+                let Some(raw) = raw else { return Ok(None); };
+                let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+                let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+                let Some(object) = metadata.as_object() else { return Ok(None); };
+                if object.get(key) != expected { return Ok(None); }
+                let changed = object.get(key) != Some(&value);
+                before_write(&metadata).map_err(AgentDbProjectionError::AdmissionRejected)?;
+                if changed {
+                    metadata.as_object_mut().expect("admitted metadata object")
+                        .insert(key.to_string(), value);
+                    let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+                    if transaction.execute(
+                        COMPARE_AND_SET_KV_SQL, params![next_raw, "metadata", raw],
+                    )? != 1 {
+                        return Ok(None);
+                    }
+                }
+                Ok(Some(((true, changed), changed)))
+            },
+        )?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path, AgentDbListenerChannel::Metadata(key.to_string()),
+            );
+        }
+        Ok(admitted)
+    }
+
     /// Atomically advances the durable Agent root and marks the addressed
     /// user transcript entry as confirmed. Conversation blobs are written
     /// before this call; metadata + recovery watermark must commit together.
@@ -1334,6 +1378,49 @@ impl SandAgentDb {
         Ok(updated)
     }
 
+    /// Refresh only the entire row observed by the caller, with current owner
+    /// metadata/credential admission inside the SQLite write transaction.
+    /// No identity settlement or intent retirement is implied by this update.
+    pub fn update_transcript_entry_if_unchanged_with_admission(
+        &self,
+        entry_id: &str,
+        expected: &serde_json::Value,
+        next: &serde_json::Value,
+        before_write: impl FnOnce(&serde_json::Value) -> Result<(), String>,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        if entry_id.is_empty()
+            || expected.get("id").and_then(serde_json::Value::as_str) != Some(entry_id)
+            || next.get("id").and_then(serde_json::Value::as_str) != Some(entry_id)
+        {
+            return Ok(None);
+        }
+        let (updated, changed) = self.run_admitted_write_value(
+            "updateTranscriptEntryIfUnchangedWithAdmission",
+            |transaction| {
+                let raw = transaction
+                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| row.get::<_, String>(0))
+                    .optional()?;
+                let Some(raw) = raw else { return Ok(None); };
+                let current: serde_json::Value = serde_json::from_str(&raw)?;
+                if &current != expected { return Ok(None); }
+                let Some(metadata) = read_metadata_json(transaction)? else { return Ok(None); };
+                if !metadata.is_object() { return Ok(None); }
+                before_write(&metadata).map_err(AgentDbProjectionError::AdmissionRejected)?;
+                let changed = &current != next;
+                if changed && transaction.execute(
+                    UPDATE_TRANSCRIPT_ENTRY_SQL, params![next.to_string(), entry_id],
+                )? != 1 {
+                    return Ok(None);
+                }
+                Ok(Some(((Some(next.clone()), changed), changed)))
+            },
+        )?;
+        if changed {
+            publish_entries_upserted(&self.db_path, vec![next.clone()]);
+        }
+        Ok(updated)
+    }
+
     /// Settle one acknowledged Human reaction and retire only its observed
     /// durable intent in the same transaction. A replay of an already settled
     /// row clears the matching intent without publishing the row again.
@@ -1846,6 +1933,46 @@ impl SandAgentDb {
         let raw = encode_hex(&serde_json::to_vec(&metadata)?);
         let _ = self.write_kv("metadata", &raw)?;
         Ok(())
+    }
+
+    /// A refused/ignored admitted write drops the transaction without commit.
+    /// The whole operation, including admission, follows BEGIN IMMEDIATE;
+    /// publication is left to the caller after this method releases the lock.
+    fn run_admitted_write_value<T: Default>(
+        &self,
+        operation: &str,
+        write: impl FnOnce(&rusqlite::Transaction<'_>)
+            -> Result<Option<(T, bool)>, AgentDbProjectionError>,
+    ) -> Result<T, AgentDbProjectionError> {
+        if self.is_closed() { return Ok(T::default()); }
+        let mut guard = self.connection.lock().map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        if self.is_closed() { return Ok(T::default()); }
+        let Some(db) = guard.as_mut() else { return Ok(T::default()); };
+        let result = (|| -> Result<(T, bool), AgentDbProjectionError> {
+            let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            let Some((value, changed)) = write(&transaction)? else {
+                return Ok((T::default(), false));
+            };
+            transaction.commit()?;
+            Ok((value, changed))
+        })();
+        drop(guard);
+        match result {
+            Ok((value, changed)) => {
+                if changed { bump_db_write_generation(&self.db_path); }
+                Ok(value)
+            }
+            Err(error) => {
+                if let AgentDbProjectionError::Sqlite(sqlite) = &error {
+                    if is_sqlite_busy_error(sqlite) {
+                        if let Some(callback) = self.options.on_busy_error.as_ref() {
+                            callback(operation, &sqlite.to_string());
+                        }
+                    }
+                }
+                Err(error)
+            }
+        }
     }
 
     fn run_write<F>(

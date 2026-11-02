@@ -157,7 +157,13 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 50 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 56 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_history_refresh_reaches_old_messages_and_resumes_fixed_cycle_after_restart ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_history_refresh_reserves_one_request_during_continuous_catchup ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_history_refresh_rejects_damaged_cursor_before_history_request ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_history_refresh_rejects_invalid_pages_and_permission_without_advancing ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_history_refresh_row_and_checkpoint_failures_resume_without_duplicate_events ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_history_refresh_sparse_empty_and_ceiling_boundaries_preserve_local_rows ... ok' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -193,7 +199,8 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
-          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
+          grep -Eq 'test result: ok\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
+          grep -F 'shipping_human_settlement_credential_history_sqlite_write_wait_fences_rows_and_cursors ... ok' artifacts/native-message/settlement-credential.log
       - name: Authenticated forward recipient gateway HTTP contract
         shell: bash
         run: |
@@ -594,8 +601,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# tests 16' artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# pass 16' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# tests 19' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# pass 19' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log

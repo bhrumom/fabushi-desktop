@@ -5,11 +5,24 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Updated: 2026-11-02
 
+## Round5 caption and covered-history refresh — NMR-R5-03/04
+
+| Requirement | Existing owner and production input | Authored oracle |
+| --- | --- | --- |
+| NMR-R5-03 / NMR-AC-R5-03 | Production Human transcript projector → selected TranscriptMessage → ForwardMessageDialog → existing Coordinator/Session forward command and journal | No caption option and false flag for plain text or blank-caption media; independent sender selection; captioned-media coupling; immutable retry and source replacement guards. Original16 plus3 actual Chromium cases require19 at the containing H. |
+| NMR-R5-04 / NMR-AC-R5-04 | Existing Human open/reconnect/focus → Coordinator Session sync → native afterId API → same SandAgentDb materializer/events and separate persisted refresh cursor | Covered old reaction/read state remains reachable under continuous new traffic; fixed upper bound, one reserved request within32, row-before-cursor CAS, failure/restart without skipped pages or duplicate events. Six new real Host cases plus retained50 require Human56 at containing H; post-lock row/cursor admission, private5/resource3/journal12 and all prior gates remain required. |
+
+Exact25 source157/schema37 and UI18/5/16 are read historical prerequisite
+results. They do not execute the new caption cases or establish full source/
+product/service/platform/Bot/independent ACCEPT.
+
 ## Current round5 reaction recovery — NMR-R5-01/02
 
 Receipt: projects/telegram-desktop-rust/evidence/round5-recovery-resume-20261102.json.
-Exact68 and exact59 are executed prerequisites. This batch's Human50/journal12/
-private credential4 and affected current gates require containing-H Actions.
+Exact68 and exact59 are executed prerequisites. Exact25 reconciliation executed Human50/
+private4, resource3/sharebox1/journal12/Agent4/forwardHTTP1 with zero failed/ignored;
+the current containing batch retains them within Human56/private5/
+journal12 and requires all affected current Actions.
 Existing source reviews, prior evidence and independent acceptance are retained.
 
 | Requirement | Existing production owner | Authored behavioral oracle |
