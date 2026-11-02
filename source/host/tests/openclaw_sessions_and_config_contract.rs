@@ -110,21 +110,28 @@ fn test_config_set_optimistic_concurrency_rejects_stale_base_hash_with_409_confl
 
     let shipping_source = include_str!("../app/src/main.rs");
     let config_set = shipping_source
-        .split("fn call_openclaw_config_set(")
+        .split("fn dispatch_public_settings_command(")
         .nth(1)
-        .expect("shipping config.set owner exists")
-        .split("fn call_openclaw_system_info(")
+        .expect("shipping public Settings adapter exists")
+        .split("struct UnifiedGatewayApi")
         .next()
-        .expect("shipping config.set function boundary exists");
+        .expect("shipping Settings adapter boundary exists");
     assert!(config_set.contains("config.set requires raw, config, or settings"));
     assert!(config_set.contains("config.set target must be a JSON object"));
     assert!(!config_set.contains("unwrap_or(args)"));
-    assert!(config_set.contains("self.settings.set_host_settings_if_current("));
+    assert!(config_set.contains("settings.set_public_host_settings_if_current("));
+    assert!(config_set.contains("settings.get_public_host_settings_snapshot()"));
+    assert!(config_set.contains("on_committed(&committed.trusted_settings, permission_changed)"));
+    assert!(shipping_source.contains("self.call_public_settings_command(\"config.set\", args)"));
+    assert!(shipping_source.contains("self.call_public_settings_command(\"config.get\", args)"));
+    assert!(shipping_source.contains("if matches!(method, \"getHostSettings\" | \"setHostSettings\")"));
+    assert!(shipping_source.contains("return self.call_public_settings_command(method, &args)"));
     assert!(config_set.contains("map_err(GatewayCommandError::from)"));
     assert!(config_set.contains("\"hash\": snapshot.hash"));
     assert!(config_set.contains("\"configSource\": snapshot.config_source"));
     assert!(!config_set.contains("get_host_settings()"));
     assert!(!config_set.contains("get_config_source_metadata()"));
+    assert!(!config_set.contains("set_host_settings_if_current("));
     let _ = fs::remove_file(path);
 }
 

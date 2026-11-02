@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::extensions::box_store_sync::box_object_store::BoxObjectStore;
 use crate::extensions::box_store_sync::box_store_download::{
-    BOX_STORE_RESTORE_TMP_SUFFIX, LARGE_OBJECT_FREE_SPACE_FACTOR,
+    BOX_STORE_RESTORE_TMP_SUFFIX, InstallationKeyMaterial, LARGE_OBJECT_FREE_SPACE_FACTOR,
 };
 use crate::extensions::box_store_sync::box_store_manifest::{
     AGENT_STORE_DB_BASENAMES, BoxManifestMap, set_manifest_entry,
@@ -110,6 +110,7 @@ pub struct BoxStoreTransfer {
     upload_concurrency: usize,
     large_object_threshold: u64,
     hydration_handoff_marker_path: Option<PathBuf>,
+    installation_data_root: Option<PathBuf>,
     log: Arc<dyn Fn(&str) + Send + Sync>,
     local_stat: Mutex<HashMap<String, LocalStat>>,
 }
@@ -127,9 +128,23 @@ impl BoxStoreTransfer {
             upload_concurrency: upload_concurrency.max(1),
             large_object_threshold: large_object_threshold.max(1),
             hydration_handoff_marker_path,
+            installation_data_root: None,
             log,
             local_stat: Mutex::new(HashMap::new()),
         }
+    }
+
+    /// Bind every transfer category to the existing path owner's installation.
+    /// Manifest names and category roots cannot override this trusted boundary.
+    pub fn with_installation_data_root(mut self, root: PathBuf) -> Self {
+        self.installation_data_root = Some(root);
+        self
+    }
+
+    pub(super) fn installation_key_material(&self) -> Result<InstallationKeyMaterial, String> {
+        let roots = self.installation_data_root.iter().cloned().collect::<Vec<_>>();
+        InstallationKeyMaterial::new(&roots)
+            .map_err(|_| "installation revision key exclusion is unavailable".to_string())
     }
 
     pub fn log_message(&self, message: &str) {
@@ -169,6 +184,22 @@ impl BoxStoreTransfer {
         let mut seen = HashSet::<String>::new();
         let mut candidates = Vec::<Candidate>::new();
         let mut walk_complete = true;
+        let installation_keys = self.installation_key_material()?;
+
+        // Old manifests can still contain a key admitted through another
+        // category before this boundary existed. Remove those references too.
+        let prefix = format!("{rel_prefix}/");
+        let mut key_entries = Vec::new();
+        for path in manifest.keys() {
+            let Some(relative) = path.strip_prefix(&prefix) else {
+                continue;
+            };
+            if InstallationKeyMaterial::contains_portable_path(path)
+                || installation_keys.excludes_path(&root.join(relative))?
+            {
+                key_entries.push(path.clone());
+            }
+        }
 
         if root.exists() {
             self.collect_tree_candidates(
@@ -177,12 +208,18 @@ impl BoxStoreTransfer {
                 rel_prefix,
                 excludes,
                 ignore,
+                &installation_keys,
                 contains_agent_store_dbs,
                 &mut seen,
                 &mut candidates,
                 &mut summary,
                 &mut walk_complete,
-            );
+            )?;
+        }
+        for path in key_entries {
+            manifest.remove(&path);
+            self.forget_local_stat_path(&path);
+            summary.removed = summary.removed.saturating_add(1);
         }
 
         self.upload_candidates(store, manifest, &candidates, manifest_v2, &mut summary)?;
@@ -228,8 +265,19 @@ impl BoxStoreTransfer {
             ..CategoryTransferSummary::default()
         };
         let mut candidates = Vec::with_capacity(files.len());
+        let installation_keys = self.installation_key_material()?;
 
         for file in files {
+            if InstallationKeyMaterial::contains_portable_path(&file.rel_path)
+                || installation_keys.excludes_path(&file.abs_path)?
+            {
+                if manifest.remove(&file.rel_path).is_some() {
+                    summary.removed = summary.removed.saturating_add(1);
+                }
+                self.forget_local_stat_path(&file.rel_path);
+                summary.excluded_files = summary.excluded_files.saturating_add(1);
+                continue;
+            }
             let metadata = match fs::symlink_metadata(&file.abs_path) {
                 Ok(metadata) => metadata,
                 Err(_) => {
@@ -300,18 +348,19 @@ impl BoxStoreTransfer {
         rel_prefix: &str,
         excludes: &[&str],
         ignore: Option<&WorkspaceIgnore>,
+        installation_keys: &InstallationKeyMaterial,
         contains_agent_store_dbs: bool,
         seen: &mut HashSet<String>,
         candidates: &mut Vec<Candidate>,
         summary: &mut CategoryTransferSummary,
         walk_complete: &mut bool,
-    ) {
+    ) -> Result<(), String> {
         let entries = match fs::read_dir(dir) {
             Ok(entries) => entries,
             Err(_) => {
                 tally_category_metadata_failure(summary);
                 *walk_complete = false;
-                return;
+                return Ok(());
             }
         };
 
@@ -341,6 +390,17 @@ impl BoxStoreTransfer {
                     continue;
                 }
             };
+            let rel_path = format!("{rel_prefix}/{relative}");
+            if InstallationKeyMaterial::contains_portable_path(&rel_path)
+                || installation_keys.excludes_path(&path)?
+            {
+                if file_type.is_dir() {
+                    summary.pruned_dirs = summary.pruned_dirs.saturating_add(1);
+                } else {
+                    summary.excluded_files = summary.excluded_files.saturating_add(1);
+                }
+                continue;
+            }
 
             if file_type.is_dir() {
                 if ignore.is_some_and(|matcher| matcher.can_prune_dir(&relative)) {
@@ -353,12 +413,13 @@ impl BoxStoreTransfer {
                     rel_prefix,
                     excludes,
                     ignore,
+                    installation_keys,
                     contains_agent_store_dbs,
                     seen,
                     candidates,
                     summary,
                     walk_complete,
-                );
+                )?;
                 continue;
             }
 
@@ -369,7 +430,6 @@ impl BoxStoreTransfer {
                 continue;
             }
 
-            let rel_path = format!("{rel_prefix}/{relative}");
             if is_excluded(&rel_path, excludes)
                 || (contains_agent_store_dbs && is_agent_store_db_path(&rel_path))
                 || rel_path.contains(BOX_STORE_SNAPSHOT_TMP_SUFFIX)
@@ -408,6 +468,7 @@ impl BoxStoreTransfer {
                 bypass_stat_cache: false,
             });
         }
+        Ok(())
     }
 
     fn is_hydration_marker_path(&self, path: &Path) -> bool {

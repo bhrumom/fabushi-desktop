@@ -322,7 +322,13 @@ not by itself close Automation execution/settlement or original-turn recovery.
   `agent_db_recovery::physical_release_tests` for actual Unix descriptor
   duplication at shared-guard Drop and exclusive recovery completion. These
   Unix controls do not claim Windows duplicate-handle equivalence. Source
-  inspection is not a pass.
+  inspection is not a pass. ARA-MAIN-ORACLE-01 is **FIX / TEST_FLAW**:
+  direct main-path refusal must exercise an actual directory and, on Unix,
+  an existing-target and dangling symlink through `recover_corrupt_store_db`.
+  Require the original path, target/sentinel and sidecar bytes to remain,
+  with no guard, permanent marker or quarantine created. This supplements
+  the existing valid recovery and other malformed-object assertions without
+  changing production behavior or claiming execution before exact-H Actions.
 - ARA-06 (ARA-PATH-01): preflight and the existing SQLite quarantine/removal
   consumer must address the same native path bytes. Derive sidecars and the
   default quarantine name by appending to `OsString`, never from `display()`.

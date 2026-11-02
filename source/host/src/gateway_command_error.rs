@@ -60,6 +60,20 @@ impl From<crate::extensions::settings::settings_service::HostSettingsUpdateError
     }
 }
 
+impl From<crate::extensions::settings::settings_service::PublicHostSettingsError>
+    for GatewayCommandError
+{
+    fn from(error: crate::extensions::settings::settings_service::PublicHostSettingsError) -> Self {
+        use crate::extensions::settings::settings_service::PublicHostSettingsError;
+        match error {
+            PublicHostSettingsError::Conflict => Self::Conflict(error.to_string()),
+            PublicHostSettingsError::Rejected | PublicHostSettingsError::KeyUnavailable => {
+                Self::Internal(error.to_string())
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GatewayCommandErrorClassification {
     pub reason: &'static str,

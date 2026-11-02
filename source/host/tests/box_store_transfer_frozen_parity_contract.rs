@@ -3,13 +3,16 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use sha2::{Digest, Sha256};
+
+use mahayana_host_runtime::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
 use mahayana_host_runtime::extensions::box_store_sync::box_object_store::{
     BoxObjectStore, LocalFsObjectStore,
 };
 use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest::BoxManifestMap;
 use mahayana_host_runtime::extensions::box_store_sync::box_store_manifest_format::BoxStoreManifestEntry;
 use mahayana_host_runtime::extensions::box_store_sync::box_store_transfer::{
-    BOX_STORE_SNAPSHOT_TMP_SUFFIX, BoxStoreTransfer, glob_matches_path,
+    BOX_STORE_SNAPSHOT_TMP_SUFFIX, BoxStoreTransfer, StagedTransferFile, glob_matches_path,
 };
 
 fn temp_root(label: &str) -> PathBuf {
@@ -205,4 +208,76 @@ fn shipping_production_has_one_transfer_owner_and_no_parallel_sync_runtime() {
     assert!(production.contains("poll_inner.transfer.sweep_leaked_temps(&roots)"));
     assert!(!production.contains("\nfn sync_tree_category("));
     assert!(!production.contains("\nfn sync_file("));
+}
+
+#[test]
+fn transfer_excludes_actual_key_staging_and_native_aliases_in_every_category() {
+    let root = temp_root("actual-installation");
+    let workspace = root.join("workspace");
+    let installation = workspace.join("private-state");
+    fs::create_dir_all(&installation).expect("create explicit installation fixture");
+    fs::create_dir_all(workspace.join("unrelated")).expect("create ordinary fixture");
+    let key = installation.join(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+    let staged = installation.join(format!("{HOST_CONFIG_REVISION_KEY_FILE_NAME}.pending.tmp"));
+    fs::write(&key, [0x31_u8; 32]).expect("write synthetic key");
+    fs::write(&staged, [0x54_u8; 32]).expect("write synthetic staged key");
+    fs::hard_link(&key, workspace.join("key-alias.bin")).expect("create key native alias");
+    fs::hard_link(&staged, workspace.join("staged-alias.bin")).expect("create staging native alias");
+    let ordinary = b"ordinary same-basename content";
+    let ordinary_path = workspace.join("unrelated").join(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+    fs::write(&ordinary_path, ordinary).expect("write unrelated same-basename file");
+    fs::write(installation.join("settings.json"), b"{}").expect("write ordinary settings");
+    let key_sha = format!("{:x}", Sha256::digest([0x31_u8; 32]));
+    let staged_sha = format!("{:x}", Sha256::digest([0x54_u8; 32]));
+    let store = LocalFsObjectStore::new(root.join("store"));
+    let transfer = transfer(None, 1024).with_installation_data_root(installation.clone());
+    let mut manifest = BoxManifestMap::new();
+
+    // Category labels and portable prefixes must never select a weaker policy.
+    for prefix in ["workspace", "home/box/cli-config", "home/box/other-category"] {
+        let forbidden = [
+            format!("{prefix}/private-state/{HOST_CONFIG_REVISION_KEY_FILE_NAME}"),
+            format!("{prefix}/private-state/{HOST_CONFIG_REVISION_KEY_FILE_NAME}.pending.tmp"),
+            format!("{prefix}/key-alias.bin"),
+            format!("{prefix}/staged-alias.bin"),
+        ];
+        for path in &forbidden {
+            manifest.insert(path.clone(), BoxStoreManifestEntry::File {
+                sha: key_sha.clone(), size: 32, mode: 0o600,
+            });
+        }
+        let summary = transfer.sync_tree_category(
+            &store, &mut manifest, &workspace, prefix, "explicit-category", &[], None, false, true,
+        ).expect("transfer explicitly rooted category");
+        assert_eq!((summary.failures, summary.metadata_failures), (0, 0));
+        for path in forbidden {
+            assert!(!manifest.contains_key(&path), "category retained installation material");
+        }
+        assert!(manifest.contains_key(&format!("{prefix}/private-state/settings.json")));
+        assert!(manifest.contains_key(&format!("{prefix}/unrelated/{HOST_CONFIG_REVISION_KEY_FILE_NAME}")));
+    }
+
+    let files = vec![
+        StagedTransferFile { abs_path: key, rel_path: "workspace/staged-final.bin".into(), mode: 0o600 },
+        StagedTransferFile { abs_path: staged, rel_path: "workspace/staged-pending.bin".into(), mode: 0o600 },
+        StagedTransferFile {
+            abs_path: ordinary_path,
+            rel_path: format!("workspace/staged-ordinary/{HOST_CONFIG_REVISION_KEY_FILE_NAME}"),
+            mode: 0o600,
+        },
+    ];
+    let staged_summary = transfer.sync_staged_files(&store, &mut manifest, "staged", &files, 0, true)
+        .expect("transfer staged inputs");
+    assert_eq!((staged_summary.failures, staged_summary.files_uploaded, staged_summary.excluded_files), (0, 1, 2));
+    assert!(!manifest.contains_key("workspace/staged-final.bin"));
+    assert!(!manifest.contains_key("workspace/staged-pending.bin"));
+    assert!(manifest.contains_key(&format!("workspace/staged-ordinary/{HOST_CONFIG_REVISION_KEY_FILE_NAME}")));
+    assert!(store.get(&format!("blobs/{key_sha}")).expect("inspect key object absence").is_none(),
+        "a category uploaded installation key bytes");
+    assert!(store.get(&format!("blobs/{staged_sha}")).expect("inspect staged object absence").is_none(),
+        "a category uploaded staged key bytes");
+    let ordinary_sha = format!("{:x}", Sha256::digest(ordinary));
+    assert!(store.get(&format!("blobs/{ordinary_sha}")).expect("inspect ordinary object").as_deref() == Some(ordinary.as_slice()),
+        "ordinary same-basename payload did not transfer");
+    fs::remove_dir_all(root).expect("cleanup owned transfer fixture");
 }

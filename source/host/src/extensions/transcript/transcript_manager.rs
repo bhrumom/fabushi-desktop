@@ -905,6 +905,13 @@ impl TranscriptManager {
             return;
         }
 
+        // Revoke inbound tickets before downstream disposal can invoke a late
+        // readiness callback. This queue object must never reopen.
+        self.background_wakes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .close();
+
         self.set_agent_run_lifecycle_observer(None);
         self.set_automation_config_changed_observer(None);
         self.set_channel_config_changed_observer(None);
@@ -936,10 +943,10 @@ impl TranscriptManager {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .take();
-        *self
-            .background_wakes
+        self.background_wakes
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner()) = BackgroundWakes::default();
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .close();
         *self
             .client_side_tool_v2
             .lock()

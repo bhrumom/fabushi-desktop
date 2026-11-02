@@ -529,3 +529,46 @@ fn shipping_chrome_session_stage_uses_frozen_mapper_and_unique_host_owner() {
         "canonical Chrome session stage telemetry must not degrade to Host-extension diagnostics"
     );
 }
+
+#[test]
+fn shipping_all_snapshot_and_pack_consumers_bind_the_captured_installation_root() {
+    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let constructor = production.split_once("impl ProductionBoxStoreSyncService {")
+        .expect("existing production service").1
+        .split_once("impl BoxStoreSyncService for ProductionBoxStoreSyncService")
+        .expect("production constructor boundary").0;
+    assert!(constructor.contains("let sand_root = get_sand_root_dir();"));
+    assert!(constructor.contains(".with_installation_data_root(sand_root.clone())"));
+    assert!(production.contains("sand_root: PathBuf"));
+    assert!(production.contains("let sand_root = &self.sand_root;"));
+    assert!(production.contains("categories.extend(sync_sand_data_and_workspace_categories("));
+    assert!(production.contains("sync_local_packs(&self.transfer, sand_root, store.as_ref(), &entries"));
+
+    let composition = production.split_once("fn sync_sand_data_and_workspace_categories(")
+        .expect("real category composition").1
+        .split_once("fn snapshot_transfer_roots(").expect("category composition boundary").0;
+    assert_eq!(composition.matches("transfer.sync_tree_category(").count(), 2);
+    assert!(composition.contains("sand_root,"));
+    assert!(composition.contains("workspace_root,"));
+    for helper in ["sync_chrome_auth_state_category", "sync_chrome_profile_category", "sync_box_home_category", "sync_chrome_session"] {
+        assert!(production.contains(&format!("fn {helper}(\n    transfer: &BoxStoreTransfer,")),
+            "category helper bypassed the captured transfer boundary");
+    }
+
+    let pack = production.split_once("fn sync_local_packs<F>(")
+        .expect("existing pack consumer").1
+        .split_once("struct ProductionStoreDbCaptureResult").expect("pack consumer boundary").0;
+    let exclusion = pack.find("installation_keys.excludes_path(path)").expect("pack installation exclusion");
+    let source_metadata = pack.find("fs::symlink_metadata(&abs_path)").expect("pack source admission");
+    let build = pack.find("build_pack_file(").expect("actual pack builder");
+    assert!(exclusion < source_metadata && source_metadata < build,
+        "pack consumer must exclude installation material before reading pack sources");
+
+    let transfer = include_str!("../src/extensions/box_store_sync/box_store_transfer.rs");
+    assert!(transfer.contains("pub fn with_installation_data_root(mut self, root: PathBuf)"));
+    let staged = transfer.split_once("pub fn sync_staged_files(").expect("staged transfer owner").1
+        .split_once("pub fn sweep_leaked_temps(").expect("staged transfer boundary").0;
+    assert!(staged.contains("installation_keys.excludes_path(&file.abs_path)"));
+    assert!(staged.find("installation_keys.excludes_path(&file.abs_path)").unwrap()
+        < staged.find("self.upload_candidates(").expect("staged upload consumer"));
+}

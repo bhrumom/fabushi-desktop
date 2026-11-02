@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use mahayana_host_runtime::extensions::session::agent_db_recovery::{
-    AUTOMATION_CUSTODY_UNAVAILABLE_KV, DbRecoveryOptions,
+    AUTOMATION_CUSTODY_UNAVAILABLE_KV, AgentDbRecoveryError, DbRecoveryOptions,
     acquire_automation_custody_recovery_guard, automation_custody_recovery_marker_path,
     is_store_db_healthy, open_configured_db, recover_corrupt_store_db, salvage_store_db,
 };
@@ -430,6 +430,82 @@ fn recovered_kv_marker_cannot_be_overwritten_by_salvage() {
     drop(recovered);
     cleanup(&db_path);
     fs::remove_dir_all(root).expect("remove completed owned fixture");
+}
+
+#[test]
+fn directory_main_refuses_before_creating_authority_or_quarantining_sentinels() {
+    let root = fixture_root("directory-main");
+    let db_path = root.join("store.db");
+    seed_corrupt_db_and_sidecars(&db_path);
+    let original = database_bytes(&db_path);
+    fs::remove_file(&db_path).expect("replace owned main database fixture");
+    fs::create_dir(&db_path).expect("nonregular main database path");
+    let sentinel = db_path.join("owned-sentinel");
+    fs::write(&sentinel, b"original main directory contents").expect("main directory sentinel");
+    assert!(quarantine_paths(&db_path).is_empty());
+
+    let error = recover_corrupt_store_db(
+        &db_path, "directory-main", &DbRecoveryOptions::default(), "nonregular main oracle",
+    ).expect_err("a directory main must refuse before recovery creates or moves anything");
+    assert!(matches!(&error, AgentDbRecoveryError::Io(io_error)
+        if io_error.kind() == io::ErrorKind::InvalidData), "{error:?}");
+    assert!(fs::symlink_metadata(&db_path).expect("main remains at its original path").is_dir());
+    assert_eq!(fs::read(&sentinel).expect("main sentinel remains in place"),
+        b"original main directory contents");
+    assert_eq!(fs::read_dir(&db_path).expect("retained main directory").count(), 1);
+    for (path, expected) in original {
+        if path != db_path {
+            assert_eq!(Some(fs::read(&path).expect("unchanged main-adjacent sidecar")), expected,
+                "recovery changed {}", path.display());
+        }
+    }
+    assert_absent(&sibling_path(&db_path, ".automation-custody.guard"));
+    assert_absent(&automation_custody_recovery_marker_path(&db_path));
+    assert!(quarantine_paths(&db_path).is_empty(), "refusal must not relocate the main directory");
+    fs::remove_dir_all(root).expect("remove completed owned fixture");
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_main_refuses_before_creating_authority_or_touching_targets() {
+    for dangling in [false, true] {
+        let root = fixture_root("symlink-main");
+        let db_path = root.join("store.db");
+        seed_corrupt_db_and_sidecars(&db_path);
+        let original = database_bytes(&db_path);
+        fs::remove_file(&db_path).expect("replace owned main database fixture");
+        let target = root.join("owned-main-target");
+        if !dangling {
+            fs::write(&target, b"original main link target").expect("main link target sentinel");
+        }
+        std::os::unix::fs::symlink(&target, &db_path).expect("actual main database symlink");
+        assert!(quarantine_paths(&db_path).is_empty());
+
+        let error = recover_corrupt_store_db(
+            &db_path, "symlink-main", &DbRecoveryOptions::default(), "main symlink oracle",
+        ).expect_err("a main symlink must refuse before recovery creates or moves anything");
+        assert!(matches!(&error, AgentDbRecoveryError::Io(io_error)
+            if io_error.kind() == io::ErrorKind::InvalidData), "{error:?}");
+        assert!(fs::symlink_metadata(&db_path).expect("main link remains in place")
+            .file_type().is_symlink());
+        assert_eq!(fs::read_link(&db_path).expect("unchanged original main link"), target);
+        if dangling {
+            assert_absent(&target);
+        } else {
+            assert_eq!(fs::read(&target).expect("unchanged original target"),
+                b"original main link target");
+        }
+        for (path, expected) in original {
+            if path != db_path {
+                assert_eq!(Some(fs::read(&path).expect("unchanged main-adjacent sidecar")), expected,
+                    "recovery changed {}", path.display());
+            }
+        }
+        assert_absent(&sibling_path(&db_path, ".automation-custody.guard"));
+        assert_absent(&automation_custody_recovery_marker_path(&db_path));
+        assert!(quarantine_paths(&db_path).is_empty(), "refusal must not relocate the main link");
+        fs::remove_dir_all(root).expect("remove completed owned fixture");
+    }
 }
 
 #[test]
