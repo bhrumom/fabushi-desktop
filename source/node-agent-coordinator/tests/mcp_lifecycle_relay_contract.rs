@@ -19,6 +19,7 @@ fn box_mcp_raw_commands_require_the_native_main_data_carrier() {
         "loadBoxMcpServers",
         "listBoxMcpToolsRaw",
         "executeBoxMcpToolRaw",
+        MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
     ] {
         assert!(!box_mcp_carrier_allowed(method, CarrierChannel::Data), "{method}");
         assert!(!box_mcp_carrier_allowed(method, CarrierChannel::Control), "{method}");

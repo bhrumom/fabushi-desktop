@@ -355,7 +355,7 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
     ) -> Result<Option<AutomationRun>, String> {
         self.session
             .with_admitted_filesystem_mutation(self.agent_id, || {
-                self.store.begin_run(
+                self.store.begin_fresh_run(
                     automation_id,
                     trigger,
                     fired_at_ms,
@@ -835,6 +835,26 @@ impl AutomationRuntime {
             let Some(automation) = store.get(automation_id) else {
                 return Ok(None);
             };
+            // Refuse a known claimed identity before Spend Guard, notice, and
+            // last-run writes. The Session-admitted begin_fresh_run below is
+            // the authoritative race fence for concurrent ingress.
+            let claimed_ids = run_uuid.iter().map(String::as_str)
+                .chain(coalesced_run_uuids.iter().map(String::as_str));
+            let checked_ids = claimed_ids.collect::<Vec<_>>();
+            if !checked_ids.is_empty() {
+                let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
+                session.with_admitted_filesystem_mutation(agent_id, || {
+                    for id in &checked_ids {
+                        if store.read_run_for_delivery(automation_id, id)
+                            .map_err(|error| error.to_string())?
+                            .is_some()
+                        {
+                            return Err("automation run identity has already been admitted".to_string());
+                        }
+                    }
+                    Ok(())
+                })?;
+            }
             let before = store.list_definitions();
             let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
             let guard = self.spend_guard.apply_with_store(

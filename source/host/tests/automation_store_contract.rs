@@ -164,6 +164,40 @@ fn begin_validates_invalid_and_duplicate_tails_beyond_the_display_window() {
     }
 }
 
+
+#[test]
+fn execution_only_begin_refuses_replayed_primary_and_coalesced_ids_without_history_rewrite() {
+    let (root, store, id) = history_store("execution-fresh-duplicate");
+    let aliases = vec!["paired-alias".to_string()];
+    let first = store.begin_run(
+        &id, "event", 1_000.0, Some("first event"),
+        Some("original"), Some(&aliases),
+    ).unwrap().expect("first persisted run");
+    assert_eq!(first.id, "original");
+    let original_bytes = fs::read(store.runs_path(&id)).unwrap();
+    for replay in ["original", "paired-alias"] {
+        let error = store.begin_fresh_run(
+            &id, "schedule", 9_000.0, None, Some(replay), None
+        ).expect_err("previously claimed execution identity must not run again");
+        assert!(matches!(error, AutomationStoreError::Io(ref error)
+            if error.kind() == io::ErrorKind::AlreadyExists), "{replay}: {error}");
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), original_bytes, "{replay}");
+    }
+    let new_primary_alias_collision = store.begin_fresh_run(
+        &id, "event", 9_000.0, None, Some("new"),
+        Some(&["paired-alias".to_string()]),
+    ).expect_err("coalesced replay must be rejected before any write");
+    assert!(matches!(new_primary_alias_collision, AutomationStoreError::Io(ref error)
+        if error.kind() == io::ErrorKind::AlreadyExists));
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), original_bytes);
+    let distinct = store.begin_fresh_run(
+        &id, "event", 10_000.0, None, Some("distinct"), None,
+    ).unwrap().expect("new execution is admitted");
+    assert_eq!(distinct.id, "distinct");
+    assert_eq!(store.read_run_for_delivery(&id, "original").unwrap(), Some(first));
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn begin_preserves_missing_history_and_duplicate_no_write_controls() {
     let (root, store, id) = history_store("begin-first-run");

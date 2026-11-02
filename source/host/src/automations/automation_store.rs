@@ -71,6 +71,31 @@ impl FileAutomationStore{
      run_id: Option<&str>,
      coalesced: Option<&[String]>,
  ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     self.begin_run_checked(id, trigger, at, event, run_id, coalesced, false)
+ }
+ /// Unlike the legacy idempotent projection API, production execution may
+ /// only admit an identity not already claimed by any primary or coalesced row.
+ pub fn begin_fresh_run(
+     &self,
+     id: &str,
+     trigger: &str,
+     at: f64,
+     event: Option<&str>,
+     run_id: Option<&str>,
+     coalesced: Option<&[String]>,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     self.begin_run_checked(id, trigger, at, event, run_id, coalesced, true)
+ }
+ fn begin_run_checked(
+     &self,
+     id: &str,
+     trigger: &str,
+     at: f64,
+     event: Option<&str>,
+     run_id: Option<&str>,
+     coalesced: Option<&[String]>,
+     require_fresh: bool,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
      if self.read_config(id).is_none() {
          return Ok(None);
      }
@@ -82,7 +107,21 @@ impl FileAutomationStore{
      }
      let mut runs = self.read_runs_for_mutation(id)?;
      let run_id = run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);
-     if let Some(found) = runs.iter().find(|run| run.id == run_id) {
+     if require_fresh {
+         let requested = std::iter::once(run_id.as_str())
+             .chain(coalesced.into_iter().flatten().map(String::as_str));
+         for identity in requested {
+             if runs.iter().any(|run| {
+                 run.id == identity || run.coalesced_run_ids.as_ref()
+                     .is_some_and(|ids| ids.iter().any(|existing| existing == identity))
+             }) {
+                 return Err(io::Error::new(
+                     io::ErrorKind::AlreadyExists,
+                     "automation run identity has already been admitted",
+                 ).into());
+             }
+         }
+     } else if let Some(found) = runs.iter().find(|run| run.id == run_id) {
          return Ok(Some(found.clone()));
      }
      if runs.iter().filter(|run| run.status == "running").count() >= AUTOMATION_MAX_RUN_HISTORY {

@@ -1206,6 +1206,53 @@ fn gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods(
     }
 }
 
+
+#[test]
+fn gateway_mcp_lifecycle_receipts_require_native_auth_not_paired_operator_write() {
+    for configured_token in [None, Some("native-mcp-gateway-secret")] {
+        let owner = Arc::new(DevicePairingOwner::in_memory().expect("MCP pairing owner"));
+        let issued = [
+            issue_box_mcp_device_token(&owner, "node"),
+            issue_box_mcp_device_token(&owner, "operator"),
+        ];
+        let api = Arc::new(CountingBoxMcpApi {
+            pairing_owner: Some(owner),
+            ..CountingBoxMcpApi::default()
+        });
+        let server = start_box_mcp_gateway(&api, config(configured_token));
+        for (token, authorization) in issued {
+            // Even an actual operator.write device credential is not the
+            // Coordinator's native MCP lifecycle settlement authority.
+            for headers in ["", "x-sand-role: operator\\r\\nx-sand-scope: operator.write\\r\\n"] {
+                let before = api.recorded_calls();
+                let response = box_mcp_post(
+                    server.port(), "mcp.resolveLifecycleRequest", Some(&token),
+                    headers, r#"{"requestId":"forged","ok":true}"#,
+                );
+                assert!(response.starts_with("HTTP/1.1 403 Forbidden"), "{response}");
+                assert!(response.contains("MCP_LIFECYCLE_NATIVE_ONLY"), "{response}");
+                assert_eq!(api.recorded_calls(), before, "paired-device receipt reached owner");
+            }
+            assert!(!authorization.device_id.is_empty());
+        }
+        server.close();
+    }
+
+    let secret = "native-mcp-gateway-secret";
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi), events: GatewayEventHub::default(),
+        local_exec: None, webauthn: None, config: config(Some(secret)), started_at: 1,
+    }).expect("native MCP gateway");
+    let denied = box_mcp_post(server.port(), "mcp.resolveLifecycleRequest", None, "", "{}");
+    assert!(denied.starts_with("HTTP/1.1 401 Unauthorized"), "{denied}");
+    let admitted = box_mcp_post(
+        server.port(), "mcp.resolveLifecycleRequest", Some(secret), "", "{}",
+    );
+    assert!(admitted.starts_with("HTTP/1.1 200 OK"), "{admitted}");
+    assert_eq!(json_body(&admitted)["method"], "mcp.resolveLifecycleRequest");
+    server.close();
+}
+
 #[test]
 fn gateway_admits_only_explicit_internal_mcp_lifecycle_settlement_method() {
     let server = start_gateway_server(GatewayServerDeps {

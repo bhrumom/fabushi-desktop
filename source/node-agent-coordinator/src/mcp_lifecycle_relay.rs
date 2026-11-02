@@ -20,12 +20,13 @@ pub const MCP_REMOVE_ACCOUNT_METHOD: &str = "removeHostMcpAccount";
 pub const MCP_RENAME_ACCOUNT_METHOD: &str = "renameHostMcpAccount";
 pub const MCP_NOTE_AUTH_COMPLETED_METHOD: &str = "noteHostMcpAuthCompleted";
 
-/// Box configuration and raw MCP payloads enter through the native main bridge.
-/// Other commands retain their existing carrier and owner checks.
+/// Box configuration, raw MCP payloads and Host lifecycle receipts enter
+/// only through the native main bridge. Other commands retain their owner checks.
 pub fn box_mcp_carrier_allowed(method: &str, channel: CarrierChannel) -> bool {
     !matches!(
         method,
         "loadBoxMcpServers" | "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw"
+            | MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD
     ) || channel == CarrierChannel::MainData
 }
 

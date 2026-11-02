@@ -25,6 +25,9 @@ use crate::gateway_protocol::{
     slim_command_result, slim_event,
 };
 use crate::host_gateway_api::FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS;
+use crate::extensions::mcp::coordinator_relay::{
+    HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
+};
 
 pub const GATEWAY_API_PREFIX: &str = "/api";
 pub const GATEWAY_EVENTS_PATH: &str = "/events";
@@ -944,6 +947,7 @@ fn serve_event_body<W: Write>(
     stop: &AtomicBool,
     channels: Option<Vec<String>>,
     slim_avatars: bool,
+    allow_internal_mcp_lifecycle: bool,
 ) -> io::Result<()> {
     sink.write_all(b"retry: 1000\n\n")?;
     sink.flush()?;
@@ -951,6 +955,14 @@ fn serve_event_body<W: Write>(
     while !stop.load(Ordering::Acquire) {
         match receiver.recv_timeout(heartbeat) {
             Ok(event) => {
+                // A paired device may watch public Gateway events, but Host MCP
+                // request IDs and methods are internal control-plane work.
+                // Filtering must apply even when the client omits channels.
+                if !allow_internal_mcp_lifecycle
+                    && event_channel(&event) == Some(HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL)
+                {
+                    continue;
+                }
                 if channels
                     .as_ref()
                     .is_some_and(|allowed| event_channel(&event).is_some_and(|channel| !allowed.iter().any(|value| value == channel)))
@@ -980,17 +992,18 @@ fn serve_events(
     channels: Option<Vec<String>>,
     slim_avatars: bool,
     gzip: bool,
+    allow_internal_mcp_lifecycle: bool,
 ) -> io::Result<()> {
     let receiver = deps.events.subscribe();
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     write_sse_headers(stream, gzip)?;
     if gzip {
         let mut encoder = GzEncoder::new(stream, Compression::default());
-        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars);
+        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars, allow_internal_mcp_lifecycle);
         let _ = encoder.try_finish();
         result
     } else {
-        serve_event_body(stream, receiver, stop, channels, slim_avatars)
+        serve_event_body(stream, receiver, stop, channels, slim_avatars, allow_internal_mcp_lifecycle)
     }
 }
 
@@ -1304,6 +1317,22 @@ fn handle_connection(
         return respond_error(&mut stream, 401, "unauthorized");
     }
 
+    // The native desktop Coordinator authenticates with the Host Gateway
+    // secret (or a loopback-only no-secret development listener). Paired device
+    // tokens, including operator.write, are not authority for MCP receipts.
+    let native_mcp_control = if let Some(secret) = deps.config.auth_token.as_deref() {
+        bearer_token(&request).is_some_and(|token| is_authorized_token(token, secret))
+    } else {
+        is_loopback_host(&deps.config.host) && device_authorization.is_none()
+    };
+    if method == MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD && !native_mcp_control {
+        return respond_error(
+            &mut stream,
+            403,
+            "MCP_LIFECYCLE_NATIVE_ONLY: Host MCP lifecycle receipts require the native control plane",
+        );
+    }
+
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
     if FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS.contains(&method)
         && (device_authorization.is_some()
@@ -1403,6 +1432,7 @@ fn handle_connection(
             parse_channels(query),
             slim_avatars,
             sse_gzip_enabled(&request),
+            native_mcp_control,
         );
     }
     if prepare {
@@ -1489,7 +1519,36 @@ fn handle_connection(
 
 #[cfg(test)]
 mod tests {
-    use super::is_gateway_command;
+    use super::{is_gateway_command, serve_event_body, HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL};
+    use serde_json::json;
+    use std::sync::{mpsc, atomic::AtomicBool};
+
+
+    #[test]
+    fn paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection() {
+        for allow_internal in [false, true] {
+            let (sender, receiver) = mpsc::channel();
+            sender.send(json!({
+                "channel": HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL,
+                "payload": {"requestId": "private-mcp-request", "method": "installHostMcpPlugin"}
+            })).unwrap();
+            sender.send(json!({"channel": "public-status", "payload": {"ok": true}})).unwrap();
+            drop(sender);
+            let mut rendered = Vec::new();
+            serve_event_body(
+                &mut rendered, receiver, &AtomicBool::new(false),
+                None, false, allow_internal,
+            ).expect("event stream body");
+            let body = String::from_utf8(rendered).expect("UTF-8 events");
+            assert!(body.contains("public-status"), "{body}");
+            assert_eq!(body.contains("private-mcp-request"), allow_internal, "{body}");
+            assert_eq!(
+                body.contains(HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL),
+                allow_internal,
+                "{body}"
+            );
+        }
+    }
 
     #[test]
     fn fbcp_human_commands_are_explicit_gateway_extensions() {
