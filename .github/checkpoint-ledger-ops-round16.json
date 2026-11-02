@@ -2,7 +2,7 @@
   "format_version": 2,
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "reviewed_delta_base_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+  "reviewed_delta_base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
   "operations": [
     {
       "id": "TDRP-R9-REPOSITORY-MAC-PACKAGED-WORKFLOW-001",
@@ -101,7 +101,8 @@
           "source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs",
           "desktop/e2e/native-message-projection.spec.ts",
           "desktop/e2e/fixtures/native-message-projection.tsx",
-          "desktop/native-message-projection.html"
+          "desktop/native-message-projection.html",
+          "frontend/src/recovered/features/conversation/workspace/submission.ts"
         ],
         "test_evidence": [
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles",
@@ -110,7 +111,7 @@
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage",
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs#exported_c_persistent_create_rejects_invalid_key_lengths_before_storage",
           "authored-not-run-at-preparation:shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page; preserve all current62 Human cases including6400/32 and short/empty32, total63 after the single new legacy-upgrade case.",
-          "authored-not-run-at-preparation:actual ProductionRenderer Chromium10 through existing Coordinator client/feed; current29 projection cases retained plus remaining overlay/author/composition cases. No retry/skipped allowance; exact containing-H Actions and complete artifacts required."
+          "authored-not-run-at-preparation:actual ProductionRenderer Chromium11 (original10 plus queued-account-reset variant) through existing Coordinator client/feed; current29 projection cases retained plus remaining overlay/author/composition cases. No retry/skipped allowance; exact containing-H Actions and complete artifacts required."
         ],
         "requirement_ids": [
           "NMR-38",
@@ -163,14 +164,15 @@
           "The latest independently read qualified message H is59f5fa24827812f78336c464995d161f403dedfb. Later concurrent 4f1070/06fb24/94dcf7 forwarding changes and their new Human/journal cases require their own exact-H gates; these results are not inherited from59.",
           "Original round16 local frozen Native matrix, ledger and owner-matrix changes were not all delivered at23f737f. Use the actual twelve-file commit/artifact reconciliation; do not call the eight-file local review an exact-byte review of that commit. Later Native7 execution is separately bound to59.",
           "Round16 direct legacy C wrapper cases are authored and require containing-H Actions; the original live-DC case remains unexecuted. Wrapper tests do not prove a final staticlib/cdylib producer, installed external caller, external mobile ABI, original user data migration or final retirement.",
-          "Request round9 resumed remaining delta is authored, not executed at preparation: version1 coverage/legacy upgrade, full ProductionRenderer10 and actual authority CLI acquisition negative require exact containing-H Actions. Preserve current qualified59 execution pointers until new results are read.",
+          "Request round9 resumed remaining delta is authored, not executed at preparation: version1 coverage/legacy upgrade, full ProductionRenderer11 and actual authority CLI acquisition negative require exact containing-H Actions. Preserve current qualified59 execution pointers until new results are read.",
           "Backend52fb/PR137 tests29 handler+10 realSQLite+24 injected readiness pass, but readiness jobs are skipped; canonical main6877 rejects explicit afterId0/no historyCursor. Current active Worker and real authenticated production multi-page/empty-page/denial/restart evidence remain unverified. Historical source33a26692/version3ad1a889 is not current deployment proof."
         ],
         "production_evidence": [
-          "Request round9 resumed: existing Session/Transcript/native client/ProductionRenderer/cache owners only; strict version1 durable history coverage upgrades legacy checkpoints after qualified historyCursor pages. Current native_messaging afterId0 contract is retained; no parallel owner/store/endpoint or data deletion."
+          "Request round9 resumed: existing Session/Transcript/native client/ProductionRenderer/cache owners only; strict version1 durable history coverage upgrades legacy checkpoints after qualified historyCursor pages. Current native_messaging afterId0 contract is retained; no parallel owner/store/endpoint or data deletion.",
+          "Request round9 account recovery: existing composer queue/journal generation resets cancel obsolete renderer completions and release account-scoped lanes while Host in-flight persistence continues. Stale queued work cannot clear new-account approvals; a post-send roster refresh error cannot fail the accepted canonical send or restore its draft."
         ]
       },
-      "note": "\n\nRequest round9 resumed at afb34b49c5964524a887088f1095070b75cfdf8b: rebase only remaining coverage and full-renderer behaviors over all concurrent reply/forwarding/resource/opaque-paging/reaction owners. Reuse the current short/empty32 case; add only one legacy upgrade Host case (Human63). Actual afb E0382 shutdown receiver repair is a test defect, not a changed production lifecycle. This append records authored work and prerequisite failures, not new execution acceptance. Preserve all184 responsibilities, six current source reviews, unknown/unread null, fixed U and every source/product/release/independent acceptance state. Source CLI entrypoint regression is governance verification, not product progress. Complete source/legal, real Worker, signed platforms, Bot/visual/a11y/security/performance/soak/upgrade/rollback and independent ACCEPT remain open."
+      "note": "\n\nRequest round9 resumed at afb34b49c5964524a887088f1095070b75cfdf8b: rebase only remaining coverage and full-renderer behaviors, including account queue/journal reset and post-receipt roster failure isolation over all concurrent reply/forwarding/resource/opaque-paging/reaction owners. Reuse the current short/empty32 case; add only one legacy upgrade Host case (Human63). Actual afb E0382 shutdown receiver repair is a test defect, not a changed production lifecycle. This append records authored work and prerequisite failures, not new execution acceptance. Preserve all184 responsibilities, six current source reviews, unknown/unread null, fixed U and every source/product/release/independent acceptance state. Source CLI entrypoint regression is governance verification, not product progress. Complete source/legal, real Worker, signed platforms, Bot/visual/a11y/security/performance/soak/upgrade/rollback and independent ACCEPT remain open."
     }
   ],
   "purpose": "Merge only frozen reviewed two-row delta into the exact Actions checkout; fail on scalar/source conflict. Create an unattached Git blob only. Root must API-read input/output and require fresh current canonical input equality before force=false expected-head CAS."

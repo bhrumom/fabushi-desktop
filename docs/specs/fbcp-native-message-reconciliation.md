@@ -1619,7 +1619,12 @@ existing NMR contract remain unchanged.
   feed result. An initial clear starts a fresh read while fencing the old one.
   An offline queued send drains exactly once only after the existing transport
   state becomes connected; repeated connected events do not redispatch it.
-  Retain all current dialog, pagination, Electron and shipping gates. Add ten
+  Reset the existing queue and journal generation on account changes, cancelling
+  obsolete renderer completions and releasing the old per-conversation queue lane;
+  already-dispatched Host requests retain their durable settlement. A roster
+  refresh failure after a canonical send receipt reports a scoped notice and
+  cannot turn that send into a failure or restore its draft.
+  Retain all current dialog, pagination, Electron and shipping gates. Add eleven
   real Chromium renderer scenarios, with no retries or skipped cases, complete
   JSON result assertions and inspectable screenshots/traces. Controlled
   browser/service fixtures do not constitute deployed-service, signed-package,
