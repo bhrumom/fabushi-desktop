@@ -178,3 +178,24 @@ at the repaired exact H before dependent history/reaction implementation.
 Do not remove the refresh, ignore HTTP failures or adopt diagnostic
 lockfile upgrades to make the fixture pass.
 
+
+### Round 7 bounded history and reaction acknowledgement (NMR-22)
+
+On the current Session owner, an afterId page is bounded to at most 200
+messages. A response exceeding that ceiling must fail before transcript or
+coverage writes. A malformed persisted coverage object must fail closed rather
+than silently restarting at zero. Each synchronization invocation is capped at
+32 HTTP history requests, including its terminal short/empty request; a
+latest-snapshot refresh is allowed only if the call has spare budget. A
+successful reaction POST is not a durable settlement until the backend
+explicitly returns the reaction summary and the local reactedByMe state equals
+the staged desired state. On missing or stale acknowledgements retain the
+persisted intent and original entry for identical-state retry after restart.
+
+NMR-AC-15: the Host/SQLite/loopback cases prove oversized history and corrupt
+checkpoint rejection without partial writes or unauthorized network requests,
+and stale/missing reaction replies preserve intent and exact POST body across
+restart. The focused gate expands to 20 Human behaviors and preserves four
+Agent nonce cases. A separate saturation/32-page boundary, UI page-cache and
+late-ack competition batch remains required, as do service deployment and
+independent full acceptance. Old-H success is not evidence for this H.

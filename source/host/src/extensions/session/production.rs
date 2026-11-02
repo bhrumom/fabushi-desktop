@@ -2341,16 +2341,29 @@ impl ProductionSessionWorkers {
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
         let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
-        let covered = coverage.as_ref().and_then(|value| value.get("afterId"))
-            .and_then(serde_json::Value::as_u64).unwrap_or(0);
+        let (covered, complete) = match coverage.as_ref() {
+            None | Some(serde_json::Value::Null) => (0, false),
+            Some(checkpoint) => {
+                let after_id = checkpoint.get("afterId")
+                    .and_then(serde_json::Value::as_u64)
+                    .ok_or_else(|| "persisted Human history coverage cursor is invalid".to_string())?;
+                let complete = checkpoint.get("complete")
+                    .and_then(serde_json::Value::as_bool)
+                    .ok_or_else(|| "persisted Human history coverage completion flag is invalid".to_string())?;
+                (after_id, complete)
+            }
+        };
         if covered > MAX_SAFE_ID { return Err("persisted Human history coverage cursor is invalid".into()); }
-        let complete = coverage.as_ref().and_then(|value| value.get("complete"))
-            .and_then(serde_json::Value::as_bool) == Some(true);
         let mut after = if complete && covered < PAGE_LIMIT as u64 { 0 } else { covered };
         let mut rejected: Option<String> = None;
         let mut reached_end = false;
+        let mut pages_used = 0;
         for _ in 0..MAX_GAP_PAGES {
+            pages_used += 1;
             let page = client.list_direct_messages_after_for_user(&peer, &local_human_id, after, PAGE_LIMIT)?;
+            if page.len() > PAGE_LIMIT {
+                return Err("Fabushi Human history page exceeded the 200-message response budget".into());
+            }
             if page.is_empty() {
                 if rejected.is_none() { Self::store_human_coverage(&owner, after.max(covered), true)?; }
                 reached_end = true;
@@ -2384,7 +2397,9 @@ impl ProductionSessionWorkers {
             after = last;
             if is_last { reached_end = true; break; }
         }
-        if reached_end && rejected.is_none() && after >= PAGE_LIMIT as u64 {
+        // A 32-page window is an absolute request budget, including the last
+        // short or empty page. A latest-snapshot refresh may use only spare capacity.
+        if reached_end && rejected.is_none() && pages_used < MAX_GAP_PAGES && after >= PAGE_LIMIT as u64 {
             let latest = client.list_direct_messages_for_user(&peer, &local_human_id, None, PAGE_LIMIT)?;
             let snapshot = owner.get_transcript_entries().map_err(|error| error.to_string())?;
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
@@ -3280,6 +3295,15 @@ impl ProductionSessionWorkers {
         }
         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
         Self::validate_remote_human_reactions(&remote)?;
+        // HTTP success is not settlement: the service must confirm the requested
+        // participant state. Keep the durable intent if a stale/misrouted reply
+        // reports the opposite state so restart can retry without retoggling.
+        let observed_active = remote.iter().any(|reaction| {
+            reaction.emoji == emoji && reaction.reacted_by_me
+        });
+        if observed_active != active {
+            return Err("Fabushi Human reaction response did not confirm the desired state".into());
+        }
         let peer = self.peer_human_id_from_metadata(metadata)?;
         let projected = Self::project_remote_human_reactions(&remote, &peer);
         let mut next = current;

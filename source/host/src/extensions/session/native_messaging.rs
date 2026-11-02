@@ -223,8 +223,9 @@ struct ReactionRequest<'a> {
 struct ReactionEnvelope {
     success: bool,
     message_id: Option<Value>,
-    #[serde(default)]
-    reactions: Vec<FabushiRemoteHumanReaction>,
+    // Missing is not an authoritative empty summary; a mutation intent must
+    // remain retryable until the backend explicitly reports its result.
+    reactions: Option<Vec<FabushiRemoteHumanReaction>>,
     error: Option<String>,
 }
 
@@ -639,7 +640,9 @@ impl FabushiNativeMessagingClient {
         if returned_id != message_id {
             return Err("Fabushi Human reaction backend returned a mismatched message id".into());
         }
-        Ok(envelope.reactions)
+        envelope.reactions.ok_or_else(|| {
+            "Fabushi Human reaction response omitted the reaction summary".to_string()
+        })
     }
 
     pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {

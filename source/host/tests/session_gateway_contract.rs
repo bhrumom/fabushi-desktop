@@ -3348,3 +3348,127 @@ fn shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_re
     restarted.shutdown(); drop(owner); drop(restarted);
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn shipping_human_history_rejects_oversized_page_before_persisting_coverage() {
+    let root = temp_root("human-oversized-history-page");
+    let oversized = (1..=201_u64)
+        .map(|id| fixture_remote_human_message(id, 2, 1, &format!("row-{id}"), None, json!([])))
+        .collect::<Vec<_>>();
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":oversized}})),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let error = runtime.sync_human_conversation(&id).expect_err("oversized page must fail");
+    assert_eq!(error, "Fabushi Human history page exceeded the 200-message response budget");
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert!(owner.get_transcript_entries().expect("unchanged transcript").is_empty());
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint"), None);
+    let requests = server.join().expect("fixture");
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].contains("&afterId=0"));
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_history_rejects_damaged_checkpoint_before_any_network_request() {
+    let root = temp_root("human-bad-history-checkpoint");
+    let (url, server) = spawn_human_message_fixture(vec![]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    assert!(owner.set_metadata("humanHistoryCoverage", json!({"afterId":"corrupt","complete":false}))
+        .expect("stage invalid checkpoint"));
+    let error = runtime.sync_human_conversation(&id).expect_err("invalid checkpoint must fail");
+    assert_eq!(error, "persisted Human history coverage cursor is invalid");
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("untouched checkpoint"),
+        Some(json!({"afterId":"corrupt","complete":false})));
+    assert!(owner.get_transcript_entries().expect("unchanged transcript").is_empty());
+    assert!(server.join().expect("no network").is_empty());
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_reaction_unconfirmed_success_keeps_intent_until_restart_replay() {
+    let root = temp_root("human-unconfirmed-reaction");
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":777,"reactions":[]
+        })),
+        HumanMessageFixtureReply::Json(200, json!({
+            "success":true,"messageId":777,
+            "reactions":[{"emoji":"👍","count":1,"reactedByMe":true}]
+        })),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2","Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let entry_id = "human-server-message:777";
+    let original = json!({
+        "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+        "authorId":"2","content":"reaction target","timestampMs":1000.0,
+        "delivery":"sent","remoteMessageId":"777","remoteReactions":[],"reactions":[]
+    });
+    assert!(owner.append_transcript_entry(&original).expect("seed"));
+    let error = runtime.toggle_human_message_reaction(&id, entry_id, "👍")
+        .expect_err("successful HTTP without desired state must fail closed");
+    assert_eq!(error, "Fabushi Human reaction response did not confirm the desired state");
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("staged intent"), Some(json!({
+        "entryId":entry_id,"remoteMessageId":"777",
+        "emoji":"👍","active":true,"localHumanId":"1"
+    })));
+    assert_eq!(owner.get_transcript_entries().expect("not falsely settled"), vec![original]);
+    runtime.shutdown(); drop(owner); drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let settled = restarted.toggle_human_message_reaction(&id, entry_id, "👍")
+        .expect("replay the same desired state instead of toggling off");
+    assert_eq!(settled["remoteReactions"], json!([{"emoji":"👍","count":1,"reactedByMe":true}]));
+    let owner = restarted.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("ack"), Some(serde_json::Value::Null));
+    let requests = server.join().expect("fixture");
+    assert_eq!(requests.len(), 2);
+    for request in requests {
+        assert!(request.starts_with("POST /api/social/messages/777/reactions "));
+        assert_eq!(fixture_request_json(&request), json!({"emoji":"👍","active":true}));
+    }
+    restarted.shutdown(); drop(owner); drop(restarted);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_reaction_missing_summary_does_not_acknowledge_intent() {
+    let root = temp_root("human-missing-reaction-summary");
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"messageId":778})),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime.create_human_conversation("2","Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_string();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+    let entry_id = "human-server-message:778";
+    let original = json!({
+        "id":entry_id,"kind":"message","role":"user","authorKind":"human",
+        "authorId":"2","content":"missing summary","timestampMs":1000.0,
+        "delivery":"sent","remoteMessageId":"778","remoteReactions":[],"reactions":[]
+    });
+    assert!(owner.append_transcript_entry(&original).expect("seed"));
+    let error = runtime.toggle_human_message_reaction(&id, entry_id, "👍")
+        .expect_err("missing response summary must fail closed");
+    assert_eq!(error, "Fabushi Human reaction response omitted the reaction summary");
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("still staged"), Some(json!({
+        "entryId":entry_id,"remoteMessageId":"778",
+        "emoji":"👍","active":true,"localHumanId":"1"
+    })));
+    assert_eq!(owner.get_transcript_entries().expect("no false settlement"), vec![original]);
+    assert_eq!(server.join().expect("fixture").len(), 1);
+    runtime.shutdown(); drop(owner); drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
