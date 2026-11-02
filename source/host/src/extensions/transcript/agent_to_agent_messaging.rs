@@ -631,14 +631,14 @@ pub fn persist_agent_inbound_message(
         }
         Err(error) => {
             if let Some(reply) = claimed_turn.as_ref() {
-                let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
+                let _ = sessions.pending_conversation_turns().release(agent_id, reply);
             }
             return Err(error.to_string());
         }
     };
     let Some(committed_entry_id) = committed_entry_id else {
         if let Some(reply) = claimed_turn.as_ref() {
-            let _ = sessions.pending_conversation_turns().release(agent_id, &reply.id);
+            let _ = sessions.pending_conversation_turns().release(agent_id, reply);
         }
         return Ok(false);
     };
@@ -646,7 +646,7 @@ pub fn persist_agent_inbound_message(
         reply.message_id = committed_entry_id;
     }
     if let Some(reply) = claimed_turn.take() {
-        let _ = sessions.pending_conversation_turns().complete(agent_id, &reply.id);
+        let _ = sessions.pending_conversation_turns().complete(agent_id, &reply);
     }
     let _ = sessions.add_agent_conversation_partner(agent_id, from_id)?;
     let _ = sessions.mark_agent_activity(agent_id, timestamp_ms as f64)?;

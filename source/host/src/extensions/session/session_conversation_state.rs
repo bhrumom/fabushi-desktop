@@ -52,6 +52,11 @@ pub struct PendingConversationTurnReply {
     pub thread_id: Option<String>,
     pub text: String,
     pub timestamp_ms: u64,
+    // Payload fields can change after persistence; only this owner-issued
+    // identity authorizes settlement, and clones share the same claim.
+    claim_id: Uuid,
+    claim_agent_id: String,
+    claim_turn_key: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,6 +85,7 @@ pub struct PendingConversationTurnRegistry {
 
 struct PendingConversationTurn {
     snapshot: PendingConversationTurnSnapshot,
+    claim_id: Option<Uuid>,
     created_at: Instant,
     expires_at: Instant,
 }
@@ -138,6 +144,7 @@ impl PendingConversationTurnRegistry {
                     claimed: false,
                     correlation_ready: false,
                 },
+                claim_id: None,
                 created_at: now,
                 expires_at: now + timeout,
             },
@@ -259,7 +266,9 @@ impl PendingConversationTurnRegistry {
         if !turn.snapshot.correlation_ready {
             return PendingConversationTurnClaimResult::NotReady;
         }
+        let claim_id = Uuid::new_v4();
         turn.snapshot.claimed = true;
+        turn.claim_id = Some(claim_id);
         PendingConversationTurnClaimResult::Claimed(PendingConversationTurnReply {
             id: turn.snapshot.id.clone(),
             conversation_ref: conversation_ref.to_string(),
@@ -268,22 +277,28 @@ impl PendingConversationTurnRegistry {
             thread_id: thread_id.map(ToOwned::to_owned),
             text: text.to_string(),
             timestamp_ms,
+            claim_id,
+            claim_agent_id: turn.snapshot.agent_id.clone(),
+            claim_turn_key: key,
         })
     }
 
-    pub fn complete(&self, agent_id: &str, id: &str) -> bool {
-        let key = turn_key(agent_id.trim(), id.trim());
+    pub fn complete(&self, agent_id: &str, claim: &PendingConversationTurnReply) -> bool {
+        if agent_id.trim() != claim.claim_agent_id.as_str() { return false; }
         let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let claimed = inner.turns.get(&key).is_some_and(|turn| turn.snapshot.claimed);
-        claimed && remove_turn_locked(&mut inner, &key)
+        let current = inner.turns.get(&claim.claim_turn_key).is_some_and(|turn| {
+            turn.snapshot.claimed && turn.claim_id == Some(claim.claim_id)
+        });
+        current && remove_turn_locked(&mut inner, &claim.claim_turn_key)
     }
 
-    pub fn release(&self, agent_id: &str, id: &str) -> bool {
-        let key = turn_key(agent_id.trim(), id.trim());
+    pub fn release(&self, agent_id: &str, claim: &PendingConversationTurnReply) -> bool {
+        if agent_id.trim() != claim.claim_agent_id.as_str() { return false; }
         let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let Some(turn) = inner.turns.get_mut(&key) else { return false };
-        if !turn.snapshot.claimed { return false; }
+        let Some(turn) = inner.turns.get_mut(&claim.claim_turn_key) else { return false };
+        if !turn.snapshot.claimed || turn.claim_id != Some(claim.claim_id) { return false; }
         turn.snapshot.claimed = false;
+        turn.claim_id = None;
         true
     }
 

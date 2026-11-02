@@ -2329,29 +2329,27 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
         PendingConversationTurnClaimResult::NotReady
     ));
     assert!(registry.mark_ready("agent-1", &turn_id));
-    assert!(matches!(
-        registry.claim_reply(
-            "agent-1",
-            "conversation-1",
-            None,
-            "session-1",
-            "inbound-1",
-            Some("outbound-1"),
-            None,
-            "reply",
-            1729900000000,
-        ),
-        PendingConversationTurnClaimResult::Claimed(_)
-    ));
-    assert!(registry.release("agent-1", &turn_id));
-    assert!(matches!(
-        registry.claim_reply(
-            "agent-1", "conversation-1", None, "session-1", "inbound-1b",
-            Some("outbound-1"), None, "retry", 1729900000001,
-        ),
-        PendingConversationTurnClaimResult::Claimed(_)
-    ));
-    assert!(registry.complete("agent-1", &turn_id));
+    let PendingConversationTurnClaimResult::Claimed(reply) = registry.claim_reply(
+        "agent-1",
+        "conversation-1",
+        None,
+        "session-1",
+        "inbound-1",
+        Some("outbound-1"),
+        None,
+        "reply",
+        1729900000000,
+    ) else {
+        panic!("ready turn must yield its exact reply claim");
+    };
+    assert!(registry.release("agent-1", &reply));
+    let PendingConversationTurnClaimResult::Claimed(retry) = registry.claim_reply(
+        "agent-1", "conversation-1", None, "session-1", "inbound-1b",
+        Some("outbound-1"), None, "retry", 1729900000001,
+    ) else {
+        panic!("released turn must permit a new reply claim");
+    };
+    assert!(registry.complete("agent-1", &retry));
 
     let threaded = registry
         .register(
@@ -2396,21 +2394,20 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
         ),
         PendingConversationTurnClaimResult::NotFound
     ));
-    assert!(matches!(
-        registry.claim_reply(
-            "agent-1",
-            "thread-conversation",
-            Some("parent-conversation"),
-            "session-1",
-            "inbound-threaded",
-            Some("outbound-threaded"),
-            Some("thread-2"),
-            "threaded reply",
-            1729900000002,
-        ),
-        PendingConversationTurnClaimResult::Claimed(_)
-    ));
-    assert!(registry.complete("agent-1", &threaded));
+    let PendingConversationTurnClaimResult::Claimed(threaded_reply) = registry.claim_reply(
+        "agent-1",
+        "thread-conversation",
+        Some("parent-conversation"),
+        "session-1",
+        "inbound-threaded",
+        Some("outbound-threaded"),
+        Some("thread-2"),
+        "threaded reply",
+        1729900000002,
+    ) else {
+        panic!("matching thread and parent must yield a reply claim");
+    };
+    assert!(registry.complete("agent-1", &threaded_reply));
 
     let missing_thread = registry
         .register(
@@ -2474,6 +2471,157 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
         .snapshot("agent-shared", &shared_turn)
         .is_some());
     assert!(second_store.pending_conversation_turns().cancel("agent-shared", &shared_turn));
+}
+
+mod session_turn_claim_settlement {
+    use std::time::Duration;
+
+    use mahayana_host_runtime::extensions::session::session_conversation_state::{
+        PendingConversationTurnClaimResult, PendingConversationTurnRegistry,
+        PendingConversationTurnReply,
+    };
+
+    fn ready_turn(registry: &PendingConversationTurnRegistry, agent: &str, id: &str, outbound: &str) {
+        assert_eq!(registry.register(
+            agent, Some(id), "conversation", "session", None, Duration::from_secs(60),
+        ).expect("register turn"), id);
+        assert!(registry.set_outbound_message_id(agent, id, outbound));
+        assert!(registry.mark_ready(agent, id));
+    }
+
+    fn claim(
+        registry: &PendingConversationTurnRegistry,
+        agent: &str,
+        outbound: &str,
+        message: &str,
+    ) -> PendingConversationTurnReply {
+        let PendingConversationTurnClaimResult::Claimed(reply) = registry.claim_reply(
+            agent, "conversation", None, "session", message, Some(outbound), None, message, 100,
+        ) else {
+            panic!("eligible ready turn must yield a claim");
+        };
+        reply
+    }
+
+    fn assert_held(registry: &PendingConversationTurnRegistry, agent: &str, id: &str, outbound: &str) {
+        assert!(registry.snapshot(agent, id).expect("pending turn remains").claimed);
+        assert_eq!(registry.claim_reply(
+            agent, "conversation", None, "session", "competitor", Some(outbound), None,
+            "must not acquire held custody", 101,
+        ), PendingConversationTurnClaimResult::NotFound);
+    }
+
+    #[test]
+    fn released_claim_cannot_settle_successor() {
+        for stale_completion in [false, true] {
+            let registry = PendingConversationTurnRegistry::new();
+            ready_turn(&registry, "agent", "turn", "outbound");
+            let released = claim(&registry, "agent", "outbound", "released-reply");
+            let released_clone = released.clone();
+            assert!(registry.release("agent", &released));
+            assert!(!registry.release("agent", &released_clone));
+            assert!(!registry.complete("agent", &released_clone));
+
+            let successor = claim(&registry, "agent", "outbound", "successor-reply");
+            let changed = if stale_completion {
+                registry.complete("agent", &released_clone)
+            } else {
+                registry.release("agent", &released_clone)
+            };
+            assert!(!changed, "released handle cannot regain settlement authority");
+            assert_held(&registry, "agent", "turn", "outbound");
+            assert!(registry.complete("agent", &successor));
+            assert!(registry.snapshot("agent", "turn").is_none());
+        }
+    }
+
+    #[test]
+    fn cancelled_claim_cannot_settle_reused_turn() {
+        let registry = PendingConversationTurnRegistry::new();
+        ready_turn(&registry, "agent", "reused-turn", "same-outbound");
+        let cancelled = claim(&registry, "agent", "same-outbound", "cancelled-reply");
+        assert!(registry.cancel("agent", "reused-turn"));
+        assert!(!registry.release("agent", &cancelled));
+        assert!(!registry.complete("agent", &cancelled));
+
+        ready_turn(&registry, "agent", "reused-turn", "same-outbound");
+        let replacement = claim(&registry, "agent", "same-outbound", "replacement-reply");
+        assert!(!registry.release("agent", &cancelled));
+        assert_held(&registry, "agent", "reused-turn", "same-outbound");
+        assert!(!registry.complete("agent", &cancelled));
+        assert_held(&registry, "agent", "reused-turn", "same-outbound");
+        assert!(registry.complete("agent", &replacement));
+        assert!(registry.snapshot("agent", "reused-turn").is_none());
+    }
+
+    #[test]
+    fn private_claim_identity_survives_payload_mutation_and_rejects_wrong_agent() {
+        let registry = PendingConversationTurnRegistry::new();
+        ready_turn(&registry, "agent", "original-turn", "original-outbound");
+        ready_turn(&registry, "other-agent", "original-turn", "original-outbound");
+        ready_turn(&registry, "agent", "other-turn", "other-outbound");
+        let original = claim(&registry, "agent", "original-outbound", "original-reply");
+        let foreign = claim(&registry, "other-agent", "original-outbound", "foreign-reply");
+        let other = claim(&registry, "agent", "other-outbound", "other-reply");
+        assert!(!registry.complete("other-agent", &original));
+        assert!(!registry.release("other-agent", &original));
+        assert_held(&registry, "agent", "original-turn", "original-outbound");
+        assert_held(&registry, "other-agent", "original-turn", "original-outbound");
+
+        let mut changed_payload = original.clone();
+        changed_payload.id = "other-turn".into();
+        changed_payload.conversation_ref = "changed-conversation".into();
+        changed_payload.message_id = "changed-message".into();
+        changed_payload.reply_to_id = "other-outbound".into();
+        changed_payload.thread_id = Some("changed-thread".into());
+        changed_payload.text = "changed text".into();
+        changed_payload.timestamp_ms = 999;
+        assert!(registry.release("agent", &changed_payload),
+            "release uses the private original key despite mutable payload fields");
+        assert!(!registry.snapshot("agent", "original-turn").unwrap().claimed);
+        assert_held(&registry, "agent", "other-turn", "other-outbound");
+
+        let mut replacement = claim(&registry, "agent", "original-outbound", "replacement-reply");
+        replacement.id = "other-turn".into();
+        assert!(!registry.complete("agent", &changed_payload));
+        assert!(!registry.release("agent", &original));
+        assert_held(&registry, "agent", "original-turn", "original-outbound");
+        assert!(registry.complete("agent", &replacement),
+            "completion uses the private original key despite a changed public id");
+        assert!(registry.snapshot("agent", "original-turn").is_none());
+        assert_held(&registry, "agent", "other-turn", "other-outbound");
+        assert_held(&registry, "other-agent", "original-turn", "original-outbound");
+        assert!(registry.complete("agent", &other));
+        assert!(registry.complete("other-agent", &foreign));
+    }
+
+    #[test]
+    fn clones_share_single_use_authority_and_drop_retains_custody() {
+        let registry = PendingConversationTurnRegistry::new();
+        ready_turn(&registry, "agent", "turn", "outbound");
+        let first = claim(&registry, "agent", "outbound", "first-reply");
+        let first_clone = first.clone();
+        drop(first);
+        assert_held(&registry, "agent", "turn", "outbound");
+        assert!(registry.release("agent", &first_clone));
+        assert!(!registry.release("agent", &first_clone));
+        assert!(!registry.complete("agent", &first_clone));
+
+        let successor = claim(&registry, "agent", "outbound", "successor-reply");
+        let successor_clone = successor.clone();
+        drop(successor);
+        assert_held(&registry, "agent", "turn", "outbound");
+        assert!(registry.complete("agent", &successor_clone));
+        assert!(!registry.complete("agent", &successor_clone));
+        assert!(!registry.release("agent", &successor_clone));
+        assert!(registry.snapshot("agent", "turn").is_none());
+
+        ready_turn(&registry, "agent", "dropped-turn", "dropped-outbound");
+        let dropped = claim(&registry, "agent", "dropped-outbound", "unknown-commit-reply");
+        drop(dropped);
+        assert_held(&registry, "agent", "dropped-turn", "dropped-outbound");
+        assert!(registry.cancel("agent", "dropped-turn"));
+    }
 }
 
 // ---------------------------------------------------------------------------

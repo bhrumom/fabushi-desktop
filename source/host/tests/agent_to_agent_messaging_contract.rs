@@ -207,6 +207,152 @@ fn inbound_turn_claim_is_released_on_refusal_or_duplicate_and_completed_only_aft
 }
 
 #[test]
+fn inbound_reply_commit_preserves_reentrant_replacement_claim() {
+    use std::sync::mpsc;
+    use mahayana_host_runtime::extensions::session::session_conversation_state::PendingConversationTurnClaimResult;
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let source = sessions.materialize_new_session(Some(&profile("Source")), "user", None).unwrap();
+    let target = sessions.materialize_new_session(Some(&profile("Target")), "user", None).unwrap();
+    let admission = sessions.read_session_work_admission(&target.id).unwrap().unwrap();
+    let unread_before = sessions.get_agent_unread_state(&target.id).unwrap();
+    let timestamp_ms = (unread_before.last_activity_at as u64).checked_add(100).unwrap();
+    let turns = sessions.pending_conversation_turns();
+    let turn_id = turns.register(
+        &target.id, Some("reused-turn"), &source.id, &admission.session_id,
+        None, Duration::from_secs(60),
+    ).unwrap();
+    assert!(turns.set_outbound_message_id(&target.id, &turn_id, "reused-request"));
+    assert!(turns.mark_ready(&target.id, &turn_id));
+    let entry_id = format!("agent-inbound:{}:reply-1", source.id);
+    let inbound = serde_json::json!({
+        "from":{"id":source.id},"messageId":"reply-1","replyToId":"reused-request",
+        "text":"committed before claim replacement","images":[],"timestampMs":timestamp_ms,
+    });
+    let callbacks = Arc::new(AtomicUsize::new(0));
+    let (callback_sender, callback_receiver) = mpsc::channel();
+    let subscription = subscribe_transcript_mutations({
+        let sessions = Arc::downgrade(&sessions);
+        let callbacks = Arc::clone(&callbacks);
+        let target_id = target.id.clone();
+        let source_id = source.id.clone();
+        let turn_id = turn_id.clone();
+        let entry_id = entry_id.clone();
+        move |event| {
+            if event.get("kind").and_then(serde_json::Value::as_str) != Some("entries-upserted")
+                || event.get("agentId").and_then(serde_json::Value::as_str) != Some(target_id.as_str())
+                || !event.get("entries").and_then(serde_json::Value::as_array).is_some_and(|entries| {
+                    entries.iter().any(|entry| entry.get("id").and_then(serde_json::Value::as_str)
+                        == Some(entry_id.as_str()))
+                })
+            {
+                return;
+            }
+            callbacks.fetch_add(1, Ordering::SeqCst);
+            // Publication catches listener panics. Return every observation or
+            // error to the parent instead of making callback-only assertions.
+            let observed = (|| -> Result<_, String> {
+                let sessions = sessions.upgrade().ok_or("committing Session owner disappeared")?;
+                let observed_admission = sessions.read_session_work_admission(&target_id)?
+                    .ok_or("committed Session admission disappeared")?;
+                let committed = sessions.read_agent_transcript_entries(&target_id)?;
+                let turns = sessions.pending_conversation_turns();
+                let original = turns.snapshot(&target_id, &turn_id)
+                    .ok_or("original claim was settled before committed publication")?;
+                if !turns.cancel(&target_id, &turn_id) {
+                    return Err("callback could not cancel the original turn".into());
+                }
+                let replacement_id = turns.register(
+                    &target_id, Some(&turn_id), &source_id, &observed_admission.session_id,
+                    None, Duration::from_secs(60),
+                )?;
+                if replacement_id != turn_id
+                    || !turns.set_outbound_message_id(&target_id, &replacement_id, "reused-request")
+                    || !turns.mark_ready(&target_id, &replacement_id)
+                {
+                    return Err("callback could not ready the same-key replacement".into());
+                }
+                let replacement = match turns.claim_reply(
+                    &target_id, &source_id, None, &observed_admission.session_id,
+                    "replacement-reply", Some("reused-request"), None,
+                    "replacement retains custody", timestamp_ms + 1,
+                ) {
+                    PendingConversationTurnClaimResult::Claimed(reply) => reply,
+                    other => return Err(format!("replacement claim was not admitted: {other:?}")),
+                };
+                Ok((observed_admission, committed, original, replacement))
+            })();
+            let _ = callback_sender.send(observed);
+        }
+    });
+    let (commit_sender, commit_receiver) = mpsc::channel();
+    let worker = std::thread::spawn({
+        let sessions = Arc::clone(&sessions);
+        let target_id = target.id.clone();
+        let inbound = inbound.clone();
+        move || {
+            let outcome = persist_agent_inbound_message(&sessions, &target_id, &inbound);
+            let _ = commit_sender.send(outcome);
+        }
+    });
+    let completed = commit_receiver.recv_timeout(Duration::from_secs(5));
+    subscription.unsubscribe();
+    let outcome = match completed {
+        Ok(outcome) => outcome,
+        Err(error) => {
+            // Never join or close a possibly wedged owner. Its exact worker
+            // retains the fixture until this failing test process exits.
+            drop(worker);
+            panic!("inbound commit/callback did not finish: {error}; retained fixture {}", root.display());
+        }
+    };
+    worker.join().expect("owned inbound worker returned");
+    assert!(outcome.expect("original reply remains a successful commit"));
+    let (observed_admission, observed_entries, original, replacement) = callback_receiver
+        .recv_timeout(Duration::from_secs(5))
+        .expect("committed listener must publish its observations")
+        .expect("listener must reenter the actual Session and replace the claim");
+    assert_eq!(callbacks.load(Ordering::SeqCst), 1);
+    assert_eq!(observed_admission, admission);
+    assert!(original.claimed, "the original producer still owned its claim during publication");
+    assert_eq!(original.id, turn_id);
+    assert_eq!(original.agent_id, target.id);
+    assert_eq!(observed_entries.len(), 1);
+    assert_eq!(observed_entries[0]["id"], entry_id);
+    assert_eq!(observed_entries[0]["content"], inbound["text"]);
+    assert_eq!(observed_entries[0]["sessionKey"], admission.session_key);
+    let retained = turns.snapshot(&target.id, &turn_id)
+        .expect("old completion must not remove the replacement claim");
+    assert_eq!(retained, original, "same public identities retain the replacement's claimed state");
+    assert!(matches!(turns.claim_reply(
+        &target.id, &source.id, None, &admission.session_id,
+        "competing-reply", Some("reused-request"), None, "must not reclaim", timestamp_ms + 2,
+    ), PendingConversationTurnClaimResult::NotFound));
+    assert_eq!(sessions.read_agent_transcript_entries(&target.id).unwrap(), observed_entries);
+    let db = rusqlite::Connection::open(sessions.session_db_path(&target.id).unwrap()).unwrap();
+    let physical_rows: i64 = db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0)).unwrap();
+    assert_eq!(physical_rows, 1, "the original reply commits exactly one physical row");
+    drop(db);
+    assert_eq!(sessions.get_agent_conversation_partner_ids(&target.id).unwrap(), vec![source.id.clone()]);
+    let mut expected_unread = unread_before;
+    expected_unread.last_activity_at = timestamp_ms as f64;
+    expected_unread.unread_count += 1.0;
+    assert_eq!(sessions.get_agent_unread_state(&target.id).unwrap(), expected_unread);
+
+    assert!(!persist_agent_inbound_message(&sessions, &target.id, &inbound).expect("committed reply is a duplicate"));
+    assert_eq!(turns.snapshot(&target.id, &turn_id), Some(retained));
+    assert_eq!(sessions.read_agent_transcript_entries(&target.id).unwrap(), observed_entries);
+    assert_eq!(sessions.get_agent_unread_state(&target.id).unwrap(), expected_unread);
+    assert!(turns.complete(&target.id, &replacement), "the current replacement can settle itself");
+    assert!(turns.snapshot(&target.id, &turn_id).is_none());
+    assert!(!turns.complete(&target.id, &replacement), "settlement is single-use");
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn legacy_inbound_uses_occupied_physical_ids_and_preserves_no_admission_compatibility() {
     let root = temp_root();
     let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
