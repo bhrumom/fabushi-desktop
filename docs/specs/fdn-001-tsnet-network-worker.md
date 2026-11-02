@@ -154,6 +154,38 @@ macOS binary source check. These bounded tests do not grant live-network, signed
 package, source/legal or independent acceptance. Rollback changes code only and
 does not migrate or delete worker state.
 
+### Whole-frame receive budget (FDN-HOST-FRAME-01)
+
+At `e711505dbc44bde087595c10a060f5ae6deb5847`, the production
+`RemoteComputerTarget` reader gives every private-frame fragment a new 15-second
+timeout. A peer sending incomplete fragments can therefore hold the supervisor
+inside one poll across many such windows, delaying normal Host shutdown and
+stream cleanup. This is a source-observed defect, not an executed pre-fix run.
+
+The existing reader must create one monotonic 15-second deadline for the whole
+frame. Each read receives only the remaining whole-millisecond budget; less than
+one millisecond remaining fails closed before another read. Check the same
+deadline after a response and reject even a complete frame received too late.
+Fragments and empty reads must never refresh that deadline. Preserve the 32 KiB
+bound, newline/trailing-whitespace rules, peer and generation checks, authorization
+and operation claims. Timeout follows the existing transport-error and
+`serve_private_request*` stream-close path, before parsing or executing a request.
+
+The worker response wait retains its existing one-second IPC allowance and stream
+close retains its existing bounded wait. This change bounds frame admission; it
+does not promise instantaneous supervisor stop or replace the separate handling
+needed for an unknown listen/dial outcome. Do not introduce a new transport owner,
+modify the wire schema, change dependency versions or migrate network state.
+
+FDN-HOST-FRAME-AC-01 requires Actions-only behavioral tests of the production frame
+reader with a controlled monotonic clock and read responses: decreasing fragment
+budgets, exhaustion despite continued fragments, rejection of a late complete
+frame, expiry before any read, accepted bounded framing and rejected malformed or
+oversized framing. Keep the existing Host owner, IPC, authorization/journal and
+native wiring suites. Record actual tests and exact H; source-string checks alone
+do not satisfy the new behavior gate. Live-network, package, full shutdown and
+independent acceptance remain separate requirements.
+
 ## Non-goals / still pending
 
 This slice does not satisfy G02/G03/G05/G16 by itself. Still pending:

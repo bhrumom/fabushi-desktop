@@ -168,9 +168,81 @@
       "TestAcceptPeerStopsOnAcceptError"
     ],
     "oracles": "Controlled listener ordering, zero/one/two Accept observations, actual net.Pipe EOF and successful ping/pong after listener closure; timeouts only guard hangs",
-    "execution": "Pending containing-H GitHub Actions: preserved 13 plus 5 new top-level Go cases, zero failed/skipped; existing three-platform worker/Host checks and actual macOS worker binary gates retained",
+    "execution": {
+      "head_sha": "e711505dbc44bde087595c10a060f5ae6deb5847",
+      "run_id": 41523198228,
+      "linux": {
+        "job_id": 125544146338,
+        "conclusion": "success",
+        "actual_tests": "18 top-level cases passed, including all five new connection ownership cases; zero failed or skipped",
+        "other_steps": "Format, readonly module verification, vet, compile and unchanged tracked inputs all passed",
+        "artifact_id": 13177714201,
+        "artifact_digest": "sha256:2d5ff199075a8e612fe9578d1cc9b3f227414f52862a147acc7849705eaf571e"
+      },
+      "windows": {
+        "job_id": 125544145887,
+        "conclusion": "success",
+        "actual_tests": "18 top-level cases passed, including all five new connection ownership cases; zero failed or skipped",
+        "other_steps": "Readonly module verification, vet, compile and unchanged tracked inputs all passed; formatting is the Linux-only gate",
+        "artifact_id": 13179505351,
+        "artifact_digest": "sha256:877ca30bfadd5cc90736d068bf810ce3120e4798d283fbe30143bef3897b6ff7"
+      },
+      "host_supervisor": {
+        "job_id": 125544146110,
+        "conclusion": "success",
+        "actual_tests": "network_worker_process_contract: 3 passed, zero failed or ignored; actual child-process IPC/secret/close fixture included",
+        "log_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523198228/job/125544146110"
+      },
+      "macos_worker": "125544146314 queued at the observed snapshot; no execution pass claimed",
+      "staged_inputs": {
+        "run_id": 41523198242,
+        "job_id": 125544146095,
+        "conclusion": "success",
+        "artifact_id": 13178996044,
+        "artifact_digest": "sha256:11aa9f8ce4dbcf181436fdf68b786de92f108b120945a19a81e2d1d98379b937"
+      },
+      "staged_macos_binaries": "125544910633 (box), 125544910736 (Coordinator), 125544911038 (worker) queued at the observed snapshot",
+      "qualification": "Partial exact-H execution only; no complete cross-platform, actual macOS worker, signed-package or independent acceptance"
+    },
     "local_or_htch_runtime_execution": "not performed",
     "dependency_versions_changed": false,
+    "accepted": false
+  },
+  "generated_output_review": {
+    "module": "github.com/tailscale/web-client-prebuilt",
+    "source_commit": "e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd",
+    "complete_tree": "4cee9cb0016e9e7ce92f256420518f3534158d27",
+    "tree_truncated": false,
+    "read_text_blobs": {
+      ".github/workflows/update-assets.yml": "f7792d246c4b096b730fd9121e591418439098f1",
+      ".gitignore": "62ab0993a7bb9ef4d3e26cf3c43ce725093b0241",
+      "README.md": "bff2a6346a433ea6215a52cb1fd6c7e6bd9d1119",
+      "go.mod": "9bee50d20bf2d6cb2563e6d6668c947b21e814e9",
+      "embed.go": "fe30e16f9fb15ea0a8c222ea5faab159889cbe40",
+      "build/index.html": "541d0fdc27fd142ba77d1f6208b5c62c420aec5a",
+      "LICENSE": "394db19e4aa5c648b2c73741f184134fe1f22f68"
+    },
+    "resource_identity_only_unread_contents": {
+      "build/assets/index-BbgPCR4_.js.zst": "6f1cb125f3ff15d87ebce9f4b79cc7ab14627317",
+      "build/assets/index-UKv3Effy.css.zst": "37a87825dd4576772a01c93cf182970a3a533a84",
+      "build/assets/Inter.var.latin-Dxq58mVK.woff2": "980853fec144d92ffd3712e7f2eec6395f638f2d"
+    },
+    "generator_entry": "The fixed workflow checks out tailscale/tailscale at an upstreamBranch input (default main), runs ./tool/go mod tidy, then ./tool/go run ./cmd/build-webclient --outDir ../../../build/",
+    "missing_provenance": "This output tree has no resolved generating Tailscale commit, JS lock, build input manifest, actual toolchain identity or separate third-party notice map. Its README floating main link is not a source identity. Compressed bundle license comments have not been read",
+    "unblock": "Retrieve the original generating run/artifact provenance binding these output blobs to the actual Tailscale source commit, then its generator/JS/tool inputs and resource/license mapping. Do not infer the generating commit from the separately pinned Tailscale v1.104.1 dependency",
+    "accepted": false
+  },
+  "whole_frame_receive_repair": {
+    "requirement": "FDN-HOST-FRAME-01 / FDN-HOST-FRAME-AC-01",
+    "review_base": "e711505dbc44bde087595c10a060f5ae6deb5847",
+    "classification": "Source-observed implementation defect; no pre-fix execution claimed",
+    "failure": "Each incomplete fragment reset the production RemoteComputerTarget read to 15 seconds, so a slow peer could delay poll, supervisor stop and the later Host runner/tool shutdown sequence",
+    "production_wiring": "Existing service poll -> serve_private_request_with_timeout -> serve_private_stream -> read_private_frame -> the existing worker stream_read; read failure returns through the existing stream_close path",
+    "implementation": "One monotonic whole-frame deadline; pass only remaining whole milliseconds to each read, fail before read when exhausted, and reject any response arriving at or after the same deadline before parsing or executing it",
+    "preserved": "Existing 32 KiB/newline/whitespace/EOF rules, identity/generation/permission/operation fences, owners, schema, dependency versions and state",
+    "execution": "Pending containing-H Actions; six controlled-clock cases exercise the production reader, with the four existing Host owner/IPC/target/native-wiring suites retained and --locked",
+    "boundary": "Existing one-second IPC allowance and bounded stream-close wait remain. This does not promise immediate supervisor stop or solve the separately observed unknown listen/dial response settlement gap",
+    "local_or_htch_runtime_execution": "not performed",
     "accepted": false
   },
   "remaining": [
