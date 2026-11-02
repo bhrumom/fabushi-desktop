@@ -299,10 +299,20 @@ for (const oldPhase of ['in-flight', 'queued']) {
 test('NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation', async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);
-  await messageRow(page, 'm1').locator('.sand-message-action-anchor').hover();
+  const reactionAnchor = messageRow(page, 'm1').locator('.sand-message-action-anchor');
+  await reactionAnchor.hover();
   await expect(messageRow(page, 'm1').getByRole('toolbar')).toHaveCSS('opacity', '1');
   await expect(messageRow(page, 'm1').getByRole('toolbar')).toHaveCSS('pointer-events', 'auto');
-  await messageRow(page, 'm1').getByRole('button', { name: 'Add reaction', exact: true }).click();
+  const anchorBounds = await reactionAnchor.boundingBox();
+  const reactionButton = messageRow(page, 'm1').getByRole('button', { name: 'Add reaction', exact: true });
+  const buttonBounds = await reactionButton.boundingBox();
+  expect(anchorBounds).not.toBeNull();
+  expect(buttonBounds).not.toBeNull();
+  // Cross the space below the bubble as a real pointer does. The toolbar must
+  // stay active here; jumping directly to click can miss a broken hover path.
+  await page.mouse.move(buttonBounds!.x + buttonBounds!.width / 2, anchorBounds!.y + anchorBounds!.height + 1, { steps: 10 });
+  await expect(messageRow(page, 'm1').getByRole('toolbar')).toHaveCSS('pointer-events', 'auto');
+  await reactionButton.click();
   await messageRow(page, 'm1').getByRole('button', { name: 'React with 👍', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(1);
   await page.evaluate(() => window.nativeMessageFixture.settleReaction());

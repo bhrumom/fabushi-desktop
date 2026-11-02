@@ -7,7 +7,7 @@
   "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "requested_head": "06fb24c4963f35d1450c122e7222ee39e21b4192",
   "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
-  "latest_read_head_at_preparation": "e711505dbc44bde087595c10a060f5ae6deb5847",
+  "latest_read_head_at_preparation": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
   "scope": "Verify original run terminal and every available full execution log; preserve concurrent implementation, classify actual failures, confirm minimal repair and publish scoped evidence in existing ledger/RTM. Not full migration acceptance.",
   "original_execution": {
     "repository": "bhrumom/fabushi-desktop",
@@ -711,12 +711,12 @@
     },
     {
       "requirement": 7,
-      "done": "Only GitHub Actions execute validation; original terminal and four full available logs read. Fifth job has no runner/steps and404 log, honestly marked not-run. Exact106bb95 affected reconciliation62/12/3/1/4/3/1 now passed; UI/Electron/Windows passed. Actual575 failure logs identify root pagination-readiness wiring and separate SQLite test-target type error; production fix441425 is remote-readback verified.",
-      "open": "Run41527189803 at441425 is queued at its initial21:19Z observation; exact-H UI/reconciliation terminal evidence is required. Mac shipping and full final acceptance remain unqualified."
+      "done": "Only GitHub Actions execute validation; original terminal and four full available logs read. Fifth job has no runner/steps and404 log, honestly marked not-run. Exact106bb95 affected reconciliation62/12/3/1/4/3/1 now passed; UI/Electron/Windows passed. Actual575 failure logs identify root pagination-readiness wiring and separate SQLite test-target type error; production fix441425 is remote-readback verified. Exact9b9 full affected job logs and actual Chromium10/11 failure inspected, including matching downloadable trace artifact.",
+      "open": "The current CSS hover bridge and existing newly concurrent creation14 independent-process lock/WAL cases require exact containing-H Actions. Current renderer extraTranscript8 was skipped after9b9 targeting failure; shipping/macOS and final acceptance remain open."
     },
     {
       "requirement": 8,
-      "done": "Distinct environment/no-execution, TEST_FLAW and source-observed implementation gaps; independent work continued during queue, no rerun-to-green. Preserve stronger concurrent f544 SQLite correction and abandon obsolete local oracle drafts after fresh-input checks.",
+      "done": "Distinct environment/no-execution, TEST_FLAW and source-observed implementation gaps; independent work continued during queue, no rerun-to-green. Preserve stronger concurrent f544 SQLite correction and abandon obsolete local oracle drafts after fresh-input checks. Used fresh source readback to retain concurrent managed-SQLite preflight and prepared one missing real process boundary regression.",
       "open": "MacOS queue and latest exact-H execution remain external evidence gates."
     },
     {
@@ -736,8 +736,9 @@
     "product_complete": false,
     "independent_accept": false,
     "formal_release": false,
-    "publication": "Evidence/unique ledger/RTM committed and read back at3ab165; one-line production readiness repair committed and read back at441425 using force=false expected_sha CAS. This receipt update preserves those exact identities and reports pending gates without promotion.",
-    "current_containing_H_all_gates_passed": false
+    "publication": "Round30 canonical evidence/ledger/RTM3ab165 and readiness441425 plus receiptf431fbf are remote-readback verified. This scoped batch adds actual toolbar bridge CSS and cursor-path coverage, preserves concurrent process-lock/WAL tests and records truthful exact9b9 terminal evidence. No passing result inferred for new head.",
+    "current_containing_H_all_gates_passed": false,
+    "latest_observed_implementation": "18fa9233d592e3fa536d4fd4ec6675e175d58d18"
   },
   "repair_execution": {
     "format_version": 1,
@@ -1747,7 +1748,7 @@
     ],
     "local_execution": false,
     "tests_weakened": false,
-    "execution_status": "Actual containing-H run41527189803 started; terminal logs required. No result inferred from static review or predecessor.",
+    "execution_status": "Readiness handoff441425 executed; concurrent9b9 preserved active-chat request/overlay state.9b9 actual renderer10/11 passed; remaining failure used row whitespace instead of the action anchor (test targeting flaw). Preserve concurrent oracle repair and add bounded production hover-gap repair plus actual cursor-path coverage, awaiting containing-H execution.",
     "concurrent_test_repair": {
       "commit": "f544e9b3161d758141e1b419bcdab22cc522952e",
       "path": "source/host/src/extensions/session/human_creation_tests.rs",
@@ -1780,5 +1781,1491 @@
     "head": "5e141b671587c8cf18965cd2c044188911ee227e",
     "ledger_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
     "all_appended_entries_retained": true
+  },
+  "production_441425_execution": {
+    "head": "441425cd65a661f95d8b629c388281c77115d2b2",
+    "run_id": 41527189803,
+    "observed_at": "2026-11-02T21:26:10Z",
+    "overall_status": "queued",
+    "overall_conclusion": null,
+    "full_logs": {
+      "ui": {
+        "job_id": 125557844335,
+        "file": "125557844335.log",
+        "bytes": 134714,
+        "sha256": "0c0bb5df322324ff5a8973ba67760c964f81efa0207eafacc4cabf8575ba5bcd",
+        "artifact": {
+          "id": 13181055417,
+          "bytes": 19750822,
+          "sha256": "61563e6545353fff4bd8f16200995564855ef2149b3b2e2341ea60943cd36890"
+        }
+      },
+      "reconciliation": {
+        "job_id": 125557844445,
+        "file": "125557844445.log",
+        "bytes": 231046,
+        "sha256": "43080a8a579baaf411a0752ad80d1f983936c1943a3ebcdd1d3c2349a0cb8a3e",
+        "artifact": {
+          "id": 13180293365,
+          "bytes": 20984,
+          "sha256": "d795d12b63d1895992826fcac09d05ef8e50f9c3bffd0a99eb54fec3b650c0e1"
+        }
+      },
+      "social": {
+        "job_id": 125557843754,
+        "file": "125557843754.log",
+        "bytes": 207484,
+        "sha256": "090ded5a0d91f0b7d80fe802624b30b6a8ab356119b057ce941bf3f24a43870b",
+        "artifact": {
+          "id": 13179524488,
+          "bytes": 14704,
+          "sha256": "d3d03e4e580b3d50bf1f1c4028259d6925eb53c2e8dc32a64dd353b980b7b83e"
+        }
+      }
+    },
+    "execution": {
+      "ui": {
+        "conclusion": "failure",
+        "transcript": {
+          "passed": 33,
+          "failed": 0
+        },
+        "cursor_rpc": {
+          "passed": 17,
+          "failed": 0
+        },
+        "renderer_compile": "success",
+        "settlement": {
+          "passed": 5,
+          "failed": 0
+        },
+        "forward_chromium": {
+          "passed": 16,
+          "failed": 0
+        },
+        "actual_renderer": {
+          "passed": 2,
+          "failed": 9,
+          "retries_configured": 0,
+          "expected": 1,
+          "actual": 2,
+          "assertion": "nativeMessageFixture.pending().older",
+          "source": "desktop/e2e/native-message-projection.spec.ts:34 openAlice",
+          "failure": "Nine10second waits saw two queued older-history RPCs",
+          "classification": "IMPLEMENTATION_REENTRY_DEFECT",
+          "cause": "Default roster selection opened Alice and acquired one older page. Explicitly selecting already active Alice reinstalled the cached cursor, cleared controller inFlight/generation/overlays, and allowed a second outstanding RPC."
+        },
+        "production_transcript8": "skipped"
+      },
+      "reconciliation": {
+        "conclusion": "failure",
+        "transcript_recovery": {
+          "passed": 3,
+          "failed": 0
+        },
+        "human": {
+          "passed": 63,
+          "failed": 0,
+          "ignored": 0
+        },
+        "resource": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "creation": {
+          "passed": 11,
+          "failed": 1,
+          "ignored": 0,
+          "failed_case": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+          "line": 777,
+          "case_within_loop": "notadb; later schema/data-page matrix iterations did not execute",
+          "expected": "store.db plus original -journal,-shm,-wal and unrelated-resource.bin remain byte-identical",
+          "actual": "store.db and unrelated-resource.bin retained; all3 original sidecars absent",
+          "classification": "IMPLEMENTATION_DEFECT",
+          "likely_cause": "probe_human_conversation_store returnsOk on any nonempty WAL/journal before immutable main probe; NOTADB with retained sidecars reaches standard SQLite opener"
+        },
+        "not_run": [
+          "creation-storage3",
+          "sharebox1",
+          "journal12",
+          "Agent4",
+          "credentials3",
+          "gateway-HTTP1"
+        ]
+      },
+      "social": {
+        "conclusion": "failure",
+        "featurehost": {
+          "passed": 10,
+          "failed": 0,
+          "ignored": 0
+        },
+        "classification": "TEST_FLAW_CI_ORACLE",
+        "cause": "Intentional caught poison panic separates case-name and ok into different lines; exact single-line grep fails although suite10passes",
+        "not_run": [
+          "Social9",
+          "HTTP6"
+        ],
+        "concurrent_fix": {
+          "commit": "f2903f53ded5b07faea73e7f07d780eda0423283",
+          "workflow_blob": "cf888c52e7860a766d8f41caaada3338e8fc1dbf",
+          "behavior": "Require exact case-start plus unchanged10pass/0fail/0ignored suite; assertions retained",
+          "fix_commit_read_back": true,
+          "validation": "Not inherited by441425; correction-H execution must be checked"
+        }
+      }
+    },
+    "other_jobs_api_status_only": [
+      {
+        "id": 125557844107,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125557844244,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125557844254,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125557844324,
+        "name": "retained-direct-ffi-compatibility",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125557846676,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "all_required_gates_passed": false
+  },
+  "concurrent_followup_repair": {
+    "commit": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "root_readback": true,
+    "changes": [
+      {
+        "path": "desktop/e2e/native-message-projection.spec.ts",
+        "blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438"
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/request-round9-recovery-repairs.json",
+        "blob": "bde369fa6064c0471d8130b44b6a9ac330e297ad"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+        "blob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167"
+      }
+    ],
+    "call_chain": "ProductionSessionWorkers.create_human_conversation -> SandAgentDb.open_human_conversation_store -> probe_human_conversation_store; preflight failure returns before open_with_options_and_seed/open_configured_db.",
+    "retained_data_fix": "Before any nonempty sidecar shortcut, read nonempty main file's first16bytes and reject invalid SQLite magic without invoking SQLite. Short unreadable main fails throughIO; missing/empty remain existing path. Valid header preserves existing sidecar-aware opener; no files are removed,renamed,rewritten or quarantined by this new preflight.",
+    "retained_data_boundaries": "Specific invalid/truncated nonempty main rejection before SQLite sidecar delegation. Valid WAL/rollback and missing/empty existing path retained; arbitrary hot/corrupt WAL and concurrent external replacement remain open.",
+    "pagination": "Restore cached cursor only for unprobed scope; retain current request, older rows, retry state and anchor on active-chat reselect. Cross-account/conversation setScope still resets to unprobed.",
+    "browser_regression": "Wait for real initial tail and exactly one older RPC before the existing Alice click; preserve exactly-one assertions before and after actual viewport scroll, all eleven scenarios and zero retries.",
+    "test_drafts_not_published": [
+      "45a0f783793e0d014007f52396f423ff27103b7f",
+      "f1a450bcd72b891b5ec38fb67c3e9f18743e3051",
+      "2e354053df24ed9542b949f9d586dfc32c1246df",
+      "1481871a62c908dc7383e374513dbaf7b554ed81"
+    ],
+    "run_id": 41528369271,
+    "execution_status": "Exact9b9 run41528369271 terminal affected jobs read: Human63/resource3/creation12/storage3/sharebox1/journal12/Agent4/credentials3/HTTP1 and Social10/9/6 passed; UI preceding33/17/5/16 passed, actual renderer11 executed10pass1fail at real Add reaction pointer interception; following Transcript8 skipped. Shipping remained queued. No full-H acceptance.",
+    "later_concurrency_limit": "The raw main-file std::fs::File probe at9b9 is superseded by4c80574 managed-SQLite read-only immutable preflight. Raw close can release another same-process connection's POSIX locks;9b9 did not cover it. Fresh source contains concurrent creation14 with real independent-process UPDATE locking and retained-WAL reopen tests. Local duplicate storage4 draft is not published. Require exact containing-H execution before qualification."
+  },
+  "concurrent_9b9_execution": {
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 30,
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "run_id": 41528369271,
+    "attempt": 1,
+    "observed_at_utc": "2026-11-02T21:37:19Z",
+    "run_status": "queued",
+    "run_conclusion": null,
+    "source": {
+      "workflow_blob": "f467018b45c9dc699dfacdf64c58f182d142d8f9",
+      "renderer_blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+      "renderer_e2e_blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+      "recovery_blob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+      "creation_tests_blob": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab"
+    },
+    "jobs": [
+      {
+        "id": 125561859409,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260175,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "created_at": "2026-11-02T21:26:33Z",
+        "started_at": "2026-11-02T21:30:50Z",
+        "completed_at": "2026-11-02T21:31:54Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:30:51Z",
+            "completed_at": "2026-11-02T21:30:51Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:30:51Z",
+            "completed_at": "2026-11-02T21:30:55Z"
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:30:55Z",
+            "completed_at": "2026-11-02T21:30:55Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:30:55Z",
+            "completed_at": "2026-11-02T21:30:57Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:30:57Z",
+            "completed_at": "2026-11-02T21:31:03Z"
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:31:03Z",
+            "completed_at": "2026-11-02T21:31:03Z"
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:31:03Z",
+            "completed_at": "2026-11-02T21:31:03Z"
+          },
+          {
+            "name": "Native package resources exclude retained FFI libraries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:31:03Z",
+            "completed_at": "2026-11-02T21:31:03Z"
+          },
+          {
+            "name": "Explicit approved update source and recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:31:03Z",
+            "completed_at": "2026-11-02T21:31:03Z"
+          },
+          {
+            "name": "Windows publisher authorization and candidate recovery behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:31:03Z",
+            "completed_at": "2026-11-02T21:31:04Z"
+          },
+          {
+            "name": "Final macOS update metadata and blockmap behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:31:04Z",
+            "completed_at": "2026-11-02T21:31:05Z"
+          },
+          {
+            "name": "Explicit artifact-only scope and side-effect admission contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-11-02T21:31:05Z",
+            "completed_at": "2026-11-02T21:31:05Z"
+          },
+          {
+            "name": "Existing installer promotion consumer contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:31:05Z",
+            "completed_at": "2026-11-02T21:31:05Z"
+          },
+          {
+            "name": "Reconcile immutable historical installer metadata without changing package bytes",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:31:05Z",
+            "completed_at": "2026-11-02T21:31:49Z"
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:31:49Z",
+            "completed_at": "2026-11-02T21:31:50Z"
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-02T21:31:50Z",
+            "completed_at": "2026-11-02T21:31:51Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 31,
+            "started_at": "2026-11-02T21:31:51Z",
+            "completed_at": "2026-11-02T21:31:51Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 32,
+            "started_at": "2026-11-02T21:31:51Z",
+            "completed_at": "2026-11-02T21:31:51Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33,
+            "started_at": "2026-11-02T21:31:51Z",
+            "completed_at": "2026-11-02T21:31:51Z"
+          }
+        ]
+      },
+      {
+        "id": 125561859867,
+        "name": "gateway-peer-durability (ubuntu-24.04)",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260178,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "created_at": "2026-11-02T21:26:33Z",
+        "started_at": "2026-11-02T21:31:04Z",
+        "completed_at": "2026-11-02T21:31:30Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:31:04Z",
+            "completed_at": "2026-11-02T21:31:06Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:31:06Z",
+            "completed_at": "2026-11-02T21:31:09Z"
+          },
+          {
+            "name": "Bind exact peer source and platform scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:31:09Z",
+            "completed_at": "2026-11-02T21:31:09Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:31:09Z",
+            "completed_at": "2026-11-02T21:31:17Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:31:17Z",
+            "completed_at": "2026-11-02T21:31:21Z"
+          },
+          {
+            "name": "Complete peer state and actual filesystem contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:31:21Z",
+            "completed_at": "2026-11-02T21:31:26Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:31:26Z",
+            "completed_at": "2026-11-02T21:31:27Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:31:27Z",
+            "completed_at": "2026-11-02T21:31:27Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:31:27Z",
+            "completed_at": "2026-11-02T21:31:27Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:31:27Z",
+            "completed_at": "2026-11-02T21:31:27Z"
+          }
+        ]
+      },
+      {
+        "id": 125561859923,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260192,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "created_at": "2026-11-02T21:26:33Z",
+        "started_at": "2026-11-02T21:32:15Z",
+        "completed_at": "2026-11-02T21:37:03Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:32:16Z",
+            "completed_at": "2026-11-02T21:32:17Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:32:17Z",
+            "completed_at": "2026-11-02T21:32:20Z"
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:32:20Z",
+            "completed_at": "2026-11-02T21:32:20Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:32:20Z",
+            "completed_at": "2026-11-02T21:32:28Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:32:28Z",
+            "completed_at": "2026-11-02T21:32:37Z"
+          },
+          {
+            "name": "Install existing Linux Host native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:32:37Z",
+            "completed_at": "2026-11-02T21:32:49Z"
+          },
+          {
+            "name": "Transcript compaction and recovery registration contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:32:49Z",
+            "completed_at": "2026-11-02T21:33:38Z"
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:33:38Z",
+            "completed_at": "2026-11-02T21:36:06Z"
+          },
+          {
+            "name": "Human resource upload size and bounded-read contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:36:06Z",
+            "completed_at": "2026-11-02T21:36:07Z"
+          },
+          {
+            "name": "Concurrent Human creation and non-destructive initialization recovery",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:36:07Z",
+            "completed_at": "2026-11-02T21:36:08Z"
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:36:08Z",
+            "completed_at": "2026-11-02T21:36:08Z"
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-11-02T21:36:08Z",
+            "completed_at": "2026-11-02T21:36:10Z"
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:36:10Z",
+            "completed_at": "2026-11-02T21:36:12Z"
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:36:12Z",
+            "completed_at": "2026-11-02T21:36:12Z"
+          },
+          {
+            "name": "Authenticated forward recipient gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:36:12Z",
+            "completed_at": "2026-11-02T21:36:14Z"
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 16,
+            "started_at": "2026-11-02T21:36:14Z",
+            "completed_at": "2026-11-02T21:36:14Z"
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-02T21:36:14Z",
+            "completed_at": "2026-11-02T21:36:15Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33,
+            "started_at": "2026-11-02T21:36:15Z",
+            "completed_at": "2026-11-02T21:36:15Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 34,
+            "started_at": "2026-11-02T21:36:15Z",
+            "completed_at": "2026-11-02T21:36:15Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 35,
+            "started_at": "2026-11-02T21:36:15Z",
+            "completed_at": "2026-11-02T21:36:15Z"
+          }
+        ]
+      },
+      {
+        "id": 125561859927,
+        "name": "windows-update-publisher",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260151,
+        "labels": [
+          "windows-2025"
+        ],
+        "created_at": "2026-11-02T21:26:33Z",
+        "started_at": "2026-11-02T21:28:19Z",
+        "completed_at": "2026-11-02T21:29:50Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:28:20Z",
+            "completed_at": "2026-11-02T21:28:21Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:28:21Z",
+            "completed_at": "2026-11-02T21:28:32Z"
+          },
+          {
+            "name": "Bind exact Windows publisher source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:28:32Z",
+            "completed_at": "2026-11-02T21:28:32Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:28:32Z",
+            "completed_at": "2026-11-02T21:28:47Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:28:47Z",
+            "completed_at": "2026-11-02T21:29:10Z"
+          },
+          {
+            "name": "Actual Windows signature and Unicode publisher contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:29:10Z",
+            "completed_at": "2026-11-02T21:29:23Z"
+          },
+          {
+            "name": "Preserve native API evidence only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:29:23Z",
+            "completed_at": "2026-11-02T21:29:24Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:29:24Z",
+            "completed_at": "2026-11-02T21:29:24Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:29:24Z",
+            "completed_at": "2026-11-02T21:29:27Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:29:27Z",
+            "completed_at": "2026-11-02T21:29:27Z"
+          }
+        ]
+      },
+      {
+        "id": 125561860003,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "failure",
+        "runner_id": 1000260182,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "created_at": "2026-11-02T21:26:33Z",
+        "started_at": "2026-11-02T21:31:15Z",
+        "completed_at": "2026-11-02T21:34:23Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:31:16Z",
+            "completed_at": "2026-11-02T21:31:16Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:31:16Z",
+            "completed_at": "2026-11-02T21:31:19Z"
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:31:19Z",
+            "completed_at": "2026-11-02T21:31:19Z"
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:31:19Z",
+            "completed_at": "2026-11-02T21:31:21Z"
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:31:21Z",
+            "completed_at": "2026-11-02T21:31:29Z"
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:31:29Z",
+            "completed_at": "2026-11-02T21:31:29Z"
+          },
+          {
+            "name": "Durable Human cursor and canonical pagination consumers",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:31:29Z",
+            "completed_at": "2026-11-02T21:31:29Z"
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:31:29Z",
+            "completed_at": "2026-11-02T21:31:40Z"
+          },
+          {
+            "name": "Forward settlement account and roster boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:31:40Z",
+            "completed_at": "2026-11-02T21:31:40Z"
+          },
+          {
+            "name": "Install locked Chromium for actual forward dialog",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:31:40Z",
+            "completed_at": "2026-11-02T21:32:06Z"
+          },
+          {
+            "name": "Actual forward dialog account and lifetime behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-02T21:32:06Z",
+            "completed_at": "2026-11-02T21:32:13Z"
+          },
+          {
+            "name": "Actual ProductionRenderer history, account and restart projection behaviors",
+            "status": "completed",
+            "conclusion": "failure",
+            "number": 12,
+            "started_at": "2026-11-02T21:32:13Z",
+            "completed_at": "2026-11-02T21:34:19Z"
+          },
+          {
+            "name": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 13,
+            "started_at": "2026-11-02T21:34:19Z",
+            "completed_at": "2026-11-02T21:34:19Z"
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:34:19Z",
+            "completed_at": "2026-11-02T21:34:21Z"
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 27,
+            "started_at": "2026-11-02T21:34:21Z",
+            "completed_at": "2026-11-02T21:34:21Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 28,
+            "started_at": "2026-11-02T21:34:21Z",
+            "completed_at": "2026-11-02T21:34:21Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 29,
+            "started_at": "2026-11-02T21:34:21Z",
+            "completed_at": "2026-11-02T21:34:21Z"
+          }
+        ]
+      },
+      {
+        "id": 125561860063,
+        "name": "retained-direct-ffi-compatibility",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260193,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "created_at": "2026-11-02T21:26:33Z",
+        "started_at": "2026-11-02T21:32:30Z",
+        "completed_at": "2026-11-02T21:33:09Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:32:41Z",
+            "completed_at": "2026-11-02T21:32:42Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:32:42Z",
+            "completed_at": "2026-11-02T21:32:47Z"
+          },
+          {
+            "name": "Bind retained direct C wrapper scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:32:47Z",
+            "completed_at": "2026-11-02T21:32:47Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:32:47Z",
+            "completed_at": "2026-11-02T21:32:55Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:32:55Z",
+            "completed_at": "2026-11-02T21:32:59Z"
+          },
+          {
+            "name": "Execute retained direct C lifecycle and rollback-reader contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:32:59Z",
+            "completed_at": "2026-11-02T21:33:06Z"
+          },
+          {
+            "name": "Preserve retained C wrapper evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:33:06Z",
+            "completed_at": "2026-11-02T21:33:06Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:33:06Z",
+            "completed_at": "2026-11-02T21:33:07Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:33:07Z",
+            "completed_at": "2026-11-02T21:33:07Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:33:07Z",
+            "completed_at": "2026-11-02T21:33:07Z"
+          }
+        ]
+      },
+      {
+        "id": 125561860190,
+        "name": "gateway-peer-durability (windows-2025)",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260162,
+        "labels": [
+          "windows-2025"
+        ],
+        "created_at": "2026-11-02T21:26:34Z",
+        "started_at": "2026-11-02T21:29:38Z",
+        "completed_at": "2026-11-02T21:32:43Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:29:41Z",
+            "completed_at": "2026-11-02T21:29:43Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:29:43Z",
+            "completed_at": "2026-11-02T21:29:51Z"
+          },
+          {
+            "name": "Bind exact peer source and platform scope",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:29:51Z",
+            "completed_at": "2026-11-02T21:29:52Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:29:52Z",
+            "completed_at": "2026-11-02T21:30:11Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:30:11Z",
+            "completed_at": "2026-11-02T21:30:33Z"
+          },
+          {
+            "name": "Complete peer state and actual filesystem contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:30:33Z",
+            "completed_at": "2026-11-02T21:31:07Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:31:07Z",
+            "completed_at": "2026-11-02T21:31:08Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-02T21:31:08Z",
+            "completed_at": "2026-11-02T21:32:38Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-02T21:32:38Z",
+            "completed_at": "2026-11-02T21:32:40Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-02T21:32:40Z",
+            "completed_at": "2026-11-02T21:32:40Z"
+          }
+        ]
+      },
+      {
+        "id": 125561860202,
+        "name": "desktop-social-owner-behaviors",
+        "status": "completed",
+        "conclusion": "success",
+        "runner_id": 1000260197,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "created_at": "2026-11-02T21:26:34Z",
+        "started_at": "2026-11-02T21:32:51Z",
+        "completed_at": "2026-11-02T21:34:59Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-02T21:32:52Z",
+            "completed_at": "2026-11-02T21:32:53Z"
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-02T21:32:53Z",
+            "completed_at": "2026-11-02T21:32:57Z"
+          },
+          {
+            "name": "Bind exact Desktop Social behavior input",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-02T21:32:57Z",
+            "completed_at": "2026-11-02T21:32:57Z"
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-02T21:32:57Z",
+            "completed_at": "2026-11-02T21:33:05Z"
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-02T21:33:05Z",
+            "completed_at": "2026-11-02T21:33:15Z"
+          },
+          {
+            "name": "Install existing Linux native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-02T21:33:15Z",
+            "completed_at": "2026-11-02T21:33:29Z"
+          },
+          {
+            "name": "Execute actual FeatureHost Social and retained messaging boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-02T21:33:29Z",
+            "completed_at": "2026-11-02T21:34:40Z"
+          },
+          {
+            "name": "Execute real SQLite retained Social recovery",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-02T21:34:40Z",
+            "completed_at": "2026-11-02T21:34:46Z"
+          },
+          {
+            "name": "Execute existing session-owned HTTP boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-02T21:34:46Z",
+            "completed_at": "2026-11-02T21:34:55Z"
+          },
+          {
+            "name": "Preserve exact Desktop Social behavior evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-02T21:34:55Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-02T21:34:56Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-11-02T21:34:56Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21,
+            "started_at": "2026-11-02T21:34:56Z",
+            "completed_at": "2026-11-02T21:34:56Z"
+          }
+        ]
+      },
+      {
+        "id": 125561860299,
+        "name": "native-message-shipping-compile",
+        "status": "queued",
+        "conclusion": null,
+        "runner_id": 0,
+        "labels": [
+          "macos-15"
+        ],
+        "created_at": "2026-11-02T21:26:34Z",
+        "started_at": "2026-11-02T21:26:34Z",
+        "completed_at": null,
+        "steps": []
+      },
+      {
+        "id": 125561862477,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "runner_id": null,
+        "labels": [],
+        "created_at": "2026-11-02T21:26:34Z",
+        "started_at": "2026-11-02T21:26:34Z",
+        "completed_at": "2026-11-02T21:26:33Z",
+        "steps": []
+      }
+    ],
+    "complete_logs": {
+      "ui": {
+        "job_id": 125561860003,
+        "file": "125561860003.log",
+        "bytes": 100195,
+        "sha256": "05f415da1390002d732dd576c048407535d034a1d9d437aa3df3c07f4b73b121",
+        "artifact": {
+          "id": 13181266771,
+          "bytes": 33891656,
+          "sha256": "24f914a7b5b9c22ed59eac35dd1d5757d1d8d41082705230ad7d981bf87a8157"
+        }
+      },
+      "social": {
+        "job_id": 125561860202,
+        "file": "125561860202.log",
+        "bytes": 153796,
+        "sha256": "00b31555df07ce8d132d1a57752cea899f202173285ae5d631c3e6115a610041",
+        "artifact": {
+          "id": 13181925633,
+          "bytes": 10311,
+          "sha256": "9131c8678632cfcd156b3a1e97aa493dc0a206e8ad79f7f0afade85ceab8d818"
+        }
+      },
+      "reconciliation": {
+        "job_id": 125561859923,
+        "file": "125561859923.log",
+        "bytes": 457543,
+        "sha256": "f2c950015c037fbfb6b048868fdd92e0a29f56380bff258d1c7facc31c5ba3a6",
+        "artifact": {
+          "id": 13182535197,
+          "bytes": 48223,
+          "sha256": "cc65f2cf6f2bc2a90a5793d834785edd194788bb4195011bc61b9f629bd8342f"
+        }
+      }
+    },
+    "execution_evidence_complete": true,
+    "all_required_gates_passed": false,
+    "validation_scope": "Full terminal job metadata and complete logs for affectedUI,reconciliation,Social at exact9b9 attempt1. Other completed jobs are API statuses only; shipping queued. UI1 real pointer failure and skippedproduction-transcript8 remain open; no all-gates success or independent acceptance.",
+    "restrictions": "Read-only API and scratch evidence; no local execution or GitHub mutation; no rerun,dispatch,cancel or Backend action",
+    "execution": {
+      "ui": {
+        "conclusion": "failure",
+        "passed_contracts": {
+          "transcript": 33,
+          "cursor_rpc": 17,
+          "settlement": 5,
+          "forward_chromium": 16
+        },
+        "renderer_compile": "success",
+        "actual_renderer": {
+          "total": 11,
+          "passed": 10,
+          "failed": 1,
+          "retries_configured": 0,
+          "failed_case": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation",
+          "at": "desktop/e2e/native-message-projection.spec.ts:303",
+          "observed": "Add reaction button visible,enabled,stable, but parent div[role=log].sand-virtual-transcript intercepts pointer events until90s timeout",
+          "classification": "Real pointer interaction failure; requires production layout/hit-target causal review; not relaxed or assumed environment",
+          "prior_readiness_and_reselect_failures": "Not observed; all other10 cases passed"
+        },
+        "production_transcript8": "skipped"
+      },
+      "social": {
+        "conclusion": "success",
+        "featurehost": {
+          "passed": 10,
+          "failed": 0,
+          "ignored": 0
+        },
+        "retained_social_sqlite_recovery": {
+          "passed": 9,
+          "failed": 0,
+          "ignored": 0
+        },
+        "http_owner": {
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        },
+        "oracle_fix": "Exact caught-panic case presence and10pass/0fail/0ignored summary both verified; no assertion was removed.",
+        "scope": "Repository FeatureHost, real temporarySQLite recovery, controlled HTTP owner boundaries; not production service or installed package acceptance."
+      },
+      "reconciliation": {
+        "conclusion": "success",
+        "transcript_recovery": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "human": {
+          "passed": 63,
+          "failed": 0,
+          "ignored": 0
+        },
+        "resource": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "creation": {
+          "passed": 12,
+          "failed": 0,
+          "ignored": 0
+        },
+        "creation_storage": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "sharebox": {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        },
+        "journal": {
+          "passed": 12,
+          "failed": 0,
+          "ignored": 0
+        },
+        "agent": {
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        },
+        "credentials": {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        },
+        "gateway_http": {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        },
+        "key_named_cases": [
+          "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings ... ok",
+          "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok",
+          "stale_same_batch_snapshot_cannot_regress_completed_destination ... ok",
+          "shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok"
+        ],
+        "corrupt_creation_scope": "Existing test loop covers NOTADB+retained sidecars, schema damage and data-page/delete-mode damage; exact directory-byte assertions after initial refusal,retry and restarted refusal passed with unchanged12-test oracle."
+      }
+    },
+    "ui_failure_fresh_head": "5c285452de88dcfba78bd5085f9833712eb3a459",
+    "prior_queue_observation": {
+      "observed_at_utc": "2026-11-02T21:31:07Z",
+      "jobs": [
+        125561859923,
+        125561860003,
+        125561860202
+      ],
+      "runner_id": 0,
+      "steps": [],
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "meaning": "No assigned runner or executed step; queue reason not exposed. started_at API field equals creation timestamp and is not evidence of execution."
+    }
+  },
+  "pointer_and_lock_batch": {
+    "base": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+    "status": "authored_not_executed",
+    "modified_paths": [
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/view.css",
+        "input_blob": "9e45e4ffdbd1669817bbdd1def33c25c8312b644",
+        "classification": "IMPLEMENTATION_INTERACTION_DEFECT",
+        "change": "Position the existing anchor-owned toolbar at top100% with2px transparent padding. This preserves its visible button placement while bridging the previous2px non-hover gap; retain existing anchor:hover, focus-within and menu-open authority.",
+        "coverage": "Existing NMR-26 case keeps concurrent anchor.hover, ordinary Add reaction/reaction clicks, settlement and late empty-row mutation assertions. Add a real10-step mouse path ending1px below the bubble, with pointer-events auto required before ordinary click. No force, retries, timeout inflation or dispatchEvent."
+      },
+      {
+        "path": "desktop/e2e/native-message-projection.spec.ts",
+        "input_blob": "e0b31573d5d3bf0dd934c75a813618fb977e3411",
+        "classification": "POINTER_PATH_REGRESSION",
+        "change": "Preserve concurrent anchor targeting fix; add an actual cursor traversal through the gap into existing toolbar before normal click. Still eleven top-level cases."
+      }
+    ],
+    "ui_diagnosis": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "job": 125561860003,
+      "artifact": 13181266771,
+      "artifact_sha256": "24f914a7b5b9c22ed59eac35dd1d5757d1d8d41082705230ad7d981bf87a8157",
+      "trace_hover_point": {
+        "x": 780,
+        "y": 97
+      },
+      "trace_button_point": {
+        "x": 1061,
+        "y": 131
+      },
+      "observed": "Full row hover ended outside right-aligned bubble. Existing toolbar remained opacity0/pointer-events none because only narrow anchor:hover enabled it. CI screenshot showed no toolbar; role=log intercepted ordinary click. Existing bottom:-30 left a2px gap between the28px toolbar and its anchor. Fresh concurrent test repair221d709 uses the actual anchor owner; later2c16d2 adds pointer-events assertions. Both are retained. No prior product contract requires full-width row whitespace to reveal actions; no row-hover behavior is added. Later e0b315 retains normal hover/click and explicitly waits opacity1 before clicking; preserved in this patch.",
+      "inspection": "Downloaded exact GitHub artifact, SHA256 matched metadata; inspected saved screenshot and Playwright trace only. No local browser/test/runtime execution.",
+      "classification": "Original9b9 failure: TEST_FLAW_HOVER_TARGET. Independently identified discontinuous2px hover path: implementation interaction gap; newly added browser assertion is authored-not-run.",
+      "concurrent_test_input_blob": "e0b31573d5d3bf0dd934c75a813618fb977e3411"
+    },
+    "retained_concurrent_recovery": {
+      "readback_head": "64e821d4c9526f4385588415a15c892e4491846b",
+      "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+      "blob": "4c80574a53edc876891527514c8f3c2fd3d00908",
+      "root_full_file_read": true,
+      "scope": "stat-only1..99-byte refusal; SQLite-managed mode=ro immutable=1 probe; nonempty sidecars only reject NOTADB from schema_version and preserve existing WAL-aware opener; no raw main-file descriptor. No duplicate production recovery patch authored.",
+      "execution": "Retain current managed-SQLite preflight plus newly concurrent creation14 real process/WAL coverage; require its containing-H execution. Historical9b9 raw-header results do not qualify these newer files.",
+      "latest_readback": {
+        "head": "b318cffdebaba11186c627ca97797a0d46cd9b5e",
+        "blob": "674335fcf15deae2c1bb4c0afbaca08bc07cd68b",
+        "root_full_read": true,
+        "scope": "No raw main fd. stat missing/empty main + retained WAL/SHM/journal refuses; short main<100 refuses; mode=ro immutable1 PRIVATE_CACHE page-one schema_version check; sidecar snapshots remain existing WAL-aware opener authority; no-sidecar quick_check."
+      }
+    },
+    "local_validation": false,
+    "tests_weakened": false,
+    "public_schema_changed": false,
+    "alternate_owner_added": false,
+    "independent_accept": false,
+    "formal_release": false,
+    "concurrent_lock_regression": {
+      "readback_head": "7201c8897dafb39bea92543d3ac447305348e17d",
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "blob": "94f10930ae5cfd207bf05bc081ece4bdb74766b6",
+      "workflow_blob": "f9c4804ce0613b9abd1cd8834c77e558fc99d4df",
+      "cases": [
+        "retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+        "human_format_probe_preserves_posix_locks_against_an_external_writer"
+      ],
+      "proof": "Real DELETE-mode parent connection holds BEGIN IMMEDIATE and uncommitted UPDATE99. Independent same-binary exact-case subprocess must fail a real UPDATE before and after actual production probe, with persisted value0; parent still sees99. After parentROLLBACK child must UPDATE1 and parent sees1. Child exit/count/marker prevent no-execution false pass. Retained-WAL case proves main-only stale identity/zero transcript before actual owner reopen preserves committed WAL identity/transcript and restart.",
+      "expected_counts": {
+        "creation": 14,
+        "storage": 3
+      },
+      "status": "authored_not_executed_at_preparation",
+      "root_full_source_read": true,
+      "duplicated_test_not_published": true,
+      "independent_static_review": {
+        "decision": "No blocking static gap; retain concurrent creation14 and stop duplicate storage4.",
+        "reviewer": "round30_scope_final",
+        "execution": false
+      }
+    },
+    "superseded_local_storage_draft": {
+      "input_blob": "7be79bc692a857775ef68c0494642ef58f305481",
+      "unpublished_blob": "933af1501e30b4cebd7a3b5144d98b4b7a3c8853",
+      "workflow_3_to_4_not_published": true,
+      "reason": "Fresh scoped CAS check discovered equivalent real process lock regression already integrated by another session in existing creation14. Preserve that stronger actual UPDATE control and avoid duplicate test/parallel harness or overwrite of the new14-case gate."
+    }
   }
 }
