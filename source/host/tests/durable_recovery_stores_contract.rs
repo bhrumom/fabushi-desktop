@@ -120,6 +120,7 @@ fn upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty() {
         source: Some("turn".into()),
         automation_id: None,
         automation_run_id: None,
+        original_work: None,
     });
     store.mark_pending(UpgradeResumeMarker {
         agent_id: "a".into(),
@@ -127,6 +128,7 @@ fn upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty() {
         source: Some("automation".into()),
         automation_id: Some("auto".into()),
         automation_run_id: Some("run".into()),
+        original_work: None,
     });
     assert_eq!(store.list_pending().len(), 1);
     assert_eq!(store.list_pending()[0].marked_at_ms, 2.0);
@@ -151,6 +153,7 @@ fn upgrade_resume_store_clears_only_the_observed_marker() {
         source: Some("turn".into()),
         automation_id: None,
         automation_run_id: None,
+        original_work: None,
     };
     let newer = UpgradeResumeMarker {
         marked_at_ms: 2.0,
@@ -173,6 +176,7 @@ fn upgrade_resume_marker_rejects_incomplete_automation_identity() {
         source: Some("automation".into()),
         automation_id: None,
         automation_run_id: Some("run-a".into()),
+        original_work: None,
     };
     assert!(!upgrade_resume_marker_identity_is_well_formed(&marker));
 }
@@ -181,6 +185,7 @@ fn checked_upgrade_marker(agent_id: &str, at: f64) -> UpgradeResumeMarker {
     UpgradeResumeMarker {
         agent_id: agent_id.into(), marked_at_ms: at, source: Some("turn".into()),
         automation_id: None, automation_run_id: None,
+        original_work: None,
     }
 }
 
@@ -205,7 +210,7 @@ fn checked_upgrade_store_accepts_only_absence_explicit_empty_and_complete_legacy
     assert_eq!(rows[0].agent_id, "legacy");
     assert_eq!(rows[1], checked_upgrade_marker("current", 2.0));
     let written: serde_json::Value = serde_json::from_slice(&fs::read(store.file_path()).unwrap()).unwrap();
-    assert_eq!(written["version"], 1);
+    assert_eq!(written["version"], 2);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -220,7 +225,7 @@ fn checked_upgrade_store_refuses_corruption_without_replacing_or_clearing_eviden
         ("not-json", "malformed"),
         (r#"[]"#, "malformed"),
         (r#"{"version":1}"#, "malformed"),
-        (r#"{"version":2,"pending":[]}"#, "unsupported"),
+        (r#"{"version":99,"pending":[]}"#, "unsupported"),
         (r#"{"version":null,"pending":[]}"#, "unsupported"),
         (r#"{"version":1,"pending":[{"agentId":"a","markedAtMs":1},{"agentId":" ","markedAtMs":2}]}"#, "invalid"),
         (r#"{"pending":[{"agentId":"a","markedAtMs":"bad"}]}"#, "invalid"),
@@ -314,6 +319,7 @@ fn production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_de
         source: Some("turn".into()),
         automation_id: None,
         automation_run_id: None,
+        original_work: None,
     });
 
     runtime.clear_agent_durable_recovery("agent-a");
@@ -345,5 +351,160 @@ fn recovery_watch_admission_replaces_only_the_exact_existing_marker() {
     assert!(store.clear_if_matches(&admitted));
     assert!(!store.replace_if_matches(&admitted, observed));
     assert!(SandPendingWakeStore::new(&root).list_pending().is_empty());
+    let _ = fs::remove_dir_all(root);
+}
+
+fn original_marker_reference(agent_id: &str) -> mahayana_host_runtime::extensions::session::agent_db::OriginalTurnReference {
+    use mahayana_host_runtime::extensions::session::agent_db::{OriginalTurnReference, OriginalTurnScope};
+    // This is structural marker data only. No completion slot or verified
+    // capability is created by the marker store's serialization tests.
+    OriginalTurnReference {
+        version: 1, scope: OriginalTurnScope::NativeOrdinaryUserV1,
+        agent_id: agent_id.into(), session_key: format!("agent:{agent_id}:main"),
+        session_id: agent_id.into(), original_lifecycle_revision: "admission-revision".into(),
+        stream_id: "original-stream".into(), input_digest: "a".repeat(64),
+        client_nonce: Some("accepted-nonce".into()), user_message_id: "user-message:1".into(),
+        echo_entry_id: "user-message:1".into(), request_source: None,
+        provider: "fabushi".into(), model_id: "admitted-native-model".into(),
+    }
+}
+
+#[test]
+fn checked_upgrade_v2_roundtrips_full_reference_and_exact_clear_rejects_reference_drift() {
+    let root = temp_root("original-reference-cas");
+    let store = SandUpgradeResumeStore::new(&root);
+    let mut marker = checked_upgrade_marker("original-agent", 1.0);
+    marker.original_work = Some(original_marker_reference(&marker.agent_id));
+    store.mark_pending_checked(marker.clone()).unwrap();
+    let bytes = fs::read(store.file_path()).unwrap();
+    let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(image["version"], 2);
+    assert_eq!(image["pending"][0]["originalWork"]["scope"], "nativeOrdinaryUserV1");
+    assert!(image["pending"][0]["originalWork"]["requestSource"].is_null());
+    assert_eq!(SandUpgradeResumeStore::new(&root).list_pending_checked().unwrap(), vec![marker.clone()]);
+    for field in ["modelId", "inputDigest", "streamId", "clientNonce", "originalLifecycleRevision"] {
+        let mut value = serde_json::to_value(&marker).unwrap();
+        value["originalWork"][field] = if field == "inputDigest" {
+            "b".repeat(64).into()
+        } else {
+            format!("different-{field}").into()
+        };
+        let foreign: UpgradeResumeMarker = serde_json::from_value(value).unwrap();
+        assert!(!store.clear_if_matches_checked(&foreign).unwrap(), "{field}");
+        assert_eq!(fs::read(store.file_path()).unwrap(), bytes, "{field}");
+    }
+    let mut unbound = marker.clone();
+    unbound.original_work = None;
+    assert!(!store.clear_if_matches_checked(&unbound).unwrap());
+    assert_eq!(fs::read(store.file_path()).unwrap(), bytes);
+    assert!(store.clear_if_matches_checked(&marker).unwrap());
+    assert!(!store.clear_if_matches_checked(&marker).unwrap());
+    assert!(!store.file_path().exists());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_upgrade_migration_is_whole_image_atomic_and_leaves_legacy_work_unbound() {
+    let root = temp_root("original-legacy-migration");
+    fs::create_dir_all(&root).unwrap();
+    let store = SandUpgradeResumeStore::new(&root);
+    for legacy in [
+        r#"{"pending":[{"agentId":"one","markedAtMs":1,"source":"turn"},{"agentId":"two","markedAtMs":2,"source":"automation","automationId":"a","automationRunId":"r"}]}"#,
+        r#"{"version":1,"pending":[{"agentId":"one","markedAtMs":1,"source":"turn"},{"agentId":"two","markedAtMs":2,"source":"automation","automationId":"a","automationRunId":"r"}]}"#,
+    ] {
+        fs::write(store.file_path(), legacy).unwrap();
+        let inspected = store.list_pending_checked().unwrap();
+        assert_eq!(fs::read_to_string(store.file_path()).unwrap(), legacy, "inspection cannot migrate");
+        let migrated = store.migrate_legacy_checked().unwrap();
+        assert_eq!(migrated, inspected);
+        assert_eq!(migrated.len(), 2);
+        assert!(migrated.iter().all(|marker| marker.original_work.is_none()));
+        let bytes = fs::read(store.file_path()).unwrap();
+        let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(image["version"], 2);
+        assert_eq!(SandUpgradeResumeStore::new(&root).migrate_legacy_checked().unwrap(), migrated);
+        assert_eq!(fs::read(store.file_path()).unwrap(), bytes, "current v2 migration is a no-op");
+    }
+    let mut bound = checked_upgrade_marker("one", 1.0);
+    bound.original_work = Some(original_marker_reference("one"));
+    let bound_value = serde_json::to_value(&bound).unwrap();
+    let mut unknown_reference = bound_value.clone();
+    unknown_reference["originalWork"]["uncheckedCompletion"] = true.into();
+    let mut foreign_reference = bound_value.clone();
+    foreign_reference["originalWork"]["sessionId"] = "foreign".into();
+    for image in [
+        serde_json::json!({"version":1,"pending":[bound_value.clone()]}),
+        serde_json::json!({"pending":[bound_value]}),
+        serde_json::json!({"version":2,"pending":[checked_upgrade_marker("valid-first", 1.0), unknown_reference]}),
+        serde_json::json!({"version":2,"pending":[checked_upgrade_marker("valid-first", 1.0), foreign_reference]}),
+        serde_json::json!({"version":2,"pending":[checked_upgrade_marker("same", 1.0), checked_upgrade_marker("same", 2.0)]}),
+        serde_json::json!({"version":99,"pending":[]}),
+    ] {
+        let bytes = serde_json::to_vec(&image).unwrap();
+        fs::write(store.file_path(), &bytes).unwrap();
+        assert!(store.migrate_legacy_checked().is_err());
+        assert!(store.mark_pending_checked(checked_upgrade_marker("new", 3.0)).is_err());
+        assert!(store.clear_if_matches_checked(&checked_upgrade_marker("valid-first", 1.0)).is_err());
+        assert_eq!(fs::read(store.file_path()).unwrap(), bytes);
+    }
+    // A duplicate known nested field must not be normalized away by Value.
+    let duplicate = serde_json::to_string(&serde_json::json!({"version":2,"pending":[bound]})).unwrap()
+        .replace("\"modelId\":\"admitted-native-model\"", "\"modelId\":\"admitted-native-model\",\"modelId\":\"different-model\"");
+    fs::write(store.file_path(), &duplicate).unwrap();
+    assert!(store.migrate_legacy_checked().is_err());
+    assert_eq!(fs::read_to_string(store.file_path()).unwrap(), duplicate);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_ack_reads_fresh_complete_image_and_never_turns_corruption_into_absence() {
+    use mahayana_host_runtime::extensions::transcript::sand_ack_obligation_store::SandAckObligationStore;
+
+    let root = temp_root("fresh-ack");
+    fs::create_dir_all(&root).unwrap();
+    let store = SandAckObligationStore::new(&root);
+    assert_eq!(store.get("held-agent"), None, "prime the compatibility cache with absence");
+    let writer = SandAckObligationStore::new(&root);
+    let recorded = writer.record_send("held-agent", 10.0).unwrap().obligation;
+    assert_eq!(store.get("held-agent"), None);
+    let bytes = fs::read(store.file_path()).unwrap();
+    assert_eq!(store.get_checked("held-agent").unwrap(), Some(recorded.clone()));
+    assert_eq!(store.list_checked().unwrap(), vec![recorded.clone()]);
+    assert_eq!(fs::read(store.file_path()).unwrap(), bytes);
+    let stale_present = SandAckObligationStore::new(&root);
+    assert_eq!(stale_present.get("held-agent"), Some(recorded.clone()));
+    writer.clear("held-agent").unwrap();
+    assert_eq!(stale_present.get("held-agent"), Some(recorded.clone()));
+    assert_eq!(stale_present.get_checked("held-agent").unwrap(), None);
+
+    let valid = serde_json::to_value(&recorded).unwrap();
+    let mut bad_count = valid.clone();
+    bad_count["redriveAttempts"] = serde_json::json!(0.5);
+    let mut unknown_field = valid.clone();
+    unknown_field["futureCustody"] = true.into();
+    for image in [
+        serde_json::json!({"version":99,"pending":[]}),
+        serde_json::json!({"version":1,"pending":[valid.clone(), valid.clone()]}),
+        serde_json::json!({"version":1,"pending":[valid.clone(), {"agentId":"broken"}]}),
+        serde_json::json!({"version":1,"pending":[bad_count]}),
+        serde_json::json!({"version":1,"pending":[unknown_field]}),
+        serde_json::json!({"version":1,"pending":null}),
+    ] {
+        let bytes = serde_json::to_vec(&image).unwrap();
+        fs::write(store.file_path(), &bytes).unwrap();
+        assert!(store.list_checked().is_err());
+        assert!(store.get_checked("held-agent").is_err());
+        assert!(store.get_checked("absent-agent").is_err(), "every row must validate before proving any absence");
+        assert_eq!(fs::read(store.file_path()).unwrap(), bytes);
+    }
+    for corrupt in ["not-json", r#"{"version":1,"version":1,"pending":[]}"#] {
+        fs::write(store.file_path(), corrupt).unwrap();
+        assert!(store.get_checked("held-agent").is_err());
+        assert_eq!(fs::read_to_string(store.file_path()).unwrap(), corrupt);
+    }
+    fs::remove_file(store.file_path()).unwrap();
+    fs::create_dir(store.file_path()).unwrap();
+    assert!(store.get_checked("held-agent").is_err());
+    assert!(store.file_path().is_dir());
     let _ = fs::remove_dir_all(root);
 }

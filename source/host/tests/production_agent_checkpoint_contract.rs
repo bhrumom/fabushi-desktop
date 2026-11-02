@@ -1,5 +1,6 @@
 use std::fs;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
@@ -7,6 +8,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::production_agent_store::{
+    ProductionAgentStore, ProductionWorkerBlobStore,
+};
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
     AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
@@ -171,6 +175,7 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
         true,
     )
     .expect("sink");
+    assert!(sink.committed_original_turn_observations().expect("new production Journal log").is_empty());
     let fixture_blob = b"canonical generated Agent state blob";
     let fixture_blob_id = Sha256::digest(fixture_blob).to_vec();
     blob_store
@@ -194,6 +199,7 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
         "assistant checkpoint",
     )
     .expect("checkpoint");
+    assert_eq!(sink.committed_original_turn_observations().expect("actual canonical and Journal commit").len(), 1);
 
     let state = session
         .agent_store
@@ -288,6 +294,7 @@ fn missing_confirmed_message_aborts_root_advance() {
         .expect_err("missing user echo must reject checkpoint");
     assert!(error.to_string().contains("were not committed atomically"));
     assert_eq!(session.agent_store.latest_root_blob_id(), prior_root);
+    assert!(sink.committed_original_turn_observations().expect("failed confirmation cannot observe a commit").is_empty());
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
@@ -568,4 +575,215 @@ fn settled_checkpoint_suppresses_compaction_stale_tokens_and_appends_timing() {
     assert_eq!(decoded.turn_timings.len(), 1);
     assert_eq!(decoded.turn_timings[0].duration_ms, 75);
     assert_eq!(decoded.turn_timings[0].timestamp_ms, 175);
+}
+
+#[derive(Clone, Copy)]
+enum OriginalJournalFault {
+    None,
+    RemovePreparedWal,
+    PublishCompetingRoot,
+}
+
+const COMPETING_CHECKPOINT: &[u8] = &[0x9a, 0x06, 0x04, b'r', b'a', b'c', b'e'];
+
+struct OriginalObservationFixture {
+    root: std::path::PathBuf,
+    agent_id: String,
+    sessions: Arc<ProductionSessionWorkers>,
+    store: Arc<ProductionAgentStore>,
+    blobs: Arc<ProductionWorkerBlobStore>,
+    sink: ProductionAgentStateCheckpointSink,
+    fault_injected: Arc<AtomicBool>,
+}
+
+impl OriginalObservationFixture {
+    fn new(label: &str, persistence_enabled: bool, journal_enabled: bool, fault: OriginalJournalFault) -> Self {
+        let root = temp_root(label);
+        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let session = sessions.materialize_session_with_active(None, "user", None, None).expect("actual Session owner");
+        let agent_id = session.record.id.clone();
+        session.db.append_transcript_entry(&serde_json::json!({
+            "id":"observation-user", "kind":"message", "role":"user",
+            "content":"hello checkpoint", "confirmed":false
+        })).expect("actual durable user row");
+        let blobs = Arc::new(sessions.create_agent_blob_store(&agent_id).expect("actual canonical blob owner"));
+        let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let transcripts = root.join("transcripts");
+        let pending_root = transcripts.clone();
+        let fault_injected = Arc::new(AtomicBool::new(false));
+        let observed_fault = Arc::clone(&fault_injected);
+        let competing_store = Arc::clone(&session.agent_store);
+        let provider = ProductionTranscriptMirrorProvider::with_reporter(
+            &transcripts,
+            GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection),
+            Arc::new(move |outcome| {
+                if outcome.op == "checkpoint" && outcome.outcome == "ok" {
+                    // Both faults use the actual Journal's post-prepare report
+                    // before the sink's canonical publication attempt.
+                    match fault {
+                        OriginalJournalFault::None => return,
+                        OriginalJournalFault::RemovePreparedWal => {
+                            fs::remove_file(pending_root.join(&outcome.conversation_id)
+                                .join(format!("{}.journal-pending.json", outcome.conversation_id)))
+                                .expect("remove the exact fixture's prepared Journal WAL");
+                        }
+                        OriginalJournalFault::PublishCompetingRoot => {
+                            competing_store.handle_checkpoint_bytes_blocking(COMPETING_CHECKPOINT)
+                                .expect("a real concurrent owner publishes its different root");
+                        }
+                    }
+                    observed_fault.store(true, Ordering::Release);
+                }
+            }),
+        );
+        let mirror = Arc::new(provider.route_for_session(
+            Arc::clone(&blobs), &prior, Arc::new(move || Ok(journal_enabled)),
+        ).expect("actual selected mirror route"));
+        let sink = ProductionAgentStateCheckpointSink::new(
+            agent_id.clone(), Arc::clone(&session.agent_store), Arc::clone(&blobs),
+            mirror, prior, persistence_enabled,
+        ).expect("actual production checkpoint sink");
+        Self { root, agent_id, sessions, store: Arc::clone(&session.agent_store), blobs, sink, fault_injected }
+    }
+
+    fn options(first: bool) -> TurnRunOptions {
+        TurnRunOptions {
+            inference_request_id: Some("observation-stream".into()),
+            message_id: first.then(|| "observation-user".into()),
+            recent_message_text: Some("hello checkpoint".into()),
+            ..TurnRunOptions::default()
+        }
+    }
+}
+
+impl Drop for OriginalObservationFixture {
+    fn drop(&mut self) {
+        self.sessions.shutdown_with_checkpoint();
+        assert_eq!(self.sessions.active_worker_count(), 0);
+        if std::thread::panicking() {
+            eprintln!("preserved failing original observation fixture: {}", self.root.display());
+        } else {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+}
+
+#[test]
+fn original_turn_observations_are_object_safe_unavailable_by_default_and_absent_until_real_commit() {
+    let unsupported = FailingAgentCheckpointSink { calls: Mutex::new(0) };
+    let sink: &dyn AgentStateCheckpointSink = &unsupported;
+    assert!(sink.committed_original_turn_observations().is_err(), "a legacy sink cannot mint sealed evidence");
+    let fixture = OriginalObservationFixture::new("original-stage-boundary", true, true, OriginalJournalFault::None);
+    let before = fixture.store.latest_root_blob_id();
+    let checkpoint = fixture.sink.stage_text_turn(
+        &user_messages(), &OriginalObservationFixture::options(true), "actual committed response",
+    ).expect("stage actual generated checkpoint");
+    assert!(fixture.sink.committed_original_turn_observations().unwrap().is_empty());
+    assert_eq!(fixture.store.latest_root_blob_id(), before, "staging is not durable evidence");
+    fixture.sink.persist_staged_text_turn(&OriginalObservationFixture::options(true), &checkpoint)
+        .expect("canonical, user confirmation and Journal COMMIT");
+    let first = fixture.sink.committed_original_turn_observations().unwrap();
+    assert_eq!(first.len(), 1);
+    fixture.sink.checkpoint_text_turn(&user_messages(), &OriginalObservationFixture::options(false), "actual nudge")
+        .expect("second actual commit");
+    assert_eq!(first.len(), 1, "a previously returned immutable observation snapshot cannot be rewritten");
+    assert_eq!(fixture.sink.committed_original_turn_observations().unwrap().len(), 2);
+}
+
+#[test]
+fn original_turn_observation_overflow_is_permanent_without_failing_successful_checkpoints() {
+    let fixture = OriginalObservationFixture::new("original-observation-bound", true, true, OriginalJournalFault::None);
+    let limit = mahayana_host_runtime::extensions::transcript::turn_runtime::MAX_REPLY_NUDGES + 2;
+    assert_eq!(limit, 5, "ORT-v1's durable bound must be deliberately migrated with the invocation bound");
+    for invocation in 0..limit + 2 {
+        fixture.sink.checkpoint_text_turn(
+            &user_messages(), &OriginalObservationFixture::options(invocation == 0),
+            &format!("real checkpoint {invocation}"),
+        ).expect("proof ineligibility must never retry or fail an otherwise successful checkpoint");
+        if invocation < limit {
+            assert_eq!(fixture.sink.committed_original_turn_observations().unwrap().len(), invocation + 1);
+        } else {
+            assert!(fixture.sink.committed_original_turn_observations().is_err(), "overflow cannot truncate into a shorter proof");
+        }
+    }
+    let state = fixture.store.latest_checkpoint_bytes().unwrap();
+    assert_eq!(decode_conversation_state_recovery_fields(&state).unwrap().turns.len(), limit + 2);
+}
+
+#[test]
+fn original_turn_skip_and_legacy_success_or_swallowed_write_failure_never_expose_observations() {
+    let skipped = OriginalObservationFixture::new("original-skip", false, true, OriginalJournalFault::None);
+    assert!(skipped.sink.committed_original_turn_observations().is_err());
+    skipped.sink.checkpoint_text_turn(&user_messages(), &OriginalObservationFixture::options(true), "skip mode response")
+        .expect("existing skip checkpoint behavior");
+    assert!(skipped.sink.committed_original_turn_observations().is_err());
+    assert!(!skipped.store.latest_root_blob_id().is_empty());
+
+    for blocked in [false, true] {
+        let fixture = OriginalObservationFixture::new(
+            if blocked { "original-legacy-failure" } else { "original-legacy-success" }, true, false, OriginalJournalFault::None,
+        );
+        assert!(fixture.sink.committed_original_turn_observations().is_err(), "Legacy is unavailable immediately after route selection");
+        let mut checkpoint = fixture.sink.stage_text_turn(
+            &user_messages(), &OriginalObservationFixture::options(true), "generated response omitted by Legacy",
+        ).unwrap();
+        // Exercise the actual Legacy full-write branch with a real root-prompt
+        // JSON blob. This is negative route evidence, never a generated positive
+        // proof fixture: Legacy does not attest the generated turn appended here.
+        let prompt = br#"{"role":"user","content":"actual legacy root prompt"}"#;
+        let prompt_id = Sha256::digest(prompt).to_vec();
+        fixture.blobs.set_blob_blocking(&prompt_id, prompt).expect("persist actual Legacy prompt blob");
+        checkpoint.state_bytes.extend_from_slice(&[0x0a, 32]);
+        checkpoint.state_bytes.extend_from_slice(&prompt_id);
+        let directory = fixture.root.join("transcripts").join(&fixture.agent_id);
+        if blocked {
+            fs::create_dir_all(directory.parent().unwrap()).unwrap();
+            fs::write(&directory, b"owned Legacy filesystem obstruction").unwrap();
+        }
+        fixture.sink.persist_staged_text_turn(&OriginalObservationFixture::options(true), &checkpoint)
+            .expect("Legacy's observational write result preserves existing canonical checkpoint behavior");
+        assert!(!fixture.store.latest_root_blob_id().is_empty());
+        assert!(fixture.sink.committed_original_turn_observations().is_err());
+        if blocked {
+            assert_eq!(fs::read(&directory).unwrap(), b"owned Legacy filesystem obstruction");
+        } else {
+            let journal = fs::read_to_string(directory.join(format!("{}.jsonl", fixture.agent_id)))
+                .expect("actual Legacy offload successfully wrote its root-prompt transcript");
+            assert!(journal.contains("actual legacy root prompt"));
+            assert!(!journal.contains("generated response omitted by Legacy"));
+        }
+    }
+}
+
+#[test]
+fn original_turn_journal_commit_failure_after_durable_root_and_confirmation_cannot_mint_observation() {
+    let fixture = OriginalObservationFixture::new("original-journal-commit-failure", true, true, OriginalJournalFault::RemovePreparedWal);
+    let before = fixture.store.latest_root_blob_id();
+    let error = fixture.sink.checkpoint_text_turn(
+        &user_messages(), &OriginalObservationFixture::options(true), "durable but unmirrored result",
+    ).expect_err("actual Journal COMMIT must refuse its removed prepared WAL");
+    assert!(error.to_string().contains("transcript mirror commit failed after durable checkpoint"));
+    assert!(fixture.fault_injected.load(Ordering::Acquire), "fault reached the actual post-prepare boundary");
+    assert_ne!(fixture.store.latest_root_blob_id(), before, "canonical root really committed before mirror refusal");
+    assert_eq!(fixture.sessions.open_agent_db_owner(&fixture.agent_id).unwrap()
+        .get_transcript_entry_by_id("observation-user").unwrap().unwrap()["confirmed"], true);
+    assert!(fixture.sink.committed_original_turn_observations().is_err(), "root-only success is not a committed original-turn observation");
+}
+
+#[test]
+fn original_turn_prior_snapshot_is_checked_under_the_actual_store_mutation_guard() {
+    let fixture = OriginalObservationFixture::new(
+        "original-prior-root-race", true, true, OriginalJournalFault::PublishCompetingRoot,
+    );
+    let error = fixture.sink.checkpoint_text_turn(
+        &user_messages(), &OriginalObservationFixture::options(true), "stale original result",
+    ).expect_err("a competing committed root after prepare cannot become this sink's unobserved prior");
+    assert!(!error.to_string().is_empty());
+    assert!(fixture.fault_injected.load(Ordering::Acquire));
+    assert_eq!(fixture.store.latest_checkpoint_bytes().as_deref(), Some(COMPETING_CHECKPOINT));
+    assert_eq!(fixture.store.latest_root_blob_id(), Sha256::digest(COMPETING_CHECKPOINT).to_vec(),
+        "the original-turn writer must not overwrite the intervening real checkpoint");
+    assert_eq!(fixture.sessions.open_agent_db_owner(&fixture.agent_id).unwrap()
+        .get_transcript_entry_by_id("observation-user").unwrap().unwrap()["confirmed"], false);
+    assert!(fixture.sink.committed_original_turn_observations().unwrap().is_empty());
 }

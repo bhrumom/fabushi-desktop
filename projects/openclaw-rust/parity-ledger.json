@@ -15975,7 +15975,15 @@
         "source/host/tests/transcript_manager_contract.rs",
         "source/host/app/src/tests/channel_inbound_readiness_tests.rs",
         "source/host/src/host_lock.rs",
-        "source/host/tests/bootstrap_contract.rs"
+        "source/host/tests/bootstrap_contract.rs",
+        "source/host/app/src/tests/original_turn_recovery_tests.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/sand_upgrade_resume_store.rs",
+        "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs",
+        "source/host/tests/durable_recovery_stores_contract.rs",
+        "source/host/tests/host_upgrade_production_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -16014,15 +16022,16 @@
       ],
       "id": "OCRM-RESP-SESSION-WORK-ADMISSION-001",
       "integration": {
-        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable; SWA-ROOT-RECOVERY-v1 also wires checked root/blob recovery into Host Runner watermark, prompt epoch and checkpoint sinks, while original-turn restart claim/settlement remains open; fresh echo/continuation context is returned only after whole-batch commit, with transcript notifications outside Session/DB locks; transport ACK and unknown post-COMMIT crash reconciliation remain open; existing BackgroundWakes rechecks retained unappended heads on committed Settings, successful manager resume and ingress; Unknown never grants replay and disposal permanently retires old tickets",
+        "consumer": "Bounded Host Gateway archive/restore, local background-revival receipt, and newly opened session-owner media recovery consumers are wired; typed provider-review continuation admission is wired but fails closed when native continuation identity is unavailable; SWA-ROOT-RECOVERY-v1 also wires checked root/blob recovery into Host Runner watermark, prompt epoch and checkpoint sinks, while original-turn restart claim/settlement remains open; fresh echo/continuation context is returned only after whole-batch commit, with transcript notifications outside Session/DB locks; transport ACK and unknown post-COMMIT crash reconciliation remain open; existing BackgroundWakes rechecks retained unappended heads on committed Settings, successful manager resume and ingress; Unknown never grants replay and disposal permanently retires old tickets; ORT-v1 shipping restart consumer requalifies an already completed Journal turn and removes only its exact marker under existing idle/ACK guards; it starts no replacement turn, never fulfills independent ACK and leaves unproved work retained; this new slice is not yet verified",
         "entrypoint": "source/host/app/src/main.rs::UnifiedGatewayApi::call_with_context -> call_openclaw_sessions_patch -> source/host/src/extensions/session/production.rs",
         "owner": "source/host/src/extensions/session/production.rs and source/host/src/extensions/session/agent_db.rs (deletion fence, generation CAS, archive/receipt/media-recovery slices, and typed provider-review admission; full detached lifecycle owner pending); ProductionAgentStore under the same Session owner validates persisted/cached checkpoint identity before recovery and publication",
-        "producer": "source/host/app/src/main.rs::call_openclaw_sessions_patch is an authenticated canonical-main archive/restore producer with expected identity/revision and active-foreground-stream guards; local background-revival remains a separate bounded producer; SESSION-FRESH-APPEND-v1 binds Gateway prompt persistence and direct-agent inbound to strict Session/SQLite snapshot allocation; channel undisplayed drafts retain CA-v1 prepared-batch custody and the existing typed Session/SQLite append boundary"
+        "producer": "source/host/app/src/main.rs::call_openclaw_sessions_patch is an authenticated canonical-main archive/restore producer with expected identity/revision and active-foreground-stream guards; local background-revival remains a separate bounded producer; SESSION-FRESH-APPEND-v1 binds Gateway prompt persistence and direct-agent inbound to strict Session/SQLite snapshot allocation; channel undisplayed drafts retain CA-v1 prepared-batch custody and the existing typed Session/SQLite append boundary; ORT-v1 captures original ordinary Native identity at the accepted lease/model boundary and frozen terminal/checkpoint custody before existing finalizer retirement"
       },
       "invariants": [
         "Archived sessions cannot admit new work until explicitly restored",
         "Unknown or damaged persisted checkpoint state cannot become an empty production session or an implicit empty-root CAS match",
-        "Fresh channel/Gateway/A2A append cannot report a skipped or partial insert as durable success; canonical IDs and provenance are checked in the allocation transaction"
+        "Fresh channel/Gateway/A2A append cannot report a skipped or partial insert as durable success; canonical IDs and provenance are checked in the allocation transaction",
+        "Original-turn completion requires actual bounded Journal checkpoint/mirror and known settled Runner custody; marker/reference data, current model choice and raw terminal JSON cannot establish completion"
       ],
       "migration_rollback": "Standard session archive state flag in agent database",
       "oracle_ids": [
@@ -16129,14 +16138,19 @@
         "source/host/tests/agent_session_contract.rs::background_result_receipt_is_hidden_from_production_transcript_projection",
         "source/host/tests/production_agent_store_recovery_contract.rs::malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_be_repaired",
         "source/host/tests/production_agent_store_recovery_contract.rs::production_consumers_refuse_missing_or_corrupt_checkpoint_and_recover_after_repair",
-        "source/host/tests/agent_db_owner_contract.rs::checkpoint_root_cas_requires_an_explicit_string_root_before_any_commit"
+        "source/host/tests/agent_db_owner_contract.rs::checkpoint_root_cas_requires_an_explicit_string_root_before_any_commit",
+        "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work",
+        "source/host/app/src/tests/original_turn_recovery_tests.rs::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases",
+        "source/host/tests/production_checkpoint_restart_contract.rs",
+        "source/host/src/extensions/session/agent_db.rs::original_turn_terminal_tests"
       ],
       "typed_contracts": [
         "Session work admission and archive lifecycle",
         "SWA-ROOT-RECOVERY-v1 checked production checkpoint-root recovery",
         "SESSION-FRESH-APPEND-v1 strict physical-snapshot allocation, all-row commit and deferred existing transcript publication",
         "OCRM-CHANNEL-INBOUND-REARM-v1 retained unappended head readiness, exact launch custody, coalesced retry and permanent disposal fence",
-        "OCRM-HOST-PHYSICAL-CUSTODY-v1 existing Host startup guard prerequisite; original-turn durable claim/reconciliation and full restart acceptance remain open"
+        "OCRM-HOST-PHYSICAL-CUSTODY-v1 existing Host startup guard prerequisite; original-turn durable claim/reconciliation and full restart acceptance remain open",
+        "ORT-v1 completed ordinary Native Journal turn: accepted original identity/model, private committed checkpoint observations and frozen terminal custody, bounded strict Session slot, whole-image marker v2 migration, guarded completed-marker acknowledgment and automatic ACK containment; newly declared implementation/tests require exact-H execution, unfinished and Legacy turn restoration remain open"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },

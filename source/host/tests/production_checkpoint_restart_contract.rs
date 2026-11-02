@@ -1,25 +1,69 @@
 //! SWA-ROOT-RECOVERY-v1: checkpoint readiness across an actual OS-process
 //! boundary. The parent materializes and commits through shipping owners, then
 //! closes them before the child opens the same files. These are storage and
-//! Host-composition prerequisites, not provider replay or full resume acceptance.
+//! Host-composition prerequisites. ORT-v1 cases additionally run the actual
+//! generated Native owner against bounded loopback Responses, then reconcile
+//! and acknowledge its actual upgrade marker in the shipping App after that
+//! process and all of its Session owners have closed.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File};
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use mahayana_host_runtime::extensions::inference::provider_session::ProviderMessage;
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
+};
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::agent_db::{
+    CompactionCommit, CompactionCommitOutcome, OriginalTurnReceiptCommit, OriginalTurnReference,
+};
+use mahayana_host_runtime::extensions::session::agent_db_recovery::{
+    AUTOMATION_CUSTODY_UNAVAILABLE_KV, automation_custody_recovery_marker_path,
+};
+use mahayana_host_runtime::extensions::session::gateway::persist_accepted_send_prompt_context;
 use mahayana_host_runtime::extensions::session::session_paths::{
     CONVERSATION_BLOBS_FILENAME, STORE_FILENAME,
 };
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+use mahayana_host_runtime::extensions::transcript::production_runtime::{
+    ProductionSendError, ProductionTranscriptRuntime,
+};
+use mahayana_host_runtime::extensions::transcript::sand_ack_obligation_store::SandAckObligationStore;
+use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
+    SandUpgradeResumeStore, UpgradeResumeMarker,
+};
+use mahayana_host_runtime::extensions::transcript::turn_runtime::{
+    MAX_REPLY_NUDGES, TurnTerminalKind, TurnTerminalProjection, project_turn_terminal,
+    shape_closing_send_nudge_turn_input, shape_reply_nudge_turn_input,
+};
+use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
-use mahayana_host_runtime::runner::TurnRunOptions;
+use mahayana_host_runtime::runner::production_agent_checkpoint::{
+    original_turn_result_digest, persist_completed_original_turn,
+    prove_completed_original_turn, reconcile_completed_original_turn,
+};
+use mahayana_host_runtime::runner::production_turn_agent_owner::{
+    ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+    ProductionTurnAgentStaticConfig,
+};
+use mahayana_host_runtime::runner::routed_provider_runtime::{
+    ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
+    RunnerRequestContextSnapshot,
+};
+use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
+use mahayana_host_runtime::runner::turn_agent_composition::{SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition};
+use mahayana_host_runtime::runner::{
+    ToolEffectCustodyObservation, ToolEffectCustodyReport, ToolEffectUnknownResult, TurnRunOptions,
+};
+use mahayana_host_runtime::runner_production_bridge::create_production_runner;
 use rusqlite::{Connection, OpenFlags, params};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -27,10 +71,16 @@ use sha2::{Digest, Sha256};
 
 const CHILD_TEST: &str = "production_checkpoint_restart_child";
 const CHILD_REQUEST_ENV: &str = "FABUSHI_CHECKPOINT_RESTART_CONTRACT_REQUEST";
+const APP_CHILD_TEST: &str = "tests::original_turn_recovery_tests::original_turn_shipping_ack_process_child";
+const APP_CHILD_EXECUTABLE_ENV: &str = "FABUSHI_ORIGINAL_TURN_APP_TEST_EXECUTABLE";
+const APP_CHILD_SHA256_ENV: &str = "FABUSHI_ORIGINAL_TURN_APP_TEST_SHA256";
 const USER_ID: &str = "checkpoint-restart-user";
 const USER_TEXT: &str = "remember this durable user turn";
 const ASSISTANT_TEXT: &str = "this reply survives the owner process";
 const LEGACY_FIXED_ROOT_ID: &[u8] = b"old";
+const ORIGINAL_STREAM: &str = "original-native-stream";
+const ORIGINAL_MODEL: &str = "Vendor/Nested/CaseSensitive@OriginalTurn";
+const ORIGINAL_TERMINAL_KEY: &str = "original-routed-terminal:current";
 // self_summary_count (field 17) = 3, followed by unknown field 99 = "keep".
 const PRIOR_STATE: &[u8] = &[0x88, 0x01, 0x03, 0x9a, 0x06, 0x04, b'k', b'e', b'e', b'p'];
 
@@ -93,6 +143,10 @@ struct Fixture {
     root: PathBuf,
     agent_id: String,
     expected: ExpectedCheckpoint,
+    original: Option<OriginalTurnReference>,
+    original_invocations: usize,
+    original_marker: Option<UpgradeResumeMarker>,
+    original_compaction: bool,
 }
 
 impl Fixture {
@@ -175,7 +229,10 @@ impl Fixture {
         assert_eq!(session.agent_store.latest_checkpoint_bytes(), expected.state_bytes);
         drop(session);
         owners.close();
-        Self { root, agent_id, expected }
+        Self {
+            root, agent_id, expected, original: None, original_invocations: 1,
+            original_marker: None, original_compaction: false,
+        }
     }
 
     fn rebind_to_legacy_fixed_root(&mut self) {
@@ -218,6 +275,15 @@ impl Fixture {
     }
 
     fn reopen(&self, label: &str, expectation: ReopenExpectation) -> ChildRun {
+        self.run_child(label, expectation, None)
+    }
+
+    fn run_child(
+        &self,
+        label: &str,
+        expectation: ReopenExpectation,
+        server: Option<&OriginalTurnWireServer>,
+    ) -> ChildRun {
         let token = uuid::Uuid::new_v4().to_string();
         let run_dir = self.root.join(format!("process-{label}-{token}"));
         fs::create_dir(&run_dir).expect("create private child run directory");
@@ -229,18 +295,61 @@ impl Fixture {
             agent_id: self.agent_id.clone(),
             expectation,
             expected: self.expected.clone(),
+            original: self.original.clone(),
+            original_invocations: self.original_invocations,
+            original_marker: self.original_marker.clone(),
+            original_compaction: self.original_compaction,
         };
         fs::write(&request_path, serde_json::to_vec(&request).expect("serialize child request"))
             .expect("write private child request");
         let stdout_path = run_dir.join("stdout.log");
         let stderr_path = run_dir.join("stderr.log");
+        let (executable, child_test) = if matches!(expectation,
+            ReopenExpectation::OriginalMarkerAck | ReopenExpectation::OriginalMarkerNoop
+                | ReopenExpectation::OriginalMarkerPendingAck | ReopenExpectation::OriginalMarkerCorruptAck
+        ) {
+            assert!(server.is_none(), "App reconciliation has no provider transport");
+            let executable = PathBuf::from(std::env::var_os(APP_CHILD_EXECUTABLE_ENV)
+                .expect("Actions must bind the actual shipping App compiler artifact"));
+            assert!(executable.is_absolute() && executable.is_file(),
+                "bound App test artifact must be an existing absolute file: {}", executable.display());
+            let expected_digest = std::env::var(APP_CHILD_SHA256_ENV)
+                .expect("Actions must bind the exact App compiler artifact digest");
+            let mut file = File::open(&executable).expect("open bound App compiler artifact");
+            let mut hasher = Sha256::new();
+            let mut buffer = [0_u8; 64 * 1024];
+            loop {
+                let length = file.read(&mut buffer).expect("hash bound App compiler artifact");
+                if length == 0 { break; }
+                hasher.update(&buffer[..length]);
+            }
+            let actual_digest = format!("{:x}", hasher.finalize());
+            assert_eq!(actual_digest, expected_digest, "App child must be the exact bound build artifact");
+            eprintln!("checkpoint App child executable={} sha256={actual_digest}", executable.display());
+            (executable, APP_CHILD_TEST)
+        } else {
+            (std::env::current_exe().expect("current contract executable"), CHILD_TEST)
+        };
+        let mut command = Command::new(executable);
+        command.args(["--exact", child_test, "--ignored", "--nocapture", "--test-threads=1"])
+            .env(CHILD_REQUEST_ENV, &request_path)
+            .env("SAND_CONVERSATION_GC", "0")
+            .env("SAND_STALE_ROOT_GC", "0")
+            .env("SAND_RETIRE_LEGACY_STORE_BLOBS", "0")
+            .env("FABUSHI_RESPONSES_MODEL", "changed-current-model-must-not-replace-original")
+            .env_remove("FABUSHI_PRODUCT_MODE").env_remove("SAND_PACKAGED")
+            .env_remove("SAND_AGENT_MODEL").env_remove("SAND_AGENT_MOCK_RESPONSE")
+            .env("NO_PROXY", "*").env("no_proxy", "*");
+        if let Some(server) = server {
+            command.env("FABUSHI_RESPONSES_URL", format!("{}/v1/responses", server.origin))
+                .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &server.credential);
+        } else {
+            // Reconciliation has no provider, credential or current-model work.
+            command.env("FABUSHI_RESPONSES_URL", "http://127.0.0.1:9/unused")
+                .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", run_dir.join("unavailable-credential.json"));
+        }
         let mut child = OwnedChild {
-            child: Command::new(std::env::current_exe().expect("current contract executable"))
-                .args(["--exact", CHILD_TEST, "--ignored", "--nocapture", "--test-threads=1"])
-                .env(CHILD_REQUEST_ENV, &request_path)
-                .env("SAND_CONVERSATION_GC", "0")
-                .env("SAND_STALE_ROOT_GC", "0")
-                .env("SAND_RETIRE_LEGACY_STORE_BLOBS", "0")
+            child: command
                 .current_dir(&run_dir)
                 .stdin(Stdio::null())
                 // Files avoid an unread pipe blocking a failing child. The
@@ -349,6 +458,14 @@ impl Drop for Fixture {
 enum ReopenExpectation {
     Ready,
     Refuse,
+    ProduceOriginal,
+    OriginalReady,
+    OriginalAbsent,
+    OriginalRefuse,
+    OriginalMarkerAck,
+    OriginalMarkerNoop,
+    OriginalMarkerPendingAck,
+    OriginalMarkerCorruptAck,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -359,6 +476,16 @@ struct ChildRequest {
     agent_id: String,
     expectation: ReopenExpectation,
     expected: ExpectedCheckpoint,
+    original: Option<OriginalTurnReference>,
+    original_invocations: usize,
+    original_marker: Option<UpgradeResumeMarker>,
+    original_compaction: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ProducedOriginal {
+    original: OriginalTurnReference,
+    checkpoint: ExpectedCheckpoint,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -367,6 +494,7 @@ struct ChildReceipt {
     pid: u32,
     parent_pid: u32,
     expectation: ReopenExpectation,
+    produced: Option<ProducedOriginal>,
 }
 
 struct OwnedChild {
@@ -439,7 +567,7 @@ struct ChildRun {
 }
 
 impl ChildRun {
-    fn assert_completed(self) {
+    fn assert_completed(self) -> ChildReceipt {
         assert!(self.result.as_ref().is_ok_and(|status| status.success()),
             "checkpoint child failed: {:?}\n{}", self.result, self.logs);
         let receipt: ChildReceipt = serde_json::from_slice(
@@ -451,6 +579,7 @@ impl ChildRun {
         assert_eq!(receipt.parent_pid, std::process::id());
         assert_ne!(receipt.pid, receipt.parent_pid, "this must be a separate OS process");
         assert_eq!(receipt.expectation, self.expectation);
+        receipt
     }
 }
 
@@ -585,6 +714,373 @@ fn assert_refused(request: &ChildRequest, sessions: &Arc<ProductionSessionWorker
     assert!(admitted.is_empty(), "{}", admitted.join("\n"));
 }
 
+struct OriginalTurnWireServer {
+    origin: String,
+    credential: PathBuf,
+    requests: Arc<Mutex<Vec<Value>>>,
+    stop: Arc<AtomicBool>,
+    worker: Option<thread::JoinHandle<Result<(), String>>>,
+}
+
+fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
+    stream.set_read_timeout(Some(Duration::from_secs(2))).map_err(|error| error.to_string())?;
+    stream.set_write_timeout(Some(Duration::from_secs(2))).map_err(|error| error.to_string())?;
+    let deadline = Instant::now() + Duration::from_secs(4);
+    let mut bytes = Vec::new();
+    let mut chunk = [0_u8; 4096];
+    let header_end = loop {
+        if Instant::now() >= deadline { return Err("original turn request deadline".into()); }
+        let count = stream.read(&mut chunk).map_err(|error| error.to_string())?;
+        if count == 0 { return Err("closed original turn request headers".into()); }
+        bytes.extend_from_slice(&chunk[..count]);
+        if let Some(index) = bytes.windows(4).position(|part| part == b"\r\n\r\n") { break index + 4; }
+        if bytes.len() > 64 * 1024 { return Err("oversized original turn headers".into()); }
+    };
+    let headers = std::str::from_utf8(&bytes[..header_end]).map_err(|error| error.to_string())?;
+    let length = headers.lines().find_map(|line| {
+        let (name, value) = line.split_once(':')?;
+        name.eq_ignore_ascii_case("content-length")
+            .then(|| value.trim().parse::<usize>().ok()).flatten()
+    }).ok_or("original turn request has no content length")?;
+    if length > 1024 * 1024 { return Err("oversized original turn request".into()); }
+    while bytes.len() < header_end + length {
+        if Instant::now() >= deadline { return Err("original turn body deadline".into()); }
+        let count = stream.read(&mut chunk).map_err(|error| error.to_string())?;
+        if count == 0 { return Err("closed original turn request body".into()); }
+        bytes.extend_from_slice(&chunk[..count]);
+    }
+    serde_json::from_slice(&bytes[header_end..header_end + length]).map_err(|error| error.to_string())
+}
+
+impl OriginalTurnWireServer {
+    fn new(root: &Path, invocations: usize, empty_final: bool) -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("private original turn Responses listener");
+        listener.set_nonblocking(true).expect("bounded original turn accept");
+        let origin = format!("http://{}", listener.local_addr().expect("fixture listener address"));
+        let credential = root.join("original-turn-credential.json");
+        let mut options = fs::OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        options.open(&credential).expect("private fixture credential").write_all(json!({
+            "version":1, "issuer":origin, "accessToken":"original-turn-fixture-token",
+            "expiresAtMs":4_102_444_800_000_u64, "sessionId":"original-turn-fixture-session",
+            "deviceId":"original-turn-fixture-device", "userId":"original-turn-fixture-account"
+        }).to_string().as_bytes()).expect("write private fixture credential");
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let captured = Arc::clone(&requests);
+        let stop = Arc::new(AtomicBool::new(false));
+        let worker_stop = Arc::clone(&stop);
+        let worker = thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(40);
+            while !worker_stop.load(Ordering::Acquire) {
+                if Instant::now() >= deadline { return Err("original turn Responses deadline".into()); }
+                let (mut stream, _) = match listener.accept() {
+                    Ok(connection) => connection,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(2));
+                        continue;
+                    }
+                    Err(error) => return Err(error.to_string()),
+                };
+                let request = original_wire_request(&mut stream)?;
+                let ordinal = {
+                    let mut requests = captured.lock().map_err(|_| "request capture poisoned")?;
+                    let ordinal = requests.len();
+                    requests.push(request);
+                    ordinal
+                };
+                let events = if ordinal == 0 {
+                    vec![json!({"type":"response.completed", "response":{
+                        "id":"original-tool-response", "output":[{
+                            "type":"function_call", "name":"b", "call_id":"original-terminal-effect", "arguments":"{}"
+                        }]
+                    }})]
+                } else if empty_final && ordinal == invocations {
+                    vec![json!({"type":"response.completed", "response":{"id":"empty-original-result","output":[]}})]
+                } else {
+                    vec![
+                        json!({"type":"response.output_text.delta", "delta":format!("completed invocation {ordinal}")}),
+                        json!({"type":"response.completed", "response":{"id":format!("original-response-{ordinal}"),"output":[]}}),
+                    ]
+                };
+                let body = events.iter().map(|event| format!("data: {event}\n\n")).collect::<String>();
+                write!(stream,
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len(),
+                ).map_err(|error| error.to_string())?;
+            }
+            Ok(())
+        });
+        Self { origin, credential, requests, stop, worker: Some(worker) }
+    }
+
+    fn finish(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(worker) = self.worker.take() {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !worker.is_finished() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(2));
+            }
+            assert!(worker.is_finished(), "owned Responses worker did not stop within its bound");
+            worker.join().expect("original Responses worker panic").expect("original Responses worker result");
+        }
+    }
+}
+
+impl Drop for OriginalTurnWireServer {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(worker) = self.worker.take() {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            while !worker.is_finished() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(2));
+            }
+            if worker.is_finished() { let _ = worker.join(); }
+        }
+    }
+}
+
+struct OriginalEffectBridge {
+    receipt: PathBuf,
+    calls: Arc<AtomicUsize>,
+}
+
+impl RoutedToolBridge for OriginalEffectBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(vec![RoutedToolDefinition {
+            name: "b".into(), provider_identifier: "original-turn-contract".into(),
+            tool_name: "b".into(), description: None, input_schema: json!({"type":"object"}),
+        }])
+    }
+
+    fn call_tool(&self, tool: &RoutedToolDefinition, _args: Value, call_id: &str) -> Result<Value, ProviderSessionError> {
+        assert_eq!(tool.name, "b");
+        assert_eq!(call_id, "original-terminal-effect");
+        assert_eq!(self.calls.fetch_add(1, Ordering::AcqRel), 0, "the actual effect must run once");
+        fs::OpenOptions::new().write(true).create_new(true).open(&self.receipt)
+            .and_then(|mut file| file.write_all(call_id.as_bytes()))
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        Ok(json!({"receipt":"committed"}))
+    }
+}
+
+fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) -> ProducedOriginal {
+    let root = &request.fixture_root;
+    let runtime = ProductionTranscriptRuntime::new(Some(root));
+    let args = json!({
+        "agentId":request.agent_id, "streamId":ORIGINAL_STREAM, "prompt":USER_TEXT,
+        "sessionKey":format!("agent:{}:main", request.agent_id), "clientNonce":"original-user-nonce",
+    });
+    let accepted = runtime.accept_routed_send(&args, |accepted| {
+        persist_accepted_send_prompt_context(sessions, &args, accepted)
+            .map_err(|error| ProductionSendError::Internal(error.to_string()))
+    }).expect("actual routed admission and gateway persistence");
+    assert!(!accepted.duplicate);
+    let admission = sessions.read_session_work_admission(&request.agent_id)
+        .expect("actual Session admission").expect("main admission");
+    let original = runtime.bind_original_turn_model(&request.agent_id, ORIGINAL_STREAM, &admission, ORIGINAL_MODEL)
+        .expect("same admitted lease model binding").expect("ordinary Native user is eligible");
+    assert_eq!(accepted.context.user_message_id.as_deref(), Some(original.user_message_id.as_str()));
+    if request.original_compaction {
+        let entries = sessions.read_agent_transcript_entries(&request.agent_id)
+            .expect("actual admitted transcript before same-stream compaction");
+        let tail = entries.last().and_then(|entry| entry.get("id")).and_then(Value::as_str)
+            .expect("actual transcript tail identity");
+        assert_eq!(tail, original.user_message_id);
+        let entry = match sessions.commit_agent_compaction(&request.agent_id, &CompactionCommit {
+            entry_id: format!("compaction:{}:{}", original.agent_id, original.stream_id),
+            expected_transcript_tail_id: tail.to_string(),
+            first_kept_entry_id: Some(original.user_message_id.clone()),
+            summary: "Retain the accepted original user turn for this same-stream compaction.".into(),
+            tokens_before: 0,
+            details: None,
+            source_turn_id: original.stream_id.clone(),
+            expected_lifecycle_revision: original.original_lifecycle_revision.clone(),
+        }).expect("real Session compaction commit") {
+            CompactionCommitOutcome::Committed(entry) => entry,
+            outcome => panic!("same-stream compaction must actually commit: {outcome:?}"),
+        };
+        assert_eq!(entry["sourceTurnId"].as_str(), Some(original.stream_id.as_str()));
+        assert_eq!(entry["sourceLifecycleRevision"].as_str(), Some(original.original_lifecycle_revision.as_str()));
+        let successor = sessions.read_session_work_admission(&request.agent_id)
+            .expect("actual committed successor admission").expect("same Session remains admitted");
+        assert_ne!(successor.lifecycle_revision, original.original_lifecycle_revision);
+        assert_eq!(entry["lifecycleRevision"].as_str(), Some(successor.lifecycle_revision.as_str()));
+        // Keep the original reference and canonical epoch. The existing Session
+        // transaction owns this successor; no metadata or receipt is fabricated.
+    }
+    let host = composition(root, sessions);
+    let sink = host.compose_production_checkpoint_sink(
+        sessions, root, &request.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+    ).expect("actual production checkpoint composition").expect("canonical main sink");
+    assert!(sink.committed_original_turn_observations().expect("new Journal sink log").is_empty());
+    let calls = Arc::new(AtomicUsize::new(0));
+    let turn_composition = TurnAgentComposition::new(
+        RoutedProvider::Fabushi,
+        Arc::new(OriginalEffectBridge { receipt: root.join("original-effect.txt"), calls: Arc::clone(&calls) }),
+        RunnerRequestContextSnapshot {
+            context: HostRequestContext {
+                os_version: "original-turn-contract".into(), shell: None, time_zone: Some("UTC".into()),
+                transcripts_folder: root.join("transcripts").to_string_lossy().into_owned(), user_full_name: None,
+            },
+            rules: None,
+        },
+        RoutedProviderCancellation::default(),
+        Arc::new(ProductionRoutedProviderCheckpointStore::new(root, &request.agent_id, ORIGINAL_STREAM)),
+    ).with_fabushi_model(ORIGINAL_MODEL);
+    let mut runner = create_production_runner(
+        turn_composition,
+        ProductionTurnAgentBuildBindings::new(
+            ProductionTurnAgentStaticConfig {
+                model_id: ORIGINAL_MODEL.into(), agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
+                conversation_id: request.agent_id.clone(), is_box_scoped_subagent: false,
+                is_subagent_runner: false, is_shared_room_runner: false,
+                sand_send_message_delivery_owed: false, transcripts_folder_available: true,
+            },
+            Arc::new(|| None), Arc::new(|_, _, _| panic!("bounded original turn must not summarize")),
+        ),
+        ProductionTurnAgentLifecycleBindings::new(&request.agent_id, ORIGINAL_STREAM),
+        Some(sink.clone()), Arc::new(AtomicBool::new(false)),
+        Arc::new(Mutex::new(SubagentRuntime::default())), None, None, None, None,
+    );
+    let messages = vec![ProviderMessage { role: "user".into(), content: USER_TEXT.into() }];
+    let options = TurnRunOptions {
+        inference_request_id: Some(ORIGINAL_STREAM.into()), message_id: Some(original.user_message_id.clone()),
+        recent_message_text: Some(USER_TEXT.into()), turn_started_at_ms: Some(1), ..TurnRunOptions::default()
+    };
+    let mut custody = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+    let mut results = Vec::new();
+    assert!((1..=MAX_REPLY_NUDGES + 2).contains(&request.original_invocations));
+    for invocation in 0..request.original_invocations {
+        let (input_messages, input_options) = if invocation == 0 {
+            (messages.clone(), options.clone())
+        } else {
+            let shaped = if invocation == MAX_REPLY_NUDGES + 1 {
+                shape_closing_send_nudge_turn_input(&messages, &messages, &options)
+            } else {
+                shape_reply_nudge_turn_input(&messages, &messages, &options)
+            };
+            (shaped.provider_messages, shaped.options)
+        };
+        let result = runner.run_routed_provider_with_options(root, &input_messages, input_options, &mut |_, _| {})
+            .expect("actual generated Native invocation completed");
+        let finished = runner.last_finished().expect("actual shell terminal");
+        assert_eq!(finished.owner.request_id, ORIGINAL_STREAM);
+        match runner.last_tool_effect_custody().expect("actual generated custody observation") {
+            ToolEffectCustodyObservation::Known { run_generation, snapshot } => {
+                assert!(*run_generation > 0);
+                assert_eq!(*run_generation, finished.owner.generation);
+                assert!(snapshot.unsettled_reason().is_none());
+                if invocation == 0 { assert!(snapshot.started_revision > 0, "the real tool effect was instrumented"); }
+            }
+            observation => panic!("generated owner did not produce Known custody: {observation:?}"),
+        }
+        custody.record(runner.last_tool_effect_custody());
+        results.push(result);
+    }
+    assert_eq!(calls.load(Ordering::Acquire), 1);
+    let observations = sink.committed_original_turn_observations().expect("sealed actual Journal commits");
+    assert_eq!(observations.len(), request.original_invocations);
+    let digest = original_turn_result_digest(results.last().expect("actual final result"));
+    let terminal = project_turn_terminal(false, false, true, 0, false);
+    // Every negative starts from the same actual owner evidence. No serialized
+    // settled custody is used to manufacture a positive completion.
+    for kind in [TurnTerminalKind::WaitingUser, TurnTerminalKind::Cancelled, TurnTerminalKind::Failed] {
+        assert!(prove_completed_original_turn(&original, TurnTerminalProjection { kind, ..terminal }, digest, 0, false, &custody, &observations).is_err());
+    }
+    assert!(prove_completed_original_turn(&original, TurnTerminalProjection { delivered: true, ..terminal }, digest, 0, false, &custody, &observations).is_err());
+    assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &ToolEffectCustodyReport::new(ORIGINAL_STREAM), &observations).is_err());
+    assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &custody, &[]).is_err());
+    for replacement in [ToolEffectCustodyObservation::NotStarted, ToolEffectCustodyObservation::Known {
+        run_generation: 0,
+        snapshot: match &custody.invocations()[0] {
+            ToolEffectCustodyObservation::Known { snapshot, .. } => snapshot.clone(), _ => unreachable!(),
+        },
+    }] {
+        let mut refused = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+        refused.record(Some(&replacement));
+        for observation in &custody.invocations()[1..] { refused.record(Some(observation)); }
+        assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &refused, &observations).is_err());
+    }
+    for unknown in [false, true] {
+        let mut first = custody.invocations()[0].clone();
+        if let ToolEffectCustodyObservation::Known { snapshot, .. } = &mut first {
+            if unknown { snapshot.unknown_result = Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown); }
+            else { snapshot.pending_effects = 1; }
+        }
+        let mut refused = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+        refused.record(Some(&first));
+        for observation in &custody.invocations()[1..] { refused.record(Some(observation)); }
+        assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &refused, &observations).is_err());
+    }
+    let mut foreign = ToolEffectCustodyReport::new("foreign-stream");
+    for observation in custody.invocations() { foreign.record(Some(observation)); }
+    assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &foreign, &observations).is_err());
+    let mut unavailable = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+    unavailable.record(None);
+    for observation in &custody.invocations()[1..] { unavailable.record(Some(observation)); }
+    assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &unavailable, &observations).is_err());
+    let mut foreign_agent = original.clone();
+    foreign_agent.agent_id = format!("other-{}", original.agent_id);
+    foreign_agent.session_id = foreign_agent.agent_id.clone();
+    foreign_agent.session_key = format!("agent:{}:main", foreign_agent.agent_id);
+    assert!(prove_completed_original_turn(&foreign_agent, terminal, digest, 0, false, &custody, &observations).is_err());
+    let mut overflow_custody = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+    for _ in 0..MAX_REPLY_NUDGES + 3 { overflow_custody.record(Some(&custody.invocations()[0])); }
+    assert!(prove_completed_original_turn(
+        &original, terminal, digest, 0, false, &overflow_custody,
+        &vec![observations[0].clone(); MAX_REPLY_NUDGES + 3],
+    ).is_err());
+    if request.original_invocations > 1 {
+        assert_ne!(results.first(), results.last());
+        assert!(prove_completed_original_turn(&original, terminal, original_turn_result_digest(&results[0]), 0, false, &custody, &observations).is_err());
+        let mut reversed = observations.clone();
+        reversed.reverse();
+        assert!(prove_completed_original_turn(&original, terminal, digest, 0, false, &custody, &reversed).is_err());
+    }
+    let proof = prove_completed_original_turn(&original, terminal, digest, 0, false, &custody, &observations)
+        .expect("actual completed owner plus sealed matching commits qualify");
+    assert_eq!(persist_completed_original_turn(sessions, &proof).expect("strict Session terminal commit"), OriginalTurnReceiptCommit::Inserted);
+    assert_eq!(persist_completed_original_turn(sessions, &proof).expect("same proof is idempotent"), OriginalTurnReceiptCommit::AlreadyCommitted);
+    assert_eq!(reconcile_completed_original_turn(sessions, &original).expect("same-process strict recheck").expect("verified completion").original(), &original);
+    assert!(runtime.quiesce_for_upgrade().expect("publish the actual bound lease upgrade marker").quiescing);
+    let markers = runtime.upgrade_resume_store().expect("actual upgrade marker owner")
+        .list_pending_checked().expect("strict producer marker image");
+    assert_eq!(markers.len(), 1);
+    assert_eq!(markers[0].agent_id, original.agent_id);
+    assert_eq!(markers[0].source.as_deref(), Some("turn"));
+    assert_eq!(markers[0].original_work.as_ref(), Some(&original));
+    runtime.settle_routed_turn(&request.agent_id, ORIGINAL_STREAM, 10).expect("retire actual routed lease");
+    let store = sessions.open_agent_store_owner(&request.agent_id).expect("actual final canonical owner");
+    let snapshot = store.checkpoint_snapshot_checked().expect("checked final root").expect("committed final state");
+    let checkpoint = ExpectedCheckpoint {
+        root_blob_id: snapshot.root_blob_id.clone(), state_bytes: Some(snapshot.checkpoint_bytes.clone()),
+        last_user_message_id: Some(original.user_message_id.clone()), compaction_epoch: request.expected.compaction_epoch,
+        critical_blobs: vec![(snapshot.root_blob_id, snapshot.checkpoint_bytes)],
+    };
+    drop((runner, sink, host, store, runtime));
+    ProducedOriginal { original, checkpoint }
+}
+
+fn assert_original_reopen(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) {
+    let original = request.original.as_ref().expect("actual producer's reference");
+    let result = reconcile_completed_original_turn(sessions, original);
+    match request.expectation {
+        ReopenExpectation::OriginalReady => {
+            let verified = result.expect("fresh strict completion read").expect("durable completion remains available");
+            assert_eq!(verified.original(), original);
+        }
+        ReopenExpectation::OriginalAbsent => assert!(result.expect("strict missing slot read").is_none()),
+        ReopenExpectation::OriginalRefuse => assert!(result.is_err(), "unavailable or invalid evidence cannot verify: {result:?}"),
+        _ => unreachable!(),
+    }
+    assert_eq!(fs::read(request.fixture_root.join("original-effect.txt")).expect("original effect receipt"), b"original-terminal-effect");
+}
+
 #[test]
 #[ignore = "private child entrypoint; launched with --exact and a per-run request by the parent tests"]
 fn production_checkpoint_restart_child() {
@@ -595,16 +1091,25 @@ fn production_checkpoint_restart_child() {
     assert_ne!(request.parent_pid, std::process::id(), "fresh OS process required");
     assert!(request.fixture_root.is_absolute());
     let owners = OpenOwners::new(&request.fixture_root);
-    match request.expectation {
-        ReopenExpectation::Ready => assert_ready(&request, &owners.sessions),
-        ReopenExpectation::Refuse => assert_refused(&request, &owners.sessions),
-    }
+    let produced = match request.expectation {
+        ReopenExpectation::Ready => { assert_ready(&request, &owners.sessions); None }
+        ReopenExpectation::Refuse => { assert_refused(&request, &owners.sessions); None }
+        ReopenExpectation::ProduceOriginal => Some(produce_original_turn(&request, &owners.sessions)),
+        ReopenExpectation::OriginalReady | ReopenExpectation::OriginalAbsent | ReopenExpectation::OriginalRefuse => {
+            assert_original_reopen(&request, &owners.sessions); None
+        }
+        ReopenExpectation::OriginalMarkerAck | ReopenExpectation::OriginalMarkerNoop
+            | ReopenExpectation::OriginalMarkerPendingAck | ReopenExpectation::OriginalMarkerCorruptAck => {
+            panic!("marker acknowledgment must use the bound shipping App executable")
+        }
+    };
     owners.close();
     let receipt = ChildReceipt {
         token: request.token,
         pid: std::process::id(),
         parent_pid: request.parent_pid,
         expectation: request.expectation,
+        produced,
     };
     fs::write(request_path.parent().expect("private run directory").join("completed.json"),
         serde_json::to_vec(&receipt).expect("serialize completion receipt"))
@@ -670,4 +1175,383 @@ fn fresh_process_refuses_persisted_damage_and_recovers_after_explicit_repair() {
         fixture.reopen("repaired", ReopenExpectation::Ready).assert_completed();
         assert_eq!(durable_state(&fixture), healthy, "repaired process must retain the original history");
     }
+}
+
+fn read_stored_kv(fixture: &Fixture, key: &str) -> String {
+    open_existing(&fixture.db_path(), true).query_row(
+        "SELECT value FROM kv WHERE key=?1", params![key], |row| row.get(0),
+    ).expect("actual persisted owner row")
+}
+
+fn replace_stored_kv(fixture: &Fixture, key: &str, raw: &str) {
+    assert_eq!(open_existing(&fixture.db_path(), false).execute(
+        "UPDATE kv SET value=?2 WHERE key=?1", params![key, raw],
+    ).expect("closed-owner fault or exact repair"), 1);
+}
+
+fn original_terminal(fixture: &Fixture) -> Value {
+    serde_json::from_str(&read_stored_kv(fixture, ORIGINAL_TERMINAL_KEY))
+        .expect("actual Runner-persisted original terminal record")
+}
+
+fn produced_original_fixture(
+    label: &str,
+    initial: InitialState,
+    legacy_prior: bool,
+    invocations: usize,
+    empty_final: bool,
+    original_compaction: bool,
+) -> Fixture {
+    let mut fixture = Fixture::new(label, initial);
+    if legacy_prior { fixture.rebind_to_legacy_fixed_root(); }
+    let prior_identity = fixture.expected.state_bytes.as_ref()
+        .map(|_| fixture.expected.root_blob_id.clone());
+    fixture.original_invocations = invocations;
+    fixture.original_compaction = original_compaction;
+    let mut server = OriginalTurnWireServer::new(&fixture.root, invocations, empty_final);
+    let receipt = fixture.run_child("produce-original", ReopenExpectation::ProduceOriginal, Some(&server))
+        .assert_completed();
+    server.finish();
+    let requests = server.requests.lock().expect("actual provider request capture");
+    assert_eq!(requests.len(), invocations + 1, "one real tool continuation plus each generated invocation");
+    assert!(requests.iter().all(|request| request["model"] == ORIGINAL_MODEL));
+    drop(requests);
+    fs::remove_file(&server.credential).expect("remove producer credential before every recovery consumer");
+    let produced = receipt.produced.expect("completed producer reports its actual reference and checkpoint");
+    fixture.original = Some(produced.original);
+    fixture.expected = produced.checkpoint;
+    let marker_store = SandUpgradeResumeStore::new(&fixture.root);
+    let mut markers = marker_store.list_pending_checked().expect("producer's actual bound marker after closure");
+    assert_eq!(markers.len(), 1);
+    let marker = markers.pop().unwrap();
+    assert_eq!(marker.agent_id, fixture.agent_id);
+    assert_eq!(marker.original_work, fixture.original);
+    let marker_image: Value = serde_json::from_slice(&fs::read(marker_store.file_path())
+        .expect("actual quiesce marker bytes")).expect("actual quiesce marker envelope");
+    assert_eq!(marker_image["version"], 2);
+    fixture.original_marker = Some(marker);
+    let record = original_terminal(&fixture);
+    assert_eq!(record["original"], serde_json::to_value(fixture.original.as_ref().unwrap()).unwrap());
+    assert_eq!(record["canonical"].as_array().unwrap().len(), invocations);
+    assert_eq!(record["canonical"][0]["priorRootBlobId"], serde_json::to_value(prior_identity).unwrap(),
+        "the actual previous root Option and fixed identity survive the commit boundary");
+    assert_eq!(record["original"]["modelId"], ORIGINAL_MODEL);
+    if empty_final {
+        assert_eq!(record["finalResultSha256"], serde_json::to_value(original_turn_result_digest("")).unwrap());
+        assert_eq!(record["canonical"][0]["stepBlobIds"].as_array().unwrap().len(), 1,
+            "the actual generated tool-only turn has no invented Assistant step");
+    }
+    assert_eq!(fs::read(fixture.root.join("original-effect.txt")).expect("one actual effect"), b"original-terminal-effect");
+    // Checkpoint metadata and admission revisions belong to different mutation
+    // domains. A normal generated completion must not require their equality.
+    let raw_metadata = read_stored_kv(&fixture, "metadata");
+    let metadata_bytes = raw_metadata.as_bytes().chunks_exact(2).map(|pair| {
+        u8::from_str_radix(std::str::from_utf8(pair).expect("metadata hex"), 16).expect("metadata byte")
+    }).collect::<Vec<_>>();
+    let metadata: Value = serde_json::from_slice(&metadata_bytes).expect("actual metadata image");
+    assert_ne!(metadata["lifecycleRevision"], record["original"]["originalLifecycleRevision"]);
+    let admission: Value = serde_json::from_str(&read_stored_kv(&fixture, "sessionWorkAdmission"))
+        .expect("actual final Session admission image");
+    assert_eq!(record["settlementLifecycleRevision"], admission["lifecycle_revision"]);
+    assert_ne!(metadata["lifecycleRevision"], record["settlementLifecycleRevision"]);
+    if original_compaction {
+        let original = fixture.original.as_ref().unwrap();
+        let compaction_id = format!("compaction:{}:{}", original.agent_id, original.stream_id);
+        let raw_entry: String = open_existing(&fixture.db_path(), true).query_row(
+            "SELECT entry FROM transcript_entries WHERE id=?1", params![compaction_id], |row| row.get(0),
+        ).expect("real committed same-stream compaction row");
+        let entry: Value = serde_json::from_str(&raw_entry).expect("actual compaction image");
+        assert_eq!(entry["kind"], "compaction");
+        assert_eq!(entry["firstKeptEntryId"].as_str(), Some(original.user_message_id.as_str()));
+        assert_eq!(entry["sourceTurnId"].as_str(), Some(original.stream_id.as_str()));
+        assert_eq!(entry["sourceLifecycleRevision"].as_str(), Some(original.original_lifecycle_revision.as_str()));
+        assert_eq!(entry["lifecycleRevision"], record["settlementLifecycleRevision"]);
+        assert_ne!(entry["lifecycleRevision"], entry["sourceLifecycleRevision"]);
+        assert_eq!(record["compaction"], json!({
+            "entryId": entry["id"], "sourceTurnId": entry["sourceTurnId"],
+            "sourceLifecycleRevision": entry["sourceLifecycleRevision"],
+            "lifecycleRevision": entry["lifecycleRevision"],
+        }), "terminal binding must exactly name the actual Session transaction");
+    } else {
+        assert!(record["compaction"].is_null());
+        assert_eq!(record["settlementLifecycleRevision"], record["original"]["originalLifecycleRevision"]);
+    }
+    fixture
+}
+
+#[test]
+fn original_turn_real_generated_owner_reconciles_across_closed_processes_and_legacy_prior_roots() {
+    for (label, initial, legacy, invocations, empty_final) in [
+        ("original-no-prior", InitialState::NoCheckpoint, false, 1, false),
+        ("original-present-empty", InitialState::EmptyCheckpoint, false, 1, false),
+        ("original-fixed-prior", InitialState::UserCheckpoint, true, 2, false),
+        ("original-all-nudges", InitialState::NoCheckpoint, false, MAX_REPLY_NUDGES + 2, false),
+        ("original-tool-only", InitialState::NoCheckpoint, false, 1, true),
+    ] {
+        let fixture = produced_original_fixture(label, initial, legacy, invocations, empty_final, false);
+        let before = durable_state(&fixture);
+        assert!(!before.mirror.is_empty(), "the producer committed an actual Journal mirror");
+        for attempt in 1..=2 {
+            fixture.reopen(&format!("original-verified-{attempt}"), ReopenExpectation::OriginalReady).assert_completed();
+            assert_eq!(durable_state(&fixture), before,
+                "reconciliation must not dispatch, replay an effect, rewrite a checkpoint or normalize owner rows");
+        }
+    }
+}
+
+#[test]
+fn original_turn_real_generated_completion_acknowledges_exact_marker_in_fresh_app_after_ack_repair() {
+    for (label, compaction) in [
+        ("original-app-ack", false),
+        ("original-app-ack-compaction", true),
+    ] {
+        let fixture = produced_original_fixture(label, InitialState::NoCheckpoint, false, 2, false, compaction);
+        let before = durable_state(&fixture);
+        assert!(!before.mirror.is_empty(), "actual generated Journal history is present");
+        let effect_path = fixture.root.join("original-effect.txt");
+        let effect_before = fs::read(&effect_path).expect("actual generated effect receipt");
+        let provider_root = fixture.root.join("runner-provider-checkpoints");
+        let provider_before = mirror_files(&provider_root);
+        assert!(!provider_before.is_empty(), "the producer created real provider checkpoints");
+        // The loopback provider has been joined and its credential removed.
+        // App consumers also receive an unavailable URL and credential, and
+        // observe their actual lifecycle owner to reject any new turn dispatch.
+        assert!(!fixture.root.join("original-turn-credential.json").exists());
+        let marker_path = SandUpgradeResumeStore::new(&fixture.root).file_path().to_path_buf();
+        let marker_before = fs::read(&marker_path).expect("actual bound v2 quiesce marker");
+        let (ack_path, pending_obligation) = {
+            let ack = SandAckObligationStore::new(&fixture.root);
+            let recorded = ack.record_send(&fixture.agent_id, 11.0)
+                .expect("real independent ACK owner records pending work");
+            assert!(recorded.created);
+            assert_eq!(ack.get_checked(&fixture.agent_id).unwrap(), Some(recorded.obligation.clone()));
+            (ack.file_path().to_path_buf(), recorded.obligation)
+        };
+        let pending_ack = fs::read(&ack_path).expect("real pending ACK owner image");
+        let assert_original_unchanged = || {
+            assert_eq!(durable_state(&fixture), before,
+                "fresh App acknowledgment cannot rewrite canonical, user, result, admission, receipt or Journal bytes");
+            assert_eq!(fs::read(&effect_path).unwrap(), effect_before, "no duplicate original tool effect");
+            assert_eq!(mirror_files(&provider_root), provider_before,
+                "recovery cannot create another provider request or alter prior provider checkpoints");
+        };
+
+        let pending = fixture.reopen("app-pending-ack", ReopenExpectation::OriginalMarkerPendingAck)
+            .assert_completed();
+        assert!(pending.produced.is_none());
+        assert_eq!(fs::read(&marker_path).unwrap(), marker_before);
+        assert_eq!(fs::read(&ack_path).unwrap(), pending_ack);
+        assert_original_unchanged();
+
+        // Inject corruption only after all owning processes close. A failed
+        // strict ACK read must preserve both the damaged bytes and the marker.
+        fs::write(&ack_path, b"{").expect("closed-owner independent ACK corruption");
+        let corrupt = fixture.reopen("app-corrupt-ack", ReopenExpectation::OriginalMarkerCorruptAck)
+            .assert_completed();
+        assert!(corrupt.produced.is_none());
+        assert_eq!(fs::read(&marker_path).unwrap(), marker_before);
+        assert_eq!(fs::read(&ack_path).unwrap(), b"{");
+        assert_original_unchanged();
+
+        fs::write(&ack_path, &pending_ack).expect("explicitly repair the exact captured ACK image");
+        assert_eq!(fs::read(&ack_path).unwrap(), pending_ack);
+        {
+            let ack = SandAckObligationStore::new(&fixture.root);
+            assert_eq!(ack.get_checked(&fixture.agent_id).unwrap(), Some(pending_obligation));
+            assert!(ack.clear(&fixture.agent_id).expect("explicit owner completion of independent ACK work"));
+            assert!(ack.get_checked(&fixture.agent_id).unwrap().is_none());
+        }
+        let cleared_ack = fs::read(&ack_path).expect("actual ACK owner wrote its empty image");
+        assert_ne!(cleared_ack, pending_ack);
+        assert_eq!(fs::read(&marker_path).unwrap(), marker_before);
+        assert_original_unchanged();
+
+        let acknowledged = fixture.reopen("app-exact-marker-ack", ReopenExpectation::OriginalMarkerAck)
+            .assert_completed();
+        assert!(acknowledged.produced.is_none());
+        assert!(!marker_path.exists(), "the shipping App consumed exactly the actual original marker");
+        assert_eq!(fs::read(&ack_path).unwrap(), cleared_ack);
+        assert_original_unchanged();
+
+        let repeated = fixture.reopen("app-fresh-marker-noop", ReopenExpectation::OriginalMarkerNoop)
+            .assert_completed();
+        assert!(repeated.produced.is_none());
+        assert!(!marker_path.exists(), "a second fresh App process leaves the consumed marker absent");
+        assert_eq!(fs::read(&ack_path).unwrap(), cleared_ack);
+        assert_original_unchanged();
+    }
+}
+
+#[test]
+fn original_turn_real_generated_receipt_refuses_malformed_custody_and_canonical_identity_in_new_process() {
+    let fixture = produced_original_fixture("original-record-faults", InitialState::NoCheckpoint, false, 2, false, false);
+    let healthy = durable_state(&fixture);
+    let raw = read_stored_kv(&fixture, ORIGINAL_TERMINAL_KEY);
+    let record: Value = serde_json::from_str(&raw).expect("actual terminal JSON");
+    for fault in [
+        "unsupported-version", "wrong-terminal", "wrong-request", "wrong-user", "wrong-order",
+        "wrong-final-result", "missing-commit", "foreign-stream", "not-started", "zero-generation",
+        "pending", "unknown-result", "unknown-nested-field", "duplicate-custody-field", "malformed", "oversized",
+    ] {
+        let mut damaged = record.clone();
+        let mut custody: Value = serde_json::from_str(damaged["custodyJson"].as_str().unwrap()).unwrap();
+        match fault {
+            "unsupported-version" => damaged["version"] = json!(2),
+            "wrong-terminal" => damaged["terminal"] = json!("failed"),
+            "wrong-request" => damaged["canonical"][0]["requestId"] = json!("different-stream"),
+            "wrong-user" => damaged["canonical"][0]["messageId"] = json!("different-user"),
+            "wrong-order" => damaged["canonical"].as_array_mut().unwrap().reverse(),
+            "wrong-final-result" => damaged["finalResultSha256"] = json!(vec![0_u8; 32]),
+            "missing-commit" => { damaged["canonical"].as_array_mut().unwrap().remove(0); }
+            "foreign-stream" => custody["streamId"] = json!("different-stream"),
+            "not-started" => custody["invocations"][0] = json!({"state":"notStarted"}),
+            "zero-generation" => custody["invocations"][0]["runGeneration"] = json!(0),
+            "pending" => custody["invocations"][0]["snapshot"]["pendingEffects"] = json!(1),
+            "unknown-result" => custody["invocations"][0]["snapshot"]["unknownResult"] = json!("downstreamOutcomeUnknown"),
+            "unknown-nested-field" => custody["invocations"][0]["snapshot"]["unsupportedAuthority"] = json!(true),
+            "duplicate-custody-field" | "malformed" | "oversized" => {}
+            _ => unreachable!(),
+        }
+        damaged["custodyJson"] = if fault == "duplicate-custody-field" {
+            json!(format!("{{\"streamId\":{},\"streamId\":{},\"invocations\":{}}}",
+                custody["streamId"], custody["streamId"], custody["invocations"]))
+        } else {
+            json!(serde_json::to_string(&custody).unwrap())
+        };
+        let damaged_raw = match fault {
+            "malformed" => "{".to_string(),
+            "oversized" => " ".repeat(64 * 1024 + 1),
+            _ => serde_json::to_string(&damaged).unwrap(),
+        };
+        replace_stored_kv(&fixture, ORIGINAL_TERMINAL_KEY, &damaged_raw);
+        let damaged_state = durable_state(&fixture);
+        assert_ne!(damaged_state, healthy, "{fault}: fault must affect the actual stored proof data");
+        fixture.reopen(fault, ReopenExpectation::OriginalRefuse).assert_completed();
+        assert_eq!(durable_state(&fixture), damaged_state, "{fault}: refusal preserves exact damaged owner bytes");
+        replace_stored_kv(&fixture, ORIGINAL_TERMINAL_KEY, &raw);
+        assert_eq!(durable_state(&fixture), healthy, "{fault}: explicit repair restores exact original bytes");
+    }
+    fixture.reopen("original-record-repaired", ReopenExpectation::OriginalReady).assert_completed();
+    assert_eq!(durable_state(&fixture), healthy);
+}
+
+#[test]
+fn original_turn_real_generated_receipt_rechecks_actual_blobs_user_and_admission_after_restart() {
+    let fixture = produced_original_fixture("original-source-faults", InitialState::NoCheckpoint, false, 2, false, false);
+    let healthy = durable_state(&fixture);
+    let record = original_terminal(&fixture);
+    let first = &record["canonical"][0];
+    for (label, id) in [
+        ("root", serde_json::from_value::<Vec<u8>>(record["canonical"][1]["rootBlobId"].clone()).unwrap()),
+        ("turn", serde_json::from_value(first["turnBlobId"].clone()).unwrap()),
+        ("user", serde_json::from_value(first["userBlobId"].clone()).unwrap()),
+        ("tool", serde_json::from_value(first["stepBlobIds"][0].clone()).unwrap()),
+        ("assistant", serde_json::from_value(first["stepBlobIds"].as_array().unwrap().last().unwrap().clone()).unwrap()),
+    ] {
+        let db = open_existing(&fixture.blob_path(), false);
+        let original: Vec<u8> = db.query_row("SELECT data FROM blobs WHERE id=?1", params![hex(&id)], |row| row.get(0))
+            .expect("actual generated blob bytes");
+        let mut changed = original.clone();
+        *changed.last_mut().expect("generated root/turn/user/step has bytes") ^= 1;
+        // Keep the wire framing intact while changing its content under the
+        // original ID, so this exercises content addressing as well as decoding.
+        assert_eq!(db.execute("UPDATE blobs SET data=?2 WHERE id=?1", params![hex(&id), changed]).unwrap(), 1);
+        drop(db);
+        let damaged = durable_state(&fixture);
+        fixture.reopen(&format!("damaged-{label}"), ReopenExpectation::OriginalRefuse).assert_completed();
+        assert_eq!(durable_state(&fixture), damaged, "{label}: checked read cannot repair canonical bytes");
+        assert_eq!(open_existing(&fixture.blob_path(), false).execute(
+            "UPDATE blobs SET data=?2 WHERE id=?1", params![hex(&id), original],
+        ).unwrap(), 1);
+        assert_eq!(durable_state(&fixture), healthy);
+    }
+    let missing_tool: Vec<u8> = serde_json::from_value(first["stepBlobIds"][0].clone()).unwrap();
+    let db = open_existing(&fixture.blob_path(), false);
+    let tool_bytes: Vec<u8> = db.query_row("SELECT data FROM blobs WHERE id=?1", params![hex(&missing_tool)], |row| row.get(0)).unwrap();
+    assert_eq!(db.execute("DELETE FROM blobs WHERE id=?1", params![hex(&missing_tool)]).unwrap(), 1);
+    drop(db);
+    let missing = durable_state(&fixture);
+    fixture.reopen("missing-recorded-tool", ReopenExpectation::OriginalRefuse).assert_completed();
+    assert_eq!(durable_state(&fixture), missing);
+    open_existing(&fixture.blob_path(), false).execute("INSERT INTO blobs(id,data) VALUES(?1,?2)",
+        params![hex(&missing_tool), tool_bytes]).unwrap();
+    assert_eq!(durable_state(&fixture), healthy);
+    let original = fixture.original.as_ref().unwrap();
+    let db = open_existing(&fixture.db_path(), false);
+    let raw_user: String = db.query_row("SELECT entry FROM transcript_entries WHERE id=?1",
+        params![original.user_message_id], |row| row.get(0)).expect("actual confirmed user row");
+    let mut changed_user: Value = serde_json::from_str(&raw_user).unwrap();
+    changed_user["content"] = json!(format!("{USER_TEXT} "));
+    assert_eq!(db.execute("UPDATE transcript_entries SET entry=?2 WHERE id=?1",
+        params![original.user_message_id, serde_json::to_string(&changed_user).unwrap()]).unwrap(), 1);
+    drop(db);
+    let damaged = durable_state(&fixture);
+    fixture.reopen("exact-user-content-changed", ReopenExpectation::OriginalRefuse).assert_completed();
+    assert_eq!(durable_state(&fixture), damaged, "even one trailing byte cannot be normalized away");
+    open_existing(&fixture.db_path(), false).execute("UPDATE transcript_entries SET entry=?2 WHERE id=?1",
+        params![original.user_message_id, raw_user]).unwrap();
+    let raw_admission = read_stored_kv(&fixture, "sessionWorkAdmission");
+    for (label, field, value) in [
+        ("independent-revision", "lifecycle_revision", json!("foreign-revision")),
+        ("archived", "archived_at_ms", json!(1.0)),
+        ("background-custody", "admitted_work_id", json!("independent-background-work")),
+        ("media-custody", "admitted_media_work_id", json!("independent-media-work")),
+        ("provider-review", "provider_review_id", json!("independent-review")),
+    ] {
+        let mut admission: Value = serde_json::from_str(&raw_admission).unwrap();
+        admission[field] = value;
+        replace_stored_kv(&fixture, "sessionWorkAdmission", &serde_json::to_string(&admission).unwrap());
+        let damaged = durable_state(&fixture);
+        fixture.reopen(label, ReopenExpectation::OriginalRefuse).assert_completed();
+        assert_eq!(durable_state(&fixture), damaged, "{label}: independent custody must be retained");
+        replace_stored_kv(&fixture, "sessionWorkAdmission", &raw_admission);
+        assert_eq!(durable_state(&fixture), healthy);
+    }
+    fixture.reopen("original-source-repaired", ReopenExpectation::OriginalReady).assert_completed();
+    assert_eq!(durable_state(&fixture), healthy);
+}
+
+#[test]
+fn original_turn_restart_refuses_recovery_unavailability_before_complete_or_absent_terminal_slot() {
+    let fixture = produced_original_fixture("original-recovery-unavailable", InitialState::NoCheckpoint, false, 1, false, false);
+    let healthy = durable_state(&fixture);
+    let raw = read_stored_kv(&fixture, ORIGINAL_TERMINAL_KEY);
+    for has_slot in [true, false] {
+        if !has_slot {
+            assert_eq!(open_existing(&fixture.db_path(), false).execute(
+                "DELETE FROM kv WHERE key=?1", params![ORIGINAL_TERMINAL_KEY],
+            ).unwrap(), 1);
+            fixture.reopen("healthy-absent-slot", ReopenExpectation::OriginalAbsent).assert_completed();
+        }
+        for marker_kind in ["filesystem", "kv"] {
+            let marker = automation_custody_recovery_marker_path(&fixture.db_path());
+            let marker_bytes = br#"{"version":1,"reason":"cron_authority_not_recovered"}"#;
+            if marker_kind == "filesystem" {
+                fs::write(&marker, marker_bytes).expect("closed-owner recovery fault injection");
+            } else {
+                open_existing(&fixture.db_path(), false).execute(
+                    "INSERT INTO kv(key,value) VALUES(?1,?2)",
+                    params![AUTOMATION_CUSTODY_UNAVAILABLE_KV, std::str::from_utf8(marker_bytes).unwrap()],
+                ).unwrap();
+            }
+            let damaged = durable_state(&fixture);
+            fixture.reopen(&format!("recovery-{marker_kind}-{has_slot}"), ReopenExpectation::OriginalRefuse).assert_completed();
+            assert_eq!(durable_state(&fixture), damaged, "recovery refusal must not salvage, clear or reissue terminal authority");
+            if marker_kind == "filesystem" {
+                assert_eq!(fs::read(&marker).unwrap(), marker_bytes);
+                fs::remove_file(&marker).expect("explicit removal of only the injected fixture marker");
+            } else {
+                assert_eq!(open_existing(&fixture.db_path(), false).execute(
+                    "DELETE FROM kv WHERE key=?1", params![AUTOMATION_CUSTODY_UNAVAILABLE_KV],
+                ).unwrap(), 1);
+            }
+        }
+        if !has_slot {
+            open_existing(&fixture.db_path(), false).execute(
+                "INSERT INTO kv(key,value) VALUES(?1,?2)", params![ORIGINAL_TERMINAL_KEY, raw],
+            ).unwrap();
+        }
+        assert_eq!(durable_state(&fixture), healthy);
+    }
+    fixture.reopen("recovery-explicitly-restored", ReopenExpectation::OriginalReady).assert_completed();
 }

@@ -600,6 +600,20 @@ impl ProductionAgentStore {
         self.commit_checkpoint_bytes(checkpoint, None)
     }
 
+    /// Bind this append to the complete checked snapshot inspected by its
+    /// caller, including an explicitly absent checkpoint. The comparison is
+    /// made after claiming the existing mutation boundary and before writes.
+    pub(crate) fn handle_checkpoint_bytes_if_current_blocking(
+        &self,
+        expected: &Option<ProductionAgentCheckpointSnapshot>,
+        checkpoint: &[u8],
+        confirmed_user_message_id: Option<&str>,
+    ) -> Result<Vec<u8>, String> {
+        self.commit_checkpoint_bytes_guarded_before_write(
+            Some(expected), checkpoint, confirmed_user_message_id, || {},
+        )
+    }
+
     fn commit_checkpoint_bytes(
         &self,
         checkpoint: &[u8],
@@ -616,12 +630,30 @@ impl ProductionAgentStore {
         confirmed_message_id: Option<&str>,
         before_write: impl FnOnce(),
     ) -> Result<Vec<u8>, String> {
+        self.commit_checkpoint_bytes_guarded_before_write(
+            None, checkpoint, confirmed_message_id, before_write,
+        )
+    }
+
+    fn commit_checkpoint_bytes_guarded_before_write(
+        &self,
+        expected: Option<&Option<ProductionAgentCheckpointSnapshot>>,
+        checkpoint: &[u8],
+        confirmed_message_id: Option<&str>,
+        before_write: impl FnOnce(),
+    ) -> Result<Vec<u8>, String> {
         decode_conversation_state_recovery_fields(checkpoint)
             .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
 
         // Initialization proves the expected CAS root, independently of child
         // completeness. Compatibility payloads retain protobuf-only acceptance.
         let mutation = self.begin_checkpoint_mutation(true)?;
+        if expected.is_some_and(|expected| expected != &mutation.expected_snapshot) {
+            mutation.finish(CheckpointPublication::Preserve)?;
+            return Err(
+                "production AgentStore captured checkpoint changed before mutation admission".into(),
+            );
+        }
         // Refusal here precedes any blob/DB mutation. Explicit durable repair
         // may retry against the retained cache without creating empty authority.
         let preflight = Self::read_persisted_checkpoint_checked(&self.db, &self.blob_store);
@@ -828,6 +860,122 @@ fn encode_hex(bytes: &[u8]) -> String {
 mod checked_state_tests {
     use super::*;
     use crate::extensions::session::production::ProductionSessionWorkers;
+
+    #[test]
+    fn captured_snapshot_guard_accepts_absent_and_present_empty_checkpoints() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-agent-store-captured-positive-{}", uuid::Uuid::new_v4(),
+        ));
+        let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+        let session = workers.materialize_session_with_active(None, "user", None, None)
+            .expect("session");
+        for id in ["first-user", "second-user"] {
+            assert!(session.db.append_transcript_entry(&serde_json::json!({
+                "id": id, "kind": "message", "role": "user",
+                "content": id, "confirmed": false,
+            })).expect("pending user"));
+        }
+        let absent = session.agent_store.checkpoint_snapshot_checked().expect("checked absence");
+        assert!(absent.is_none());
+        let empty_root = session.agent_store.handle_checkpoint_bytes_if_current_blocking(
+            &absent, &[], Some("first-user"),
+        ).expect("guarded initial checkpoint");
+        assert_eq!(empty_root, Sha256::digest(b"").to_vec());
+        let present_empty = session.agent_store.checkpoint_snapshot_checked().expect("checked empty protobuf");
+        assert_eq!(present_empty, Some(ProductionAgentCheckpointSnapshot {
+            root_blob_id: empty_root.clone(), checkpoint_bytes: Vec::new(),
+        }));
+        assert_eq!(session.agent_store.get_blob(&empty_root).expect("empty checkpoint blob"), Some(Vec::new()));
+        assert_eq!(session.db.get_transcript_entry_by_id("first-user").expect("first row")
+            .and_then(|row| row.get("confirmed").and_then(Value::as_bool)), Some(true));
+        assert_eq!(session.db.get_transcript_entry_by_id("second-user").expect("second row")
+            .and_then(|row| row.get("confirmed").and_then(Value::as_bool)), Some(false));
+
+        // Generated ConversationStateStructure field 17, self_summary_count.
+        let next = [0x88, 0x01, 0x01];
+        let next_root = session.agent_store.handle_checkpoint_bytes_if_current_blocking(
+            &present_empty, &next, Some("second-user"),
+        ).expect("guarded append after a present empty protobuf checkpoint");
+        assert_eq!(next_root, Sha256::digest(next).to_vec());
+        assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("next checkpoint"),
+            Some(ProductionAgentCheckpointSnapshot {
+                root_blob_id: next_root, checkpoint_bytes: next.to_vec(),
+            }));
+        assert_eq!(session.db.get_transcript_entry_by_id("second-user").expect("confirmed second row")
+            .and_then(|row| row.get("confirmed").and_then(Value::as_bool)), Some(true));
+        workers.shutdown();
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn stale_captured_snapshot_preserves_real_competing_root_and_pending_user() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-agent-store-captured-race-{}", uuid::Uuid::new_v4(),
+        ));
+        let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+        let session = workers.materialize_session_with_active(None, "user", None, None)
+            .expect("session");
+        assert!(session.db.append_transcript_entry(&serde_json::json!({
+            "id": "captured-user", "kind": "message", "role": "user",
+            "content": "pending original user", "confirmed": false,
+        })).expect("pending user"));
+        session.agent_store.handle_checkpoint_bytes_blocking(&[]).expect("initial checkpoint A");
+        let captured = session.agent_store.checkpoint_snapshot_checked().expect("capture A");
+        let competitor = Arc::clone(&session.agent_store);
+        let competing_root = std::thread::spawn(move || {
+            competitor.handle_checkpoint_bytes_blocking(&[0x88, 0x01, 0x01])
+        }).join().expect("competing writer thread").expect("real checkpoint B");
+        let current = session.agent_store.checkpoint_snapshot_checked().expect("checked competing checkpoint");
+        assert_ne!(captured, current);
+        assert_eq!(current.as_ref().unwrap().root_blob_id, competing_root);
+        let metadata = session.db.read_kv("metadata").expect("competing metadata");
+        let user = session.db.get_transcript_entry_by_id("captured-user").expect("pending row");
+        let candidate = [0x88, 0x01, 0x02];
+        let candidate_root = Sha256::digest(candidate).to_vec();
+        assert!(session.agent_store.get_blob(&candidate_root).expect("candidate absent").is_none());
+
+        let error = session.agent_store.handle_checkpoint_bytes_if_current_blocking(
+            &captured, &candidate, Some("captured-user"),
+        ).expect_err("A cannot authorize a B-to-C append");
+        assert!(error.contains("captured checkpoint changed before mutation admission"), "{error}");
+        assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("authority remains ready"), current);
+        assert_eq!(session.db.read_kv("metadata").expect("unchanged competing metadata"), metadata);
+        assert_eq!(session.db.get_latest_root_blob_id().expect("competing root retained"), competing_root);
+        assert_eq!(session.db.get_transcript_entry_by_id("captured-user").expect("unchanged pending row"), user);
+        assert_eq!(user.and_then(|row| row.get("confirmed").and_then(Value::as_bool)), Some(false));
+        assert!(session.agent_store.get_blob(&candidate_root).expect("no candidate root write").is_none());
+        workers.shutdown();
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn captured_snapshot_guard_distinguishes_absence_and_compares_full_bytes() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-agent-store-captured-image-{}", uuid::Uuid::new_v4(),
+        ));
+        let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+        let session = workers.materialize_session_with_active(None, "user", None, None)
+            .expect("session");
+        let empty_root = session.agent_store.handle_checkpoint_bytes_blocking(&[]).expect("present checkpoint");
+        let current = session.agent_store.checkpoint_snapshot_checked().expect("checked current image");
+        let metadata = session.db.read_kv("metadata").expect("original metadata");
+        let candidate = [0x88, 0x01, 0x02];
+        let candidate_root = Sha256::digest(candidate).to_vec();
+        assert!(session.agent_store.handle_checkpoint_bytes_if_current_blocking(
+            &None, &candidate, None,
+        ).is_err(), "absence does not match a present empty protobuf checkpoint");
+        let mut different_bytes = current.clone();
+        different_bytes.as_mut().unwrap().checkpoint_bytes = vec![0x88, 0x01, 0x01];
+        assert_eq!(different_bytes.as_ref().unwrap().root_blob_id, empty_root);
+        assert!(session.agent_store.handle_checkpoint_bytes_if_current_blocking(
+            &different_bytes, &candidate, None,
+        ).is_err(), "matching root identity alone cannot match a different snapshot");
+        assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("authority preserved"), current);
+        assert_eq!(session.db.read_kv("metadata").expect("metadata preserved"), metadata);
+        assert!(session.agent_store.get_blob(&candidate_root).expect("no refused root write").is_none());
+        workers.shutdown();
+        let _ = std::fs::remove_dir_all(root);
+    }
 
     #[test]
     fn final_prewrite_refusal_preserves_authority_for_retry_after_explicit_binding_repair() {

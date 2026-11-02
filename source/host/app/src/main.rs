@@ -166,7 +166,6 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
 use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::{
     upgrade_resume_marker_identity_is_well_formed, SandUpgradeResumeStore, UpgradeResumeMarker,
 };
-use mahayana_host_runtime::extensions::transcript::upgrade_recreate_resume::build_upgrade_resume_prompt;
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     WorkflowCommandError, WorkflowRunNowPlan,
@@ -215,7 +214,12 @@ use mahayana_host_runtime::extensions::session::agent_db::{
     ChannelInboundAppendAttempt, ChannelInboundAppendFailure,
     ChannelInboundAppendFailureKind, ChannelInboundAppendOutcome,
     CompactionCommit, CompactionCommitOutcome, ProviderReviewContinuationOutcome,
-    SessionProviderReview,
+    SessionProviderReview, OriginalTurnReference, OriginalTurnReceiptCommit,
+};
+use mahayana_host_runtime::runner::production_agent_checkpoint::{
+    AgentStateCheckpointSink, original_turn_result_digest,
+    prove_completed_original_turn, persist_completed_original_turn,
+    reconcile_completed_original_turn,
 };
 use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
@@ -1392,6 +1396,7 @@ struct RoutedTurnModelAdmission {
     fabushi_model: Option<String>,
     fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     direction_epoch: u64,
+    original_turn: Option<OriginalTurnReference>,
 }
 
 /// The authorized entrypoint uses this boundary before staging attachments or
@@ -1435,6 +1440,18 @@ fn prepare_routed_turn_model_admission(
     } else {
         None
     };
+    let original_turn = if let Some(model_id) = fabushi_model.as_deref() {
+        // Session is read outside the Transcript mutex. Eligibility failure
+        // only withholds recovery proof; it never changes the admitted turn.
+        match sessions.read_session_work_admission(agent_id) {
+            Ok(Some(admission)) => runtime.bind_original_turn_model(
+                agent_id, stream_id, &admission, model_id,
+            ).ok().flatten(),
+            _ => None,
+        }
+    } else {
+        None
+    };
     if starts_new_user_direction {
         permission.begin_turn(agent_id);
     }
@@ -1444,6 +1461,7 @@ fn prepare_routed_turn_model_admission(
         fabushi_model,
         fabushi_request_binding,
         direction_epoch: permission.direction_epoch(agent_id),
+        original_turn,
     })
 }
 
@@ -1470,12 +1488,38 @@ fn visit_upgrade_resume_markers_checked(
 ) -> Result<usize, String> {
     // Validate the complete durable image before any scheduling callback.
     // The store lock is released before visiting a marker.
-    let pending = store.list_pending_checked().map_err(|error| error.to_string())?;
+    let pending = store.migrate_legacy_checked().map_err(|error| error.to_string())?;
     let mut accepted = 0;
     for marker in pending {
         accepted += usize::from(visit(marker)?);
     }
     Ok(accepted)
+}
+
+fn acknowledge_completed_upgrade_marker(
+    sessions: &ProductionSessionWorkers,
+    runtime: &ProductionTranscriptRuntime,
+    registry: &TranscriptRunnerRegistry,
+    ack_store: &mahayana_host_runtime::extensions::transcript::sand_ack_obligation_store::SandAckObligationStore,
+    marker: &UpgradeResumeMarker,
+) -> Result<bool, String> {
+    let Some(original) = marker.original_work.as_ref() else { return Ok(false); };
+    if !upgrade_resume_marker_identity_is_well_formed(marker)
+        || runtime.is_agent_running(&marker.agent_id)
+        || !registry.active_stream_ids_for_agent(&marker.agent_id).is_empty()
+    {
+        return Ok(false);
+    }
+    let Some(verified) = reconcile_completed_original_turn(sessions, original)
+        .map_err(|error| error.to_string())? else { return Ok(false); };
+    if verified.original() != original
+        || ack_store.get_checked(&marker.agent_id).map_err(|error| error.to_string())?.is_some()
+        || runtime.is_agent_running(&marker.agent_id)
+        || !registry.active_stream_ids_for_agent(&marker.agent_id).is_empty()
+    {
+        return Ok(false);
+    }
+    runtime.clear_completed_upgrade_marker_if_idle(marker, ack_store)
 }
 
 // All complete Settings responses cross this shipping adapter. The callback
@@ -1738,6 +1782,7 @@ impl CreatedAgentKickstartRuntimePort for ProductionCreatedAgentKickstartRuntime
                 source: Some(source.to_string()),
                 automation_id: None,
                 automation_run_id: None,
+                original_work: None,
             })
     }
 
@@ -2355,6 +2400,7 @@ impl CompletionRevivalRuntimePort for ProductionCompletionRevivalRuntime {
                 source: Some("background-revival".into()),
                 automation_id: None,
                 automation_run_id: None,
+                original_work: None,
             })
         {
             self.report_revival_error(agent_id, "Could not preserve upgrade recovery marker", &error);
@@ -3725,129 +3771,27 @@ impl UnifiedGatewayApi {
             if !self.transcript_manager.can_execute() {
                 return Ok(false);
             }
-            if !upgrade_resume_marker_identity_is_well_formed(&marker) {
-                eprintln!(
-                    "mahayana-host upgrade_resume_identity_invalid agent={}",
-                    marker.agent_id
-                );
-                return Err("upgrade resume marker identity is invalid".into());
-            }
-            let Some(summary) = self
-                .session_workers
-                .summarize_agent_by_id(&marker.agent_id, None)?
-            else {
-                store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
-                return Ok(false);
-            };
-            if summary.is_group {
-                store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
-                return Ok(false);
-            }
-
-            let resumed_source = match marker.source.as_deref() {
-                Some("notification") => "background-revival",
-                Some(source) if !source.trim().is_empty() => source,
-                _ => "handoff-resume",
-            };
-            let automation_wake = if resumed_source == "automation" {
-                marker.automation_id.as_deref().and_then(|automation_id| {
-                    self.transcript_manager
-                        .automation_runtime()
-                        .get_agent_automations(&marker.agent_id)
-                        .ok()?
-                        .into_iter()
-                        .find(|automation| automation.id == automation_id)
-                        .map(|automation| serde_json::json!({
-                            "id": automation.id,
-                            "name": automation.name,
-                        }))
-                })
-            } else {
-                None
-            };
-
-            let provider = configured_routed_provider(&self.data_dir.join("settings.json"));
-            let result = match provider {
-                Some(provider) if provider != RoutedProvider::Cursor => {
-                    start_local_upgrade_resume_turn(
-                        self.local_routed_runner_deps(),
-                        provider,
-                        &marker,
-                        automation_wake,
-                    )
-                }
-                _ => {
-                    let session_key = if let Some(automation_id) = marker.automation_id.as_deref() {
-                        resolve_admitted_automation_session_key(
-                            &self.session_workers,
-                            &marker.agent_id,
-                            automation_id,
-                        )?
-                    } else {
-                        self.session_workers
-                            .read_session_work_admission(&marker.agent_id)?
-                            .map(|record| record.session_key)
-                            .filter(|value| !value.trim().is_empty())
-                            .ok_or_else(|| {
-                                format!(
-                                    "upgrade resume requires an existing admitted session identity for {}",
-                                    marker.agent_id
-                                )
-                            })?
-                    };
-                    let mut args = serde_json::json!({
-                        "agentId": marker.agent_id,
-                        "sessionKey": session_key,
-                        "prompt": build_upgrade_resume_prompt(resumed_source),
-                        "clientNonce": format!(
-                            "upgrade-resume:{}:{}",
-                            marker.agent_id,
-                            uuid::Uuid::new_v4()
-                        ),
-                        "appendUserMessage": false,
-                        "hidden": true,
-                        "requestSource": resumed_source,
-                        "upgradeResume": true,
-                        "skipAckObligation": true,
-                        "awaitTurn": false,
-                    });
-                    if let Some(automation_wake) = automation_wake {
-                        args["automationWake"] = automation_wake;
-                    }
-                    self.call("sendPrompt", args)
-                        .map(|_| ())
-                        .map_err(|error| error.to_string())
-                }
-            };
-
-            if let Err(error) = result {
-                let classified_error = ProviderSessionError::Tool(error.clone());
+            if let Err(error) = acknowledge_completed_upgrade_marker(
+                self.session_workers.as_ref(), self.transcript_runtime.as_ref(),
+                self.runner_registry.as_ref(), self.ack_obligations.store(), &marker,
+            ) {
+                let classified_error = ProviderSessionError::Protocol(error.clone());
                 let report = AgentErrorReport {
                     source: "resume".into(),
                     conversation_id: marker.agent_id.clone(),
-                    request_id: None,
+                    request_id: marker.original_work.as_ref().map(|original| original.stream_id.clone()),
                     error: classify_agent_error(&classified_error),
                     detail: Some(sand_error_detail(&error)),
                 };
                 if let Err(telemetry_error) = self.telemetry_logs.report_agent_error(&report) {
-                    eprintln!(
-                        "mahayana-host upgrade_resume_telemetry_failed agent={} error={telemetry_error}",
-                        marker.agent_id
-                    );
+                    eprintln!("mahayana-host upgrade_resume_telemetry_failed agent={} error={telemetry_error}", marker.agent_id);
                 }
-                let mut tray =
-                    provider_failure_tray(&marker.agent_id, &error, started_at_ms() as i64);
-                tray.title = "Agent failed to resume after host update".into();
-                self.trays.push_error(tray);
-                eprintln!(
-                    "mahayana-host upgrade_resume_failed agent={} error={error}",
-                    marker.agent_id
-                );
-                Ok(false)
-            } else {
-                store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
-                Ok(true)
+                let detail = error.chars().take(256).collect::<String>();
+                eprintln!("mahayana-host original_upgrade_work_retained agent={} reason={detail}", marker.agent_id);
             }
+            // A completed receipt acknowledges original work. It never starts
+            // a provider turn and cannot increase the accepted-dispatch count.
+            Ok(false)
         })
     }
 
@@ -5804,147 +5748,6 @@ fn run_local_group_member_turn(
     Ok(collect_new_member_send_messages(&before, &after))
 }
 
-fn start_local_upgrade_resume_turn(
-    deps: LocalRoutedRunnerDeps,
-    provider: RoutedProvider,
-    marker: &UpgradeResumeMarker,
-    automation_wake: Option<serde_json::Value>,
-) -> Result<(), String> {
-    if provider == RoutedProvider::Cursor {
-        return Err("Cursor upgrade resume stays on the compatibility production path".into());
-    }
-
-    let resumed_source = match marker.source.as_deref() {
-        Some("notification") => "background-revival".to_string(),
-        Some(source) if !source.trim().is_empty() => source.to_string(),
-        _ => "handoff-resume".to_string(),
-    };
-    let prompt = build_upgrade_resume_prompt(&resumed_source);
-    let session_key = if let Some(automation_id) = marker.automation_id.as_deref() {
-        resolve_admitted_automation_session_key(
-            &deps.session_workers,
-            &marker.agent_id,
-            automation_id,
-        )?
-    } else {
-        deps.session_workers
-            .read_session_work_admission(&marker.agent_id)?
-            .map(|record| record.session_key)
-            .filter(|value| !value.trim().is_empty())
-            .ok_or_else(|| {
-                format!(
-                    "upgrade resume requires an existing admitted session identity for {}",
-                    marker.agent_id
-                )
-            })?
-    };
-    let stream_id = format!("upgrade-resume-{}", uuid::Uuid::new_v4());
-    let client_nonce = format!(
-        "upgrade-resume:{}:{}",
-        marker.agent_id,
-        uuid::Uuid::new_v4()
-    );
-    let ack_token = if matches!(resumed_source.as_str(), "turn" | "handoff-resume") {
-        deps.ack_obligations
-            .mint_ack_run_token(&marker.agent_id)
-            .map_err(|error| error.to_string())?
-    } else {
-        None
-    };
-
-    let mut admission_args = serde_json::json!({
-        "agentId": marker.agent_id,
-        "sessionKey": session_key.clone(),
-        "prompt": prompt,
-        "clientNonce": client_nonce,
-        "streamId": stream_id,
-        "appendUserMessage": false,
-        "hidden": true,
-        "requestSource": "upgrade-resume",
-        "ackToken": ack_token,
-        "skipAckObligation": true,
-    });
-    if let Some(automation_wake) = automation_wake.clone() {
-        admission_args["automationWake"] = automation_wake;
-    }
-
-    deps.session_workers
-        .assert_session_work_admission(
-            &marker.agent_id,
-            admission_args.get("sessionKey").and_then(serde_json::Value::as_str),
-        )
-        .map_err(|error| error.to_string())?;
-
-    if let Err(error) = deps.transcript_runtime.accept_routed_send(&admission_args, |_| {
-        Ok::<_, ProductionSendError>(PersistedSendContext::default())
-    }) {
-        deps.ack_obligations
-            .retire_ack_run_token(&marker.agent_id, ack_token.as_deref());
-        return Err(error.to_string());
-    }
-
-    let mut runner_args = serde_json::json!({
-        "provider": provider.as_str(),
-        "agentId": marker.agent_id,
-        "sessionKey": session_key,
-        "streamId": stream_id,
-        "requestSource": resumed_source,
-        "hidden": true,
-        "isSilenceAllowed": matches!(resumed_source.as_str(), "automation" | "background-revival"),
-        "upgradeResume": true,
-        "messages": [{
-            "role": "user",
-            "content": prompt,
-        }],
-    });
-    if let Some(ack_token) = ack_token {
-        runner_args["ackToken"] = serde_json::Value::String(ack_token);
-    }
-    if let Some(automation_wake) = automation_wake {
-        runner_args["automationWake"] = automation_wake;
-    }
-
-    start_routed_provider_task(
-        deps.routed_tool_relay,
-        deps.mcp_service,
-        deps.events.clone(),
-        deps.host_tx,
-        deps.data_dir,
-        deps.request_context,
-        deps.auth,
-        deps.auto_review,
-        deps.experiments,
-        deps.settings,
-        deps.inference,
-        Arc::clone(&deps.session_workers),
-        Arc::clone(&deps.runner_registry),
-        deps.ack_obligations,
-        deps.transcript_runtime,
-        deps.transcript_manager,
-        deps.generated_agent_runtime,
-        deps.completion_revivals,
-        deps.forever_box,
-        deps.local_exec,
-        deps.local_tool_permission,
-        deps.session_handoff,
-        deps.trays,
-        deps.telemetry_logs,
-        deps.product_analytics,
-        deps.production_action_auditor,
-        deps.cloud_agents,
-        deps.cloud_agent_watches,
-        deps.background_shell_watches,
-        deps.host_runner_composition,
-        deps.box_store_sync,
-        Arc::clone(&deps.automations_lifecycle),
-        Arc::clone(&deps.generated_subagent_cleanup),
-        None,
-        runner_args,
-    )
-    .map(|_| ())
-    .map_err(|error| error.to_string())
-}
-
 fn listener_connection_state_or_disconnected(
     platform: &str,
     result: Result<bool, String>,
@@ -7609,6 +7412,18 @@ fn queue_channel_delivery_failure(
     }
 }
 
+fn automatic_ack_redrive_marker_snapshot(
+    runtime: &ProductionTranscriptRuntime,
+) -> Result<std::collections::HashSet<String>, String> {
+    if runtime.is_quiescing_for_upgrade() {
+        return Err("automatic ACK redrive is paused for upgrade".into());
+    }
+    let store = runtime.upgrade_resume_store()
+        .ok_or_else(|| "automatic ACK requires the upgrade marker owner".to_string())?;
+    Ok(store.migrate_legacy_checked().map_err(|error| error.to_string())?
+        .into_iter().map(|marker| marker.agent_id).collect())
+}
+
 fn start_ack_redrive_worker(
     api: Arc<UnifiedGatewayApi>,
     ack_obligations: Arc<AckObligations>,
@@ -7620,7 +7435,7 @@ fn start_ack_redrive_worker(
     thread::Builder::new()
         .name("mahayana-ack-redrive".into())
         .spawn(move || {
-            let _ = ack_obligations.arm_boot_redrives(started_at_ms());
+            let mut boot_redrives_armed = false;
             while !stop.load(Ordering::Acquire) {
                 if api.transcript_runtime.is_quiescing_for_upgrade() {
                     thread::sleep(Duration::from_millis(100));
@@ -7628,9 +7443,25 @@ fn start_ack_redrive_worker(
                 }
 
                 let now_ms = started_at_ms();
-                let obligations = ack_obligations.pending_obligations();
+                // Validate the complete marker and ACK images before any
+                // timer can be taken or any redrive attempt can be consumed.
+                let marker_image = automatic_ack_redrive_marker_snapshot(api.transcript_runtime.as_ref());
+                let (retained_agents, obligations) = match (marker_image, ack_obligations.store().list_checked()) {
+                    (Ok(retained), Ok(obligations)) => (retained, obligations),
+                    _ => {
+                        thread::sleep(Duration::from_millis(100));
+                        continue;
+                    }
+                };
+                if !boot_redrives_armed {
+                    let _ = ack_obligations.arm_boot_redrives(now_ms);
+                    boot_redrives_armed = true;
+                }
                 for obligation in &obligations {
                     let agent_id = obligation.agent_id.as_str();
+                    if retained_agents.contains(agent_id) {
+                        continue;
+                    }
                     let active = !runner_registry.active_stream_ids_for_agent(agent_id).is_empty()
                         || api.transcript_runtime.is_agent_running(agent_id);
                     if !active && ack_obligations.redrive_schedule(agent_id).is_none() {
@@ -7651,19 +7482,33 @@ fn start_ack_redrive_worker(
                     {
                         continue;
                     }
-                    let Some(trigger) =
-                        ack_obligations.take_due_redrive(&agent_id, now_ms)
-                    else {
+                    if retained_agents.contains(&agent_id) {
                         continue;
-                    };
+                    }
+                    let Some(schedule) = ack_obligations.redrive_schedule(&agent_id) else { continue; };
+                    if schedule.due_at_ms > now_ms {
+                        continue;
+                    }
+                    // These snapshots only skip work. The existing atomic owner
+                    // freshly checks markers and ACK bytes before consuming a
+                    // due timer, including publication after this tick's read.
                     let agent_exists = session_workers
                         .session_db_path(&agent_id)
                         .is_ok_and(|path| path.is_file());
-                    match ack_obligations.prepare_redrive_with_telemetry(
-                        &agent_id, agent_exists, trigger, now_ms as f64,
-                    ) {
-                        Ok(AckRedrivePreparation::Missing) => {}
-                        Ok(AckRedrivePreparation::LostAgentDeleted(lost)) => {
+                    let prepared = api.transcript_runtime.prepare_automatic_ack_redrive(
+                        ack_obligations.as_ref(), &agent_id, agent_exists, now_ms,
+                    );
+                    let (trigger, preparation) = match prepared {
+                        Ok(Some(prepared)) => prepared,
+                        Ok(None) => continue,
+                        Err(error) => {
+                            eprintln!("mahayana-host-ack redrive_prepare_failed agent={agent_id} error={error}");
+                            continue;
+                        }
+                    };
+                    match preparation {
+                        AckRedrivePreparation::Missing => {}
+                        AckRedrivePreparation::LostAgentDeleted(lost) => {
                             events.publish(serde_json::json!({
                                 "channel": "ack-obligation",
                                 "payload": {
@@ -7676,7 +7521,7 @@ fn start_ack_redrive_worker(
                                 }
                             }));
                         }
-                        Ok(AckRedrivePreparation::LostMaxRedrives(lost)) => {
+                        AckRedrivePreparation::LostMaxRedrives(lost) => {
                             events.publish(serde_json::json!({
                                 "channel": "ack-obligation",
                                 "payload": {
@@ -7689,7 +7534,7 @@ fn start_ack_redrive_worker(
                                 }
                             }));
                         }
-                        Ok(AckRedrivePreparation::Ready(bumped)) => {
+                        AckRedrivePreparation::Ready(bumped) => {
                             let session_key = match session_workers
                                 .read_session_work_admission(&agent_id)
                             {
@@ -7744,11 +7589,6 @@ fn start_ack_redrive_worker(
                                     }
                                 }));
                             }
-                        }
-                        Err(error) => {
-                            eprintln!(
-                                "mahayana-host-ack redrive_prepare_failed agent={agent_id} error={error}"
-                            );
                         }
                     }
                 }
@@ -8499,6 +8339,10 @@ struct RoutedProviderTerminal {
     succeeded: bool,
     error: Option<ProviderSessionError>,
     event: serde_json::Value,
+    tool_effect_custody: ToolEffectCustodyReport,
+    final_result_sha256: Option<[u8; 32]>,
+    sent_message_count: u64,
+    reacted: bool,
 }
 
 impl RoutedProviderTerminal {
@@ -8513,6 +8357,8 @@ impl RoutedProviderTerminal {
     ) -> Self {
         let cancelled = cancellation.is_cancelled();
         let succeeded = result.is_ok();
+        let final_result_sha256 = result.as_ref().ok().map(|content| original_turn_result_digest(content));
+        let tool_effect_custody = tool_effect_custody.for_terminal(stream_id);
         let projection = project_turn_terminal(
             waiting_user, cancelled, succeeded, sent_message_count, reacted,
         );
@@ -8531,7 +8377,7 @@ impl RoutedProviderTerminal {
             "streamId": stream_id,
             "sentMessageCount": sent_message_count,
             "reacted": reacted,
-            "toolEffectCustody": tool_effect_custody.for_terminal(stream_id),
+            "toolEffectCustody": tool_effect_custody.clone(),
         });
         let error = match (projection.kind, result) {
             (TurnTerminalKind::WaitingUser, result) => {
@@ -8561,11 +8407,32 @@ impl RoutedProviderTerminal {
             provider_review_outcome,
             succeeded,
             error,
+            tool_effect_custody,
+            final_result_sha256,
+            sent_message_count,
+            reacted,
             event: serde_json::json!({
                 "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
                 "payload": payload,
             }),
         }
+    }
+
+    fn persist_original_turn(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        original: &OriginalTurnReference,
+        sink: &dyn AgentStateCheckpointSink,
+    ) -> Result<OriginalTurnReceiptCommit, ProviderSessionError> {
+        let digest = self.final_result_sha256.ok_or_else(|| {
+            ProviderSessionError::Protocol("original turn has no successful final result".into())
+        })?;
+        let observations = sink.committed_original_turn_observations()?;
+        let proof = prove_completed_original_turn(
+            original, self.projection, digest, self.sent_message_count, self.reacted,
+            &self.tool_effect_custody, &observations,
+        )?;
+        persist_completed_original_turn(sessions, &proof)
     }
 
     fn finalize_observations(
@@ -8783,6 +8650,7 @@ fn start_routed_provider_task(
         fabushi_model,
         fabushi_request_binding,
         direction_epoch: turn_local_tool_direction_epoch,
+        original_turn,
     } = prepare_routed_turn_model_admission(
         &transcript_runtime,
         &events,
@@ -11836,6 +11704,7 @@ fn start_routed_provider_task(
             )
             .with_disk_pressure_reminders(forever_box.disk_pressure_reminder_episodes())
             .with_profile_announcement_commit(profile_announcement_commit);
+            let terminal_checkpoint_sink = agent_state_checkpoint_sink.clone();
             let mut runner = worker_host_runner_composition.compose_production_runner(
                 composition,
                 build_bindings,
@@ -12458,6 +12327,17 @@ fn start_routed_provider_task(
                 reaction_delivery_counter.count() > 0,
                 tool_effect_custody,
             );
+            if let (Some(original), Some(sink)) = (original_turn.as_ref(), terminal_checkpoint_sink.as_ref()) {
+                if let Err(error) = terminal.persist_original_turn(
+                    worker_sessions.as_ref(), original, sink.as_ref(),
+                ) {
+                    let detail = error.to_string().chars().take(256).collect::<String>();
+                    eprintln!(
+                        "mahayana-host original_turn_terminal_retained agent={} stream={} reason={detail}",
+                        agent_id, worker_stream_id,
+                    );
+                }
+            }
             if worker_request_source.as_deref() == Some("provider-review") {
                 if let Some(expected_revision) =
                     worker_provider_review_lifecycle_revision.as_deref()
@@ -12811,6 +12691,7 @@ impl GatewayApi for UnifiedGatewayApi {
                         source: None,
                         automation_id: None,
                         automation_run_id: None,
+                        original_work: None,
                     });
                     resume_ids.push(agent_id.to_string());
                 }
@@ -15697,6 +15578,7 @@ fn main() {
                         source: Some("automation".into()),
                         automation_id: Some(observed.automation_id.clone()),
                         automation_run_id: observed.automation_run_id.clone(),
+                        original_work: None,
                     }) {
                         eprintln!("mahayana-host automation_upgrade_marker_failed agent={} error={error}", observed.agent_id);
                     }
@@ -17327,6 +17209,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    #[path = "original_turn_recovery_tests.rs"]
+    mod original_turn_recovery_tests;
     #[path = "channel_host_lane_tests.rs"]
     mod channel_host_lane_tests;
     #[path = "automation_terminal_custody_tests.rs"]
@@ -17970,7 +17854,7 @@ mod tests {
         let store = super::SandUpgradeResumeStore::new(&root);
         for corrupt in [
             "broken marker state",
-            r#"{"version":2,"pending":[]}"#,
+            r#"{"version":99,"pending":[]}"#,
             r#"{"pending":[{"agentId":"valid-first","markedAtMs":1},{"agentId":7}]}"#,
         ] {
             fs::write(store.file_path(), corrupt).unwrap();
@@ -17999,6 +17883,7 @@ mod tests {
         let marker = super::UpgradeResumeMarker {
             agent_id: "pending".into(), marked_at_ms: 1.0, source: Some("turn".into()),
             automation_id: None, automation_run_id: None,
+            original_work: None,
         };
         store.mark_pending_checked(marker.clone()).unwrap();
         assert_eq!(super::visit_upgrade_resume_markers_checked(&store, |_| Ok(false)).unwrap(), 0,
@@ -20667,14 +20552,25 @@ mod tests {
                 assert!(record < next_control, "observe before a later invocation/result can replace it");
             }
         }
+        let retained_sink = runner.find("let terminal_checkpoint_sink = agent_state_checkpoint_sink.clone();").unwrap();
+        let compose = runner.find("worker_host_runner_composition.compose_production_runner(").unwrap();
+        assert!(retained_sink < compose, "retain the same sink before moving it into the Runner");
+        let compose_call = runner[compose..].split("let generated_prompt =").next().unwrap();
+        assert!(compose_call.contains("agent_state_checkpoint_sink,"));
+        assert_eq!(runner.matches("let terminal_checkpoint_sink =").count(), 1);
         let capture = runner.find("let terminal = RoutedProviderTerminal::capture(").unwrap();
-        assert!(handoff < capture, "freeze only after the result-changing Human handoff write");
+        assert!(compose < capture && handoff < capture, "freeze after actual Runner and result-changing Human handoff");
         let capture_call = runner[capture..].split("if worker_request_source.as_deref()").next().unwrap();
         assert!(capture_call.contains("tool_effect_custody,"), "finalizer consumes the accumulated stream report");
         let finalizer = &runner[capture..runner.find("if let Err(error) = spawn {").unwrap()];
         assert!(!finalizer.contains("worker_cancellation.is_cancelled()"));
+        assert_eq!(finalizer.matches("terminal.persist_original_turn(").count(), 1,
+            "the shipping worker must attempt the original completion receipt exactly once");
+        assert!(finalizer.contains("(original_turn.as_ref(), terminal_checkpoint_sink.as_ref())"));
+        assert!(finalizer.contains("worker_sessions.as_ref(), original, sink.as_ref(),"));
         let mut previous = 0;
         for step in [
+            "terminal.persist_original_turn(",
             "settle_provider_review_continuation(",
             "track_runner_activity_update(", "finish_computer_use_turn(",
             "end_provider_run_with_kind(", "finish_routed_provider(",

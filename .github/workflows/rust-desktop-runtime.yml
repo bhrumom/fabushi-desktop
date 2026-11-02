@@ -171,6 +171,75 @@ jobs:
           cargo build --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
           FABUSHI_BOX_EXEC_DAEMON_TEST_BIN="$GITHUB_WORKSPACE/source/box-exec-daemon/target/debug/box-exec-daemon" \
             cargo test --manifest-path source/host/Cargo.toml --test box_exec_daemon_process_contract
+      - name: Bind the actual shipping App test executable for original-turn restart
+        id: original_turn_app_compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/ocrm-original-turn
+          compile_status=0
+          cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
+            --no-run --message-format=json > .evidence/ocrm-original-turn/compiler-artifacts.jsonl || compile_status=$?
+          python3 - <<'PY_MESSAGES'
+          import json
+          from pathlib import Path
+          for line in Path(".evidence/ocrm-original-turn/compiler-artifacts.jsonl").read_text().splitlines():
+              if line.startswith("{"):
+                  item=json.loads(line)
+                  rendered=item.get("message", {}).get("rendered")
+                  if rendered:
+                      print(rendered, end="")
+          PY_MESSAGES
+          if [ "$compile_status" -ne 0 ]; then exit "$compile_status"; fi
+          python3 - <<'PY_BIND'
+          import hashlib, json, os
+          from pathlib import Path
+          evidence=Path(".evidence/ocrm-original-turn")
+          candidates=set()
+          for line in (evidence/"compiler-artifacts.jsonl").read_text().splitlines():
+              if not line.startswith("{"):
+                  continue
+              item=json.loads(line)
+              if (item.get("reason") == "compiler-artifact"
+                      and item.get("target", {}).get("name") == "mahayana-app-host"
+                      and item.get("target", {}).get("kind") == ["bin"]
+                      and item.get("profile", {}).get("test") is True
+                      and item.get("executable")):
+                  candidates.add(item["executable"])
+          assert len(candidates) == 1, "Expected one actual shipping App test executable"
+          binary=Path(candidates.pop()).resolve(strict=True)
+          assert binary.is_file() and binary.is_relative_to(Path.cwd().resolve()), "Unexpected App compiler artifact boundary"
+          sha256=lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          binding={
+              "head_sha": os.environ["FABUSHI_TARGET_SHA"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "command": ["cargo", "test", "--locked", "--manifest-path", "source/host/app/Cargo.toml", "--bin", "mahayana-app-host", "--no-run", "--message-format=json"],
+              "exit_code": 0,
+              "executable": str(binary),
+              "executable_sha256": sha256(binary),
+              "manifest_sha256": sha256("source/host/app/Cargo.toml"),
+              "lock_sha256": sha256("source/host/app/Cargo.lock"),
+              "main_sha256": sha256("source/host/app/src/main.rs"),
+              "child_source_sha256": sha256("source/host/app/src/tests/original_turn_recovery_tests.rs"),
+              "compiler_artifacts_sha256": sha256(evidence/"compiler-artifacts.jsonl"),
+              "child_filter": "tests::original_turn_recovery_tests::original_turn_shipping_ack_process_child",
+              "result": "compiled; restart parent must still execute and validate owned child receipts",
+          }
+          (evidence/"app-test-binding.json").write_text(json.dumps(binding, indent=2)+"\n")
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              for key,value in [("FABUSHI_ORIGINAL_TURN_APP_TEST_EXECUTABLE", str(binary)), ("FABUSHI_ORIGINAL_TURN_APP_TEST_SHA256", binding["executable_sha256"])]:
+                  assert "\n" not in value and "\r" not in value
+                  env.write(f"{key}={value}\n")
+          PY_BIND
+      - name: Upload actual original-turn App executable binding
+        if: ${{ always() && steps.original_turn_app_compile.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-original-turn-app-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/ocrm-original-turn
+          if-no-files-found: error
+          retention-days: 90
       - name: Test independent Mahayana Host Runner contract
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -215,7 +284,7 @@ jobs:
         run: |
           set -euo pipefail
           admission_status=0
-          if cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host --no-run; then
+          if test -x "$FABUSHI_ORIGINAL_TURN_APP_TEST_EXECUTABLE"; then
             for admission_test in \
               tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests \
               tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization \
@@ -223,6 +292,13 @@ jobs:
               tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry \
               tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret \
               tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization \
+              tests::original_turn_recovery_tests::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work \
+              tests::original_turn_recovery_tests::original_turn_completed_marker_retains_fresh_pending_corrupt_ack_and_live_work \
+              tests::original_turn_recovery_tests::original_turn_marker_retains_unbound_missing_and_foreign_original_references \
+              tests::original_turn_recovery_tests::original_turn_finalizer_refuses_noncompleted_unknown_and_result_drift_without_receipt \
+              tests::original_turn_recovery_tests::original_turn_marker_requalifies_actual_saved_custody_before_acknowledgment \
+              tests::original_turn_recovery_tests::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases \
+              tests::original_turn_recovery_tests::original_turn_checked_marker_migration_calls_no_consumer_for_invalid_whole_image \
               tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects \
               tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce \
               tests::upgrade_marker_handoff_preserves_kickstart_intent_on_failure \
@@ -397,6 +473,8 @@ jobs:
             --test runner_coordinator_tool_relay_contract \
             --test mcp_extension_contract \
             --test mcp_production_contract \
+            --test ack_obligations_contract \
+            --test ack_redrive_production_contract \
             --test host_upgrade_production_contract \
             --test bootstrap_contract \
             --test sand_host_production_wiring_contract \
@@ -430,6 +508,9 @@ jobs:
               extensions::session::agent_db::channel_inbound_append_tests \
               extensions::session::production::plugin_skills_admission_tests \
               host_production_extensions::plugin_skills_binding_tests \
+              extensions::session::agent_db::original_turn_terminal_tests \
+              extensions::session::production::original_turn_terminal_tests \
+              extensions::transcript::sand_ack_obligation_store::checked_reads \
               extensions::transcript::sand_upgrade_resume_store::checked_marker_tests \
               extensions::transcript::production_runtime::checked_upgrade_handoff_tests \
               extensions::mcp::coordinator_relay::lifecycle_tests \
@@ -679,9 +760,15 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract"],
-              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
+              "original_turn_completion_contract": "ORT-v1",
+              "original_turn_fresh_process_parent": "production_checkpoint_restart_contract::original_turn_real_generated_completion_acknowledges_exact_marker_in_fresh_app_after_ack_repair",
+              "original_turn_fresh_process_child": "tests::original_turn_recovery_tests::original_turn_shipping_ack_process_child",
+              "original_turn_app_executable_binding": ".evidence/ocrm-original-turn/app-test-binding.json; actual compiler artifact SHA-256 checked by the owned parent",
+              "original_turn_completion_app_tests": ["tests::original_turn_recovery_tests::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work", "tests::original_turn_recovery_tests::original_turn_completed_marker_retains_fresh_pending_corrupt_ack_and_live_work", "tests::original_turn_recovery_tests::original_turn_marker_retains_unbound_missing_and_foreign_original_references", "tests::original_turn_recovery_tests::original_turn_finalizer_refuses_noncompleted_unknown_and_result_drift_without_receipt", "tests::original_turn_recovery_tests::original_turn_marker_requalifies_actual_saved_custody_before_acknowledgment", "tests::original_turn_recovery_tests::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases", "tests::original_turn_recovery_tests::original_turn_checked_marker_migration_calls_no_consumer_for_invalid_whole_image"],
+              "original_turn_completion_scope": "Actual accepted ordinary Native identity/model, Journal checkpoint and known terminal custody, strict bounded Session slot, v2 marker migration and guarded completed acknowledgment/ACK retention. This is completed-turn reconciliation only; unfinished or Legacy continuation, durable unknown effects, arbitrary crash cuts, real providers and full acceptance remain open.",
               "automation_known_run_redelivery_contract": "OCRM-AUTOMATION-KNOWN-RUN-REDELIVERY-v1",
               "automation_known_run_redelivery_result": "passed",
               "automation_known_run_redelivery_scope": "Actual reopened Session and FileAutomationStore history plus AutomationFireBackendRuntime controlled poll/completion transport refuse known Running original/coalesced IDs without execution, completion or ACK. Distinct IDs and stored terminal replay retain existing behavior. Missing/corrupt/pruned/ambiguous history, durable claims, unknown effects and real backend-service acceptance remain open.",
@@ -752,7 +839,7 @@ jobs:
               "plugin_live_admission_result": "passed",
               "plugin_live_admission_scope": "Actual service/cache/Session/workflow/Runner consumers retain validated canonical refusals after staging or rename failure, including warm cache and same-root MCP successor readers. Real publication releases only fresh eligible IDs; predecessor cleanup cannot delete successor materialization. Host binding/root/lifecycle controls and bounded shipping-source wiring supplement actual command/state/ProviderMessage oracles. Account changes after the loader response, process-loss persistence, uninstall after failed publication, captured prompts, external tool effects, real marketplace and all MCP grants remain open.",
               "committed_source_integrity": "passed",
-              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, shipping lease refusal, and truthful Automation history settlement through existing owners. Checkpoint recovery checks durable metadata/root/blob state before owner recovery or publication, preserves legacy fixed IDs and refusal custody, and validates bounded direct-reference availability. App compaction tests bind typed/shared cancellation to the real Runner/Session producer and the post-lock and pre-COMMIT token reads, with raw rollback/no-publication and ordinary-fallback controls. Callback timing is injected; cancellation after the DB final read does not undo the committed result. Normalized root continuation and separate-process storage reopening retain valid fixed-root checkpoints; original-turn provider load/claim/settle remains open. Checked upgrade markers refuse malformed or unwritable handoff before fresh admission is fenced and registered tasks are cancelled; startup checks the complete image before dispatch. Per-agent marker recreation is still a hidden replacement turn, not original-turn claim/settle, and asynchronous revival/Automation/delete custody remains open. Host takeover coverage refuses a still-live known Host or exhausted exclusive acquisition without claiming atomic PID fencing or tool termination. MCP lifecycle and routed-tool relay coverage bind close to waiter registration and exercises real Skills polling shutdown without claiming remote operation retraction or full permission lifecycle acceptance. Automation coverage includes bounded background/spend-guard execution and guarded cron SQL lifecycle. Cancellation request acknowledgment no longer publishes a task terminal; frozen finalization inputs bind structured, trace and terminal event outcomes. Automation deadline cancellation keeps supervising the genuine Runner terminal before settlement; channel/Host loss and durable unknown-outcome custody remain open. Channel coverage retains the original batch and Session generation through the actual shipping append/handoff boundary; confirmed rollback and unknown acknowledgment remain distinct, and ambiguous appends are held without automatic replay. Gateway/A2A reserve physical IDs and commit their whole planned batch through the existing Session/SQLite owner. Autonomous deferred rearm, cross-process ambiguity reconciliation and restart delivery remain open. History refusal suppresses run observations but does not undo terminal cron rows or imply no backend ACK. Loopback protocol evidence is not real provider compatibility or process-restart execution. Plugin Skills coverage includes committed eligibility, current-publisher editing, live canonical refusal through failed publication, shared Session/Runner reads, and same-root owner handoff. Process-loss persistence, later account invalidation, in-flight effects and real marketplace/MCP permission lifecycle remain open. Platform packaging and final acceptance remain pending.",
+              "scope": "Shared Settings CAS/snapshot; provider-bound Fabushi turn identity, accepted-checkpoint retry, shipping lease refusal, and truthful Automation history settlement through existing owners. Checkpoint recovery checks durable metadata/root/blob state before owner recovery or publication, preserves legacy fixed IDs and refusal custody, and validates bounded direct-reference availability. App compaction tests bind typed/shared cancellation to the real Runner/Session producer and the post-lock and pre-COMMIT token reads, with raw rollback/no-publication and ordinary-fallback controls. Callback timing is injected; cancellation after the DB final read does not undo the committed result. Normalized root continuation and separate-process storage reopening retain valid fixed-root checkpoints; original-turn provider load/claim/settle remains open. Checked upgrade markers refuse malformed or unwritable handoff before fresh admission is fenced and registered tasks are cancelled; startup checks the complete image before dispatch. Completed ordinary Native Journal turns have bounded original-marker acknowledgment; unproved, unfinished and Legacy turns remain retained, and asynchronous revival/Automation/delete custody remains open. Host takeover coverage refuses a still-live known Host or exhausted exclusive acquisition without claiming atomic PID fencing or tool termination. MCP lifecycle and routed-tool relay coverage bind close to waiter registration and exercises real Skills polling shutdown without claiming remote operation retraction or full permission lifecycle acceptance. Automation coverage includes bounded background/spend-guard execution and guarded cron SQL lifecycle. Cancellation request acknowledgment no longer publishes a task terminal; frozen finalization inputs bind structured, trace and terminal event outcomes. Automation deadline cancellation keeps supervising the genuine Runner terminal before settlement; channel/Host loss and durable unknown-outcome custody remain open. Channel coverage retains the original batch and Session generation through the actual shipping append/handoff boundary; confirmed rollback and unknown acknowledgment remain distinct, and ambiguous appends are held without automatic replay. Gateway/A2A reserve physical IDs and commit their whole planned batch through the existing Session/SQLite owner. Autonomous deferred rearm, cross-process ambiguity reconciliation and restart delivery remain open. History refusal suppresses run observations but does not undo terminal cron rows or imply no backend ACK. Loopback protocol evidence is not real provider compatibility. ORT-v1 includes actual generated producer and fresh App acknowledgment processes within its declared completed Journal scope; unfinished continuation and full restart ownership remain open. Plugin Skills coverage includes committed eligibility, current-publisher editing, live canonical refusal through failed publication, shared Session/Runner reads, and same-root owner handoff. Process-loss persistence, later account invalidation, in-flight effects and real marketplace/MCP permission lifecycle remain open. Platform packaging and final acceptance remain pending.",
               "independent_acceptance": "pending",
           }
           Path(".evidence/ocrm-config.json").write_text(json.dumps(evidence, sort_keys=True, indent=2)+"\n")

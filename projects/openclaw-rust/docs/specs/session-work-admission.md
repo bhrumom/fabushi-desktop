@@ -1246,8 +1246,9 @@ replacement fault injection supplements real file I/O; source wiring checks
 supplement actual owner behavior. All executable validation is GitHub Actions
 at the integrated exact H, with independent frozen review before acceptance.
 
-Markers remain discovery hints. The existing valid-marker hidden recreation
-behavior and clear-after-accepted-dispatch rule are not original-turn recovery.
+Markers remain discovery hints. The historical valid-marker hidden recreation
+behavior and clear-after-accepted-dispatch rule are not original-turn recovery;
+the ORT-v1 contract below supersedes those automatic continuation paths.
 Original stream/model/generation/checkpoint claim and final settlement remain
 open. Asynchronous CompletionRevival marker failure propagation, Automation
 observer handoff custody and deletion across pending-wake/marker stores also
@@ -1493,6 +1494,216 @@ compatibility assertions. Do not change the stored schema or production
 admission policy to accommodate this oracle. Independently review the narrow
 spec/test correction and execute the complete selected AgentState, Session,
 composition and shared recovery targets on the resulting exact H in Actions.
+
+## Completed original-turn reconciliation — ORT-v1
+
+Initial contract base: `8c80af7505e7245f8d201943816082fdb8225a1d`; implementation
+base preserves incoming `22b10860e909bea9e4ee3840bab310c2d61fcd4d`. Fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. Current shipping upgrade recovery
+chooses today's provider, creates another stream/prompt/nonce and removes the
+marker after accepting that new work. This cannot establish what happened to
+the original turn. This batch replaces that behavior with acknowledgment of an
+exactly identified, already completed ordinary Native user turn whose existing
+Journal mirror acknowledged commit. Unproved work
+remains retained; unfinished provider continuation is a separate required batch.
+
+The chain is actual accepted Transcript input/lease → actual Native model
+admission → existing Runner checkpoint sink/frozen terminal → existing Session
+and AgentDb terminal slot → checked upgrade-marker and independent ACK consumers.
+No new runtime, scheduler, session database or permission owner is introduced.
+The blocking shared repair gate was observed at exact `d2c9cf44f8a988ca7bde0d829b90eb6945fc9ef8`,
+Runtime `41468043502`, Host `125354022734`, including the repaired App custody
+case and all selected recovery targets. This permits dependent implementation;
+it is not validation of the subsequently cancelled zero-job `8c80af` run, the
+incoming `22b108` recovery changes, or this new batch. The final frozen H must
+execute its affected shared gates; this contract is not verification evidence.
+
+- **ORT-01 — original admission.** Store a version-1 strict
+  `OriginalTurnReference` as data, with scope `NativeOrdinaryUserV1`, agent,
+  canonical Session key/id, original admission revision, stream, the existing
+  accepted `send_input_digest`, optional original nonce, actual user/echo IDs,
+  original optional request source, provider `fabushi` and actual resolved model.
+  The scope wire tag is `nativeOrdinaryUserV1`; identity strings are bounded to
+  1024 UTF-8 bytes without control characters, and the accepted digest is exactly
+  64 lowercase hexadecimal characters. A structural reference is never authority.
+  Capture accepted input facts inside the existing routed lease; bind the
+  checked Session/model only to that exact current ticket/generation. Do not
+  reconstruct identity from current Settings, timestamps or provider UUID files.
+  Eligible input is visible ordinary main user work with a durable nonempty
+  user message; exclude group/fork, hidden, generated child, handoff, ACK,
+  upgrade, automation/background and other special producers. An ineligible
+  turn continues through its existing owner but receives no positive proof.
+- **ORT-02 — proof is not public JSON.** Session owns strict neutral stored
+  structs, including `CanonicalTurnCommitRecord`, `SameTurnCompactionBinding`
+  and `OriginalTurnTerminalRecord`. The record stores the full reference,
+  Completed tag, final result digest, sent/reacted facts, opaque custody JSON,
+  ordered canonical observations and settlement admission/compaction binding.
+  Runner owns opaque committed-observation/completed-proof/verified-completion
+  types with private fields and no Deserialize, Default or unchecked constructor.
+  Session does not import Runner custody or implement its retention policy.
+- **ORT-03 — actual commit boundary.** The existing production checkpoint sink
+  may expose sealed observations only after user/step/turn blobs, canonical root,
+  user confirmation where applicable, transcript mirror and prior-state update
+  all succeed. Capture the actual previous root Option; a present empty root or
+  legacy fixed root is not absent and is not replaced by a guessed hash.
+  The sink passes its captured `Option<ProductionAgentCheckpointSnapshot>` to
+  the existing AgentStore commit owner. That owner compares it with the snapshot
+  captured under its mutation guard before root writes and reuses its durable
+  preflight/CAS/publication path. A competing checkpoint between sink capture
+  and mutation admission refuses the stale append and cannot mint a record.
+  Staging, partial blob writes, root-only publication or mirror failure cannot
+  mint an observation. The actual Journal route must acknowledge COMMIT. The
+  existing Legacy route is observational: both router and offload can suppress
+  mirror failure, and its root-prompt projection does not establish generated
+  turn coverage. A Legacy or skip route therefore remains unavailable for this
+  proof even when the existing checkpoint call succeeds; preserve that user-turn
+  behavior. Closing Legacy mirror evidence remains required in a later owner
+  batch. Non-production sink implementations default to unavailable.
+- **ORT-04 — one completed qualification.** Live and restart checks share one
+  Runner validator: actual typed `TurnTerminalKind::Completed`, exact stream,
+  one through `MAX_REPLY_NUDGES + 2` ordered commits, matching observation count,
+  every custody observation Known with positive generation, and the existing
+  `requires_retention()` false. NotStarted, WaitingUser, Failed, Cancelled,
+  unavailable/pending/unknown evidence and incomplete observations cannot pass.
+  Known completed effects need not satisfy the separate retry checkpoint rule.
+  Bind every request ID, first user ID and derived nudge message ID; the final
+  result digest must match the last invocation, not the original reply alone.
+- **ORT-05 — canonical and generation recheck.** Reuse actual checked AgentStore
+  snapshots and generated decoders to validate each recorded root/turn/user/step,
+  ordered append chain, request/message identities and Assistant-result digest.
+  Verify the new generated content-addressed IDs without imposing SHA identities
+  on legacy prior roots. Current root must equal the final recorded root. Check
+  the actual durable confirmed user row and Session identity/admission; accept
+  only the original admission revision or its exact same-stream committed
+  compaction successor. Metadata lifecycle revision is an independent mutation
+  token and normally differs after a checkpoint; equality with Session admission
+  revision is expressly not required. Capture/recheck the raw metadata, admission,
+  user, relevant compaction and terminal-slot images at the final DB boundary.
+  Refuse archive/deletion/rebind, independent background/media/review custody,
+  missing/unavailable/corrupt source and changed fences. Every strict DB prepare,
+  candidate read, commit and final recheck also reuses the existing
+  `acquire_automation_custody_recovery_guard` with its actual connection, holds
+  that guard through the SQL boundary and rechecks `require_available` there.
+  A filesystem or KV recovery marker, busy/unknown guard or read failure refuses
+  before an absent terminal slot can mean no candidate. A reconstructed database
+  may have salvaged a slot but lost other custody rows; canonical readiness alone
+  cannot restore this authority. The guard is availability evidence only. Do not
+  clear those owners or recovery markers.
+- **ORT-06 — bounded existing storage.** Use exactly one AgentDb KV slot,
+  `original-routed-terminal:current`, with strict version-1 decoding and a maximum
+  encoded UTF-8 size of 64 KiB. Oversize/count overflow refuses eligibility and
+  never truncates evidence or affects the user's actual turn. Generic `write_kv`,
+  generation-bound KV write and `delete_kv` refuse the reserved prefix.
+  The dedicated immediate transaction inserts an absent slot, returns unchanged
+  AlreadyCommitted for identical same-stream data with current fences, and
+  rejects any same-stream conflict. A different stream replaces the one slot
+  only when its fully qualified final root equals the current root and differs
+  from the old final root. Malformed/unsupported stored data is never absence.
+  This bounds proof storage; it does not promise indefinite historical dedup.
+- **ORT-07 — shipping finalizer.** main retains the same checkpoint-sink Arc
+  already passed to Runner, freezes typed custody and actual result/delivery
+  facts at the existing last result-changing terminal boundary, and attempts
+  proof/receipt persistence before registry/runtime/lease retirement. A failure
+  logs a bounded diagnostic and retains uncertainty; it does not change the
+  frozen terminal, retry effects or clear a marker. Write the bounded slot even
+  if quiesce has not yet written a marker, covering completion-before-marker.
+- **ORT-08 — marker v2.** Extend the existing marker with optional strict
+  `originalWork`. Quiesce copies only the exact currently bound routed lease
+  while holding the existing snapshot/write/flag boundary; late binding cannot
+  backfill a prior marker. The existing owner atomically migrates complete valid
+  v1/versionless images to v2 before automatic consumption, retaining old rows
+  as unbound. Reject unknown versions, malformed fields and duplicate identities
+  without callbacks or partial writes; failed migration preserves prior bytes.
+  Exact removal includes the complete original reference. Lenient inspection
+  remains inspection only. This supersedes MARKER-01's current-version statement.
+- **ORT-09 — restart consumption.** Startup and explicit recreate read candidate
+  data, requalify custody and the actual canonical chain, then recheck Session
+  fences and exact slot. Only an opaque verified completion plus a fresh checked
+  absence in the independent ACK store permits exact marker removal. Pending ACK,
+  an unreadable ACK owner, a live conflicting turn, unbound legacy marker, missing
+  slot or stale/foreign proof retains the marker.
+  Hold existing Runtime admission, marker and checked ACK absence guards through
+  exact marker removal, so a concurrently accepted turn or ACK write cannot
+  invalidate the deciding idle/absence observation before the marker is removed.
+  Do not choose today's provider, load an unclaimed provider checkpoint,
+  mint prompt/nonce/stream, change grants,
+  rerun tools, publish a duplicate result or fulfill ACK from sent/reacted counts.
+  Acknowledgment is not accepted dispatch; it does not inflate `resumed` counts.
+- **ORT-10 — automatic ACK containment.** The real ACK worker checks the complete
+  marker image before taking a due timer or incrementing attempts. Retained
+  markers hold the matching agent; unreadable image holds automatic continuation.
+  Serialize the deciding check and due-timer/attempt transition with the existing
+  Runtime admission mutex and marker-owner mutex, in that order. A preliminary
+  unlocked inspection cannot authorize this transition: publication of a marker
+  between that inspection and preparation must retain the timer and ACK bytes.
+  The ACK owner then holds its existing schedule/cache locks for a fresh checked
+  read and atomic replacement; its other mutation methods use the same cache
+  mutex without changing fulfillment/rollback policy. Failed checked reads or
+  writes retain the due timer. Report telemetry only after all these locks are
+  released, and continue to check actual send admission after preparation.
+  Both actual send-admission paths recheck fresh automatic continuation, including
+  `handoff-resume` with `ackRedrive: true` and upgrade continuation flags. Preserve
+  existing accepted/coalesced/queued nonce ownership and ordinary new user work.
+  Use the ACK store's fresh strict reader; cached/lenient errors cannot prove no
+  obligation. Do not alter independent ACK fulfillment/rollback semantics.
+- **ORT-11 — lifecycle and atomic domains.** Delete the reserved terminal prefix
+  in both existing clone admission reset transactions and clear-conversation;
+  delete follows the existing agent directory owner. Archive/restore or later
+  unrelated root/compaction invalidates eligibility without rewriting history.
+  Blob reads occur outside the SQLite mutex and are rechecked before commit or
+  proof return; existing filesystem/deletion boundaries remain authoritative.
+  No transaction across SQLite, worker blobs, marker and ACK files is claimed.
+  Do not make receipts a new blob-GC root or repair source. Late older markers
+  remain retained after a valid slot replacement.
+- **ORT-12 — executable acceptance.** At the frozen exact H in GitHub Actions,
+  use real accepted input, generated checkpoint/mirror, actual terminal and
+  custody owners; close all owners before an owned fresh OS child reopens the
+  same stores. Require exact marker acknowledgment, unchanged canonical/mirror/
+  user/result bytes, no duplicate dispatch/effect and a second no-op. Include
+  unequal metadata/admission revision and same-turn compaction positives; all
+  forbidden terminal/custody states, foreign model/input/stream, missing/corrupt
+  blobs, staged/root-only/mirror failure, slot conflicts/capacity, raw-KV refusal,
+  clone/clear/delete, stale CAS, ACK pending/corruption, legacy migration/refusal
+  and actual automatic-admission controls must retain/refuse without lost state.
+  Reuse existing bounded process harnesses and affected shared gates, preserving
+  all valid baseline assertions. The existing generated-producer process parent
+  also launches the shipping App's private acknowledgment test through its
+  existing owned-child harness. Actions binds the actual `mahayana-app-host`
+  test executable from the exact compiler artifact; missing executable is a
+  failed prerequisite. Fresh App children reopen Session/Runtime/marker/ACK
+  owners for acknowledgment, no-op, pending/corrupt ACK and a same-stream
+  compaction case. Preserve PID/token receipts, exact-child cleanup and all
+  original durable-content comparisons. Mock transport is not real provider
+  acceptance. The existing shipping-finalizer wiring oracle must pin reuse of
+  the same checkpoint sink and the one persistence call before retirement.
+
+Production allowlist is the existing Session `agent_db.rs`/`production.rs`/
+`production_agent_store.rs`,
+Runner `production_agent_checkpoint.rs`, Transcript `production_runtime.rs`,
+`sand_upgrade_resume_store.rs`, `sand_ack_obligation_store.rs`,
+`ack_obligations.rs`, and app `main.rs`.
+Tests extend existing owner/restart/durable-store/manager/HostUpgrade targets and
+the shipping app test module; root integrates shared schema, composition,
+workflow and existing OCRM ledger/RTM. No factory, codec or stream-attempt owner
+expansion is needed. Every criterion above remains unverified until execution.
+
+There is no new SQLite table migration; absent old slots are unproved. An old
+consumer's refusal of marker v2 alone does not make rollback safe: its ACK worker
+can still bypass retained custody. Roll back only with compatible checked gates,
+or stop automatic recovery owners while retaining the files. Existing marker/
+Running state and bounded diagnostic errors expose retained work; no success
+status is synthesized. Full unfinished-turn restoration, durable running/effect
+claims, arbitrary crash cuts without markers, cross-process recovery ownership,
+real providers/channels/devices and final OCRM G01–G12/AC01–AC24 remain required.
+
+Bearing source review at fixed U: `src/agents/embedded-agent-runner/run/run-settlement.ts` blob
+`53f37c4adcbe109f748a9f34271803cd0370b2a4` (original/committed successor and
+settlement before retirement); `src/sessions/background-session-result.ts`
+blob `1f4285bde53ca674c314f90affea0f24dee68ddb` (exact generation/result owner);
+`src/config/sessions/session-accessor.sqlite-transcript-turn.ts` blob
+`74dff134b85aa720758effeb944685e90fafecc9`, reviewed lines 390–505 (transaction
+identity and publication after managed commit). These are bounded semantic
+sources, not a claim of full file/dependency closure or a replacement for OCRM.
 
 ## References
 

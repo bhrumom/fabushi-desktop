@@ -473,21 +473,38 @@ impl AckObligations {
         agent_id: &str,
         agent_exists: bool,
     ) -> io::Result<AckRedrivePreparation> {
-        let Some(obligation) = self.store.get(agent_id) else {
-            return Ok(AckRedrivePreparation::Missing);
-        };
-        if !agent_exists {
-            self.store.clear(agent_id)?;
-            return Ok(AckRedrivePreparation::LostAgentDeleted(obligation));
-        }
-        if obligation.redrive_attempts >= MAX_ACK_REDRIVES as f64 {
-            self.store.clear(agent_id)?;
-            return Ok(AckRedrivePreparation::LostMaxRedrives(obligation));
-        }
-        Ok(match self.store.record_redrive_attempt(agent_id)? {
-            Some(bumped) => AckRedrivePreparation::Ready(bumped),
-            None => AckRedrivePreparation::Missing,
+        self.store.update_checked(agent_id, |obligation| {
+            let Some(mut obligation) = obligation else {
+                return (None, AckRedrivePreparation::Missing);
+            };
+            if !agent_exists {
+                return (None, AckRedrivePreparation::LostAgentDeleted(obligation));
+            }
+            if obligation.redrive_attempts >= MAX_ACK_REDRIVES as f64 {
+                return (None, AckRedrivePreparation::LostMaxRedrives(obligation));
+            }
+            obligation.redrive_attempts += 1.0;
+            (Some(obligation.clone()), AckRedrivePreparation::Ready(obligation))
         })
+    }
+
+    /// Runtime/marker admission is held by the caller. Keep the due timer on
+    /// every failed checked read/write, and never invoke an observer here.
+    pub(super) fn prepare_due_redrive_checked(
+        &self,
+        agent_id: &str,
+        agent_exists: bool,
+        now_ms: u64,
+    ) -> io::Result<Option<(AckRedriveTrigger, AckRedrivePreparation)>> {
+        let mut schedules = self.redrive_schedules.lock()
+            .map_err(|_| io::Error::other("ACK schedule owner is poisoned"))?;
+        let Some(schedule) = schedules.get(agent_id).copied() else { return Ok(None); };
+        if schedule.due_at_ms > now_ms {
+            return Ok(None);
+        }
+        let preparation = self.prepare_redrive(agent_id, agent_exists)?;
+        schedules.remove(agent_id);
+        Ok(Some((schedule.trigger, preparation)))
     }
 
     pub fn prepare_redrive_with_telemetry(
@@ -498,7 +515,18 @@ impl AckObligations {
         now_ms: f64,
     ) -> io::Result<AckRedrivePreparation> {
         let preparation = self.prepare_redrive(agent_id, agent_exists)?;
-        match &preparation {
+        self.report_redrive_preparation(agent_id, &preparation, trigger, now_ms);
+        Ok(preparation)
+    }
+
+    pub(super) fn report_redrive_preparation(
+        &self,
+        agent_id: &str,
+        preparation: &AckRedrivePreparation,
+        trigger: AckRedriveTrigger,
+        now_ms: f64,
+    ) {
+        match preparation {
             AckRedrivePreparation::Ready(obligation) => {
                 self.report_telemetry(AckObligationReport {
                     conversation_id: agent_id.to_string(),
@@ -519,7 +547,6 @@ impl AckObligations {
             }
             AckRedrivePreparation::Missing => {}
         }
-        Ok(preparation)
     }
 
     fn report_lost(&self, obligation: &AckObligation, reason: &str, now_ms: f64) {

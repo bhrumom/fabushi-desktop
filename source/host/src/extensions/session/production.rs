@@ -24,6 +24,8 @@ use super::agent_db::{
     ProviderReviewContinuationOutcome, SessionProviderReview,
     SessionWorkAdmissionRecord,
     SessionWorkResultCommitOutcome,
+    OriginalTurnReference, OriginalTurnReceiptCommit, OriginalTurnTerminalRecord,
+    OriginalTurnTerminalFence, SameTurnCompactionBinding,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
@@ -117,7 +119,9 @@ use super::session_mutations::{
     restore_profile_mutation_files,
 };
 use super::typed_replay::{TypedReplayEntry, project_typed_replay_entries};
-use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
+use super::production_agent_store::{
+    ProductionAgentStore, ProductionAgentCheckpointSnapshot, ProductionWorkerBlobStore,
+};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
     FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
@@ -126,6 +130,23 @@ use super::native_messaging::{
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
+
+/// Checked owner data for Runner's blob qualification. The raw SQL fence is
+/// deliberately private and is rechecked by Session after those blob reads.
+pub(crate) struct OriginalTurnTerminalView {
+    pub(crate) original_user_content: String,
+    pub(crate) checkpoint: ProductionAgentCheckpointSnapshot,
+    pub(crate) store: Arc<ProductionAgentStore>,
+    pub(crate) settlement_lifecycle_revision: String,
+    pub(crate) compaction: Option<SameTurnCompactionBinding>,
+    original: OriginalTurnReference,
+    fence: OriginalTurnTerminalFence,
+}
+
+pub(crate) struct OriginalTurnTerminalRead {
+    pub(crate) record: OriginalTurnTerminalRecord,
+    pub(crate) view: OriginalTurnTerminalView,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PreparedAgentBlobStore {
@@ -1561,6 +1582,14 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
+        self.open_agent_db_owner_locked_with_recovery(agent_id, true)
+    }
+
+    fn open_agent_db_owner_locked_with_recovery(
+        &self,
+        agent_id: &str,
+        recover_pending: bool,
+    ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
         // Re-entry must reject a stale cached root before pending recovery can
         // settle journals or restore files. Release the owner-map lock before
@@ -1579,19 +1608,35 @@ impl ProductionSessionWorkers {
         if let Some(owner) = owners.get(agent_id) {
             ProductionAgentStore::validate_persisted_checkpoint_checked(owner, &blob_store)?;
             self.validate_owner_session_identity(agent_id, owner)?;
-            self.recover_pending_profile_mutation(agent_id, owner)?;
-            self.recover_pending_memory_mutation(agent_id, owner)?;
+            if recover_pending {
+                self.recover_pending_profile_mutation(agent_id, owner)?;
+                self.recover_pending_memory_mutation(agent_id, owner)?;
+            }
             return Ok(Arc::clone(owner));
         }
-        let owner = Arc::new(
+        let owner = Arc::new(if recover_pending {
             SandAgentDb::open_existing_agent(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
-        );
+        } else {
+            SandAgentDb::open_existing_agent_without_recovery(&db_path, self.busy_timeout_ms)
+        }.map_err(|error| error.to_string())?);
         ProductionAgentStore::validate_persisted_checkpoint_checked(&owner, &blob_store)?;
         self.validate_owner_session_identity(agent_id, &owner)?;
-        self.recover_pending_media_custody(agent_id, &owner)?;
-        self.recover_pending_profile_mutation(agent_id, &owner)?;
-        self.recover_pending_memory_mutation(agent_id, &owner)?;
+        if !recover_pending && owner.read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .is_some_and(|record| record.admitted_media_work_id.is_some()
+                || !record.admitted_media_paths.is_empty())
+        {
+            // Ordinary media recovery runs only on a first open. Do not cache
+            // a strict-open candidate that skipped that required work, or a
+            // later ordinary open would mistake it for an already recovered
+            // owner. Retain the fence for that existing recovery path.
+            return Err("terminal inspection found pending media custody on first open".into());
+        }
+        if recover_pending {
+            self.recover_pending_media_custody(agent_id, &owner)?;
+            self.recover_pending_profile_mutation(agent_id, &owner)?;
+            self.recover_pending_memory_mutation(agent_id, &owner)?;
+        }
         owners.insert(agent_id.to_string(), Arc::clone(&owner));
         Ok(owner)
     }
@@ -1943,16 +1988,24 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
+        self.open_agent_store_owner_locked_with_recovery(agent_id, true)
+    }
+
+    fn open_agent_store_owner_locked_with_recovery(
+        &self,
+        agent_id: &str,
+        recover_pending: bool,
+    ) -> Result<Arc<ProductionAgentStore>, String> {
         let cached_owner = self.agent_store_owners.lock()
             .map_err(|_| "agent store owner map poisoned".to_string())?
             .get(agent_id).cloned();
         if let Some(owner) = cached_owner {
             owner.validate_cached_checkpoint_checked()?;
-            let _ = self.open_agent_db_owner_locked(agent_id)?;
+            let _ = self.open_agent_db_owner_locked_with_recovery(agent_id, recover_pending)?;
             return Ok(owner);
         }
 
-        let db = self.open_agent_db_owner_locked(agent_id)?;
+        let db = self.open_agent_db_owner_locked_with_recovery(agent_id, recover_pending)?;
         let blob_store = self.create_agent_blob_store(agent_id)?;
         let candidate = Arc::new(ProductionAgentStore::new(db, blob_store));
         candidate.reset_from_db_checked()?;
@@ -1966,6 +2019,135 @@ impl ProductionSessionWorkers {
         }
         owners.insert(agent_id.to_string(), Arc::clone(&candidate));
         Ok(candidate)
+    }
+
+    /// Retain Session's existing filesystem/deletion boundary while preserving
+    /// the strict terminal error type. Only this module supplies the operation;
+    /// no Runner/provider callback runs while the boundary is held.
+    fn with_original_turn_terminal_owner<T>(
+        &self,
+        original: &OriginalTurnReference,
+        operation: impl FnOnce(&SandAgentDb) -> Result<T, AgentDbProjectionError>,
+    ) -> Result<T, AgentDbProjectionError> {
+        original.validate().map_err(AgentDbProjectionError::OriginalTurnInvalid)?;
+        self.with_agent_filesystem_mutation(&original.agent_id, || {
+            Ok((|| {
+                if self.deleting_agents.lock().map_err(|_| {
+                    AgentDbProjectionError::OriginalTurnUnavailable(
+                        "Session deletion registry is poisoned".into(),
+                    )
+                })?.contains(&original.agent_id) {
+                    return Err(AgentDbProjectionError::OriginalTurnStale(
+                        "agent deletion owns the terminal store".into(),
+                    ));
+                }
+                let owner = self.open_agent_db_owner_locked_with_recovery(&original.agent_id, false)
+                    .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+                operation(owner.as_ref())
+            })())
+        }).map_err(AgentDbProjectionError::OriginalTurnUnavailable)?
+    }
+
+    fn original_turn_terminal_view_locked(
+        &self,
+        original: &OriginalTurnReference,
+        owner: &SandAgentDb,
+        fence: OriginalTurnTerminalFence,
+    ) -> Result<OriginalTurnTerminalView, AgentDbProjectionError> {
+        let store = self.open_agent_store_owner_locked_with_recovery(&original.agent_id, false)
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+        let checkpoint = store.checkpoint_snapshot_checked()
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?
+            .ok_or_else(|| AgentDbProjectionError::OriginalTurnUnavailable(
+                "original terminal has no canonical checkpoint".into(),
+            ))?;
+        if checkpoint.root_blob_id != fence.final_root_blob_id {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "checked canonical root differs from the inspected terminal owner".into(),
+            ));
+        }
+        // Worker/blob I/O above does not hold the SQLite connection mutex.
+        owner.recheck_original_turn_terminal_fence(&fence)?;
+        Ok(OriginalTurnTerminalView {
+            original_user_content: fence.original_user_content.clone(),
+            settlement_lifecycle_revision: fence.settlement_lifecycle_revision.clone(),
+            compaction: fence.compaction.clone(),
+            original: original.clone(),
+            checkpoint,
+            store,
+            fence,
+        })
+    }
+
+    pub(crate) fn prepare_original_turn_terminal_view(
+        &self,
+        original: &OriginalTurnReference,
+        expected_final_root: &[u8],
+    ) -> Result<OriginalTurnTerminalView, AgentDbProjectionError> {
+        self.with_original_turn_terminal_owner(original, |owner| {
+            let fence = owner.prepare_original_turn_terminal_fence(original, expected_final_root)?;
+            self.original_turn_terminal_view_locked(original, owner, fence)
+        })
+    }
+
+    fn recheck_original_turn_checkpoint_locked(
+        &self,
+        view: &OriginalTurnTerminalView,
+    ) -> Result<(), AgentDbProjectionError> {
+        let store = self.open_agent_store_owner_locked_with_recovery(&view.original.agent_id, false)
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+        if !Arc::ptr_eq(&store, &view.store) {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "canonical AgentStore owner changed after terminal inspection".into(),
+            ));
+        }
+        let current = store.checkpoint_snapshot_checked()
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+        if current.as_ref() != Some(&view.checkpoint) {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "checked canonical checkpoint changed after terminal qualification".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn commit_original_turn_terminal_record(
+        &self,
+        view: &OriginalTurnTerminalView,
+        record: &OriginalTurnTerminalRecord,
+    ) -> Result<OriginalTurnReceiptCommit, AgentDbProjectionError> {
+        self.with_original_turn_terminal_owner(&view.original, |owner| {
+            self.recheck_original_turn_checkpoint_locked(view)?;
+            owner.commit_original_turn_terminal_record(&view.fence, record)
+        })
+    }
+
+    pub(crate) fn read_original_turn_terminal_candidate(
+        &self,
+        original: &OriginalTurnReference,
+    ) -> Result<Option<OriginalTurnTerminalRead>, AgentDbProjectionError> {
+        self.with_original_turn_terminal_owner(original, |owner| {
+            let Some((record, fence)) = owner.read_original_turn_terminal_candidate_checked(original)? else {
+                return Ok(None);
+            };
+            let view = self.original_turn_terminal_view_locked(original, owner, fence)?;
+            Ok(Some(OriginalTurnTerminalRead { record, view }))
+        })
+    }
+
+    pub(crate) fn recheck_original_turn_terminal_read(
+        &self,
+        read: &OriginalTurnTerminalRead,
+    ) -> Result<(), AgentDbProjectionError> {
+        if !read.view.fence.contains_record(&read.record) {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "terminal candidate differs from the exact inspected slot".into(),
+            ));
+        }
+        self.with_original_turn_terminal_owner(&read.view.original, |owner| {
+            self.recheck_original_turn_checkpoint_locked(&read.view)?;
+            owner.recheck_original_turn_terminal_fence(&read.view.fence)
+        })
     }
 
     pub fn close_agent_store_owner(
@@ -3910,6 +4092,10 @@ impl ProductionSessionWorkers {
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
         self.with_agent_filesystem_mutation(agent_id, || {
             self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            // Validate and retain the existing owner before deleting the
+            // canonical blob. Reopening it afterwards would reject the root
+            // that this very clear operation has just removed.
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
             let store = self.create_agent_blob_store(agent_id)?;
             self.existing_session_db_path(agent_id)?;
             futures::executor::block_on(self.pool.clear_blobs(
@@ -3918,9 +4104,11 @@ impl ProductionSessionWorkers {
                 store.legacy_blob_db_path.as_deref(),
             ))
             .map_err(|error| error.to_string())?;
-            self.open_agent_db_owner_locked(agent_id)?
-                .clear_conversation()
-                .map_err(|error| error.to_string())
+            let cleared = owner.clear_conversation().map_err(|error| error.to_string())?;
+            if cleared {
+                self.close_agent_store_owner_locked(agent_id, false);
+            }
+            Ok(cleared)
         })
     }
 
@@ -6107,6 +6295,338 @@ impl ProductionSessionWorkers {
     }
 }
 
+
+#[cfg(test)]
+mod original_turn_terminal_tests {
+    use super::*;
+    use rusqlite::{OptionalExtension, params};
+    use serde_json::json;
+    use crate::extensions::session::agent_db::{
+        CanonicalTurnCommitRecord, OriginalTurnScope, StoredCompletedTerminal,
+        ORIGINAL_TURN_TERMINAL_KEY,
+    };
+    use crate::extensions::session::agent_db_recovery::{
+        AUTOMATION_CUSTODY_UNAVAILABLE_KV, automation_custody_recovery_marker_path,
+    };
+    use crate::extensions::session::agent_db_schema::{GET_KV_SQL, SET_KV_SQL};
+
+    struct Fixture {
+        root: PathBuf,
+        workers: ProductionSessionWorkers,
+        original: OriginalTurnReference,
+        root_id: Vec<u8>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-original-terminal-facade-{label}-{}", Uuid::new_v4(),
+            ));
+            let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 0);
+            let materialized = workers.materialize_new_session(None, "user", None).unwrap();
+            let admission = workers.read_session_work_admission(&materialized.id).unwrap().unwrap();
+            let original = OriginalTurnReference {
+                version: 1,
+                scope: OriginalTurnScope::NativeOrdinaryUserV1,
+                agent_id: materialized.id.clone(),
+                session_key: admission.session_key,
+                session_id: materialized.id,
+                original_lifecycle_revision: admission.lifecycle_revision,
+                stream_id: "original-stream".into(),
+                input_digest: "a".repeat(64),
+                client_nonce: Some("original-nonce".into()),
+                user_message_id: "original-user".into(),
+                echo_entry_id: "original-user".into(),
+                request_source: None,
+                provider: "fabushi".into(),
+                model_id: "resolved-native-model".into(),
+            };
+            let db = workers.open_agent_db_owner(&original.agent_id).unwrap();
+            assert!(db.append_transcript_entry(&json!({
+                "id": original.user_message_id, "kind": "message", "role": "user",
+                "content": "original durable user text", "sessionKey": original.session_key,
+                "clientNonce": original.client_nonce, "isStreaming": false,
+            })).unwrap());
+            let store = workers.open_agent_store_owner(&original.agent_id).unwrap();
+            // A real empty protobuf checkpoint gives this facade a nonempty
+            // content-addressed root and actual user confirmation. Neutral
+            // records below are storage data, never Runner completion proofs.
+            let root_id = store.handle_checkpoint_bytes_and_confirm_user_message_blocking(
+                &[], &original.user_message_id,
+            ).unwrap();
+            Self { root, workers, original, root_id }
+        }
+
+        fn db_path(&self) -> PathBuf {
+            self.workers.session_db_path(&self.original.agent_id).unwrap()
+        }
+
+        fn raw_db(&self) -> rusqlite::Connection {
+            rusqlite::Connection::open(self.db_path()).unwrap()
+        }
+
+        fn raw_kv(&self, key: &str) -> Option<String> {
+            self.raw_db().query_row(GET_KV_SQL, params![key], |row| row.get(0)).optional().unwrap()
+        }
+
+        fn rows(&self) -> (Vec<(String, String)>, Vec<(i64, String, String)>) {
+            let db = self.raw_db();
+            let mut statement = db.prepare("SELECT key, value FROM kv ORDER BY key").unwrap();
+            let kv = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+                .unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap();
+            let mut statement = db.prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq").unwrap();
+            let entries = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+                .unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap();
+            (kv, entries)
+        }
+
+        fn record(&self, view: &OriginalTurnTerminalView) -> OriginalTurnTerminalRecord {
+            OriginalTurnTerminalRecord {
+                version: 1,
+                original: self.original.clone(),
+                terminal: StoredCompletedTerminal::Completed,
+                final_result_sha256: [7; 32],
+                sent_message_count: 0,
+                reacted: false,
+                custody_json: "{}".into(),
+                canonical: vec![CanonicalTurnCommitRecord {
+                    ordinal: 0,
+                    request_id: self.original.stream_id.clone(),
+                    message_id: self.original.user_message_id.clone(),
+                    prior_root_blob_id: None,
+                    root_blob_id: view.checkpoint.root_blob_id.clone(),
+                    user_blob_id: vec![2; 32],
+                    turn_blob_id: vec![3; 32],
+                    step_blob_ids: vec![vec![4; 32]],
+                    assistant_result_sha256: [7; 32],
+                }],
+                settlement_lifecycle_revision: view.settlement_lifecycle_revision.clone(),
+                compaction: view.compaction.clone(),
+            }
+        }
+
+        fn publish(&self) -> OriginalTurnTerminalRecord {
+            let view = self.workers.prepare_original_turn_terminal_view(&self.original, &self.root_id).unwrap();
+            let record = self.record(&view);
+            assert_eq!(self.workers.commit_original_turn_terminal_record(&view, &record).unwrap(),
+                OriginalTurnReceiptCommit::Inserted);
+            record
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            self.workers.shutdown();
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn checked_facade_reopens_actual_worker_blob_and_preserves_source_bytes() {
+        let fixture = Fixture::new("reopen");
+        let record = fixture.publish();
+        let before = fixture.rows();
+        let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+        assert_ne!(owner.read_metadata().unwrap()["lifecycleRevision"].as_str().unwrap(),
+            fixture.original.original_lifecycle_revision);
+        drop(owner);
+        fixture.workers.shutdown_with_checkpoint();
+        let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+        let read = restarted.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        assert_eq!(read.record, record);
+        assert_eq!(read.view.original_user_content, "original durable user text");
+        assert_eq!(read.view.checkpoint.root_blob_id, fixture.root_id);
+        assert_eq!(read.view.store.get_blob(&fixture.root_id).unwrap(), Some(Vec::new()));
+        restarted.recheck_original_turn_terminal_read(&read).unwrap();
+        let second = restarted.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        restarted.recheck_original_turn_terminal_read(&second).unwrap();
+        assert_eq!(second.record, record);
+        assert_eq!(fixture.rows(), before);
+        restarted.shutdown();
+    }
+
+    #[test]
+    fn final_facade_recheck_refuses_changed_slot_user_and_canonical_root() {
+        for field in ["slot", "user", "root"] {
+            let fixture = Fixture::new(field);
+            fixture.publish();
+            let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+            match field {
+                "slot" => { fixture.raw_db().execute("UPDATE kv SET value = value || ' ' WHERE key = ?1",
+                    params![ORIGINAL_TURN_TERMINAL_KEY]).unwrap(); }
+                "user" => { fixture.raw_db().execute("UPDATE transcript_entries SET entry = entry || ' ' WHERE id = ?1",
+                    params![fixture.original.user_message_id]).unwrap(); }
+                "root" => {
+                    // Actual generated field 17: self_summary_count = 1.
+                    let changed_root = read.view.store.handle_checkpoint_bytes_blocking(&[0x88, 0x01, 0x01]).unwrap();
+                    assert_ne!(changed_root, fixture.root_id);
+                }
+                _ => unreachable!(),
+            }
+            let changed = fixture.rows();
+            assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err(), "{field}");
+            assert!(fixture.workers.commit_original_turn_terminal_record(&read.view, &read.record).is_err(), "{field}");
+            assert_eq!(fixture.rows(), changed);
+        }
+    }
+
+    #[test]
+    fn reopened_owner_or_mutated_candidate_cannot_reuse_an_old_view() {
+        let fixture = Fixture::new("retired-view");
+        fixture.publish();
+        let mut read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        let before = fixture.rows();
+        read.record.reacted = true;
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        read.record.reacted = false;
+        assert!(fixture.workers.retire_agent_owners(&fixture.original.agent_id, true).unwrap());
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        let current = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        fixture.workers.recheck_original_turn_terminal_read(&current).unwrap();
+        assert!(!Arc::ptr_eq(&read.view.store, &current.view.store));
+        assert_eq!(fixture.rows(), before);
+    }
+
+    #[test]
+    fn strict_first_open_retains_pending_recovery_inputs_for_the_ordinary_owner() {
+        for kind in ["memory", "profile", "media"] {
+            let fixture = Fixture::new(kind);
+            fixture.publish();
+            let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+            let (key, raw) = match kind {
+                "memory" => ("pendingExternalMemoryMutation", serde_json::to_string(&PendingMemoryMutation {
+                    mutation_id: "pending-memory".into(), operation: "clear".into(),
+                    session_key: fixture.original.session_key.clone(), session_id: fixture.original.session_id.clone(),
+                    lifecycle_revision: fixture.original.original_lifecycle_revision.clone(),
+                    records: Vec::new(), prior_snapshot: owner.get_memory_prompt_snapshot().unwrap(),
+                }).unwrap()),
+                "profile" => {
+                    let files = capture_profile_mutation_files(fixture.db_path().parent().unwrap(), true).unwrap();
+                    ("pendingExternalProfileMutation", serde_json::to_string(&PendingProfileMutation {
+                        mutation_id: "pending-profile".into(), operation: "profile-update".into(),
+                        session_key: fixture.original.session_key.clone(), session_id: fixture.original.session_id.clone(),
+                        lifecycle_revision: fixture.original.original_lifecycle_revision.clone(),
+                        before_files: files.clone(), after_files: files,
+                        previous_profile: owner.get_sand_profile().unwrap(), next_profile: None,
+                    }).unwrap())
+                }
+                "media" => {
+                    let mut admission = owner.read_session_work_admission().unwrap().unwrap();
+                    admission.admitted_media_work_id = Some("pending-media".into());
+                    ("sessionWorkAdmission", serde_json::to_string(&admission).unwrap())
+                }
+                _ => unreachable!(),
+            };
+            drop(owner);
+            fixture.workers.shutdown_with_checkpoint();
+            fixture.raw_db().execute(SET_KV_SQL, params![key, raw]).unwrap();
+            let before = fixture.rows();
+            let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+            assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err(), "{kind}");
+            assert!(restarted.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).is_err(), "{kind}");
+            assert_eq!(fixture.rows(), before, "strict inspection cannot recover {kind}");
+            assert_eq!(fixture.raw_kv(key).as_deref(), Some(raw.as_str()));
+            // This is the existing ordinary recovery owner, deliberately
+            // called only after the strict path has retained the input.
+            let ordinary = restarted.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+            if kind == "media" {
+                assert!(ordinary.read_session_work_admission().unwrap().unwrap().admitted_media_work_id.is_none());
+            } else {
+                assert!(ordinary.read_kv(key).unwrap().is_none());
+            }
+            restarted.shutdown();
+        }
+    }
+
+    #[test]
+    fn recovery_markers_block_the_facade_before_an_absent_slot() {
+        let fixture = Fixture::new("marker-before-none");
+        let view = fixture.workers.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).unwrap();
+        let record = fixture.record(&view);
+        let marker = automation_custody_recovery_marker_path(&fixture.db_path());
+        fs::write(&marker, []).unwrap();
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(fixture.workers.commit_original_turn_terminal_record(&view, &record).is_err());
+        assert!(fixture.raw_kv(ORIGINAL_TURN_TERMINAL_KEY).is_none());
+        fs::remove_file(&marker).unwrap();
+        fixture.raw_db().execute(SET_KV_SQL, params![AUTOMATION_CUSTODY_UNAVAILABLE_KV, "malformed marker"]).unwrap();
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert_eq!(fixture.raw_kv(AUTOMATION_CUSTODY_UNAVAILABLE_KV).as_deref(), Some("malformed marker"));
+        assert!(fixture.raw_kv(ORIGINAL_TURN_TERMINAL_KEY).is_none());
+    }
+
+    #[test]
+    fn strict_facade_open_does_not_rebuild_corruption() {
+        let fixture = Fixture::new("no-corruption-recovery");
+        fixture.publish();
+        fixture.workers.shutdown_with_checkpoint();
+        let db_path = fixture.db_path();
+        let damaged = b"not a sqlite database: retain the original bytes";
+        fs::write(&db_path, damaged).unwrap();
+        let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+        assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert_eq!(fs::read(&db_path).unwrap(), damaged);
+        assert!(!automation_custody_recovery_marker_path(&db_path).exists());
+        restarted.shutdown();
+    }
+
+    #[test]
+    fn actual_facade_clear_handles_a_nonempty_canonical_root_and_retires_cache() {
+        let fixture = Fixture::new("clear");
+        fixture.publish();
+        let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        assert!(!read.view.checkpoint.root_blob_id.is_empty());
+        assert_eq!(fixture.workers.active_agent_store_owner_count(), 1);
+        assert!(fixture.workers.clear_agent_conversation(&fixture.original.agent_id).unwrap());
+        assert!(fixture.raw_kv(ORIGINAL_TURN_TERMINAL_KEY).is_none());
+        assert_eq!(fixture.workers.active_agent_store_owner_count(), 0);
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        let store = fixture.workers.open_agent_store_owner(&fixture.original.agent_id).unwrap();
+        assert!(store.checkpoint_snapshot_checked().unwrap().is_none());
+        let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+        assert!(owner.get_transcript_entries().unwrap().is_empty());
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().is_none());
+    }
+
+    #[test]
+    fn failed_clear_keeps_sql_evidence_and_cannot_acknowledge_removed_blobs() {
+        let fixture = Fixture::new("clear-failure");
+        fixture.publish();
+        let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        fixture.raw_db().execute_batch(
+            "CREATE TRIGGER terminal_refuse_clear BEFORE DELETE ON kv
+             WHEN OLD.key = 'original-routed-terminal:current'
+             BEGIN SELECT RAISE(ABORT, 'clear refused'); END;",
+        ).unwrap();
+        let before = fixture.rows();
+        assert!(fixture.workers.clear_agent_conversation(&fixture.original.agent_id).is_err());
+        assert_eq!(fixture.rows(), before);
+        // The existing clear order spans two stores: blob deletion can have
+        // happened before the SQLite failure. No cross-store rollback or
+        // successful terminal acknowledgment is inferred from retained rows.
+        assert!(read.view.store.get_blob(&fixture.root_id).unwrap().is_none());
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+    }
+
+    #[test]
+    fn deletion_boundary_and_missing_directory_cannot_recreate_terminal_authority() {
+        let fixture = Fixture::new("delete");
+        fixture.publish();
+        let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        fixture.workers.begin_agent_delete(&fixture.original.agent_id).unwrap();
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        fixture.workers.retire_agent_owners(&fixture.original.agent_id, false).unwrap();
+        let directory = fixture.db_path().parent().unwrap().to_path_buf();
+        fixture.workers.with_agent_filesystem_mutation(&fixture.original.agent_id, || {
+            fs::remove_dir_all(&directory).map_err(|error| error.to_string())
+        }).unwrap();
+        fixture.workers.clear_agent_delete_fast_path(&fixture.original.agent_id);
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(!directory.exists());
+    }
+}
 
 #[cfg(test)]
 mod sharebox_shipping_tests {

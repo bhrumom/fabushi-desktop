@@ -127,11 +127,13 @@ fn production_upgrade_service_propagates_real_transcript_marker_refusal() {
 
 
 #[test]
-fn shipping_host_recreates_durable_upgrade_turns_before_ack_redrive() {
+fn shipping_host_reconciles_completed_original_work_before_ack_redrive() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
     assert!(SHIPPING_HOST.contains("fn resume_interrupted_upgrade_turns(&self)"));
-    assert!(SHIPPING_HOST.contains("start_local_upgrade_resume_turn("));
+    assert!(SHIPPING_HOST.contains("fn acknowledge_completed_upgrade_marker("));
+    assert!(SHIPPING_HOST.contains("reconcile_completed_original_turn(sessions, original)"));
+    assert!(!SHIPPING_HOST.contains("start_local_upgrade_resume_turn("));
     assert!(SHIPPING_HOST.contains("gateway.resume_interrupted_upgrade_turns()"));
     assert!(!SHIPPING_HOST.contains(
         "resumeInterruptedUpgradeTurns production Runner recreation is not wired"
@@ -165,7 +167,10 @@ fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
     assert!(SHIPPING_HOST.contains("if worker_is_upgrade_resume {"));
     assert!(SHIPPING_HOST.contains("worker_transcript_manager.emit_agent_update(&agent_id)"));
     assert!(SHIPPING_HOST.contains("worker_transcript_manager.emit_automations(&agent_id)"));
-    assert!(SHIPPING_HOST.contains("\"isSilenceAllowed\": matches!(resumed_source.as_str(), \"automation\" | \"background-revival\")"));
+    // ORT-v1 intentionally removes the former fresh hidden prompt/provider
+    // dispatch. Recreate still carries existing pending wakes and lifecycle
+    // updates, but completed original work enters the checked consumer.
+    assert!(SHIPPING_HOST.contains("acknowledge_completed_upgrade_marker("));
     assert!(TRANSCRIPT_MANAGER.contains("pub fn restore_recreate_pending_wakes"));
     assert!(TRANSCRIPT_MANAGER.contains("owner.restore_recreate_carried_pending_wakes(carried)"));
     assert!(PENDING_WAKE_REARM.contains("self.rearm_pending_wake(marker, now_ms, Some(\"recreate_carry\"))"));
@@ -176,6 +181,7 @@ fn shipping_recreate_gateway_carries_pending_wakes_and_resumes_durable_turns() {
 #[test]
 fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
     const TRANSCRIPT_MANAGER: &str =
         include_str!("../src/extensions/transcript/transcript_manager.rs");
     const COMPLETION_REVIVALS: &str =
@@ -191,17 +197,40 @@ fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
         .find("if !self.transcript_manager.can_execute()")
         .expect("execution guard before durable marker settlement");
     assert!(!resume_body.contains("store.clear_all();"));
-    let clear_if_matches = resume_body
-        .rfind("store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?")
-        .expect("exact durable marker settlement");
+    let reconciliation = resume_body
+        .find("if let Err(error) = acknowledge_completed_upgrade_marker(")
+        .expect("completed original-work reconciliation and failure reporting");
     assert!(checked_discovery < can_execute);
-    assert!(can_execute < clear_if_matches);
-    let dispatch_failure = resume_body
-        .find("if let Err(error) = result")
-        .expect("upgrade resume failure branch");
-    assert!(dispatch_failure < clear_if_matches);
-    assert!(resume_body.contains("upgrade_resume_marker_identity_is_well_formed"));
-    assert!(resume_body.contains("upgrade_resume_identity_invalid"));
+    assert!(can_execute < reconciliation);
+    assert!(resume_body.contains("original_upgrade_work_retained"));
+    assert!(resume_body.contains("Ok(false)"), "acknowledgment is not a resumed dispatch");
+    for fresh_dispatch in ["configured_routed_provider(", "Uuid::new_v4(", "start_local_upgrade_resume_turn("] {
+        assert!(!resume_body.contains(fresh_dispatch));
+    }
+    assert!(!resume_body.contains("clear_if_matches"), "only the verified consumer can settle a marker");
+    let consumer = SHIPPING_HOST.split("fn acknowledge_completed_upgrade_marker(").nth(1).unwrap()
+        .split("fn dispatch_public_settings_command(").next().unwrap();
+    let identity = consumer.find("upgrade_resume_marker_identity_is_well_formed(marker)").unwrap();
+    let verify = consumer.find("reconcile_completed_original_turn(sessions, original)").unwrap();
+    let fresh_ack = consumer.find("ack_store.get_checked(&marker.agent_id)").unwrap();
+    let final_live_guard = consumer.rfind("runtime.is_agent_running(&marker.agent_id)").unwrap();
+    let clear = consumer.find("runtime.clear_completed_upgrade_marker_if_idle(marker, ack_store)").unwrap();
+    assert!(identity < verify && verify < fresh_ack && fresh_ack < final_live_guard && final_live_guard < clear);
+    assert!(consumer.contains("verified.original() != original"));
+    assert!(consumer.contains("registry.active_stream_ids_for_agent(&marker.agent_id).is_empty()"));
+    assert!(consumer.contains("map_err(|error| error.to_string())?"), "read/proof failures must retain the exact marker");
+    assert!(!consumer.contains("clear_all"));
+    assert!(!consumer.contains("store.clear_if_matches_checked"));
+    let final_owner = TRANSCRIPT_RUNTIME.split("pub fn clear_completed_upgrade_marker_if_idle(").nth(1).unwrap()
+        .split("pub fn clear_agent_durable_recovery(").next().unwrap();
+    assert!(final_owner.find("self.state.lock()").unwrap()
+        < final_owner.find("state.lifecycle.is_running(&marker.agent_id)").unwrap());
+    assert!(final_owner.contains("store.clear_if_matches_with_ack_absent_checked(marker, acknowledgments)"),
+        "final idle check, complete marker CAS and fresh ACK absence share the actual owners' locked boundary");
+    let visit = SHIPPING_HOST.split("fn visit_upgrade_resume_markers_checked(").nth(1).unwrap()
+        .split("fn acknowledge_completed_upgrade_marker(").next().unwrap();
+    assert!(visit.find("store.migrate_legacy_checked()").unwrap() < visit.find("visit(marker)?").unwrap(),
+        "the complete image must migrate and validate before the first consumer callback");
 
     assert!(TRANSCRIPT_MANAGER.contains("services.trace_flusher.flush_tracing()"));
     assert!(COMPLETION_REVIVALS.contains("pub fn mid_drain_revival_agent_ids(&self)"));
@@ -217,4 +246,42 @@ fn shipping_upgrade_resume_keeps_durable_state_and_recreate_work_accounting() {
     assert!(SHIPPING_HOST.contains(".mark_upgrade_resume_batch_pending(&imported_markers)"));
     assert!(SHIPPING_HOST.contains("let resumed = self.resume_interrupted_upgrade_turns()"));
     assert!(SHIPPING_HOST.contains("\"resumed\": resumed"));
+}
+
+#[test]
+fn shipping_ack_worker_uses_atomic_original_marker_admission_before_due_consumption() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
+    const ACK_OWNER: &str = include_str!("../src/extensions/transcript/ack_obligations.rs");
+    let worker = SHIPPING_HOST.split("fn start_ack_redrive_worker(").nth(1).unwrap()
+        .split("fn project_forever_box_status(").next().unwrap();
+    let snapshot = SHIPPING_HOST.split("fn automatic_ack_redrive_marker_snapshot(").nth(1).unwrap()
+        .split("fn start_ack_redrive_worker(").next().unwrap();
+    assert!(snapshot.contains("store.migrate_legacy_checked()"));
+    let fresh_markers = worker.find("automatic_ack_redrive_marker_snapshot(").unwrap();
+    assert_eq!(worker.matches("automatic_ack_redrive_marker_snapshot(").count(), 1,
+        "one checked complete image supplies preliminary filtering for each polling tick");
+    let fresh_ack = worker.find("ack_obligations.store().list_checked()").unwrap();
+    let atomic_prepare = worker.find("api.transcript_runtime.prepare_automatic_ack_redrive(").unwrap();
+    let send = worker.find("api.call(\"sendPrompt\", args)").unwrap();
+    assert!(fresh_markers < atomic_prepare && fresh_ack < atomic_prepare && atomic_prepare < send);
+    assert!(worker.contains("retained_agents.contains(agent_id)"));
+    assert!(worker.contains("retained_agents.contains(&agent_id)"));
+    let future_timer = worker.find("schedule.due_at_ms > now_ms").unwrap();
+    assert!(future_timer < atomic_prepare, "future timers do not enter the global admission or durable transition");
+    assert!(!worker.contains(".get_checked("), "the atomic ACK transition supplies the per-agent fresh check");
+    assert!(!worker.contains(".take_due_redrive("), "the cheap read helper cannot authorize a separate timer take");
+    assert!(!worker.contains(".prepare_redrive_with_telemetry("));
+    let runtime = TRANSCRIPT_RUNTIME.split("pub fn prepare_automatic_ack_redrive(").nth(1).unwrap()
+        .split("pub fn resume_after_recreate(").next().unwrap();
+    let admission_lock = runtime.find("self.state.lock()").unwrap();
+    let marker_boundary = runtime.find("store.while_agent_unmarked_checked(agent_id, ||").unwrap();
+    let due_boundary = runtime.find("obligations.prepare_due_redrive_checked(agent_id, agent_exists, now_ms)").unwrap();
+    let release = runtime.find("drop(state)").unwrap();
+    let telemetry = runtime.find("obligations.report_redrive_preparation(").unwrap();
+    assert!(admission_lock < marker_boundary && marker_boundary < due_boundary && due_boundary < release && release < telemetry);
+    let due = ACK_OWNER.split("fn prepare_due_redrive_checked(").nth(1).unwrap()
+        .split("pub fn prepare_redrive_with_telemetry(").next().unwrap();
+    assert!(due.find("self.prepare_redrive(agent_id, agent_exists)?").unwrap()
+        < due.find("schedules.remove(agent_id)").unwrap(), "failed ACK custody reads or writes must retain the due timer");
 }

@@ -7,15 +7,21 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{Value, json};
 
 use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::extensions::session::agent_db::{
+    OriginalTurnReference, OriginalTurnScope, SessionWorkAdmissionRecord,
+};
 use crate::extensions::session::session_paths::resolve_internal_send_route;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::sand_activity::{ActivityUpdate, AgentActivity};
 
 use super::async_task_union::{AsyncTask, merge_async_tasks};
+use super::ack_obligations::{AckObligations, AckRedrivePreparation, AckRedriveTrigger};
+use super::sand_ack_obligation_store::SandAckObligationStore;
 use super::box_request_entries::{ActiveBoxRequest, BoxRequestTrackDecision};
 use super::prompt_acceptance_ledger::{
     AcceptanceLookup, AcceptanceRecord, AcceptanceStatus, PromptAcceptanceError,
     PromptAcceptanceLedger, SendInput,
+    send_input_digest,
 };
 use super::run_lifecycle::RunLifecycleState;
 use super::send_group_fanout::GroupMemberTurnExecutor;
@@ -116,6 +122,49 @@ struct RoutedTurnLease {
     generation: u64,
     is_group_member_turn: bool,
     human_handoff_conversation_id: Option<String>,
+    original_input: Option<RoutedOriginalInput>,
+    original_work: Option<OriginalTurnReference>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RoutedOriginalInput {
+    input_digest: String,
+    client_nonce: Option<String>,
+    user_message_id: String,
+    echo_entry_id: String,
+    request_source: Option<String>,
+}
+
+fn original_routed_input(
+    args: &Value,
+    input: &SendInput,
+    client_nonce: Option<&str>,
+    context: &PersistedSendContext,
+) -> Option<RoutedOriginalInput> {
+    let source = match args.get("requestSource") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(source)) if source.trim().is_empty() => None,
+        Some(Value::String(source)) if source.trim() == "turn" => Some("turn".to_string()),
+        _ => return None,
+    };
+    if !context.accepted_durably || input.prompt.trim().is_empty() || input.is_fork
+        || ["hidden", "groupMemberTurn", "upgradeResume", "ackRedrive", "skipAckObligation"]
+            .into_iter().any(|key| args.get(key).is_some_and(|value| !value.is_null() && value.as_bool() != Some(false)))
+        || args.get("appendUserMessage").is_some_and(|value| !value.is_null() && value.as_bool() != Some(true))
+        || ["parentAgentId", "parentAgentToolCallId", "spawnedBy", "automationWake", "groupContext", "groupRoomId", "humanHandoffConversationId"]
+            .into_iter().any(|key| args.get(key).is_some_and(|value| !value.is_null()))
+    {
+        return None;
+    }
+    let user_message_id = context.user_message_id.as_ref().filter(|value| !value.trim().is_empty())?;
+    let echo_entry_id = context.echo_entry_id.as_ref().filter(|value| *value == user_message_id)?;
+    Some(RoutedOriginalInput {
+        input_digest: send_input_digest(input),
+        client_nonce: client_nonce.map(ToOwned::to_owned),
+        user_message_id: user_message_id.clone(),
+        echo_entry_id: echo_entry_id.clone(),
+        request_source: source,
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -408,12 +457,15 @@ impl ProductionTranscriptRuntime {
             .map(|(agent_id, source)| UpgradeResumeMarker {
                     agent_id: agent_id.clone(),
                     marked_at_ms,
-                    // Kickstart recreation becomes an ordinary hidden turn.
-                    // Normalize within the single durable handoff, before the
-                    // Host consumes the pending introduction flag.
+                    // Keep the existing kickstart marker identity, but only an
+                    // actual bound ordinary routed lease carries original work.
                     source: Some(if source == "kickstart" { "turn".into() } else { source.clone() }),
                     automation_id: None,
                     automation_run_id: None,
+                    original_work: state.routed_turn_leases.values()
+                        .find(|lease| lease.agent_id == *agent_id
+                            && state.turn_dispatch.active_generation_for(&lease.ticket) == Some(lease.generation))
+                        .and_then(|lease| lease.original_work.clone()),
                 })
             .collect::<Vec<_>>();
         write_markers(store, &markers)?;
@@ -427,10 +479,9 @@ impl ProductionTranscriptRuntime {
         state: &mut RuntimeState,
         input: &SendInput,
         client_nonce: Option<&str>,
+        args: &Value,
     ) -> Result<(), ProductionSendError> {
-        if !self.is_quiescing_for_upgrade()
-            || (input.prompt.trim().is_empty() && input.attachment_paths.is_empty())
-        {
+        if input.prompt.trim().is_empty() && input.attachment_paths.is_empty() {
             return Ok(());
         }
         // Existing in-flight and durable identities retain their coalesced
@@ -442,7 +493,24 @@ impl ProductionTranscriptRuntime {
         }) {
             return Ok(());
         }
-        Err(ProductionSendError::Rejected("Transcript is quiescing for host upgrade".into()))
+        if self.is_quiescing_for_upgrade() {
+            return Err(ProductionSendError::Rejected("Transcript is quiescing for host upgrade".into()));
+        }
+        let automatic_continuation = matches!(optional_non_empty(args, "requestSource"), Some("upgrade-resume" | "ack-redrive"))
+            || args.get("upgradeResume").and_then(Value::as_bool) == Some(true)
+            || args.get("ackRedrive").and_then(Value::as_bool) == Some(true);
+        if automatic_continuation {
+            let store = self.upgrade_resume_store.as_ref().ok_or_else(|| {
+                ProductionSendError::Rejected("automatic continuation requires the upgrade marker owner".into())
+            })?;
+            let pending = store.migrate_legacy_checked().map_err(|error| {
+                ProductionSendError::Rejected(format!("automatic continuation retained: {error}"))
+            })?;
+            if input.agent_id.as_deref().is_none_or(|agent_id| pending.iter().any(|marker| marker.agent_id == agent_id)) {
+                return Err(ProductionSendError::Rejected("automatic continuation retained by original upgrade work".into()));
+            }
+        }
+        Ok(())
     }
 
     /// Compatibility inspection; production upgrade decisions use the checked projection.
@@ -463,8 +531,55 @@ impl ProductionTranscriptRuntime {
         self.upgrade_recreate_resume.is_quiescing_for_upgrade()
     }
 
+    /// Serialize automatic ACK consumption with both upgrade publication
+    /// paths. Admission -> marker -> ACK schedule -> ACK file/cache is the
+    /// owner order. Provider, telemetry and send callbacks run after release.
+    pub fn prepare_automatic_ack_redrive(
+        &self,
+        obligations: &AckObligations,
+        agent_id: &str,
+        agent_exists: bool,
+        now_ms: u64,
+    ) -> Result<Option<(AckRedriveTrigger, AckRedrivePreparation)>, String> {
+        let state = self.state.lock()
+            .map_err(|_| "Transcript admission owner is poisoned".to_string())?;
+        if self.is_quiescing_for_upgrade() || state.lifecycle.is_running(agent_id) {
+            return Ok(None);
+        }
+        let store = self.upgrade_resume_store.as_ref()
+            .ok_or_else(|| "automatic ACK requires the upgrade marker owner".to_string())?;
+        let preparation = store.while_agent_unmarked_checked(agent_id, || {
+            obligations.prepare_due_redrive_checked(agent_id, agent_exists, now_ms)
+        }).map_err(|error| error.to_string())?
+            .transpose().map_err(|error| error.to_string())?.flatten();
+        drop(state);
+        if let Some((trigger, preparation)) = &preparation {
+            obligations.report_redrive_preparation(agent_id, preparation, *trigger, now_ms as f64);
+        }
+        Ok(preparation)
+    }
+
     pub fn resume_after_recreate(&self) {
         self.upgrade_recreate_resume.resume_after_recreate();
+    }
+
+    /// The shipping consumer first proves the original completed turn. This
+    /// existing admission owner only serializes the final idle/ACK/marker CAS;
+    /// a reference or marker alone is never a Runner completion proof.
+    pub fn clear_completed_upgrade_marker_if_idle(
+        &self,
+        marker: &UpgradeResumeMarker,
+        acknowledgments: &SandAckObligationStore,
+    ) -> Result<bool, String> {
+        let state = self.state.lock()
+            .map_err(|_| "Transcript admission owner is poisoned".to_string())?;
+        if state.lifecycle.is_running(&marker.agent_id) {
+            return Ok(false);
+        }
+        let store = self.upgrade_resume_store.as_ref()
+            .ok_or_else(|| "upgrade marker owner unavailable".to_string())?;
+        store.clear_if_matches_with_ack_absent_checked(marker, acknowledgments)
+            .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_durable_recovery(&self, agent_id: &str) {
@@ -663,7 +778,7 @@ impl ProductionTranscriptRuntime {
 
         let mut state = self.lock_state();
         loop {
-            self.ensure_upgrade_send_admission(&mut state, &input, nonce.as_deref())?;
+            self.ensure_upgrade_send_admission(&mut state, &input, nonce.as_deref(), args)?;
             let begin = {
                 let RuntimeState {
                     pipeline, ledger, ..
@@ -858,6 +973,8 @@ impl ProductionTranscriptRuntime {
                                 generation,
                                 is_group_member_turn,
                                 human_handoff_conversation_id: human_handoff_conversation_id.clone(),
+                                original_input: original_routed_input(args, &input, nonce.as_deref(), &context),
+                                original_work: None,
                             },
                         );
                     }
@@ -896,6 +1013,57 @@ impl ProductionTranscriptRuntime {
                 "routed provider stream has no admitted Host turn lease: {stream_id}"
             ))),
         }
+    }
+
+    /// Attach the already checked Session and actual resolved Native model to
+    /// the original accepted input, without reading Session under this mutex.
+    pub fn bind_original_turn_model(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        admission: &SessionWorkAdmissionRecord,
+        model_id: &str,
+    ) -> Result<Option<OriginalTurnReference>, ProductionSendError> {
+        let mut state = self.state.lock().map_err(|_| {
+            ProductionSendError::Internal("original turn admission owner is poisoned".into())
+        })?;
+        let lease = state.routed_turn_leases.get(stream_id).ok_or_else(|| {
+            ProductionSendError::Rejected("original turn has no admitted routed lease".into())
+        })?;
+        if lease.agent_id != agent_id
+            || state.turn_dispatch.active_generation_for(&lease.ticket) != Some(lease.generation)
+        {
+            return Err(ProductionSendError::Conflict("original turn lease is stale or foreign".into()));
+        }
+        if self.is_quiescing_for_upgrade() {
+            return Ok(None);
+        }
+        let Some(input) = lease.original_input.as_ref() else { return Ok(None); };
+        let original = OriginalTurnReference {
+            version: 1,
+            scope: OriginalTurnScope::NativeOrdinaryUserV1,
+            agent_id: agent_id.to_string(),
+            session_key: admission.session_key.clone(),
+            session_id: admission.session_id.clone(),
+            original_lifecycle_revision: admission.lifecycle_revision.clone(),
+            stream_id: stream_id.to_string(),
+            input_digest: input.input_digest.clone(),
+            client_nonce: input.client_nonce.clone(),
+            user_message_id: input.user_message_id.clone(),
+            echo_entry_id: input.echo_entry_id.clone(),
+            request_source: input.request_source.clone(),
+            provider: "fabushi".into(),
+            model_id: model_id.to_string(),
+        };
+        if admission.deletion_pending || admission.archived_at_ms.is_some() || original.validate().is_err() {
+            return Ok(None);
+        }
+        if lease.original_work.as_ref().is_some_and(|bound| bound != &original) {
+            return Err(ProductionSendError::Conflict("original turn is already bound to another identity".into()));
+        }
+        state.routed_turn_leases.get_mut(stream_id).expect("checked under same owner lock")
+            .original_work = Some(original.clone());
+        Ok(Some(original))
     }
 
     pub fn settle_routed_turn(
@@ -1067,7 +1235,7 @@ impl ProductionTranscriptRuntime {
 
         let mut state = self.lock_state();
         loop {
-            self.ensure_upgrade_send_admission(&mut state, &input, nonce.as_deref())?;
+            self.ensure_upgrade_send_admission(&mut state, &input, nonce.as_deref(), args)?;
             let begin = {
                 let RuntimeState {
                     pipeline, ledger, ..

@@ -762,6 +762,7 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
         source: Some("background-revival".into()),
         automation_id: None,
         automation_run_id: None,
+        original_work: None,
     }).expect("durable marker");
     assert_eq!(
         manager.transcript_runtime().upgrade_resume_agent_ids(),
@@ -806,6 +807,7 @@ fn manager_refuses_failed_marker_handoff_and_preserves_existing_quiesce() {
     assert!(manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
         agent_id: "other".into(), marked_at_ms: 1.0, source: None,
         automation_id: None, automation_run_id: None,
+        original_work: None,
     }).is_err());
     assert_eq!(fs::read(store.file_path()).unwrap(), b"bad recovery evidence");
 

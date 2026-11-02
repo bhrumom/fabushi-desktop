@@ -5,13 +5,15 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::durable_file_policy::SAND_UPGRADE_RESUME_FILE_NAME;
+use crate::extensions::session::agent_db::OriginalTurnReference;
+use super::sand_ack_obligation_store::SandAckObligationStore;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UpgradeResumeMarker {
     pub agent_id: String,
     pub marked_at_ms: f64,
@@ -21,6 +23,8 @@ pub struct UpgradeResumeMarker {
     pub automation_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub automation_run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original_work: Option<OriginalTurnReference>,
 }
 
 pub fn coerce_upgrade_resume_marker(entry: &Value) -> Option<UpgradeResumeMarker> {
@@ -45,6 +49,9 @@ pub fn coerce_upgrade_resume_marker(entry: &Value) -> Option<UpgradeResumeMarker
             .get("automationRunId")
             .and_then(Value::as_str)
             .map(ToOwned::to_owned),
+        original_work: object.get("originalWork")
+            .filter(|value| !value.is_null())
+            .and_then(|value| serde_json::from_value(value.clone()).ok()),
     })
 }
 
@@ -75,7 +82,14 @@ pub fn upgrade_resume_marker_identity_is_well_formed(marker: &UpgradeResumeMarke
     {
         return false;
     }
-    marker.automation_run_id.is_none() || marker.automation_id.is_some()
+    (marker.automation_run_id.is_none() || marker.automation_id.is_some())
+        && marker.original_work.as_ref().is_none_or(|original| {
+            original.validate().is_ok()
+                && original.agent_id == marker.agent_id
+                && marker.source.as_deref() == Some("turn")
+                && marker.automation_id.is_none()
+                && marker.automation_run_id.is_none()
+        })
 }
 
 #[derive(Debug)]
@@ -133,6 +147,10 @@ fn validate_marker(marker: &UpgradeResumeMarker, index: usize) -> Result<(), Upg
 }
 
 fn parse_upgrade_resume_file_checked(raw: &str) -> Result<Vec<UpgradeResumeMarker>, UpgradeResumeStoreError> {
+    Ok(parse_upgrade_resume_image_checked(raw)?.1)
+}
+
+fn parse_upgrade_resume_image_checked(raw: &str) -> Result<(u64, Vec<UpgradeResumeMarker>), UpgradeResumeStoreError> {
     let value: Value = serde_json::from_str(raw)
         .map_err(|error| UpgradeResumeStoreError::MalformedDocument(error.to_string()))?;
     let object = value.as_object().ok_or_else(|| {
@@ -140,19 +158,24 @@ fn parse_upgrade_resume_file_checked(raw: &str) -> Result<Vec<UpgradeResumeMarke
     })?;
     // The historical writer also used a versionless pending envelope. Its
     // rows still need complete identities; lenient coercion is inspection-only.
-    if let Some(version) = object.get("version") {
-        if version.as_u64() != Some(1) {
+    let version = match object.get("version") {
+        Some(version) => {
+            if !matches!(version.as_u64(), Some(1 | 2)) {
             return Err(UpgradeResumeStoreError::UnsupportedVersion(version.to_string()));
+            }
+            version.as_u64().expect("version was checked")
         }
-    }
+        None => 1,
+    };
     let rows = object.get("pending").and_then(Value::as_array).ok_or_else(|| {
         UpgradeResumeStoreError::MalformedDocument("pending must be an array".into())
     })?;
-    let mut agents = HashSet::new();
-    let mut pending = Vec::with_capacity(rows.len());
     for (index, row) in rows.iter().enumerate() {
         let invalid = |reason| UpgradeResumeStoreError::InvalidMarker { index, reason };
         let object = row.as_object().ok_or_else(|| invalid("expected an object"))?;
+        if !object.get("agentId").and_then(Value::as_str).is_some_and(|value| !value.is_empty()) {
+            return Err(invalid("agentId must be a nonempty string"));
+        }
         if !object.get("markedAtMs").and_then(Value::as_f64).is_some_and(|value| value.is_finite()) {
             return Err(invalid("markedAtMs must be a finite number"));
         }
@@ -161,15 +184,30 @@ fn parse_upgrade_resume_file_checked(raw: &str) -> Result<Vec<UpgradeResumeMarke
                 return Err(invalid("optional identity fields must be strings or null"));
             }
         }
-        let marker = coerce_upgrade_resume_marker(row)
-            .ok_or_else(|| invalid("agentId must be a nonempty string"))?;
-        validate_marker(&marker, index)?;
+    }
+    // Parse the original bytes again into the strict shape, so duplicate known
+    // fields and unknown nested reference fields cannot disappear through Value.
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Image {
+        #[serde(rename = "version")]
+        _version: Option<u64>,
+        pending: Vec<UpgradeResumeMarker>,
+    }
+    let image: Image = serde_json::from_str(raw)
+        .map_err(|error| UpgradeResumeStoreError::MalformedDocument(error.to_string()))?;
+    let mut agents = HashSet::new();
+    for (index, marker) in image.pending.iter().enumerate() {
+        let invalid = |reason| UpgradeResumeStoreError::InvalidMarker { index, reason };
+        validate_marker(marker, index)?;
+        if version != 2 && marker.original_work.is_some() {
+            return Err(invalid("legacy marker cannot carry original work authority"));
+        }
         if !agents.insert(marker.agent_id.clone()) {
             return Err(invalid("duplicate agent identity"));
         }
-        pending.push(marker);
     }
-    Ok(pending)
+    Ok((version, image.pending))
 }
 
 pub fn upsert_resume_marker(
@@ -215,6 +253,53 @@ impl SandUpgradeResumeStore {
     pub fn list_pending_checked(&self) -> Result<Vec<UpgradeResumeMarker>, UpgradeResumeStoreError> {
         let _guard = self.lock.lock().map_err(|_| UpgradeResumeStoreError::OwnerPoisoned)?;
         self.read_pending_checked_unlocked()
+    }
+
+    /// Migrate the complete valid legacy image under the existing owner lock.
+    /// Legacy rows remain unbound; migration never invents an original turn.
+    pub fn migrate_legacy_checked(&self) -> Result<Vec<UpgradeResumeMarker>, UpgradeResumeStoreError> {
+        self.migrate_legacy_with_replace(|part, target| fs::rename(part, target))
+    }
+
+    fn migrate_legacy_with_replace(
+        &self,
+        replace: impl FnOnce(&Path, &Path) -> std::io::Result<()>,
+    ) -> Result<Vec<UpgradeResumeMarker>, UpgradeResumeStoreError> {
+        let _guard = self.lock.lock().map_err(|_| UpgradeResumeStoreError::OwnerPoisoned)?;
+        self.migrate_legacy_unlocked(replace)
+    }
+
+    fn migrate_legacy_unlocked(
+        &self,
+        replace: impl FnOnce(&Path, &Path) -> std::io::Result<()>,
+    ) -> Result<Vec<UpgradeResumeMarker>, UpgradeResumeStoreError> {
+        let raw = match fs::read_to_string(&self.file_path) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(UpgradeResumeStoreError::Io { operation: "read", error }),
+        };
+        let (version, pending) = parse_upgrade_resume_image_checked(&raw)?;
+        if version != 2 {
+            self.write_unlocked_with_replace(&pending, replace)?;
+        }
+        Ok(pending)
+    }
+
+    /// Only the Runtime admission owner uses this boundary. The action is a
+    /// synchronous ACK mutation, never a provider, observer or send callback.
+    /// Holding this existing lock prevents a retained marker from appearing
+    /// between the deciding read and consumption of a due timer/attempt.
+    pub(super) fn while_agent_unmarked_checked<T>(
+        &self,
+        agent_id: &str,
+        action: impl FnOnce() -> T,
+    ) -> Result<Option<T>, UpgradeResumeStoreError> {
+        let _guard = self.lock.lock().map_err(|_| UpgradeResumeStoreError::OwnerPoisoned)?;
+        let pending = self.migrate_legacy_unlocked(|part, target| fs::rename(part, target))?;
+        if pending.iter().any(|marker| marker.agent_id == agent_id) {
+            return Ok(None);
+        }
+        Ok(Some(action()))
     }
 
     pub fn mark_pending_checked(&self, marker: UpgradeResumeMarker) -> Result<(), UpgradeResumeStoreError> {
@@ -291,6 +376,26 @@ impl SandUpgradeResumeStore {
         replace: impl FnOnce(&Path, &Path) -> std::io::Result<()>,
     ) -> Result<bool, UpgradeResumeStoreError> {
         let _guard = self.lock.lock().map_err(|_| UpgradeResumeStoreError::OwnerPoisoned)?;
+        self.clear_if_matches_unlocked_with_replace(marker, replace)
+    }
+
+    pub(super) fn clear_if_matches_with_ack_absent_checked(
+        &self,
+        marker: &UpgradeResumeMarker,
+        acknowledgments: &SandAckObligationStore,
+    ) -> Result<bool, UpgradeResumeStoreError> {
+        let _guard = self.lock.lock().map_err(|_| UpgradeResumeStoreError::OwnerPoisoned)?;
+        let Some(_absence) = acknowledgments.checked_absence_guard(&marker.agent_id)
+            .map_err(|error| UpgradeResumeStoreError::Io { operation: "check ACK absence", error })?
+        else { return Ok(false); };
+        self.clear_if_matches_unlocked_with_replace(marker, |part, target| fs::rename(part, target))
+    }
+
+    fn clear_if_matches_unlocked_with_replace(
+        &self,
+        marker: &UpgradeResumeMarker,
+        replace: impl FnOnce(&Path, &Path) -> std::io::Result<()>,
+    ) -> Result<bool, UpgradeResumeStoreError> {
         validate_marker(marker, 0)?;
         let pending = self.read_pending_checked_unlocked()?;
         let remaining = pending
@@ -346,7 +451,7 @@ impl SandUpgradeResumeStore {
         let result = (|| -> std::io::Result<()> {
             let mut file = fs::OpenOptions::new().create_new(true).write(true).open(&part)?;
             let bytes = serde_json::to_vec(&File {
-                version: 1,
+                version: 2,
                 pending,
             })
             .map_err(std::io::Error::other)?;
@@ -379,6 +484,7 @@ mod checked_marker_tests {
         UpgradeResumeMarker {
             agent_id: agent_id.into(), marked_at_ms: at, source: Some("turn".into()),
             automation_id: None, automation_run_id: None,
+            original_work: None,
         }
     }
 
@@ -428,6 +534,7 @@ mod checked_marker_tests {
         }));
         assert!(poisoned.is_err());
         assert!(matches!(store.list_pending_checked(), Err(UpgradeResumeStoreError::OwnerPoisoned)));
+        assert!(matches!(store.migrate_legacy_checked(), Err(UpgradeResumeStoreError::OwnerPoisoned)));
         assert!(matches!(store.mark_pending_checked(marker("b", 2.0)), Err(UpgradeResumeStoreError::OwnerPoisoned)));
         assert!(matches!(store.clear_if_matches_checked(&saved), Err(UpgradeResumeStoreError::OwnerPoisoned)));
         assert!(matches!(store.clear_checked("a"), Err(UpgradeResumeStoreError::OwnerPoisoned)));
@@ -438,5 +545,94 @@ mod checked_marker_tests {
         assert!(!store.clear_if_matches(&saved));
         assert_eq!(fs::read(store.file_path()).unwrap(), original);
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn legacy_migration_is_atomic_and_never_invents_original_work() {
+        let root = std::env::temp_dir().join(format!("fabushi-upgrade-migrate-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let store = SandUpgradeResumeStore::new(&root);
+        for document in [
+            r#"{"pending":[{"agentId":"a","markedAtMs":1,"source":"turn"},{"agentId":"b","markedAtMs":2}]}"#,
+            r#"{"version":1,"pending":[{"agentId":"a","markedAtMs":1,"source":"turn"},{"agentId":"b","markedAtMs":2}]}"#,
+        ] {
+            fs::write(store.file_path(), document).unwrap();
+            let before = fs::read(store.file_path()).unwrap();
+            assert!(store.migrate_legacy_with_replace(|part, target| {
+                assert_eq!(fs::read(target).unwrap(), before);
+                let staged: Value = serde_json::from_slice(&fs::read(part).unwrap()).unwrap();
+                assert_eq!(staged["version"], 2);
+                assert_eq!(staged["pending"].as_array().unwrap().len(), 2);
+                assert!(staged["pending"].as_array().unwrap().iter().all(|row| row.get("originalWork").is_none()));
+                Err(std::io::Error::other("controlled migration replace refusal"))
+            }).is_err());
+            assert_eq!(fs::read(store.file_path()).unwrap(), before);
+            assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+            let migrated = store.migrate_legacy_checked().unwrap();
+            assert_eq!(migrated.len(), 2);
+            assert!(migrated.iter().all(|row| row.original_work.is_none()));
+            let version_two = fs::read(store.file_path()).unwrap();
+            assert_eq!(store.migrate_legacy_checked().unwrap(), migrated);
+            assert_eq!(fs::read(store.file_path()).unwrap(), version_two);
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn marker_v2_keeps_strict_reference_and_exact_original_identity() {
+        use crate::extensions::session::agent_db::OriginalTurnScope;
+        let root = std::env::temp_dir().join(format!("fabushi-upgrade-original-{}", uuid::Uuid::new_v4()));
+        let store = SandUpgradeResumeStore::new(&root);
+        let mut original_marker = marker("agent", 1.0);
+        original_marker.original_work = Some(OriginalTurnReference {
+            version: 1, scope: OriginalTurnScope::NativeOrdinaryUserV1,
+            agent_id: "agent".into(), session_key: "agent:agent:main".into(), session_id: "agent".into(),
+            original_lifecycle_revision: "revision".into(), stream_id: "stream".into(),
+            input_digest: "a".repeat(64), client_nonce: None,
+            user_message_id: "user".into(), echo_entry_id: "user".into(), request_source: None,
+            provider: "fabushi".into(), model_id: "admitted-model".into(),
+        });
+        store.mark_pending_checked(original_marker.clone()).unwrap();
+        assert_eq!(store.migrate_legacy_checked().unwrap(), vec![original_marker.clone()]);
+        let before = fs::read(store.file_path()).unwrap();
+        let mut foreign = original_marker.clone();
+        foreign.original_work.as_mut().unwrap().model_id = "another-model".into();
+        assert!(!store.clear_if_matches_checked(&foreign).unwrap());
+        assert_eq!(fs::read(store.file_path()).unwrap(), before);
+        let mut document: Value = serde_json::from_slice(&before).unwrap();
+        document["pending"][0]["originalWork"]["extra"] = Value::Bool(true);
+        fs::write(store.file_path(), serde_json::to_vec(&document).unwrap()).unwrap();
+        let corrupt = fs::read(store.file_path()).unwrap();
+        assert!(store.migrate_legacy_checked().is_err());
+        assert!(store.clear_if_matches_checked(&original_marker).is_err());
+        assert_eq!(fs::read(store.file_path()).unwrap(), corrupt);
+        document["pending"][0]["originalWork"].as_object_mut().unwrap().remove("extra");
+        document["version"] = Value::from(1);
+        fs::write(store.file_path(), serde_json::to_vec(&document).unwrap()).unwrap();
+        assert!(store.migrate_legacy_checked().is_err(), "v1 cannot import positive original authority");
+        fs::write(store.file_path(), before).unwrap();
+        assert!(store.clear_if_matches_checked(&original_marker).unwrap());
+        assert!(!store.file_path().exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn checked_migration_rejects_duplicate_fields_and_whole_image_corruption() {
+        let root = std::env::temp_dir().join(format!("fabushi-upgrade-migrate-invalid-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let store = SandUpgradeResumeStore::new(&root);
+        for raw in [
+            r#"{"version":2,"version":2,"pending":[]}"#,
+            r#"{"version":2,"pending":[],"extra":true}"#,
+            r#"{"version":2,"pending":[{"agentId":"a","agentId":"a","markedAtMs":1}]}"#,
+            r#"{"version":1,"pending":[{"agentId":"good","markedAtMs":1},{"agentId":"bad"}]}"#,
+            r#"{"version":99,"pending":[]}"#,
+        ] {
+            fs::write(store.file_path(), raw).unwrap();
+            assert!(store.migrate_legacy_checked().is_err());
+            assert_eq!(fs::read_to_string(store.file_path()).unwrap(), raw);
+            assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        }
+        fs::remove_dir_all(root).unwrap();
     }
 }

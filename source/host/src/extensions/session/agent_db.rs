@@ -17,7 +17,8 @@ use crate::extensions::memory::memory_service::MemoryRecoveryRecord;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
-    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db, recover_corrupt_store_db,
+    AgentDbRecoveryError, DbRecoveryOptions, acquire_automation_custody_recovery_guard,
+    open_configured_db, recover_corrupt_store_db,
 };
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
@@ -67,6 +68,14 @@ pub enum AgentDbProjectionError {
     LatestRootHex(String),
     #[error("canonical Agent checkpoint root is invalid: {0}")]
     CheckpointRootInvalid(String),
+    #[error("original turn terminal data is invalid: {0}")]
+    OriginalTurnInvalid(String),
+    #[error("original turn terminal authority is unavailable: {0}")]
+    OriginalTurnUnavailable(String),
+    #[error("original turn terminal fence changed: {0}")]
+    OriginalTurnStale(String),
+    #[error("original turn terminal identity conflicts: {0}")]
+    OriginalTurnConflict(String),
     #[error("agent db owner mutex poisoned")]
     OwnerPoisoned,
 }
@@ -92,6 +101,404 @@ const KV_PURPOSE: &str = "purpose";
 const KV_PARTNERS: &str = "conversationPartners";
 const KV_SESSION_WORK_ADMISSION: &str = "sessionWorkAdmission";
 const MAX_COMPACTION_SUMMARY_CHARS: usize = 16_000;
+
+pub(crate) const ORIGINAL_TURN_TERMINAL_PREFIX: &str = "original-routed-terminal:";
+pub(crate) const ORIGINAL_TURN_TERMINAL_KEY: &str = "original-routed-terminal:current";
+pub(crate) const ORIGINAL_TURN_TERMINAL_MAX_BYTES: usize = 64 * 1024;
+pub(crate) const ORIGINAL_TURN_MAX_COMMITS: usize = 5;
+
+/// Identity data captured by the admitted Transcript lease. Possessing or
+/// deserializing this reference is not proof that a turn completed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OriginalTurnReference {
+    pub version: u16,
+    pub scope: OriginalTurnScope,
+    pub agent_id: String,
+    pub session_key: String,
+    pub session_id: String,
+    pub original_lifecycle_revision: String,
+    pub stream_id: String,
+    pub input_digest: String,
+    pub client_nonce: Option<String>,
+    pub user_message_id: String,
+    pub echo_entry_id: String,
+    pub request_source: Option<String>,
+    pub provider: String,
+    pub model_id: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OriginalTurnScope {
+    #[serde(rename = "nativeOrdinaryUserV1")]
+    NativeOrdinaryUserV1,
+}
+
+impl OriginalTurnReference {
+    /// Structural validation only; Session and Runner independently check the
+    /// actual owner rows, canonical blobs and sealed completed observations.
+    pub fn validate(&self) -> Result<(), String> {
+        let bounded_identity = |value: &str| {
+            !value.trim().is_empty()
+                && value.len() <= 1024
+                && !value.chars().any(char::is_control)
+        };
+        if self.version != 1
+            || self.provider != "fabushi"
+            || self.session_id != self.agent_id
+            || self.session_key != format!("agent:{}:main", self.agent_id)
+            || self.echo_entry_id != self.user_message_id
+            || self.request_source.as_deref().is_some_and(|source| source != "turn")
+            || self.input_digest.len() != 64
+            || !self.input_digest.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+            || [
+                self.agent_id.as_str(), self.session_key.as_str(), self.session_id.as_str(),
+                self.original_lifecycle_revision.as_str(), self.stream_id.as_str(),
+                self.user_message_id.as_str(), self.echo_entry_id.as_str(), self.model_id.as_str(),
+            ].into_iter().any(|value| !bounded_identity(value))
+            || self.client_nonce.as_deref().is_some_and(|value| !bounded_identity(value))
+        {
+            return Err("unsupported or inconsistent original turn reference".into());
+        }
+        Ok(())
+    }
+}
+
+/// Session persists neutral records; completion and tool-custody policy stays
+/// in Runner. These records cannot be submitted through a public raw writer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct CanonicalTurnCommitRecord {
+    pub(crate) ordinal: u32,
+    pub(crate) request_id: String,
+    pub(crate) message_id: String,
+    pub(crate) prior_root_blob_id: Option<Vec<u8>>,
+    pub(crate) root_blob_id: Vec<u8>,
+    pub(crate) user_blob_id: Vec<u8>,
+    pub(crate) turn_blob_id: Vec<u8>,
+    pub(crate) step_blob_ids: Vec<Vec<u8>>,
+    pub(crate) assistant_result_sha256: [u8; 32],
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct SameTurnCompactionBinding {
+    pub(crate) entry_id: String,
+    pub(crate) source_turn_id: String,
+    pub(crate) source_lifecycle_revision: String,
+    pub(crate) lifecycle_revision: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) enum StoredCompletedTerminal {
+    #[serde(rename = "completed")]
+    Completed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct OriginalTurnTerminalRecord {
+    pub(crate) version: u16,
+    pub(crate) original: OriginalTurnReference,
+    pub(crate) terminal: StoredCompletedTerminal,
+    pub(crate) final_result_sha256: [u8; 32],
+    pub(crate) sent_message_count: u64,
+    pub(crate) reacted: bool,
+    pub(crate) custody_json: String,
+    pub(crate) canonical: Vec<CanonicalTurnCommitRecord>,
+    pub(crate) settlement_lifecycle_revision: String,
+    pub(crate) compaction: Option<SameTurnCompactionBinding>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OriginalTurnReceiptCommit {
+    Inserted,
+    AlreadyCommitted,
+    Replaced,
+}
+
+/// One inspected SQLite image, not a completed-turn capability. Blob checks
+/// happen outside the connection mutex; Session brings this exact image back
+/// to the same owner before publishing or returning a verified candidate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct OriginalTurnTerminalFence {
+    original: OriginalTurnReference,
+    pub(super) final_root_blob_id: Vec<u8>,
+    pub(super) original_user_content: String,
+    pub(super) settlement_lifecycle_revision: String,
+    pub(super) compaction: Option<SameTurnCompactionBinding>,
+    raw_metadata: String,
+    raw_admission: String,
+    raw_user: String,
+    raw_compaction: Option<String>,
+    raw_slot: Option<String>,
+}
+
+impl OriginalTurnTerminalFence {
+    pub(super) fn contains_record(&self, record: &OriginalTurnTerminalRecord) -> bool {
+        self.raw_slot.as_deref()
+            .and_then(|raw| serde_json::from_str::<OriginalTurnTerminalRecord>(raw).ok())
+            .as_ref() == Some(record)
+    }
+}
+
+struct OriginalTurnTerminalSlot {
+    raw: String,
+    record: OriginalTurnTerminalRecord,
+}
+
+fn reject_original_turn_terminal_key(key: &str) -> Result<(), AgentDbProjectionError> {
+    if key.starts_with(ORIGINAL_TURN_TERMINAL_PREFIX) {
+        return Err(AgentDbProjectionError::OriginalTurnInvalid(
+            "terminal slots are reserved for the Session terminal transaction".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn clear_original_turn_terminal_slots(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
+    db.execute(
+        "DELETE FROM kv WHERE substr(key, 1, ?1) = ?2",
+        params![ORIGINAL_TURN_TERMINAL_PREFIX.len() as i64, ORIGINAL_TURN_TERMINAL_PREFIX],
+    )
+}
+
+fn validate_original_turn_terminal_record(
+    record: &OriginalTurnTerminalRecord,
+) -> Result<(), AgentDbProjectionError> {
+    record.original.validate().map_err(AgentDbProjectionError::OriginalTurnInvalid)?;
+    if record.version != 1
+        || record.canonical.is_empty()
+        || record.canonical.len() > ORIGINAL_TURN_MAX_COMMITS
+        || record.settlement_lifecycle_revision.trim().is_empty()
+        || record.settlement_lifecycle_revision.len() > 1024
+        || record.settlement_lifecycle_revision.chars().any(char::is_control)
+        || record.custody_json.trim().is_empty()
+    {
+        return Err(AgentDbProjectionError::OriginalTurnInvalid(
+            "unsupported terminal version, commit count or settlement identity".into(),
+        ));
+    }
+    for (ordinal, commit) in record.canonical.iter().enumerate() {
+        let message_id = if ordinal == 0 {
+            record.original.user_message_id.as_str()
+        } else {
+            record.original.stream_id.as_str()
+        };
+        if commit.ordinal as usize != ordinal
+            || commit.request_id != record.original.stream_id
+            || commit.message_id != message_id
+            || commit.root_blob_id.len() != 32
+            || commit.user_blob_id.len() != 32
+            || commit.turn_blob_id.len() != 32
+            || commit.step_blob_ids.iter().any(|id| id.len() != 32)
+            || commit.prior_root_blob_id.as_ref().is_some_and(Vec::is_empty)
+            || (ordinal > 0 && commit.prior_root_blob_id.as_ref()
+                != Some(&record.canonical[ordinal - 1].root_blob_id))
+        {
+            return Err(AgentDbProjectionError::OriginalTurnInvalid(
+                "terminal canonical references have an invalid identity or order".into(),
+            ));
+        }
+    }
+    match record.compaction.as_ref() {
+        None if record.settlement_lifecycle_revision == record.original.original_lifecycle_revision => {}
+        Some(binding) if binding.entry_id == format!(
+                "compaction:{}:{}", record.original.agent_id, record.original.stream_id,
+            )
+            && binding.source_turn_id == record.original.stream_id
+            && binding.source_lifecycle_revision == record.original.original_lifecycle_revision
+            && binding.lifecycle_revision == record.settlement_lifecycle_revision
+            && binding.lifecycle_revision != binding.source_lifecycle_revision => {}
+        _ => return Err(AgentDbProjectionError::OriginalTurnInvalid(
+            "terminal settlement is not the original or its bound compaction successor".into(),
+        )),
+    }
+    // Custody is deliberately opaque here. Runner alone parses and qualifies
+    // its existing typed report and the actual canonical blob contents.
+    Ok(())
+}
+
+fn read_original_turn_terminal_slot(
+    db: &rusqlite::Connection,
+) -> Result<Option<OriginalTurnTerminalSlot>, AgentDbProjectionError> {
+    let stored = db.query_row(
+        "SELECT length(CAST(value AS BLOB)), \
+         CASE WHEN length(CAST(value AS BLOB)) <= ?1 THEN value ELSE NULL END \
+         FROM kv WHERE key = ?2",
+        params![ORIGINAL_TURN_TERMINAL_MAX_BYTES as i64, ORIGINAL_TURN_TERMINAL_KEY],
+        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Option<String>>(1)?)),
+    ).optional()?;
+    let Some((byte_length, raw)) = stored else { return Ok(None); };
+    let raw = raw.filter(|raw| byte_length >= 0
+        && byte_length as usize == raw.len()
+        && raw.len() <= ORIGINAL_TURN_TERMINAL_MAX_BYTES)
+        .ok_or_else(|| AgentDbProjectionError::OriginalTurnInvalid(
+            "stored terminal slot exceeds its encoded byte limit".into(),
+        ))?;
+    let record = serde_json::from_str::<OriginalTurnTerminalRecord>(&raw)
+        .map_err(|error| AgentDbProjectionError::OriginalTurnInvalid(format!(
+            "stored terminal slot is malformed: {error}",
+        )))?;
+    validate_original_turn_terminal_record(&record)?;
+    Ok(Some(OriginalTurnTerminalSlot { raw, record }))
+}
+
+fn capture_original_turn_terminal_fence(
+    db: &rusqlite::Connection,
+    original: &OriginalTurnReference,
+    expected_final_root: &[u8],
+    slot: Option<&OriginalTurnTerminalSlot>,
+) -> Result<OriginalTurnTerminalFence, AgentDbProjectionError> {
+    original.validate().map_err(AgentDbProjectionError::OriginalTurnInvalid)?;
+    if expected_final_root.is_empty() {
+        return Err(AgentDbProjectionError::OriginalTurnInvalid(
+            "terminal completion requires a present canonical root".into(),
+        ));
+    }
+    let raw_metadata = read_kv(db, "metadata")?.ok_or_else(|| {
+        AgentDbProjectionError::OriginalTurnUnavailable("persisted metadata is missing".into())
+    })?;
+    let metadata: serde_json::Value = serde_json::from_slice(
+        &decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?,
+    )?;
+    if !metadata.get("lifecycleRevision").and_then(serde_json::Value::as_str)
+        .is_some_and(|revision| !revision.trim().is_empty()
+            && revision.len() <= 1024 && !revision.chars().any(char::is_control))
+    {
+        return Err(AgentDbProjectionError::OriginalTurnInvalid(
+            "persisted metadata has no valid independent lifecycle token".into(),
+        ));
+    }
+    let root = metadata.get("latestRootBlobId").and_then(serde_json::Value::as_str)
+        .ok_or_else(|| AgentDbProjectionError::OriginalTurnInvalid(
+            "persisted metadata requires a canonical root string".into(),
+        ))?;
+    let root = decode_hex(root).map_err(AgentDbProjectionError::LatestRootHex)?;
+    if metadata.get("agentId").and_then(serde_json::Value::as_str)
+            != Some(original.agent_id.as_str())
+        || root.as_slice() != expected_final_root
+    {
+        return Err(AgentDbProjectionError::OriginalTurnStale(
+            "canonical agent or root differs from the completed original".into(),
+        ));
+    }
+    let raw_admission = read_kv(db, KV_SESSION_WORK_ADMISSION)?.ok_or_else(|| {
+        AgentDbProjectionError::OriginalTurnUnavailable("terminal admission is missing".into())
+    })?;
+    let admission: SessionWorkAdmissionRecord = serde_json::from_str(&raw_admission)?;
+    if !session_admission_identity_is_well_formed(&admission)
+        || admission.session_key != original.session_key
+        || admission.session_id != original.session_id
+        || admission.deletion_pending
+        || admission.archived_at_ms.is_some()
+        || admission.admitted_work_id.is_some()
+        || admission.admitted_media_work_id.is_some()
+        || !admission.admitted_media_paths.is_empty()
+        || admission.provider_review_id.is_some()
+        || admission.provider_review.is_some()
+        || admission.provider_review_continuation_run_id.is_some()
+        || !matches!(admission.provider_review_phase.as_deref(), None | Some("completed"))
+        || read_kv(db, KV_PENDING_MEMORY_MUTATION)?.is_some()
+        || read_kv(db, KV_PENDING_PROFILE_MUTATION)?.is_some()
+    {
+        return Err(AgentDbProjectionError::OriginalTurnStale(
+            "session identity, lifecycle or independent custody refuses terminal evidence".into(),
+        ));
+    }
+    if db.query_row(
+        "SELECT EXISTS(SELECT 1 FROM cron_session_runs \
+         WHERE lifecycle_revision = ?1 AND state = 'running')",
+        params![admission.lifecycle_revision], |row| row.get::<_, bool>(0),
+    )? {
+        return Err(AgentDbProjectionError::OriginalTurnStale(
+            "session still has running scheduled work".into(),
+        ));
+    }
+    let raw_user = db.query_row(GET_TRANSCRIPT_ENTRY_SQL,
+        params![original.user_message_id], |row| row.get::<_, String>(0),
+    ).optional()?.ok_or_else(|| AgentDbProjectionError::OriginalTurnUnavailable(
+        "original durable user row is missing".into(),
+    ))?;
+    let user: serde_json::Value = serde_json::from_str(&raw_user)?;
+    let user_content = user.get("content").and_then(serde_json::Value::as_str)
+        .filter(|content| !content.trim().is_empty());
+    let optional_binding_matches = |key: &str, expected: Option<&str>| {
+        match user.get(key) {
+            None | Some(serde_json::Value::Null) => expected.is_none(),
+            Some(value) => value.as_str().is_some_and(|value| Some(value) == expected),
+        }
+    };
+    if user.get("id").and_then(serde_json::Value::as_str) != Some(original.user_message_id.as_str())
+        || user.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+        || user.get("role").and_then(serde_json::Value::as_str) != Some("user")
+        || user.get("confirmed").and_then(serde_json::Value::as_bool) != Some(true)
+        || user_content.is_none()
+        || ["branched", "hidden", "isHidden", "isStreaming"].into_iter().any(|key| {
+            user.get(key).is_some_and(|value| !matches!(value, serde_json::Value::Bool(false)))
+        })
+        || ["fromAgent", "toAgent", "channel", "sender"].into_iter().any(|key| {
+            user.get(key).is_some_and(|value| !value.is_null())
+        })
+        || !optional_binding_matches("clientNonce", original.client_nonce.as_deref())
+        || user.get("sessionKey").is_some_and(|value| {
+            value.as_str() != Some(original.session_key.as_str())
+        })
+        || user.get("sessionId").is_some_and(|value| {
+            value.as_str() != Some(original.session_id.as_str())
+        })
+    {
+        return Err(AgentDbProjectionError::OriginalTurnStale(
+            "original user row is not the confirmed local admitted input".into(),
+        ));
+    }
+    let compaction_id = format!("compaction:{}:{}", original.agent_id, original.stream_id);
+    let raw_compaction = db.query_row(GET_TRANSCRIPT_ENTRY_SQL,
+        params![compaction_id], |row| row.get::<_, String>(0),
+    ).optional()?;
+    let compaction = if admission.lifecycle_revision == original.original_lifecycle_revision {
+        None
+    } else {
+        let entry: serde_json::Value = serde_json::from_str(raw_compaction.as_deref()
+            .ok_or_else(|| AgentDbProjectionError::OriginalTurnStale(
+                "admission changed without the original stream's compaction".into(),
+            ))?)?;
+        compaction_first_kept_entry_id(&entry)?;
+        if entry.get("id").and_then(serde_json::Value::as_str) != Some(compaction_id.as_str())
+            || entry.get("kind").and_then(serde_json::Value::as_str) != Some("compaction")
+            || entry.get("sourceTurnId").and_then(serde_json::Value::as_str)
+                != Some(original.stream_id.as_str())
+            || entry.get("sourceLifecycleRevision").and_then(serde_json::Value::as_str)
+                != Some(original.original_lifecycle_revision.as_str())
+            || entry.get("lifecycleRevision").and_then(serde_json::Value::as_str)
+                != Some(admission.lifecycle_revision.as_str())
+        {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "compaction does not prove the exact original-to-settlement generation".into(),
+            ));
+        }
+        Some(SameTurnCompactionBinding {
+            entry_id: compaction_id,
+            source_turn_id: original.stream_id.clone(),
+            source_lifecycle_revision: original.original_lifecycle_revision.clone(),
+            lifecycle_revision: admission.lifecycle_revision.clone(),
+        })
+    };
+    // Metadata's lifecycleRevision is intentionally not compared with the
+    // independently owned admission revision: ordinary checkpoints rotate it.
+    Ok(OriginalTurnTerminalFence {
+        original: original.clone(),
+        final_root_blob_id: root,
+        original_user_content: user_content.expect("checked user content").to_string(),
+        settlement_lifecycle_revision: admission.lifecycle_revision,
+        compaction,
+        raw_metadata,
+        raw_admission,
+        raw_user,
+        raw_compaction,
+        raw_slot: slot.map(|slot| slot.raw.clone()),
+    })
+}
 
 /// A committed value and its existing transcript notification. Session carries
 /// this out of its filesystem/deletion lock before publishing to subscribers.
@@ -513,6 +920,28 @@ impl SandAgentDb {
         Self::open_with_options_and_seed(db_path, options, false)
     }
 
+    /// A terminal inspection must preserve unavailable source state. Ordinary
+    /// foreground opens keep their recovery policy; this path neither rebuilds
+    /// corruption nor invents absent metadata.
+    pub(super) fn open_existing_agent_without_recovery(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        let recover_on_corruption = options.recovery.recover_on_corruption;
+        let reject_if_corrupt = options.recovery.reject_if_corrupt;
+        options.recovery.recover_on_corruption = false;
+        options.recovery.reject_if_corrupt = true;
+        let mut owner = Self::open_with_options_and_seed(db_path, options, false)?;
+        // This instance enters the existing shared owner map. Terminal SQL
+        // never calls recovery helpers, while later ordinary foreground APIs
+        // retain their original recovery policy on this same cached owner.
+        owner.options.recovery.recover_on_corruption = recover_on_corruption;
+        owner.options.recovery.reject_if_corrupt = reject_if_corrupt;
+        Ok(owner)
+    }
+
     pub fn open_with_options(
         db_path: impl AsRef<Path>,
         options: SandAgentDbOptions,
@@ -582,11 +1011,228 @@ impl SandAgentDb {
         Ok(read_kv(db, key)?)
     }
 
+    /// All terminal operations are strict, including candidate absence. Never
+    /// recover/retry a transaction or collapse a closed/busy owner into None.
+    /// The operation is internal SQL only; it cannot call Runner or listeners.
+    fn original_turn_terminal_transaction<T>(
+        &self,
+        operation: impl FnOnce(&rusqlite::Connection)
+            -> Result<(T, bool), AgentDbProjectionError>,
+    ) -> Result<T, AgentDbProjectionError> {
+        let mut guard = self.connection.lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::OriginalTurnUnavailable(
+                "terminal database owner is closed".into(),
+            ));
+        }
+        let db = guard.as_mut().ok_or_else(|| AgentDbProjectionError::OriginalTurnUnavailable(
+            "terminal database connection is unavailable".into(),
+        ))?;
+        if !db.is_autocommit() {
+            self.retire_channel_inbound_connection(&mut guard);
+            return Err(AgentDbProjectionError::OriginalTurnUnavailable(
+                "terminal database has an unsettled prior transaction".into(),
+            ));
+        }
+        let recovery = acquire_automation_custody_recovery_guard(&self.db_path, db)?;
+        let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let result = (|| {
+            recovery.require_available(&transaction)?;
+            let result = operation(&transaction)?;
+            recovery.require_available(&transaction)?;
+            Ok::<_, AgentDbProjectionError>(result)
+        })();
+        let (value, changed) = match result {
+            Ok(result) => result,
+            Err(error) => {
+                let rollback = transaction.rollback();
+                let clean = db.is_autocommit();
+                if rollback.is_err() || !clean {
+                    if !clean {
+                        self.retire_channel_inbound_connection(&mut guard);
+                    }
+                    return Err(AgentDbProjectionError::OriginalTurnUnavailable(format!(
+                        "terminal rollback was not confirmed after {error}",
+                    )));
+                }
+                return Err(error);
+            }
+        };
+        if let Err(error) = transaction.commit() {
+            if !db.is_autocommit() {
+                let _ = db.execute_batch("ROLLBACK");
+            }
+            if !db.is_autocommit() {
+                self.retire_channel_inbound_connection(&mut guard);
+            }
+            return Err(AgentDbProjectionError::OriginalTurnUnavailable(format!(
+                "terminal COMMIT outcome is unknown: {error}",
+            )));
+        }
+        if changed {
+            bump_db_write_generation(&self.db_path);
+        }
+        // The slot is internal evidence, so there is no Transcript/UI callback.
+        drop(recovery);
+        drop(guard);
+        Ok(value)
+    }
+
+    pub(super) fn prepare_original_turn_terminal_fence(
+        &self,
+        original: &OriginalTurnReference,
+        expected_final_root: &[u8],
+    ) -> Result<OriginalTurnTerminalFence, AgentDbProjectionError> {
+        self.original_turn_terminal_transaction(|db| {
+            let slot = read_original_turn_terminal_slot(db)?;
+            let fence = capture_original_turn_terminal_fence(
+                db, original, expected_final_root, slot.as_ref(),
+            )?;
+            Ok((fence, false))
+        })
+    }
+
+    pub(super) fn read_original_turn_terminal_candidate_checked(
+        &self,
+        original: &OriginalTurnReference,
+    ) -> Result<Option<(OriginalTurnTerminalRecord, OriginalTurnTerminalFence)>, AgentDbProjectionError> {
+        original.validate().map_err(AgentDbProjectionError::OriginalTurnInvalid)?;
+        self.original_turn_terminal_transaction(|db| {
+            // The transaction's recovery guard has already refused a
+            // reconstructed store before either absence branch is reachable.
+            let Some(slot) = read_original_turn_terminal_slot(db)? else {
+                return Ok((None, false));
+            };
+            if slot.record.original != *original {
+                return Ok((None, false));
+            }
+            let final_root = &slot.record.canonical.last()
+                .expect("strict terminal record has a canonical commit").root_blob_id;
+            let fence = capture_original_turn_terminal_fence(db, original, final_root, Some(&slot))?;
+            if slot.record.settlement_lifecycle_revision != fence.settlement_lifecycle_revision
+                || slot.record.compaction != fence.compaction
+            {
+                return Err(AgentDbProjectionError::OriginalTurnStale(
+                    "stored terminal settlement no longer matches Session".into(),
+                ));
+            }
+            Ok((Some((slot.record, fence)), false))
+        })
+    }
+
+    pub(super) fn recheck_original_turn_terminal_fence(
+        &self,
+        expected: &OriginalTurnTerminalFence,
+    ) -> Result<(), AgentDbProjectionError> {
+        self.original_turn_terminal_transaction(|db| {
+            let slot = read_original_turn_terminal_slot(db)?;
+            let current = capture_original_turn_terminal_fence(
+                db, &expected.original, &expected.final_root_blob_id, slot.as_ref(),
+            )?;
+            if current != *expected {
+                return Err(AgentDbProjectionError::OriginalTurnStale(
+                    "inspected terminal owner rows changed".into(),
+                ));
+            }
+            Ok(((), false))
+        })
+    }
+
+    pub(super) fn commit_original_turn_terminal_record(
+        &self,
+        expected: &OriginalTurnTerminalFence,
+        record: &OriginalTurnTerminalRecord,
+    ) -> Result<OriginalTurnReceiptCommit, AgentDbProjectionError> {
+        validate_original_turn_terminal_record(record)?;
+        let encoded = serde_json::to_string(record)?;
+        if encoded.len() > ORIGINAL_TURN_TERMINAL_MAX_BYTES {
+            return Err(AgentDbProjectionError::OriginalTurnInvalid(
+                "terminal record exceeds its encoded byte limit".into(),
+            ));
+        }
+        if record.original != expected.original
+            || record.canonical.last().map(|commit| &commit.root_blob_id)
+                != Some(&expected.final_root_blob_id)
+            || record.settlement_lifecycle_revision != expected.settlement_lifecycle_revision
+            || record.compaction != expected.compaction
+        {
+            return Err(AgentDbProjectionError::OriginalTurnInvalid(
+                "terminal record differs from its prepared Session binding".into(),
+            ));
+        }
+        self.original_turn_terminal_transaction(|db| {
+            let slot = read_original_turn_terminal_slot(db)?;
+            if slot.as_ref().is_some_and(|slot| {
+                slot.record.original.stream_id == record.original.stream_id && slot.raw != encoded
+            }) {
+                // Keep a same-stream conflict explicit even when another
+                // captured row has also become stale.
+                return Err(AgentDbProjectionError::OriginalTurnConflict(
+                    "the current slot already binds this stream to different terminal data".into(),
+                ));
+            }
+            let current = capture_original_turn_terminal_fence(
+                db, &expected.original, &expected.final_root_blob_id, slot.as_ref(),
+            )?;
+            if current != *expected {
+                return Err(AgentDbProjectionError::OriginalTurnStale(
+                    "terminal owner rows changed after canonical qualification".into(),
+                ));
+            }
+            if slot.as_ref().is_some_and(|slot| slot.raw == encoded) {
+                return Ok((OriginalTurnReceiptCommit::AlreadyCommitted, false));
+            }
+            let outcome = if let Some(slot) = slot.as_ref() {
+                if slot.record.canonical.last().map(|commit| commit.root_blob_id.as_slice())
+                    == Some(expected.final_root_blob_id.as_slice())
+                {
+                    return Err(AgentDbProjectionError::OriginalTurnStale(
+                        "a different stream cannot replace the slot at the same canonical root".into(),
+                    ));
+                }
+                if db.execute(COMPARE_AND_SET_KV_SQL,
+                    params![encoded, ORIGINAL_TURN_TERMINAL_KEY, slot.raw],
+                )? != 1 {
+                    return Err(AgentDbProjectionError::OriginalTurnStale(
+                        "terminal slot replacement lost its raw compare".into(),
+                    ));
+                }
+                OriginalTurnReceiptCommit::Replaced
+            } else {
+                if db.execute("INSERT INTO kv (key, value) VALUES (?1, ?2)",
+                    params![ORIGINAL_TURN_TERMINAL_KEY, encoded],
+                )? != 1 {
+                    return Err(AgentDbProjectionError::OriginalTurnStale(
+                        "terminal slot insertion did not commit one row".into(),
+                    ));
+                }
+                OriginalTurnReceiptCommit::Inserted
+            };
+            // A SQL trigger can change another row in this same transaction.
+            // Re-read every captured image after the slot write and roll all
+            // effects back if the final owner image is no longer exact.
+            let written_slot = read_original_turn_terminal_slot(db)?;
+            let after = capture_original_turn_terminal_fence(
+                db, &expected.original, &expected.final_root_blob_id, written_slot.as_ref(),
+            )?;
+            let mut committed = expected.clone();
+            committed.raw_slot = Some(encoded.clone());
+            if after != committed {
+                return Err(AgentDbProjectionError::OriginalTurnStale(
+                    "terminal owner rows changed during slot publication".into(),
+                ));
+            }
+            Ok((outcome, true))
+        })
+    }
+
     pub fn write_kv(
         &self,
         key: &str,
         value: &str,
     ) -> Result<bool, AgentDbProjectionError> {
+        reject_original_turn_terminal_key(key)?;
         self.run_write(&format!("writeKv:{key}"), |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<bool, rusqlite::Error> {
@@ -622,6 +1268,7 @@ impl SandAgentDb {
         expected_session_id: &str,
         expected_lifecycle_revision: &str,
     ) -> Result<bool, AgentDbProjectionError> {
+        reject_original_turn_terminal_key(key)?;
         let expected_session_id = expected_session_id.trim();
         let expected_lifecycle_revision = expected_lifecycle_revision.trim();
         if key.trim().is_empty()
@@ -673,6 +1320,7 @@ impl SandAgentDb {
     }
 
     pub fn delete_kv(&self, key: &str) -> Result<bool, AgentDbProjectionError> {
+        reject_original_turn_terminal_key(key)?;
         self.run_write(&format!("deleteKv:{key}"), |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
             let result = (|| -> Result<bool, rusqlite::Error> {
@@ -741,10 +1389,14 @@ impl SandAgentDb {
         let encoded = serde_json::to_string(&record)?;
         let changed = self.run_write("resetSessionWorkAdmissionForClone", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
-            let result = db.execute(
-                SET_KV_SQL,
-                params![KV_SESSION_WORK_ADMISSION, encoded],
-            );
+            let result = (|| -> Result<usize, rusqlite::Error> {
+                let changes = db.execute(
+                    SET_KV_SQL,
+                    params![KV_SESSION_WORK_ADMISSION, encoded],
+                )?;
+                clear_original_turn_terminal_slots(db)?;
+                Ok(changes)
+            })();
             match result {
                 Ok(changes) => {
                     if let Err(error) = db.execute_batch("COMMIT") {
@@ -5200,6 +5852,7 @@ impl SandAgentDb {
                 }
                 db.execute(CLEAR_BLOBS_SQL, [])?;
                 db.execute(CLEAR_TRANSCRIPT_ENTRIES_SQL, [])?;
+                clear_original_turn_terminal_slots(db)?;
                 for key in [
                     KV_AWAITING,
                     KV_LATEST_REQUEST_ID,
@@ -6082,6 +6735,7 @@ pub fn reset_persisted_session_work_admission(
         SET_KV_SQL,
         params![KV_SESSION_WORK_ADMISSION, encoded],
     )? > 0;
+    clear_original_turn_terminal_slots(&transaction)?;
     transaction.commit()?;
     if changed {
         bump_db_write_generation(db_path);
@@ -7254,6 +7908,735 @@ fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
         output.push(byte);
     }
     Ok(output)
+}
+
+#[cfg(test)]
+mod original_turn_terminal_tests {
+    use super::*;
+    use serde_json::{Value, json};
+    use crate::extensions::session::agent_db_recovery::{
+        AUTOMATION_CUSTODY_UNAVAILABLE_KV, automation_custody_recovery_marker_path,
+    };
+    use crate::storage::store_db::get_sand_agent_db_write_generation;
+
+    // These are neutral storage oracles. The fixture deliberately does not
+    // manufacture Runner's opaque proof or claim canonical/custody acceptance.
+    // Runner's real checkpoint-sink tests own that positive qualification.
+    struct Fixture {
+        root: PathBuf,
+        owner: SandAgentDb,
+        original: OriginalTurnReference,
+        root_id: Vec<u8>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-original-terminal-{label}-{}", Uuid::new_v4(),
+            ));
+            let agent_id = format!("agent-{}", Uuid::new_v4());
+            let directory = root.join(&agent_id);
+            std::fs::create_dir_all(&directory).unwrap();
+            let owner = SandAgentDb::open(directory.join("store.db"), 0).unwrap();
+            let admission: SessionWorkAdmissionRecord = serde_json::from_value(json!({
+                "session_key": format!("agent:{agent_id}:main"),
+                "session_id": agent_id,
+                "lifecycle_revision": owner.read_metadata().unwrap()["lifecycleRevision"],
+            })).unwrap();
+            assert!(owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+            let original = OriginalTurnReference {
+                version: 1,
+                scope: OriginalTurnScope::NativeOrdinaryUserV1,
+                agent_id: admission.session_id.clone(),
+                session_key: admission.session_key.clone(),
+                session_id: admission.session_id.clone(),
+                original_lifecycle_revision: admission.lifecycle_revision,
+                stream_id: "original-stream".into(),
+                input_digest: "a".repeat(64),
+                client_nonce: Some("original-nonce".into()),
+                user_message_id: "original-user".into(),
+                echo_entry_id: "original-user".into(),
+                request_source: None,
+                provider: "fabushi".into(),
+                model_id: "resolved-native-model".into(),
+            };
+            assert!(owner.append_transcript_entry(&json!({
+                "id": original.user_message_id, "kind": "message", "role": "user",
+                "content": "original durable user text", "isStreaming": false,
+                "sessionKey": original.session_key, "clientNonce": original.client_nonce,
+            })).unwrap());
+            let root_id = vec![1; 32];
+            assert!(owner.commit_checkpoint_root_and_confirm_user_message(
+                &[], &root_id, &original.user_message_id,
+            ).unwrap().is_some());
+            Self { root, owner, original, root_id }
+        }
+
+        fn raw_db(&self) -> rusqlite::Connection {
+            rusqlite::Connection::open(self.owner.db_path()).unwrap()
+        }
+
+        fn prepare(&self) -> OriginalTurnTerminalFence {
+            self.owner.prepare_original_turn_terminal_fence(&self.original, &self.root_id).unwrap()
+        }
+
+        fn persist(&self) -> OriginalTurnTerminalRecord {
+            let fence = self.prepare();
+            let record = record_for(&fence);
+            assert_eq!(self.owner.commit_original_turn_terminal_record(&fence, &record).unwrap(),
+                OriginalTurnReceiptCommit::Inserted);
+            record
+        }
+
+        fn slot(&self) -> Option<String> {
+            read_kv(&self.raw_db(), ORIGINAL_TURN_TERMINAL_KEY).unwrap()
+        }
+
+        fn rows(&self) -> (Vec<(String, String)>, Vec<(i64, String, String)>) {
+            let db = self.raw_db();
+            let mut statement = db.prepare("SELECT key, value FROM kv ORDER BY key").unwrap();
+            let kv = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+                .unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap();
+            let mut statement = db.prepare(
+                "SELECT seq, id, entry FROM transcript_entries ORDER BY seq",
+            ).unwrap();
+            let entries = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+                .unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap();
+            (kv, entries)
+        }
+
+        fn generation(&self) -> u64 {
+            get_sand_agent_db_write_generation(self.owner.db_path())
+        }
+
+        fn next_stream(&mut self, ordinal: u8) -> OriginalTurnTerminalFence {
+            let next_root = vec![ordinal; 32];
+            assert!(self.owner.commit_checkpoint_root_and_confirm_user_message(
+                &self.root_id, &next_root, &self.original.user_message_id,
+            ).unwrap().is_some());
+            self.root_id = next_root;
+            self.original.stream_id = format!("stream-{ordinal}");
+            self.prepare()
+        }
+
+        fn compact_original(&self) -> Value {
+            let commit = CompactionCommit {
+                entry_id: format!("compaction:{}:{}", self.original.agent_id, self.original.stream_id),
+                expected_transcript_tail_id: self.original.user_message_id.clone(),
+                first_kept_entry_id: Some(self.original.user_message_id.clone()),
+                summary: "Earlier context was summarized for this original turn.".into(),
+                tokens_before: 100,
+                details: None,
+                source_turn_id: self.original.stream_id.clone(),
+                expected_lifecycle_revision: self.original.original_lifecycle_revision.clone(),
+            };
+            match self.owner.commit_compaction(&commit).unwrap() {
+                CompactionCommitOutcome::Committed(entry) => entry,
+                outcome => panic!("actual compaction refused: {outcome:?}"),
+            }
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            self.owner.close(false);
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    fn record_for(fence: &OriginalTurnTerminalFence) -> OriginalTurnTerminalRecord {
+        OriginalTurnTerminalRecord {
+            version: 1,
+            original: fence.original.clone(),
+            terminal: StoredCompletedTerminal::Completed,
+            final_result_sha256: [7; 32],
+            sent_message_count: 0,
+            reacted: false,
+            custody_json: "{}".into(),
+            canonical: vec![CanonicalTurnCommitRecord {
+                ordinal: 0,
+                request_id: fence.original.stream_id.clone(),
+                message_id: fence.original.user_message_id.clone(),
+                prior_root_blob_id: None,
+                root_blob_id: fence.final_root_blob_id.clone(),
+                user_blob_id: vec![2; 32],
+                turn_blob_id: vec![3; 32],
+                step_blob_ids: vec![vec![4; 32]],
+                assistant_result_sha256: [7; 32],
+            }],
+            settlement_lifecycle_revision: fence.settlement_lifecycle_revision.clone(),
+            compaction: fence.compaction.clone(),
+        }
+    }
+
+    #[test]
+    fn real_checkpoint_revision_difference_insert_duplicate_and_reopen() {
+        let fixture = Fixture::new("reopen");
+        let metadata = fixture.owner.read_metadata().unwrap();
+        assert_ne!(metadata["lifecycleRevision"].as_str().unwrap(),
+            fixture.original.original_lifecycle_revision);
+        let before_insert = fixture.prepare();
+        assert_eq!(before_insert.original_user_content, "original durable user text");
+        let record = fixture.persist();
+        let raw = fixture.slot().unwrap();
+        assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&before_insert, &record),
+            Err(AgentDbProjectionError::OriginalTurnStale(_))));
+        let current = fixture.prepare();
+        let generation = fixture.generation();
+        assert_eq!(fixture.owner.commit_original_turn_terminal_record(&current, &record).unwrap(),
+            OriginalTurnReceiptCommit::AlreadyCommitted);
+        assert_eq!(fixture.generation(), generation);
+        assert_eq!(fixture.slot().as_deref(), Some(raw.as_str()));
+        fixture.owner.close(true);
+        let reopened = SandAgentDb::open_existing_agent_without_recovery(fixture.owner.db_path(), 0).unwrap();
+        // Strict opening changes only that open, not later ordinary APIs on
+        // the shared cached owner.
+        assert!(reopened.options.recovery.recover_on_corruption);
+        assert!(!reopened.options.recovery.reject_if_corrupt);
+        let (stored, fence) = reopened.read_original_turn_terminal_candidate_checked(&fixture.original)
+            .unwrap().unwrap();
+        assert_eq!(stored, record);
+        reopened.recheck_original_turn_terminal_fence(&fence).unwrap();
+        assert_eq!(read_kv(&fixture.raw_db(), ORIGINAL_TURN_TERMINAL_KEY).unwrap(), Some(raw));
+        reopened.close(false);
+    }
+
+    #[test]
+    fn same_stream_conflict_precedes_a_second_changed_raw_fence() {
+        let fixture = Fixture::new("conflict");
+        let stored = fixture.persist();
+        let raw = fixture.slot().unwrap();
+        for field in ["digest", "model", "result", "custody", "delivery"] {
+            let mut original = fixture.original.clone();
+            if field == "digest" { original.input_digest = "b".repeat(64); }
+            if field == "model" { original.model_id = "other-resolved-model".into(); }
+            let fence = fixture.owner.prepare_original_turn_terminal_fence(&original, &fixture.root_id).unwrap();
+            let mut changed = record_for(&fence);
+            match field {
+                "result" => changed.final_result_sha256 = [8; 32],
+                "custody" => changed.custody_json = "{\"different\":true}".into(),
+                "delivery" => changed.sent_message_count = 1,
+                _ => {}
+            }
+            assert_ne!(changed, stored);
+            assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&fence, &changed),
+                Err(AgentDbProjectionError::OriginalTurnConflict(_))), "{field}");
+            assert_eq!(fixture.slot().as_deref(), Some(raw.as_str()));
+        }
+        let fence = fixture.prepare();
+        let mut changed = stored;
+        changed.reacted = true;
+        fixture.raw_db().execute("UPDATE kv SET value = value || '20' WHERE key = 'metadata'", []).unwrap();
+        assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&fence, &changed),
+            Err(AgentDbProjectionError::OriginalTurnConflict(_))));
+        assert_eq!(fixture.slot().as_deref(), Some(raw.as_str()));
+    }
+
+    #[test]
+    fn different_stream_requires_a_new_current_root_and_keeps_one_slot() {
+        let mut fixture = Fixture::new("bounded-replacement");
+        let first = fixture.original.clone();
+        fixture.persist();
+        let old_raw = fixture.slot();
+        fixture.original.stream_id = "same-root-foreign-stream".into();
+        let same_root = fixture.prepare();
+        assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&same_root, &record_for(&same_root)),
+            Err(AgentDbProjectionError::OriginalTurnStale(_))));
+        assert_eq!(fixture.slot(), old_raw);
+        for ordinal in 2..=40 {
+            let fence = fixture.next_stream(ordinal);
+            assert_eq!(fixture.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)).unwrap(),
+                OriginalTurnReceiptCommit::Replaced);
+            let count: i64 = fixture.raw_db().query_row(
+                "SELECT count(*) FROM kv WHERE substr(key, 1, ?1) = ?2",
+                params![ORIGINAL_TURN_TERMINAL_PREFIX.len() as i64, ORIGINAL_TURN_TERMINAL_PREFIX],
+                |row| row.get(0),
+            ).unwrap();
+            assert_eq!(count, 1);
+            assert!(fixture.slot().unwrap().len() <= ORIGINAL_TURN_TERMINAL_MAX_BYTES);
+        }
+        fixture.owner.close(true);
+        let reopened = SandAgentDb::open_existing_agent_without_recovery(fixture.owner.db_path(), 0).unwrap();
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&first).unwrap().is_none());
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).unwrap().is_some());
+        reopened.close(false);
+    }
+
+    #[test]
+    fn generic_kv_mutators_refuse_the_whole_reserved_prefix() {
+        let fixture = Fixture::new("reserved-prefix");
+        fixture.persist();
+        let before = fixture.rows();
+        for key in [ORIGINAL_TURN_TERMINAL_KEY.to_string(),
+            format!("{ORIGINAL_TURN_TERMINAL_PREFIX}another-stream"), ORIGINAL_TURN_TERMINAL_PREFIX.into()]
+        {
+            assert!(matches!(fixture.owner.write_kv(&key, "replacement"),
+                Err(AgentDbProjectionError::OriginalTurnInvalid(_))));
+            assert!(matches!(fixture.owner.write_session_kv_if_generation(
+                &key, "replacement", &fixture.original.session_id, &fixture.original.original_lifecycle_revision,
+            ), Err(AgentDbProjectionError::OriginalTurnInvalid(_))));
+            assert!(matches!(fixture.owner.delete_kv(&key),
+                Err(AgentDbProjectionError::OriginalTurnInvalid(_))));
+        }
+        assert_eq!(fixture.rows(), before);
+        assert!(fixture.owner.write_kv("original-routed-terminal-unrelated", "allowed").unwrap());
+        assert!(fixture.owner.delete_kv("original-routed-terminal-unrelated").unwrap());
+    }
+
+    #[test]
+    fn encoded_utf8_capacity_and_commit_count_are_strict_without_truncation() {
+        let fixture = Fixture::new("capacity");
+        let fence = fixture.prepare();
+        let mut record = record_for(&fence);
+        record.custody_json.clear();
+        let overhead = serde_json::to_string(&record).unwrap().len();
+        record.custody_json = "x".repeat(ORIGINAL_TURN_TERMINAL_MAX_BYTES - overhead);
+        assert_eq!(serde_json::to_string(&record).unwrap().len(), ORIGINAL_TURN_TERMINAL_MAX_BYTES);
+        assert_eq!(fixture.owner.commit_original_turn_terminal_record(&fence, &record).unwrap(),
+            OriginalTurnReceiptCommit::Inserted);
+        let raw = fixture.slot().unwrap();
+        let fence = fixture.prepare();
+        record.custody_json.push('é');
+        assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&fence, &record),
+            Err(AgentDbProjectionError::OriginalTurnInvalid(_))));
+        assert_eq!(fixture.slot().as_deref(), Some(raw.as_str()));
+        // SQLite character length is below the cap; the persisted byte length
+        // is above it. Refuse before deserializing this input.
+        fixture.raw_db().execute(SET_KV_SQL,
+            params![ORIGINAL_TURN_TERMINAL_KEY, "é".repeat(40_000)],
+        ).unwrap();
+        assert!(matches!(fixture.owner.read_original_turn_terminal_candidate_checked(&fixture.original),
+            Err(AgentDbProjectionError::OriginalTurnInvalid(_))));
+
+        let counts = Fixture::new("commit-count");
+        let fence = counts.prepare();
+        let mut record = record_for(&fence);
+        let template = record.canonical[0].clone();
+        record.canonical.clear();
+        for ordinal in 0..ORIGINAL_TURN_MAX_COMMITS {
+            let mut commit = template.clone();
+            commit.ordinal = ordinal as u32;
+            commit.message_id = if ordinal == 0 { counts.original.user_message_id.clone() }
+                else { counts.original.stream_id.clone() };
+            commit.prior_root_blob_id = record.canonical.last().map(|prior| prior.root_blob_id.clone());
+            commit.root_blob_id = if ordinal + 1 == ORIGINAL_TURN_MAX_COMMITS { counts.root_id.clone() }
+                else { vec![20 + ordinal as u8; 32] };
+            record.canonical.push(commit);
+        }
+        assert_eq!(counts.owner.commit_original_turn_terminal_record(&fence, &record).unwrap(),
+            OriginalTurnReceiptCommit::Inserted);
+        let raw = counts.slot();
+        let fence = counts.prepare();
+        let mut excess = record.canonical.last().unwrap().clone();
+        excess.ordinal += 1;
+        excess.prior_root_blob_id = Some(excess.root_blob_id.clone());
+        record.canonical.push(excess);
+        assert!(matches!(counts.owner.commit_original_turn_terminal_record(&fence, &record),
+            Err(AgentDbProjectionError::OriginalTurnInvalid(_))));
+        assert_eq!(counts.slot(), raw);
+    }
+
+    #[test]
+    fn only_the_actual_same_stream_compaction_successor_is_eligible() {
+        let fixture = Fixture::new("compaction");
+        let entry = fixture.compact_original();
+        let fence = fixture.prepare();
+        assert_ne!(fence.settlement_lifecycle_revision, fixture.original.original_lifecycle_revision);
+        assert_eq!(fence.compaction.as_ref().unwrap().entry_id, entry["id"].as_str().unwrap());
+        let record = fixture.persist();
+        fixture.owner.close(true);
+        let reopened = SandAgentDb::open_existing_agent_without_recovery(fixture.owner.db_path(), 0).unwrap();
+        assert_eq!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original)
+            .unwrap().unwrap().0, record);
+        for field in ["sourceTurnId", "sourceLifecycleRevision", "lifecycleRevision", "summary"] {
+            let mut changed = entry.clone();
+            if field == "summary" { changed.as_object_mut().unwrap().remove(field); }
+            else { changed[field] = json!("unrelated"); }
+            fixture.raw_db().execute(UPDATE_TRANSCRIPT_ENTRY_SQL,
+                params![changed.to_string(), entry["id"].as_str().unwrap()],
+            ).unwrap();
+            assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).is_err(), "{field}");
+        }
+        fixture.raw_db().execute(UPDATE_TRANSCRIPT_ENTRY_SQL,
+            params![entry.to_string(), entry["id"].as_str().unwrap()],
+        ).unwrap();
+        let mut admission = reopened.read_session_work_admission().unwrap().unwrap();
+        let prior = admission.lifecycle_revision.clone();
+        admission.lifecycle_revision = "unrelated-successor".into();
+        assert!(reopened.compare_and_set_session_work_admission(Some(&prior), &admission).unwrap());
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        reopened.close(false);
+    }
+
+    #[test]
+    fn every_raw_image_is_rechecked_even_when_decoded_values_are_unchanged() {
+        for field in ["metadata", "admission", "user", "compaction", "slot"] {
+            let fixture = Fixture::new(field);
+            let record = fixture.persist();
+            let fence = fixture.prepare();
+            let db = fixture.raw_db();
+            match field {
+                "metadata" => { db.execute("UPDATE kv SET value = value || '20' WHERE key = 'metadata'", []).unwrap(); }
+                "admission" => { db.execute("UPDATE kv SET value = value || ' ' WHERE key = ?1",
+                    params![KV_SESSION_WORK_ADMISSION]).unwrap(); }
+                "user" => { db.execute("UPDATE transcript_entries SET entry = entry || ' ' WHERE id = ?1",
+                    params![fixture.original.user_message_id]).unwrap(); }
+                "compaction" => { db.execute(INSERT_TRANSCRIPT_ENTRY_SQL,
+                    params![format!("compaction:{}:{}", fixture.original.agent_id, fixture.original.stream_id), "{}"],
+                ).unwrap(); }
+                "slot" => { db.execute("UPDATE kv SET value = value || ' ' WHERE key = ?1",
+                    params![ORIGINAL_TURN_TERMINAL_KEY]).unwrap(); }
+                _ => unreachable!(),
+            }
+            let changed = fixture.rows();
+            let generation = fixture.generation();
+            assert!(fixture.owner.recheck_original_turn_terminal_fence(&fence).is_err(), "{field}");
+            assert!(fixture.owner.commit_original_turn_terminal_record(&fence, &record).is_err(), "{field}");
+            assert_eq!(fixture.rows(), changed, "{field}");
+            assert_eq!(fixture.generation(), generation, "{field}");
+        }
+    }
+
+    #[test]
+    fn post_insert_triggers_roll_back_slot_and_changed_owner_rows() {
+        for field in ["metadata", "admission", "user", "compaction", "slot", "delete-slot", "memory", "profile", "cron", "recovery"] {
+            let fixture = Fixture::new(field);
+            let fence = fixture.prepare();
+            let body = match field {
+                "metadata" => "UPDATE kv SET value = value || '20' WHERE key = 'metadata';".into(),
+                "admission" => "UPDATE kv SET value = value || ' ' WHERE key = 'sessionWorkAdmission';".into(),
+                "user" => "UPDATE transcript_entries SET entry = entry || ' ' WHERE id = 'original-user';".into(),
+                "compaction" => format!(
+                    "INSERT INTO transcript_entries (id, entry) VALUES ('compaction:{}:{}', '{{}}');",
+                    fixture.original.agent_id, fixture.original.stream_id,
+                ),
+                "slot" => "UPDATE kv SET value = value || ' ' WHERE key = 'original-routed-terminal:current';".into(),
+                "delete-slot" => "DELETE FROM kv WHERE key = 'original-routed-terminal:current';".into(),
+                "memory" => "INSERT INTO kv (key, value) VALUES ('pendingExternalMemoryMutation', 'retained');".into(),
+                "profile" => "INSERT INTO kv (key, value) VALUES ('pendingExternalProfileMutation', 'retained');".into(),
+                "cron" => format!(
+                    "INSERT INTO cron_session_runs (session_key, automation_id, run_id, session_id, \
+                     lifecycle_revision, updated_at_ms, state) \
+                     VALUES ('cron', 'automation', 'run', '{}', '{}', 0, 'running');",
+                    fixture.original.session_id, fixture.original.original_lifecycle_revision,
+                ),
+                "recovery" => format!("INSERT INTO kv (key, value) VALUES ('{AUTOMATION_CUSTODY_UNAVAILABLE_KV}', '');"),
+                _ => unreachable!(),
+            };
+            fixture.raw_db().execute_batch(&format!(
+                "CREATE TRIGGER terminal_after_insert AFTER INSERT ON kv \
+                 WHEN NEW.key = 'original-routed-terminal:current' BEGIN {body} END;",
+            )).unwrap();
+            let before = fixture.rows();
+            let generation = fixture.generation();
+            assert!(fixture.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)).is_err(), "{field}");
+            assert_eq!(fixture.rows(), before, "all trigger effects roll back: {field}");
+            assert!(fixture.slot().is_none());
+            assert_eq!(fixture.generation(), generation);
+            assert_eq!(fixture.raw_db().query_row("SELECT count(*) FROM cron_session_runs", [],
+                |row| row.get::<_, i64>(0)).unwrap(), 0);
+            assert!(fixture.owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        }
+    }
+
+    #[test]
+    fn post_replace_trigger_preserves_the_previous_slot_atomically() {
+        let mut fixture = Fixture::new("replace-trigger");
+        fixture.persist();
+        let previous = fixture.slot();
+        let fence = fixture.next_stream(2);
+        fixture.raw_db().execute_batch(
+            "CREATE TRIGGER terminal_after_update AFTER UPDATE ON kv
+             WHEN NEW.key = 'original-routed-terminal:current'
+             BEGIN UPDATE kv SET value = value || ' ' WHERE key = 'sessionWorkAdmission'; END;",
+        ).unwrap();
+        let before = fixture.rows();
+        assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)),
+            Err(AgentDbProjectionError::OriginalTurnStale(_))));
+        assert_eq!(fixture.rows(), before);
+        assert_eq!(fixture.slot(), previous);
+    }
+
+    #[test]
+    fn real_deferred_commit_failure_is_unavailable_even_after_clean_rollback() {
+        let fixture = Fixture::new("commit-failure");
+        let fence = fixture.prepare();
+        fixture.owner.connection.lock().unwrap().as_ref().unwrap().execute_batch(
+            "PRAGMA foreign_keys = ON;
+             CREATE TABLE terminal_parent (id INTEGER PRIMARY KEY);
+             CREATE TABLE terminal_child (
+                 parent_id INTEGER REFERENCES terminal_parent(id) DEFERRABLE INITIALLY DEFERRED
+             );
+             CREATE TRIGGER terminal_deferred_commit AFTER INSERT ON kv
+             WHEN NEW.key = 'original-routed-terminal:current'
+             BEGIN INSERT INTO terminal_child (parent_id) VALUES (7); END;",
+        ).unwrap();
+        let before = fixture.rows();
+        let generation = fixture.generation();
+        assert!(matches!(fixture.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)),
+            Err(AgentDbProjectionError::OriginalTurnUnavailable(message)) if message.contains("COMMIT outcome is unknown")));
+        assert_eq!(fixture.rows(), before);
+        assert_eq!(fixture.generation(), generation);
+        assert!(fixture.owner.connection.lock().unwrap().as_ref().unwrap().is_autocommit());
+        assert_eq!(fixture.raw_db().query_row("SELECT count(*) FROM terminal_child", [],
+            |row| row.get::<_, i64>(0)).unwrap(), 0);
+        assert!(!fixture.owner.is_closed());
+    }
+
+    #[test]
+    fn closed_busy_poisoned_and_unsettled_owners_never_report_absence() {
+        let closed = Fixture::new("closed");
+        let fence = closed.prepare();
+        closed.owner.close(false);
+        assert!(closed.owner.read_original_turn_terminal_candidate_checked(&closed.original).is_err());
+        assert!(closed.owner.prepare_original_turn_terminal_fence(&closed.original, &closed.root_id).is_err());
+        assert!(closed.owner.recheck_original_turn_terminal_fence(&fence).is_err());
+        assert!(closed.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)).is_err());
+
+        let busy = Fixture::new("busy");
+        let fence = busy.prepare();
+        let writer = busy.raw_db();
+        writer.execute_batch("BEGIN IMMEDIATE").unwrap();
+        assert!(busy.owner.read_original_turn_terminal_candidate_checked(&busy.original).is_err());
+        assert!(busy.owner.prepare_original_turn_terminal_fence(&busy.original, &busy.root_id).is_err());
+        assert!(busy.owner.recheck_original_turn_terminal_fence(&fence).is_err());
+        assert!(busy.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)).is_err());
+        writer.execute_batch("ROLLBACK").unwrap();
+        assert!(busy.owner.read_original_turn_terminal_candidate_checked(&busy.original).unwrap().is_none());
+
+        let poisoned = Fixture::new("poisoned");
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _held = poisoned.owner.connection.lock().unwrap();
+            panic!("poison only this fixture owner");
+        })).is_err());
+        assert!(matches!(poisoned.owner.read_original_turn_terminal_candidate_checked(&poisoned.original),
+            Err(AgentDbProjectionError::OwnerPoisoned)));
+        poisoned.owner.connection.clear_poison();
+
+        let unsettled = Fixture::new("unsettled");
+        unsettled.owner.connection.lock().unwrap().as_ref().unwrap().execute_batch("BEGIN IMMEDIATE").unwrap();
+        assert!(unsettled.owner.read_original_turn_terminal_candidate_checked(&unsettled.original).is_err());
+        assert!(unsettled.owner.is_closed());
+        assert!(unsettled.owner.connection.lock().unwrap().is_none());
+        assert_eq!(live_db_handle_count(unsettled.owner.db_path()), 0);
+        assert!(unsettled.slot().is_none());
+    }
+
+    #[test]
+    fn malformed_unsupported_and_duplicate_field_slots_are_never_absence() {
+        let fixture = Fixture::new("bad-slot");
+        let record = fixture.persist();
+        let raw = fixture.slot().unwrap();
+        let mut unsupported = serde_json::to_value(&record).unwrap();
+        unsupported["version"] = json!(2);
+        let mut unknown = serde_json::to_value(&record).unwrap();
+        unknown["unrecognizedAuthority"] = json!(true);
+        let duplicate = format!("{{\"version\":1,{}", raw.strip_prefix('{').unwrap());
+        let mut foreign = fixture.original.clone();
+        foreign.stream_id = "foreign-stream".into();
+        for damaged in ["{".to_string(), unsupported.to_string(), unknown.to_string(), duplicate] {
+            fixture.raw_db().execute(SET_KV_SQL, params![ORIGINAL_TURN_TERMINAL_KEY, damaged]).unwrap();
+            assert!(fixture.owner.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+            assert!(fixture.owner.read_original_turn_terminal_candidate_checked(&foreign).is_err());
+            assert!(fixture.owner.prepare_original_turn_terminal_fence(&fixture.original, &fixture.root_id).is_err());
+            assert_eq!(fixture.slot().as_deref(), Some(damaged.as_str()));
+        }
+    }
+
+    #[test]
+    fn missing_invalid_or_independently_owned_source_rows_are_refused_unchanged() {
+        let mutations = [
+            ("metadata", "lifecycleRevision", Value::Null),
+            ("metadata", "lifecycleRevision", json!("")),
+            ("metadata", "lifecycleRevision", json!("bad\ntoken")),
+            ("metadata", "agentId", json!("foreign-agent")),
+            ("metadata", "latestRootBlobId", json!("0202")),
+            ("admission", "session_key", json!("agent:foreign:main")),
+            ("admission", "session_id", json!("foreign-agent")),
+            ("admission", "lifecycle_revision", json!("restored-generation")),
+            ("admission", "deletion_pending", json!(true)),
+            ("admission", "archived_at_ms", json!(100)),
+            ("admission", "admitted_work_id", json!("independent-work")),
+            ("admission", "admitted_media_work_id", json!("independent-media")),
+            ("admission", "admitted_media_paths", json!(["/retained/media"])),
+            ("admission", "provider_review_id", json!("review")),
+            ("admission", "provider_review_phase", json!("pending")),
+            ("admission", "provider_review_continuation_run_id", json!("continuation")),
+            ("admission", "provider_review", json!({})),
+            ("user", "id", json!("foreign-user")),
+            ("user", "kind", json!("divider")),
+            ("user", "role", json!("assistant")),
+            ("user", "confirmed", json!(false)),
+            ("user", "content", json!("")),
+            ("user", "clientNonce", json!("foreign-nonce")),
+            ("user", "sessionKey", json!("agent:foreign:main")),
+            ("user", "hidden", json!(true)),
+            ("user", "branched", json!(true)),
+            ("user", "isStreaming", json!(true)),
+            ("user", "fromAgent", json!("child")),
+            ("user", "toAgent", json!("foreign")),
+            ("user", "channel", json!("external")),
+        ];
+        for (source, field, replacement) in mutations {
+            let fixture = Fixture::new("invalid-source");
+            fixture.persist();
+            let db = fixture.raw_db();
+            match source {
+                "metadata" => {
+                    let mut metadata = fixture.owner.read_metadata().unwrap();
+                    metadata[field] = replacement;
+                    db.execute(SET_KV_SQL, params!["metadata", encode_hex(&serde_json::to_vec(&metadata).unwrap())]).unwrap();
+                }
+                "admission" => {
+                    let mut admission: Value = serde_json::from_str(&read_kv(&db, KV_SESSION_WORK_ADMISSION).unwrap().unwrap()).unwrap();
+                    admission[field] = replacement;
+                    db.execute(SET_KV_SQL, params![KV_SESSION_WORK_ADMISSION, admission.to_string()]).unwrap();
+                }
+                "user" => {
+                    let raw: String = db.query_row(GET_TRANSCRIPT_ENTRY_SQL,
+                        params![fixture.original.user_message_id], |row| row.get(0)).unwrap();
+                    let mut user: Value = serde_json::from_str(&raw).unwrap();
+                    user[field] = replacement;
+                    db.execute(UPDATE_TRANSCRIPT_ENTRY_SQL, params![user.to_string(), fixture.original.user_message_id]).unwrap();
+                }
+                _ => unreachable!(),
+            }
+            let before = fixture.rows();
+            assert!(fixture.owner.read_original_turn_terminal_candidate_checked(&fixture.original).is_err(), "{source}.{field}");
+            assert_eq!(fixture.rows(), before);
+        }
+        for source in ["metadata", KV_SESSION_WORK_ADMISSION, "user", KV_PENDING_MEMORY_MUTATION, KV_PENDING_PROFILE_MUTATION] {
+            let fixture = Fixture::new("missing-source");
+            fixture.persist();
+            let db = fixture.raw_db();
+            match source {
+                "user" => { db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![fixture.original.user_message_id]).unwrap(); }
+                KV_PENDING_MEMORY_MUTATION | KV_PENDING_PROFILE_MUTATION => { db.execute(SET_KV_SQL, params![source, "retained malformed journal"]).unwrap(); }
+                _ => { db.execute(DELETE_KV_SQL, params![source]).unwrap(); }
+            }
+            let before = fixture.rows();
+            assert!(fixture.owner.read_original_turn_terminal_candidate_checked(&fixture.original).is_err(), "{source}");
+            assert_eq!(fixture.rows(), before);
+        }
+    }
+
+    #[test]
+    fn recovery_guard_contention_refuses_all_terminal_phases_before_absence() {
+        let fixture = Fixture::new("recovery-contention");
+        let fence = fixture.prepare();
+        let mut guard_path = fixture.owner.db_path().as_os_str().to_os_string();
+        guard_path.push(".automation-custody.guard");
+        let guard = std::fs::OpenOptions::new().read(true).write(true).open(PathBuf::from(guard_path)).unwrap();
+        fs2::FileExt::try_lock_exclusive(&guard).unwrap();
+        assert!(fixture.owner.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        assert!(fixture.owner.prepare_original_turn_terminal_fence(&fixture.original, &fixture.root_id).is_err());
+        assert!(fixture.owner.recheck_original_turn_terminal_fence(&fence).is_err());
+        assert!(fixture.owner.commit_original_turn_terminal_record(&fence, &record_for(&fence)).is_err());
+        fs2::FileExt::unlock(&guard).unwrap();
+        assert!(fixture.owner.read_original_turn_terminal_candidate_checked(&fixture.original).unwrap().is_none());
+        assert!(fixture.slot().is_none());
+    }
+
+    #[test]
+    fn actual_reconstruction_salvages_slot_but_never_restores_terminal_authority() {
+        let fixture = Fixture::new("salvage");
+        let record = fixture.persist();
+        let fence = fixture.prepare();
+        let raw = fixture.slot().unwrap();
+        fixture.owner.close(true);
+        let recovered = recover_corrupt_store_db(
+            fixture.owner.db_path(), &fixture.original.agent_id,
+            &DbRecoveryOptions { busy_timeout_ms: 0, ..DbRecoveryOptions::default() },
+            "terminal salvage oracle",
+        ).unwrap();
+        assert_eq!(read_kv(&recovered, ORIGINAL_TURN_TERMINAL_KEY).unwrap().as_deref(), Some(raw.as_str()));
+        assert!(read_kv(&recovered, AUTOMATION_CUSTODY_UNAVAILABLE_KV).unwrap().is_some());
+        drop(recovered);
+        let marker = automation_custody_recovery_marker_path(fixture.owner.db_path());
+        assert!(marker.is_file());
+        let reopened = SandAgentDb::open_existing_agent_without_recovery(fixture.owner.db_path(), 0).unwrap();
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        assert!(reopened.prepare_original_turn_terminal_fence(&fixture.original, &fixture.root_id).is_err());
+        assert!(reopened.recheck_original_turn_terminal_fence(&fence).is_err());
+        assert!(reopened.commit_original_turn_terminal_record(&fence, &record).is_err());
+        assert_eq!(fixture.slot().as_deref(), Some(raw.as_str()));
+        // Exercise each marker independently using only this test-owned DB.
+        // Neither malformed marker contents nor an absent slot proves absence.
+        fixture.raw_db().execute(DELETE_KV_SQL, params![ORIGINAL_TURN_TERMINAL_KEY]).unwrap();
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        std::fs::remove_file(&marker).unwrap();
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        std::fs::write(&marker, []).unwrap();
+        fixture.raw_db().execute(DELETE_KV_SQL, params![AUTOMATION_CUSTODY_UNAVAILABLE_KV]).unwrap();
+        assert!(reopened.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        assert!(marker.is_file());
+        reopened.close(false);
+    }
+
+    #[test]
+    fn clone_resets_and_clear_remove_prefix_in_the_same_transaction() {
+        for operation in ["owner-clone", "persisted-clone", "clear"] {
+            let fixture = Fixture::new(operation);
+            fixture.persist();
+            let db = fixture.raw_db();
+            db.execute(SET_KV_SQL, params![format!("{ORIGINAL_TURN_TERMINAL_PREFIX}legacy-row"), "retained"]).unwrap();
+            db.execute(SET_KV_SQL, params!["original-routed-terminal-unrelated", "unrelated"]).unwrap();
+            db.execute(SET_KV_SQL, params![AUTOMATION_CUSTODY_UNAVAILABLE_KV, "retained recovery marker"]).unwrap();
+            let marker = automation_custody_recovery_marker_path(fixture.owner.db_path());
+            std::fs::write(&marker, b"retained recovery marker").unwrap();
+            db.execute_batch(
+                "CREATE TRIGGER terminal_refuse_cleanup BEFORE DELETE ON kv
+                 WHEN OLD.key = 'original-routed-terminal:current'
+                 BEGIN SELECT RAISE(ABORT, 'terminal cleanup refused'); END;",
+            ).unwrap();
+            let apply = || match operation {
+                "owner-clone" => fixture.owner.reset_session_work_admission_for_clone("clone-agent"),
+                "persisted-clone" => reset_persisted_session_work_admission(fixture.owner.db_path(), 0, "clone-agent"),
+                "clear" => fixture.owner.clear_conversation(),
+                _ => unreachable!(),
+            };
+            let before = fixture.rows();
+            assert!(apply().is_err(), "{operation}");
+            assert_eq!(fixture.rows(), before, "{operation}");
+            db.execute_batch("DROP TRIGGER terminal_refuse_cleanup").unwrap();
+            assert!(apply().unwrap(), "{operation}");
+            assert_eq!(db.query_row(
+                "SELECT count(*) FROM kv WHERE substr(key, 1, ?1) = ?2",
+                params![ORIGINAL_TURN_TERMINAL_PREFIX.len() as i64, ORIGINAL_TURN_TERMINAL_PREFIX],
+                |row| row.get::<_, i64>(0),
+            ).unwrap(), 0);
+            assert_eq!(read_kv(&db, "original-routed-terminal-unrelated").unwrap().as_deref(), Some("unrelated"));
+            assert_eq!(read_kv(&db, AUTOMATION_CUSTODY_UNAVAILABLE_KV).unwrap().as_deref(), Some("retained recovery marker"));
+            assert_eq!(std::fs::read(&marker).unwrap(), b"retained recovery marker");
+            if operation == "clear" {
+                assert!(fixture.owner.get_transcript_entries().unwrap().is_empty());
+                assert!(fixture.owner.get_latest_root_blob_id().unwrap().is_empty());
+            } else {
+                assert_eq!(fixture.owner.read_session_work_admission().unwrap().unwrap().session_id, "clone-agent");
+            }
+        }
+    }
+
+    #[test]
+    fn actual_agent_clone_cannot_copy_a_source_terminal_slot() {
+        let fixture = Fixture::new("actual-clone");
+        fixture.persist();
+        let raw = fixture.slot().unwrap();
+        fixture.raw_db().execute(SET_KV_SQL,
+            params![AUTOMATION_CUSTODY_UNAVAILABLE_KV, "source recovery marker"],
+        ).unwrap();
+        fixture.owner.close(true);
+        let target = fixture.root.join("clone-agent");
+        crate::agents::agent_clone::clone_agent_dir(
+            fixture.owner.db_path().parent().unwrap(), &target, "clone-agent", "Clone", 0,
+        ).unwrap();
+        assert_eq!(fixture.slot().as_deref(), Some(raw.as_str()));
+        let cloned = SandAgentDb::open_existing_agent_without_recovery(target.join("store.db"), 0).unwrap();
+        assert!(cloned.read_kv(ORIGINAL_TURN_TERMINAL_KEY).unwrap().is_none());
+        assert!(cloned.read_kv(AUTOMATION_CUSTODY_UNAVAILABLE_KV).unwrap().is_some());
+        assert!(cloned.read_original_turn_terminal_candidate_checked(&fixture.original).is_err());
+        cloned.close(false);
+    }
 }
 
 #[cfg(test)]
