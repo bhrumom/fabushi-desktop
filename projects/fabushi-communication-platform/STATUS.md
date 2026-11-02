@@ -288,3 +288,27 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
+
+
+### Round 8 — Native renderer author/receipt and actual Electron recovery batch
+
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+The renderer batch is cloud-saved and fully API-read back at
+`779ca162cfbf57a4c9ffb175af2ea16b61dc2439` on the temporary review ref
+`checkpoint/tdrp-r8-author-recovery-ddfff221`; original checkpoint integration
+is pending. It preserves all concurrent cache/page/optional-field fixes, scopes
+Human nonces to their author, and fences draft/recovery settlement by original
+submission ownership. Its exact UI run is `41530015937`, pending when recorded.
+Prior exact `7bb0455a200e2ad817eb9927c9cbf8036be51cf8` ran 41 pure contracts:
+40 passed, one newly strengthened fixture had duplicate authoritative IDs; the
+correction keeps all assertions. No browser16 pass is claimed.
+
+Two actual Electron cases are now authored in the existing Agent Network e2e
+owner and wired to the existing same-H macOS build. They cover a complete local
+canonical row during remote history503 and same-nonce outbox recovery across
+actual process exits, with a further independent B-draft reopen/old-socket
+negative. Exact executable results are pending. Original A submitted-draft
+retirement is explicitly unqualified, not hidden by editing B. Existing Plugins
+and Agent Network assertions remain intact; full UI/a11y, deployed backend,
+kill-crash, signed platforms and independent acceptance stay open. See the
+existing RTM and round8 renderer/Electron receipts for exact counts and scope.

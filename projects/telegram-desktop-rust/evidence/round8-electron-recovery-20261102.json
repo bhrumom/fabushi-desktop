@@ -1,0 +1,377 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 8,
+  "recorded_at": "2026-11-02 21:40:15 UTC",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "repository": "bhrumom/fabushi-desktop",
+  "intended_checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "temporary_review_ref": "checkpoint/tdrp-r8-author-recovery-ddfff221",
+  "parent": "779ca162cfbf57a4c9ffb175af2ea16b61dc2439",
+  "scope": "Actual Human IPC / SQLite and process reopen through current existing owner",
+  "spec": "docs/specs/fbcp-native-message-reconciliation.md#nmr-electron-01--actual-human-ipc-and-process-restart-qualification",
+  "production_code_change": "none in this Electron test integration; renderer product delta retained from parent",
+  "harness": {
+    "path": "desktop/e2e/agent-network-responsive.spec.ts",
+    "blob": "c4923630b2df47ca189f4720f274d40394d06e61",
+    "concurrent_baseline": "52f6bf6f07580fd7a8967c8ab018d386428df723",
+    "concurrent_baseline_blob": "adba306a35b8a62b1cf916b86a2c5f8226451532",
+    "existing_assertions_preserved": true,
+    "new_cases": [
+      "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+      "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen"
+    ],
+    "expected_actual_count": 2,
+    "execution": "not-run",
+    "actual_executed": null
+  },
+  "workflow": {
+    "path": ".github/workflows/plugins-window-close.yml",
+    "build": "existing locked actual JS, Go network worker, Rust Coordinator, AppHost, daemon and renderer at checkout H",
+    "existing_Plugins_pointer_cases": 2,
+    "actual_Human_cases": 2,
+    "independent_Human_execution": "requires successful exact-H build; can still collect Human evidence after independent Plugins failure; neither failure is allowed to pass",
+    "retries": 0,
+    "skips_allowed": 0,
+    "compiled_input_digests": true,
+    "artifacts": [
+      "artifacts/native-human-electron",
+      "desktop/human-electron-results",
+      "artifacts/plugins-close",
+      "desktop/test-results"
+    ]
+  },
+  "independent_static_review": {
+    "schema": "FBCP_ROUND8_STATIC_ELECTRON_REVIEW_V1",
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 8,
+    "observedAt": "2026-11-02T21:37:23Z",
+    "reviewer": "independent read-only source reviewer",
+    "repository": "bhrumom/fabushi-desktop",
+    "scope": {
+      "path": "desktop/e2e/agent-network-responsive.spec.ts",
+      "finalBlob": "c4923630b2df47ca189f4720f274d40394d06e61",
+      "localPath": "/workspace/scratch/de9ad44a05f9/fabushi-round8-final/desktop/e2e/agent-network-responsive.spec.ts",
+      "baselineHead": "52f6bf6f07580fd7a8967c8ab018d386428df723",
+      "baselineBlob": "adba306a35b8a62b1cf916b86a2c5f8226451532",
+      "baselineProvenance": "Live checkpoint file independently fetched by GitHub API; exact head additionally reported by author.",
+      "priorBaselineHead": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+      "priorBaselineBlob": "77f3e036ad582881cc8b1819d4d9402d6456a7e8"
+    },
+    "conclusion": {
+      "staticScope": "No outstanding blocking static finding in this final test-only delta.",
+      "productionModifiedByReviewer": false,
+      "remoteWritesByReviewer": false,
+      "repositoryExecutableValidation": "none; no local build/test/typecheck/lint/validator was run",
+      "identityRead": "git hash-object without -w; final content read in full",
+      "executionAccepted": false,
+      "productAcceptance": false
+    },
+    "counts": {
+      "newAuthoredCases": 2,
+      "newCaseRetries": 0,
+      "newCaseSkips": 0,
+      "existingCasesRetained": 3,
+      "executedCases": null
+    },
+    "newCaseNames": [
+      "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+      "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen"
+    ],
+    "preservedCurrentWork": [
+      "The fresh adba Plugins destination argument, roster observation attachment, Plugins early return, and both Plugins call sites remain intact.",
+      "The original two Plugins pointer cases and Agent Network wheel-zoom case retain their assertions.",
+      "Default social friends remain empty outside the two opt-in Human scenarios.",
+      "The Human setup uses the third options argument to skip creating an unrelated Agent while preserving the original Agent Network default."
+    ],
+    "authoredChecks": [
+      "Actual shipping Electron entry and renderer/preload are launched; Human message changes use the UI and real IPC, without synthetic renderer ports or seeded product storage.",
+      "The first actual Sign in saves a non-plaintext account-session record through the existing secret owner; subsequent lifetimes use the same directory and loopback issuer, cannot receive an inherited CI session file, and do not click Sign in again.",
+      "Runtime safeStorage availability and absence of simulated unavailable storage are asserted; only ciphertext file hash/bytes/key presence are recorded, not credential contents.",
+      "The controlled loopback service validates Human bearer/device binding, participant identity, send shape, nonempty nonce, bounded history limit, explicit afterId=0 and historyCursor/nextAfterId echo.",
+      "Idempotent external fixture state is keyed by clientRequestId and rejects content changes for a replay; it is not used to mutate the product's local message owner.",
+      "Readonly node:sqlite diagnostics inspect actual transcript_entries and hex-encoded metadata under the test-owned .conversations store; no INSERT/UPDATE, seeding, recovery repair, or cursor writes exist in the harness.",
+      "The offline case asserts a unique complete canonical row, timestamp, identity, physical sequence and local visibility during a real HTTP 503, followed by an actual new send after service recovery.",
+      "The held-receipt case observes a real pending/dispatching local row, closes the first actual process lifetime, requires restarted Host POST replay with the original nonce, and asserts one canonical SQLite/UI message.",
+      "The held-receipt case creates new draft B through the editor, closes/reopens another actual lifetime, attempts release on the original already-closed socket, and requires B's full persisted draft and UI to remain unchanged before a new successful send.",
+      "Process identity is collected from observed owned processes, with Linux executable symlinks read only for those PIDs; the actual utility service, Rust Coordinator and AppHost parentage are asserted.",
+      "Normal shutdown refreshes the still-owned process-tree union before closing, then requires every observed identity to exit before reopen. Cleanup SIGKILL is separately recorded and cannot turn a failed graceful shutdown into a passed assertion.",
+      "Initial process-table or first-window failures share windowless cleanup/output capture; later failures retain page/console/process/HTTP/database diagnostics, failure trace/screenshot and explicit video capture attempts.",
+      "Each actual Electron launch opts into recordVideo, each context starts/stops tracing, each milestone captures DOM/PNG, and missing video or cleanup errors fail the case rather than being silently accepted.",
+      "The two cases assert no unexpected HTTP request and no captured pageerror, use zero retries, and contain no skip/fixme/only.",
+      "The harness requires GitHub Actions and full target HEAD equality, records hashes of actual assembled JS/native inputs, and requires Node >=22.16 for the readonly SQLite API."
+    ],
+    "resolvedReviewFindings": [
+      {
+        "issue": "Concurrent live adba Plugins changes would have been overwritten by the original 7b2da4 candidate.",
+        "resolution": "Preserved exactly in the final candidate through the destination argument and existing observation branch; fresh baseline diff contains no removed legacy assertions."
+      },
+      {
+        "issue": "Open-time process snapshot alone could omit a Host replacement during a test; Coordinator has an explicit Host restart path.",
+        "resolution": "Normal close now expands only from still-identical owned processes and records their union before shutdown."
+      },
+      {
+        "issue": "Initial ps/identity assertion failure occurred before first-window cleanup registration.",
+        "resolution": "Moved initial process read and root-identity assertion into the existing windowless try/catch, retaining captured stdout/stderr and safe owned cleanup."
+      },
+      {
+        "issue": "Renderer reload comment implied an independently proven new Host generation.",
+        "resolution": "Comment now claims only a new renderer/port scope and actual sync."
+      }
+    ],
+    "sourceContracts": [
+      {
+        "path": "source/product/fabushi/fabushi-account-service.ts",
+        "blob": "7dc39db60fca2765671fb897b1e213619aa56d27",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/product/fabushi/fabushi-account-adapters.ts",
+        "blob": "b2e0fa5a88d6d0f19f7637ba62f79c9e4fc6cf0e",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/product/fabushi/fabushi-account-policy.ts",
+        "blob": "31da18303e7a482ed5199e60936f601c0ada0af1",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/electron-main/secrets/secret-store.ts",
+        "blob": "c71c39527858771835f59745905ce6f72b078ace",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+        "blob": "1b6192d01594e691171c36397a63dda154b41565",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/electron-main/coordinator/rust-coordinator-carrier.ts",
+        "blob": "89865fc448dc715225953c811cba11c7a3c33572",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/node-agent-coordinator/src/carrier.rs",
+        "blob": "2977d5e1a43e89265090cea2f820cf85b2ad03a0",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/node-agent-coordinator/src/main.rs",
+        "blob": "279dc93569effbba8f49918d9293325dbb0c4ac8",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/host/src/extensions/session/native_messaging.rs",
+        "blob": "2c86ddf9c9432334e862a062d72a2de8903368dc",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob": "1ab341949c21cc20b2c6c9ee03b7140535ba7bd7",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db_schema.rs",
+        "blob": "3d381c12c55d8444caac81f61b64bd81efa5e2bd",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/host/src/extensions/session/session_paths.rs",
+        "blob": "d703762772211f6a77bb6638a25017f8e62e80be",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "blob": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+        "ref": "29996ee2c057b5752ed9615ff0524aa2d8f0642f",
+        "read": "GitHub API full content; targeted call-chain static review"
+      }
+    ],
+    "sourceAnchors": [
+      {
+        "path": "source/product/fabushi/fabushi-account-service.ts",
+        "lines": "200-241,460-501,593-624",
+        "finding": "CI file precedence, stored-session resolution, host credential write and real login persistence."
+      },
+      {
+        "path": "source/product/fabushi/fabushi-account-policy.ts",
+        "lines": "98-105",
+        "finding": "Stored issuer must match the configured origin; the same bound loopback server is retained across reopen."
+      },
+      {
+        "path": "source/electron-main/secrets/secret-store.ts",
+        "lines": "168-199,236-274",
+        "finding": "Flat ciphertext JSON store with atomic writes; unavailable storage falls back to process memory and therefore cannot qualify restart persistence."
+      },
+      {
+        "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+        "lines": "3,57-82",
+        "finding": "Actual utility service name and MessageChannel bootstrap."
+      },
+      {
+        "path": "source/node-agent-coordinator/src/carrier.rs",
+        "lines": "10-42",
+        "finding": "localHumanId camelCase field and rejection of a provided empty identity."
+      },
+      {
+        "path": "source/node-agent-coordinator/src/main.rs",
+        "lines": "1418-1449,1588-1640,2885-2890",
+        "finding": "Real Host binary spawn, account/data-root propagation and Host restart path."
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "lines": "11618-11628,11686-11696",
+        "finding": "Unconditional production Session worker construction and actual Session startup."
+      },
+      {
+        "path": "source/host/src/extensions/session/native_messaging.rs",
+        "lines": "345-357,625-697,873-939,1254-1370",
+        "finding": "Credential-bound Native HTTP send/history contracts and explicit-zero cursor echo."
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "lines": "2569-2602,2733-2769",
+        "finding": "Existing durable pending/dispatching nonce replay precedes history reads; Human owner metadata and canonical store path."
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db_schema.rs",
+        "lines": "8-22",
+        "finding": "Actual readonly kv/transcript_entries schema."
+      },
+      {
+        "path": "source/host/src/extensions/session/session_paths.rs",
+        "lines": "17-22,88-99",
+        "finding": "Actual .conversations/<conversationId>/store.db path."
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "lines": "1825-1838",
+        "finding": "Feature mode test remains a scoped testing mode for other AppHost areas; this review does not claim the entire AppHost is in full production mode."
+      }
+    ],
+    "finalFileAnchors": [
+      {
+        "line": 168,
+        "text": "function releaseOldHumanResponses(scenario: HumanElectronScenario) {"
+      },
+      {
+        "line": 619,
+        "text": "async function startHumanCapture(info: TestInfo): Promise<HumanCapture> {"
+      },
+      {
+        "line": 671,
+        "text": "function observedLiveProcessTree(table: HumanProcessIdentity[], lifetime: Pick<HumanLifetime, 'identities'>) {"
+      },
+      {
+        "line": 710,
+        "text": "async function captureHumanProcessChain(lifetime: HumanLifetime, capture: HumanCapture) {"
+      },
+      {
+        "line": 741,
+        "text": "async function launchHumanLifetime(appDataDir: string, label: string, capture: HumanCapture): Promise<HumanLifetime> {"
+      },
+      {
+        "line": 819,
+        "text": "async function assertHumanSessionSaved(appDataDir: string, capture: HumanCapture) {"
+      },
+      {
+        "line": 831,
+        "text": "async function openHumanWorkspace(lifetime: HumanLifetime, capture: HumanCapture, restore: boolean) {"
+      },
+      {
+        "line": 882,
+        "text": "async function readHumanDatabase(appDataDir: string): Promise<HumanDbSnapshot> {"
+      },
+      {
+        "line": 962,
+        "text": "async function closeHumanLifetime(lifetime: HumanLifetime, capture: HumanCapture) {"
+      },
+      {
+        "line": 988,
+        "text": "async function finishHumanCapture(appDataDir: string, scenario: HumanElectronScenario, capture: HumanCapture) {"
+      },
+      {
+        "line": 1187,
+        "text": "test('NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen', async ({}, info) => {"
+      },
+      {
+        "line": 1264,
+        "text": "test('NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen', async ({}, info) => {"
+      }
+    ],
+    "externalDocumentation": [
+      {
+        "url": "https://playwright.dev/docs/api/class-electron",
+        "finding": "Explicit Electron recordVideo configuration and manual browser-context tracing are used."
+      },
+      {
+        "url": "https://www.electronjs.org/docs/latest/api/utility-process",
+        "finding": "utilityProcess serviceName is exposed through ProcessMetric.name, matching the authored carrier assertion."
+      },
+      {
+        "url": "https://www.electronjs.org/docs/latest/api/structures/process-metric",
+        "finding": "PID plus creation time identify Electron process instances."
+      },
+      {
+        "url": "https://man7.org/linux/man-pages/man1/ps.1.html",
+        "finding": "Modern ps documents removal of an old name truncation limit; do not claim every modern ps comm truncates. The harness uses owned /proc/PID/exe on Linux."
+      }
+    ],
+    "limitations": [
+      "This is static review of authored tests, not evidence of any executed test, compiler success or product acceptance.",
+      "The original submitted A draft's retirement across a process restart remains explicitly unqualified; replacing it with a new B draft is not counted as proof of A retirement.",
+      "Late old-socket release is an observed release attempt after the old process and socket have ended, not a fabricated callback into the new renderer.",
+      "The shutdown scenario is graceful Electron close with observed descendant exit; it does not establish OS-kill/crash recovery.",
+      "The controlled service is not the deployed backend. Backend afterId=0 deployment, supported-platform packages, OS-keychain qualification, full visual/a11y/security/long-term stability and independent ACCEPT remain separate requirements.",
+      "Parent must build/stage the actual desktop JS entry, Rust Coordinator and AppHost from the tested exact H and inspect the resulting run artifacts. Input-file hashes alone are not proof that a build came from H.",
+      "For this source-assembled CI case, parent should keep FABUSHI_ELECTRON_EXECUTABLE unset (or separately bind any packaged executable to the exact candidate); the inherited harness supports that override for other tasks."
+    ],
+    "pureCase31OracleReview": {
+      "scope": "frontend/src/production/transcript-projection.contract.test.ts case NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder",
+      "observedSourceProblem": "unknownAuthor inherits id=authorless, so direct-ID identity intentionally returns true before nonce/author checks.",
+      "reviewedMinimalCorrection": "Give unknownAuthor its own id='unknown-author' while retaining authorId='peer'; keep every false/true assertion and all 41 authored cases.",
+      "reason": "Distinct IDs now exercise the intended same-nonce foreign-author path. Later assertions explicitly override pending-n and remain meaningful.",
+      "localExecution": false,
+      "productionCorrelationChangeRequired": false
+    }
+  },
+  "ledger": {
+    "canonical": "projects/telegram-desktop-rust/parity-ledger.json",
+    "UI16_input": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+    "UI16_output": "a2274b780185e97a77c352650cb6b01bddc1771a",
+    "UI16_transport_run": 41528778051,
+    "UI16_transport_job": 125563297457,
+    "UI16_full_input_output_readback": true,
+    "UI16_only_approved_append": true,
+    "Electron_additional_case_fields": "authored in the same sole row's bounded ops manifest; waiting current original-checkpoint transport and full root input/output readback, no acceptance promotion"
+  },
+  "acceptance": false,
+  "limitations": [
+    "This is static review of authored tests, not evidence of any executed test, compiler success or product acceptance.",
+    "The original submitted A draft's retirement across a process restart remains explicitly unqualified; replacing it with a new B draft is not counted as proof of A retirement.",
+    "Late old-socket release is an observed release attempt after the old process and socket have ended, not a fabricated callback into the new renderer.",
+    "The shutdown scenario is graceful Electron close with observed descendant exit; it does not establish OS-kill/crash recovery.",
+    "The controlled service is not the deployed backend. Backend afterId=0 deployment, supported-platform packages, OS-keychain qualification, full visual/a11y/security/long-term stability and independent ACCEPT remain separate requirements.",
+    "Parent must build/stage the actual desktop JS entry, Rust Coordinator and AppHost from the tested exact H and inspect the resulting run artifacts. Input-file hashes alone are not proof that a build came from H.",
+    "For this source-assembled CI case, parent should keep FABUSHI_ELECTRON_EXECUTABLE unset (or separately bind any packaged executable to the exact candidate); the inherited harness supports that override for other tasks."
+  ],
+  "local_executable_validation": false
+}

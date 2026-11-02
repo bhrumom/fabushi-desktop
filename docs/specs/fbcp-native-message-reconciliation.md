@@ -1934,3 +1934,36 @@ Keep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and
 all current message gates intact. Store exact run/job/artifact identities;
 retain all final service, package, migration and independent-ACCEPT gaps.
 The one-purpose workflow may be removed after its immutable evidence is saved.
+
+
+## NMR-ELECTRON-01 — Actual Human IPC and process restart qualification
+
+Extend the existing Electron e2e owner and production startup chain after the
+renderer contract fixes. Keep the existing Plugins Close pointer cases and
+native-message-electron Node/carrier/auth/update contracts. The browser-only
+external-port fixture is not an Electron IPC substitute.
+
+- Start the real desktop entry, production renderer/preload, MessageChannelMain,
+  utility-process carrier, Rust Coordinator and AppHost/Session Native client.
+  Control only a loopback auth/social HTTP service and test-owned user directory.
+  Return the current bounded, explicit-zero historyCursor contract and canonical
+  author/recipient/clientRequestId identities; unexpected requests fail visibly.
+- A canonical Human send must remain unique and display its full persisted row
+  after closing and reopening Electron with the same test user directory while
+  remote history is unavailable. Assert actual IPC requests, user-visible state,
+  persisted local recovery, and a new positive operation after service recovery.
+- A remote-committed send whose response is withheld must recover after the old
+  Electron lifetime ends and the same directory is reopened. Reuse the original
+  nonce, settle one canonical row, preserve newer draft state and reject any late
+  old-lifetime UI mutation. Record the actual shutdown mode; graceful reopen is
+  not a process-kill claim. The fixture's idempotent server state is not another
+  product message owner.
+- Capture exact H, full Electron/Host output, HTTP request/response/release order,
+  page errors and console, DOM and screenshots, trace/video and exact two-case
+  results with zero retries/skips. No local executable validation. These are
+  controlled Electron/HTTP/SQLite process tests, not deployed-service, complete
+  visual/a11y, OS keychain, signed-package or independent product acceptance.
+
+The actual production behavior, persistence owner and public schema stay in the
+existing Session/Transcript path. If the tests expose a production defect, fix
+that owner in a separately reviewed narrow delta before claiming a pass.

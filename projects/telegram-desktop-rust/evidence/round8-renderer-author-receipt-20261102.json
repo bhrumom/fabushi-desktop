@@ -2,7 +2,7 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-02 21:36:45 UTC",
+  "recorded_at": "2026-11-02 21:41:36 UTC",
   "scope": "NMR-UI-01 / NMR-AC-UI-01: existing ProductionRenderer Human author, cache, queue and asynchronous settlement",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
@@ -1699,18 +1699,17 @@
     "acceptance": false
   },
   "ledger_integration": {
-    "status": "pending",
-    "renamed_manifest": {
-      "sha": "9bb7bd6b1a00d4f1028e60aee8ccfaacfa97656a",
-      "blob": "fb283d4d1b6707c8dcc9668a7dcc82dc79d290e6",
-      "full_remote_readback": true,
-      "run": 41528667515,
-      "job": 125562909836,
-      "conclusion": "success"
-    },
-    "input_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
-    "output_blob": "33d4deb30a59b2859ec2c7acabe912bec0862302",
-    "not_installed_reason": "Canonical ledger input advanced; no stale ledger replacement permitted."
+    "status": "UI16 appended only on the temporary review branch in this containing commit; original checkpoint still pending",
+    "input_blob": "fb32a0e0a86ce5226e20ddd5a668a30429bb68c2",
+    "output_blob": "a2274b780185e97a77c352650cb6b01bddc1771a",
+    "output_sha256": "467f8e611c9f3f4e561f32254312aac59461a956b9258d17cc01940dc0e80353",
+    "transport_run": 41528778051,
+    "transport_job": 125563297457,
+    "full_input_output_remote_readback": true,
+    "only_reviewed_append_and_note": true,
+    "other183_rows_and_source_reviews_and_acceptance_unchanged": true,
+    "expected_parent": "779ca162cfbf57a4c9ffb175af2ea16b61dc2439",
+    "Electron2": "same responsibility manifest adds two fault/recovery case IDs and test evidence; pending current primary helper output, with explicit RTM authored/not-run state"
   },
   "observed_failed_prerequisite_ui": {
     "head": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
@@ -1797,5 +1796,12 @@
     "e787ab0ffb78ff1dc247948a45e230888da8890e retains zero-byte database recovery negative/positive boundary",
     "f2903f53ded5b07faea73e7f07d780eda0423283 Social log oracle, all product assertions retained",
     "existing 11 ProductionRenderer cases and 8 Transcript viewport cases remain distinct from own 16"
-  ]
+  ],
+  "corrected_ui_qualification": {
+    "sha": "779ca162cfbf57a4c9ffb175af2ea16b61dc2439",
+    "run_id": 41530015937,
+    "status": "pending",
+    "scope": "only actual UI affected gates; other review-branch jobs skipped, never counted as passed",
+    "exact_remote_content_readback": true
+  }
 }

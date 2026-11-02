@@ -667,3 +667,26 @@ Beaf run41522952938/job125543328873 failed inherited reaction-fixture `E0382` be
 The canonical evidence append is `558b57bf9730446b08cf40c120d17c988c56ed16`; all other ledger rows, source reviews, execution scalar fields and acceptance remain unchanged. Exact source contract job125557439692 passed158 Node and37 Python schema cases with zero ledger shape errors; candidate125557839138 also passed consistency for16381 source identities/184 responsibilities/six reviews (two complete), retained unknown/unread=null and correctly rejected accepted mode. Full identities and bounded failure/recovery records are in `projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json`.
 
 Later shared SQLite initialization, Session permissions/history and actual renderer changes require their own exactf544/run41526852400 results (Human63, creation12+3, retained Transcript3, journal12, actual ProductionRenderer11+8 and Social). Historical59/106/d878 results do not qualify those changed inputs. Current shipping, real services, complete source/legal closure, signed platform install/upgrade/rollback, full Bot regression and independent ACCEPT remain open. Backend PR137 stays read-only.
+
+
+## NMR-UI-01 / NMR-ELECTRON-01 — Round 8 author scope and recovery batch
+
+The existing FBCP-NMR-001 responsibility, Session/Transcript persistence and
+ProductionRenderer projections remain the owners. Fixed U is
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`. This is a pending Stage-A batch,
+not an independent ACCEPT or a deployed-service result.
+
+| Requirement | Invariant and implemented entry | Authored cases | Execution evidence / gap |
+|---|---|---|---|
+| NMR-UI-01 | Human author + nonce identity, canonical merge, account/conversation/clear/disposal lifetime; original draft ownership for delayed receipts and retries in ProductionRenderer and transcript-projection | 41 pure cases (33 retained + 8 distinct new); 16 real ProductionRenderer Chromium cases in desktop/e2e/native-message-author-recovery.spec.ts | Exact 7bb0455a200e2ad817eb9927c9cbf8036be51cf8 run 41527943483 job 125560418605: 40/41 pure passed, one newly added fixture reused an authoritative ID. Distinct-ID fix preserves its false/true oracles. Exact 779ca162cfbf57a4c9ffb175af2ea16b61dc2439 run 41530015937 pending; browser16 not yet executed. Retain independent existing Renderer11, Transcript8, cursor17 and Forward5/16 gates. |
+| NMR-ELECTRON-01 | Actual Electron entry/preload/utility/Rust Coordinator/Production Session/Native HTTP/SQLite, one test-owned user directory, encrypted session restored without a second login | desktop/e2e/agent-network-responsive.spec.ts: actual Human IPC offline same-directory reopen; committed nonce held-receipt process reopen (two cases) | Authored and independently statically reviewed; run only same-H assembled binaries in plugins-window-close.yml. Actual two-case execution pending. |
+| NMR-ELECTRON-01 recovery boundary | Entire persisted canonical row stays unique under history503; old process tree actually exits; restarted Host replays original nonce; independent newer draft B survives another process reopen and old socket release attempt | Two real-process cases record full HTTP/DOM/SQLite, PID/PPID/start identity, per-generation trace/video and binary SHA256 | Original A draft automatic retirement across processes is observed separately and remains open; graceful process exit is not kill-crash qualification. |
+
+The actual batch evidence is
+`projects/telegram-desktop-rust/evidence/round8-renderer-author-receipt-20261102.json`
+and the Electron receipt beside it. Temporary review ref
+`checkpoint/tdrp-r8-author-recovery-ddfff221` preserves the existing checkpoint
+lineage; original-checkpoint integration remains pending. Its UI-only selection
+is not a pass for skipped Host/shipping/Windows gates. The original checkpoint
+retains those gates. Deployed afterId=0, full source/legal closure, retained-store
+rollbacks, signed platforms, visual/a11y, Bot regression and ACCEPT remain open.
