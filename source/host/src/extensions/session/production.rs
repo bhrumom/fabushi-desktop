@@ -2373,6 +2373,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "persisted Human pending nonce is invalid".to_string())?;
         let author = entry.get("authorId").and_then(serde_json::Value::as_str)
             .ok_or_else(|| "persisted Human pending author is invalid".to_string())?;
+        let mut readable_legacy_source = false;
         if let Some(context) = context.filter(|value|
             ["sourceConversationId", "sourceEntryId", "requestId"].iter()
                 .any(|key| value.get(*key).is_some())
@@ -2394,6 +2395,14 @@ impl ProductionSessionWorkers {
             ) {
                 return Ok(true);
             }
+            // The pre-journal shipping path used this exact nonce contract.
+            // A readable but unrelated source alone cannot authorize downgrade
+            // of a v1 target whose real source/journal is no longer available.
+            let mut legacy_digest = Sha256::new();
+            legacy_digest.update(request.as_bytes());
+            legacy_digest.update([0_u8]);
+            legacy_digest.update(conversation_id.as_bytes());
+            readable_legacy_source = nonce == format!("human-forward-{:x}", legacy_digest.finalize());
         }
         // Older rows did not have the independent marker. If their entire
         // context was lost/replaced, their stable target nonce still identifies
@@ -2402,7 +2411,9 @@ impl ProductionSessionWorkers {
         if !nonce.starts_with("human-forward-") { return Ok(false); }
         let entries = match fs::read_dir(get_native_conversations_root(&self.agents_root)) {
             Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err("persisted Human forward ownership cannot be resolved from unavailable source stores".into());
+            }
             Err(error) => return Err(error.to_string()),
         };
         for source in entries {
@@ -2420,6 +2431,9 @@ impl ProductionSessionWorkers {
             ) {
                 return Ok(true);
             }
+        }
+        if !readable_legacy_source {
+            return Err("persisted Human forward ownership is unresolved; retain pending intent until its source can be recovered".into());
         }
         Ok(false)
     }

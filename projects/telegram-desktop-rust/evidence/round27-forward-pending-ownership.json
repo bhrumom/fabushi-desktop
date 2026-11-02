@@ -458,7 +458,9 @@
     "expected_input_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
     "source_reviews_unchanged": true,
     "coverage_unchanged": true,
-    "acceptance_changed": false
+    "acceptance_changed": false,
+    "remote_commit": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+    "remote_commit_verified": true
   },
   "product_commit": "2d03120fe107b94f389409ac4f6890947940af4e",
   "product_run": 41519971441,
@@ -470,8 +472,43 @@
     "shipping": "queued/unassigned; no execution claimed"
   },
   "followup_defect": {
-    "scope": "Source-derived pre-marker row with missing/replaced entire context and unavailable source store can still fall through after an empty ownership scan",
-    "execution": "not reproduced by Actions yet",
-    "action": "Require positive readable-source legacy evidence and add combined unavailable-source/context-loss negatives; do not mark current53 case sufficient."
+    "scope": "Pre-marker pending loses whole context or has unrelated replacement, and its real source SQLite file is unavailable",
+    "classification": "IMPLEMENTATION_DEFECT identified by source review; no Actions reproduction claimed before fix",
+    "repair": "Generic replay requires a strict readable referenced source with a valid journal and a nonce matching exact2a pre-journal SHA256(request || NUL || destination); scan all existing journals for actual target ownership first. Otherwise return unresolved-ownership error and retain pending intent.",
+    "new_negative_subcases": [
+      "referenced source unavailable with original source context",
+      "source unavailable and whole context missing",
+      "source unavailable and unrelated metadata replaces context"
+    ],
+    "legacy_positive": "Uses the actual pre-journal production nonce from exact2a; no invented legacy nonce format",
+    "oracle_reference": {
+      "head": "2a00708897e17c76194e0811a083ef6cd315d674",
+      "path": "source/host/src/extensions/session/production.rs",
+      "blob": "f254c169115a6f298e8eb8a11251b3377c5345ec",
+      "symbol": "forward_human_message"
+    },
+    "scope_limit": "Does not claim arbitrary lost provenance repair or unreviewed older formats; no public command, schema or service contract change.",
+    "execution": "authored; requires containing-H Actions"
+  },
+  "followup_review_base": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
+  "followup_selected_human": 54,
+  "followup_source_schema_evidence": {
+    "head": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+    "run": 41520778145,
+    "conclusion": "success",
+    "contract_job": 125535903909,
+    "candidate_job": 125536039467,
+    "node": 157,
+    "schema": 37,
+    "ledger_errors": 0,
+    "root_identities": 6895,
+    "recursive_identities": 16381,
+    "responsibilities": 184,
+    "source_reviews": 6,
+    "completed_reviews": 2,
+    "unknown": null,
+    "unread": null,
+    "independent_acceptance": false,
+    "scope": "Only source accounting at this exact integrated ledger H; not new Human execution"
   }
 }

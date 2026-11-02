@@ -1047,13 +1047,22 @@ read the referenced source journal directly; a matching request or destination
 nonce remains owned even after membership removal. Missing or corrupt source
 storage cannot prove legacy ownership. A forwarding-shaped nonce without
 usable context must also be checked against the stored source journals; ordinary
-reply metadata alone is not a forwarding identity. Preserve genuine readable
-pre-journal replay, existing pinned-byte guarantees and NMR-49 reply repair.
+reply metadata alone is not a forwarding identity. If no journal matches, require
+a strict readable referenced source plus the actual pre-journal nonce contract
+`SHA256(request UTF-8 || NUL || destination UTF-8)` before generic replay. Old
+and v1 nonces share the same external format, so the prefix alone proves neither
+ownership nor legacy compatibility. Missing/replaced-unrelated context plus an
+unavailable source remains pending with an explicit unresolved-ownership error.
+Preserve genuine readable pre-journal replay, existing pinned-byte guarantees
+and NMR-49 reply repair. This compatibility claim binds to the actual 2a007088
+legacy path; it does not promise automatic repair of arbitrary lost provenance.
 
 NMR-AC-38 ownership continuation adds one actual killed-process/SQLite/HTTP
 case: durable marker before first POST; revoked-source pending rows with future
 or missing context version, changed request marker, missing context and retained
-nonce; unavailable/corrupt source refusal; and a readable genuine legacy control.
+nonce; unavailable source combined with missing/replaced-unrelated context;
+corrupt source refusal; and a readable genuine legacy control using the real
+pre-journal nonce algorithm.
 The complete original intent and pending payload must remain retained. Tests
 execute only at exact-H GitHub Actions. NMR-50 retains nonblocking batch recovery;
 this extension does not replace that work or change public commands/service APIs.

@@ -6514,13 +6514,27 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     assert!(source_owner.set_metadata("humanForwardBatches", journal.clone()).unwrap());
     let source_path = forward_db_path(&root, source);
     let unavailable_path = source_path.with_extension("temporarily-unavailable");
-    fs::rename(&source_path, &unavailable_path).expect("make the exact source store unavailable");
-    let unavailable = runtime.sync_human_conversation(first);
-    fs::rename(&unavailable_path, &source_path).expect("restore owned source store");
-    assert!(unavailable.is_err(), "unreadable source cannot authorize markerless generic replay");
-    assert_eq!(server.post_count(), 1);
-    assert_eq!(target_owner.get_transcript_entries().unwrap(), vec![markerless]);
-    assert_eq!(source_owner.get_metadata("humanForwardBatches").unwrap(), Some(journal));
+    for case in ["source-context", "missing-context", "unrelated-context"] {
+        let mut pending = markerless.clone();
+        if case == "missing-context" {
+            pending.as_object_mut().unwrap().remove("forwardContext");
+        } else if case == "unrelated-context" {
+            pending["forwardContext"] = json!({"preserve":"unrelated retained metadata"});
+        }
+        target_owner.update_transcript_entry(original_id, &pending).unwrap().unwrap();
+        // The directory scan may skip an absent SQLite file. Neither a lost
+        // source pointer nor unrelated metadata establishes legacy ownership
+        // of this pre-marker forwarding nonce when its source is unreadable.
+        fs::rename(&source_path, &unavailable_path).expect("make the exact source store unavailable");
+        let unavailable = runtime.sync_human_conversation(first);
+        fs::rename(&unavailable_path, &source_path).expect("restore owned source store");
+        assert!(unavailable.is_err(), "{case}: unreadable source cannot authorize markerless generic replay");
+        assert_eq!(server.post_count(), 1, "{case}: preserve the single previously accepted POST");
+        assert_eq!(target_owner.get_transcript_entries().unwrap(), vec![pending],
+            "{case}: failed source lookup cannot mutate the retained pending intent");
+        assert_eq!(source_owner.get_metadata("humanForwardBatches").unwrap(), Some(journal.clone()),
+            "{case}: the exact denied source journal remains recoverable");
+    }
     runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime); drop(child);
     server.finish(); fs::remove_dir_all(root).expect("remove ownership negative fixture");
 
@@ -6535,16 +6549,25 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     let legacy_target = legacy_args["destinationConversationIds"][0].as_str().unwrap();
     let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    // Reproduce the actual pre-journal production nonce: SHA256 of the
+    // request ID, one NUL byte, then this destination conversation ID.
+    use sha2::Digest;
+    let legacy_request_id = "pre-journal-request";
+    let mut legacy_digest = sha2::Sha256::new();
+    legacy_digest.update(legacy_request_id.as_bytes());
+    legacy_digest.update([0u8]);
+    legacy_digest.update(legacy_target.as_bytes());
+    let legacy_nonce = format!("human-forward-{:x}", legacy_digest.finalize());
     let context = json!({
-        "requestId":"pre-journal-request","sourceConversationId":legacy_source,
+        "requestId":legacy_request_id,"sourceConversationId":legacy_source,
         "sourceEntryId":legacy_args["sourceEntryId"],
         "privacy":{"dropSenderNames":false,"dropCaptions":false}
     });
     assert!(legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap()
         .append_transcript_entry(&json!({
-            "id":"human-message:human-forward-legacy-replay","kind":"message","role":"user",
+            "id":format!("human-message:{legacy_nonce}"),"kind":"message","role":"user",
             "authorKind":"human","authorId":"1","content":"legacy forward content",
-            "clientNonce":"human-forward-legacy-replay","timestampMs":1000.0,
+            "clientNonce":legacy_nonce.as_str(),"timestampMs":1000.0,
             "delivery":"pending","forwardContext":context
         })).unwrap());
     let legacy_rows = legacy_runtime.sync_human_conversation(legacy_target)
@@ -6552,7 +6575,7 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     assert_eq!(legacy_server.post_count(), 1);
     assert_eq!(legacy_rows.len(), 1);
     assert_eq!(legacy_rows[0]["delivery"], "sent");
-    assert_eq!(legacy_rows[0]["clientNonce"], "human-forward-legacy-replay");
+    assert_eq!(legacy_rows[0]["clientNonce"].as_str(), Some(legacy_nonce.as_str()));
     assert_eq!(legacy_rows[0]["forwardContext"], context);
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
     legacy_runtime.shutdown(); drop(legacy_owner); drop(legacy_runtime);
