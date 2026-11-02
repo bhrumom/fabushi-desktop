@@ -488,7 +488,27 @@
       "symbol": "forward_human_message"
     },
     "scope_limit": "Does not claim arbitrary lost provenance repair or unreviewed older formats; no public command, schema or service contract change.",
-    "execution": "authored; requires containing-H Actions"
+    "execution": {
+      "head": "d261afe14785d9bf1c4ac772d01df3523b453300",
+      "run": 41521138485,
+      "job": 125537164274,
+      "runner": "ubuntu-24.04",
+      "result": "success",
+      "case": "shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources",
+      "human": 54,
+      "resource_upload": 3,
+      "sharebox": 1,
+      "journal": 12,
+      "agent": 4,
+      "credential": 3,
+      "gateway_forward_http": 1,
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "e540894adf0c83b5403046d410e77b9d5a9c854f2eddb883aa2004b2b65e1fb4",
+      "artifact_id": 13177203183,
+      "artifact_digest": "sha256:d2c4ead4b34e5cdfe62430bcc605439ff07fd244c870e349d8313beafaa2f18a",
+      "scope": "Controlled actual Host/process/SQLite/HTTP execution; not live backend or macOS package acceptance"
+    }
   },
   "followup_review_base": "682aea58b4fbac7b1b509c30fd565a12c4af5a2f",
   "followup_selected_human": 54,
@@ -510,5 +530,488 @@
     "unread": null,
     "independent_acceptance": false,
     "scope": "Only source accounting at this exact integrated ledger H; not new Human execution"
-  }
+  },
+  "latest_product_commit": "d261afe14785d9bf1c4ac772d01df3523b453300",
+  "latest_product_tree": "ca3f4485dc7ac8048fefcf4188fc0795b72392e0",
+  "latest_product_files": {
+    "source/host/src/extensions/session/production.rs": "ff8b3c05d547a3f6001f1f5b2911b37d0b918e90",
+    "source/host/tests/session_gateway_contract.rs": "dcb1eb43177def27498f92676812141574b85738",
+    "docs/specs/fbcp-native-message-reconciliation.md": "1d63c006daa1d96066ec51b4d42ee6ab17649a6d",
+    "projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json": "7bfe83b5193c055cef205c8337315a4b215aefb1"
+  },
+  "latest_product_remote_readback_verified": true,
+  "latest_verified_product_audit": {
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300",
+    "run_id": 41521138485,
+    "run_attempt": 1,
+    "run_status": "queued",
+    "run_conclusion": null,
+    "workflow_blob": "c73f272907aedcd8672a3138391e2f5c6eb1171c",
+    "verified": {
+      "native-message-ui": {
+        "job_id": 125537164157,
+        "status": "completed",
+        "conclusion": "success",
+        "renderer_build": "success",
+        "transcript": 20,
+        "human_cursor_RPC": 17,
+        "forward_settlement": 5,
+        "Chromium": 16,
+        "failed": 0,
+        "skipped": 0,
+        "log_file": "125537164157.log",
+        "log_sha256": "dbe62edd8b425d095c3a16ad66af527a046d997c55f1c5d1334301947f617567"
+      },
+      "native-message-electron": {
+        "job_id": 125537163477,
+        "status": "completed",
+        "conclusion": "success",
+        "carrier": 10,
+        "native_account": 8,
+        "fixture_resource_copy": 3,
+        "update_source": 16,
+        "windows_publisher": 28,
+        "macos_metadata": 18,
+        "promotion_consumer": 6,
+        "build": "actual product main/preload and Rust Coordinator carrier",
+        "historical_package_source": "9d16483f70df9af06db97b17bb02a24dc507e459",
+        "historical_package_bytes_unchanged": true,
+        "installed_or_released": false,
+        "log_file": "125537163477.log",
+        "log_sha256": "455c375007f44e76653383184222452c255b9d1f11b43a6abeddfdf898eb697e"
+      },
+      "windows-update-publisher": {
+        "job_id": 125537164190,
+        "status": "completed",
+        "conclusion": "success",
+        "native_authenticode": 11,
+        "failed": 0,
+        "skipped": 0,
+        "CI_inert_fixture_only": true,
+        "log_file": "125537164190.log",
+        "log_sha256": "36049c5274f362cb741c20b2e172a69bde35119d10ca77228b55dc97e0c67656"
+      },
+      "native-message-reconciliation": {
+        "job_id": 125537164274,
+        "status": "completed",
+        "conclusion": "success",
+        "platform": "ubuntu-24.04",
+        "runner_id": 1000259696,
+        "completed_at": "2026-11-02T20:42:42Z",
+        "Human": 54,
+        "resource_upload": 3,
+        "sharebox": 1,
+        "journal_cas": 12,
+        "Agent_nonce": 4,
+        "private_credentials": 3,
+        "gateway_forward_HTTP": 1,
+        "failed": 0,
+        "ignored": 0,
+        "key_new_case": "shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources ... ok",
+        "key_new_case_timestamp": "2026-11-02T20:40:53.6554918Z",
+        "concurrent_reply_identity_case": "shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging ... ok",
+        "log_file": "125537164274.log",
+        "log_sha256": "e540894adf0c83b5403046d410e77b9d5a9c854f2eddb883aa2004b2b65e1fb4"
+      }
+    },
+    "pending": {
+      "native-message-shipping-compile": {
+        "job_id": 125537163909,
+        "status": "queued",
+        "runner_id": 0,
+        "runner": "macos-15",
+        "steps": [],
+        "actual_execution": "not-run"
+      }
+    },
+    "skipped": {
+      "native-auth-and-journal": {
+        "job_id": 125537166049,
+        "reason": "Focused push selector; not counted as pass"
+      }
+    },
+    "artifacts": [
+      {
+        "id": 13177981296,
+        "name": "native-message-ui-d261afe14785d9bf1c4ac772d01df3523b453300",
+        "digest": "sha256:03127bbc068aed7ed76cc5bf604473693af8e17e6b5471c7a82af3a53ec43644",
+        "size_in_bytes": 226740,
+        "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300"
+      },
+      {
+        "id": 13177333141,
+        "name": "windows-update-publisher-d261afe14785d9bf1c4ac772d01df3523b453300",
+        "digest": "sha256:1a12a49c3b1ac53088e80458e65fca0b70ef2a4e3100910e5b9b8257ef30fcb5",
+        "size_in_bytes": 1829,
+        "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300"
+      },
+      {
+        "id": 13177203183,
+        "name": "native-message-reconciliation-d261afe14785d9bf1c4ac772d01df3523b453300",
+        "digest": "sha256:d2c4ead4b34e5cdfe62430bcc605439ff07fd244c870e349d8313beafaa2f18a",
+        "size_in_bytes": 35105,
+        "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300"
+      },
+      {
+        "id": 13176354254,
+        "name": "native-message-electron-d261afe14785d9bf1c4ac772d01df3523b453300",
+        "digest": "sha256:5c0d58f7025b26d31d833d4d47631871795181eac956fc67f11c2abb77626ec9",
+        "size_in_bytes": 14003,
+        "head_sha": "d261afe14785d9bf1c4ac772d01df3523b453300"
+      }
+    ],
+    "scope": "Only this exact d261 follows stronger legacy/source proof. Prior 2d031 product and b0e745 source results remain separately bound historical evidence. Controlled CI does not grant release or independent acceptance.",
+    "independent_accept": "blocked",
+    "formal_release": "blocked",
+    "local_product_execution": false,
+    "remote_mutation": false,
+    "observed_run_updated_at": "2026-11-02T20:38:59Z",
+    "runner_provenance": "The prior concurrent workflow selected Ubuntu reconciliation and installed Linux dependencies; this task's production fix did not change the selected runner. Linux results do not qualify the separate macOS shipping job.",
+    "observed_at": "2026-11-02T20:45:08Z"
+  },
+  "original_fixture_root_cause": {
+    "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 27,
+    "scope": "Original Chromium fixture bootstrap failure and already-landed repairs only",
+    "classification": "TEST_FLAW",
+    "observed": {
+      "original": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head": "2a00708897e17c76194e0811a083ef6cd315d674",
+        "run_id": 41500770749,
+        "job_id": 125467351076,
+        "job_conclusion": "failure",
+        "log": "125467351076.log",
+        "log_sha256": "c28c0dd4c9a0379f9f6ef26064e445b7efcd9eaf34ab66b908a3a5a88d4c5383",
+        "log_lines": "646-820",
+        "browser_tests": {
+          "tests": 12,
+          "passed": 0,
+          "failed": 12,
+          "skipped": 0
+        },
+        "failure": "All twelve cases time out at fixture() line31 waiting for window.__forwardHarness AND an input[type=search], before their behavior assertions.",
+        "identical_timeout_ms": 30000,
+        "setup_evidence": "The before hook reached Chromium launch after HTML fetch returned res.ok, and each test reached page.waitForFunction after page.goto.",
+        "diagnostic_limit": "The original harness did not record Vite stdout/stderr, pageerror, console errors, request failures or HTTP error responses. The log does not distinguish absent harness from absent search input and does not identify an observed HTTP status or MIME failure."
+      },
+      "first_repair_execution": {
+        "head": "65253740c033508ab08a4b500449a5b56727e940",
+        "run_id": 41504939510,
+        "job_id": 125481711814,
+        "job_conclusion": "failure",
+        "complete_log_remotely_read": true,
+        "browser_tests": {
+          "tests": 12,
+          "passed": 11,
+          "failed": 1,
+          "skipped": 0
+        },
+        "log_lines": "646-664 and 666-739",
+        "remaining_failure": "The new positive-control test reached page.evaluate, then failed with TypeError: window.__forwardHarness[m] is not a function, at behavior.test.mjs:92:13 calling setTheme.",
+        "isolation": "The original fixture.tsx blob was unchanged at this H. The other eleven cases passed, so this remaining failure is downstream of successful fixture bootstrap."
+      },
+      "second_repair_execution": {
+        "head": "59f5fa24827812f78336c464995d161f403dedfb",
+        "run_id": 41508537631,
+        "job_id": 125494010641,
+        "job_conclusion": "success",
+        "log": "../audit_live_actions/125494010641.log",
+        "log_sha256": "472c3b7d59e0b9202c366e88f9189d88af4ea21009d98b27eb874cecdec1c78b",
+        "log_lines": "646-736",
+        "renderer": "compiled",
+        "transcript_tests": 16,
+        "forward_settlement_tests": 5,
+        "browser_tests": {
+          "tests": 12,
+          "passed": 12,
+          "failed": 0,
+          "skipped": 0
+        }
+      }
+    },
+    "source_inference": {
+      "finding": "The HTML module entry used a browser-relative URL intended to cross Vite's filesystem root. The landed root-local TypeScript entry lets Vite's module resolver resolve the external fixture and emit an explicit filesystem URL.",
+      "reasoning": [
+        "At original H, behavior.test.mjs:13-15 spawns Vite with cwd=desktop. desktop/vite.config.ts does not override root; Vite6.4.3 config.ts:1152-1154 defaults root to process.cwd().",
+        "desktop/forward-dialog-test.html:3 uses src=../frontend/src/production/ForwardMessageDialog.fixture.tsx. At /forward-dialog-test.html this browser URL denotes /frontend/src/production/ForwardMessageDialog.fixture.tsx, not the repository filesystem sibling outside desktop.",
+        "Vite6.4.3 indexHtml.ts:122-190,279-291 processes the script src as a URL and does not rewrite this external filesystem reference to /@fs/. resolve.ts:262-273 resolves a source URL against the configured root.",
+        "The existing config already permits repository filesystem access via server.fs.allow at line26; that permission does not map a browser /frontend URL to the sibling directory.",
+        "The repaired root-local entry imports ../frontend/... as a module. Vite6.4.3 importAnalysis.ts:103-129 rewrites resolved files outside the root to explicit /@fs/ URLs.",
+        "ForwardMessageDialog.tsx and vite.config.ts have identical blobs at original2a and successful59. The fixture.tsx itself also has the original blob at intermediate652. This isolates the original repair to fixture entry/loading and diagnostics rather than product component logic."
+      ],
+      "confidence_boundary": "This is a source-supported explanation of the incorrect entry path and its landed repair, corroborated by intermediate execution. No original network trace or controlled original-H rerun was available; do not claim the original log captured a particular 403/404, MIME rejection, console error or sole runtime exception.",
+      "locked_vite": {
+        "package_lock_path": "desktop/package-lock.json",
+        "package_lock_blob": "1655189b893de0d2d09648bdd37a176cc90a5c8d",
+        "version": "6.4.3",
+        "resolved": "https://registry.npmjs.org/vite/-/vite-6.4.3.tgz",
+        "integrity": "sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A=="
+      },
+      "primary_implementation_sources": [
+        {
+          "repository": "vitejs/vite",
+          "ref": "v6.4.3",
+          "path": "packages/vite/src/node/config.ts",
+          "blob": "0cba941e4e54d81144bb38638364a5108dedccc2",
+          "lines": "1152-1154"
+        },
+        {
+          "repository": "vitejs/vite",
+          "ref": "v6.4.3",
+          "path": "packages/vite/src/node/server/middlewares/indexHtml.ts",
+          "blob": "c10d404ba5eaaecd500fcac8871c1d15820fbe6a",
+          "lines": "122-190,279-291"
+        },
+        {
+          "repository": "vitejs/vite",
+          "ref": "v6.4.3",
+          "path": "packages/vite/src/node/plugins/resolve.ts",
+          "blob": "7780fa6a0343d519cd80fa21a8506d2c7e658ae0",
+          "lines": "252-273"
+        },
+        {
+          "repository": "vitejs/vite",
+          "ref": "v6.4.3",
+          "path": "packages/vite/src/node/plugins/importAnalysis.ts",
+          "blob": "da486716e24529abe0d807e650eebdd14871f9f0",
+          "lines": "103-129"
+        }
+      ]
+    },
+    "landed_repairs": [
+      {
+        "commit": "65253740c033508ab08a4b500449a5b56727e940",
+        "files": [
+          {
+            "path": "desktop/forward-dialog-test.html",
+            "old_blob": "e354833c3573d39348022e74414ece52952d18b3",
+            "new_blob": "6be9402c8d8ef1c53d339061585e95231616af71",
+            "lines": "3",
+            "change": "Script src now points to ./forward-dialog-test.ts."
+          },
+          {
+            "path": "desktop/forward-dialog-test.ts",
+            "new_blob": "59de8d77d1a25c39633d29d79cceac4de1c35141",
+            "lines": "1-3",
+            "change": "New entry under Vite root imports the allowed external fixture through module resolution."
+          },
+          {
+            "path": "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
+            "old_blob": "3cc1e421a3fb255c27767a6686f490b29dcaabde",
+            "new_blob": "c117eb8a92b9dbcc2dc219137c667b5887c64b75",
+            "change": "Capture Vite logs and browser errors/failed responses, save bootstrap screenshot, use bounded readiness fetch and wait for owned server close; add keyboard/theme/viewport and stronger existing behavior oracles."
+          }
+        ],
+        "unresolved_at_this_commit": "Positive control calls setTheme but unchanged original fixture has no such method; 11 passed, 1 failed."
+      },
+      {
+        "commit": "59f5fa24827812f78336c464995d161f403dedfb",
+        "files": [
+          {
+            "path": "frontend/src/production/ForwardMessageDialog.fixture.tsx",
+            "old_blob": "c9ab331486d0709617a501ed9fe0663890d14a7e",
+            "new_blob": "b84e7aa9c49a3068eca26581efe1ca926aa9141b",
+            "change": "Install existing runtime theme owner, expose setTheme via installer.update, dispose on unmount."
+          },
+          {
+            "path": "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
+            "old_blob": "c117eb8a92b9dbcc2dc219137c667b5887c64b75",
+            "new_blob": "a1fdea7702171962a73912c85323a7265cb2fd7a",
+            "change": "Assert actual root theme attribute and distinct computed foreground/background colors in addition to screenshots."
+          }
+        ],
+        "classification": "TEST_FLAW: missing fixture method was the remaining intermediate error, separate from original bootstrap timeout."
+      }
+    ],
+    "unchanged_product_inputs": [
+      {
+        "path": "frontend/src/production/ForwardMessageDialog.tsx",
+        "blob_at_original_and_success": "c9dec05d4c95abd8d4d57c2f95f1a52b21e36f53"
+      },
+      {
+        "path": "desktop/vite.config.ts",
+        "blob_at_original_and_success": "62e32ef4499400c8c2f4c5446ddd6ae97b7de3fa"
+      },
+      {
+        "path": "frontend/src/production/ForwardMessageDialog.fixture.tsx",
+        "blob_at_original_and_first_repair": "c9ab331486d0709617a501ed9fe0663890d14a7e"
+      }
+    ],
+    "workflow": {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "successful_blob": "1a467ad8c641c844d5cd5e23d0abc4dfe530ba54",
+      "retained_browser_gate": "Node TAP must report tests12/pass12/fail0/skipped0; no weakening of the original twelve-case gate.",
+      "relevant_change": "Add desktop/forward-dialog-test.ts to push paths."
+    },
+    "limits": {
+      "new_product_validation_performed": false,
+      "local_executable_validation_performed": false,
+      "github_writes_performed": false,
+      "independent_acceptance": false,
+      "formal_release_acceptance": false
+    }
+  },
+  "integrated_ledger_source_audit": {
+    "repository": "bhrumom/fabushi-desktop",
+    "head_sha": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+    "run_id": 41520778145,
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "updated_at": "2026-11-02T20:37:18Z",
+    "workflow_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+    "jobs": [
+      {
+        "id": 125535903909,
+        "name": "contract",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-02T20:36:37Z",
+        "completed_at": "2026-11-02T20:36:50Z"
+      },
+      {
+        "id": 125536039467,
+        "name": "fixed-source-candidate",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-02T20:36:52Z",
+        "completed_at": "2026-11-02T20:37:17Z"
+      }
+    ],
+    "contract": {
+      "job": 125535903909,
+      "node": 157,
+      "python_schema": 37,
+      "ledger_schema_errors": 0,
+      "failed": 0
+    },
+    "candidate": {
+      "job": 125536039467,
+      "report": {
+        "status": "unaccepted-candidate-consistent",
+        "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "counts_by_scope": {
+          "pinned-cmake-component": 2,
+          "legacy-root-paths": 331
+        },
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "target_commit": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+        "reused_git_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "artifact_id": 13118749668,
+          "run_id": 41397005716,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+        },
+        "reused_build_input_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "artifact_id": 13121721589,
+          "run_id": 41401970993,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+        }
+      },
+      "accepted_negative": "Error: accepted source accounting cannot contain a rebaseline candidate"
+    },
+    "artifacts": [
+      {
+        "id": 13177656939,
+        "name": "tdrp-source-review-contract-b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+        "digest": "sha256:65f38c89aafd0e370de80e44eddc537cd4198fbe37d7a504e605f2c508fd566b",
+        "size_in_bytes": 6780,
+        "head_sha": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da"
+      },
+      {
+        "id": 13176054073,
+        "name": "tdrp-source-candidate-b0e7458a1db86c22e01fa7b20fcbcde8403f40da",
+        "digest": "sha256:951177fcc51e3c1faa49e47b7c03d70645d57899d4d25bfbc9fe504f026267de",
+        "size_in_bytes": 79143,
+        "head_sha": "b0e7458a1db86c22e01fa7b20fcbcde8403f40da"
+      }
+    ],
+    "qualification": "This exact b0e745 ledger/checker result is not transferable to a later ledger SHA or a native-product compile. It preserves source/product/independent acceptance=false.",
+    "local_product_execution": false,
+    "remote_mutation": false,
+    "complete_logs": {
+      "125535903909.log": {
+        "bytes": 89851,
+        "sha256": "daf3dfe64558fc7d6cb7c7337ea0061b399ac5f11f99e6783f2aa2a897dff1f6"
+      },
+      "125536039467.log": {
+        "bytes": 146055,
+        "sha256": "a9c12ac5968f80fc4a06a1e70e730f68f1c602566e44f9f7efad9487f03f0d49"
+      }
+    }
+  },
+  "bounded_source_review": {
+    "head": "d261afe14785d9bf1c4ac772d01df3523b453300",
+    "production_blob": "ff8b3c05d547a3f6001f1f5b2911b37d0b918e90",
+    "test_blob": "dcb1eb43177def27498f92676812141574b85738",
+    "scope": [
+      "strict source/journal lookup and legacy nonce proof",
+      "unresolved ownership retains pending without generic POST",
+      "six retained corruption variants plus three combined unavailable-source negatives",
+      "real pre-journal nonce recovery positive",
+      "current durable reply reread, pinned resource preflight and pagination activity paths preserved"
+    ],
+    "outcome": "No additional defect found in the selected changed call chain; not a whole-file or whole-migration acceptance",
+    "local_execution": false,
+    "independent_acceptance": false
+  },
+  "current_observation_at_report": {
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "checkpoint": "78c375cef3f27e4a355cb8c206681c2b7edc9c66",
+    "production_blob_at_that_head": "ff8b3c05d547a3f6001f1f5b2911b37d0b918e90",
+    "workflow_blob_at_that_head": "45c9e620c900e6a3334e0d1dab0cdbcd3dde10d8",
+    "rule": "Concurrent newer workflow/package changes are preserved but do not inherit exact d261 execution."
+  },
+  "remaining_shipping_gate": {
+    "head": "d261afe14785d9bf1c4ac772d01df3523b453300",
+    "run": 41521138485,
+    "job": 125537163909,
+    "status": "queued",
+    "runner_id": 0,
+    "steps": 0,
+    "runner_label": "macos-15",
+    "reason": "No runner assigned in the observed Actions response; queue cause not established",
+    "qualification": "not-run; Linux reconciliation cannot replace this AppHost/package boundary"
+  },
+  "remaining_owner_work": {
+    "requirement": "NMR-50",
+    "path": "source/host/src/extensions/session/production.rs",
+    "symbols": [
+      "resume_human_forward_batches",
+      "deliver_forward_batch",
+      "sync_human_conversations"
+    ],
+    "observation": "Current production blob ff8b3c05d547a3f6001f1f5b2911b37d0b918e90 still uses the existing blocking per-batch delivery path during recovery; nonblocking recovery/once-per-roster/credential readiness work remains separate and unqualified.",
+    "rule": "Preserve the existing recorded NMR-50 scope and any concurrent unpublished work; inspect live head before integration. No second owner or Backend PR137 mutation."
+  },
+  "acceptance": {
+    "source_complete": false,
+    "product_complete": false,
+    "live_service": false,
+    "supported_platform_packages": false,
+    "formal_publisher": false,
+    "bot_regression_complete": false,
+    "independent_ACCEPT": false,
+    "formal_release": false
+  },
+  "report_scope": "Round27 executable changes, exact-H test execution and original failure diagnosis are persisted here. The whole migration remains incomplete; this receipt grants no independent acceptance or release."
 }
