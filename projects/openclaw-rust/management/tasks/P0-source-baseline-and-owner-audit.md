@@ -8,6 +8,44 @@ Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
 Last updated: 2026-10-31（Asia/Shanghai）
 
+### 2026-11-02 exact-head recovery evidence
+
+GitHub Actions [run 41381141155](https://github.com/bhrumom/fabushi-desktop/actions/runs/41381141155),
+job `125072012962`, checked out subject
+`38cbc11c9fa522e69ff02627b8d0de714b2615ee` (tree
+`8618ec4e2bed66385be7f825ab7356c3d09f39cf`) and fixed U
+`1440bb1771372334bea23d7642bb52deb7db1845`. Its 27 risk-review tests and
+10 materialization tests passed. Committed-state preflight then failed on
+`OCRM-RESP-CRON-SESSION-REAPER-001.source_refs`: seven target code/spec paths
+had been recorded as strings where exact upstream reference objects are required.
+Classification: ledger data defect, not an environment failure. Preserve these
+seven references in `evidence_refs`, including existing duplicates only once;
+leave `source_refs` empty until fixed-U mapping is established, and retain the
+original `historical_source_refs` and literal reading history. This correction
+does not establish cron source coverage, implementation, wiring or acceptance.
+The schema assertion remains required. No runtime check or scoped G01/G02
+verification passed in this run; recovery must validate the corrected subject.
+
+The independent read-only recovery review also found seven historical
+responsibility-level `mapping=reviewed` claims with no oracle. Their existing
+target/owner mappings remain `mapped`; historical `read=read-complete`, source
+references, implementation/wiring declarations and all eight false flags are
+preserved. `OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE` blocks promotion until each
+responsibility has an actual reviewed oracle and current source mapping:
+
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-COMPUTER-ADAPTER-001`
+- `OCRM-RESP-INFRA-WORKER-CRABBOX-STATUS-PROJECTION-001`
+- `OCRM-RESP-AUTO-REPLY-HEARTBEAT-001`
+- `OCRM-RESP-CRON-SESSION-REAPER-001`
+- `OCRM-RESP-TALK-AUDIO-PORT-FENCE-001`
+- `OCRM-RESP-TALK-EXACT-SPEECH-001`
+- `OCRM-RESP-TALK-WS-TRANSCRIPTION-001`
+
+Current object source references and reverse shard links were read together;
+the old 22-edge discrepancy is already resolved. No shard or coverage counter
+is edited to recover this failure. Final review-complete gates still reject
+these incomplete responsibilities; structural mode records the open work.
+
 ## 1. 本任务要交付什么
 
 建立可以驱动全部后续 Rust 等价实现的真实 source authority、无遗漏 inventory、逐责任 ledger/RTM、当前 owner 解析和首批可实施合同。任务结束后必须能回答任一上游文件“读到哪里、承担什么、由谁实现、还缺什么、如何验收”，不能只产生目录清单和 migration proposal。

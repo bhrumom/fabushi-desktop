@@ -1,6 +1,6 @@
 # OCRM-P0-CONFIG-001 — Configuration, Schema Normalization & Single-Writer Settings Authority
 
-Status: **Scoped unit admitted into parity-ledger (6 responsibilities mapped, 8 source files read-complete); source-level contract assertions are present for settings_service.rs/agent_paths.rs, but no current exact-head Actions receipt proves implementation, production wiring, or acceptance; acceptance pending**
+Status: **Historical scoped mapping retained (6 responsibilities, 8 source reads at the historical source); current fixed-U authority, exact-head verification and acceptance pending**
 Unit: `OCRM-UNIT-CONFIG-001`  
 Candidate requirements: `OCRM-R04`, `OCRM-R09`, `OCRM-AC05`, `OCRM-AC17`  
 Dossier: `projects/openclaw-rust/dossiers/config-settings-scoped.md`  
@@ -12,7 +12,7 @@ Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 Configuration reads and mutations enter through canonical Fabushi settings API → check immutability / deployment mode guards → acquire serial writer mutex → traverse or update properties along safe dot notation paths with prototype pollution defense → persist atomically via temporary staging files and sync → notify subscribers of effective field changes.
 
-**Current readiness:** Unit admitted into `parity-ledger.json` (`OCRM-RESP-CONFIG-PATH-MUTATION-001` .. `OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001`). 8 source files mapped to reviewed status in Git shards. `source/host/tests/settings_service_contract.rs` contains source-level contract assertions; this is not a current exact-head Actions receipt and does not by itself prove production wiring. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.
+**Historical readiness:** Unit recorded in `parity-ledger.json` (`OCRM-RESP-CONFIG-PATH-MUTATION-001` .. `OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001`) with the earlier eight source reads. That historical claim does not describe the current fixed-U shards or confer current authority. `source/host/tests/settings_service_contract.rs` contains source-level contract assertions; this is not a current exact-head Actions receipt and does not by itself prove production wiring. Full project closure and release acceptance remain false until every path is dispositioned and every applicable product responsibility is reviewed, implemented, wired and accepted.
 
 ## Current production batch — OCRM-CONFIG-CAS-v1 (2026-11-02)
 
@@ -24,7 +24,17 @@ new exact-U reads separately from historical counts above. Gateway hash CAS,
 commit receipt and notification normalization share the writer transaction;
 strict mutation reads must preserve invalid/unreadable prior bytes.
 
-Verification is not run. Use the existing `ocrm-p0-authority.yml` for the shared
+Subject `38cbc11c9fa522e69ff02627b8d0de714b2615ee`, tree
+`8618ec4e2bed66385be7f825ab7356c3d09f39cf`, is pushed and read back through
+GitHub. Independent source review found no new blocking defect after fixing
+notification reentrancy ordering and stale roster receipt application. This
+review covered actual Experiments, Wallpaper, diagnostics and roster consumers;
+it did not execute tests or establish scoped verification. Actions run
+`41381141155` passed 27 review and 10 materialization tests, then rejected an
+existing malformed ledger reference before runtime dispatch; the recovery is
+recorded in the P0 source task. Runtime verification remains not-run.
+
+Use the existing `ocrm-p0-authority.yml` for the shared
 risk contract, conservative materialization and exact-U structural gates; use
 `rust-desktop-runtime.yml` with `validation_scope=ocrm-config` for the shipping
 Host check and affected Settings/Gateway/inference contracts after freezing H.

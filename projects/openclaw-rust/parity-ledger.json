@@ -33,7 +33,9 @@
         "projects/openclaw-rust/decisions/2026-10-30-upstream-rebaseline-required.md"
       ],
       "behavior": "P1-F08 Computer consumer adapter that consumes an ephemeral enrolled Cloud Worker capability and delegates only through the existing ComputerToolExecutor contract.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "cloud_workers.computer_adapter"
       ],
@@ -113,7 +115,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -265,7 +267,9 @@
         "projects/openclaw-rust/decisions/2026-10-30-upstream-rebaseline-required.md"
       ],
       "behavior": "Cloud Worker read-only status projection from the canonical Host owner through the existing Gateway and Coordinator typed projection.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "cloud_workers.status_projection"
       ],
@@ -352,7 +356,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "wired"
@@ -4665,7 +4669,9 @@
     {
       "adr_refs": [],
       "behavior": "Periodic heartbeat poll scheduling, scratchpad effectively-empty detection, silent token reply evaluation (HEARTBEAT_OK), and response tool instruction injection.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "autoreply.heartbeat"
       ],
@@ -4734,7 +4740,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -6894,7 +6900,9 @@
         "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md"
       ],
       "behavior": "Expired cron run-session pruning (sessionRetention), unreferenced transcript cleanup, and active media task preservation.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "cron.session_reaper"
       ],
@@ -6905,7 +6913,12 @@
         "source/host/tests/openclaw_plugins_automations_contract.rs",
         "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
         "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md"
+        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md",
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md"
       ],
       "existing_owner_candidates": [
         {
@@ -6964,19 +6977,11 @@
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; prevents database bloat while protecting active work items",
       "selected_owner": "bounded registration/projection owner selected: ProductionSessionWorkers/SandAgentDb; reaper scheduler/archive/delete owner remains unselected",
-      "source_refs": [
-        "source/host/src/extensions/transcript/automation_run_path.rs",
-        "source/host/src/extensions/transcript/automation_runtime.rs",
-        "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/agent_db.rs",
-        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md",
-        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md"
-      ],
+      "source_refs": [],
       "status": {
         "acceptance": "pending",
         "implementation": "not-started",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -16821,7 +16826,9 @@
     {
       "adr_refs": [],
       "behavior": "Audio output port buffer bounds (320 chunks / 1 MiB) and 32-bit atomic close fence.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "talk.audio_port_fence"
       ],
@@ -16889,7 +16896,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -17007,7 +17014,9 @@
     {
       "adr_refs": [],
       "behavior": "Exact speech sentinel classification and echo suppression to prevent recursive agent consult loops.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "talk.exact_speech"
       ],
@@ -17074,7 +17083,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
@@ -17282,7 +17291,9 @@
     {
       "adr_refs": [],
       "behavior": "Realtime transcription WebSocket queue, SDP offer validation, empty-audio rejection, and CJK voice fallback.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "OCRM-MAPPING-ORACLE-REVIEW-INCOMPLETE"
+      ],
       "capability_ids": [
         "talk.ws_transcription"
       ],
@@ -17351,7 +17362,7 @@
       "status": {
         "acceptance": "pending",
         "implementation": "implemented",
-        "mapping": "reviewed",
+        "mapping": "mapped",
         "read": "read-complete",
         "verification": "not-run",
         "wiring": "not-wired"
