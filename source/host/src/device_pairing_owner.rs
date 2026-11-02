@@ -1217,7 +1217,7 @@ impl DevicePairingOwner {
         ))
     }
 
-    /// Atomically burns a live shortcode and returns its validated JSON payload.
+    /// Consume one shortcode before validating its content or publishing a payload.
     pub fn redeem_device_pairing_join_code(
         &self,
         shortcode: &str,
@@ -1226,35 +1226,60 @@ impl DevicePairingOwner {
         if !is_device_pairing_join_code(shortcode) {
             return Ok(None);
         }
-        let conn = self.conn.lock().unwrap();
-        let now = now_ms();
-        let payload_json: Option<String> = conn
+        let storage_error = || {
+            GatewayCommandError::Internal("device pairing join-code storage unavailable".into())
+        };
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(|_| storage_error())?;
+        // Do not convert raw TEXT to UTF-8, or exclude malformed/expired rows,
+        // before consumption. Content refusal must not leave a reusable code.
+        let stored = tx
             .query_row(
-                "SELECT payload_json FROM device_pairing_join_codes
-                 WHERE shortcode = ?1 AND redeemed_at_ms IS NULL AND expires_at_ms > ?2",
-                params![shortcode, now],
-                |row| row.get(0),
+                "SELECT payload_json, expires_at_ms FROM device_pairing_join_codes
+                 WHERE shortcode = ?1 AND redeemed_at_ms IS NULL",
+                params![shortcode],
+                |row| {
+                    let payload = match row.get_ref(0)? {
+                        rusqlite::types::ValueRef::Text(bytes) if bytes.len() <= 64 * 1024 => {
+                            Some(bytes.to_vec())
+                        }
+                        _ => None,
+                    };
+                    let expires_at_ms = match row.get_ref(1)? {
+                        rusqlite::types::ValueRef::Integer(value) => Some(value),
+                        _ => None,
+                    };
+                    Ok((payload, expires_at_ms))
+                },
             )
-            .ok();
-        let Some(payload_json) = payload_json else {
+            .optional()
+            .map_err(|_| storage_error())?;
+        if stored.is_some() {
+            let updated = tx
+                .execute(
+                    "UPDATE device_pairing_join_codes SET redeemed_at_ms = ?1
+                     WHERE shortcode = ?2 AND redeemed_at_ms IS NULL",
+                    params![now_ms(), shortcode],
+                )
+                .map_err(|_| storage_error())?;
+            if updated != 1 {
+                return Err(storage_error());
+            }
+        }
+        tx.commit().map_err(|_| storage_error())?;
+        drop(conn);
+
+        let Some((Some(payload_json), Some(expires_at_ms))) = stored else {
             return Ok(None);
         };
-        let updated = conn
-            .execute(
-                "UPDATE device_pairing_join_codes SET redeemed_at_ms = ?1
-                 WHERE shortcode = ?2 AND redeemed_at_ms IS NULL AND expires_at_ms > ?1",
-                params![now, shortcode],
-            )
-            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
-        if updated != 1 {
+        if expires_at_ms <= now_ms() {
             return Ok(None);
         }
-        let payload = serde_json::from_str(&payload_json).map_err(|error| {
-            GatewayCommandError::Internal(format!(
-                "stored device pairing payload is invalid: {error}"
-            ))
-        })?;
-        Ok(Some(payload))
+        // Only committed content failures become safe misses. SQL/commit
+        // errors above retain a distinct failure and never publish a payload.
+        Ok(serde_json::from_slice(&payload_json).ok())
     }
 
     pub fn handle_pairing_command(
