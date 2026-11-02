@@ -36,8 +36,8 @@ jobs:
           const repository = 'bhrumom/fabushi-desktop';
           const branch = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1';
           const path = 'projects/telegram-desktop-rust/parity-ledger.json';
-          const baseBlob = '82cf93f16e7b4c5f7bc8482822977c92ad6ee18a';
-          const targetBlob = 'a3e7a13f16e63670eeee05087d08f67c9355a579';
+          const baseBlob = 'd44b094065722c5a70f92e21489887f86f5b2b0e';
+          const targetBlob = 'e88c75896bd0dce29b2d8b89e949c9231dad872c';
           const fields = ['requirement_ids','fabushi_target_paths','fabushi_target_symbols',
             'unit_case_ids','contract_case_ids','integration_case_ids','fault_recovery_case_ids',
             'security_case_ids','production_evidence','test_evidence','test_execution_evidence','blockers'];
