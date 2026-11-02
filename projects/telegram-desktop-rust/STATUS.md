@@ -7,12 +7,19 @@ Complete: false
 
 ## Round31 — canonical reply identity recovery
 
-Retain the concurrent direct-parent guard, Ubuntu reconciliation and corrected
-reaction fixture. This round uses the existing strict message-ID parser for reply
-parents and extends existing real persistence/HTTP cases without changing owners
-or test-function counts. Complete old-H shipping logs and containing106bb recovery
-results are qualified separately; this new patch requires its own containing-H
-execution. Full migration and independent ACCEPT remain blocked. See
+Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing
+strict message-ID parser before direct or historical reply staging/HTTP. Existing
+Session/Transcript owners and valid reply semantics remain. Run41524748572 /
+reconciliation125549482711 actually passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1, including the28-scenario historical reply matrix,
+17 direct-target scenarios, dual SQLite CAS, mixed stale progress and corrupt
+journal restart. UI29/cursor17/forward5/Chromium16, Electron, Windows native11
+and retained C wrappers15-pass/1-live-DC-ignore also passed at this H.
+
+Same-H shipping125549483258 is queued at observation. Originalff6 shipping and
+containing106bb recovery are separate historical evidence. Full migration, real
+services, supported signed packages, complete source/legal/Bot/quality/upgrade/
+rollback and independent ACCEPT remain blocked. See
 `projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
 
 ## Concurrent round16 — pinned package inputs and retained C wrapper qualification

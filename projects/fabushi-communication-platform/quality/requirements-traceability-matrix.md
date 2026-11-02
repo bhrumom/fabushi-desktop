@@ -45,25 +45,29 @@ Exact source/oracle/old-failure/execution boundary: `projects/telegram-desktop-r
 
 ## Round31 — canonical reply remote identity and exact execution
 
-NMR-49c / NMR-AC-40: retain the concurrent direct-parent admission guard and
-use the existing strict message-ID parser for both direct and historical reply
-parents. Extend the existing historical-alias test with direct/alias numeric
-negatives and canonical positive controls; retain physical-storage and explicit
-chronological-order oracles. Correct non-message fixtures to valid persisted
-notice entries so the kind guard is exercised. No new owner or test function.
-Containing-H Actions execution remains required; authored scenarios are not pass
-results. Receipt: `projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+NMR-49c / NMR-AC-40: existing Session reply admission now uses the strict
+canonical positive safe-integer message-ID parser for both direct and historical
+parents. Valid local/peer and local-only pending semantics remain. Two existing
+tests cover28 historical/numeric scenarios and17 direct-target scenarios; readable
+notice fixtures exercise the kind guard. Physical rows, independent chronology,
+HTTP refusal/idempotency, sync and reopen are checked without a new owner.
 
-Original06 reconciliation was cancelled without a runner. Exactff6 shipping is
-successful with complete logs; its reconciliation is still unexecuted at the
-last observation. Exact94 CAS evidence is reusable only for unchanged scope;
-its unchanged44/12 totals do not execute later mixed-stale/corruption assertions.
-The Ubuntu exactafb fixture E0382 is TEST_FLAW, already corrected in concurrent
-106bb. Its run41523018920 reconciliation125543545349 actually passes Human62,
-resource3, sharebox1, journal12, Agent4, credential3 and forwardHTTP1, including
-the requested CAS, mixed-stale, corruption and NMR-49 recovery cases. Preserve
-that correction and all current gates. Backend PR137, full source,
-real services, platform packages and independent ACCEPT remain unaccepted.
+Exact H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40`, run41524748572,
+reconciliation125549482711 passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1. The named reply, mixed-stale, dual-SQLite CAS
+and corrupt-journal recovery cases actually passed. UI passed Transcript29,
+cursor17, forward5 and Chromium16; Electron, Windows11 and retained C wrappers
+15-pass/1-live-DC-ignore also passed at this H. Shipping125549483258 remains
+queued at the recorded observation; old ff6 shipping is not a replacement for
+this affected-H result. Complete log hashes and artifact identities are in
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
+Original06 reconciliation was cancelled without a runner. Originalff6
+reconciliation remains unexecuted; containing106bb and this4cbd run qualify the
+requested later recovery assertions separately. The afb E0382 fixture failure
+was TEST_FLAW, corrected in concurrent106bb and preserved. Backend PR137 stays
+read-only; full source/legal, real services, signed supported-platform packages,
+full Bot/quality/upgrade/rollback and independent ACCEPT remain open.
 
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
