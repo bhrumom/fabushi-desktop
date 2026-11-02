@@ -4,6 +4,8 @@ on:
     branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - projects/telegram-desktop-rust/evidence/round18-ledger-transport.json
+      - projects/telegram-desktop-rust/parity-ledger.json
+      - .github/workflows/round18-ledger-blob.yml
 permissions: {}
 jobs:
   prepare:
@@ -35,16 +37,49 @@ jobs:
           original = (root / target).read_bytes()
           def git_blob(data):
               return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
-          if git_blob(original) != spec["base_blob"]:
-              raise SystemExit("Canonical ledger changed; refuse stale row replacement")
+          actual_base = git_blob(original)
+          checkout_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tracked_blob = subprocess.check_output(["git", "rev-parse", "HEAD:" + target], text=True).strip()
+          if checkout_sha != os.environ["GITHUB_SHA"] or tracked_blob != actual_base:
+              raise SystemExit("Ledger bytes do not match the exact Actions checkout")
           doc = json.loads(original)
+          before = json.loads(original)
+          def equal(a, b):
+              return json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
           for identity, change in spec["rows"].items():
               matches = [i for i, row in enumerate(doc["rows"]) if row["responsibility_id"] == identity]
-              if len(matches) != 1 or doc["rows"][matches[0]] != change["expected"]:
-                  raise SystemExit("Row observation does not match")
-              if change["replacement"]["responsibility_id"] != identity:
-                  raise SystemExit("Responsibility identity changed")
-              doc["rows"][matches[0]] = change["replacement"]
+              if len(matches) != 1 or change["replacement"]["responsibility_id"] != identity:
+                  raise SystemExit("Unexpected responsibility identity")
+              row = doc["rows"][matches[0]]
+              prior, proposed = change["expected"], change["replacement"]
+              if set(prior) != set(proposed):
+                  raise SystemExit("Transport cannot add or remove schema fields")
+              for key in proposed:
+                  if equal(prior[key], proposed[key]):
+                      continue
+                  if equal(row[key], prior[key]) or equal(row[key], proposed[key]):
+                      row[key] = proposed[key]
+                  elif all(isinstance(value, list) for value in [prior[key], proposed[key], row[key]]):
+                      removed = [value for value in prior[key] if not any(equal(value, item) for item in proposed[key])]
+                      combined = [value for value in row[key] if not any(equal(value, item) for item in removed)]
+                      for value in proposed[key]:
+                          if not any(equal(value, item) for item in prior[key]) and not any(equal(value, item) for item in combined):
+                              combined.append(value)
+                      row[key] = combined
+                  elif all(isinstance(value, str) for value in [prior[key], proposed[key], row[key]]) and row[key].startswith(prior[key]) and proposed[key].startswith(prior[key]):
+                      suffix = proposed[key][len(prior[key]):]
+                      if suffix and suffix not in row[key]:
+                          row[key] += suffix
+                  else:
+                      raise SystemExit("Concurrent scalar or non-append conflict: " + identity + "/" + key)
+          if {key:value for key,value in doc.items() if key != "rows"} != {key:value for key,value in before.items() if key != "rows"}:
+              raise SystemExit("Top-level source or acceptance authority changed")
+          protected = ["source_repository", "source_commit", "source_path", "source_blob_sha", "additional_source_identities", "responsibility_id", "source_kind", "license_and_provenance"]
+          for previous, current in zip(before["rows"], doc["rows"]):
+              if previous["responsibility_id"] not in allowed and not equal(previous, current):
+                  raise SystemExit("Unrelated responsibility changed")
+              if any(not equal(previous.get(key), current.get(key)) for key in protected):
+                  raise SystemExit("Source or legal identity changed")
           content = json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
           data = content.encode()
           blob = git_blob(data)
@@ -62,11 +97,11 @@ jobs:
           out = root / "artifacts/round18-ledger-transport"
           out.mkdir(parents=True)
           receipt = {"schema":"round18-ledger-blob-receipt-v1",
-                     "workflow_sha": os.environ["GITHUB_SHA"], "base_blob":spec["base_blob"],
+                     "workflow_sha": os.environ["GITHUB_SHA"], "base_blob":actual_base, "reviewed_operation_base_blob":spec["base_blob"],
                      "ledger_blob":blob, "ledger_sha256":hashlib.sha256(data).hexdigest(),
                      "ledger_bytes":len(data), "rows":sorted(allowed),
                      "source_review_count_preserved":len(doc.get("source_reviews", [])),
-                     "ref_updated":False,"acceptance":False}
+                     "ref_updated":False,"acceptance":False,"merge":"exact-checkout three-way; scalar conflicts fail"}
           (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt))
           PY
