@@ -2976,7 +2976,7 @@ mod tests {
 #[cfg(test)]
 mod fabushi_credential_context_tests {
     use super::*;
-    use std::io::Write;
+    use std::io::{self, Write};
     use std::net::{TcpListener, TcpStream};
     use std::sync::{Mutex, atomic::{AtomicBool, Ordering}};
     use std::time::Instant;
@@ -2989,6 +2989,10 @@ mod fabushi_credential_context_tests {
     const ROTATED: &str = "private-bound-transport-token-a-rotated";
     const TOKEN_B: &str = "private-bound-transport-token-b";
     const BOUND: Duration = Duration::from_secs(20);
+
+    fn fixture_io_error(stage: &str, error: io::Error) -> String {
+        format!("{stage}: kind={:?}, os={:?}", error.kind(), error.raw_os_error())
+    }
 
     fn captured_output_observation(output: &std::io::Result<String>) -> Value {
         match output {
@@ -3030,7 +3034,7 @@ mod fabushi_credential_context_tests {
         }
     }
 
-    fn write_credential(path: &Path, issuer: &str, user: &str, token: &str) {
+    fn write_credential(path: &Path, issuer: &str, user: &str, token: &str) -> Result<(), String> {
         let temporary = path.with_extension(format!("{}.tmp", Uuid::new_v4()));
         let mut options = fs::OpenOptions::new();
         options.create_new(true).write(true);
@@ -3039,43 +3043,44 @@ mod fabushi_credential_context_tests {
             use std::os::unix::fs::OpenOptionsExt;
             options.mode(0o600);
         }
-        options.open(&temporary).unwrap().write_all(json!({
+        options.open(&temporary).map_err(|error| fixture_io_error("replacement-create", error))?.write_all(json!({
             "version": 1, "issuer": issuer, "accessToken": token,
             "expiresAtMs": 4_102_444_800_000_u64,
             "userId": user, "deviceId": "bound-device", "sessionId": "bound-session"
-        }).to_string().as_bytes()).unwrap();
-        fs::rename(temporary, path).unwrap();
+        }).to_string().as_bytes()).map_err(|error| fixture_io_error("replacement-write", error))?;
+        fs::rename(temporary, path).map_err(|error| fixture_io_error("replacement-rename", error))
     }
 
     type Request = (bool, String, String, Vec<u8>);
 
-    fn read_request(stream: &mut TcpStream, next_endpoint: bool) -> Request {
-        // Accepted sockets can inherit the nonblocking listener mode on macOS.
-        // Header/body reads and response writes use the bounded blocking path.
-        stream.set_nonblocking(false).expect("private transport fixture blocking I/O");
-        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-        stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
+    fn read_request(stream: &mut TcpStream, next_endpoint: bool) -> Result<Request, String> {
+        // Match the bounded integration fixture on platforms inheriting O_NONBLOCK.
+        stream.set_nonblocking(false).map_err(|error| fixture_io_error("request-blocking", error))?;
+        stream.set_read_timeout(Some(Duration::from_secs(5))).map_err(|error| fixture_io_error("request-read-timeout", error))?;
+        stream.set_write_timeout(Some(Duration::from_secs(5))).map_err(|error| fixture_io_error("request-write-timeout", error))?;
         let mut reader = BufReader::new(stream);
         let mut line = String::new();
-        reader.read_line(&mut line).unwrap();
+        reader.read_line(&mut line).map_err(|error| fixture_io_error("request-line", error))?;
         let request_line = line.trim_end().to_string();
         let mut length = None;
         let mut authorization = String::new();
         loop {
             line.clear();
-            assert!(reader.read_line(&mut line).unwrap() > 0);
+            if reader.read_line(&mut line).map_err(|error| fixture_io_error("request-header", error))? == 0 {
+                return Err("request headers ended early".into());
+            }
             if line == "\r\n" { break; }
-            let (name, value) = line.split_once(':').unwrap();
+            let (name, value) = line.split_once(':').ok_or("invalid request header")?;
             if name.eq_ignore_ascii_case("content-length") {
-                length = Some(value.trim().parse::<usize>().unwrap());
+                length = Some(value.trim().parse::<usize>().map_err(|_| "invalid request content-length")?);
             }
             if name.eq_ignore_ascii_case("authorization") { authorization = value.trim().into(); }
         }
-        let length = length.expect("request content length");
-        assert!(length < 1024 * 1024);
+        let length = length.ok_or("missing request content-length")?;
+        if length >= 1024 * 1024 { return Err("oversized fixture request".into()); }
         let mut body = vec![0; length];
-        reader.read_exact(&mut body).unwrap();
-        (next_endpoint, request_line, authorization, body)
+        reader.read_exact(&mut body).map_err(|error| fixture_io_error("request-body", error))?;
+        Ok((next_endpoint, request_line, authorization, body))
     }
 
     #[cfg(unix)]
@@ -3093,7 +3098,8 @@ mod fabushi_credential_context_tests {
         let body = br#"{"model":"Fixture/Case@Bound"}"#;
         client.write_all(format!("POST /captured/v1/responses HTTP/1.1\r\nAuthorization: fixture-marker\r\nContent-Length: {}\r\n\r\n", body.len()).as_bytes()).unwrap();
         client.write_all(body).unwrap();
-        let (next, line, authorization, actual_body) = read_request(&mut stream, true);
+        let (next, line, authorization, actual_body) = read_request(&mut stream, true)
+            .expect("bounded private fixture reader");
         let after = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
         assert!(after >= 0);
         assert_eq!(after & libc::O_NONBLOCK, 0, "actual reader must restore blocking I/O");
@@ -3105,7 +3111,41 @@ mod fabushi_credential_context_tests {
         assert_eq!(actual_body, body.to_vec());
     }
 
+    fn write_child_receipt(root: &Path, receipt: &Value) {
+        let temporary = root.join("receipt.tmp");
+        fs::write(&temporary, receipt.to_string())
+            .map_err(|error| fixture_io_error("child-receipt-write", error)).expect("record child phase");
+        fs::rename(temporary, root.join("receipt"))
+            .map_err(|error| fixture_io_error("child-receipt-rename", error)).expect("publish child phase");
+    }
+
+    fn child_phase(root: &Path, receipt: &mut Value, phase: &str) {
+        receipt["phase"] = json!(phase);
+        write_child_receipt(root, receipt);
+    }
+
+    fn record_transport_result(root: &Path, receipt: &mut Value, phase: &str, result: &Result<(), CodexDirectError>, events: usize) {
+        let kind = match result {
+            Ok(()) => "success",
+            Err(CodexDirectError::Authentication(_)) => "authentication",
+            Err(CodexDirectError::Configuration(_)) => "configuration",
+            Err(CodexDirectError::Transport(_)) => "transport",
+            Err(CodexDirectError::Protocol(_)) => "protocol",
+            Err(CodexDirectError::Tool(_)) => "tool",
+            Err(CodexDirectError::ProviderRefusal(_)) => "provider-refusal",
+            Err(CodexDirectError::Cancelled(_)) => "cancelled",
+        };
+        receipt["observations"].as_array_mut().expect("receipt observations")
+            .push(json!({"phase":phase, "kind":kind, "events":events}));
+        child_phase(root, receipt, &format!("{phase}-observed"));
+    }
+
     fn child(root: &Path) {
+        let mut receipt = json!({
+            "nonce":env::var(NONCE).unwrap(), "case":"captured-endpoint-and-context",
+            "phase":"capture-credentials", "completed":false, "observations":[],
+        });
+        write_child_receipt(root, &receipt);
         // Capture through the actual configuration reader before changing the
         // environment. This exact-test child has not started any I/O workers;
         // the parent owns both HTTP servers. No environment mutation occurs
@@ -3121,13 +3161,16 @@ mod fabushi_credential_context_tests {
         let mut transport = CodexHttpTransport::with_credentials(captured).unwrap();
         let request = json!({"model":"Vendor/Case@Bound", "input":[{"role":"user","content":"bound request"}], "stream":true});
         let mut events = Vec::new();
-        transport.stream_response(&request, &mut |event| { events.push(event); Ok(()) }, &|| false).unwrap();
+        child_phase(root, &mut receipt, "same-context-refresh-running");
+        let result = transport.stream_response(&request, &mut |event| { events.push(event); Ok(()) }, &|| false);
+        record_transport_result(root, &mut receipt, "same-context-refresh", &result, events.len());
+        assert!(result.is_ok(), "same-context refresh must succeed; see the typed child receipt");
         assert_eq!(events.len(), 1);
         let assert_original_binding = |transport: &CodexHttpTransport| {
             match &transport.credentials {
                 ResponsesHttpCredentials::Fabushi { credential, endpoint, .. } => {
-                    assert_eq!(credential.context(), original_context);
-                    assert!(credential.access_token() == ROTATED, "transport must retain its bound credential");
+                    assert!(credential.context() == original_context, "original credential context retained");
+                    assert!(credential.access_token() == ROTATED, "rotated bearer retained");
                     assert_eq!(endpoint, &original_endpoint);
                 }
                 _ => panic!("Native binding changed provider"),
@@ -3136,7 +3179,10 @@ mod fabushi_credential_context_tests {
             for token in [TOKEN_A, ROTATED, TOKEN_B] { assert!(!debug.contains(token)); }
         };
         assert_original_binding(&transport);
-        let error = transport.stream_response(&request, &mut |_| panic!("refusal cannot emit an event"), &|| false).unwrap_err();
+        child_phase(root, &mut receipt, "context-refusal-running");
+        let result = transport.stream_response(&request, &mut |_| panic!("refusal cannot emit an event"), &|| false);
+        record_transport_result(root, &mut receipt, "context-refusal", &result, 0);
+        let error = result.expect_err("changed context is refused");
         assert!(matches!(&error, CodexDirectError::Authentication(_)));
         for token in [TOKEN_A, ROTATED, TOKEN_B] {
             assert!(!format!("{error:?} {error}").contains(token));
@@ -3144,47 +3190,175 @@ mod fabushi_credential_context_tests {
         assert_original_binding(&transport);
         // Drive both conversion directions through the actual HTTP SSE decoder,
         // rather than relying only on a conversion/classifier unit assertion.
-        let configuration = transport.stream_response(&request,
-            &mut |_| Err(CodexDirectError::Configuration("typed callback configuration timeout".into())),
+        child_phase(root, &mut receipt, "configuration-callback-running");
+        let mut configuration_events = 0;
+        let result = transport.stream_response(&request,
+            &mut |_| {
+                configuration_events += 1;
+                Err(CodexDirectError::Configuration("typed callback configuration timeout".into()))
+            },
             &|| false,
-        ).unwrap_err();
+        );
+        record_transport_result(root, &mut receipt, "configuration-callback", &result, configuration_events);
+        let configuration = result.expect_err("configuration callback fails");
         assert!(matches!(&configuration, CodexDirectError::Configuration(_)));
         assert!(matches!(ProviderSessionError::from(configuration), ProviderSessionError::Configuration(_)));
         assert_original_binding(&transport);
 
         let next_origin = url::Url::parse(&next_endpoint).unwrap().origin().ascii_serialization();
-        write_credential(&path, &next_origin, "user-b", TOKEN_B);
+        child_phase(root, &mut receipt, "new-transport-running");
+        write_credential(&path, &next_origin, "user-b", TOKEN_B).expect("new transport credential");
         let mut new_transport = CodexHttpTransport::new_fabushi().unwrap();
-        new_transport.stream_response(&request, &mut |_| Ok(()), &|| false).unwrap();
-        fs::write(root.join("receipt"), env::var(NONCE).unwrap()).unwrap();
+        let mut new_events = 0;
+        let result = new_transport.stream_response(&request, &mut |_| { new_events += 1; Ok(()) }, &|| false);
+        record_transport_result(root, &mut receipt, "new-transport", &result, new_events);
+        assert!(result.is_ok(), "new transport must succeed; see the typed child receipt");
+        receipt["completed"] = json!(true);
+        child_phase(root, &mut receipt, "complete");
+    }
+
+    struct FixtureReport {
+        cleanup: Result<(), String>,
+        cleanup_observation: Option<String>,
+        server: Result<(), String>,
+        server_panicked: bool,
+        progress: Vec<String>,
+        requests: Vec<Request>,
+    }
+
+    impl FixtureReport {
+        fn is_ok(&self) -> bool {
+            self.cleanup.is_ok() && self.server.is_ok()
+        }
+
+        fn evidence(&self) -> Value {
+            json!({
+                "childCleanup": self.cleanup_observation,
+                "childCleanupOutcome": self.cleanup,
+                "serverOutcome": self.server,
+                "serverPanicked": self.server_panicked,
+                "phase": self.progress.last(),
+                "accepted": self.progress.iter().filter(|event| event.ends_with(" accepted")).count(),
+                "parsed": self.progress.iter().filter(|event| event.ends_with(" request-complete")).count(),
+                "responded": self.progress.iter().filter(|event| event.ends_with(" response-written")).count(),
+                "capturedRequests": self.requests.len(),
+            })
+        }
     }
 
     struct Fixture {
         root: PathBuf,
         stop: Arc<AtomicBool>,
-        server: Option<thread::JoinHandle<()>>,
+        server: Option<thread::JoinHandle<Result<(), String>>>,
         child: Option<std::process::Child>,
+        cleanup_observation: Option<String>,
+        progress: Arc<Mutex<Vec<String>>>,
+        requests: Arc<Mutex<Vec<Request>>>,
+    }
+
+    impl Fixture {
+        fn wait_child(&mut self) -> Result<std::process::ExitStatus, String> {
+            let child = self.child.as_mut().ok_or("owned child was not started")?;
+            let deadline = Instant::now() + BOUND;
+            loop {
+                if let Some(status) = child.try_wait().map_err(|error| fixture_io_error("child-status", error))? {
+                    return Ok(status);
+                }
+                if Instant::now() >= deadline { return Err("owned transport child deadline".into()); }
+                thread::sleep(Duration::from_millis(5));
+            }
+        }
+
+        fn finish(&mut self) -> FixtureReport {
+            let mut cleanup = Ok(());
+            let mut cleanup_observation = self.cleanup_observation.clone();
+            let mut retired = self.child.is_none();
+            if let Some(child) = self.child.as_mut() {
+                let before = child.try_wait().map_err(|error| fixture_io_error("child-reap-status", error));
+                if let Ok(Some(status)) = &before {
+                    retired = true;
+                    if let Some(prior) = &cleanup_observation {
+                        cleanup = Err(format!("previous owned child cleanup failed: {prior}"));
+                    } else {
+                        cleanup_observation = Some(format!("already-exited={status:?}"));
+                    }
+                } else if let Some(prior) = &cleanup_observation {
+                    // A second finalizer may observe a late exit, but cannot
+                    // restart an unresolved cleanup budget or erase its failure.
+                    cleanup = Err(format!("owned child remains unresolved; prior cleanup={prior}; status={before:?}"));
+                } else {
+                    let deadline = Instant::now() + BOUND;
+                    let kill = child.kill().map_err(|error| fixture_io_error("child-kill", error));
+                    let reap = loop {
+                        match child.try_wait() {
+                            Ok(Some(status)) => break Ok(status),
+                            Ok(None) if Instant::now() < deadline => {}
+                            Ok(None) => break Err("owned child reap deadline; root retained".to_string()),
+                            Err(error) => break Err(fixture_io_error("child-reap-status", error)),
+                        }
+                        thread::sleep(Duration::from_millis(5));
+                    };
+                    retired = reap.is_ok();
+                    cleanup_observation = Some(format!("status-before={before:?}; kill={kill:?}; reap={reap:?}"));
+                    if before.is_err() || kill.is_err() || reap.is_err() {
+                        cleanup = Err(format!("owned child cleanup failed: {}", cleanup_observation.as_deref().unwrap_or("unavailable")));
+                    }
+                }
+            }
+            self.cleanup_observation = cleanup_observation.clone();
+            if retired { drop(self.child.take()); }
+            self.stop.store(true, Ordering::Release);
+            let (mut server, server_panicked) = match self.server.take() {
+                Some(server) => match server.join() {
+                    Ok(result) => (result, false),
+                    Err(_) => (Err("fixture worker panicked; payload omitted".into()), true),
+                },
+                None => (Ok(()), false),
+            };
+            let progress = self.progress.lock().unwrap_or_else(|poisoned| {
+                server = Err(format!("prior server={server:?}; fixture progress lock poisoned"));
+                poisoned.into_inner()
+            }).clone();
+            let requests = self.requests.lock().unwrap_or_else(|poisoned| {
+                server = Err(format!("prior server={server:?}; fixture request capture lock poisoned"));
+                poisoned.into_inner()
+            }).clone();
+            FixtureReport { cleanup, cleanup_observation, server, server_panicked, progress, requests }
+        }
     }
 
     impl Drop for Fixture {
         fn drop(&mut self) {
-            if let Some(child) = self.child.as_mut() {
-                if child.try_wait().ok().flatten().is_none() {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                }
+            if self.server.is_some() || self.child.is_some() {
+                let report = self.finish();
+                eprintln!("case=captured-endpoint-and-context phase=cleanup server={} progress={:?}",
+                    report.evidence(), report.progress);
             }
-            self.stop.store(true, Ordering::Release);
-            if let Some(server) = self.server.take() { let _ = server.join(); }
-            let _ = fs::remove_dir_all(&self.root);
+            if self.child.is_none() {
+                let _ = fs::remove_dir_all(&self.root);
+            } else {
+                eprintln!("private credential fixture root retained path={} owned_child_exit_unresolved", self.root.display());
+            }
         }
+    }
+
+    fn record_progress(progress: &Mutex<Vec<String>>, connection: usize, next: bool, stage: &str) -> Result<(), String> {
+        progress.lock().map_err(|_| "fixture progress lock poisoned")?
+            .push(format!("connection={connection} endpoint={} {stage}", if next { "new" } else { "captured" }));
+        Ok(())
     }
 
     #[test]
     fn captured_endpoint_and_context_survive_real_http_refresh() {
         if let Some(root) = env::var_os(CHILD_ROOT) { child(&PathBuf::from(root)); return; }
         let root = env::temp_dir().join(format!("fabushi-bound-transport-{}", Uuid::new_v4()));
-        fs::create_dir_all(&root).unwrap();
+        fs::create_dir(&root).expect("exclusively create private transport root");
+        let mut fixture = Fixture {
+            root, stop: Arc::new(AtomicBool::new(false)), server: None, child: None,
+            cleanup_observation: None,
+            progress: Arc::new(Mutex::new(vec!["connection=0 listen".into()])),
+            requests: Arc::new(Mutex::new(Vec::new())),
+        };
         let a = TcpListener::bind("127.0.0.1:0").unwrap();
         let b = TcpListener::bind("127.0.0.1:0").unwrap();
         a.set_nonblocking(true).unwrap();
@@ -3192,95 +3366,106 @@ mod fabushi_credential_context_tests {
         let origin_a = format!("http://{}", a.local_addr().unwrap());
         let endpoint_a = format!("{origin_a}/captured/v1/responses");
         let endpoint_b = format!("http://{}/changed/v2/responses", b.local_addr().unwrap());
-        let path = root.join("credential.json");
-        write_credential(&path, &origin_a, "user-a", TOKEN_A);
-        let stop = Arc::new(AtomicBool::new(false));
-        let stopped = Arc::clone(&stop);
-        let capture = Arc::new(Mutex::new(Vec::<Request>::new()));
-        let requests = Arc::clone(&capture);
-        let phase = Arc::new(Mutex::new("listen"));
-        let worker_phase = Arc::clone(&phase);
+        let path = fixture.root.join("credential.json");
+        write_credential(&path, &origin_a, "user-a", TOKEN_A).expect("initial transport credential");
+        let stopped = Arc::clone(&fixture.stop);
+        let requests = Arc::clone(&fixture.requests);
+        let server_progress = Arc::clone(&fixture.progress);
         let server_path = path.clone();
-        let server = thread::spawn(move || {
+        fixture.server = Some(thread::spawn(move || {
             let deadline = Instant::now() + BOUND * 2;
             let mut a_count = 0;
+            let mut connections = 0;
             while !stopped.load(Ordering::Acquire) {
-                assert!(Instant::now() < deadline, "private transport fixture deadline");
+                if Instant::now() >= deadline { return Err("private transport fixture deadline".into()); }
                 for (next, listener) in [(false, &a), (true, &b)] {
                     let mut stream = match listener.accept() {
                         Ok((stream, _)) => stream,
                         Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => continue,
-                        Err(error) => panic!("fixture accept: {error}"),
+                        Err(error) => return Err(fixture_io_error("accept", error)),
                     };
-                    *worker_phase.lock().unwrap() = "read-request";
-                    requests.lock().unwrap().push(read_request(&mut stream, next));
-                    *worker_phase.lock().unwrap() = "install-image";
+                    connections += 1;
+                    record_progress(&server_progress, connections, next, "accepted")?;
+                    record_progress(&server_progress, connections, next, "read-request")?;
+                    let request = read_request(&mut stream, next)?;
+                    record_progress(&server_progress, connections, next, "request-complete")?;
+                    requests.lock().map_err(|_| "fixture request capture lock poisoned")?.push(request);
+                    record_progress(&server_progress, connections, next, "install-image")?;
                     let unauthorized = !next && matches!(a_count, 0 | 2);
                     if !next {
-                        if a_count == 0 { write_credential(&server_path, &origin_a, "user-a", ROTATED); }
-                        if a_count == 2 { write_credential(&server_path, &origin_a, "user-b", TOKEN_B); }
+                        if a_count == 0 {
+                            write_credential(&server_path, &origin_a, "user-a", ROTATED)?;
+                            record_progress(&server_progress, connections, next, "same-context-replacement-installed")?;
+                        }
+                        if a_count == 2 {
+                            write_credential(&server_path, &origin_a, "user-b", TOKEN_B)?;
+                            record_progress(&server_progress, connections, next, "changed-context-replacement-installed")?;
+                        }
                         a_count += 1;
                     }
                     let (status, body) = if unauthorized { ("401 Unauthorized", "{}") } else {
                         ("200 OK", "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"bound-response\",\"output\":[]}}\n\n")
                     };
                     let response = format!("HTTP/1.1 {status}\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
-                    *worker_phase.lock().unwrap() = "write-response";
-                    stream.write_all(response.as_bytes()).unwrap();
-                    *worker_phase.lock().unwrap() = "response-complete";
+                    record_progress(&server_progress, connections, next, &format!("response-planned status={status}"))?;
+                    record_progress(&server_progress, connections, next, "write-response")?;
+                    stream.write_all(response.as_bytes()).map_err(|error| fixture_io_error("response-write", error))?;
+                    record_progress(&server_progress, connections, next, "response-written")?;
                 }
                 thread::sleep(Duration::from_millis(2));
             }
-        });
-        let mut fixture = Fixture { root, stop, server: Some(server), child: None };
+            Ok(())
+        }));
         let nonce = Uuid::new_v4().to_string();
         let stdout = fixture.root.join("stdout");
         let stderr = fixture.root.join("stderr");
-        fixture.child = Some(Command::new(env::current_exe().unwrap())
-            .args(["--exact", TEST_NAME, "--nocapture", "--test-threads=1"])
-            .env(CHILD_ROOT, &fixture.root).env(NEXT_ENDPOINT, endpoint_b).env(NONCE, &nonce)
-            .env(FABUSHI_RESPONSES_URL_ENV, endpoint_a).env(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, path)
-            .env("NO_PROXY", "*").env("no_proxy", "*")
-            .stdout(fs::File::create(&stdout).unwrap()).stderr(fs::File::create(&stderr).unwrap())
-            .spawn().unwrap());
-        let deadline = Instant::now() + BOUND;
-        let child_result = loop {
-            match fixture.child.as_mut().unwrap().try_wait() {
-                Ok(Some(status)) => break Ok(status),
-                Ok(None) => {}
-                Err(error) => break Err(format!("owned transport child wait error: {error}")),
-            }
-            if Instant::now() >= deadline {
-                break Err("owned transport child deadline".to_string());
-            }
-            thread::sleep(Duration::from_millis(5));
-        };
-        let child_cleanup = child_result.is_err().then(|| {
-            let child = fixture.child.as_mut().unwrap();
-            let kill = child.kill();
-            let reap = child.wait();
-            format!("kill={kill:?}, reap={reap:?}")
-        });
-        fixture.stop.store(true, Ordering::Release);
-        let server_result = fixture.server.take().unwrap().join();
-        let phase = phase.lock().map(|phase| *phase).unwrap_or("phase-lock-poisoned");
-        let captured_count = capture.lock().map(|requests| requests.len()).ok();
+        let status = (|| -> Result<std::process::ExitStatus, String> {
+            let executable = env::current_exe().map_err(|error| fixture_io_error("child-executable", error))?;
+            fixture.child = Some(Command::new(executable)
+                .args(["--exact", TEST_NAME, "--nocapture", "--test-threads=1"])
+                .env(CHILD_ROOT, &fixture.root).env(NEXT_ENDPOINT, endpoint_b).env(NONCE, &nonce)
+                .env(FABUSHI_RESPONSES_URL_ENV, endpoint_a).env(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, path)
+                .env("NO_PROXY", "*").env("no_proxy", "*")
+                .stdout(fs::File::create(&stdout).map_err(|error| fixture_io_error("child-stdout-create", error))?)
+                .stderr(fs::File::create(&stderr).map_err(|error| fixture_io_error("child-stderr-create", error))?)
+                .spawn().map_err(|error| fixture_io_error("child-spawn", error))?);
+            fixture.wait_child()
+        })();
+        let report = fixture.finish();
         let stdout = fs::read_to_string(stdout);
         let stderr = fs::read_to_string(stderr);
-        let receipt = fs::read_to_string(fixture.root.join("receipt"));
-        let receipt_bytes = receipt.as_ref().map(|value| value.len());
-        let receipt_matches = receipt.as_ref().is_ok_and(|value| value == &nonce);
-        assert!(child_result.as_ref().is_ok_and(|status| status.success()) && server_result.is_ok()
-            && stdout.is_ok() && stderr.is_ok(),
-            "captured-endpoint credential case: child={child_result:?}, cleanup={child_cleanup:?}, server_panicked={}, phase={phase}, captured_requests={captured_count:?}, receipt_bytes={receipt_bytes:?}, receipt_nonce_matches={receipt_matches}; stdout={}; stderr={}",
-            server_result.is_err(), captured_output_observation(&stdout), captured_output_observation(&stderr));
-        assert!(receipt_matches, "child execution receipt must match the owned nonce");
-        let requests = capture.lock().unwrap();
+        let receipt_raw = fs::read(fixture.root.join("receipt"))
+            .map_err(|error| fixture_io_error("child-receipt-read", error));
+        let receipt_bytes = receipt_raw.as_ref().ok().map(Vec::len);
+        let receipt = receipt_raw.and_then(|raw| serde_json::from_slice::<Value>(&raw).map_err(|error| format!(
+            "child receipt JSON: category={:?}, line={}, column={}",
+            error.classify(), error.line(), error.column(),
+        )));
+        let evidence = json!({
+            "case":"captured-endpoint-and-context", "childResult":format!("{status:?}"),
+            "server":report.evidence(), "progress":report.progress,
+            "stdout":captured_output_observation(&stdout), "stderr":captured_output_observation(&stderr),
+            "receiptBytes":receipt_bytes,
+            "receipt":receipt.as_ref().map(|value| json!({
+                "nonceMatches":value["nonce"] == nonce,
+                "caseMatches":value["case"] == "captured-endpoint-and-context",
+                "phase":value["phase"], "completed":value["completed"], "observations":value["observations"],
+            })),
+        });
+        eprintln!("captured-endpoint credential evidence: {evidence}");
+        assert!(status.as_ref().is_ok_and(|status| status.success()) && report.is_ok()
+            && stdout.is_ok() && stderr.is_ok() && receipt.is_ok(), "{evidence}");
+        let receipt = receipt.expect("checked child receipt");
+        assert!(receipt["nonce"] == nonce, "a zero-test child must not satisfy this oracle");
+        assert!(receipt["case"] == "captured-endpoint-and-context", "child receipt scenario binding");
+        assert_eq!(receipt["completed"], true, "{evidence}");
+        assert_eq!(receipt["observations"].as_array().unwrap().len(), 4);
+        let requests = report.requests;
         assert_eq!(requests.len(), 5, "two allowed refresh requests, one refused invocation, one callback refusal, one new transport");
         for (index, (next, line, authorization, body)) in requests.iter().enumerate() {
             assert_eq!(*next, index == 4, "only the new transport can use the changed endpoint");
             assert!(line == if *next { "POST /changed/v2/responses HTTP/1.1" } else { "POST /captured/v1/responses HTTP/1.1" }, "request must use its bound endpoint");
-            assert!(authorization == &format!("Bearer {}", match index { 0 => TOKEN_A, 4 => TOKEN_B, _ => ROTATED }), "request must use its bound credential");
+            assert!(authorization == &format!("Bearer {}", match index { 0 => TOKEN_A, 4 => TOKEN_B, _ => ROTATED }), "request bearer identity");
             assert!(body == &requests[0].3, "request/model bytes remain unchanged");
         }
     }
@@ -3295,8 +3480,13 @@ mod fabushi_credential_context_tests {
 
     fn turn_binding_fixture(label: &str) -> Fixture {
         let root = env::temp_dir().join(format!("fabushi-turn-binding-{label}-{}", Uuid::new_v4()));
-        fs::create_dir_all(&root).expect("create private turn-binding fixture");
-        Fixture { root, stop: Arc::new(AtomicBool::new(false)), server: None, child: None }
+        fs::create_dir(&root).expect("exclusively create private turn-binding fixture");
+        Fixture {
+            root, stop: Arc::new(AtomicBool::new(false)), server: None, child: None,
+            cleanup_observation: None,
+            progress: Arc::new(Mutex::new(vec!["connection=0 listen".into()])),
+            requests: Arc::new(Mutex::new(Vec::new())),
+        }
     }
 
     fn assert_turn_binding_authentication<T>(
@@ -3343,7 +3533,7 @@ mod fabushi_credential_context_tests {
         assert!(binding.identity.get() == Some(original), "{phase}: refusal replaced the admitted identity");
         // The existing private writer also restores permissions after the
         // missing/non-regular/non-private file controls.
-        write_credential(path, issuer, "user-a", ROTATED);
+        write_credential(path, issuer, "user-a", ROTATED).expect("repair original private credential");
         let mut rotated: Value = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
         rotated["expiresAtMs"] = json!(4_102_444_900_000_u64);
         fs::write(path, rotated.to_string()).unwrap();
@@ -3361,7 +3551,7 @@ mod fabushi_credential_context_tests {
         let path = fixture.root.join("credential-a.json");
         let issuer = "http://127.0.0.1:1";
         let endpoint = validate_fabushi_responses_url(&format!("{issuer}/captured/v1/responses")).unwrap();
-        write_credential(&path, issuer, "user-a", TOKEN_A);
+        write_credential(&path, issuer, "user-a", TOKEN_A).expect("initial private binding credential");
         let original_image: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         let binding = FabushiResponsesRequestBinding::for_runner_invocation();
         assert!(binding.identity.get().is_none(), "allocation must not acquire credentials");
@@ -3423,7 +3613,7 @@ mod fabushi_credential_context_tests {
             assert_turn_binding_authentication(binding.credentials_for_transport(), "non-private file");
             assert_turn_binding_repair(&binding, &original, &path, issuer, "non-private file");
             let target = fixture.root.join("symlink-target.json");
-            write_credential(&target, issuer, "user-a", TOKEN_A);
+            write_credential(&target, issuer, "user-a", TOKEN_A).expect("private symlink control target");
             fs::remove_file(&path).unwrap();
             std::os::unix::fs::symlink(&target, &path).unwrap();
             assert_turn_binding_authentication(binding.credentials_for_transport(), "symlink instead of private file");
@@ -3440,7 +3630,7 @@ mod fabushi_credential_context_tests {
         assert_turn_binding_authentication(binding.accept_credentials(&endpoint_candidate), "complete endpoint mismatch");
         assert_turn_binding_repair(&binding, &original, &path, issuer, "complete endpoint mismatch");
         let other_path = fixture.root.join("credential-b.json");
-        write_credential(&other_path, issuer, "user-a", TOKEN_B);
+        write_credential(&other_path, issuer, "user-a", TOKEN_B).expect("private alternate-path credential");
         let path_candidate = read_fabushi_responses_credentials(&endpoint, &other_path).unwrap();
         assert_turn_binding_authentication(binding.accept_credentials(&path_candidate), "credential path mismatch");
         assert_turn_binding_repair(&binding, &original, &path, issuer, "credential path mismatch");
@@ -3478,8 +3668,8 @@ mod fabushi_credential_context_tests {
         let b = fixture.root.join("credential-b.json");
         let issuer = "http://127.0.0.1:1";
         let endpoint = validate_fabushi_responses_url(&format!("{issuer}/race/v1/responses")).unwrap();
-        write_credential(&a, issuer, "user-a", TOKEN_A);
-        write_credential(&b, issuer, "user-b", TOKEN_B);
+        write_credential(&a, issuer, "user-a", TOKEN_A).expect("first private race credential");
+        write_credential(&b, issuer, "user-b", TOKEN_B).expect("second private race credential");
         let binding = FabushiResponsesRequestBinding::for_runner_invocation();
         let [(first, first_result), (second, second_result)] =
             race_turn_binding_images(&binding, (&endpoint, &a), (&endpoint, &b));
@@ -3523,11 +3713,11 @@ mod fabushi_credential_context_tests {
         assert!(initial.identity.get().is_none());
         assert_turn_binding_authentication(initial.credentials_for_transport(), "initial unavailable credential");
         assert!(initial.identity.get().is_none(), "unavailable credential admitted an identity");
-        write_credential(&path_b, &issuer_b, "user-b", TOKEN_B);
+        write_credential(&path_b, &issuer_b, "user-b", TOKEN_B).expect("private initial malformed control");
         fs::write(&path_b, b"{malformed initial credential").unwrap();
         assert_turn_binding_authentication(initial.credentials_for_transport(), "initial malformed credential");
         assert!(initial.identity.get().is_none(), "malformed credential admitted an identity");
-        write_credential(&path_b, &issuer_b, "user-b", TOKEN_B);
+        write_credential(&path_b, &issuer_b, "user-b", TOKEN_B).expect("private initial credential repair");
         let repaired_initial = initial.credentials_for_transport().unwrap();
         assert!(turn_binding_matches_credentials(&initial, &repaired_initial), "valid image after initial refusal must bind");
 
@@ -3544,7 +3734,7 @@ mod fabushi_credential_context_tests {
         assert!(turn_binding_matches_credentials(&binding, &captured));
         drop(captured);
         for token in [ROTATED, TURN_BINDING_ROTATED_AGAIN] {
-            write_credential(&path_a, &issuer_a, "user-a", token);
+            write_credential(&path_a, &issuer_a, "user-a", token).expect("private bound token rotation");
             let shared = binding.clone();
             let mut transport = CodexHttpTransport::new_fabushi_with_binding(Some(&shared)).unwrap();
             let mut events = 0;
@@ -3594,40 +3784,53 @@ mod fabushi_credential_context_tests {
         let endpoint_b = validate_fabushi_responses_url(&format!("http://{}/turn-current/v2/responses", b.local_addr().unwrap())).unwrap();
         let path_a = fixture.root.join("captured-credential.json");
         let path_b = fixture.root.join("configured-credential.json");
-        write_credential(&path_a, &issuer_a, "user-a", TOKEN_A);
+        write_credential(&path_a, &issuer_a, "user-a", TOKEN_A).expect("private captured credential");
         let observation = Arc::new(Mutex::new(TurnBindingHttpObservation::default()));
         let server_observation = Arc::clone(&observation);
+        let server_progress = Arc::clone(&fixture.progress);
+        let server_requests = Arc::clone(&fixture.requests);
         let stop = Arc::clone(&fixture.stop);
-        fixture.server = Some(thread::spawn(move || {
+        fixture.server = Some(thread::spawn(move || -> Result<(), String> {
             let deadline = Instant::now() + BOUND * 2;
             let expected_body = serde_json::to_vec(&turn_binding_http_request()).unwrap();
-            'serve: while !stop.load(Ordering::Acquire) {
+            while !stop.load(Ordering::Acquire) {
                 if Instant::now() >= deadline {
                     let mut observed = server_observation.lock().unwrap();
                     observed.phase = "listener deadline";
                     observed.failed = true;
-                    break;
+                    return Err("turn-binding fixture listener deadline".into());
                 }
                 for (next, listener) in [(false, &a), (true, &b)] {
                     let mut stream = match listener.accept() {
                         Ok((stream, _)) => stream,
                         Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => continue,
-                        Err(_) => {
+                        Err(error) => {
                             let mut observed = server_observation.lock().unwrap();
                             observed.phase = "listener accept";
                             observed.failed = true;
-                            break 'serve;
+                            return Err(fixture_io_error("turn-binding-listener-accept", error));
                         }
                     };
-                    {
+                    let connection = {
                         let mut observed = server_observation.lock().unwrap();
                         observed.accepted += 1;
                         observed.phase = "bounded blocking request read";
-                    }
+                        observed.accepted
+                    };
+                    record_progress(&server_progress, connection, next, "accepted")?;
+                    record_progress(&server_progress, connection, next, "read-request")?;
                     // The established reader resets accepted sockets to
                     // blocking before its bounded read/write timeouts.
-                    let (_, line, authorization, body) = read_request(&mut stream, next);
+                    let request = match read_request(&mut stream, next) {
+                        Ok(request) => request,
+                        Err(error) => {
+                            server_observation.lock().unwrap().failed = true;
+                            return Err(error);
+                        }
+                    };
+                    record_progress(&server_progress, connection, next, "request-complete")?;
                     {
+                        let (_, line, authorization, body) = &request;
                         let mut observed = server_observation.lock().unwrap();
                         let expected_token = match observed.parsed {
                             0 => ROTATED,
@@ -3636,62 +3839,56 @@ mod fabushi_credential_context_tests {
                         };
                         observed.requests.push((
                             next,
-                            line == if next { "POST /turn-current/v2/responses HTTP/1.1" } else { "POST /turn-bound/v1/responses HTTP/1.1" },
-                            authorization == format!("Bearer {expected_token}"),
-                            body == expected_body,
+                            line.as_str() == if next { "POST /turn-current/v2/responses HTTP/1.1" } else { "POST /turn-bound/v1/responses HTTP/1.1" },
+                            authorization == &format!("Bearer {expected_token}"),
+                            body == &expected_body,
                         ));
                         observed.parsed += 1;
                         observed.phase = "bounded response write";
                     }
+                    server_requests.lock().map_err(|_| "fixture request capture lock poisoned")?.push(request);
                     let body = "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"turn-binding-response\",\"output\":[]}}\n\n";
                     let response = format!("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
-                    if stream.write_all(response.as_bytes()).is_err() {
+                    record_progress(&server_progress, connection, next, "response-planned status=200 OK")?;
+                    record_progress(&server_progress, connection, next, "write-response")?;
+                    if let Err(error) = stream.write_all(response.as_bytes()) {
                         server_observation.lock().unwrap().failed = true;
-                        break 'serve;
+                        return Err(fixture_io_error("turn-binding-response-write", error));
                     }
+                    record_progress(&server_progress, connection, next, "response-written")?;
                     let mut observed = server_observation.lock().unwrap();
                     observed.responded += 1;
                     observed.phase = "observing both endpoints";
                 }
                 thread::sleep(Duration::from_millis(2));
             }
+            Ok(())
         }));
         let nonce = Uuid::new_v4().to_string();
-        fixture.child = Some(Command::new(env::current_exe().unwrap())
-            .args(["--exact", TURN_BINDING_TEST, "--nocapture", "--test-threads=1"])
-            .env(TURN_BINDING_CHILD_ROOT, &fixture.root).env(TURN_BINDING_NONCE, &nonce)
-            .env(TURN_BINDING_CAPTURE_ENDPOINT, endpoint_a).env(TURN_BINDING_CAPTURE_PATH, path_a)
-            .env(FABUSHI_RESPONSES_URL_ENV, endpoint_b).env(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, path_b)
-            .env("NO_PROXY", "*").env("no_proxy", "*")
-            .stdout(Stdio::null()).stderr(Stdio::null())
-            .spawn().expect("spawn owned turn-binding child"));
-        let child_pid = fixture.child.as_ref().unwrap().id();
-        let deadline = Instant::now() + BOUND;
-        let outcome = loop {
-            match fixture.child.as_mut().unwrap().try_wait() {
-                Ok(Some(status)) => break Ok(status),
-                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(5)),
-                Ok(None) => break Err("owned child deadline"),
-                Err(_) => break Err("owned child wait failed"),
-            }
-        };
-        let cleanup = if outcome.is_err() {
-            // This exact Child remains owned and unreaped. No process-name
-            // search or unrelated process cleanup is part of the fixture.
-            let child = fixture.child.as_mut().unwrap();
-            let killed = child.kill().is_ok();
-            let reaped = child.wait().is_ok();
-            Some((killed, reaped))
-        } else {
-            None
-        };
-        fixture.stop.store(true, Ordering::Release);
-        let server_panicked = fixture.server.take().unwrap().join().is_err();
+        let mut child_pid = None;
+        let outcome = (|| -> Result<std::process::ExitStatus, String> {
+            let executable = env::current_exe().map_err(|error| fixture_io_error("child-executable", error))?;
+            fixture.child = Some(Command::new(executable)
+                .args(["--exact", TURN_BINDING_TEST, "--nocapture", "--test-threads=1"])
+                .env(TURN_BINDING_CHILD_ROOT, &fixture.root).env(TURN_BINDING_NONCE, &nonce)
+                .env(TURN_BINDING_CAPTURE_ENDPOINT, endpoint_a).env(TURN_BINDING_CAPTURE_PATH, path_a)
+                .env(FABUSHI_RESPONSES_URL_ENV, endpoint_b).env(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, path_b)
+                .env("NO_PROXY", "*").env("no_proxy", "*")
+                .stdout(Stdio::null()).stderr(Stdio::null())
+                .spawn().map_err(|error| fixture_io_error("turn-binding-child-spawn", error))?);
+            child_pid = Some(fixture.child.as_ref().unwrap().id());
+            fixture.wait_child()
+        })();
+        // The same fixture owner retains the original child outcome, bounds
+        // retirement, joins the server, and authorizes root deletion on exit.
+        let report = fixture.finish();
         let observed = observation.lock().unwrap_or_else(|error| error.into_inner());
         // Retain the safe server outcome before adjudicating any child error.
-        eprintln!("turn-binding HTTP control pid={child_pid} cleanup={cleanup:?} server_panicked={server_panicked} outcome={observed:?}");
-        assert!(!server_panicked && !observed.failed, "turn-binding HTTP fixture failed: {observed:?}");
+        eprintln!("turn-binding HTTP control pid={child_pid:?} child={outcome:?} report={} progress={:?} outcome={observed:?}", report.evidence(), report.progress);
+        assert!(!report.server_panicked && !observed.failed && report.is_ok(),
+            "turn-binding HTTP fixture failed: {observed:?}; report={}", report.evidence());
         assert!(matches!(&outcome, Ok(status) if status.success()), "turn-binding child failed: {outcome:?}; server={observed:?}");
+        let child_pid = child_pid.expect("successful owned child retained its PID");
         let expected_receipt = format!("{nonce}\n{child_pid}\n{TURN_BINDING_COMPLETE}\n");
         assert!(fs::read_to_string(fixture.root.join("turn-binding-receipt")).ok().as_deref() == Some(expected_receipt.as_str()),
             "owned child lacks the nonce/PID/completion-bound receipt; server={observed:?}");

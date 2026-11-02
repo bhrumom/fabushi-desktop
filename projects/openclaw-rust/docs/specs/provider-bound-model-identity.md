@@ -587,6 +587,61 @@ without value-printing failure messages; a sensitive-output negative control
 must exercise the same diagnostic projection. Production behavior is unchanged.
 
 
+### Credential fixture observation union — FC-FIXTURE-OBSERVATION-01
+
+Decision **FC-FIXTURE-OBSERVATION-01 — FIX / TEST_FLAW**, before integration
+on `a514b70ab7901e9c8b4d87a8d29bf8e7d52be507`. Preserve FC-04-HTTP-02/03,
+FC-HTTP-FIXTURE-01/02 and every incoming assertion. The independently reviewed
+parallel fixture candidate adds a second, distinct empty-socket control and
+pre-assertion evidence; merge those through the same reader and observation
+owners rather than replacing the existing split-header/body control.
+
+- Keep both actual TCP controls: the split request directly checks socket mode,
+  five-second deadlines, header/body phase ordering and complete 204 response;
+  the delayed empty connection inspects the shared descriptor before sending
+  bytes and uses the actual fixture's 200/SSE response path. Use one reader.
+- Publish nonce/case/control-bound running and observed child receipts atomically
+  before semantic assertions, and completion only after all checks. Sanitizing
+  a private sentinel is sticky failure, never permission to accept the receipt.
+- Collect the exact child's bounded exit and join its owned server before parent
+  adjudication. Retain safe phase, numeric panic location, accepted/parsed/
+  responded/captured counts and server outcome even on failure. Planned status
+  and completed response write remain different evidence. Do not print private
+  request, credential or response bodies. Keep all existing timeout and retry
+  bounds and every typed/error/model/body/redaction/custody predicate.
+- Apply the same pre-assertion phase and explicit finalization discipline to
+  the already selected private transport fixture. Preserve its five actual
+  requests, captured endpoint/context, callback refusal and new-transport proof.
+
+Reconciliation on `b60a2e406071827031ee18e81b35d8e71d4f1aee` retains the
+FC-HTTP-ORACLE-02 and F5-PRIVATE-CREDENTIAL-DIAGNOSTIC additions above. Keep
+the private forced-nonblocking reader control and its exact request, OS-flag
+and read/write-timeout predicates, plus the sensitive-output negative control
+using the actual diagnostic projection. Both parents require successful reads
+of redirected stdout/stderr and expose only byte counts, numeric panic
+coordinates or safe I/O error classes. Receipt diagnostics retain read/parse
+outcomes and binding booleans without printing raw output or nonce values.
+Reader/replacement/write phases and owned child cleanup observations join the
+same existing report, not another phase store, receipt file or provider loop.
+
+`FC-CHILD-CUSTODY-01 — FIX / TEST_FLAW`: a kill request alone is not proof
+that the owned exact-test child exited. Replace the fixtures' unbounded
+post-kill wait with bounded status observation; keep timeout, wait and cleanup
+errors nonpassing. Only an actual exit/reap observation releases that child's
+fixture-root deletion permission. An unresolved child retains its exclusive
+root and failed cleanup evidence. A real nonce/PID-bound child control must
+prove live-child root retention and observed retirement before cleanup. This
+repair adds no product retry, process-name cleanup or production authority.
+The incoming FTB private transport control uses this same existing fixture
+finalizer; its additional initializer and wait path cannot bypass the bounded
+retirement and root-retention contract. Preserve all FTB request predicates.
+
+This scope is the two existing credential test surfaces and this contract;
+production behavior, dependencies, workflow selection and full acceptance stay
+unchanged. Historical failures and the unavailable original errno remain as
+recorded. Fresh frozen-scope review and exact-H Actions are required.
+
+
 ### Frozen terminal tool-custody evidence — REC-11/12/13
 
 Contract: `OCRM-RUNNER-TERMINAL-CUSTODY-v1`, specified before code on
@@ -774,3 +829,52 @@ availability, `parameters`/thinking mapping, fallback ladders, trusted session
 model mutation ingress, real service testing or the final G01–G12/AC01–AC24
 matrix. OCRM inventory/ledger/RTM remain authoritative; no verified/accepted
 state or global flag changes follow from authored code or a local green result.
+
+### Automatic-attempt verification — OCRM-FABUSHI-AUTOMATIC-ATTEMPT-BINDING-v1
+
+Decision **FABUSHI-ATTEMPT-BINDING-01 — FIX / IMPL_BUG** was specified and
+implemented against `73cf0269c5ccbbd1dff946e0949824a1bbbeffd4`. Before
+publication, `1501be999f195e7204da8b095a0ab64d5bc3a5aa` supplied the broader
+FTB-01–05 implementation above. Integration adopts that existing request
+binding and all its callers; the unpublished separate `FabushiAttemptBinding`
+implementation is superseded, with its immutable source/review history kept.
+There is one production binding. This increment adds the distinct actual
+Runner oracles and the fixture repairs above; it does not replace FTB controls.
+
+- AB-01/02: exercise FTB-04 through one actual public
+  `run_routed_provider_in_runner` invocation with no pre-supplied binding. Its
+  real executor captures the first validated typed context, complete URL and
+  source once, after existing cancellation and checkpoint/model checks. Each
+  later transport rereads that source; same-context token/expiry rotation may
+  proceed, while a changed or invalid identity refuses before HTTP. A separate
+  invocation may capture the later account. The shipping admission, nudge and
+  memory lifetime remains FTB's responsibility and retains its own oracles.
+- AB-03: retain existing typed permanent failures, retry budget, model/provider
+  fences, output and checkpoint eligibility, cancellation and sticky unknown
+  custody. Binding cannot authorize replay or clear custody. The integration
+  uses the incoming public options without adding another forwarding argument,
+  parser, credential cache, persisted binding, permission truth or runtime.
+- AB-04: the already selected credential target includes private module
+  `tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs`.
+  Its parent owns observable HTTP, fixed child environment and real private
+  credential replacement before the 503. Cover changed user/device/session/
+  issuer, invalid/expired/missing identity and file-shape/private-file failures;
+  require initial Retried, attempt-2 GaveUpIneligible/AuthenticationError, exact
+  request/report counts, no extra attempt or output/effect/checkpoint/usage,
+  and a separate new-account positive. Same-context rotation must complete
+  with the original request bytes and model.
+- AB-05: use the actual guarded tool, synced effect receipt and durable
+  checkpoint store. After a continuation's 503, changed identity refuses the
+  third request and retains exact checkpoint bytes and one effect. Rotation
+  resumes exact history/model without repeating the effect and preserves
+  cumulative usage. Cancellation at the real retry callback retains the
+  current outer Transport reason and existing unknown-effect controls.
+
+The exact-child receipt binds module-qualified test, nonce, PID, scenario,
+observed phase and completion. Keep the server observable through completion,
+reuse the existing parser/writer and bounded cleanup, and do not count child
+summaries as extra parent tests. Source review and exact-H Actions cover this
+integrated scope; authored tests do not establish runtime success. Fixed U,
+full product scope and all global flags remain unchanged. Original-turn disk
+claim/restore/settle, unknown-result reconciliation, real services, platforms
+and final G01–G12/AC01–AC24 acceptance remain open. No local/htch validation.

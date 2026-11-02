@@ -4001,6 +4001,8 @@
         "source/host/tests/canonical_checkpoint_recovery_contract.rs",
         "source/host/tests/production_agent_store_contract.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/fabushi_responses_credential_context_contract.rs",
+        "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
         "source/host/tests/runner_effect_custody_contract.rs",
         "source/host/tests/routed_send_acceptance_contract.rs"
       ],
@@ -4023,14 +4025,16 @@
       ],
       "id": "OCRM-RESP-AGENT-LOOP-RUNNER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/production_runtime.rs consumes ProductionTurnDispatch queue admission, active generation, watchdog escape, and settle-and-start-next; downstream provider attempts remain owned by StreamAttemptRuntime and ProductionTurnRunShellAdapter: OCRM-RUNNER-EFFECT-CUSTODY-v1 fences retries after pending, unknown, or uncheckpointed effects through the direct Responses tool wrapper and actual Claude MCP endpoint. Authored oracles await exact-H Actions evidence; durable unknown-effect reconciliation and original-turn restart resumption remain open",
+        "consumer": "source/host/src/extensions/transcript/production_runtime.rs consumes ProductionTurnDispatch queue admission, active generation, watchdog escape, and settle-and-start-next; downstream provider attempts remain owned by StreamAttemptRuntime and ProductionTurnRunShellAdapter: OCRM-RUNNER-EFFECT-CUSTODY-v1 fences retries after pending, unknown, or uncheckpointed effects through the direct Responses tool wrapper and actual Claude MCP endpoint. OCRM-FABUSHI-TURN-BINDING-v1 owns the admitted context/URL/source binding through Host, Runner, nudges and turn-memory; OCRM-FABUSHI-AUTOMATIC-ATTEMPT-BINDING-v1 adds actual public Runner oracles for its direct-invocation policy, original-source reread, same-context rotation and refusal of another context before HTTP. Public Runner/tool/durable-checkpoint oracles await exact-H Actions; durable unknown-effect reconciliation and original-turn restart resumption remain open",
         "entrypoint": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch -> source/host/src/extensions/transcript/production_runtime.rs::accept_routed_send/settle_routed_turn",
         "owner": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch",
         "producer": "ProductionTranscriptRuntime accepts routed sends and enqueues every admitted turn; the scheduler starts the first turn and defers later turns until settlement or watchdog escape"
       },
       "invariants": [
         "Active run rejects parallel run requests with AlreadyRunning",
-        "Deferred turn supersedes pending turn upon turn completion"
+        "Deferred turn supersedes pending turn upon turn completion",
+        "One public Runner invocation cannot transfer its original input or accepted checkpoint to a replacement Fabushi credential context during automatic attempts; a separate invocation may capture a new context",
+        "Credential identity binding neither authorizes tool replay nor changes cancellation, unknown-effect custody, checkpoint acceptance or model/provider fences; no token or binding is persisted in the checkpoint"
       ],
       "migration_rollback": "Controlled by runner execution flags",
       "oracle_ids": [
@@ -4089,10 +4093,12 @@
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o02_deferred_supersedes_queue",
         "source/host/tests/runner_effect_custody_contract.rs::production_fabushi_executor_refuses_replay_after_tool_expiry",
         "source/host/tests/runner_effect_custody_contract.rs::real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
-        "source/host/tests/routed_send_acceptance_contract.rs::routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal"
+        "source/host/tests/routed_send_acceptance_contract.rs::routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal",
+        "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs::fabushi_runner_retains_binding_across_automatic_attempts"
       ],
       "typed_contracts": [
-        "TurnRunShell::begin_run"
+        "TurnRunShell::begin_run",
+        "ProductionRoutedProviderAttemptExecutor::fabushi_request_binding -> Inference::FabushiResponsesRequestBinding"
       ],
       "unit_id": "OCRM-UNIT-AGENT-TURN-001"
     },
