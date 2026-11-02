@@ -703,7 +703,9 @@
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -1209,7 +1211,9 @@
         "source/host/tests/attachments_service_contract.rs",
         "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
         "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
-        "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md"
+        "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1881,7 +1885,10 @@
     {
       "acceptance_status": "not-started",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "source/host/tests/transcript_manager_contract.rs"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC13",
       "kind": "acceptance-criterion",
@@ -2012,7 +2019,9 @@
         "source/host/app/src/tests/config_secret_boundary_tests.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2359,7 +2368,9 @@
         "source/host/tests/attachments_service_contract.rs",
         "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md",
         "projects/openclaw-rust/docs/specs/media-input-url-admission.md",
-        "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md"
+        "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

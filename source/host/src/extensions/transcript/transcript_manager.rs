@@ -35,6 +35,7 @@ use crate::extensions::trays::trays_service::PushErrorOptions;
 use crate::extensions::turn_execution::turn_execution_service::{
     TurnExecutionError, TurnExecutionRegistry, TurnExecutor,
 };
+use crate::storage::agent_paths::assert_valid_sand_agent_id;
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::{AutomationRuntime, automation_records_value};
@@ -705,8 +706,9 @@ impl TranscriptManager {
                 .ok_or_else(|| format!("{method} requires {name}"))
         };
         match method {
-            "getAgentMemories" => Some(required("id").map(|agent_id| {
-                Value::Array(
+            "getAgentMemories" => Some(required("id").and_then(|agent_id| {
+                assert_valid_sand_agent_id(agent_id).map_err(|error| error.to_string())?;
+                Ok(Value::Array(
                     self.session_workers
                         .memory_service()
                         .list(agent_id)
@@ -723,7 +725,7 @@ impl TranscriptManager {
                             })
                         })
                         .collect(),
-                )
+                ))
             })),
             "deleteAgentMemory" => Some(required("id").and_then(|agent_id| {
                 let memory_id = required("memoryId")?;

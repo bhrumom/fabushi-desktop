@@ -306,6 +306,12 @@ jobs:
               "source/host/tests/automation_runtime_contract.rs",
               "source/host/tests/automation_run_path_contract.rs",
               "source/host/tests/agent_session_contract.rs",
+              "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+              "source/host/src/extensions/transcript/transcript_manager.rs",
+              "source/host/src/extensions/memory/memory_service.rs",
+              "source/host/src/storage/agent_paths.rs",
+              "source/host/src/storage/folder_id.rs",
+              "source/host/tests/transcript_manager_contract.rs",
               "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
               "source/host/src/extensions/attachments/attachments_service.rs",
               "source/host/src/extensions/attachments/input_files.rs",
@@ -779,6 +785,43 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
+      - name: Require Memory Gateway selector positives from the existing macOS recovery command
+        if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          raw = (root / "integration-contracts.log").read_bytes()
+          command = (root / "integration-contracts.command.txt").read_text().strip()
+          exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
+                   if line.split("\t")[0] == "integration-contracts"]
+          required = [
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+          ]
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
+          missing = [name for name in required if passed.count(name) != 1]
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"] and exits == [["integration-contracts", "0"]] and not missing)
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          receipt.update({"contract": "MGS-v1", "command": command, "command_exit_records": exits,
+              "required_tests": required, "observed_passed_test_names": passed,
+              "missing_or_nonunique_positive_results": missing, "log_sha256": hashlib.sha256(raw).hexdigest(),
+              "result": "passed" if accepted else "failed",
+              "scope": "Actual TranscriptManager Memory read selector with real inside/outside file stores, unchanged bytes and notifications, valid-after-refusal, existing projection/order/100-record bound and mutation/snapshot control. Not symlink, cross-account, full HTTP/UI, Windows or whole-Memory acceptance."})
+          (root / "memory-gateway-selector.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          PY
       - name: Preserve failed owned Automation fixtures
         if: ${{ failure() && (steps.ocrm_recovery.outcome == 'failure' || steps.ocrm_app_contracts.outcome == 'failure') }}
         uses: actions/upload-artifact@v4
@@ -1621,7 +1664,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or 1)
           PY
-      - name: Test portable pending-failure recovery on the existing Linux Host cache
+      - name: Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         timeout-minutes: 15
@@ -1640,11 +1683,15 @@ jobs:
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml",
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+              "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
               "source/host/src/extensions/transcript/transcript_manager.rs",
+              "source/host/src/extensions/memory/memory_service.rs",
+              "source/host/src/storage/agent_paths.rs", "source/host/src/storage/folder_id.rs",
+              "source/host/src/host_gateway_api.rs",
               "source/host/src/extensions/transcript/background_wakes.rs",
               "source/host/src/gateway_server.rs", "source/host/app/src/main.rs",
               "source/host/tests/durable_recovery_stores_contract.rs",
@@ -1675,6 +1722,10 @@ jobs:
               "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
               "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
               "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
               "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
               "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
               "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
@@ -1693,7 +1744,7 @@ jobs:
               ("paired-device-sse", base + ["--lib", sse_filter, "--", "--exact", "--test-threads=1"], [sse_filter]),
           ]
           receipt = {
-              "contract": "CWR-v1-portable", "subject_commit": head,
+              "contract": "CWR-v1-portable/MGS-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -1702,7 +1753,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. The cloud-agent target is source-wiring assertions only; controlled runtime-port outcomes are not shipping app/provider/quiescence execution. Existing macOS app, real transport/provider, unknown-effect reconciliation and platform acceptance gates remain open.",
+              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. MGS-v1 exercises the actual Memory dispatch with real outside/inside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and preserved mutation/snapshot behavior. The cloud-agent target is source-wiring only; controlled runtime-port outcomes are not shipping app/provider/quiescence execution. Symlink, cross-account, full HTTP/UI, macOS/Windows, real transport/provider, unknown-effect and platform acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label

@@ -540,6 +540,193 @@ fn manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation() 
     let _ = fs::remove_dir_all(root);
 }
 
+// MGS-v1 uses real stores on both sides of the agents-root boundary. The
+// outside store must be readable independently, so malformed fixture data
+// cannot masquerade as refusal by the production Gateway entry.
+struct MemoryGatewaySelectorFixture {
+    root: std::path::PathBuf,
+    manager: TranscriptManager,
+    expected: Value,
+    before: Vec<(std::path::PathBuf, Option<Vec<u8>>)>,
+    notifications: Arc<AtomicU64>,
+    unsubscribe: Option<mahayana_host_runtime::extensions::memory::memory_service::MemoryUnsubscribe>,
+}
+
+fn memory_gateway_selector_files(
+    root: &std::path::Path,
+) -> Vec<(std::path::PathBuf, Option<Vec<u8>>)> {
+    fn visit(
+        root: &std::path::Path,
+        directory: &std::path::Path,
+        entries: &mut Vec<(std::path::PathBuf, Option<Vec<u8>>)>,
+    ) {
+        for entry in fs::read_dir(directory).expect("owned memory fixture directory") {
+            let entry = entry.expect("owned memory fixture entry");
+            let path = entry.path();
+            let relative = path.strip_prefix(root).expect("fixture-owned path").to_path_buf();
+            let kind = entry.file_type().expect("owned memory fixture type");
+            if kind.is_dir() {
+                entries.push((relative, None));
+                visit(root, &path, entries);
+            } else {
+                assert!(kind.is_file(), "fixture must not introduce symlink semantics");
+                entries.push((relative, Some(fs::read(&path).expect("owned memory fixture bytes"))));
+            }
+        }
+    }
+    let mut entries = Vec::new();
+    visit(root, root, &mut entries);
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    entries
+}
+
+impl MemoryGatewaySelectorFixture {
+    const AGENT_ID: &'static str = "memory-selector-agent";
+    const DAY_MS: i64 = 86_400_000;
+
+    fn new() -> Self {
+        use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
+
+        let root = temp_root();
+        fs::create_dir(&root).expect("create exclusively owned memory selector fixture");
+        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let mut fixture = Self {
+            manager: TranscriptManager::new(&root, Arc::clone(&sessions)),
+            root,
+            expected: Value::Null,
+            before: Vec::new(),
+            notifications: Arc::new(AtomicU64::new(0)),
+            unsubscribe: None,
+        };
+        let store = sessions.memory_service().store_for_agent(Self::AGENT_ID);
+        let profile = store.add_memory("Existing profile ☃", Self::DAY_MS, MemoryKind::Profile)
+            .expect("profile write").expect("new profile fact");
+        let log = store.add_memory("Existing log ☃", 2 * Self::DAY_MS, MemoryKind::Log)
+            .expect("log write").expect("new log fact");
+        fixture.expected = json!([
+            {"id": profile.id, "content": "Existing profile ☃", "createdAt": Self::DAY_MS, "kind": "profile"},
+            {"id": log.id, "content": "Existing log ☃", "createdAt": 2 * Self::DAY_MS, "kind": "log"},
+        ]);
+
+        let outside = FileMemoryStore::new(fixture.root.join("outside/memory"));
+        let sentinel = outside.add_memory(
+            "External sentinel must never enter an agent reply", 3 * Self::DAY_MS, MemoryKind::Profile,
+        ).expect("outside sentinel write").expect("new outside fact");
+        assert_eq!(outside.list_memories(100), vec![sentinel], "outside oracle must be readable");
+
+        let notifications = Arc::clone(&fixture.notifications);
+        fixture.unsubscribe = Some(sessions.memory_service().subscribe(Arc::new(move || {
+            notifications.fetch_add(1, Ordering::Relaxed);
+        })));
+        fixture.before = memory_gateway_selector_files(&fixture.root);
+        fixture.assert_valid_read();
+        fixture
+    }
+
+    fn read(&self, args: Value) -> Result<Value, String> {
+        self.manager.dispatch_memory_gateway_call("getAgentMemories", &args)
+            .expect("existing memory read command must remain registered")
+    }
+
+    fn assert_unchanged(&self) {
+        assert_eq!(memory_gateway_selector_files(&self.root), self.before,
+            "a memory read must preserve valid/outside files and create no owner or directory");
+        assert_eq!(self.notifications.load(Ordering::Relaxed), 0,
+            "a memory read must not publish a mutation notification");
+    }
+
+    fn assert_valid_read(&self) {
+        assert_eq!(self.read(json!({"id": Self::AGENT_ID})).expect("valid memory read"), self.expected);
+        self.assert_unchanged();
+    }
+}
+
+impl Drop for MemoryGatewaySelectorFixture {
+    fn drop(&mut self) {
+        if let Some(unsubscribe) = self.unsubscribe.take() {
+            unsubscribe();
+        }
+        self.manager.dispose();
+        let cleanup = fs::remove_dir_all(&self.root);
+        if !thread::panicking() {
+            cleanup.expect("remove owned memory selector fixture");
+        }
+    }
+}
+
+#[test]
+fn memory_gateway_rejects_path_selectors_before_external_memory_read() {
+    let fixture = MemoryGatewaySelectorFixture::new();
+    let absolute = fixture.root.join("outside").to_str().expect("UTF-8 fixture path").to_string();
+    for selector in [
+        ".", "..", "../outside", " \t../outside\n", "../outside/.",
+        "memory-selector-agent/../../outside", "memory-selector-agent/memory",
+        r"..\outside", r"memory-selector-agent\memory", r"C:\outside",
+        "memory-selector-agent\0outside", absolute.as_str(),
+    ] {
+        let error = fixture.read(json!({"id": selector}))
+            .expect_err("a path selector must fail before its external memory can become a reply");
+        assert_eq!(error, format!("Invalid Sand agent id: {}", selector.trim()));
+        fixture.assert_valid_read();
+    }
+}
+
+#[test]
+fn memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts() {
+    let fixture = MemoryGatewaySelectorFixture::new();
+    for args in [
+        Value::Null, json!({}), json!({"id": ""}), json!({"id": " \t\n"}),
+        json!({"id": 7}), json!({"id": false}), json!({"id": null}),
+        json!({"id": [MemoryGatewaySelectorFixture::AGENT_ID]}), json!({"id": {"id": "nested"}}),
+    ] {
+        assert_eq!(fixture.read(args).expect_err("required ID contract"), "getAgentMemories requires id");
+        fixture.assert_valid_read();
+    }
+    assert_eq!(fixture.read(json!({
+        "id": format!(" \t{}\n", MemoryGatewaySelectorFixture::AGENT_ID),
+    })).expect("existing trimmed-ID compatibility"), fixture.expected);
+    for missing in ["missing-safe-agent", " missing-safe-agent "] {
+        assert_eq!(fixture.read(json!({"id": missing})).expect("safe missing ID"), json!([]));
+        fixture.assert_valid_read();
+    }
+    assert!(fixture.manager.dispatch_memory_gateway_call(
+        "getAgentMemories.extra", &json!({"id": "../outside"}),
+    ).is_none(), "unknown methods keep the existing unhandled outcome");
+    fixture.assert_valid_read();
+}
+
+#[test]
+fn memory_gateway_preserves_projection_order_and_hundred_record_limit() {
+    use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, memory_id_for};
+
+    let mut fixture = MemoryGatewaySelectorFixture::new();
+    let memory_dir = fixture.root.join("agents")
+        .join(MemoryGatewaySelectorFixture::AGENT_ID).join("memory");
+    fs::write(memory_dir.join("profile.md"), concat!(
+        "# Profiles\n\n- (1970-01-02) Earlier profile\n- (1970-01-03) Later profile\n",
+    )).expect("ordered profile fixture");
+    let log = (0..=100).map(|index| format!("- (1970-01-04) Log {index:03}\n"))
+        .collect::<String>();
+    fs::write(memory_dir.join("log/1970-01.md"), log).expect("bounded log fixture");
+    assert_eq!(FileMemoryStore::new(&memory_dir).list_memories(usize::MAX).len(), 103,
+        "the fixture must exceed the Gateway's existing bound");
+    let mut expected = vec![
+        json!({"id": memory_id_for("Later profile"), "content": "Later profile",
+            "createdAt": 2 * MemoryGatewaySelectorFixture::DAY_MS, "kind": "profile"}),
+        json!({"id": memory_id_for("Earlier profile"), "content": "Earlier profile",
+            "createdAt": MemoryGatewaySelectorFixture::DAY_MS, "kind": "profile"}),
+    ];
+    for index in (3..=100).rev() {
+        let content = format!("Log {index:03}");
+        expected.push(json!({"id": memory_id_for(&content), "content": content,
+            "createdAt": 3 * MemoryGatewaySelectorFixture::DAY_MS, "kind": "log"}));
+    }
+    assert_eq!(expected.len(), 100, "independent bounded projection oracle");
+    fixture.expected = Value::Array(expected);
+    fixture.before = memory_gateway_selector_files(&fixture.root);
+    fixture.assert_valid_read();
+}
+
 #[test]
 fn runner_registry_owns_turn_execution_and_manager_delegates_to_the_same_owner() {
     let root = temp_root();
