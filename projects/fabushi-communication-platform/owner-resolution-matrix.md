@@ -68,7 +68,7 @@ This matrix is the executable planning contract required by FBCP P0. A selected 
 | TDE2E-SECURITY | long-tail dossier; frozen TDE2E temporary keys, participant permissions, scoped encrypt/decrypt and call/channel key lifecycle | identity/device security; native sync security; CallSession; Shared Room permissions; new crypto product | existing identity/device security + native messaging/sync security + ADR-003 CallSession + Shared Room permissions | auth/secrets/WebAuthn + network row + ADR-003 + Shared Room | Fabushi protocol security only; Telegram TDE2E rejected | authenticated device keys, rotation/revoke, replay/order binding, secure erase, crypto migration | membership/key rotation/device loss/replay/restart/call lifetime/security review |
 ## P0 invariants carried by every row
 
-### Round 14 Native startup boundary (base 50b0a2048adce13f2281143e6c3f7449d56344d5)
+### Round 15 desktop message boundary (base c15dfbd9631f8b9fb6920cb5f80b9aea35210d07)
 
 `ACCOUNT-AUTH-MULTI`, `STORAGE-MIGRATION-RECOVERY` and `NETWORK-SYNC-REALTIME`
 reuse the existing Electron account owner and AppHost/Host composition for
@@ -79,20 +79,24 @@ legacy keys/files are retained byte-for-byte; rollback is a reviewed ordinary
 code revert, not a data conversion. Existing settings still persist, while an
 unconfigured carrier reports unavailable.
 
-The exact inspected callers and six-domain authority boundaries are recorded
-in `current-owner-inventory.md`'s round-14 refresh. The live
-`feature.messaging.*` / typed messaging command → FeatureHost →
-`MessagingService` → account-scoped `_messaging/snapshot.json` + `blobs` chain
-remains separate and reachable. Its engine/search/permission model is not the
-observed Native Human Composer path. This unresolved duplicate responsibility,
-legacy default build/FFI dependencies and unconverted old data keep complete
-single-authority and retirement acceptance open. No new owner is proposed.
+The inspected callers and six-domain authorities are in the inventory's
+round-15 refresh. NMR-34–35 place the Production+Electron refusal inside the
+existing FeatureHost owner, before its separate MessagingService execute,
+blob-read and access-write boundaries, covering both explicit and typed routes.
+The Automation owner skips reserved `_messaging` discovery/override/write/cleanup
+so login cannot reinterpret or remove retained unknown message data. Normal
+Agent automation persistence is a positive control. Non-desktop state, legacy
+default dependencies/direct Host injection and old FFI exports remain open;
+current Electron packaging selects the standalone AppHost binary. No new owner,
+canonical data import, public schema or dependency is introduced.
 
 Production AppHost tests use the real registry's missing-provider error,
 Native account/Agent positives, actual encrypted SQLite plus corrupt/sidecar
 retention, and original-reader recovery. Electron tests exercise real account
 service login/refresh/restart/logout with instrumented secret storage and real
-descriptor files. Test authorship is separate from exact-H Actions execution;
+descriptor files. Seven direct-owner tests and the expanded six-case real
+AppHost target cover the new boundary, original reader compatibility and
+recursive data preservation. Test authorship is separate from exact-H Actions execution;
 packaged/real-service/full Bot/independent ACCEPT are not claimed.
 
 - Telegram source is evidence only; MTProto is not a Fabushi runtime dependency.
@@ -100,5 +104,6 @@ packaged/real-service/full Bot/independent ACCEPT are not claimed.
 - Infrastructure may be added only below those owners and may not become a second product model.
 - Agent-native typed events remain typed and coexist with Human communication in the same transcript/workspace.
 - An owner-resolution row is not accepted until production wiring, focused contracts, integration/E2E and applicable packaged evidence exist.
+
 
 

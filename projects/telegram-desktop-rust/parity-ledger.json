@@ -50154,7 +50154,10 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/transcript_mutation_events.rs",
         "frontend/src/production/ProductionRenderer.tsx",
-        "source/host/tests/session_gateway_contract.rs"
+        "source/host/tests/session_gateway_contract.rs",
+        "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs"
       ],
       "fabushi_target_symbols": [
         "validate_remote_human_message",
@@ -50196,7 +50199,8 @@
       "blockers": [
         "The bounded NMR-18/19/20 Host gates passed at exact95/run41403643662; full product/independent acceptance and the open behaviors below remain unqualified. Evidence for later code must be bound to its own H.",
         "Known-overlap refresh/coverage, snapshot-versus-mutation freshness, monotonic receipt semantics, distinct-emoji/whole-payload bounds and read-receipt UI remain separate open work.",
-        "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open."
+        "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open.",
+        "NMR-34/35 production edge and rollback protections authored in current batch; require exact containing-H GitHub Actions with owner7 and real AppHost6 plus Human33/Agent4/private3/composition11/protocol122/TCP9 and UI/Electron. Previous macOS jobs cancelled without assigned runner; not product failure evidence, no tests executed."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
@@ -50260,7 +50264,7 @@
         "Existing transcript mutation publication",
         "Existing Composer acknowledgement and reaction projection"
       ],
-      "duplicate_root_check": "Read shipping Human send/sync/reaction paths at 6cf. They use existing Session/SandAgentDb and Fabushi native HTTP; no new root/store is introduced. Shared forwarding/recipient policy functions are reused separately; full MessagingService dispatch and legacy-runtime retirement are not claimed.",
+      "duplicate_root_check": "Read shipping Human send/sync/reaction paths at 6cf. They use existing Session/SandAgentDb and Fabushi native HTTP; no new root/store is introduced. Shared forwarding/recipient policy functions are reused separately; full MessagingService dispatch and legacy-runtime retirement are not claimed. Round15: explicit FeatureHost MessagingService and generic typed route were callable in Production Electron but not selected by the Human Composer; both now fail closed at the existing FeatureHost owner, with old bytes retained and no new store. Old FFI explicit non-desktop injection is still unresolved.",
       "novel_capability": false,
       "owner_absence_evidence": [],
       "minimal_owner_adr": null,
@@ -50338,14 +50342,29 @@
         "NMR-18",
         "NMR-19",
         "NMR-20",
-        "NMR-AC-12"
+        "NMR-AC-12",
+        "NMR-31",
+        "NMR-32",
+        "NMR-33",
+        "NMR-34",
+        "NMR-35",
+        "NMR-AC-22",
+        "NMR-AC-23",
+        "NMR-AC-24",
+        "NMR-AC-25",
+        "NMR-AC-26"
       ],
       "oracle_ids": [
         "NMR-AC-01",
         "NMR-AC-02",
         "NMR-AC-03",
         "NMR-AC-04",
-        "NMR-AC-12"
+        "NMR-AC-12",
+        "NMR-AC-22",
+        "NMR-AC-23",
+        "NMR-AC-24",
+        "NMR-AC-25",
+        "NMR-AC-26"
       ],
       "invariant_ids": [
         "NMR-01",
@@ -50356,7 +50375,12 @@
         "NMR-09",
         "NMR-18",
         "NMR-19",
-        "NMR-20"
+        "NMR-20",
+        "NMR-31",
+        "NMR-32",
+        "NMR-33",
+        "NMR-34",
+        "NMR-35"
       ],
       "unit_case_ids": [],
       "property_state_case_ids": [
@@ -50397,7 +50421,10 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap",
         "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+        "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#desktop_entries_refuse_before_auth_parse_io_and_event_publication",
+        "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#automation_store_preserves_reserved_messaging_tree_and_normal_agent_lifecycle",
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
@@ -50431,7 +50458,10 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce",
         "source/host/tests/session_gateway_contract.rs#shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart",
+        "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#desktop_entries_refuse_before_auth_parse_io_and_event_publication",
+        "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs#automation_store_preserves_reserved_messaging_tree_and_normal_agent_lifecycle",
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts"
       ],
       "regression_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50463,11 +50493,13 @@
         "source/host/tests/session_gateway_contract.rs#spawn_human_message_fixture",
         "source/host/tests/session_gateway_contract.rs#human_message_fixture_runtime",
         "source/host/tests/session_gateway_contract.rs#fixture_remote_human_message",
-        "source/host/tests/session_gateway_contract.rs#spawn_ambiguous_human_send_server"
+        "source/host/tests/session_gateway_contract.rs#spawn_ambiguous_human_send_server",
+        "NMR-34/35: synthetic Native credential, original MessagingSnapshot/Blob/Access readers, legacy archive, reserved automation marker and corrupt/partial account fixtures"
       ],
       "test_environment_ids": [
         ".github/workflows/native-service-contracts.yml#native-message-reconciliation:macos-15:Rust-stable-as-selected-by-workflow:loopback HTTP and real Host/SQLite",
-        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H locked AppHost/protocol/TCP/live/normalization/proxy/credential checks"
+        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H locked AppHost/protocol/TCP/live/normalization/proxy/credential checks",
+        ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:exact-H:feature-host owner7/AppHost6/locked AppHost/real TCP selected; GitHub-hosted only"
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
@@ -50475,13 +50507,14 @@
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662@68d4f07688741e8f54b35f3746a087f7fdd12108:attempt1:job125135845372:completed/success:Human10 and AgentNonce4, zero failed/ignored; artifact13122181591 sha256:efb9a58757f0f56291f93a0d11c0bf062e5e718dada4028ddd92aa389b3a647b",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41402071662@68d4f07688741e8f54b35f3746a087f7fdd12108:attempt1:job125135845319:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122201285 sha256:90ad15f97a4f6f1906b05cb4f7f0f9351ee9f6dbe93888c03e132809baf3e162; original prerequisite only, not new reaction batch",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696528:completed/success:Human13 including all three new NMR-AC-12 cases and AgentNonce4, zero failed/ignored; artifact13122423309 sha256:7a05891c6594b2fcfb66bb80847cfd8dca2349af4e842dbc9128267968dba41d",
-        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696373:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122264126 sha256:ced74e3a058e43ea6925483413d0f6c7bc149b23d3f37b789a19fdc4d9108b9e"
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41403643662@95b29df688f718a35574fa36ef4ca75df437ed30:attempt1:job125140696373:completed/success:locked AppHost and normalization6/parser2/protocol122/TCP9 including live/proxy4/credential1, zero failed/ignored; artifact13122264126 sha256:ced74e3a058e43ea6925483413d0f6c7bc149b23d3f37b789a19fdc4d9108b9e",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41438907013@c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:attempt1:completed/failure; native-message-electron carrier10/auth8 and native-message-ui transcript16 passed; macos native-message-reconciliation job125255547398 and native-message-shipping-compile job125255547295 cancelled before runner assignment; steps empty; no Rust test count/acceptance"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
       "reviewer": null,
-      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced."
+      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance."
     }
   ],
   "rebaseline_candidate": {

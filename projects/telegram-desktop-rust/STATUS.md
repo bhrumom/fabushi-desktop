@@ -5,7 +5,7 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch (round 14)
+## Current bounded batch (round 15)
 
 Authoritative lock remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`, tree
 `91f2b083ab2877c0a17d07868eabec362a5cfca6`; it is not source-accepted. The older
@@ -14,18 +14,24 @@ to follow floating upstream. Current ledger source-review/schema contracts
 support FMEP-SOURCE-01 risk/depth categories; this batch does not promote source
 coverage, legal status or whole-product acceptance.
 
-From checkpoint `50b0a2048adce13f2281143e6c3f7449d56344d5`, NMR-31–33 remove
-Native startup's automatic old-client instantiation in the existing Electron
-account and AppHost owners, preserving original keys, databases and settings.
-Auth lifecycle, actual Production provider absence, encrypted/corrupt data
-retention and original-reader compatibility tests are authored. Execution must
-bind the new containing commit through `native-service-contracts.yml`; the
-receipt `evidence/round14-native-startup-retention.json` records preparation
-and backend evidence, not a successful future run. Live main was reread at
+From checkpoint `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07`, NMR-34–35 close
+the separate FeatureHost messaging execution/blob/access paths for the selected
+Production Electron composition, including typed dispatch. The Session/Transcript
+owner remains unchanged. Existing snapshots, blobs, access records and unknown
+files are retained; the Automation owner now excludes the reserved `_messaging`
+namespace during load, owner override, desired writes and stale cleanup.
+Seven direct-owner and six real AppHost account/restart cases are authored.
+Predecessor run 41438907013 ended failure (Electron10+8/UI16 passed; both Rust
+jobs cancelled without runner, steps or downloadable logs); no Rust count is
+inferred. The exact scheduling cause is unverified. Execution must
+bind the new containing commit through `native-service-contracts.yml` and the
+unchanged source-review schema/validator workflow. The receipt
+`evidence/round15-desktop-messaging-boundary.json` records preparation and audit,
+not a successful future run. Live main was reread at
 `5528062177e3865eef60a073a066cca144f9e3e8` and is untouched.
 
-FeatureHost's separate persisted MessagingService and public legacy FFI/link
-paths still require caller/data disposition. Backend #137 remains draft with
+Non-Electron FeatureHost authority, retained data import and public legacy
+FFI/default-link paths still require caller/data disposition. Backend #137 remains draft with
 no review/production authorization, and production `afterId=0` evidence is
 missing. Full migration and independent ACCEPT remain blocked.
 
@@ -72,4 +78,5 @@ Report separately:
 - independent release acceptance.
 
 Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
+
 

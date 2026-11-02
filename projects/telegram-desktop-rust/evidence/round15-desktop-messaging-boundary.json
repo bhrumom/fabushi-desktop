@@ -1,0 +1,120 @@
+{
+  "schema": "fabushi-migration-batch-receipt-v1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 15,
+  "date": "2026-11-02",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "previous_head": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+  "previous_tree": "5f02e6693602fcbabdbf07fb127a6ad2ae5228ba",
+  "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "normative_sources": {
+    "AGENTS": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+    "FBCP_SOT": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+    "TDRP_SOT": "da3455bff35978b41027d940213bf3fc6d9a496a",
+    "FBCP_spec": "93c543fafda43a0f84ecc13808dba9dd2ef71b42",
+    "TDRP_spec": "2b3873eb34a5e31ed2460c1a9f6b72df51583694",
+    "FMEP_spec": "0d1e9555075599fe65f95872b37722198f8c06cd",
+    "upstream_lock": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+    "ledger_before": "981ac59d92d15edba04376ffb9b04f796aedeb50"
+  },
+  "previous_run": {
+    "id": 41438907013,
+    "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+    "conclusion": "failure",
+    "jobs": [
+      {
+        "id": 125255546900,
+        "name": "native-message-electron",
+        "conclusion": "success",
+        "carrier_tests": 10,
+        "native_auth_tests": 8,
+        "artifact": 13138047184
+      },
+      {
+        "id": 125255547292,
+        "name": "native-message-ui",
+        "conclusion": "success",
+        "transcript_tests": 16,
+        "artifact": 13138126451
+      },
+      {
+        "id": 125255547295,
+        "name": "native-message-shipping-compile",
+        "conclusion": "cancelled",
+        "runner_id": 0,
+        "steps": 0,
+        "log": "404 BlobNotFound",
+        "test_execution": "not-run"
+      },
+      {
+        "id": 125255547398,
+        "name": "native-message-reconciliation",
+        "conclusion": "cancelled",
+        "runner_id": 0,
+        "steps": 0,
+        "log": "404 BlobNotFound",
+        "test_execution": "not-run"
+      }
+    ],
+    "diagnosis": "macos-15 jobs were never assigned a runner and have no execution logs; specific scheduling reason is not established; do not attribute to implementation/test failure"
+  },
+  "owner_trace": {
+    "ui": "ProductionRenderer → Human Composer/Transcript",
+    "canonical": "Session gateway → ProductionSessionWorkers → SandAgentDb durable transcript/outbox → FabushiNativeMessagingClient service",
+    "alternate": "AppHost feature.messaging.execute/blob.read/access.issue and generic feature.execute messaging.execute → FeatureHostController → separate MessagingService/BlobStore/AccessStore",
+    "change": "Reject alternate solely for Production+Electron before parsing, authentication, lock, disk or event. Guard both explicit and typed routes in single FeatureHost owner",
+    "data_retention": [
+      "runtime/accounts/<account-fingerprint>/agents/_messaging/snapshot.json",
+      "runtime/accounts/<account-fingerprint>/agents/_messaging/blobs/*",
+      "runtime/agents/_messaging/access.json",
+      "standalone incomplete, unknown and corrupt store data and metadata",
+      "old feature-host/accounts/<account-fingerprint>/automations.json",
+      "external retained owner markers and companion files",
+      "legacy encrypted Telegram SQLite/sidecars and secure-storage keys"
+    ],
+    "automation": "On login/switch/restart, skip reserved _messaging discovery; refuse reserved owner override, legacy archive collisions, desired write collisions before cleanup; do not activate on rejected Upsert",
+    "legacy_ffi": "old Telegram C ABI and direct Host injection/default dependencies are not retired; Electron shipping selects source/host/app binary rather than FFI; non-desktop callers unqualified",
+    "rollback": "normal reviewed revert of production code, unchanged byte stores/reader retained; no data conversion or deletion"
+  },
+  "authored_tests": {
+    "feature_host": "desktop_messaging_boundary_tests.rs:7 selected behavior cases",
+    "app_host": "native_desktop_account_handoff.rs:6 total cases (3 existing + 3 new)",
+    "required_retained": "Human33, Agent nonce4, private settlement3, AppHost composition11, protocol122, TCP9 incl live, normalization6, future-salts2, proxy4, Native credential1, UI16, Electron carrier10+Native auth8",
+    "action": "native-service-contracts.yml",
+    "execution": "not-run on new candidate until exact-H GitHub Actions completes"
+  },
+  "backend_read_only": {
+    "repo": "bhrumom/fabushi-backend",
+    "draft_pr": 137,
+    "head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+    "state": "open",
+    "draft": true,
+    "review_count": 0,
+    "issue_comments": 0,
+    "merged": false,
+    "approved_deployment": false,
+    "latest_known_delivery": {
+      "run": 40047409890,
+      "source": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "observed_as_older": "2026-10-24"
+    },
+    "current_worker_provenance": "not verified",
+    "authenticated_after_id_zero": {
+      "multi_page": "not verified",
+      "empty_page": "not verified",
+      "unauthorized_rejection": "not verified",
+      "restart": "not verified"
+    },
+    "disposition": "No merge/deploy/backend changes; exact production release identity and real-service acceptance blocked"
+  },
+  "acceptance": {
+    "stage": "A product batch candidate",
+    "source_closure": "not accepted",
+    "production_feature_gate": "not run at new H",
+    "real_service": "not accepted",
+    "full_platform_package": "not accepted",
+    "bot_regression": "not accepted",
+    "independent_ACCEPT": "not accepted"
+  }
+}

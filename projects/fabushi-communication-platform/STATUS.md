@@ -6,21 +6,28 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current bounded batch: Native startup isolation
+## Current bounded batch: desktop standalone-messaging boundary
 
-Inspected checkpoint base `50b0a2048adce13f2281143e6c3f7449d56344d5` and
+Inspected checkpoint base `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07` and
 live main `5528062177e3865eef60a073a066cca144f9e3e8`. Fixed upstream remains
 `f985723b552b30fe1c17d377d57f44e61a15a8c4`; no upstream refresh is authorized.
-NMR-31–33 remove Native login's legacy secret provisioning and AppHost's
-automatic Telegram lease/provider creation. Existing legacy keys, database
-files and schema are retained; no user-data migration or deletion is performed.
-The real Session/Transcript Human path remains in place. The additional
-FeatureHost MessagingService write path and public FFI/default-link legacy
-surfaces remain unresolved. The owner inventory and RTM distinguish these.
+NMR-31–33 already remove automatic legacy secret/client/provider creation.
+NMR-34–35 now refuse FeatureHost's separate messaging execution, blob reads and
+access issuance in Production+Electron, including generic typed dispatch.
+Session/Transcript remains the Human owner. Retained snapshots/blobs/access
+files are not migrated or deleted. The existing Automation owner also excludes
+the reserved `_messaging` namespace from loading, owner overrides, writes and
+cleanup, preserving unknown/corrupt files during account changes. Test mode and
+selected non-Electron surfaces retain existing behavior; their acceptance and
+legacy FFI/default dependencies remain open.
 
-At commit preparation, independent static review and behavior tests are recorded
-in `projects/telegram-desktop-rust/evidence/round14-native-startup-retention.json`;
-new exact-H Actions execution remains required. Backend Draft PR #137 has no
+Preparation/audit evidence is in
+`projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json`.
+Predecessor run 41438907013 binds c15 and ended failure: Electron carrier10/auth8
+and UI16 passed; both Rust jobs were cancelled before runner assignment, with
+no steps and no downloadable log. No Rust result/count is accepted. New
+owner7/AppHost6 and all retained gates require this candidate's exact-H Actions;
+authorship/static review is not execution acceptance. Backend Draft PR #137 has no
 approval or deployment authorization; current Worker provenance and production
 authenticated `afterId=0` pagination are not accepted. Full source/legal,
 platform/package/UI/accessibility, Bot regression, upgrade/rollback, soak and
@@ -65,4 +72,5 @@ independent ACCEPT remain open.
 8. Human + Agent unified UX
 9. full capability acceptance
 10. packaged/release acceptance
+
 

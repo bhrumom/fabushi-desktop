@@ -139,6 +139,26 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 
 ### FBCP-NMR-001 native Human admission and settlement
 
+#### Round 15 extension — desktop messaging boundary and retained data
+
+Base H is `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07`. Run 41438907013
+ended failure with verified Electron carrier10/auth8 and UI16. Both Rust jobs
+were cancelled without runner assignment/steps; logs return BlobNotFound.
+No Rust count is accepted and the exact scheduling cause remains unverified.
+
+| Requirement / oracle | Existing owner and executable case | Execution / acceptance boundary |
+| --- | --- | --- |
+| NMR-34 / NMR-AC-25 | `FeatureHostController` guard at sync execution, blob read and access issuance; `desktop_messaging_boundary_tests` covers direct and typed routes, malformed inner payloads, absent roots, poisoned state and immediate event non-publication | 7 authored owner cases; actual Production AppHost separately exercised. Test/non-Electron positives prevent a blanket disable. |
+| NMR-35 / NMR-AC-25 | Original snapshot/blob/access writer-reader compatibility; nested `_messaging` automation discovery/override/write/cleanup exclusion and normal Agent create/update/delete | Real data/byte and negative authorization oracles; no import, cleanup or mobile acceptance claim. |
+| NMR-AC-25 | Existing `native_desktop_account_handoff` target: 3 previous cases plus missing/retained/corrupt standalone store cases; explicit routes and generic wrapped/unwrapped dispatch in actual Production subprocesses | 6 authored tests; production/isolated issuers, A/B/logout/relogin/restart, immediate real event drain, Native and Agent positives. |
+| NMR-AC-26 | Existing `native-service-contracts.yml`, plus unchanged `tdrp-source-review-contract.yml` for the canonical ledger | Exact containing H must execute owner7/AppHost6 and all prior Human33/Agent4/private3/composition11/UI16/Electron10+8/protocol/TCP gates. No queue or authored count is a pass. |
+
+`evidence/round15-desktop-messaging-boundary.json` records exact read identities,
+backend read-only audit, predecessor execution, design finding R15-D1 and its
+FIX disposition. The existing ledger row is reconciled in this batch; its old
+exact95 evidence remains historical. No inventory/source-review counter or
+independent ACCEPT is promoted.
+
 #### Round 14 extension — Native startup isolation and retained legacy data
 
 The following extends the same responsibility; the older exact95 evidence
@@ -151,14 +171,16 @@ below retains its historical scope and does not qualify this candidate.
 | NMR-33 / NMR-AC-23 | `native_startup_preserves_encrypted_legacy_storage_for_rollback`; `native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars` in the existing account-handoff test target | Compare retained files after each process; decrypt retained metadata/snapshot with the original storage API after shutdown. No data migration or package rollback claim. |
 | NMR-AC-24 | Existing workflow compiles shipping `source/host/app`, runs the three AppHost cases and Electron behaviors; preserves Human33, Agent4, private settlement3, UI16 and Electron carrier10 | Complete logs/counts/artifacts must bind `github.sha`; final FBCP/TDRP ACCEPT remains false. |
 
-The canonical ledger's existing FBCP-NMR-001 row records this target delta
-without changing source review/category/depth or source counters. FMEP-SOURCE-01
+The round-15 reread found that the canonical FBCP-NMR-001 ledger row still held
+the older exact95/round-4 scope despite this section's previous update claim.
+This batch adds the missing target/test/preparation anchors to that same row,
+preserving its historical execution records and source counters. FMEP-SOURCE-01
 is already represented by `source_reviews` in the current schema and
 `scripts/tdrp-source-review.mjs`; the existing Actions source-review contract
 also validates the current ledger shape. No invented read-complete or new
 schema state is needed for this composition correction. Global single-state
-authority remains open because the separate FeatureHost MessagingService and
-legacy FFI/default links remain reachable; see the current owner inventory.
+acceptance remains open for non-desktop FeatureHost authority, old data import,
+legacy FFI/direct Host injection/default links; see the current owner inventory.
 
 Scope and authority: `docs/specs/fbcp-native-message-reconciliation.md` NMR-01/02/03/04/05/06/09/18/19/20 and NMR-AC-01/02/03/04/05/12. The bounded responsibility is recorded in the existing TDRP ledger as `FBCP-NMR-001`, with existing owner anchors `MSG-SEND-SETTLEMENT`, `MSG-REACTION` and `NETWORK-SYNC-REALTIME`; no new message owner or parallel ledger is introduced.
 
@@ -195,4 +217,5 @@ Authorship/evidence boundary: the original strengthened ten-case blob `127700079
 The bounded Host gate passed at exact95/run41403643662. Every subsequent message change remains gated by NMR-AC-06/07/08/09/10/11/12: both named message jobs on one exact H, actual thirteen Human and four Agent nonce cases, locked AppHost compilation, response normalization, both bare future-salts library fixtures, full protocol/TCP including its live case, proxy rejection and credential-schema cases. A skipped step, diagnostic lock generation, test authorship or old-H result is not a pass. Use the existing round3 evidence receipt for execution records; no second result ledger.
 
 Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-message application and identity-transition sections recorded in `research/native-message-known-overlap-fixed-u.md`. It does not close whole upstream files or change inventory/source_reviews/unknown/unread/source acceptance. Known-message refresh, durable history-range coverage, read-state/visible receipt behavior, distinct-emoji/whole-payload bounds and stale mutation/refresh ordering remain separate open work. Full native-service, UI/package/platform, performance/soak, complete Bot regression and independent ACCEPT remain open.
+
 

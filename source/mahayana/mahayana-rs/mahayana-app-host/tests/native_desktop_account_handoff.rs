@@ -26,8 +26,14 @@ const BOT_A: &str = "Public native fixture A";
 const BOT_B: &str = "Public native fixture B";
 const BOT_PRODUCTION: &str = "Public production fixture";
 const BOT_RETAINED: &str = "Public retained Native Agent";
+const BOT_MESSAGING_A: &str = "Public messaging boundary Agent A";
+const BOT_MESSAGING_B: &str = "Public messaging boundary Agent B";
+const LEGACY_AUTOMATION_ID: &str = "retained-legacy-normal";
+const LEGACY_AUTOMATION_NAME: &str = "Public retained normal legacy automation";
+const UPSERT_COLLISION_ID: &str = "retained-upsert-collision";
 const LEGACY_KEY: [u8; 32] = [11; 32];
 const LEGACY_METADATA: &[u8] = b"public retained encrypted metadata; no real account";
+const STANDALONE_MESSAGING_ERROR: &str = "host operation failed: standalone messaging is unavailable in the desktop host; use the Session/Transcript owner";
 
 struct TestDirectory(PathBuf);
 
@@ -130,6 +136,213 @@ fn assert_legacy_unavailable(host: &AppHost) {
         ));
     }
     assert!(host.take_startup_native_shell_event().expect("startup event").is_none());
+}
+
+fn assert_no_messaging_event(host: &AppHost) {
+    // MessagingExecute publishes synchronously into this same event queue.
+    // Drain real account/Agent events as well; no inferred source-string oracle.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    for _ in 0..256 {
+        assert!(Instant::now() < deadline, "FeatureHost event queue did not settle");
+        let response = host.dispatch(HostRequest {
+            id: None,
+            method: "feature.receive".into(),
+            params: json!({"timeoutMs": 0}),
+        });
+        assert!(response.ok, "production event receive failed: {:?}", response.error);
+        let event = response.result.expect("event receive result");
+        if event.is_null() {
+            return;
+        }
+        assert_ne!(event["type"], "messaging.event", "refused command published a MessagingEvent");
+    }
+    panic!("FeatureHost event queue exceeded the bounded fixture event budget");
+}
+
+fn messaging_account_fingerprint(account_id: &str) -> String {
+    Sha256::digest(account_id.as_bytes())[..16]
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+fn assert_standalone_messaging_unavailable(host: &AppHost, account_id: &str) {
+    let valid_envelope = json!({
+        "protocolVersion": 2,
+        "context": {
+            "requestId": "public-boundary-sync",
+            "deviceId": "public-boundary-device",
+            "actorId": format!("human:account:{}", messaging_account_fingerprint(account_id)),
+            "sessionId": "public-boundary-session",
+            "sentAtMs": 1
+        },
+        "command": {"type": "sync", "cursor": null, "limit": 1}
+    });
+    assert_no_messaging_event(host);
+    for envelope in [
+        valid_envelope,
+        Value::Null,
+        json!({"protocolVersion": "malformed", "context": [], "command": false}),
+    ] {
+        let command = json!({
+            "type": "messaging.execute",
+            "requestId": "public-boundary-dispatch",
+            "envelope": envelope
+        });
+        for (method, params) in [
+            ("feature.messaging.execute", json!({
+                "requestId": "public-boundary-dispatch", "envelope": envelope
+            })),
+            ("feature.execute", json!({"command": command})),
+            ("feature.execute", command),
+        ] {
+            let response = host.dispatch(HostRequest { id: None, method: method.into(), params });
+            assert!(!response.ok, "standalone command unexpectedly accepted: {method}");
+            assert!(response.result.is_none(), "refusal cannot return accepted or empty-success");
+            assert_eq!(response.error.as_deref(), Some(STANDALONE_MESSAGING_ERROR));
+            assert_no_messaging_event(host);
+        }
+    }
+    for params in [
+        json!({"blobId": "public-retained-blob", "offset": 0, "length": 32}),
+        json!({"blobId": "../public-retained-blob", "offset": u64::MAX, "length": 0}),
+    ] {
+        let response = host.dispatch(HostRequest {
+            id: None, method: "feature.messaging.blob.read".into(), params,
+        });
+        assert!(!response.ok);
+        assert!(response.result.is_none());
+        assert_eq!(response.error.as_deref(), Some(STANDALONE_MESSAGING_ERROR));
+        assert_no_messaging_event(host);
+    }
+    for params in [
+        json!({
+            "deviceId": "public-boundary-device", "sessionId": "public-boundary-session",
+            "scopes": ["messaging", "blobsRead"], "ttlMs": 900000
+        }),
+        json!({
+            "deviceId": "public-boundary-device", "sessionId": "public-boundary-session",
+            "scopes": ["unsupported-boundary-scope"], "ttlMs": -1
+        }),
+    ] {
+        let response = host.dispatch(HostRequest {
+            id: None, method: "feature.messaging.access.issue".into(), params,
+        });
+        assert!(!response.ok);
+        assert!(response.result.is_none());
+        assert_eq!(response.error.as_deref(), Some(STANDALONE_MESSAGING_ERROR));
+        assert_no_messaging_event(host);
+    }
+    // Invalid outer dispatch shapes are rejected by the existing AppHost
+    // parser before the owner is reached. Preserve that validation contract.
+    for (method, params) in [
+        ("feature.messaging.execute", json!({"requestId": 3})),
+        ("feature.messaging.blob.read", json!({"blobId": false})),
+        ("feature.messaging.access.issue", json!({"deviceId": [], "sessionId": null})),
+        ("feature.execute", json!({"type": "messaging.execute", "requestId": false})),
+        ("feature.execute", json!({"command": {"type": "messaging.execute"}})),
+    ] {
+        let response = host.dispatch(HostRequest { id: None, method: method.into(), params });
+        assert!(!response.ok, "malformed request was accepted: {method}");
+        assert!(response.result.is_none());
+        assert!(response.error.as_deref().unwrap_or("").starts_with("invalid request:"));
+        assert_no_messaging_event(host);
+    }
+}
+
+fn assert_reserved_automations_absent(
+    host: &AppHost,
+    expect_legacy_record: bool,
+    authenticated: bool,
+) {
+    // Do not drain before listing: a failed upsert must leave neither an
+    // active record nor an AutomationChanged event in this same queue.
+    let response = host.dispatch(HostRequest {
+        id: None,
+        method: "feature.execute".into(),
+        params: json!({"command": {
+            "type": "automation.list", "requestId": "public-retained-automation-list"
+        }}),
+    });
+    assert!(response.ok, "public automation list failed: {:?}", response.error);
+    assert_eq!(response.result.expect("automation command accepted")["requestId"], "public-retained-automation-list");
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let mut saw_listed = false;
+    for _ in 0..256 {
+        assert!(Instant::now() < deadline, "public automation list event did not arrive");
+        let response = host.dispatch(HostRequest {
+            id: None, method: "feature.receive".into(), params: json!({"timeoutMs": 0}),
+        });
+        assert!(response.ok, "automation event receive failed: {:?}", response.error);
+        let event = response.result.expect("automation event result");
+        if event.is_null() {
+            assert!(saw_listed, "accepted automation list must publish its actual state");
+            return;
+        }
+        assert_ne!(event["type"], "messaging.event", "automation listing cannot reopen messaging");
+        assert_ne!(event["type"], "automation.changed", "failed collision cannot publish an automation mutation");
+        if event["type"] == "automation.listed" {
+            assert!(!saw_listed, "one public list command must yield one actual state");
+            saw_listed = true;
+            let automations = event["automations"].as_array().expect("actual automation list");
+            if !authenticated {
+                assert!(automations.is_empty(), "logout must clear the active automation state");
+            }
+            let normal = automations.iter().find(|item| item["id"] == LEGACY_AUTOMATION_ID);
+            assert_eq!(normal.is_some(), expect_legacy_record, "normal legacy import control differs from the current account fixture");
+            if let Some(normal) = normal {
+                assert_eq!(normal["name"], LEGACY_AUTOMATION_NAME);
+                assert_eq!(normal["agentId"], "mahayana-assistant");
+                assert_eq!(normal["enabled"], false, "archive control must never execute");
+            }
+            for automation in automations {
+                assert_ne!(automation["agentId"], "_messaging", "reserved owner was imported into active state");
+                let id = automation["id"].as_str().expect("listed automation identity");
+                assert!(![
+                    "retained-legacy-reserved", "retained-reserved-override",
+                    "retained-valid", "retained-corrupt", "retained-unrecognized",
+                    UPSERT_COLLISION_ID,
+                ].contains(&id), "retained automation marker became active: {id}");
+            }
+        }
+    }
+    panic!("public automation list exceeded the bounded event budget");
+}
+
+fn assert_retained_automation_boundary(
+    host: &AppHost,
+    root: &Path,
+    account_id: &str,
+    authenticated: bool,
+) {
+    let fingerprint = messaging_account_fingerprint(account_id);
+    let feature_root = root.join("app-host/feature-host");
+    let legacy_archive = feature_root.join("accounts").join(&fingerprint).join("automations.json");
+    let collision = feature_root.join("runtime/accounts").join(&fingerprint)
+        .join("agents/mahayana-assistant/automations").join(UPSERT_COLLISION_ID)
+        .join("automation.json");
+    let before = messaging_entries(root);
+    if authenticated && collision.exists() {
+        assert_no_messaging_event(host);
+        let response = host.dispatch(HostRequest {
+            id: None,
+            method: "feature.execute".into(),
+            // Omitting agentId exercises the real default Agent owner.
+            params: json!({"command": {
+                "type": "automation.upsert", "requestId": "public-retained-upsert-collision",
+                "id": UPSERT_COLLISION_ID, "name": "Public rejected collision",
+                "prompt": "Do not replace retained metadata", "schedule": "@daily",
+                "enabled": false
+            }}),
+        });
+        assert!(!response.ok, "retained metadata collision must refuse the public upsert");
+        assert!(response.result.is_none(), "refused collision cannot return accepted");
+        assert_eq!(response.error.as_deref(), Some(
+            "host operation failed: Agent automation path contains retained standalone messaging metadata"
+        ));
+    }
+    assert_reserved_automations_absent(host, authenticated && legacy_archive.exists(), authenticated);
+    assert_eq!(messaging_entries(root), before, "public automation dispatch altered retained paths or bytes");
 }
 
 fn gateway(host: &AppHost, method: &str, args: Value) -> Value {
@@ -310,6 +523,8 @@ fn child_case(root: &Path, mode: &str) {
             assert!(!contains_bot(&host, BOT_B));
         }
     }
+    assert_standalone_messaging_unavailable(&host, &first.account_id);
+    assert!(messaging_entries(root).is_empty(), "issuer transitions cannot create a second message store");
     // Read-only restoration must not mutate the Native owner's file or import
     // the public fixture into the legacy Rust account-session persistence path.
     let current = fs::read(&credential).expect("Native fixture remains");
@@ -355,7 +570,9 @@ fn legacy_child_case(root: &Path, restart: bool) {
 }
 
 fn run_child(root: &Path, mode: &str) {
-    let issuer = if mode == "production" || mode.starts_with("legacy-") {
+    let issuer = if mode == "production" || mode.starts_with("legacy-")
+        || (mode.starts_with("messaging-") && mode != "messaging-isolated")
+    {
         PRODUCTION
     } else {
         ISOLATED
@@ -415,6 +632,14 @@ fn native_desktop_account_handoff() {
         let root = PathBuf::from(std::env::var_os(TEST_ROOT).expect("owned test directory"));
         if matches!(mode.as_str(), "legacy-first" | "legacy-restart") {
             legacy_child_case(&root, mode == "legacy-restart");
+            return;
+        }
+        if matches!(mode.as_str(), "messaging-first" | "messaging-isolated" | "messaging-restart") {
+            messaging_child_case(
+                &root,
+                mode == "messaging-restart",
+                if mode == "messaging-isolated" { ISOLATED } else { PRODUCTION },
+            );
             return;
         }
         assert!(matches!(
@@ -528,4 +753,279 @@ fn native_startup_preserves_encrypted_legacy_storage_for_rollback() {
 fn native_startup_ignores_corrupt_legacy_database_and_preserves_sidecars() {
     retained_legacy_case(true);
 }
+
+fn messaging_entries(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+    fn visit(
+        base: &Path,
+        path: &Path,
+        in_messaging: bool,
+        entries: &mut BTreeMap<PathBuf, Option<Vec<u8>>>,
+    ) {
+        let metadata = fs::symlink_metadata(path).expect("inspect owned retention fixture");
+        let filename = path.file_name().and_then(|name| name.to_str());
+        let in_messaging = in_messaging
+            || matches!(filename, Some("_messaging" | "retained-reserved-override" | UPSERT_COLLISION_ID));
+        let legacy_archive = filename == Some("automations.json")
+            && path.parent().and_then(Path::parent) == Some(base.join("accounts").as_path());
+        if metadata.is_dir() {
+            if in_messaging {
+                entries.insert(path.strip_prefix(base).expect("relative messaging directory").into(), None);
+            }
+            for child in fs::read_dir(path).expect("read owned runtime directory") {
+                visit(base, &child.expect("runtime entry").path(), in_messaging, entries);
+            }
+        } else if in_messaging || legacy_archive {
+            assert!(metadata.is_file(), "messaging fixture unexpectedly changed file kind");
+            entries.insert(
+                path.strip_prefix(base).expect("relative messaging file").into(),
+                Some(fs::read(path).expect("read retained messaging bytes")),
+            );
+        }
+    }
+    let feature_root = root.join("app-host/feature-host");
+    let mut entries = BTreeMap::new();
+    if feature_root.exists() {
+        visit(&feature_root, &feature_root, false, &mut entries);
+    }
+    entries
+}
+
+fn messaging_child_case(root: &Path, restart: bool, issuer: &str) {
+    let before = messaging_entries(root);
+    let credential = root.join("native-credential.json");
+    replace_native_credential(&credential, issuer, "123");
+    let host = production_host(root);
+    let account = host.mini_app_account_port();
+    assert_eq!(auth(&host)["loggedIn"], true);
+    let first = account.current_scope().expect("first real Production Native scope");
+    assert_eq!(first.account_id, if issuer == PRODUCTION {
+        "123".to_string()
+    } else {
+        expected_isolated_id("123")
+    });
+    assert_legacy_unavailable(&host);
+    assert_standalone_messaging_unavailable(&host, &first.account_id);
+    assert_retained_automation_boundary(&host, root, &first.account_id, true);
+    assert_eq!(messaging_entries(root), before, "startup or refused dispatch touched retained storage");
+    if restart {
+        assert!(contains_bot(&host, BOT_MESSAGING_A), "Agent A must survive process restart");
+    } else {
+        assert!(!contains_bot(&host, BOT_MESSAGING_A));
+        create(&host, BOT_MESSAGING_A);
+    }
+    assert!(!contains_bot(&host, BOT_MESSAGING_B), "account A cannot see B's Agent");
+
+    replace_native_credential(&credential, issuer, "456");
+    assert_eq!(auth(&host)["loggedIn"], true);
+    let second = account.current_scope().expect("second real Production Native scope");
+    assert_eq!(second.account_id, if issuer == PRODUCTION {
+        "456".to_string()
+    } else {
+        expected_isolated_id("456")
+    });
+    assert!(second.generation > first.generation);
+    assert!(!contains_bot(&host, BOT_MESSAGING_A), "account B cannot inherit A's Agent");
+    if restart {
+        assert!(contains_bot(&host, BOT_MESSAGING_B), "Agent B must survive process restart");
+    } else {
+        create(&host, BOT_MESSAGING_B);
+    }
+    assert_standalone_messaging_unavailable(&host, &second.account_id);
+    assert_retained_automation_boundary(&host, root, &second.account_id, true);
+    assert_eq!(messaging_entries(root), before, "account switch touched standalone messaging state");
+
+    // The Native credential owner performs logout. Unauthenticated dispatch
+    // must still refuse before access/session or retained-store I/O.
+    fs::remove_file(&credential).expect("Native logout removes only its credential");
+    assert_eq!(auth(&host)["loggedIn"], false);
+    assert!(account.current_scope().is_err());
+    assert_standalone_messaging_unavailable(&host, &second.account_id);
+    assert_retained_automation_boundary(&host, root, &second.account_id, false);
+    assert!(!contains_bot(&host, BOT_MESSAGING_A));
+    assert!(!contains_bot(&host, BOT_MESSAGING_B));
+    assert_eq!(messaging_entries(root), before, "logged-out dispatch touched retained storage");
+
+    let expected = replace_native_credential(&credential, issuer, "123");
+    assert_eq!(auth(&host)["loggedIn"], true);
+    let returned = account.current_scope().expect("relogged-in Native scope");
+    assert_eq!(returned.account_id, first.account_id);
+    assert!(returned.generation > second.generation);
+    assert!(contains_bot(&host, BOT_MESSAGING_A));
+    assert!(!contains_bot(&host, BOT_MESSAGING_B));
+    assert_standalone_messaging_unavailable(&host, &returned.account_id);
+    assert_retained_automation_boundary(&host, root, &returned.account_id, true);
+    assert_eq!(fs::read(&credential).expect("Native credential remains"), expected);
+    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    assert_eq!(messaging_entries(root), before, "relogin altered retained messaging bytes");
+    drop(account);
+    drop(host);
+    assert_eq!(messaging_entries(root), before, "shutdown altered retained messaging bytes");
+}
+
+fn seed_retained_messaging(root: &Path, corrupt: bool) {
+    let runtime = root.join("app-host/feature-host/runtime");
+    // Preserve the actual unscoped access namespace as well as current,
+    // switched and never-selected account stores. These are byte fixtures;
+    // the FeatureHost owner tests separately exercise original writer/readers.
+    let mut stores = vec![runtime.join("agents/_messaging")];
+    for id in [
+        "123".to_string(), "456".to_string(), "789".to_string(),
+        expected_isolated_id("123"), expected_isolated_id("456"),
+    ] {
+        let fingerprint = messaging_account_fingerprint(&id);
+        stores.push(runtime.join("accounts")
+            .join(&fingerprint).join("agents/_messaging"));
+        // The historical account-wide archive is beside runtime, not inside
+        // it. Loading that original Vec<AutomationSummary> must not import a
+        // reserved owner or overwrite an external reserved-owner marker.
+        let legacy_account = root.join("app-host/feature-host/accounts").join(&fingerprint);
+        fs::create_dir_all(&legacy_account).expect("retained legacy automation account directory");
+        let legacy_records = json!([
+            {
+                "id": "retained-legacy-reserved", "agentId": "_messaging",
+                "name": "Public retained legacy messaging record", "prompt": "Do not import",
+                "schedule": "@daily", "enabled": false, "createdAtMs": 1000,
+                "lastRunAtMs": null, "nextRunAtMs": null
+            },
+            {
+                "id": "retained-reserved-override", "agentId": "research",
+                "name": "Public legacy same-path collision", "prompt": "Do not overwrite",
+                "schedule": "@daily", "enabled": false, "createdAtMs": 1001,
+                "lastRunAtMs": null, "nextRunAtMs": null
+            },
+            {
+                "id": LEGACY_AUTOMATION_ID, "agentId": "mahayana-assistant",
+                "name": LEGACY_AUTOMATION_NAME, "prompt": "Public disabled migration control",
+                "schedule": "@daily", "enabled": false, "createdAtMs": 1002,
+                "lastRunAtMs": null, "nextRunAtMs": null
+            }
+        ]);
+        fs::write(
+            legacy_account.join("automations.json"),
+            serde_json::to_vec_pretty(&legacy_records).expect("original automation archive array"),
+        ).expect("retained legacy automation archive");
+        let external_marker = runtime.join("accounts").join(&fingerprint)
+            .join("agents/research/automations/retained-reserved-override");
+        fs::create_dir_all(external_marker.join("user-backup")).expect("retained external automation folder");
+        fs::write(
+            external_marker.join("automation.json"),
+            serde_json::to_vec_pretty(&json!({
+                "name": "Public reserved-owner override marker", "prompt": "Preserve this folder",
+                "schedule": "@daily", "enabled": false, "createdAt": 777,
+                "lastRunAt": null,
+                "_mahayana": {"id": "retained-reserved-override", "agentId": "_messaging"},
+                "publicUnknownProperty": "original external marker"
+            })).expect("external reserved-owner automation marker"),
+        ).expect("retained external automation marker");
+        fs::write(external_marker.join("preserved.bin"), b"public original external sibling bytes")
+            .expect("retained external sibling");
+        fs::write(external_marker.join("user-backup/keep.bin"), [0, 255, 9])
+            .expect("retained external nested sibling");
+        let collision = runtime.join("accounts").join(&fingerprint)
+            .join("agents/mahayana-assistant/automations").join(UPSERT_COLLISION_ID);
+        fs::create_dir_all(collision.join("user-backup")).expect("retained default Agent collision folder");
+        fs::write(
+            collision.join("automation.json"),
+            serde_json::to_vec_pretty(&json!({
+                "name": "Public retained default Agent marker", "prompt": "Keep the original marker",
+                "schedule": "@daily", "enabled": false, "createdAt": 778,
+                "lastRunAt": null,
+                "_mahayana": {"id": UPSERT_COLLISION_ID, "agentId": "_messaging"},
+                "publicUnknownProperty": "original default Agent collision marker"
+            })).expect("default Agent reserved-owner marker"),
+        ).expect("retained default Agent marker");
+        fs::write(collision.join("preserved.bin"), b"public default Agent original sibling bytes")
+            .expect("retained default Agent sibling");
+        fs::write(collision.join("user-backup/keep.bin"), [0, 255, 10])
+            .expect("retained default Agent nested sibling");
+    }
+    for (index, directory) in stores.iter().enumerate() {
+        fs::create_dir_all(directory.join("blobs")).expect("seed retained blob directory");
+        let snapshot = if corrupt {
+            b"{public-corrupt-snapshot\0\xff".to_vec()
+        } else {
+            serde_json::to_vec(&json!({
+                "schemaVersion": 1, "cursor": index + 7, "savedAtMs": 1000,
+                "state": {}, "retainedPublicFixture": index
+            })).expect("representative retained snapshot JSON")
+        };
+        fs::write(directory.join("snapshot.json"), snapshot).expect("retained snapshot bytes");
+        fs::write(directory.join("snapshot.json.tmp"), b"public unfinished snapshot replacement")
+            .expect("retained snapshot temporary");
+        fs::write(directory.join("access.json"), if corrupt {
+            b"public corrupt access registry\0\xff".as_slice()
+        } else {
+            b"{\"grants\":[],\"retainedPublicFixture\":true}".as_slice()
+        }).expect("retained access registry");
+        fs::write(directory.join("access.json.tmp"), b"public unfinished access replacement")
+            .expect("retained access temporary");
+        for (name, bytes) in [
+            ("public-retained-blob.blob", b"public original blob bytes".as_slice()),
+            ("public-retained-blob.json", b"{\"publicRetainedMetadata\":true}".as_slice()),
+            ("public-upload.part", b"public partial upload bytes".as_slice()),
+            ("public-upload.part.json", b"{\"publicUploadOffset\":7}".as_slice()),
+            ("public-upload.part.json.tmp", b"public interrupted metadata replacement".as_slice()),
+        ] {
+            fs::write(directory.join("blobs").join(name), bytes).expect("retained blob/upload fixture");
+        }
+        fs::create_dir(directory.join("unknown-empty-directory")).expect("retained empty directory");
+        fs::write(directory.join("unknown-user-data.bin"), [index as u8, 0, 255, 7])
+            .expect("retained unknown file");
+        // Login/account reconciliation scans the containing agents directory.
+        // A reserved messaging subtree must never be treated as an Agent's
+        // automation store, including malformed markers eligible for cleanup.
+        let automation_markers = [
+            ("retained-valid", serde_json::to_vec(&json!({
+                "name": "Public retained marker", "prompt": "Keep these bytes",
+                "schedule": "0 9 * * *", "enabled": false, "createdAt": 1000,
+                "lastRunAt": null,
+                "_mahayana": {"id": "retained-valid", "agentId": "_messaging"},
+                "retainedUnknownField": index
+            })).expect("representative retained automation marker")),
+            ("retained-corrupt", b"{public corrupt automation marker\0\xff".to_vec()),
+            ("retained-unrecognized", b"{\"unknownUserFormat\":true}".to_vec()),
+        ];
+        for (name, marker) in automation_markers {
+            let automation = directory.join("automations").join(name);
+            fs::create_dir_all(automation.join("user-backup")).expect("retained automation directory");
+            fs::write(automation.join("automation.json"), marker).expect("retained automation marker");
+            fs::write(automation.join("preserved.bin"), b"public original automation-adjacent bytes")
+                .expect("retained automation-adjacent file");
+            fs::write(automation.join("user-backup/item.bin"), [0, 255, index as u8])
+                .expect("retained nested automation backup");
+        }
+    }
+}
+
+fn retained_messaging_case(corrupt: bool) {
+    let root = test_directory(if corrupt { "messaging-corrupt" } else { "messaging-retained" });
+    seed_retained_messaging(&root.0, corrupt);
+    let before = messaging_entries(&root.0);
+    assert!(!before.is_empty());
+    for mode in ["messaging-first", "messaging-isolated", "messaging-restart"] {
+        run_child(&root.0, mode);
+        assert_eq!(messaging_entries(&root.0), before, "production process changed retained messaging state");
+    }
+}
+
+#[test]
+fn native_standalone_messaging_refuses_dispatch_without_creating_storage() {
+    let root = test_directory("messaging-absent");
+    assert!(messaging_entries(&root.0).is_empty());
+    for mode in ["messaging-first", "messaging-isolated", "messaging-restart"] {
+        run_child(&root.0, mode);
+        assert!(messaging_entries(&root.0).is_empty(), "missing messaging stores must remain absent");
+    }
+}
+
+#[test]
+fn native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts() {
+    retained_messaging_case(false);
+}
+
+#[test]
+fn native_standalone_messaging_preserves_corrupt_and_interrupted_stores() {
+    retained_messaging_case(true);
+}
+
 

@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–14
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–15
 
 ## Context and goal
 
@@ -416,6 +416,93 @@ source/legal, supported-platform package, real service, upgrade/rollback,
 full Bot regression and independent ACCEPT remain unqualified. Backend
 PR #137 may only be inspected until explicit merge/deployment authorization;
 no mock or old Worker artifact substitutes for production `afterId=0` evidence.
+
+### Round 15 desktop standalone-messaging boundary (NMR-34–35)
+
+At base `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07`, the actual Human
+Composer and history requests use the existing Session/Transcript native HTTP
+owner. AppHost nevertheless exposes `feature.messaging.execute`,
+`feature.messaging.blob.read`, `feature.messaging.access.issue`, and the generic
+`feature.execute` variant `messaging.execute`. Those routes reach a separate
+FeatureHost MessagingService snapshot/search/blob/access authority. The generic
+variant branches before ordinary feature authorization. This is callable
+production composition, not evidence that the Human Composer uses it.
+
+- NMR-34: In the existing FeatureHostController, reject all standalone messaging
+  execution, blob reads and access issuance when `HostMode::Production` and
+  `SurfacePlatform::Electron` are selected. Check before envelope parsing,
+  authentication refresh, messaging locks, state-store/blob/access I/O or
+  MessagingEvent publication. Both explicit AppHost methods and generic typed
+  commands must reach the same refusal. Use the existing contract-error path:
+  `standalone messaging is unavailable in the desktop host; use the Session/Transcript owner`.
+  Do not return accepted/empty-success, synthesize Native IDs, silently import
+  state, or send through a second HTTP owner. Keep the working Human/Agent
+  Session/Transcript path, Agent control, Mini Apps, Settings and other feature
+  commands unchanged. Explicit Test mode and non-Electron platform composition
+  retain their current behavior; their separate authority/acceptance remains open.
+- NMR-35: The refusal is a reversible code transition. Preserve account-scoped
+  `runtime/accounts/<account-hash>/agents/_messaging/{snapshot.json,blobs}` and
+  the existing unscoped `runtime/agents/_messaging/access.json`, including
+  incomplete uploads, corrupt or unknown files and other accounts. An absent
+  messaging directory must remain absent. Login/logout, account/issuer changes,
+  invalid requests and process restart cannot reopen or overwrite those stores.
+  The reserved `_messaging` directory is not an Agent automation owner. Existing
+  automation loading, owner overrides, desired writes and stale-record cleanup
+  must exclude it, so valid, corrupt and unknown nested `automation.json` files
+  and their companion files remain untouched. Keep ordinary Agent automation
+  create/update/delete behavior working. This fixes design-review R15-D1 at the
+  existing owner boundary without changing general Agent-ID validation.
+  Preserve an existing automation folder outside `_messaging` that explicitly
+  declares that reserved owner. Skip both reserved-owner records and records
+  targeting such a folder when merging the old account-wide `automations.json`;
+  keep the original archive and reader intact. Desired-write collisions with
+  these retained markers must fail before cleanup or writes, never overwrite
+  the marker or pretend the conflicting record was persisted.
+  `AutomationUpsert` must persist its candidate map before committing the
+  active map or publishing an event; a collision cannot leave an executable
+  in-memory task after returning an error. Ordinary legacy archive records
+  must still migrate and appear through the real authenticated public list.
+  Keep the original readers and formats available for a reviewed code revert;
+  no data conversion, deletion or automatic fallback is authorized. Any future
+  import needs versioned account/ID/permission mapping, backup and interrupted
+  migration recovery before the old data can become canonical state.
+
+NMR-AC-25: Exercise the real Production AppHost public dispatch for all three
+explicit methods and both wrapped/unwrapped generic command shapes, with valid
+and malformed envelopes and existing/absent/corrupt retained storage. Prove
+the exact refusal for valid outer RPC/command fields; invalid outer fields may
+retain AppHost's existing InvalidRequest response. Check no MessagingEvent
+immediately after each refusal, before any account-boundary queue reset. Prove
+no messaging-directory creation and
+byte-identical retained files across account changes, logout and subprocess
+restart. Native account projection and real Agent create/list are positive
+controls. Add direct FeatureHost method/typed-command tests and original
+snapshot/blob/access-reader rollback controls using existing dependencies.
+Include nested valid/corrupt automation files under `_messaging`, reject that
+reserved override owner, and exercise ordinary Agent automation persistence.
+Also retain external reserved-owner markers/companion files and the real old
+`feature-host/accounts/<account-hash>/automations.json` archive. Prove neither
+reserved nor same-destination conflicting archive records become active, and
+direct desired-write collisions fail without changing existing file bytes.
+Require a public Upsert collision followed immediately by an unchanged active
+list/no change event, and an ordinary legacy record as a positive import control
+across login, logout, account/issuer changes and process restart.
+
+NMR-AC-26: Reuse the existing Actions workflow and actual shipping AppHost
+compile. Require nonzero executed new owner cases and the expanded existing
+account-handoff target, preserving Human33, Agent4, private settlement3,
+composition11, UI16, carrier10/auth8 and protocol/TCP gates. Bind all selected
+results to exact H and retain any failed or queued predecessor evidence. The
+current source-review schema/validator must still accept the same canonical
+ledger; no source-review state or source-completeness claim is introduced.
+
+The old `mahayana-ffi` force-link exports and explicit Host provider injection
+are separate audited paths. Current Electron packaging builds `source/host/app`
+and does not select the old FFI crate; unconditional Telegram dependencies in
+AppHost/Host and non-desktop callers are not declared retired. No backend
+mutation, merge or deployment is part of this batch. Full FBCP/TDRP source,
+service, platform/package, Bot, migration and independent acceptance stay open.
+
 
 
 

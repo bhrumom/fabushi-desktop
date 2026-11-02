@@ -652,6 +652,7 @@ impl FeatureHostController {
         requested_scopes: Vec<String>,
         ttl_ms: i64,
     ) -> Result<Value, FeatureHostError> {
+        self.ensure_desktop_messaging_owner()?;
         let device_id = required(device_id, "device id")?;
         let session_id = required(session_id, "session id")?;
         let auth = self.auth_status()?;
@@ -1006,6 +1007,19 @@ impl FeatureHostController {
                 return Err(FeatureHostError::ProductionUnavailable);
             }
         }
+    }
+
+    /// Desktop Session/Transcript is the sole production Human message owner.
+    /// Reject before parsing, authentication, messaging locks or store access.
+    fn ensure_desktop_messaging_owner(&self) -> Result<(), FeatureHostError> {
+        if self.config.mode == HostMode::Production
+            && self.info.platform == SurfacePlatform::Electron
+        {
+            return Err(FeatureHostError::Contract(
+                "standalone messaging is unavailable in the desktop host; use the Session/Transcript owner".into(),
+            ));
+        }
+        Ok(())
     }
 
     pub fn execute(&self, command: FeatureCommand) -> Result<CommandAccepted, FeatureHostError> {
@@ -1437,6 +1451,7 @@ impl FeatureHostController {
         request_id: String,
         envelope: Value,
     ) -> Result<Vec<Value>, FeatureHostError> {
+        self.ensure_desktop_messaging_owner()?;
         static MESSAGING_IO_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         let _io_guard = MESSAGING_IO_LOCK
             .get_or_init(|| Mutex::new(()))
@@ -1481,6 +1496,7 @@ impl FeatureHostController {
         offset: u64,
         length: u64,
     ) -> Result<(fabushi_messaging_core::BlobMetadata, Vec<u8>), FeatureHostError> {
+        self.ensure_desktop_messaging_owner()?;
         let root = self
             .active_account_root(self.memory_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("messaging storage is unavailable".into()))?;
@@ -1622,15 +1638,18 @@ impl FeatureHostController {
                     last_run_at_ms: previous.as_ref().and_then(|item| item.last_run_at_ms),
                     next_run_at_ms: automation_next_run(&trigger, &schedule, enabled, now),
                 };
+                // A rejected write must not leave an active executable task.
+                let mut candidate = state.automations.clone();
                 if let Some(previous_key) = previous_key {
-                    state.automations.remove(&previous_key);
+                    candidate.remove(&previous_key);
                 }
                 let state_key = automation_state_key(
                     fabu_automation_owner(&automation),
                     &automation.id,
                 );
-                state.automations.insert(state_key, automation.clone());
-                self.persist_automations(&state.automations)?;
+                candidate.insert(state_key, automation.clone());
+                self.persist_automations(&candidate)?;
+                state.automations = candidate;
                 state.events.push_back(HostEvent::AutomationChanged {
                     timestamp: timestamp(),
                     action: action.into(),
@@ -7080,6 +7099,21 @@ impl FeatureHostController {
                         automation.agent_id = Some("mahayana-assistant".into());
                     }
                     let owner = fabu_automation_owner(&automation).to_string();
+                    if owner == RETAINED_MESSAGING_AGENT_ID
+                        || !is_safe_memory_agent_id(&owner)
+                    {
+                        continue;
+                    }
+                    let colliding = self.memory_root_path.as_deref().map(|root| {
+                        account_scoped_path(root, id)
+                            .join(&owner)
+                            .join(FABU_AUTOMATIONS_DIRNAME)
+                            .join(&legacy_id)
+                            .join(FABU_AUTOMATION_CONFIG_FILENAME)
+                    });
+                    if colliding.as_deref().is_some_and(is_retained_messaging_automation_marker) {
+                        continue;
+                    }
                     automations
                         .entry(automation_state_key(&owner, &legacy_id))
                         .or_insert(automation);
@@ -13159,6 +13193,23 @@ fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(),
 
 const FABU_AUTOMATIONS_DIRNAME: &str = "automations";
 const FABU_AUTOMATION_CONFIG_FILENAME: &str = "automation.json";
+const RETAINED_MESSAGING_AGENT_ID: &str = "_messaging";
+
+fn is_retained_messaging_automation_marker(path: &Path) -> bool {
+    let Ok(bytes) = std::fs::read(path) else {
+        return false;
+    };
+    serde_json::from_slice::<Value>(&bytes)
+        .ok()
+        .and_then(|value| {
+            value.get("_mahayana")
+                .and_then(|extension| extension.get("agentId"))
+                .and_then(Value::as_str)
+                .map(|owner| owner == RETAINED_MESSAGING_AGENT_ID)
+        })
+        .unwrap_or(false)
+}
+
 
 fn automation_state_key(agent_id: &str, automation_id: &str) -> String {
     format!("{agent_id}\u{1f}{automation_id}")
@@ -13227,7 +13278,7 @@ fn load_fabu_agent_automations(agent_root: &Path) -> BTreeMap<String, Automation
             continue;
         }
         let agent_id = agent_entry.file_name().to_string_lossy().to_string();
-        if !is_safe_memory_agent_id(&agent_id) {
+        if agent_id == RETAINED_MESSAGING_AGENT_ID || !is_safe_memory_agent_id(&agent_id) {
             continue;
         }
         let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
@@ -13265,6 +13316,9 @@ fn load_fabu_agent_automations(agent_root: &Path) -> BTreeMap<String, Automation
                 .filter(|id| is_safe_memory_agent_id(id))
                 .unwrap_or(agent_id.as_str())
                 .to_string();
+            if owner == RETAINED_MESSAGING_AGENT_ID {
+                continue;
+            }
             let name = value
                 .get("name")
                 .and_then(Value::as_str)
@@ -13334,15 +13388,13 @@ fn persist_fabu_agent_automations(
     agent_root: &Path,
     automations: &BTreeMap<String, AutomationSummary>,
 ) -> Result<(), FeatureHostError> {
-    std::fs::create_dir_all(agent_root).map_err(|error| {
-        FeatureHostError::Contract(format!("create Agent automation root: {error}"))
-    })?;
 
     let desired = automations
         .values()
         .filter(|automation| {
             is_safe_automation_id(&automation.id)
                 && is_safe_memory_agent_id(fabu_automation_owner(automation))
+                && fabu_automation_owner(automation) != RETAINED_MESSAGING_AGENT_ID
         })
         .map(|automation| {
             (
@@ -13355,6 +13407,23 @@ fn persist_fabu_agent_automations(
         })
         .collect::<BTreeMap<_, _>>();
 
+    // Refuse same-destination legacy metadata before any cleanup or writes.
+    for ((agent_id, automation_id), _) in &desired {
+        let marker = agent_root
+            .join(agent_id)
+            .join(FABU_AUTOMATIONS_DIRNAME)
+            .join(automation_id)
+            .join(FABU_AUTOMATION_CONFIG_FILENAME);
+        if is_retained_messaging_automation_marker(&marker) {
+            return Err(FeatureHostError::Contract(
+                "Agent automation path contains retained standalone messaging metadata".into(),
+            ));
+        }
+    }
+    std::fs::create_dir_all(agent_root).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent automation root: {error}"))
+    })?;
+
     // Remove only directories that contain our automation.json marker and are
     // no longer represented in state. Other Agent-owned files are untouched.
     if let Ok(agent_entries) = std::fs::read_dir(agent_root) {
@@ -13363,6 +13432,9 @@ fn persist_fabu_agent_automations(
                 continue;
             }
             let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+            if agent_id == RETAINED_MESSAGING_AGENT_ID {
+                continue;
+            }
             let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
             let Ok(entries) = std::fs::read_dir(&automation_root) else {
                 continue;
@@ -13372,7 +13444,8 @@ fn persist_fabu_agent_automations(
                     continue;
                 }
                 let automation_id = entry.file_name().to_string_lossy().to_string();
-                if !entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME).is_file() {
+                let marker = entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME);
+                if !marker.is_file() || is_retained_messaging_automation_marker(&marker) {
                     continue;
                 }
                 if !desired.contains_key(&(agent_id.clone(), automation_id)) {
@@ -13678,6 +13751,10 @@ fn account_scoped_path(base: &Path, account_id: &str) -> PathBuf {
 fn actor_id_for_account_id(account_id: &str) -> ActorId {
     ActorId::new(format!("human:account:{}", account_fingerprint(account_id)))
 }
+
+#[cfg(test)]
+#[path = "desktop_messaging_boundary_tests.rs"]
+mod desktop_messaging_boundary_tests;
 
 #[cfg(test)]
 mod tests {
