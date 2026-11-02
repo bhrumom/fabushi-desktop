@@ -32,9 +32,10 @@
       "Only matching FeatureHost workflow count7 to10",
       "Runtime test header uses named Social IDs; body unchanged",
       "Correct outdated CurrentUser-only Windows fixture description to actual private-key/public-trust stores",
-      "Append existing owner/RTM/status/ledger anchors without replacing concurrent fields"
+      "Append existing owner/RTM/status/ledger anchors without replacing concurrent fields",
+      "Run the same Feature10/Runtime9/HTTP6 through the existing Ubuntu Actions workflow while preserving macOS shipping; repair only the caught-panic log participation oracle, preserving Cargo pipefail and exact aggregate success."
     ],
-    "new_tests_execution": "not-run at preparation; containing exact H Actions required"
+    "new_tests_execution": "Feature10, Runtime9 and expanded HTTP6 passed with zero failed/ignored at exact f2903f53ded5b07faea73e7f07d780eda0423283, run41527613857/job125559290571; full logs and artifact recorded in round23-native-execution-f2903f.json."
   },
   "historical_evidence": [
     {
@@ -76,7 +77,17 @@
     "state": "open/draft/unmerged",
     "ci": "push41510852280 and PR41510861859 success: each29+10+24",
     "production_readiness": "skipped; no real authenticated production result",
-    "mutation": "none; no merge/deploy/dispatch/comment/production request"
+    "mutation": "none; no merge/deploy/dispatch/comment/production request",
+    "latest_read_only_observation": {
+      "at": "2026-11-02 21:32:24 UTC",
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "main": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "reviews": 0,
+      "comments": 0
+    }
   },
   "requirements_review": [
     {
@@ -92,12 +103,12 @@
     {
       "id": "user-03-authority",
       "state": "partial",
-      "evidence": "Current AppHost→Host→FeatureHost/Runtime/Product policy inspected; Session/native_messaging remains Human authority; new early-refusal tests authored."
+      "evidence": "Existing AppHost→Host→FeatureHost/Runtime/Product policy was inspected; Feature10/Runtime9/expanded HTTP6 executed successfully at f290. Session/native_messaging remains Human authority; the full migration is not accepted."
     },
     {
       "id": "user-04-behavior-batches",
       "state": "partial",
-      "evidence": "This batch completes missing boundary oracles for an existing production behavior; containing-H execution pending, full migration scope remains."
+      "evidence": "Existing Social production boundary now has exact-H Feature10/Runtime9/HTTP6 qualification. Current UI and database preservation failures are retained and their already-concurrent production repairs require containing-H execution."
     },
     {
       "id": "user-05-existing-owner",
@@ -111,18 +122,18 @@
     },
     {
       "id": "user-07-actions-only",
-      "state": "pending",
-      "evidence": "No local build/test/validator; existing Actions suite10 and affected source gates required at containing H."
+      "state": "satisfied-for-qualified-scopes",
+      "evidence": "No local build/test/validator. Social10/9/6 and Windows11/controlled28 pass at f290, source158/schema37/ledger0 at1c0b. Shipping and repaired UI/creation remain separately unqualified."
     },
     {
       "id": "user-08-causal-recovery",
       "state": "satisfied-for-this-diff",
-      "evidence": "H0 setup timeout, later fixture repair success, latest compile-test flaw and concurrent single-line repair kept separate; no retry-green claim."
+      "evidence": "Preserved H0 setup timeout, f75 caught-panic log TEST_FLAW, and f290 UI/SQLite IMPL_BUG failures separately. Existing concurrent fixes were read back rather than duplicated; no retry-green or static-source pass."
     },
     {
       "id": "user-09-canonical-evidence",
-      "state": "pending",
-      "evidence": "Existing ledger rows/RTM/inventory updated append-only, source schema evidence preserved; ledger object still must be integrated and validated."
+      "state": "satisfied-for-this-diff",
+      "evidence": "Canonical ledger integrated at1c0b from exact current input240a31→output4bc2, 22 array additions and2 notes, preserving184 rows and6 reviews; temporary helper removed. Source41527855423 passed158/schema37/errors0. No acceptance flags promoted."
     },
     {
       "id": "user-10-final-acceptance",
@@ -141,7 +152,164 @@
     "round23-backend-pr137-readonly.json",
     "round23-native-current.json",
     "round23-concurrent-reconciliation-fix.json",
-    "round23-feature-social-source-review.json"
+    "round23-feature-social-source-review.json",
+    "round23-native-execution-83c9e3.json",
+    "round23-native-execution-f75ba3.json",
+    "round23-f75-failures-readback.json",
+    "round23-f75-renderer-failure.json",
+    "round23-renderer-441-e4-failure.json",
+    "round23-source-concurrent-ledger.json",
+    "round23-source-1c0b.json",
+    "round23-ledger-transport.json",
+    "round23-delivery-readback.json",
+    "round23-native-execution-f2903f.json",
+    "round23-creation-preservation-failure-and-fix.json",
+    "round23-renderer-concurrent-fix-readback.json",
+    "round23-renderer-failure-state-review.json",
+    "round23-native-execution-9b9cadd7.json",
+    "round23-source-fourteen-reviews.json",
+    "round23-public-requirements-refresh.json",
+    "round23-native-short-header-f95a33b1.json",
+    "round23-reaction-hover-oracle-review.json",
+    "round23-unrelated-helper-recovery.json"
   ],
-  "review_note": "Earlier Feature test source review binds the prior draft exact blob. This revision only changes its first documentation line to collision-free named IDs; executable test body is identical. Latest review will bind new bytes."
+  "review_note": "Earlier Feature test source review binds the prior draft exact blob. This revision only changes its first documentation line to collision-free named IDs; executable test body is identical. Latest review will bind new bytes.",
+  "execution_followup": {
+    "evidence_publication": {
+      "sha": "a4499061296ffdc883e4f4ca9fa60f1f4617d5e2",
+      "parent": "f3ee5d8874ab74b07c60c0751035843b24319deb",
+      "tree": "4b2e2d965da6a5a2f2ca2f00576f5824c2874e59",
+      "verifiedRef": true,
+      "observedHead": "a4499061296ffdc883e4f4ca9fa60f1f4617d5e2"
+    },
+    "evidence_publication_files_read_back": 9,
+    "social": {
+      "head": "f2903f53ded5b07faea73e7f07d780eda0423283",
+      "run": 41527613857,
+      "job": 125559290571,
+      "feature_passed": 10,
+      "runtime_passed": 9,
+      "http_passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "artifact": 13180587783,
+      "artifact_digest": "sha256:c001d9c13ae4adce815ca037194fd4db5228a19698dc52dd5b07f6721498fcfe"
+    },
+    "source": {
+      "head": "1c0bd07f85c4f17ee465509c766eead878879185",
+      "run": 41527855423,
+      "conclusion": "success",
+      "contracts": 158,
+      "schemas": 37,
+      "ledger_errors": 0,
+      "ledger_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+      "entries": 16381,
+      "rows": 184,
+      "authored_source_reviews": 6,
+      "complete_source_reviews": 2,
+      "acceptance": false
+    },
+    "preserved_failures": {
+      "f75_social": "TEST_FLAW: caught panic hook separated exact case name and ok; actual Feature10 passed; Runtime9/HTTP6 skipped at that H. Minimal oracle fixed at f290 and actually passed.",
+      "f290_creation": "IMPL_BUG: NOTADB opening deleted original SQLite sidecars; actual creation11 pass/1 fail, later groups skipped.",
+      "f290_ui": "IMPL_BUG: nine ProductionRenderer cases observed two same-cursor older RPCs; 2 pass/9 fail, subsequent Node8 skipped.",
+      "nine_b9_ui": "After the production current-scope cursor repair,10 of11 actual renderer cases pass. The remaining reaction input did not activate its real hover surface; the first ordinary click never dispatched a reaction request. The next containing H must execute the corrected real hover/click sequence and previously blocked Node8."
+    },
+    "existing_concurrent_repair": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "native_run": 41528369271,
+      "ui_job": 125561860003,
+      "reconciliation_job": 125561859923,
+      "scope": "Current-scope cursor guard retains active/failed pagination; SQLite header probe rejects NOTADB before opening a writable handle.",
+      "execution": {
+        "reconciliation": {
+          "run": 41528369271,
+          "job": 125561859923,
+          "conclusion": "success",
+          "passed": {
+            "transcript": 3,
+            "human": 63,
+            "resources": 3,
+            "creation": 12,
+            "atomic_storage": 3,
+            "sharebox": 1,
+            "journal": 12,
+            "agent": 4,
+            "credential": 3,
+            "forward_http": 1
+          },
+          "failed": 0,
+          "ignored": 0,
+          "scope": "The original NOTADB/schema/data-page byte-preservation assertions passed. A later short-header variant belongs to its separate containing H."
+        },
+        "ui": {
+          "run": 41528369271,
+          "job": 125561860003,
+          "playwright_passed": 10,
+          "playwright_failed": 1,
+          "node8": "skipped",
+          "classification": "TEST_FLAW for the remaining reaction case: row-center hover targets blank space, leaving the actual message action anchor unhovered; ordinary click remains blocked by the unopened toolbar.",
+          "root_scope": "Correct the actual hover entry and keep ordinary click plus reaction request/settlement/stale-mutation assertions; do not change production pointer rules or force-click."
+        }
+      }
+    },
+    "unchanged_blockers": [
+      "Queued exact-H macOS shipping is not covered by Linux Social qualification.",
+      "Formal Fabushi publisher authorization and real supported signed-package install/upgrade/rollback remain absent.",
+      "Backend PR137 remains draft/unmerged with production readiness skipped; no Backend mutations.",
+      "Full source/legal/product/Bot/UI/a11y/security/performance/soak and independent ACCEPT remain incomplete."
+    ]
+  },
+  "later_source_scope_observation": {
+    "head": "6f692309387aa549d98740968997d70e1f48011d",
+    "source_reviews": 14,
+    "original_six_preserved": true,
+    "additional_pending": 8,
+    "complete": 2,
+    "unknown": null,
+    "unread": null,
+    "accepted": false,
+    "run": 41528778067,
+    "jobs": [
+      125563297373,
+      125564294213
+    ],
+    "conclusion": "success",
+    "contracts": 158,
+    "schemas": 37,
+    "ledger_errors": 0,
+    "qualification": "Current-input source14 result is exact6f692309. The actual authority-entrypoint acquisition-refusal subprocess is test25 within the158-case suite; candidate accepted-mode refusal remains required."
+  },
+  "retry_reselect_test": {
+    "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+    "case_id": "UI-NMR-OLDER-RETRY-001",
+    "scope": "Retain the already-concurrent same-chat failed-page reselection, visible-error and no-extra-older-read assertions. This containing change adds the missing no-extra-initial-read assertion; all existing keyboard/double-click retry and successful overlay/cross-scope recovery behavior remains in the same eight-case actual-root harness.",
+    "production_path": "Actual sidebar onOpenAgent → ProductionRenderer.openAgent → existing pagination owner; fixture mounts ProductionRenderer with the real Coordinator broker/client.",
+    "fixture_changed": false,
+    "test_count_changed": false,
+    "execution": "Not yet executed at the containing commit. Keep this authored assertion separate from earlier UI11 and Node8 results."
+  },
+  "reaction_hover_test": {
+    "path": "desktop/e2e/native-message-projection.spec.ts",
+    "case": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation",
+    "concurrent_hover_repair": "221d7097f5603a6be06c8c51763047e03420090a",
+    "current_input_at_review": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+    "behavior": "Preserve the existing exact-row action-anchor hover and pointer-events:auto checks. Add toolbar opacity1 before each ordinary click. Preserve real reaction requests, settlement, and stale empty-row mutation assertions.",
+    "production_css_modified": false,
+    "test_count_changed": false,
+    "execution": "Not yet run at containing H. Historical9b9 is10pass/1fail; its subsequent Node8 was skipped."
+  },
+  "later_public_inputs": {
+    "observed_head": "922ca5c05041a6212a75c2f2013d0cc0dd9199a8",
+    "scope": "Current workflow additionally requires Linux native_desktop_account_handoff7 and Human67 with newer full-header/zero-length preservation cases. Historical9b9/f95 success does not qualify those changed inputs; preserve the new gates and obtain their own exact-H result.",
+    "source_ledger_observation": {
+      "commit": "5c285452de88dcfba78bd5085f9833712eb3a459",
+      "blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+      "reviews": 14,
+      "originals_preserved": true,
+      "run": 41529547932,
+      "contract": "158/schema37/errors0 observed success",
+      "candidate": "queued at observation; do not infer whole-run success"
+    }
+  }
 }

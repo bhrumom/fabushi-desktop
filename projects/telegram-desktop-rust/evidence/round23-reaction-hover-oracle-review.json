@@ -1,0 +1,409 @@
+{
+  "schema": "MAHAYANA_UI_CAUSAL_REVIEW_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "observedAt": "2026-11-02 21:40:41 UTC",
+  "repository": "bhrumom/fabushi-desktop",
+  "historicalEvidencePreserved": [
+    "../existing-fix-readback.json",
+    "../ui9b9-execution-and-failure-state.json",
+    "../../renderer-441-e4-terminal-review.json",
+    "../../f75-renderer-failure-review.json"
+  ],
+  "execution": {
+    "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "runId": 41528369271,
+    "jobId": 125561860003,
+    "status": "completed",
+    "conclusion": "failure",
+    "completeLog": "125561860003.log",
+    "artifactId": 13181266771,
+    "artifactBytes": 33891656,
+    "artifactDigest": "sha256:24f914a7b5b9c22ed59eac35dd1d5757d1d8d41082705230ad7d981bf87a8157",
+    "artifactTargetSha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "productionRenderer11": {
+      "passed": 10,
+      "failed": 1,
+      "flaky": 0,
+      "retried": 0,
+      "skipped": 0
+    },
+    "productionRendererNode8": {
+      "status": "skipped",
+      "executed": 0,
+      "reason": "previous required ProductionRenderer Playwright step failed"
+    },
+    "jobSteps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Run actions/checkout@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Bind exact renderer source",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Run actions/setup-node@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Install locked desktop dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Transcript pagination and refresh behaviors",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Durable Human cursor and canonical pagination consumers",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Compile actual production renderer",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8
+      },
+      {
+        "name": "Forward settlement account and roster boundaries",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 9
+      },
+      {
+        "name": "Install locked Chromium for actual forward dialog",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10
+      },
+      {
+        "name": "Actual forward dialog account and lifetime behaviors",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11
+      },
+      {
+        "name": "Actual ProductionRenderer history, account and restart projection behaviors",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 12
+      },
+      {
+        "name": "Actual ProductionRenderer Transcript cache and continuation behaviors",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 13
+      },
+      {
+        "name": "Preserve exact renderer evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 14
+      },
+      {
+        "name": "Post Run actions/setup-node@v6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 27
+      },
+      {
+        "name": "Post Run actions/checkout@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 28
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 29
+      }
+    ],
+    "countNote": "Old 33/17/5/16 gates and actual renderer compilation passed in this UI job; the 11-case suite did not pass, and no Node8 execution is credited."
+  },
+  "failure": {
+    "test": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation",
+    "source": "desktop/e2e/native-message-projection.spec.ts",
+    "oldBlob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+    "testLine": 299,
+    "failedClickLine": 303,
+    "resultStatus": "timedOut",
+    "timeoutMs": 90000,
+    "retry": 0,
+    "actualLog": "m1 Add reaction button is visible, enabled and stable; the .sand-virtual-transcript viewport intercepts pointer events during ordinary click.",
+    "classification": "TEST_FLAW",
+    "causalFinding": "The preceding hover targeted the full-width [data-entry-id=m1] row, whose center was blank space outside its right-aligned message action anchor. The required CSS hover state was never established. This is the proved test interaction precondition defect; no production pointer rule change is justified by this evidence.",
+    "trace": {
+      "source": "0-trace.trace",
+      "hoverCall": "call@824",
+      "hoverTarget": "internal:role=log[name=\"Conversation transcript\"i] >> [data-entry-id=\"m1\"]",
+      "hoverInput": {
+        "x": 780,
+        "y": 97
+      },
+      "clickCall": "call@826",
+      "clickTarget": "internal:role=log[name=\"Conversation transcript\"i] >> [data-entry-id=\"m1\"] >> internal:role=button[name=\"Add reaction\"s]",
+      "clickInput": {
+        "x": 1061,
+        "y": 131
+      },
+      "inputCountNote": "The trace contains 170 call@826 input events at the same point; the original failure log retains the complete actionability retries.",
+      "screenshot": "reaction-failed.png",
+      "visualObservation": "At the 1280x900 failure screenshot, the m1 bubble is at the right edge, approximately x1000..1125 and y79..115. The action toolbar is not drawn. These are approximate visual bounds; exact pointer positions above are from trace input records.",
+      "domCss": "trace-style-efbd7f9003501c85.css",
+      "productionCss": "trace-style-d21d951155b8f61f.css",
+      "limitation": "The recorded whole-row hover cannot establish whether a correct anchor-to-toolbar movement succeeds. The corrected ordinary click remains the execution gate and may expose a separate production defect; none is assumed absent."
+    },
+    "requestEvidence": {
+      "source": "coordinator-requests.json",
+      "totalRequests": 215,
+      "reactionRequests": 0,
+      "initialTail": {
+        "requestId": "r-19",
+        "method": "getHumanConversationTranscriptTail",
+        "args": {
+          "conversationId": "human:a",
+          "limit": 200
+        }
+      },
+      "olderTail": {
+        "requestId": "r-20",
+        "method": "getHumanConversationTranscriptTail",
+        "args": {
+          "conversationId": "human:a",
+          "limit": 200,
+          "beforeSeq": 3,
+          "beforeCursor": "fixture-human-walk:3"
+        }
+      },
+      "rendererErrors": [],
+      "consequence": "The case failed before any reaction command reached the Coordinator fixture. It provides no executed reaction settlement or stale-mutation success claim."
+    }
+  },
+  "sourceBinding": {
+    "failedHead": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "cssUnchangedAtObservedHead": "d1daa0427a43f19480814f9669de118069e090c9",
+    "css": {
+      "cssPath": "frontend/src/recovered/features/conversation/workspace/view.css",
+      "cssBlob": "9e45e4ffdbd1669817bbdd1def33c25c8312b644",
+      "cssRules": [
+        ".sand-message-action-anchor { position: relative; width: fit-content; max-width: 100%; }",
+        ".sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 2; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }",
+        ".sand-message-action-anchor:hover .sand-message-hover-actions,",
+        ".sand-message-action-anchor:focus-within .sand-message-hover-actions,",
+        ".sand-message-action-anchor--menu-open .sand-message-hover-actions { opacity: 1; pointer-events: auto; }",
+        ".sand-message-hover-actions__button { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 8px; color: #a9afa3; background: #20231f; border: 1px solid #343832; border-radius: 7px; cursor: pointer; font: inherit; font-size: 11px; }",
+        ".sand-message-hover-actions__button:hover,",
+        ".sand-message-hover-actions__button:focus-visible { color: #eef3e7; background: #292d26; outline: 1px solid #a9c85d; outline-offset: 1px; }"
+      ],
+      "prodPath": "frontend/src/production/production.css",
+      "prodBlob": "6a3738d98a07a7b2a81194c6666a2fe868ace80a",
+      "prodRules": ".sand-virtual-transcript .sand-transcript-row {\n  display: flex;\n  min-width: 0;\n}\n.sand-virtual-transcript .sand-transcript-row[data-role=\"user\"] {\n  justify-content: flex-end;\n}\n.sand-virtual-transcript .sand-transcript-row[data-role=\"assistant\"] {\n  justify-content: flex-start;\n}\n.sand-virtual-transcript .sand-transcript-row > .sand-message-action-anchor {\n  width: auto;\n  max-width: min(88%, 640px, calc(100% - 82px));\n  min-width: 0;\n}\n.sand-virtual-transcript .sand-transcript-row > .sand-message-action-anchor > .sand-message {\n  width: auto;\n  max-width: 100%;\n}\n\n\n/* Canonical ConversationWorkspace forward surface.\n * New styles bind to Fabushi semantic names first; cursor/sand values are compatibility fallbacks. */\n.fabushi-forward-dialog {\n  width: min(520px, calc(100vw - 24px));\n  max-height: min(680px, calc(100vh - 24px));\n  overflow: hidden;\n  color: var(--fabushi-text-primary, var(--cursor-text-primary));\n  background: var(--fabushi-surface-raised, var(--cursor-bg-elevated))"
+    },
+    "anchorIntroducingCommit": {
+      "sha": "221d7097f5603a6be06c8c51763047e03420090a",
+      "parent": "32439f618ce8998888d330380882626f2e54121f",
+      "newSpecBlob": "2728e5e026b815c62d5f73715e7129977443b45d",
+      "patch": "Only m1 and m2 whole-row hover become row-scoped .sand-message-action-anchor hover; ordinary clicks and all later assertions are retained.",
+      "runId": 41530131373,
+      "uiJobId": 125567864141,
+      "observedAt": "2026-11-02 21:40:07 UTC",
+      "status": "queued",
+      "conclusion": null,
+      "steps": 0,
+      "qualification": "No valid execution result was available at this observation."
+    },
+    "latestReadback": {
+      "head": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+      "observedAt": "2026-11-02 21:40:41 UTC",
+      "blobs": {
+        "desktop/e2e/native-message-projection.spec.ts": "2c16d2f446fafb49c9ec41f9f5e4f83256c427db",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs": "2859e5e28204e1c8523e3bf911389e1794512342",
+        "docs/specs/fbcp-native-message-reconciliation.md": "3f01bcfab07651035501da873bd750cdf068152e"
+      },
+      "concurrentChanges": "Reaction case now includes both row-scoped anchor hovers and both pointer-events:auto assertions. Existing Node8 first case now clicks the real Alpha sidebar after an older failure and asserts the visible failure and unchanged older request count. Current spec includes the pointer-entry requirement and unrelated native response contract.",
+      "remainingMinimalDelta": "Main integrator will add only opacity1 assertions for each reaction toolbar and before/after initial-read count equality in the existing same-chat failed-state reselect sequence. Preserve current concurrent source and apply the minimal existing spec wording update."
+    }
+  },
+  "proposedWork": {
+    "directory": "../reaction-oracle-fix",
+    "preparedAtBase": "64e821d4c9526f4385588415a15c892e4491846b",
+    "preparedTestBlob": "e0b31573d5d3bf0dd934c75a813618fb977e3411",
+    "preparedSpecBlob": "58ea815ed5e4a0deac7a4e7ec07010fe77f4f04a",
+    "status": "superseded-before-publication",
+    "remoteApplied": false,
+    "reason": "18fa concurrent changes already contain the two pointer assertions and spec entry wording; never overwrite them with this earlier full-file candidate.",
+    "scope": "No production files, pointer rules, workflow counts, schema, ledger, composition, locks or remote refs were changed by this child.",
+    "preservedAssertions": [
+      "ordinary real Add reaction and reaction-option clicks",
+      "pending reactions exactly1 then2",
+      "actual reaction receipt updates m1",
+      "canonical empty m2 mutation defeats stale later reaction receipt",
+      "no m2 old content/attachment resurrection",
+      "ordered rows m1..m5",
+      "single older RPC and opaque cursor",
+      "existing cancellation, account fencing and restart cases"
+    ],
+    "localTestsRun": false,
+    "validationRequired": "Containing exact-H GitHub Actions must execute all 11 ProductionRenderer scenarios and all8 Node cases without skipped/retried cases; original forwarding33/17/5/16 and shipping/Electron gates remain."
+  },
+  "accepted": false,
+  "fileIdentities": {
+    "125561860003.log": {
+      "bytes": 100195,
+      "sha256": "05f415da1390002d732dd576c048407535d034a1d9d437aa3df3c07f4b73b121"
+    },
+    "13181266771.zip": {
+      "bytes": 33891656,
+      "sha256": "24f914a7b5b9c22ed59eac35dd1d5757d1d8d41082705230ad7d981bf87a8157"
+    },
+    "production-renderer.json": {
+      "bytes": 154286,
+      "sha256": "cac961d1d962109634a98a3c16721cf0e36ce71fcbce1db67e1b1a3e853938b4"
+    },
+    "production-renderer.log": {
+      "bytes": 6708,
+      "sha256": "d823d15293c8911310c350708e1eedc096aa5d9b36ca8b6e8d6651a719b354f0"
+    },
+    "target-sha.txt": {
+      "bytes": 41,
+      "sha256": "f090cba174cdb58b2a107ce3b1cafef8278d121f6dc5d4e948d11d38468122a7"
+    },
+    "reaction-failed.png": {
+      "bytes": 41171,
+      "sha256": "06b7a017730d359f202603a257319f04d3c30a662ae3ac4da0b080f626b4219b"
+    },
+    "reaction-error-context.md": {
+      "bytes": 13695,
+      "sha256": "1d546a1adfe0a8d8dfca3530e02e4a27c6bff88f1c0774f3c4b2806b7c947f6d"
+    },
+    "reaction-trace.zip": {
+      "bytes": 71181521,
+      "sha256": "734878f44a8e3a5a89bfcd544a9d86881ac44195b6da80f5dc82db8e230fcb4e"
+    },
+    "test.trace": {
+      "bytes": 29581,
+      "sha256": "9070944b9a46bef39e19605904406019774386fa78565a6e933620887d5dc86d"
+    },
+    "0-trace.trace": {
+      "bytes": 2397032,
+      "sha256": "8270b11c53fa3594440b781a366930bfef96b8bf7ec63244f448da739941fc29"
+    },
+    "0-trace.network": {
+      "bytes": 626759,
+      "sha256": "f3d7844c2ca088350cd216a38c32a5897f523d3c68dda838d1633368487ec010"
+    },
+    "0-trace.stacks": {
+      "bytes": 929,
+      "sha256": "5a5fbd08876db2d1cccc301a1f7398dbb9c39ba5f3c9d194b3f4e6e7c1b3f0d7"
+    },
+    "failed-case.json": {
+      "bytes": 34461,
+      "sha256": "4b4a07eae5a3b340be5ce17a7b8b6274151288e3c8263eb30bea566da3ee4693"
+    },
+    "coordinator-requests.json": {
+      "bytes": 27764,
+      "sha256": "0e1d487c2817cb9fb66a841317723dffb6781d906bce7fa6d1a6ff5e1f82b0ed"
+    },
+    "renderer-errors.json": {
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "trace-style-index.json": {
+      "bytes": 846,
+      "sha256": "ef5cbdcb5cb65d5fb3504663dab2675c5c41c820c5d0269e311e2c8e33102c6e"
+    },
+    "trace-style-efbd7f9003501c85.css": {
+      "bytes": 36740,
+      "sha256": "efbd7f9003501c85c8b953f2624aa4dcbf6a28df1635e309d647655fe5f5f9dc"
+    },
+    "trace-style-d21d951155b8f61f.css": {
+      "bytes": 25450,
+      "sha256": "d21d951155b8f61f7133a0b0c049f00570db3bed120e12bba729501ac991769b"
+    },
+    "trace-call-facts.json": {
+      "bytes": 1207,
+      "sha256": "8334d6a71c3ea184c56afe2093d2b59d2486aed2e53cd37aed08a7d3a55f0cdf"
+    },
+    "api-binding.json": {
+      "bytes": 26048,
+      "sha256": "363a5b24ce701ceb207f7f51b3020ac8af1935e09f5c1fafbe92679a6a544be3"
+    }
+  },
+  "traceCallFacts": {
+    "call@824": {
+      "before": {
+        "type": "before",
+        "callId": "call@824",
+        "startTime": 24352.273,
+        "class": "Frame",
+        "method": "hover",
+        "params": {
+          "selector": "internal:role=log[name=\"Conversation transcript\"i] >> [data-entry-id=\"m1\"]",
+          "strict": true
+        },
+        "stepId": "pw:api@55",
+        "pageId": "page@0f5644eb84707988cca799258bd5a95b",
+        "beforeSnapshot": "before@call@824"
+      },
+      "input_count": 1,
+      "input_points": [
+        {
+          "x": 780,
+          "y": 97,
+          "count": 1
+        }
+      ]
+    },
+    "call@826": {
+      "before": {
+        "type": "before",
+        "callId": "call@826",
+        "startTime": 24406.245,
+        "class": "Frame",
+        "method": "click",
+        "params": {
+          "selector": "internal:role=log[name=\"Conversation transcript\"i] >> [data-entry-id=\"m1\"] >> internal:role=button[name=\"Add reaction\"s]",
+          "strict": true
+        },
+        "stepId": "pw:api@56",
+        "pageId": "page@0f5644eb84707988cca799258bd5a95b",
+        "beforeSnapshot": "before@call@826"
+      },
+      "input_count": 170,
+      "input_points": [
+        {
+          "x": 1061,
+          "y": 131,
+          "count": 170
+        }
+      ]
+    }
+  },
+  "actualReportStats": {
+    "startTime": "2026-11-02T21:32:14.315Z",
+    "duration": 124890.93,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

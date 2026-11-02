@@ -1,0 +1,260 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "purpose": "Prepare the narrowly authorized UI fix; switched to exact concurrent-fix readback because the same repair had already landed. No duplicate patch or production write was applied.",
+  "observation_base": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+  "live_readback": {
+    "head": "1d552adf2f4e25dcb4a4a63188a23da7925294b2",
+    "observed_at_utc": "2026-11-02T21:27:29Z",
+    "compare_base": "9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a",
+    "compare_head": "1d552adf2f4e25dcb4a4a63188a23da7925294b2",
+    "compare_url": "https://github.com/bhrumom/fabushi-desktop/compare/9bb1c85da1bdff22c8f49fbbe69e2edaa07c119a...1d552adf2f4e25dcb4a4a63188a23da7925294b2",
+    "status": "ahead",
+    "ahead_by": 3,
+    "behind_by": 0
+  },
+  "concurrent_fix": {
+    "sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "parent": [
+      "5d1b04368e33d209dd025f37db35de4a33c125c2"
+    ],
+    "committer_date": "2026-11-02T21:26:25Z",
+    "url": "https://github.com/bhrumom/fabushi-desktop/commit/9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "files": [
+      {
+        "path": "desktop/e2e/native-message-projection.spec.ts",
+        "blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+        "patch": "@@ -42,6 +42,9 @@ async function scrollToOlderHistory(page: Page) {\n async function openAlice(page: Page, theme = 'dark') {\n   await page.goto(`${origin}/native-message-projection.html?theme=${theme}`);\n   await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();\n+  // The roster opens Alice automatically. Reselecting it must retain this page.\n+  await expect(messageRow(page, 'm3')).toBeVisible();\n+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);\n   await page.getByRole('button', { name: 'Alice', exact: true }).click();\n   await expect(messageRow(page, 'm3')).toBeVisible();\n   await scrollToOlderHistory(page);"
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+        "patch": "@@ -2754,13 +2754,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender\n     setWorkspaceRoute(null);\n     setCommandPaletteOpen(false);\n     if (hasLoadedEntries) {\n-      // Reopening a cached conversation must restore its next page as well as\n-      // its rows. Scope changes deliberately discard only the active request.\n-      transcriptPaginationController.installInitialPage({\n-        entries: [],\n-        nextBeforeSeq: cachedCursor?.nextBeforeSeq,\n-        nextBeforeCursor: cachedCursor?.nextBeforeCursor,\n-      });\n+      // A changed scope needs its cached cursor restored; reselecting the\n+      // current scope must preserve its in-flight page and failure overlays.\n+      if (transcriptPaginationController.getSnapshot().cursor.kind === \"unprobed\") {\n+        transcriptPaginationController.installInitialPage({\n+          entries: [],\n+          nextBeforeSeq: cachedCursor?.nextBeforeSeq,\n+          nextBeforeCursor: cachedCursor?.nextBeforeCursor,\n+        });\n+      }\n       selectionStore.settle(agentId);\n     }\n     if (hasLoadedEntries || client == null) {"
+      }
+    ],
+    "other_paths_in_same_commit": [
+      "projects/telegram-desktop-rust/evidence/request-round9-recovery-repairs.json",
+      "source/host/src/extensions/session/agent_db_recovery.rs"
+    ],
+    "ownership_note": "Other paths were only listed to identify the commit; this UI audit neither changes nor accepts their content."
+  },
+  "task_scope_result": {
+    "existing_guard_found": true,
+    "existing_regression_strengthening_found": true,
+    "new_source_edits_by_this_agent": [],
+    "new_test_edits_by_this_agent": [],
+    "remote_mutations": false,
+    "local_test_execution": false,
+    "local_build_execution": false,
+    "local_source_validator_execution": false,
+    "readback_hashing_only": true,
+    "observed_patch_is_historical_readback_not_for_reapplication": true
+  },
+  "causal_refinement": {
+    "prior_evidence": "441 and e4 each failed9/pass2, with two actual same-cursor older request frames before any release. Full raw logs and both artifact reports are in final-resume/renderer-repair/ and copied job logs here.",
+    "specific_reentry": "The root's reconcileCompleteRosterSelection calls selectionStore.reconcile; selection-state.ts defaults to agentIds[0] when no valid selection remains. The activeAgent missing-cache effect opens it automatically. Original openAlice then explicitly clicked Alice, reselecting the already-open scope. The new spec waits for automatic m3/older1 before clicking, making the cached reselect boundary explicit.",
+    "selection_blob": "23db0f0b38085e3723525cc02c389456738330ad",
+    "selection_source_anchors": "ProductionRenderer.tsx 1022-1031, 3214-3216 after patch; selection-state.ts 195-215",
+    "guard_mechanism": "setScope is a no-op for equal account and agent. The added cursor.kind==='unprobed' guard prevents cached reselection from calling installInitialPage on an existing more/exhausted/unavailable state. That preserves inFlight and page/request generations. A genuinely changed scope still becomes unprobed and receives its cached continuation.",
+    "evidence_limit": "Actual fixture requests establish duplicate dispatch; source establishes the automatic-selection/reselection path and invalidating install. Passing execution of the new guard has not yet been observed."
+  },
+  "before_after": {
+    "path": "frontend/src/production/ProductionRenderer.tsx",
+    "before_blob": "e6449278d2b45a40cfbd3537ef3a6590680dce82",
+    "after_blob": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+    "before": "if (hasLoadedEntries) { transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: cachedCursor?.nextBeforeSeq, nextBeforeCursor: cachedCursor?.nextBeforeCursor }); selectionStore.settle(agentId); }",
+    "after": "if (hasLoadedEntries) { if (transcriptPaginationController.getSnapshot().cursor.kind === \"unprobed\") { transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: cachedCursor?.nextBeforeSeq, nextBeforeCursor: cachedCursor?.nextBeforeCursor }); } selectionStore.settle(agentId); }",
+    "unchanged_boundaries": [
+      "cursor readiness handoff cursor.kind==='more'",
+      "setScope implementation and account/conversation generation fences",
+      "clear/reset/dispose",
+      "canonical row cache and opaque continuation values",
+      "transport and root read-generation guards",
+      "pending older===1 and single-RPC assertions",
+      "all11 and Node8 mandatory workflow outcomes"
+    ]
+  },
+  "test_coverage_review": {
+    "projection_spec": {
+      "path": "desktop/e2e/native-message-projection.spec.ts",
+      "blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+      "same_test_count": 11,
+      "retries": 0,
+      "existing_assertions": [
+        {
+          "lines": "29-39",
+          "coverage": "Before scrolling, the helper requires automatic pending older===1, then emits a real viewport scroll; the pending promise must remain single-flight."
+        },
+        {
+          "lines": "42-51",
+          "coverage": "openAlice now waits for automatic first-page rows and pending older===1 before clicking the same Alice selection; afterward and after real scroll it still requires exactly1. This directly covers the newly exposed reselect defect across its nine consuming cases."
+        },
+        {
+          "lines": "54-60",
+          "coverage": "Releases the held request, verifies canonical merged row IDs, and verifies every beforeSeq3 request carries fixture-human-walk:3."
+        },
+        {
+          "lines": "89-130",
+          "coverage": "Light/dark cases preserve paged edits, cleared attachment/reaction rows, inactive-conversation mutations, return with exactly1 prior beforeSeq3 request, and browser reload history."
+        },
+        {
+          "lines": "134-182",
+          "coverage": "Held initial tail, identity remap, partial/empty updates and authoritative clear keep old snapshots from restoring stale rows."
+        },
+        {
+          "lines": "remaining seven parameterized cases",
+          "coverage": "Both page/full-refresh orders; canonical send with nonce collision/late receipt; queued and in-flight logout fencing; old-row reaction settlement; disconnected send followed by one reconnect dispatch."
+        }
+      ]
+    },
+    "transcript_behaviors": {
+      "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+      "blob": "0929f54e3a836c6d90a2e8ee059c75fec0aca986",
+      "test_count": 8,
+      "source_unchanged_by_guard_commit": true,
+      "cases": [
+        [
+          "UI-NMR-OLDER-RETRY-001",
+          "failure pause, keyboard/double-click single-flight retries, mutation overlays, cached scope return and opaque continuation"
+        ],
+        [
+          "UI-NMR-INITIAL-RETRY-VIEWPORT-001",
+          "first-page retry binds new real viewport; prepend anchor survives intervening row commit"
+        ],
+        [
+          "UI-NMR-REFRESH-PAGE-RACE-001",
+          "full reconnect refresh preserves live events and fences late older response"
+        ],
+        [
+          "UI-NMR-CLEAR-PAGE-001",
+          "canonical clear fences old retry; fresh first page remains usable"
+        ],
+        [
+          "UI-NMR-ACCOUNT-PAGE-001",
+          "new account with reused conversation ID does not receive old retry failure or old cursor"
+        ],
+        [
+          "UI-NMR-CONVERSATION-PAGE-001",
+          "conversation switch rejects late retry and restores original cached cursor on return"
+        ],
+        [
+          "UI-NMR-UNMOUNT-PAGE-001",
+          "unmount closes actual claimed port and ignores late retry rejection"
+        ],
+        [
+          "UI-NMR-FIND-PAGE-FAILURE-001",
+          "Find stops after one failed older read; explicit Retry remains available"
+        ]
+      ]
+    },
+    "coverage_gaps": [
+      "The new source/spec have not yet executed in a completed exact-H UI job; both earlier heads skipped Node8.",
+      "The specific same-scope reselect while an older request is held is now explicit in openAlice; no extra test is needed merely to restate that implementation.",
+      "The same-scope reselect after an older failure is not a separately named assertion. Existing Node8 checks failure pause/overlays and cross-scope recovery, and the guard statically preserves same-scope failure state; do not claim an independently executed failure-reselect scenario."
+    ],
+    "decision": "No duplicate source/test patch prepared because the exact minimal guard and direct regression constraint already exist in 9b9. Preserve current assertions and wait for its already-triggered exact-H Actions evidence."
+  },
+  "cancellation_and_recovery_impacts": [
+    {
+      "case": "same account and conversation, older request held",
+      "impact": "Do not invalidate the active page. Keep inFlight, pending anchor and mutation overlay; one eventual response is applied under unchanged pagination generation."
+    },
+    {
+      "case": "same scope after older failure",
+      "impact": "Avoid reinitializing cursor/failure overlays. Explicit Retry continues to own the retry transition."
+    },
+    {
+      "case": "switch conversation or account",
+      "impact": "setScope still increments generations and resets page state. The unprobed branch restores only the new scope's cached cursor. Old responses remain fenced."
+    },
+    {
+      "case": "authoritative clear or full refresh",
+      "impact": "Their deliberate reset/install paths are unchanged; the guard is only in cached openAgent, so stale-response fencing and fresh first-page recovery remain required."
+    },
+    {
+      "case": "unmount or browser reload",
+      "impact": "Dispose/remount ownership and port cleanup are unchanged; new controller starts unprobed and current fixture restart tests remain mandatory."
+    },
+    {
+      "case": "root pending initial/full read",
+      "impact": "The existing root request-generation increment and pending-read clearing in openAgent are unchanged. This review does not claim to redesign those cancellation semantics."
+    }
+  ],
+  "exact_fix_actions": {
+    "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "run_id": 41528369271,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528369271",
+    "ui_job": {
+      "id": 125561860003,
+      "name": "native-message-ui",
+      "status": "queued",
+      "conclusion": null,
+      "run_id": 41528369271,
+      "logs_url": null,
+      "steps": null
+    },
+    "observed_status_utc": "2026-11-02T21:28:00Z (approximate observation window; exact fetch followed source calls)",
+    "status_observation_note": "Job metadata, not a terminal log or pass assertion. No queued polling loop was performed.",
+    "production_renderer_11": "not yet executed/completed in observed queued job",
+    "production_renderer_transcript_8": "not yet executed/completed in observed queued job",
+    "mandatory_commands": [
+      {
+        "cwd": "desktop",
+        "command": "npx --no-install playwright test e2e/native-message-projection.spec.ts --workers=1 --retries=0 --reporter=line,json",
+        "oracle": "11 expected;0 unexpected/flaky/skipped; exactly1 passed result each; retry0"
+      },
+      {
+        "cwd": "repository root",
+        "command": "node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        "oracle": "tests8/pass8/fail0/cancelled0/skipped0/todo0"
+      }
+    ],
+    "last_observed_at_utc": "2026-11-02T21:29:37Z",
+    "complete_log_available": false,
+    "reason": "queued with steps=null; no completed job log exists yet; two spaced observations separated by source/coverage work show no status change"
+  },
+  "prior_terminal_audit": {
+    "path": "final-resume/renderer-441-e4-terminal-review.json",
+    "sha256": "9c681d82dee5c7d4c4a500751b95193e806a6ffab38cd3e0cdcabc8b5b15eb94",
+    "unchanged": true
+  },
+  "acceptance": {
+    "new_guard_validated": false,
+    "ui_accepted": false,
+    "shipping_accepted": false,
+    "independent_ACCEPT": false
+  },
+  "next": "Read UI job125561860003 of exact9b9/native41528369271 once it advances to a terminal state, save its complete log and artifact, and classify actual11/8 outcomes. Apply no duplicate guard patch.",
+  "local_readback_hashes": [
+    {
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/ui-owner-fix/readback/ProductionRenderer.transcript.behavior.test.mjs",
+      "bytes": 24581,
+      "sha256": "46194753141f3fda0261a43f421b6a35b450279e1e9dd4434d63739dff81f90f",
+      "git_blob_sha1": "0929f54e3a836c6d90a2e8ee059c75fec0aca986"
+    },
+    {
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/ui-owner-fix/readback/ProductionRenderer.tsx",
+      "bytes": 258783,
+      "sha256": "8f22f87100ad95b30ea7c8f27931760455826c65d7a9ca30ec2437eaf630fed5",
+      "git_blob_sha1": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363"
+    },
+    {
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/ui-owner-fix/readback/native-message-projection.spec.ts",
+      "bytes": 23875,
+      "sha256": "7c9999d12bdc6b02cda2450a09ae0b31ec5c0b4a249aa5968ab7c7f674470194",
+      "git_blob_sha1": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438"
+    },
+    {
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/ui-owner-fix/readback/old-openAgent.txt",
+      "bytes": 2380,
+      "sha256": "f04b1e6058de27069cffd6b0b50e3ca712d5edcc0b95251dbce8e4fdb9d1bc0e",
+      "git_blob_sha1": "2982e572b72d76ffd6d4ec3aeaff710c56e56f09"
+    },
+    {
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/ui-owner-fix/readback/selection-state.ts",
+      "bytes": 7193,
+      "sha256": "127a8e5c0b37c60466b336717e53b8aa07fc55dc0e0869de77a51b0f7b41df78",
+      "git_blob_sha1": "23db0f0b38085e3723525cc02c389456738330ad"
+    }
+  ]
+}

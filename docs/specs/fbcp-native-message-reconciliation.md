@@ -1656,8 +1656,9 @@ existing NMR contract remain unchanged.
   real Chromium renderer scenarios, with no retries or skipped cases, complete
   JSON result assertions and inspectable screenshots/traces. Pointer-based
   reaction scenarios must hover the message action anchor and assert its
-  toolbar can receive pointer events before performing the real click; keep
-  the request-count and stale-receipt oracles intact. Controlled
+  toolbar is visibly rendered (opacity `1`) and can receive pointer events
+  before performing the real click; keep the request-count and stale-receipt
+  oracles intact. Controlled
   browser/service fixtures do not constitute deployed-service, signed-package,
   visual/a11y or independent acceptance.
 
@@ -1894,7 +1895,7 @@ viewport. A row commit while a prepend is pending must not consume the existing
 
 | Case | Actual-root behavior |
 | --- | --- |
-| UI-NMR-OLDER-RETRY-001 | Two failures preserve live overlays and exact opaque continuation; automatic retry pauses, keyboard/double-click Retry stays single-flight; cache A→B→A restores the next continuation. |
+| UI-NMR-OLDER-RETRY-001 | Two failures preserve live overlays and exact opaque continuation; reselecting the active conversation preserves the visible failure without another initial or older read; automatic retry pauses, keyboard/double-click Retry stays single-flight; cache A→B→A restores the next continuation. |
 | UI-NMR-INITIAL-RETRY-VIEWPORT-001 | Initial-error Retry replaces the real viewport; both ordinary prepend and an intermediate older-row commit retain the visible anchor. |
 | UI-NMR-REFRESH-PAGE-RACE-001 | Real reconnect drives roster/sync/full read; live edits/appends win over stale reads and a retired older-page result cannot revive its continuation. |
 | UI-NMR-CLEAR-PAGE-001 | Clear invalidates pending reads and permits a fresh initial read; a late old page cannot repopulate the cleared scope. |

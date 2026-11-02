@@ -629,9 +629,9 @@ responsibility rows and current acceptance requirements remain unchanged.
 | Requirement / acceptance | Existing production owner and direct oracle | Execution scope |
 | --- | --- | --- |
 | NMR-SOCIAL-OWNER-01; NMR-SOCIAL-AC-02 | AppHost/Host Production Electron Session policy; ordinary/Codex registry selection and native retained-data handoff | Current composition/native suites; historical59f success is scoped evidence, not all-current approval |
-| NMR-SOCIAL-OWNER-02; NMR-SOCIAL-AC-01 | FeatureHost real execute: exact early refusal before absent runtime, poisoned lock, file or event side effects; explicit Test/non-desktop/unrelated controls | Existing desktop_messaging_boundary_tests: seven retained plus three added, ten required at containing H |
-| NMR-SOCIAL-OWNER-03; NMR-SOCIAL-AC-02 | Runtime real SQLite recovery preserves Social records and continues ordinary Agent work | retained_social_recovery_tests: nine; source-comment ID correction only in this batch |
-| NMR-SOCIAL-OWNER-04; NMR-SOCIAL-AC-02 | Existing session-owned platform client validates actual URL/origin/path before credentials and disallows desktop redirects | session_owned_platform_: six; unchanged production implementation |
+| NMR-SOCIAL-OWNER-02; NMR-SOCIAL-AC-01 | FeatureHost real execute: exact early refusal before absent runtime, poisoned lock, file or event side effects; explicit Test/non-desktop/unrelated controls | Existing desktop_messaging_boundary_tests: 10 passed/0 failed/0 ignored at exact f2903f53ded5b07faea73e7f07d780eda0423283, run41527613857/job125559290571 |
+| NMR-SOCIAL-OWNER-03; NMR-SOCIAL-AC-02 | Runtime real SQLite recovery preserves Social records and continues ordinary Agent work | retained_social_recovery_tests: 9 passed/0 failed/0 ignored in the same exact-f290 Ubuntu job; source-comment ID correction did not change its executable body |
+| NMR-SOCIAL-OWNER-04; NMR-SOCIAL-AC-02 | Existing session-owned platform client validates actual URL/origin/path before credentials and disallows desktop redirects | session_owned_platform_: 6 passed/0 failed/0 ignored in the same exact-f290 job, including expanded UUID resource, alias, origin and redirect assertions; production implementation unchanged |
 
 See `docs/specs/fbcp-desktop-social-owner-boundary.md` and
 `projects/telegram-desktop-rust/evidence/round23-owner-boundary-recovery.json`.

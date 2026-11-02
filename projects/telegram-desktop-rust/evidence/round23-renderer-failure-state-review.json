@@ -1,0 +1,170 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "subject": "Exact9b9 UI execution plus same-scope older-failure reselect/Retry source audit",
+  "tested_candidate": {
+    "sha": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "native_run_id": 41528369271,
+    "ui_job_id": 125561860003,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528369271/job/125561860003"
+  },
+  "execution_observations": [
+    {
+      "observed_at_utc": "2026-11-02T21:29:37Z",
+      "status": "queued",
+      "conclusion": null,
+      "steps": null,
+      "source": "existing-fix-readback.json"
+    },
+    {
+      "observed_at_utc": "2026-11-02T21:30:21Z",
+      "id": 125561860003,
+      "name": "native-message-ui",
+      "status": "queued",
+      "conclusion": null,
+      "run_id": 41528369271,
+      "logs_url": null,
+      "steps": null
+    }
+  ],
+  "complete_job_log_read": false,
+  "artifact_read": false,
+  "source_binding": {
+    "observed_at_utc": "2026-11-02T21:30:21Z",
+    "live_head": "214135940bf3d1bdf38f39bef3b2a3b274e6eda8",
+    "compare_base": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+    "compare_status": "ahead",
+    "ahead_by": 8,
+    "compare_url": "https://github.com/bhrumom/fabushi-desktop/compare/9b9cadd7d5b7cc3b7a294568fa26a3919c35021f...214135940bf3d1bdf38f39bef3b2a3b274e6eda8",
+    "changed_files": [
+      ".github/checkpoint-ledger-ops-round8-ui.json",
+      ".github/round22-ledger-operations.json",
+      ".github/round7-source-evidence-ops.json",
+      ".github/task20bf-human-retry-objects/manifest.json",
+      ".github/task20bf-human-retry-objects/part-000.b64",
+      ".github/task20bf-human-retry-objects/part-001.b64",
+      ".github/task20bf-human-retry-objects/part-002.b64",
+      ".github/task20bf-human-retry-objects/part-003.b64",
+      ".github/task20bf-human-retry-objects/part-004.b64",
+      ".github/task20bf-human-retry-objects/part-005.b64",
+      ".github/task20bf-human-retry-objects/part-006.b64",
+      ".github/task20bf-human-retry-objects/part-007.b64",
+      ".github/task20bf-human-retry-objects/part-008.b64",
+      ".github/task20bf-human-retry-objects/part-009.b64",
+      ".github/workflows/round22-ledger-object.yml",
+      ".github/workflows/round7-source-evidence-object.yml",
+      ".github/workflows/task20bf-human-retry-live-objects.yml",
+      ".github/workflows/task20bf-human-retry-objects.yml",
+      "projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json",
+      "projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json",
+      "projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json",
+      "projects/telegram-desktop-rust/parity-ledger.json",
+      "source/host/src/extensions/session/agent_db_recovery.rs",
+      "source/host/src/extensions/session/human_creation_tests.rs",
+      "source/host/tests/session_gateway_contract.rs"
+    ],
+    "ui_paths_changed": false,
+    "exact_blobs": {
+      "frontend/src/production/ProductionRenderer.tsx": "3ba10ab2e4e67082ec09df3f6a51cc7a58fcf363",
+      "frontend/src/recovered/features/conversation/workspace/pagination.ts": "8a9e536fd567b0c90013cc5c6240279e281f3840",
+      "frontend/src/recovered/features/conversation/workspace/transcript.tsx": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+      "desktop/e2e/native-message-projection.spec.ts": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+      "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs": "0929f54e3a836c6d90a2e8ee059c75fec0aca986"
+    }
+  },
+  "same_scope_failed_state": {
+    "status": "Source-supported behavior; not a separately executed browser scenario",
+    "precondition": "Same logged-in account and same selected conversation; cached entries/cursor exist; an ordinary older-page request failed. This is distinct from the explicit capability-unavailable terminal cursor.",
+    "failure_commit": "pagination.ts catch preserves cursor=more and records olderFailure. finally clears inFlight only for the current request. It does not discard updatesDuringRequest on an ordinary failure; later retry consumes the latest overlay.",
+    "reselect": "openAgent reads the cache and calls setScope. The same account/agent setScope returns without generation change. selectionStore.select also preserves an already-selected ID. The new cached branch sees cursor=more and skips installInitialPage, preserving entries, cursor, olderFailure, generation and retained mutation overlay.",
+    "other_root_state": "openAgent's existing root pending-read generation and clearing remain unchanged. setTranscriptLoadError affects the separate initial-load error, not pagination olderFailure; it does not clear the older error banner.",
+    "view_binding": "ProductionRenderer sets hasOlder from cursor.kind==='more', olderLoadFailed from matching account/agent and olderFailure!=null, and passes the stable loadOlderTranscript callback. Same-scope reselect keeps those inputs.",
+    "automatic_read_pause": "ConversationTranscript effect exits when olderLoadFailed. Scrolling or rerendering must not automatically issue a retry.",
+    "explicit_retry": "The visible 'Retry loading older messages' button invokes loadOlder directly. The controller requires cursor=more, returns an existing inFlight promise if one exists, clears olderFailure, assigns inFlight before fetch, and requests the same beforeSeq/beforeCursor under the current scope.",
+    "settlement": "Success overlays updates captured during failed/in-flight reads over the page and merges into the existing owner cache. A later failure retains the cursor and shows the same generic error. Scope/account/reset/dispose generations still suppress stale responses.",
+    "source_anchors": [
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "lines": "2290,2734-2770,4270-4279"
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+        "lines": "183-206,209-217,220-287"
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "lines": "664-689,714-719"
+      },
+      {
+        "path": "frontend/src/recovered/features/roster/selection-state.ts",
+        "lines": "165-193"
+      }
+    ],
+    "negative_boundaries": [
+      "No claim that unavailable capability cursors become retryable by reselecting.",
+      "No claim that all root pending full-read semantics are unchanged in effect; only the narrow guard is reviewed and the existing cancellation statements remain in place.",
+      "No local test, fixture execution, browser run or source validator was executed."
+    ]
+  },
+  "coverage": {
+    "playwright11": {
+      "source_blob": "c0dc8a1ed85e5ccdd7dab854b882cdfbdd9e0438",
+      "direct_reselect_case": "openAlice waits for auto-opened older1, reselects Alice, emits real scroll and again requires older1; light/dark return also requires exact same-cursor request count1",
+      "ordinary_older_failure_injection": false,
+      "failed_state_reselect_then_retry_direct_assertion": false,
+      "stale_response_cancel_restart_cases": "held initial, clear, page/full-refresh ordering, logout in-flight/queued epoch, browser reload, reconnect dispatch"
+    },
+    "node8": {
+      "source_blob": "0929f54e3a836c6d90a2e8ee059c75fec0aca986",
+      "direct_executed_at_9b9": false,
+      "authored_cases": [
+        {
+          "case": "UI-NMR-OLDER-RETRY-001",
+          "assertions": "ordinary failure pauses auto reads through scroll and updates; count remains1; keyboard Retry produces request2; second failure stays paused; double click produces only request3; row overlay and later cross-scope continuation preserved"
+        },
+        {
+          "case": "UI-NMR-INITIAL-RETRY-VIEWPORT-001",
+          "assertions": "replacement viewport, scroll geometry and pending anchor during row updates"
+        },
+        {
+          "case": "UI-NMR-REFRESH-PAGE-RACE-001",
+          "assertions": "full reconnect refresh wins over old page while preserving live events"
+        },
+        {
+          "case": "UI-NMR-CLEAR-PAGE-001",
+          "assertions": "clear fences old retry and permits fresh page"
+        },
+        {
+          "case": "UI-NMR-ACCOUNT-PAGE-001",
+          "assertions": "new-account same conversation ID rejects old retry failure/cursor"
+        },
+        {
+          "case": "UI-NMR-CONVERSATION-PAGE-001",
+          "assertions": "switching away then back fences old retry and restores cached cursor"
+        },
+        {
+          "case": "UI-NMR-UNMOUNT-PAGE-001",
+          "assertions": "unmount closes actual client/ports; late rejection creates no request or UI"
+        },
+        {
+          "case": "UI-NMR-FIND-PAGE-FAILURE-001",
+          "assertions": "failed unloaded Find page is not replayed until explicit Retry"
+        }
+      ],
+      "same_scope_failed_state_reselect_then_retry_direct_assertion": false
+    },
+    "coverage_gap": "The exact sequence 'ordinary older failure -> reselect currently active conversation while error visible -> same error and request count preserved -> explicit Retry' is not directly asserted in current11/8. This audit proves the source path and records the gap rather than crediting a nonexistent browser result. The requested narrow fix already includes direct in-flight reselect regression."
+  },
+  "audit_inputs": {
+    "failed_heads_audit": "final-resume/renderer-441-e4-terminal-review.json",
+    "failed_heads_audit_sha256": "9c681d82dee5c7d4c4a500751b95193e806a6ffab38cd3e0cdcabc8b5b15eb94",
+    "concurrent_fix_readback": "final-resume/ui-owner-fix/existing-fix-readback.json",
+    "prior_snapshots_preserved": true
+  },
+  "acceptance": {
+    "ui11_passed": false,
+    "node8_passed": false,
+    "accepted": false
+  },
+  "next": "Read already-running exact9b9 UI job125561860003 only after it advances; preserve complete log/artifact and bind actual11/8 results. Do not rerun, relax pending===1 or duplicate the concurrent guard."
+}
