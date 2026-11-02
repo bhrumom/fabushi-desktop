@@ -143,3 +143,65 @@ The reviewed endpoint accepts a timestamp-only `before` cursor, and the client d
 ## Remaining boundary
 
 No whole-project closure changes follow from this dossier. Recursive original-host source provenance, complete source dispositions, legal records, broader destination/topic/channel behavior, live service correctness, supported packages, UI acceptance, Bot regression and independent ACCEPT remain independently required. Current Actions outcomes must be read and bound to the integrator's actual frozen H; this research contains no fabricated run, test count or passing-result claim.
+
+## Round 7 sparse history and parser review
+
+This append records source reading and a production wiring review on 2026-11-02. Fixed upstream remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4` (tree `91f2b083ab2877c0a17d07868eabec362a5cfca6`). Target comparison is `bhrumom/fabushi-desktop@35fe95331cdb67eb32430e03043ab9246b9b1453`, inspected through exact Git objects without switching the working tree. No executable validation, implementation change or acceptance is claimed.
+
+Earlier sections retain their original target and reading boundaries. In particular, this append resolves the parser previously described as unread; it does not claim that earlier investigation read it. The separate `message-settlement-and-history-gap.md` uses historical U `33261535a0e747f125e0ed25486f01e556330677` and does not establish current-U coverage.
+
+### Exact texts and reading limits
+
+The entire returned UTF-8 text of each file below was read at fixed U. “New” means newly recorded relative to this dossier; “reread” preserves its earlier reading evidence. Text reading does not establish complete responsibility mapping, transitive review or product acceptance. Paths are relative to `Telegram/SourceFiles/`.
+
+| Path | Exact blob | Reading relationship |
+| --- | --- | --- |
+| `data/data_history_messages.h` | `5c8276867846c861baf208d2e1f059f4edeedf3d` | New |
+| `data/data_history_messages.cpp` | `412f30c67ae3d39442a38dce66ae123d864ab4ac` | Reread |
+| `storage/storage_sparse_ids_list.h` | `2f892a0e11cc4b92d16d82aa9f61dc471a7c0fe2` | New |
+| `storage/storage_sparse_ids_list.cpp` | `cc0e3ed6b2c763326c2c16635a7671a747ef506b` | New |
+| `data/data_sparse_ids.h` | `10dbe9037e3221a0d42154d21f84a8af0286c552` | New |
+| `data/data_sparse_ids.cpp` | `1f11a0424294023ee486a87e1ba194cabd9bd87a` | Reread |
+| `data/data_search_controller.h` | `289a6b7e4e091cbf5ce9424d18a1b5f08396f979` | New |
+| `data/data_search_controller.cpp` | `5c1869566dd0551bdf9679aa71c2e1be8392dd93` | New |
+
+Scoped supporting reads were `apiwrap.cpp@342e501177996be3c083ba7985d3720a53100b51`, lines 1–115 and 3628–3699; and `data/data_histories.cpp@8abdb57141996c9b39b5531c9d2ff0c1e1b18adf`, lines 795–831, 1040–1145 and 1231–1342. Their remaining behavior was not reviewed here. Symbol-only lookups of `data_messages.{h,cpp}`, `apiwrap.h` and adjacent media code add no responsibility coverage.
+
+### State, request and lifetime obligations
+
+**Coverage remains separate from cached IDs.** `SparseIdsList` retains explicit `noSkipRange` boundaries and optional count/skipped information. Separate gaps do not become continuous because a later ID exists. An uncovered anchor can yield count-only information. `invalidateBottom` keeps cached rows while invalidating newest completeness; `removeAll` establishes a known complete empty range. `countAfter` requires a covered anchor and newest endpoint (`storage_sparse_ids_list.cpp:69–311`).
+
+**The existing history owner supplies missing ranges.** `HistoryViewer` subscribes to slice/removal/clear/invalidation and routes insufficient ranges through `ApiWrap::requestHistory` (`data_history_messages.cpp:341–413`; `data_sparse_ids.cpp:299–365`). The final viewer suppresses an unresolved empty/count-only snapshot with positive total. Local rows are restricted to their history and respect unknown boundaries. Identity rekey updates anchors, IDs and nearest-to-around; subscriptions and delayed local-row merging are lifetime owned. Migrated-history and sponsored-tail semantics remain separate mapping obligations. This in-memory algorithm proves no Fabushi SQLite restart or opaque-walk behavior.
+
+**The previously unresolved parser is now located.** [`PrepareHistoryRequest` and `ParseHistoryResult`](https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/data/data_search_controller.cpp#L294-L347) use a 50-row history limit: Before uses anchor/0, Around anchor/−25, and After anchor+1/−50 for offset/add-offset, with allowed offset bounds. Fabushi’s 200-row/32-page limits are target contracts. `ParseHistoryResult` delegates to `ParseSearchResult:204–292`, which processes response variants and related session data, adds messages through the existing owner, and derives the returned range from IDs. Successful empty responses establish directional terminal ranges. This is not independent proof of Fabushi participant admission before resource effects; malformed or unbound HTTP responses must not become successful empty history.
+
+**Failure and deletion preserve request ownership.** `ApiWrap::requestHistory:3636–3683` deduplicates peer/anchor/direction, removes its marker on success and failure, and reports applicable access loss without inventing an empty-complete slice. `Histories` postpones history requests during deletion, cancels/postpones already active history generators when deletion starts, and resumes them after completion. Cancellation and finish remove owner mappings. By contrast, `SearchController::requestMore:530–573` explicitly removes its key on success but only calls `finish()` on failure; unconditional same-key retry is not established by that code.
+
+### Current production comparison
+
+These four blobs bind the target observations to `35fe95331cdb67eb32430e03043ab9246b9b1453`:
+
+| Target path | Exact blob |
+| --- | --- |
+| `source/host/src/extensions/session/production.rs` | `fafad99ad86d25562c14644343fda58c8506b530` |
+| `source/host/src/extensions/session/native_messaging.rs` | `2c86ddf9c9432334e862a062d72a2de8903368dc` |
+| `source/host/src/extensions/session/gateway.rs` | `9e4f1ebc675e7ab3bd0d57b3833448dc72ad979f` |
+| `frontend/src/production/ProductionRenderer.tsx` | `5f8ec8e8bf92317d8e0a8d52a5d0be4c49e0b20a` |
+
+This H already persists coverage `version:1`, checks it before this conversation’s reaction/pending-send replay, and restarts valid legacy coverage from origin until qualified persistence. Renderer initial-read deduplication, author/lifetime fencing and clear-triggered reopening are also present. This reading does not requalify their test results.
+
+The relevant production call closure remains:
+
+1. Renderer `refreshRoster:2564–2704` invokes `syncHumanConversations` once. Host `sync_human_conversations:2661–2688` invokes the bounded sync once per friend.
+2. Host `sync_human_conversation:2512–2659` normally returns a transcript vector after 32 full pages, retaining `complete:false`. Gateway `323–332` returns arrays; roster `2891–2939` and tail `423–445` expose no coverage.
+3. The active cached conversation refresh reads all durable local rows, resets local pagination copies, and schedules no coverage continuation.
+4. Renderer `openAgent:2741–2852` returns before syncing a cached conversation. An uncached Human open syncs once; pagination `1055–1070` only reads the local transcript.
+5. Feed `2938–3049` updates projections; clear can reopen the active conversation. Ready/connected/focus and explicit or queued retry can refresh again. The connection controller has no coverage poll; Renderer’s interval belongs to teach recording.
+
+**Deterministic static gap:** after startup settles, let an already cached active Human conversation have more than 6,400 allowed remote rows beyond its qualified cursor. One isolated roster refresh receives 32 valid full pages without failure. With no subsequent ready/connected/focus/retry/clear or other independent sync request, the Host retains `complete:false`, while the consumer receives no incomplete-coverage signal and arranges no next sync. Cached reopening and local older-page reads cannot fetch the remaining remote rows. Further external events can advance another window; the finding does not assert that synchronization can never recur. No browser/service reproduction was executed for this review.
+
+### Disposition and remaining work
+
+At this H the canonical ledger still has six forward source-review records and none for these eight texts. Its schema permits `pending` and `complete`, not `partial`. Pending records may preserve this reading while responsibility decomposition and acceptance remain open; publishing them requires real dossier anchors and canonical inventory/relationship checks. Root integration owns that publication. No global unknown/unread counter is reduced.
+
+Global/media search, forwardable permissions, topic/monoforum/migrated scope, query-cache restoration and remaining consumers still require mapping. Keep the existing Session/Transcript and version-one coverage owner. The continuation consumer needs implementation and exact-H Actions evidence; its lifecycle and permission boundaries cannot be inferred from these source excerpts. Human retry remains reserved by `fbcp-human-message-retry.md` (HRR); this review proposes no replacement retry API. Full source/legal closure, deployed services, supported packages, UI/a11y, recovery/security/performance/soak/Bot qualification and independent ACCEPT remain open.
