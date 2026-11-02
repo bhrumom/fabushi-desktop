@@ -388,8 +388,11 @@ The current slice adds a same-owner terminal receipt for that revival path:
 clears the admitted work marker in one SQLite transaction. The deterministic
 receipt identity is the idempotency key; an identical retry returns
 `AlreadyCommitted`, while a different payload for the same key returns an
-explicit conflict. Admission is released on pre-run rejection, cancellation,
-timeout, disconnect, and terminal failure. This is wired only for the local background-revival
+explicit conflict. Admission is released on pre-run rejection, genuine terminal
+cancellation, disconnect, and terminal failure. Deadline expiry requests
+cancellation but must retain admission until a genuine terminal under
+`SWA-BACKGROUND-DEADLINE-TERMINAL-v1` below. The existing disconnect release is
+a separate unresolved unknown-outcome boundary. This is wired only for the local background-revival
 consumer; the existing `ProductionSessionWorkers` transcript/page/thread
 projections filter the receipt kind so it cannot enter user-visible context.
 It does not yet establish the full detached-result, media, or provider-review
@@ -1148,6 +1151,104 @@ remain open where their existing void interfaces cannot return an error. This
 batch makes their marker mutation non-destructive and reports failures; it
 does not claim those full lifecycles, unknown execution results, restart or
 the global OCRM acceptance matrix are closed.
+
+## Background revival deadline supervision — 2026-11-02
+
+Contract: `SWA-BACKGROUND-DEADLINE-TERMINAL-v1`; decision
+`SWA-BGT-01 — FIX / IMPL_BUG`, specified before implementation on
+`430fe8f0601b83aa032a8a46a314a0a2bdf3be55`. Fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. This is a target-owner correction
+under SWA-03/06/07, with no new whole-file source-reading or parity claim.
+Shared prerequisite Runtime `41422752089` succeeded on its exact `3761bde2`
+subject; the final changed commit still requires its own Actions evidence.
+
+The shipping `run_local_background_revival_turn_with_context` currently asks
+the registry to cancel at 30 minutes, releases its persisted Session work
+admission, and returns an aborted result before receiving the next event. The
+real Runner and routed lease can still be active, or its genuine success may
+already be queued. This falsely ends the synchronous background consumer and
+opens Session admission before the owned execution has settled.
+
+Reuse the existing Host Automation deadline control and stream/channel-qualified
+terminal mapper. Entry remains the current channel, completion, timeline,
+broadcast or hidden-handoff producer -> background revival -> existing Session
+admission and routed Runner -> existing finalizer/event hub -> the same Session
+receipt/release owner -> original background consumer. Do not create another
+scheduler, subscription, timer thread, outcome store, permission authority or
+public wire type. The existing Registry, Transcript runtime and routed lease
+remain the execution owners; Session remains the sole durable result owner.
+
+- BGT-01: factor the existing Automation receive/deadline loop into a private
+  shared waiter which returns the actual event and mapped outcome. Preserve
+  the current Automation wrapper, timeout/disconnect text, upgrade annotation
+  and fence attachment. The background wrapper retains its own timeout reason
+  and disconnect error text. Do not serialize or reclassify provider errors.
+- BGT-02: receive once before applying the deadline. A matching genuine
+  terminal returned by that receive wins. Foreign-channel/stream and progress
+  events cannot settle the wait. A foreign event ahead of a frozen terminal
+  may still cause the single cancel attempt; a later cancel must not rewrite
+  that frozen success/failure. Do not add an unbounded drain-to-empty policy.
+- BGT-03: at expiry attempt the same stream cancellation once with
+  `background revival timed out`, then continue the original subscription.
+  Acceptance, refusal, an already-cancelled token or a missing registry entry
+  is not a terminal. Subsequent receives use a positive duration at most the
+  existing 250 ms interval, avoiding an expired-deadline busy loop. Preserve
+  Session work identity, caller/drain ownership and result bytes while waiting;
+  there is no second fabricated terminal deadline.
+- BGT-04: extract the actual post-dispatch background wait and settlement into
+  one private production-used helper. It receives the real Session owner,
+  receiver/registry and captured agent/session/revision/stream/nonce/before
+  transcript values. Keep the generation check, actual transcript delta,
+  `commit_session_work_result`, and exact-work release in that helper; no
+  commit/release callback may replace the real owner in its causal tests.
+- BGT-05: success uses the raw event's `payload.content` and the existing
+  `collect_new_member_send_messages(before, after)` result, not the event's
+  delivery counter. Preserve committed/idempotent receipts, stale/conflicting
+  refusals and hidden-receipt projection. Genuine cancellation/failure follows
+  the existing release/result paths only after the qualifying terminal.
+  Preserve waiting-user completion, all error text and existing propagation.
+- BGT-06: use private clock and observation seams for deterministic execution
+  evidence; observations report the durations supplied to the actual receiver
+  and actual registry cancellation attempts outside owner locks. Shipping
+  passes a no-op observer. Tests still use the real event hub, registry, token,
+  routed lease, finalizer, Session/SQLite and receipt implementation. A mocked
+  executor or a recording release callback alone cannot prove custody.
+- BGT-07: hold an actual registered worker across expiry. Before releasing it,
+  assert the original persisted admission/revision, no receipt/terminal key,
+  refused different-work admission and Session archive, live registry/provider
+  state/lease, and no caller result. Feed progress, wrong-channel and genuine
+  foreign-stream terminal controls; repeated polling makes one cancel attempt.
+  Release through the existing retirement/finalizer/publication order, then
+  require the genuine cancellation and exact Session release. Include a
+  refused cancellation control that continues supervision.
+- BGT-08: queue a genuine matching success as the next receivable event at
+  expiry; require no cancellation, exact receipt content/identity, real
+  transcript-derived send count, atomic admission clearing and hidden receipt.
+  Also cover a frozen terminal delivered after cancellation, provider failure,
+  waiting-user completion, stale generation with successor custody intact,
+  identical receipt replay and conflicting receipt refusal. Retain all prior
+  Automation deadline, Runner terminal, Session receipt and channel assertions.
+
+Scope: the private Host functions and inline tests in
+`source/host/app/src/main.rs`, this existing Session spec/task and the existing
+scoped Actions selectors/evidence fields. Session DB, Registry/finalizer,
+completion drains, channel queue, public schemas and dependency locks are not
+replaced. Freeze the complete candidate, independently review source/lifetime
+and consumer wiring, then run the affected shipping `--locked` compile/app
+cases and retained surrounding contracts on one exact H. No local or
+htch-runtime execution is permitted. Rollback restores the premature timeout
+release; no persisted format or data migration is introduced.
+
+The claim is limited to one live Host/event-subscription lifetime. Existing
+event-bus disconnection still returns its explicit error and releases admission;
+that is not known execution completion and remains an open custody defect.
+Background cancellation still projects `quiesced_for_upgrade: false`, and the
+completion consumer checks aborted before quiesced; upgrade propagation and
+marker cleanup need their own complete contract. Clear-before-execute pending
+wakes, never-published terminals, durable unknown effects, original-turn
+restart/claim/settlement, real provider/channel/device behavior and all final
+OCRM gates remain open. No global flag or responsibility status is promoted by
+authored tests or this target-source correction.
 
 ## Release and rollback
 

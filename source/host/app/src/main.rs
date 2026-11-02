@@ -5900,13 +5900,22 @@ fn automation_terminal_from_event(
     }
 }
 
-fn wait_for_automation_terminal(
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RunnerTerminalWaitObservation {
+    Received(Duration),
+    DeadlineCancellation { accepted: bool },
+}
+
+fn wait_for_runner_terminal(
     receiver: &mpsc::Receiver<serde_json::Value>,
     runner_registry: &TranscriptRunnerRegistry,
     stream_id: &str,
     deadline: Instant,
+    timeout_reason: &str,
+    disconnected_error: &str,
     mut now: impl FnMut() -> Instant,
-) -> Result<AutomationExecutionResult, String> {
+    mut observe: impl FnMut(RunnerTerminalWaitObservation),
+) -> Result<(serde_json::Value, AutomationExecutionResult), String> {
     let mut deadline_cancel_requested = false;
     loop {
         let current = now();
@@ -5919,31 +5928,54 @@ fn wait_for_automation_terminal(
         };
         // Even at the deadline, receive a queued terminal before requesting
         // cancellation. The Runner finalizer remains the terminal authority.
-        match receiver.recv_timeout(wait) {
+        let received = receiver.recv_timeout(wait);
+        observe(RunnerTerminalWaitObservation::Received(wait));
+        match received {
             Ok(event) => {
-                if let Some(mut result) = automation_terminal_from_event(&event, stream_id) {
-                    if let Ok(AutomationExecutionResult::Interrupted {
-                        quiesced_for_upgrade,
-                        ..
-                    }) = &mut result
-                    {
-                        *quiesced_for_upgrade = runner_registry.is_quiescing_for_upgrade();
-                    }
-                    return result;
+                if let Some(result) = automation_terminal_from_event(&event, stream_id) {
+                    return result.map(|result| (event, result));
                 }
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => {
-                return Err("Host event bus disconnected during automation turn".into());
+                return Err(disconnected_error.into());
             }
         }
         if !deadline_cancel_requested && now() >= deadline {
-            let _ = runner_registry.cancel_stream(stream_id, "automation turn timed out");
+            let accepted = runner_registry.cancel_stream(stream_id, timeout_reason);
             // A cancellation request is not settlement. Keep this subscription
             // and caller ownership until the genuine terminal is received.
             deadline_cancel_requested = true;
+            observe(RunnerTerminalWaitObservation::DeadlineCancellation { accepted });
         }
     }
+}
+
+fn wait_for_automation_terminal(
+    receiver: &mpsc::Receiver<serde_json::Value>,
+    runner_registry: &TranscriptRunnerRegistry,
+    stream_id: &str,
+    deadline: Instant,
+    now: impl FnMut() -> Instant,
+) -> Result<AutomationExecutionResult, String> {
+    let (_, mut result) = wait_for_runner_terminal(
+        receiver,
+        runner_registry,
+        stream_id,
+        deadline,
+        "automation turn timed out",
+        "Host event bus disconnected during automation turn",
+        now,
+        |_| {},
+    )?;
+    if let AutomationExecutionResult::Interrupted {
+        quiesced_for_upgrade,
+        ..
+    } = &mut result
+    {
+        *quiesced_for_upgrade = runner_registry.is_quiescing_for_upgrade();
+    }
+    Ok(result)
 }
 
 fn resolve_admitted_automation_session_key(
@@ -6586,129 +6618,120 @@ fn run_local_background_revival_turn_with_context(
         return Err(error);
     }
 
-    let deadline = Instant::now() + Duration::from_secs(30 * 60);
-    loop {
-        let now = Instant::now();
-        if now >= deadline {
-            let _ = deps
-                .runner_registry
-                .cancel_stream(&stream_id, "background revival timed out");
-            let _ = deps.session_workers.release_session_work_admission(
+    wait_and_settle_background_revival(
+        &deps.session_workers,
+        &receiver,
+        &deps.runner_registry,
+        agent_id,
+        &session_key,
+        &admitted_lifecycle_revision,
+        &stream_id,
+        &client_nonce,
+        &before,
+        Instant::now() + Duration::from_secs(30 * 60),
+        Instant::now,
+        |_| {},
+    )
+}
+
+fn wait_and_settle_background_revival(
+    session_workers: &ProductionSessionWorkers,
+    receiver: &mpsc::Receiver<serde_json::Value>,
+    runner_registry: &TranscriptRunnerRegistry,
+    agent_id: &str,
+    session_key: &str,
+    admitted_lifecycle_revision: &str,
+    stream_id: &str,
+    client_nonce: &str,
+    before: &[serde_json::Value],
+    deadline: Instant,
+    now: impl FnMut() -> Instant,
+    observe: impl FnMut(RunnerTerminalWaitObservation),
+) -> Result<RevivalExecution, String> {
+    let terminal = wait_for_runner_terminal(
+        receiver,
+        runner_registry,
+        stream_id,
+        deadline,
+        "background revival timed out",
+        "Host event bus disconnected during background revival",
+        now,
+        observe,
+    );
+    match terminal {
+        Ok((event, AutomationExecutionResult::Completed))
+        | Ok((event, AutomationExecutionResult::CompletedWithFences { .. })) => {
+            session_workers.assert_session_work_admission_generation(
                 agent_id,
-                &admitted_lifecycle_revision,
-                &stream_id,
+                session_key,
+                admitted_lifecycle_revision,
+            )?;
+            let terminal_content = event
+                .get("payload")
+                .and_then(serde_json::Value::as_object)
+                .and_then(|payload| payload.get("content"))
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            let after = session_workers
+                .read_agent_transcript_entries(agent_id)
+                .unwrap_or_default();
+            let sent_message_count = collect_new_member_send_messages(before, &after).len();
+            let receipt = session_workers.commit_session_work_result(
+                agent_id,
+                session_key,
+                admitted_lifecycle_revision,
+                stream_id,
+                client_nonce,
+                terminal_content,
+                sent_message_count,
+            )?;
+            let sent_message_count = match receipt {
+                mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::Committed(receipt)
+                | mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::AlreadyCommitted(receipt) => {
+                    receipt.sent_message_count
+                }
+                mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::RejectedStale => {
+                    return Err("background result generation became stale before receipt commit".into());
+                }
+                mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::ConflictingResult => {
+                    return Err("background result idempotency key conflicts with a prior receipt".into());
+                }
+            };
+            Ok(RevivalExecution {
+                aborted: false,
+                quiesced_for_upgrade: false,
+                sent_message_count,
+            })
+        }
+        Ok((_, AutomationExecutionResult::Interrupted { .. }))
+        | Ok((_, AutomationExecutionResult::InterruptedWithFences { .. })) => {
+            let _ = session_workers.release_session_work_admission(
+                agent_id,
+                admitted_lifecycle_revision,
+                stream_id,
             );
-            return Ok(RevivalExecution {
+            Ok(RevivalExecution {
                 aborted: true,
                 quiesced_for_upgrade: false,
                 sent_message_count: 0,
-            });
+            })
         }
-        let wait = deadline
-            .saturating_duration_since(now)
-            .min(Duration::from_millis(250));
-        match receiver.recv_timeout(wait) {
-            Ok(event) => {
-                let Some(result) = automation_terminal_from_event(&event, &stream_id) else {
-                    continue;
-                };
-                match result {
-                    Ok(AutomationExecutionResult::Completed)
-                    | Ok(AutomationExecutionResult::CompletedWithFences { .. }) => {
-                        deps.session_workers
-                            .assert_session_work_admission_generation(
-                                agent_id,
-                                admission_args
-                                    .get("sessionKey")
-                                    .and_then(serde_json::Value::as_str)
-                                    .unwrap_or_default(),
-                                &admitted_lifecycle_revision,
-                            )?;
-                        let terminal_content = event
-                            .get("payload")
-                            .and_then(serde_json::Value::as_object)
-                            .and_then(|payload| payload.get("content"))
-                            .and_then(serde_json::Value::as_str)
-                            .unwrap_or_default();
-                        let after = deps
-                            .session_workers
-                            .read_agent_transcript_entries(agent_id)
-                            .unwrap_or_default();
-                        let sent_message_count = collect_new_member_send_messages(&before, &after)
-                            .len();
-                        let receipt = deps.session_workers.commit_session_work_result(
-                            agent_id,
-                            admission_args
-                                .get("sessionKey")
-                                .and_then(serde_json::Value::as_str)
-                                .unwrap_or_default(),
-                            &admitted_lifecycle_revision,
-                            &stream_id,
-                            &client_nonce,
-                            terminal_content,
-                            sent_message_count,
-                        )?;
-                        let sent_message_count = match receipt {
-                            mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::Committed(
-                                receipt,
-                            )
-                            | mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::AlreadyCommitted(
-                                receipt,
-                            ) => receipt.sent_message_count,
-                            mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::RejectedStale => {
-                                return Err("background result generation became stale before receipt commit".into());
-                            }
-                            mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::ConflictingResult => {
-                                return Err("background result idempotency key conflicts with a prior receipt".into());
-                            }
-                        };
-                        return Ok(RevivalExecution {
-                            aborted: false,
-                            quiesced_for_upgrade: false,
-                            sent_message_count,
-                        });
-                    }
-                    Ok(AutomationExecutionResult::Interrupted { .. })
-                    | Ok(AutomationExecutionResult::InterruptedWithFences { .. }) => {
-                        let _ = deps.session_workers.release_session_work_admission(
-                            agent_id,
-                            &admitted_lifecycle_revision,
-                            &stream_id,
-                        );
-                        return Ok(RevivalExecution {
-                            aborted: true,
-                            quiesced_for_upgrade: false,
-                            sent_message_count: 0,
-                        });
-                    }
-                    Ok(AutomationExecutionResult::Failed { detail })
-                    | Ok(AutomationExecutionResult::FailedWithFences { detail, .. }) => {
-                        let _ = deps.session_workers.release_session_work_admission(
-                            agent_id,
-                            &admitted_lifecycle_revision,
-                            &stream_id,
-                        );
-                        return Err(detail);
-                    }
-                    Err(error) => {
-                        let _ = deps.session_workers.release_session_work_admission(
-                            agent_id,
-                            &admitted_lifecycle_revision,
-                            &stream_id,
-                        );
-                        return Err(error);
-                    }
-                }
-            }
-            Err(mpsc::RecvTimeoutError::Timeout) => continue,
-            Err(mpsc::RecvTimeoutError::Disconnected) => {
-                let _ = deps.session_workers.release_session_work_admission(
-                    agent_id,
-                    &admitted_lifecycle_revision,
-                    &stream_id,
-                );
-                return Err("Host event bus disconnected during background revival".into());
-            }
+        Ok((_, AutomationExecutionResult::Failed { detail }))
+        | Ok((_, AutomationExecutionResult::FailedWithFences { detail, .. })) => {
+            let _ = session_workers.release_session_work_admission(
+                agent_id,
+                admitted_lifecycle_revision,
+                stream_id,
+            );
+            Err(detail)
+        }
+        Err(error) => {
+            let _ = session_workers.release_session_work_admission(
+                agent_id,
+                admitted_lifecycle_revision,
+                stream_id,
+            );
+            Err(error)
         }
     }
 }
@@ -18579,6 +18602,622 @@ mod tests {
         assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
         drop(lease);
         drop(structured);
+        fixture.close();
+    }
+
+    struct BackgroundRevivalTerminalFixture {
+        runner: RoutedProviderTerminalFixture,
+        sessions: std::sync::Arc<ProductionSessionWorkers>,
+        agent_id: String,
+        session_key: String,
+        revision: String,
+        stream_id: String,
+        nonce: String,
+        before: Vec<serde_json::Value>,
+    }
+
+    impl BackgroundRevivalTerminalFixture {
+        fn new() -> Self {
+            use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+            let runner = RoutedProviderTerminalFixture::new();
+            let sessions = std::sync::Arc::new(ProductionSessionWorkers::with_agents_root(
+                runner.root.join("agents"), 500,
+            ));
+            let store = SandAgentSessionStore::new(std::sync::Arc::clone(&sessions));
+            let agent_id = store.create_session(None, "user", None).expect("real Session").id;
+            let session_key = format!("agent:{agent_id}:main");
+            let stream_id = "background-owned-stream".to_string();
+            let revision = sessions.capture_session_work_admission(
+                &agent_id, &session_key, &stream_id,
+            ).expect("persist real background admission");
+            let before = sessions.read_agent_transcript_entries(&agent_id).unwrap();
+            Self {
+                runner, sessions, agent_id, session_key, revision, stream_id,
+                nonce: "background-owned-nonce".into(), before,
+            }
+        }
+
+        fn admission(&self) -> mahayana_host_runtime::extensions::session::agent_db::SessionWorkAdmissionRecord {
+            self.sessions.read_session_work_admission(&self.agent_id).unwrap().unwrap()
+        }
+
+        fn receipt(&self) -> Option<serde_json::Value> {
+            self.sessions.open_agent_db_owner(&self.agent_id).unwrap()
+                .get_transcript_entry_by_id(&format!("background-result:{}", self.nonce)).unwrap()
+        }
+
+        fn wait(
+            &self,
+            receiver: &std::sync::mpsc::Receiver<serde_json::Value>,
+            observe: impl FnMut(super::RunnerTerminalWaitObservation),
+        ) -> Result<super::RevivalExecution, String> {
+            let deadline = std::time::Instant::now();
+            super::wait_and_settle_background_revival(
+                &self.sessions, receiver, &self.runner.registry,
+                &self.agent_id, &self.session_key, &self.revision, &self.stream_id,
+                &self.nonce, &self.before, deadline, || deadline, observe,
+            )
+        }
+
+        fn publish_terminal(
+            &self,
+            mut lease: super::RoutedTurnLeaseGuard,
+            terminal: super::RoutedProviderTerminal,
+        ) -> serde_json::Value {
+            let event = terminal.event.clone();
+            self.runner.runtime.end_provider_run_with_kind(&self.agent_id, false);
+            self.runner.registry.finish_routed_provider(&self.stream_id);
+            lease.settle();
+            let structured = std::sync::Mutex::new(
+                self.runner.telemetry.logs.start_turn(&self.agent_id, "connector", None),
+            );
+            terminal.finalize_observations(&structured, None);
+            terminal.publish(&self.runner.events);
+            event
+        }
+
+        fn close(self) {
+            self.sessions.shutdown();
+            drop(self.sessions);
+            self.runner.close();
+        }
+    }
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum BackgroundTerminalHoldPoint {
+        BeforeCapture,
+        AfterCapture,
+        AfterRetirement,
+    }
+
+    struct HeldBackgroundRunner {
+        cancellation: super::RoutedProviderCancellation,
+        release: std::sync::mpsc::Sender<()>,
+        published: std::sync::mpsc::Receiver<()>,
+        worker: std::thread::JoinHandle<()>,
+    }
+
+    impl HeldBackgroundRunner {
+        fn start(
+            fixture: &BackgroundRevivalTerminalFixture,
+            hold_point: BackgroundTerminalHoldPoint,
+            result: Result<String, super::ProviderSessionError>,
+            already_cancelled: bool,
+        ) -> Self {
+            use std::sync::{Arc, Mutex, mpsc};
+            use std::time::Duration;
+            let (cancellation, mut lease) = fixture.runner.admit(&fixture.agent_id, &fixture.stream_id);
+            if already_cancelled {
+                assert!(fixture.runner.registry.cancel_stream(&fixture.stream_id, "previous cancellation"));
+            }
+            let registry = Arc::clone(&fixture.runner.registry);
+            let runtime = Arc::clone(&fixture.runner.runtime);
+            let events = fixture.runner.events.clone();
+            let agent_id = fixture.agent_id.clone();
+            let stream_id = fixture.stream_id.clone();
+            let worker_cancellation = cancellation.clone();
+            let structured = Mutex::new(fixture.runner.telemetry.logs.start_turn(&agent_id, "connector", None));
+            let (release, held) = mpsc::channel();
+            let (ready, worker_ready) = mpsc::channel();
+            let (published, publication) = mpsc::channel();
+            let worker = std::thread::spawn(move || {
+                let mut result = Some(result);
+                let frozen = (hold_point != BackgroundTerminalHoldPoint::BeforeCapture).then(|| {
+                    super::RoutedProviderTerminal::capture(
+                        &stream_id, false, &worker_cancellation, result.take().unwrap(), 2, true,
+                    )
+                });
+                if hold_point == BackgroundTerminalHoldPoint::AfterRetirement {
+                    runtime.end_provider_run_with_kind(&agent_id, false);
+                    registry.finish_routed_provider(&stream_id);
+                    lease.settle();
+                }
+                ready.send(()).expect("worker reached the owned hold boundary");
+                held.recv_timeout(Duration::from_secs(10)).expect("release held background Runner");
+                let terminal = frozen.unwrap_or_else(|| super::RoutedProviderTerminal::capture(
+                    &stream_id, false, &worker_cancellation, result.take().unwrap(), 2, true,
+                ));
+                if hold_point != BackgroundTerminalHoldPoint::AfterRetirement {
+                    runtime.end_provider_run_with_kind(&agent_id, false);
+                    registry.finish_routed_provider(&stream_id);
+                    lease.settle();
+                }
+                terminal.finalize_observations(&structured, None);
+                terminal.publish(&events);
+                published.send(()).expect("actual finalizer published");
+            });
+            worker_ready.recv_timeout(Duration::from_secs(10)).expect("held worker is ready");
+            Self { cancellation, release, published: publication, worker }
+        }
+
+        fn release(self) {
+            self.release.send(()).expect("release real worker");
+            self.published.recv_timeout(std::time::Duration::from_secs(10)).expect("real terminal published");
+            self.worker.join().expect("background Runner finalizer");
+        }
+    }
+
+    struct ObservedBackgroundWait {
+        observations: std::sync::Arc<std::sync::Mutex<Vec<super::RunnerTerminalWaitObservation>>>,
+        reached: std::sync::mpsc::Receiver<super::RunnerTerminalWaitObservation>,
+        resume: std::sync::mpsc::Sender<()>,
+        result: std::sync::mpsc::Receiver<Result<super::RevivalExecution, String>>,
+        waiter: std::thread::JoinHandle<()>,
+    }
+
+    impl ObservedBackgroundWait {
+        fn start(
+            fixture: &BackgroundRevivalTerminalFixture,
+            receiver: std::sync::mpsc::Receiver<serde_json::Value>,
+            hold_positive_receives: bool,
+        ) -> Self {
+            use super::RunnerTerminalWaitObservation;
+            use std::sync::{Arc, Mutex, mpsc};
+            use std::time::{Duration, Instant};
+            let sessions = Arc::clone(&fixture.sessions);
+            let registry = Arc::clone(&fixture.runner.registry);
+            let agent_id = fixture.agent_id.clone();
+            let session_key = fixture.session_key.clone();
+            let revision = fixture.revision.clone();
+            let stream_id = fixture.stream_id.clone();
+            let nonce = fixture.nonce.clone();
+            let before = fixture.before.clone();
+            let observations = Arc::new(Mutex::new(Vec::new()));
+            let sink = Arc::clone(&observations);
+            let (observed, reached) = mpsc::channel();
+            let (resume, pause) = mpsc::channel();
+            let (completed, result) = mpsc::channel();
+            let waiter = std::thread::spawn(move || {
+                let deadline = Instant::now();
+                let mut cancellation_observed = false;
+                let outcome = super::wait_and_settle_background_revival(
+                    &sessions, &receiver, &registry, &agent_id, &session_key, &revision,
+                    &stream_id, &nonce, &before, deadline, || deadline, |observation| {
+                        sink.lock().unwrap().push(observation);
+                        let hold = match observation {
+                            RunnerTerminalWaitObservation::DeadlineCancellation { .. } => {
+                                assert!(!cancellation_observed, "deadline cancellation must be attempted once");
+                                cancellation_observed = true;
+                                true
+                            }
+                            RunnerTerminalWaitObservation::Received(duration) => {
+                                if cancellation_observed {
+                                    assert!(!duration.is_zero() && duration <= Duration::from_millis(250),
+                                        "actual post-cancel receives must use a positive bounded duration");
+                                }
+                                hold_positive_receives && !duration.is_zero()
+                            }
+                        };
+                        if hold {
+                            observed.send(observation).expect("observe actual owner operation");
+                            pause.recv_timeout(Duration::from_secs(10)).expect("resume observed waiter");
+                        }
+                    },
+                );
+                completed.send(outcome).expect("original background caller result");
+            });
+            Self { observations, reached, resume, result, waiter }
+        }
+
+        fn next(&self) -> super::RunnerTerminalWaitObservation {
+            self.reached.recv_timeout(std::time::Duration::from_secs(10)).expect("waiter observation")
+        }
+
+        fn assert_pending(&self) {
+            assert!(matches!(self.result.try_recv(), Err(std::sync::mpsc::TryRecvError::Empty)),
+                "a cancellation request or unrelated event cannot finish the background caller");
+        }
+
+        fn resume(&self) {
+            self.resume.send(()).expect("continue original subscription");
+        }
+
+        fn finish(self) -> (Result<super::RevivalExecution, String>, Vec<super::RunnerTerminalWaitObservation>) {
+            let result = self.result.recv_timeout(std::time::Duration::from_secs(10)).expect("background settlement");
+            self.waiter.join().expect("shipping background wait and settlement");
+            let observations = self.observations.lock().unwrap().clone();
+            (result, observations)
+        }
+    }
+
+    #[test]
+    fn background_deadline_retains_session_custody_until_worker_terminal() {
+        use super::RunnerTerminalWaitObservation::{DeadlineCancellation, Received};
+        use serde_json::json;
+        use std::sync::{Arc, Mutex};
+        use std::time::Duration;
+
+        let fixture = BackgroundRevivalTerminalFixture::new();
+        let admission = fixture.admission();
+        let receiver = fixture.runner.events.subscribe();
+        let worker = HeldBackgroundRunner::start(
+            &fixture, BackgroundTerminalHoldPoint::BeforeCapture,
+            Ok("provider returned after cancellation".into()), false,
+        );
+        assert_eq!(fixture.runner.runtime.active_turn_source(&fixture.agent_id).as_deref(), Some("connector"));
+        let terminals = Arc::new(Mutex::new(Vec::new()));
+        let sink = Arc::clone(&terminals);
+        let registry = Arc::clone(&fixture.runner.registry);
+        let runtime = Arc::clone(&fixture.runner.runtime);
+        let agent_id = fixture.agent_id.clone();
+        let stream_id = fixture.stream_id.clone();
+        let listener = fixture.runner.events.subscribe_listener(move |event| {
+            if automation_terminal_from_event(event, &stream_id).is_some() {
+                sink.lock().unwrap().push((
+                    registry.active_stream_ids_for_agent(&agent_id),
+                    runtime.has_routed_turn_lease(&agent_id, &stream_id),
+                    runtime.is_agent_running(&agent_id), event.clone(),
+                ));
+            }
+        });
+        let waiter = ObservedBackgroundWait::start(&fixture, receiver, true);
+        assert_eq!(waiter.next(), DeadlineCancellation { accepted: true });
+        assert!(worker.cancellation.is_cancelled());
+        assert_eq!(worker.cancellation.reason().as_deref(), Some("background revival timed out"));
+
+        let assert_custody = || {
+            assert_eq!(fixture.admission(), admission);
+            assert_eq!(admission.admitted_work_id.as_deref(), Some(fixture.stream_id.as_str()));
+            assert!(admission.terminal_result_idempotency_key.is_none());
+            assert!(fixture.receipt().is_none());
+            assert_eq!(fixture.sessions.read_agent_transcript_entries(&fixture.agent_id).unwrap(), fixture.before);
+            assert!(fixture.sessions.capture_session_work_admission(
+                &fixture.agent_id, &fixture.session_key, "different-background-work",
+            ).unwrap_err().contains("already has admitted background work"));
+            assert!(fixture.sessions.transition_session_work_archive(
+                &fixture.agent_id, &fixture.session_key, &fixture.agent_id, Some(&fixture.revision),
+                true, Some("test"), None, 1.0,
+            ).unwrap_err().contains("admitted work"));
+            assert_eq!(fixture.runner.registry.active_stream_ids_for_agent(&fixture.agent_id), vec![fixture.stream_id.clone()]);
+            assert!(fixture.runner.runtime.is_agent_running(&fixture.agent_id));
+            assert!(fixture.runner.runtime.has_routed_turn_lease(&fixture.agent_id, &fixture.stream_id));
+            assert!(terminals.lock().unwrap().is_empty());
+            waiter.assert_pending();
+        };
+        assert_custody();
+
+        for event in [
+            json!({"channel":RUNNER_INFERENCE_EVENT_CHANNEL,"payload":{
+                "streamId":fixture.stream_id,"type":"delta","content":"still unwinding",
+            }}),
+            json!({"channel":"foreign-channel","payload":{
+                "streamId":fixture.stream_id,"type":"completed","content":"not this channel",
+            }}),
+        ] {
+            fixture.runner.events.publish(event);
+            waiter.resume();
+            assert_eq!(waiter.next(), Received(Duration::from_millis(250)));
+            assert_custody();
+        }
+        let (foreign_cancellation, mut foreign_lease) = fixture.runner.admit("foreign-agent", "foreign-stream");
+        let foreign_terminal = super::RoutedProviderTerminal::capture(
+            "foreign-stream", false, &foreign_cancellation, Ok("other worker completed".into()), 0, false,
+        );
+        fixture.runner.runtime.end_provider_run_with_kind("foreign-agent", false);
+        fixture.runner.registry.finish_routed_provider("foreign-stream");
+        foreign_lease.settle();
+        let foreign_structured = Mutex::new(fixture.runner.telemetry.logs.start_turn("foreign-agent", "connector", None));
+        foreign_terminal.finalize_observations(&foreign_structured, None);
+        foreign_terminal.publish(&fixture.runner.events);
+        waiter.resume();
+        assert_eq!(waiter.next(), Received(Duration::from_millis(250)));
+        assert_custody();
+
+        // A real timeout receive with no new events remains positive after expiry.
+        waiter.resume();
+        assert_eq!(waiter.next(), Received(Duration::from_millis(250)));
+        assert_custody();
+        worker.release();
+        assert_eq!(fixture.admission(), admission, "Runner retirement does not itself release Session custody");
+        waiter.resume();
+        assert_eq!(waiter.next(), Received(Duration::from_millis(250)));
+        assert_eq!(fixture.admission(), admission, "settlement follows receipt classification");
+        waiter.resume();
+        let (result, observations) = waiter.finish();
+        assert_eq!(result, Ok(super::RevivalExecution {
+            aborted: true, quiesced_for_upgrade: false, sent_message_count: 0,
+        }));
+        let mut released = admission;
+        released.admitted_work_id = None;
+        assert_eq!(fixture.admission(), released);
+        assert!(fixture.receipt().is_none());
+        assert_eq!(observations.iter().filter(|item| matches!(item, DeadlineCancellation { .. })).count(), 1);
+        assert_eq!(observations[0], Received(Duration::ZERO));
+        assert!(observations.iter().skip(2).all(|item| *item == Received(Duration::from_millis(250))));
+        let observed = terminals.lock().unwrap();
+        assert_eq!(observed.len(), 1);
+        assert!(observed[0].0.is_empty());
+        assert!(!observed[0].1 && !observed[0].2);
+        assert_eq!(observed[0].3["payload"]["type"], "cancelled");
+        assert_eq!(observed[0].3["payload"]["sentMessageCount"], 2);
+        assert_eq!(observed[0].3["payload"]["reacted"], true);
+        drop(observed);
+        drop(listener);
+        drop(foreign_lease);
+        drop(foreign_structured);
+        fixture.close();
+    }
+
+    #[test]
+    fn background_deadline_refused_cancellation_keeps_supervising() {
+        use super::RunnerTerminalWaitObservation::{DeadlineCancellation, Received};
+        use std::time::Duration;
+        for already_cancelled in [true, false] {
+            let fixture = BackgroundRevivalTerminalFixture::new();
+            let admission = fixture.admission();
+            let receiver = fixture.runner.events.subscribe();
+            let worker = HeldBackgroundRunner::start(
+                &fixture,
+                if already_cancelled { BackgroundTerminalHoldPoint::BeforeCapture }
+                else { BackgroundTerminalHoldPoint::AfterRetirement },
+                Ok("completed before registry retirement".into()), already_cancelled,
+            );
+            let waiter = ObservedBackgroundWait::start(&fixture, receiver, true);
+            assert_eq!(waiter.next(), DeadlineCancellation { accepted: false });
+            assert_eq!(worker.cancellation.is_cancelled(), already_cancelled);
+            assert_eq!(worker.cancellation.reason().as_deref(),
+                already_cancelled.then_some("previous cancellation"));
+            assert_eq!(fixture.runner.registry.active_stream_ids_for_agent(&fixture.agent_id).is_empty(), !already_cancelled);
+            assert_eq!(fixture.runner.runtime.has_routed_turn_lease(&fixture.agent_id, &fixture.stream_id), already_cancelled);
+            assert_eq!(fixture.runner.runtime.is_agent_running(&fixture.agent_id), already_cancelled);
+            assert_eq!(fixture.admission(), admission);
+            assert!(fixture.receipt().is_none());
+            waiter.assert_pending();
+            waiter.resume();
+            assert_eq!(waiter.next(), Received(Duration::from_millis(250)));
+            assert_eq!(fixture.admission(), admission);
+            waiter.assert_pending();
+            worker.release();
+            waiter.resume();
+            assert_eq!(waiter.next(), Received(Duration::from_millis(250)));
+            waiter.resume();
+            let (result, observations) = waiter.finish();
+            assert_eq!(result, Ok(super::RevivalExecution {
+                aborted: already_cancelled, quiesced_for_upgrade: false, sent_message_count: 0,
+            }));
+            assert_eq!(observations.iter().filter(|item| matches!(item, DeadlineCancellation { .. })).count(), 1);
+            assert_eq!(fixture.receipt().is_some(), !already_cancelled);
+            if !already_cancelled {
+                assert_eq!(fixture.receipt().unwrap()["content"], "completed before registry retirement");
+            }
+            assert!(fixture.admission().admitted_work_id.is_none());
+            fixture.close();
+        }
+    }
+
+    #[test]
+    fn background_deadline_preserves_queued_success_receipt() {
+        use super::RunnerTerminalWaitObservation::Received;
+        use serde_json::json;
+        use std::time::Duration;
+        let mut fixture = BackgroundRevivalTerminalFixture::new();
+        fixture.sessions.append_agent_transcript_entries(&fixture.agent_id, &[
+            json!({"id":"old-send","kind":"send-message","message":{"type":"text","content":"earlier delivery"}}),
+        ]).unwrap();
+        fixture.before = fixture.sessions.read_agent_transcript_entries(&fixture.agent_id).unwrap();
+        let receiver = fixture.runner.events.subscribe();
+        let (cancellation, lease) = fixture.runner.admit(&fixture.agent_id, &fixture.stream_id);
+        let entries = [
+            json!({"id":"new-send-a","kind":"send-message","message":{"type":"text","content":"first delivery"}}),
+            json!({"id":"new-send-b","kind":"send-message","message":{"type":"text","content":" second delivery "}}),
+            json!({"id":"empty-send","kind":"send-message","message":{"type":"text","content":"  "}}),
+            json!({"id":"image-send","kind":"send-message","message":{"type":"attachment","content":"not text"}}),
+            json!({"id":"ordinary-message","kind":"message","role":"assistant","content":"not SendMessage"}),
+        ];
+        assert_eq!(fixture.sessions.append_agent_transcript_entries(&fixture.agent_id, &entries).unwrap(), entries.len());
+        let event = fixture.publish_terminal(lease, super::RoutedProviderTerminal::capture(
+            &fixture.stream_id, false, &cancellation, Ok("exact background result".into()), 99, true,
+        ));
+        let mut observations = Vec::new();
+        let result = fixture.wait(&receiver, |item| observations.push(item));
+        assert_eq!(observations, vec![Received(Duration::ZERO)]);
+        assert!(!cancellation.is_cancelled());
+        assert_eq!(result, Ok(super::RevivalExecution {
+            aborted: false, quiesced_for_upgrade: false, sent_message_count: 2,
+        }));
+        let receipt = fixture.receipt().expect("actual SQLite receipt");
+        assert_eq!(receipt, json!({
+            "id":format!("background-result:{}",fixture.nonce),"kind":"background-result-receipt",
+            "sessionKey":fixture.session_key,"lifecycleRevision":fixture.revision,
+            "workId":fixture.stream_id,"idempotencyKey":fixture.nonce,
+            "content":"exact background result","sentMessageCount":2,
+        }));
+        let admission = fixture.admission();
+        assert!(admission.admitted_work_id.is_none());
+        assert_eq!(admission.terminal_result_idempotency_key.as_deref(), Some(fixture.nonce.as_str()));
+        let visible = fixture.sessions.read_agent_transcript_entries(&fixture.agent_id).unwrap();
+        assert_eq!(visible.len(), fixture.before.len() + entries.len());
+        assert!(visible.iter().all(|entry| entry["kind"] != "background-result-receipt"));
+
+        // Replayed terminal delivery must use the same real receipt transaction.
+        fixture.runner.events.publish(event.clone());
+        assert_eq!(fixture.wait(&receiver, |_| {}), result);
+        assert_eq!(fixture.receipt(), Some(receipt.clone()));
+        assert_eq!(fixture.admission(), admission);
+        let mut conflicting = event;
+        conflicting["payload"]["content"] = json!("conflicting replay");
+        fixture.runner.events.publish(conflicting);
+        assert_eq!(fixture.wait(&receiver, |_| {}), Err(
+            "background result idempotency key conflicts with a prior receipt".into(),
+        ));
+        assert_eq!(fixture.receipt(), Some(receipt));
+        assert_eq!(fixture.admission(), admission);
+        assert_eq!(fixture.sessions.read_agent_transcript_entries(&fixture.agent_id).unwrap(), visible);
+
+        // Behavioral oracles above exercise this exact helper used after dispatch.
+        let source = include_str!("main.rs")
+            .split_once("\n#[cfg(test)]\nmod tests {").expect("shipping/test boundary").0;
+        let shipping = source.split_once("fn run_local_background_revival_turn_with_context(")
+            .expect("shipping background entry").1
+            .split_once("fn wait_and_settle_background_revival(")
+            .expect("shipping background settlement helper").0;
+        assert!(shipping.find("start_routed_provider_task(").unwrap()
+            < shipping.find("wait_and_settle_background_revival(").unwrap());
+        assert!(!shipping.contains("cancel_stream("));
+        assert!(!shipping.contains("recv_timeout("));
+        fixture.close();
+    }
+
+    #[test]
+    fn background_deadline_preserves_frozen_success_and_failure() {
+        use super::RunnerTerminalWaitObservation::DeadlineCancellation;
+        for failed in [false, true] {
+            let fixture = BackgroundRevivalTerminalFixture::new();
+            let admission = fixture.admission();
+            let receiver = fixture.runner.events.subscribe();
+            let failure = super::ProviderSessionError::Tool("frozen provider failure".into());
+            let failure_detail = failure.to_string();
+            let worker = HeldBackgroundRunner::start(
+                &fixture, BackgroundTerminalHoldPoint::AfterCapture,
+                if failed { Err(failure) } else { Ok("frozen success".into()) }, false,
+            );
+            fixture.runner.events.publish(serde_json::json!({
+                "channel":"foreign-channel",
+                "payload":{"streamId":fixture.stream_id,"type":"completed","content":"unrelated"},
+            }));
+            let waiter = ObservedBackgroundWait::start(&fixture, receiver, false);
+            assert_eq!(waiter.next(), DeadlineCancellation { accepted: true });
+            assert!(worker.cancellation.is_cancelled());
+            assert_eq!(fixture.admission(), admission);
+            assert!(fixture.receipt().is_none());
+            waiter.assert_pending();
+            worker.release();
+            waiter.resume();
+            let (result, observations) = waiter.finish();
+            if failed {
+                assert_eq!(result, Err(failure_detail));
+                assert!(fixture.receipt().is_none());
+            } else {
+                assert_eq!(result, Ok(super::RevivalExecution {
+                    aborted: false, quiesced_for_upgrade: false, sent_message_count: 0,
+                }));
+                assert_eq!(fixture.receipt().unwrap()["content"], "frozen success");
+            }
+            assert!(fixture.admission().admitted_work_id.is_none());
+            assert_eq!(observations.iter().filter(|item| matches!(item, DeadlineCancellation { .. })).count(), 1);
+            fixture.close();
+        }
+    }
+
+    #[test]
+    fn background_terminal_preserves_failure_waiting_and_stale_generation() {
+        use super::RunnerTerminalWaitObservation::Received;
+        use std::time::Duration;
+        for case in ["failure", "waiting", "stale", "stale-work", "cancelled-upgrade"] {
+            let fixture = BackgroundRevivalTerminalFixture::new();
+            let receiver = fixture.runner.events.subscribe();
+            let (cancellation, lease) = fixture.runner.admit(&fixture.agent_id, &fixture.stream_id);
+            if case == "waiting" || case == "cancelled-upgrade" {
+                fixture.runner.registry.request_quiesce_for_upgrade();
+                assert!(cancellation.is_cancelled());
+            }
+            let failure = super::ProviderSessionError::Tool("known provider failure".into());
+            let detail = failure.to_string();
+            let terminal = super::RoutedProviderTerminal::capture(
+                &fixture.stream_id, case == "waiting", &cancellation,
+                if case == "failure" { Err(failure) } else { Ok("provider content".into()) }, 7, true,
+            );
+            let expected_admission = if case == "stale" || case == "stale-work" {
+                let mut successor = fixture.admission();
+                if case == "stale" {
+                    successor.lifecycle_revision = "successor-revision".into();
+                }
+                successor.admitted_work_id = Some("successor-work".into());
+                assert!(fixture.sessions.compare_and_set_session_work_admission(
+                    &fixture.agent_id, Some(&fixture.revision), &successor,
+                ).unwrap());
+                Some(successor)
+            } else { None };
+            let event = fixture.publish_terminal(lease, terminal);
+            let mut observations = Vec::new();
+            let result = fixture.wait(&receiver, |item| observations.push(item));
+            assert_eq!(observations, vec![Received(Duration::ZERO)]);
+            match case {
+                "failure" => {
+                    assert_eq!(result, Err(detail));
+                    assert!(fixture.receipt().is_none());
+                    assert!(fixture.admission().admitted_work_id.is_none());
+                }
+                "waiting" => {
+                    assert_eq!(event["payload"]["waitingUser"], true);
+                    assert_eq!(event["payload"]["content"], "");
+                    assert_eq!(result, Ok(super::RevivalExecution {
+                        aborted: false, quiesced_for_upgrade: false, sent_message_count: 0,
+                    }));
+                    assert_eq!(fixture.receipt().unwrap()["content"], "");
+                    assert!(fixture.admission().admitted_work_id.is_none());
+                }
+                "stale" => {
+                    assert_eq!(result, Err(format!(
+                        "session work admission generation changed for {}", fixture.session_key,
+                    )));
+                    assert_eq!(Some(fixture.admission()), expected_admission);
+                    assert!(fixture.receipt().is_none());
+                }
+                "stale-work" => {
+                    assert_eq!(result, Err(
+                        "background result generation became stale before receipt commit".into(),
+                    ));
+                    assert_eq!(Some(fixture.admission()), expected_admission);
+                    assert!(fixture.receipt().is_none());
+                }
+                "cancelled-upgrade" => {
+                    assert_eq!(result, Ok(super::RevivalExecution {
+                        aborted: true, quiesced_for_upgrade: false, sent_message_count: 0,
+                    }));
+                    assert_eq!(event["payload"]["sentMessageCount"], 7);
+                    assert_eq!(event["payload"]["reacted"], true);
+                    assert!(fixture.receipt().is_none());
+                    assert!(fixture.admission().admitted_work_id.is_none());
+                }
+                _ => unreachable!(),
+            }
+            fixture.close();
+        }
+    }
+
+    #[test]
+    fn background_terminal_disconnect_preserves_existing_error_and_release() {
+        let fixture = BackgroundRevivalTerminalFixture::new();
+        let worker = HeldBackgroundRunner::start(
+            &fixture, BackgroundTerminalHoldPoint::BeforeCapture,
+            Ok("worker outlived observation".into()), false,
+        );
+        let disconnected_bus = super::GatewayEventHub::default();
+        let receiver = disconnected_bus.subscribe();
+        drop(disconnected_bus);
+        let mut observations = Vec::new();
+        assert_eq!(fixture.wait(&receiver, |item| observations.push(item)), Err(
+            "Host event bus disconnected during background revival".into(),
+        ));
+        assert_eq!(observations, vec![super::RunnerTerminalWaitObservation::Received(std::time::Duration::ZERO)]);
+        assert!(!worker.cancellation.is_cancelled());
+        assert!(fixture.admission().admitted_work_id.is_none());
+        assert!(fixture.receipt().is_none());
+        assert_eq!(fixture.runner.registry.active_stream_ids_for_agent(&fixture.agent_id), vec![fixture.stream_id.clone()]);
+        assert!(fixture.runner.runtime.has_routed_turn_lease(&fixture.agent_id, &fixture.stream_id));
+        // This retained loss behavior is explicitly outside the deadline claim.
+        worker.release();
         fixture.close();
     }
 

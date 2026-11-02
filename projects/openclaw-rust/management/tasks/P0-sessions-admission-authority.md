@@ -8,6 +8,30 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation subject: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; historical unit reads and later discovery candidates do not replace this subject or confer scoped authority.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+## 2026-11-02 background deadline supervision
+
+Decision **SWA-BGT-01 — FIX / IMPL_BUG**, specified before implementation on
+`430fe8f0601b83aa032a8a46a314a0a2bdf3be55`. The background revival deadline
+previously cancelled then released Session admission and returned before the
+actual Runner terminal. `SWA-BACKGROUND-DEADLINE-TERMINAL-v1` now shares the
+existing Automation receive-first, one-cancel supervisor and calls the actual
+background Session receipt/release helper from the shipping post-dispatch path.
+Six new app cases cover held-worker/SQLite custody, refused cancellation,
+queued/frozen terminals, real receipt content and idempotency, failure/waiting
+and stale-generation controls, plus the preserved disconnect limitation.
+Their exact names are selected and indexed in the existing workflow. This
+authored implementation does not establish executable proof; independent
+frozen review and final exact-H Actions remain required. Event-bus loss,
+background upgrade propagation, pending-wake cleanup and original-turn restart
+remain separate open responsibilities. Fixed U and global flags are unchanged.
+
+Related evidence correction **BGT-EVIDENCE-01 — FIX / TEST_FLAW**: exact
+`3761bde2` Runtime `41422752089` passed all 19 selected app cases, but its config
+artifact omitted the shipping downstream-unknown bridge test from the explicit
+name index. The complete job log proves execution; this is an evidence-index
+gap, not a missing run. Add its exact name with the new background test index
+without changing the valid bridge assertion or attributing an old pass to H.
+
 ## 2026-11-02 checked upgrade-marker handoff
 
 `SWA-UPGRADE-MARKER-CHECKED-v1` now has a frozen implementation through the
