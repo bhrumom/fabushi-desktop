@@ -920,7 +920,86 @@ fn test_transcript_owners_roll_back_when_commit_fails() {
 #[test]
 fn test_agent_db_has_no_direct_commit_error_propagation() {
     let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let owner_source = source_without_owned_channel_commit_adapter(owner_source)
+        .expect("the one channel command adapter must return to its checked transaction owner");
     assert!(!owner_source.contains("db.execute_batch(\"COMMIT\")?;"));
+}
+
+// A low-level command adapter may return an error to a transaction owner that
+// explicitly handles it. Only this exact adapter is excluded; all other source
+// retains the original prohibition. Real SQLite fault controls exercise the
+// cleanup/outcome behavior in channel_inbound_append_tests.
+fn source_without_owned_channel_commit_adapter(source: &str) -> Option<String> {
+    syn::parse_file(source).ok()?;
+    const ADAPTER: &str = "impl ChannelInboundTransactionControl {";
+    const NEXT: &str = "\nfn read_channel_inbound_admission(";
+    const COMMIT: &str = "db.execute_batch(\"COMMIT\")?;";
+    if source.matches(ADAPTER).count() != 1
+        || source.matches(NEXT).count() != 1
+        || source.matches("control.commit(db)").count() != 1
+    {
+        return None;
+    }
+    let (before, tail) = source.split_once(ADAPTER)?;
+    let (adapter, after) = tail.split_once(NEXT)?;
+    if adapter.matches(COMMIT).count() != 1
+        || !adapter.contains("fn commit(&self, db: &rusqlite::Connection)")
+        || !adapter.contains("db.execute_batch(\"ROLLBACK\")")
+    {
+        return None;
+    }
+    let (_, transaction) = source.split_once("\nfn append_channel_inbound_transaction(")?;
+    let (transaction, _) = transaction.split_once("\nfn channel_inbound_entry_id_exists(")?;
+    if !transaction.contains("Ok(inserted_count) => match control.commit(db) {")
+        || !transaction.contains("Err(error) => channel_inbound_transaction_failure(\n                db, channel_inbound_storage_failure(error), true, control,")
+    {
+        return None;
+    }
+    let (_, failure) = source.split_once("\nfn channel_inbound_transaction_failure(")?;
+    let (failure, _) = failure.split_once("\nfn append_channel_inbound_transaction(")?;
+    if !failure.contains("if commit_attempted && db.is_autocommit()")
+        || !failure.contains("let rolled_back = control.rollback(db).is_ok();")
+        || !failure.contains("let clean = db.is_autocommit();")
+        || !failure.contains("if !rolled_back || !clean")
+        || !failure.contains("if commit_attempted {\n        (ChannelInboundAppendOutcome::Unknown(failure), false)")
+    {
+        return None;
+    }
+    Some(format!("{before}{NEXT}{after}"))
+}
+
+#[test]
+fn test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup() {
+    let source = include_str!("../src/extensions/session/agent_db.rs");
+    let direct = "db.execute_batch(\"COMMIT\")?;";
+    // The adapter exception must not hide a new unguarded owner elsewhere.
+    let unguarded = format!(
+        "{source}\nfn unguarded_commit(db: &rusqlite::Connection) -> Result<(), rusqlite::Error> {{ {direct} Ok(()) }}\n"
+    );
+    assert!(source_without_owned_channel_commit_adapter(&unguarded)
+        .expect("valid existing adapter remains checked").contains(direct));
+
+    for (before, after) in [
+        (
+            "Err(error) => channel_inbound_transaction_failure(\n                db, channel_inbound_storage_failure(error), true, control,",
+            "Err(error) => channel_inbound_transaction_failure(\n                db, channel_inbound_storage_failure(error), false, control,",
+        ),
+        ("let rolled_back = control.rollback(db).is_ok();", "let rolled_back = true;"),
+        ("if !rolled_back || !clean", "if !rolled_back"),
+        (
+            "if commit_attempted {\n        (ChannelInboundAppendOutcome::Unknown(failure), false)",
+            "if commit_attempted {\n        (ChannelInboundAppendOutcome::NotWritten(failure), false)",
+        ),
+    ] {
+        assert_eq!(source.matches(before).count(), 1, "mutation must bind one production site");
+        let mutated = source.replacen(before, after, 1);
+        assert!(source_without_owned_channel_commit_adapter(&mutated).is_none(),
+            "missing transaction error ownership must revoke the exception");
+    }
+    assert!(source_without_owned_channel_commit_adapter("fn broken(").is_none());
+    assert!(source_without_owned_channel_commit_adapter(&source.replace(
+        "impl ChannelInboundTransactionControl {", "impl MissingChannelTransactionControl {",
+    )).is_none());
 }
 
 #[test]

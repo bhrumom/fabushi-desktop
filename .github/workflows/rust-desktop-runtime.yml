@@ -433,6 +433,8 @@ jobs:
               "shipping_downstream_custody_tests": ["tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate"],
               "channel_append_custody_contract": "OCRM-CHANNEL-APPEND-CUSTODY-v1",
               "channel_append_custody_result": "passed",
+              "channel_append_commit_oracle_contract": "CA-COMMIT-ORACLE-01",
+              "channel_append_commit_oracle_tests": ["openclaw_sessions_and_config_contract::test_agent_db_has_no_direct_commit_error_propagation", "openclaw_sessions_and_config_contract::test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"],
               "channel_append_custody_scope": "Existing Session/SQLite strict append, retained live queue and shipping handoff preserve original entries on rollback, hold unknown acknowledgements and block Runner/tail overtaking. Real transaction, public Session notification reentry and late-worker controls do not prove durable ingress, automatic reconciliation, transport ACK or real-channel delivery.",
               "runner_downstream_custody_result": "passed",
               "runner_downstream_custody_scope": "Real Host execution relay, guarded Responses/checkpoint owner and shipping private bridge preserve unknown post-publication outcomes, reject replay and isolate relay incarnations. Coordinator echo covers opaque legacy/new IDs. No original-turn restart, external termination or durable outcome reconciliation is claimed.",

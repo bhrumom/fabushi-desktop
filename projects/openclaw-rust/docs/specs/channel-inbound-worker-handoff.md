@@ -144,6 +144,24 @@ discard claimed input or run the Agent without the complete admitted input.
 
 ### Verification, release and provenance
 
+Review disposition **CA-COMMIT-ORACLE-01 — FIX / TEST_FLAW** (2026-11-02),
+recorded before repair. At `ae8774e38fd04ba07d571dd5c5ea42ddb600f977`, Runtime
+`41429187307` job `125225966146` passed locked shipping compilation but failed
+`test_agent_db_has_no_direct_commit_error_propagation` in the shared Settings
+target (38 passed, one failed); downstream app/recovery/library groups did not
+execute. Its whole-file literal prohibition matches the production command
+adapter `ChannelInboundTransactionControl::commit`, whose sole caller explicitly
+matches the result and forwards errors to `channel_inbound_transaction_failure`
+with `commit_attempted = true`. That existing owner retains Unknown and performs
+the required cleanup; changing production syntax to avoid the needle would not
+repair the oracle. Preserve the prohibition for every unguarded site, exempt
+only this precisely bounded, uniquely owned adapter after checking its sole
+caller and cleanup path, and add mutation controls for an unguarded propagation
+and missing error/rollback handling. Keep all actual SQLite acknowledgement,
+rollback/retirement, queue and continuation assertions. A fresh independent
+oracle review and final-H Actions must decide the repair; no CA execution pass
+or environment failure is inferred from this source assessment.
+
 Use the actual Session/SQLite owner, retained queue and production-used Host
 append/handoff control. Required controls include checked read/open/closed-owner
 failure; real SQLite later-insert failure with complete rollback; ID conflict

@@ -8,6 +8,91 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation source: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; accepted identity and scoped evidence remain pending. Later discovery candidates do not reopen this fixed subject.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+### Active recovery — existing live Skills owner and shared COMMIT oracle (2026-11-02)
+
+Decision **ADOPT / existing implementation**: remote
+`43407c39fae8e347cb58584a4815a319fc33eba0` (parent `ae8774...`) supplies
+the same live Skills responsibility through its existing admission reader.
+All fifteen changed files and complete commit/tree identities were API-read
+back. Adopt that implementation as the only production line. The unpublished
+alternative below, frozen at tree `833291857850b924c548eeeca30449c5b9588072`
+and independently source-reviewed, is superseded and is not published over it.
+Its source approval does not approve the incoming implementation. Re-evaluate
+reporting, final-write and lifecycle gaps against the incoming owner before any
+further change; retain all of the incoming tests and selectors.
+
+Carry only the independently approved **CA-COMMIT-ORACLE-01** repair and its
+negative controls into this recovery commit, along with its receipt index.
+The production AgentDb caller/cleanup is unchanged from reviewed `ae8774...`.
+The old failed run remains failed; new exact-H shared and downstream gates are
+required. Incoming fifteen-path review and Actions are separately pending.
+Fixed U, source review facts and all global acceptance flags remain unchanged.
+
+### Superseded unpublished candidate — PS-LIVE-ADMISSION-01 (2026-11-02)
+
+Decision **FIX / IMPL_BUG**, specified before implementation in
+`docs/specs/plugin-skills-snapshot-admission.md` (`PS-LIVE-v1`). Authoring base
+`3dea753726c6e2751252ce4ed2a68b17cfdc97cf`, fixed U unchanged. A valid
+canonical Host access block followed by cache staging/rename failure currently
+leaves old skills eligible in the service and independent Session/Runner stores.
+Keep one live restriction owner in `SandPluginSkillsService`, bind all production
+workflow admission to that owner, and guard final publisher edits. Preserve cold
+cache availability, prior publisher/zero-skill repairs and ordinary MCP restart;
+concurrent replacement waits for a settled old pass through an explicit busy
+refusal, never raw-cache fallback. Worker scope is service/sync tests; shared
+composition, workflow and contract integration remain with the integrator.
+The service, both production store routes and final file-write guard are now
+implemented with nine authored real-owner failure/recovery/lifecycle cases and
+a supplementary shipping wiring check. Independent frozen review and final-H
+Actions are still required; authored cases are not execution evidence.
+Review disposition **PS-LIVE-REPORT-01 — FIX / IMPL_BUG**: frozen tree
+`6a4c5cd004b59aa428bfd9a393c47c9c132d468f` can restore a live-denied plugin at
+its original version/current user while reporting `changed: false`. The spec's
+PS-LIVE-09 records the accepted repair before implementation: include the prior
+effective restriction baseline, retain all eight cases, and add same-version
+restoration/unchanged-refresh controls. A fresh focused review and exact-H
+Actions remain required; no permission or acceptance assertion is relaxed.
+Prerequisite own H `430fe8f0601b83aa032a8a46a314a0a2bdf3be55` has passed
+Source `41425599235` and Runtime `41425599255` attempt 1: 809 unique Rust cases,
+including all six REC-10 controls, and 29 renderer/SDK/carrier leaf cases.
+The scoped Host/app commands used their committed locks; the Node target still
+resolved its uncommitted graph. Its app receipt omitted the selected shipping
+bridge name although the full log proves its pass; the already-pushed BGT H
+`3dea753726c6e2751252ce4ed2a68b17cfdc97cf` corrects that index. Its Source
+`41427488028` and Runtime `41427488030` attempt 1 now pass: 815 unique Rust
+cases (all six BGT and six REC-10 controls), 29 renderer/SDK/carrier leaf cases,
+and 27/27 selected app names in the configuration receipt, including the actual
+shipping bridge. Artifact `13132918614` SHA-256 is
+`8102a1f52db3dbc43bf71b1d7303152952eb00ff8dc5b96699449d860a392a91`;
+its exact subject/run/input binding was checked. Source remains structural-only,
+Node's dependency graph remains unlocked, and broader acceptance stays open.
+None of these results are substituted for PS-LIVE-v1.
+Incoming `ae8774e38fd04ba07d571dd5c5ea42ddb600f977` adds the existing
+Session-owned channel append claim, typed append outcomes and retained inbound
+generation custody (`CA-v1`). Its ten files were read back at exact API blob
+identities and adopted; only the workflow and Session production file required
+clean three-way integration with this batch. Preserve its seven app selectors,
+AgentDb library selector, locked app input and all assertions. Independent full
+22-path integration source review approved candidate
+`f922c0846f77d11222366a961c50e86c010cfb87` (patch SHA-256
+`3892db052d5e6040317df65f12d9edfd9ae2f11d7c296e208fbc0967d9a3406a`).
+This preserves the separately accepted PS-LIVE-REPORT-01 repair obligation;
+source approval is not execution. Incoming Source `41429187260` passed, but
+Runtime `41429187307` failed its shared Settings target after locked shipping
+compilation. **CA-COMMIT-ORACLE-01 — FIX / TEST_FLAW** is recorded before repair
+in the channel contract: a whole-file text guard mistook the new command
+adapter's COMMIT propagation for an unhandled transaction-owner error, although
+its sole owner matches the error and preserves Unknown/cleanup. Keep the
+unguarded-site assertion, narrow the sole adapter exception with explicit
+owner/cleanup checks, and add mutation controls. No CA app/recovery/lib pass is
+claimed: those groups were skipped. The oracle repair expands this frozen
+scope to the channel spec and existing shared contract test; production CA is
+unchanged. Fresh focused review and final integration-H evidence are pending.
+This batch does not duplicate channel append ownership or change fixed U.
+Account/restart revocation, already
+running recipes, UI refresh and unwired publishing RPCs remain open; no source
+reading status or global completion flag changes.
+
 ### Active production batch — REC-UNKNOWN-01 (2026-11-02)
 
 Decision **ADOPT / existing implementation**: concurrent
