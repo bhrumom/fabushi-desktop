@@ -45,6 +45,10 @@ pub enum ServerRequestError {
     UnknownQuestion(String),
     #[error("invalid persisted server-request state: {0}")]
     InvalidPersistedState(String),
+    #[error("approval server request requires a non-empty requestId")]
+    InvalidApprovalRequestId,
+    #[error("gateway peer persistence failed: {0}")]
+    Persistence(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -328,8 +332,9 @@ impl ServerRequestRegistry {
         &mut self,
         requests: impl IntoIterator<Item = PendingServerRequest>,
     ) -> Result<(), ServerRequestError> {
-        self.open.clear();
-        self.order.clear();
+        // Import is a single state transition. A malformed later record must
+        // never expose the valid prefix as if the document had loaded fully.
+        let mut next = Self::default();
         let mut requests = requests.into_iter().collect::<Vec<_>>();
         requests.sort_by_key(|request| request.created_at_ms);
         for request in requests {
@@ -342,9 +347,15 @@ impl ServerRequestRegistry {
                 )));
             }
             let id = request.id.clone();
-            self.open.insert(id.clone(), request);
-            self.order.push_back(id);
+            if next.open.contains_key(&id) {
+                return Err(ServerRequestError::InvalidPersistedState(format!(
+                    "duplicate request id: {id}"
+                )));
+            }
+            next.open.insert(id.clone(), request);
+            next.order.push_back(id);
         }
+        *self = next;
         Ok(())
     }
 }

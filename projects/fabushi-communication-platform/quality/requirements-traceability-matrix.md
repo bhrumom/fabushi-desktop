@@ -6,6 +6,26 @@ Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2
 Updated: 2026-11-02
 
 
+## Peer durable mutation boundary — NMR-PEER-DURABILITY-01
+
+Spec: `docs/specs/fbcp-gateway-peer-durability.md`.
+Evidence: `projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json`.
+Unique peer IDs preserve the concurrent NMR48 forwarding-attachment contract.
+The following are authored checks; containing-H Actions must establish execution.
+
+| Requirement | Existing production owner and observation | Required execution / remaining boundary |
+| --- | --- | --- |
+| NMR-PEER-DURABILITY-01a/b | PersistentServerRequestRegistry uses latest-disk temporary import/mutation, commit then live publication; approval identity admission is in the same transaction | Complete peer23: real-file failure/repair/reopen, malformed/duplicate IDs, stale-instance merge and non-resurrection. |
+| NMR-PEER-DURABILITY-01c | Existing peer and replay file writers share stable fs2 0.4.3 lock inode, private file handles, owned temp cleanup and only-backup retention | Peer23 on Linux/Windows and macOS shipping; no mixed-version or power-loss acceptance. |
+| NMR-PEER-DURABILITY-01d | Actual stdio event pump and direct/compatibility Host approval adapters fence storage errors; original canonical parser and Native Host features retained | Gateway executable9 and full library13; independent file/Host-call observations, zero-call failure controls and repaired retry. |
+| NMR-AC-PEER-DURABILITY-01 | Containing exact-H focused peer suites plus every existing Human/Agent/CLI/shipping/UI/Electron/Windows gate | Source review and object transport are not execution. Peer/Host crash handoff, replay transaction/epoch semantics and full migration ACCEPT remain open. |
+
+The canonical ledger is changed only by an append to its existing NMR row;
+all current source_reviews, source/legal identities, other rows and acceptance
+fields are preserved. Backend137 current52fb fixture CI is distinct from its
+skipped production readiness; no merge, deployment or live pagination acceptance.
+
+
 ## Round 18 — native CLI composition and installer members
 
 Production changes are frozen at `1b0e674b3e39292ae715a3eb50435d83e2cb8577`; ledger binding

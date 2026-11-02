@@ -10,6 +10,7 @@ path = "src/lib_v2.rs"
 
 [dependencies]
 chrono.workspace = true
+fs2 = "=0.4.3"
 mahayana-core.workspace = true
 mahayana-gateway-protocol.workspace = true
 serde.workspace = true

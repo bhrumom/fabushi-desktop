@@ -59,22 +59,24 @@ fn run() -> Result<(), String> {
                     Ok(mut state) => state.ingest_runtime_event(&runtime_event, now_ms()),
                     Err(_) => break,
                 };
-                let peer_frames = issue_server_requests(&pump_peer, &projected);
-                for event in projected {
-                    if write_notification(&pump_output, event).is_err() {
-                        return;
-                    }
-                }
-                for frame in peer_frames {
-                    if write_value(&pump_output, &frame).is_err() {
-                        return;
-                    }
+                if let Err(error) = publish_projected_events(&pump_peer, projected, |frame| {
+                    write_value(&pump_output, frame)
+                }) {
+                    eprintln!("mahayana-gateway event delivery failed: {error}");
+                    pump_shutdown.store(true, Ordering::Release);
+                    let _ = write_value(&pump_output, &rpc_error(
+                        Value::Null, -32000, "gateway event delivery failed",
+                    ));
+                    return;
                 }
             }
         })
         .map_err(|error| error.to_string())?;
 
     for line in io::stdin().lock().lines() {
+        if shutdown.load(Ordering::Acquire) {
+            return Err("gateway event delivery stopped; recover storage before restarting".into());
+        }
         let line = line.map_err(|error| error.to_string())?;
         let line = line.trim();
         if line.is_empty() {
@@ -92,13 +94,10 @@ fn run() -> Result<(), String> {
         };
 
         if ServerRequestRegistry::is_response_frame(&request) {
-            let resolved = peer
+            let mut runtime = runtime
                 .lock()
-                .map_err(|_| "gateway peer mutex poisoned".to_string())?
-                .resolve_response(&request);
-            if let Some(resolved) = resolved {
-                resolve_peer_request(&runtime, resolved)?;
-            }
+                .map_err(|_| "runtime mutex poisoned".to_string())?;
+            resolve_peer_response(&peer, &mut *runtime, &request)?;
             continue;
         }
 
@@ -118,17 +117,6 @@ fn run() -> Result<(), String> {
             continue;
         }
         let params = request.get("params").cloned().unwrap_or_else(|| json!({}));
-        let legacy_approval_request_id = if method == "approval.respond" {
-            params
-                .get("approval_id")
-                .or_else(|| params.get("approvalId"))
-                .or_else(|| params.get("requestId"))
-                .and_then(Value::as_str)
-                .map(ToOwned::to_owned)
-        } else {
-            None
-        };
-
         // Runtime -> state is the shared lock order used by the event pump too.
         // Holding both through prompt.submit prevents a fast runtime event from
         // racing ahead of turn/session registration.
@@ -139,7 +127,8 @@ fn run() -> Result<(), String> {
             let mut state = state
                 .lock()
                 .map_err(|_| "gateway state mutex poisoned".to_string())?;
-            dispatch_request(method, &params, &mut *runtime, &mut state, now_ms())
+            let mut guarded = PeerGuardedRuntime { runtime: &mut *runtime, peer: &peer };
+            dispatch_request(method, &params, &mut guarded, &mut state, now_ms())
         };
 
         match dispatched {
@@ -151,9 +140,6 @@ fn run() -> Result<(), String> {
                 }
                 for event in dispatched.events {
                     write_notification(&output, event)?;
-                }
-                if let Some(request_id) = legacy_approval_request_id.as_deref() {
-                    close_peer_approval(&peer, request_id)?;
                 }
             }
             Err(RpcFailure { code, message }) => {
@@ -176,27 +162,42 @@ fn run() -> Result<(), String> {
 fn issue_server_requests(
     peer: &Arc<Mutex<ServerRequestRegistry>>,
     events: &[GatewayEventEnvelope],
-) -> Vec<Value> {
-    let Ok(mut peer) = peer.lock() else {
-        return Vec::new();
-    };
+) -> Result<Vec<Value>, String> {
+    let mut peer = peer.lock().map_err(|_| "gateway peer mutex poisoned".to_string())?;
     let mut frames = Vec::new();
     for event in events {
         let GatewayEvent::ApprovalRequest(payload) = &event.event else {
             continue;
         };
-        if pending_approval_exists(&peer, &payload.request_id) {
-            continue;
-        }
-        if let Ok(issued) = peer.issue(
+        // The owner checks duplicates against the latest durable state while
+        // holding the same file lock used to commit the new request.
+        if let Some(issued) = peer.issue_approval_request(
             event.session_id.clone(),
-            "approval",
             approval_params(payload),
-        ) {
+        ).map_err(|error| error.to_string())? {
             frames.push(issued.frame);
         }
     }
-    frames
+    Ok(frames)
+}
+
+fn publish_projected_events(
+    peer: &Arc<Mutex<ServerRequestRegistry>>,
+    events: Vec<GatewayEventEnvelope>,
+    mut write: impl FnMut(&Value) -> Result<(), String>,
+) -> Result<(), String> {
+    // Even the legacy semantic approval notification waits for peer commit.
+    // An issuance failure cannot expose an approval that has no durable srq.
+    let peer_frames = issue_server_requests(peer, &events)?;
+    for event in events {
+        let value = serde_json::to_value(JsonRpcEventNotification::new(event))
+            .map_err(|error| error.to_string())?;
+        write(&value)?;
+    }
+    for frame in peer_frames {
+        write(&frame)?;
+    }
+    Ok(())
 }
 
 fn approval_params(payload: &ApprovalRequestPayload) -> Value {
@@ -210,36 +211,24 @@ fn approval_params(payload: &ApprovalRequestPayload) -> Value {
     })
 }
 
-fn pending_approval_exists(peer: &ServerRequestRegistry, request_id: &str) -> bool {
-    peer.export_state().iter().any(|request| {
-        request.method == "approval"
-            && request.params.get("requestId").and_then(Value::as_str) == Some(request_id)
-    })
-}
-
-fn close_peer_approval(
+fn resolve_peer_response<R: GatewayRuntime>(
     peer: &Arc<Mutex<ServerRequestRegistry>>,
-    request_id: &str,
+    runtime: &mut R,
+    response: &Value,
 ) -> Result<(), String> {
-    let mut peer = peer
-        .lock()
-        .map_err(|_| "gateway peer mutex poisoned".to_string())?;
-    let pending = peer.export_state().into_iter().find(|request| {
-        request.method == "approval"
-            && request.params.get("requestId").and_then(Value::as_str) == Some(request_id)
-    });
-    if let Some(request) = pending {
-        let _ = peer.resolve_response(&json!({
-            "jsonrpc": "2.0",
-            "id": request.id,
-            "result": {"decision": "resolved-by-approval.respond"},
-        }));
+    let resolved = {
+        let mut peer = peer.lock().map_err(|_| "gateway peer mutex poisoned".to_string())?;
+        peer.resolve_response(response).map_err(|error| error.to_string())?
+    };
+    // Both the peer mutex and its file lock have been released before Host.
+    if let Some(resolved) = resolved {
+        resolve_peer_request(runtime, resolved)?;
     }
     Ok(())
 }
 
-fn resolve_peer_request(
-    runtime: &Arc<Mutex<RuntimeHandle>>,
+fn resolve_peer_request<R: GatewayRuntime>(
+    runtime: &mut R,
     resolved: ResolvedServerRequest,
 ) -> Result<(), String> {
     if resolved.request.method != "approval" {
@@ -256,10 +245,36 @@ fn resolve_peer_request(
 
     let decision = peer_decision(&resolved.response);
     runtime
-        .lock()
-        .map_err(|_| "runtime mutex poisoned".to_string())?
         .resolve_approval(request_id, decision)
         .map(|_| ())
+}
+
+// Reuse dispatch_request's existing validation and canonical decision mapping.
+// Only a validated Host-facing approval call reaches this persistence fence.
+struct PeerGuardedRuntime<'a, R> {
+    runtime: &'a mut R,
+    peer: &'a Arc<Mutex<ServerRequestRegistry>>,
+}
+
+impl<R: GatewayRuntime> GatewayRuntime for PeerGuardedRuntime<'_, R> {
+    fn execute(&mut self, command: Value) -> Result<Value, String> {
+        self.runtime.execute(command)
+    }
+
+    fn interrupt(&mut self, turn_id: &str) -> Result<Value, String> {
+        self.runtime.interrupt(turn_id)
+    }
+
+    fn resolve_approval(&mut self, approval_id: &str, decision: &str) -> Result<Value, String> {
+        {
+            let mut peer = self.peer.lock().map_err(|_| "gateway peer mutex poisoned".to_string())?;
+            peer.resolve_approval_request(approval_id, json!({"decision": decision}))
+                .map_err(|error| error.to_string())?;
+        }
+        // A healthy absent peer record retains the existing legacy Host
+        // admission path. A storage error above never becomes that outcome.
+        self.runtime.resolve_approval(approval_id, decision)
+    }
 }
 
 fn rpc_result(id: Value, result: Value) -> Value {
@@ -417,6 +432,14 @@ mod tests {
             assert!(registry.durability_info()["lastError"].is_null());
             Arc::new(Mutex::new(registry))
         }
+
+        fn block_commit(&self) {
+            std::fs::create_dir(self.root.join("gateway-state-v1.json.bak")).unwrap();
+        }
+
+        fn unblock_commit(&self) {
+            std::fs::remove_dir(self.root.join("gateway-state-v1.json.bak")).unwrap();
+        }
     }
 
     impl Drop for ApprovalFixture {
@@ -446,7 +469,7 @@ mod tests {
                 metadata: None,
             }),
         );
-        let frames = issue_server_requests(&peer, &[event]);
+        let frames = issue_server_requests(&peer, &[event]).unwrap();
         assert_eq!(frames.len(), 1);
         assert!(peer.lock().unwrap().durability_info()["lastError"].is_null());
         assert_eq!(frames[0]["method"], "approval");
@@ -458,6 +481,7 @@ mod tests {
     fn repeated_approval_event_does_not_duplicate_peer_lock() {
         let fixture = ApprovalFixture::new();
         let peer = fixture.open();
+        let stale_peer = fixture.open();
         assert!(peer.lock().unwrap().is_empty());
         let event = GatewayEventEnvelope::new(
             "session-1",
@@ -473,14 +497,16 @@ mod tests {
                 metadata: None,
             }),
         );
-        let first = issue_server_requests(&peer, &[event.clone()]);
+        let first = issue_server_requests(&peer, &[event.clone()]).unwrap();
         assert_eq!(first.len(), 1);
         assert!(peer.lock().unwrap().durability_info()["lastError"].is_null());
         let original = peer.lock().unwrap().export_state();
         assert_eq!(original.len(), 1);
         assert_eq!(first[0]["id"], original[0].id);
         let persisted = std::fs::read(fixture.state_path()).expect("persist the first approval");
-        assert!(issue_server_requests(&peer, &[event.clone()]).is_empty());
+        assert!(issue_server_requests(&peer, &[event.clone()]).unwrap().is_empty());
+        assert!(issue_server_requests(&stale_peer, &[event.clone()]).unwrap().is_empty());
+        assert_eq!(stale_peer.lock().unwrap().export_state(), original);
         assert_eq!(peer.lock().unwrap().export_state(), original);
         assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
         drop(peer);
@@ -491,14 +517,14 @@ mod tests {
         let pending = restored.lock().unwrap().open_requests("session-1");
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0]["id"], first[0]["id"]);
-        assert!(issue_server_requests(&restored, &[event.clone()]).is_empty());
+        assert!(issue_server_requests(&restored, &[event.clone()]).unwrap().is_empty());
         assert_eq!(restored.lock().unwrap().export_state(), original);
         assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
 
         let independent_fixture = ApprovalFixture::new();
         let independent = independent_fixture.open();
         assert!(independent.lock().unwrap().is_empty());
-        let independent_frames = issue_server_requests(&independent, &[event]);
+        let independent_frames = issue_server_requests(&independent, &[event]).unwrap();
         assert_eq!(independent_frames.len(), 1, "the same approval ID is isolated across fixture stores");
         assert!(independent.lock().unwrap().durability_info()["lastError"].is_null());
         assert_eq!(independent_frames[0]["params"]["requestId"], "approval-1");
@@ -561,5 +587,181 @@ mod tests {
         .err()
         .expect("legacy handoff must fail");
         assert!(error.contains("legacy Telegram handoff"), "{error}");
+    }
+
+    fn approval_event(request_id: &str) -> GatewayEventEnvelope {
+        GatewayEventEnvelope::new(
+            "session-1", "turn-1", 1, "2026-09-15T00:00:00Z", "epoch-1",
+            GatewayEvent::ApprovalRequest(ApprovalRequestPayload {
+                request_id: request_id.into(),
+                title: "Approve".into(),
+                description: None,
+                tool_id: None,
+                metadata: None,
+            }),
+        )
+    }
+
+    struct RecordingRuntime {
+        peer: Arc<Mutex<ServerRequestRegistry>>,
+        path: PathBuf,
+        approvals: Vec<(String, String, Value)>,
+        ordinary_calls: usize,
+    }
+
+    impl RecordingRuntime {
+        fn new(peer: &Arc<Mutex<ServerRequestRegistry>>, fixture: &ApprovalFixture) -> Self {
+            Self {
+                peer: Arc::clone(peer), path: fixture.state_path(),
+                approvals: Vec::new(), ordinary_calls: 0,
+            }
+        }
+    }
+
+    impl GatewayRuntime for RecordingRuntime {
+        fn execute(&mut self, _command: Value) -> Result<Value, String> {
+            self.ordinary_calls += 1;
+            Err("unexpected ordinary dispatch".into())
+        }
+
+        fn interrupt(&mut self, _turn_id: &str) -> Result<Value, String> {
+            self.ordinary_calls += 1;
+            Err("unexpected interrupt".into())
+        }
+
+        fn resolve_approval(&mut self, approval_id: &str, decision: &str) -> Result<Value, String> {
+            // Observe the real production adapter's ordering independently:
+            // no peer mutex is held, and committed bytes are already visible.
+            assert!(self.peer.try_lock().is_ok(), "peer mutex held across Host call");
+            let disk: Value = serde_json::from_slice(&std::fs::read(&self.path).unwrap()).unwrap();
+            self.approvals.push((approval_id.into(), decision.into(), disk));
+            Ok(json!({"resolved": true}))
+        }
+    }
+
+    #[test]
+    fn failed_peer_commit_publishes_no_approval_event_or_frame_and_recovers() {
+        let fixture = ApprovalFixture::new();
+        let peer = fixture.open();
+        peer.lock().unwrap().issue("other-session", "clarify", json!({})).unwrap();
+        let original = peer.lock().unwrap().export_state();
+        let persisted = std::fs::read(fixture.state_path()).unwrap();
+        fixture.block_commit();
+        let mut published = Vec::new();
+        let failed = publish_projected_events(&peer, vec![approval_event("approval-failed")], |frame| {
+            published.push(frame.clone());
+            Ok(())
+        });
+        assert!(failed.is_err());
+        assert!(published.is_empty(), "neither semantic approval nor srq may escape");
+        assert_eq!(peer.lock().unwrap().export_state(), original);
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
+        assert!(peer.lock().unwrap().durability_info()["lastError"].is_string());
+        fixture.unblock_commit();
+        publish_projected_events(&peer, vec![approval_event("approval-failed")], |frame| {
+            let disk: Value = serde_json::from_slice(&std::fs::read(fixture.state_path()).unwrap()).unwrap();
+            assert!(disk["peer"]["requests"].as_array().unwrap().iter().any(|request| {
+                request["params"]["requestId"] == "approval-failed"
+            }), "request must be durable even before the semantic notification");
+            published.push(frame.clone());
+            Ok(())
+        }).unwrap();
+        assert_eq!(published.len(), 2);
+        assert_eq!(published[0]["method"], "event");
+        assert_eq!(published[1]["method"], "approval");
+        assert_eq!(published[1]["params"]["requestId"], "approval-failed");
+        let restored = fixture.open();
+        assert_eq!(restored.lock().unwrap().len(), 2);
+        assert_eq!(restored.lock().unwrap().export_state(), peer.lock().unwrap().export_state());
+    }
+
+    #[test]
+    fn response_storage_failure_preserves_pending_and_never_calls_host() {
+        let fixture = ApprovalFixture::new();
+        let peer = fixture.open();
+        let frames = issue_server_requests(&peer, &[approval_event("approval-direct")]).unwrap();
+        let response = json!({"jsonrpc":"2.0", "id":frames[0]["id"], "result":{"decision":"allow-once"}});
+        let original = peer.lock().unwrap().export_state();
+        let persisted = std::fs::read(fixture.state_path()).unwrap();
+        let mut runtime = RecordingRuntime::new(&peer, &fixture);
+        fixture.block_commit();
+        assert!(resolve_peer_response(&peer, &mut runtime, &response).is_err());
+        assert!(runtime.approvals.is_empty());
+        assert_eq!(runtime.ordinary_calls, 0);
+        assert_eq!(peer.lock().unwrap().export_state(), original);
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
+        fixture.unblock_commit();
+        assert_eq!(fixture.open().lock().unwrap().export_state(), original);
+        resolve_peer_response(&peer, &mut runtime, &response).unwrap();
+        assert_eq!(runtime.approvals.len(), 1);
+        assert_eq!(runtime.approvals[0].0, "approval-direct");
+        assert_eq!(runtime.approvals[0].1, "accept");
+        assert_eq!(runtime.approvals[0].2["peer"]["requests"], json!([]));
+        resolve_peer_response(&peer, &mut runtime, &response).unwrap();
+        assert_eq!(runtime.approvals.len(), 1, "late duplicate response cannot call Host again");
+        assert!(fixture.open().lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn compatibility_approval_validates_then_commits_before_host() {
+        let fixture = ApprovalFixture::new();
+        let peer = fixture.open();
+        issue_server_requests(&peer, &[approval_event("approval-legacy")]).unwrap();
+        let mut state = GatewayState::with_path(ReplayLimits::default(), Some(fixture.state_path()));
+        let mut runtime = RecordingRuntime::new(&peer, &fixture);
+        let original = peer.lock().unwrap().export_state();
+        let persisted = std::fs::read(fixture.state_path()).unwrap();
+        fixture.block_commit();
+        let invalid = dispatch_request(
+            "approval.respond", &json!({"approvalId":"approval-legacy", "decision":"unknown"}),
+            &mut PeerGuardedRuntime { runtime: &mut runtime, peer: &peer }, &mut state, 1,
+        ).unwrap_err();
+        assert_eq!(invalid.code, -32602);
+        let failed = dispatch_request(
+            "approval.respond", &json!({"approval_id":"approval-legacy", "decision":"allow-session"}),
+            &mut PeerGuardedRuntime { runtime: &mut runtime, peer: &peer }, &mut state, 2,
+        );
+        assert!(failed.is_err());
+        assert!(runtime.approvals.is_empty());
+        assert_eq!(runtime.ordinary_calls, 0);
+        assert_eq!(peer.lock().unwrap().export_state(), original);
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), persisted);
+        fixture.unblock_commit();
+        let dispatched = dispatch_request(
+            "approval.respond", &json!({"approvalId":"approval-legacy", "decision":"allow-session"}),
+            &mut PeerGuardedRuntime { runtime: &mut runtime, peer: &peer }, &mut state, 3,
+        ).unwrap();
+        assert_eq!(dispatched.result["resolved"], true);
+        assert_eq!(runtime.approvals.len(), 1);
+        assert_eq!(runtime.approvals[0].0, "approval-legacy");
+        assert_eq!(runtime.approvals[0].1, "acceptForSession");
+        assert_eq!(runtime.approvals[0].2["peer"]["requests"], json!([]));
+        assert!(fixture.open().lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn compatibility_approval_distinguishes_healthy_absence_from_broken_storage() {
+        let fixture = ApprovalFixture::new();
+        let peer = fixture.open();
+        let mut state = GatewayState::with_path(ReplayLimits::default(), Some(fixture.state_path()));
+        let mut runtime = RecordingRuntime::new(&peer, &fixture);
+        std::fs::write(fixture.state_path(), b"{").unwrap();
+        let params = json!({"approvalId":"host-owned-approval", "decision":"deny"});
+        let failed = dispatch_request(
+            "approval.respond", &params,
+            &mut PeerGuardedRuntime { runtime: &mut runtime, peer: &peer }, &mut state, 1,
+        );
+        assert!(failed.is_err());
+        assert!(runtime.approvals.is_empty());
+        assert_eq!(std::fs::read(fixture.state_path()).unwrap(), b"{");
+        std::fs::write(fixture.state_path(), br#"{"schemaVersion":1,"peer":{"requests":[]}}"#).unwrap();
+        dispatch_request(
+            "approval.respond", &params,
+            &mut PeerGuardedRuntime { runtime: &mut runtime, peer: &peer }, &mut state, 2,
+        ).unwrap();
+        assert_eq!(runtime.approvals.len(), 1);
+        assert_eq!(runtime.approvals[0].0, "host-owned-approval");
+        assert_eq!(runtime.approvals[0].1, "decline");
+        assert_eq!(runtime.ordinary_calls, 0);
     }
 }

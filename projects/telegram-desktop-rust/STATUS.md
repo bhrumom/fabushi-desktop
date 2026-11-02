@@ -5,6 +5,44 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
+## Round 20 peer mutation boundary — NMR-PEER-DURABILITY-01
+
+The fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+The existing peer registry now stages each change from the latest shared file
+under the same OS lock and commits before replacing live state or returning a
+frame/resolution. The real stdio publisher and both direct/compatibility
+approval response routes propagate storage failures before output or Host calls.
+Same-file approval deduplication and stale-instance merges use the locked latest
+state. Both existing writers retain one advisory lock inode and the only backup;
+no new store, owner, wire format or user-data migration is introduced.
+
+These are authored changes pending containing-H GitHub Actions: complete peer23
+on macOS/Linux/Windows, executable gateway9 and full gateway-library13. All current
+Human/Transcript gates, CLI Native Host features, actual executable/process,
+retained C-wrapper, protocol/TCP, UI/Electron/Windows and package gates remain.
+No local executable validation has run. The original NMR48 attachment contract
+and all concurrent source reviews and responsibility records are preserved.
+
+The original151/run41465224038 failures were the shared gateway fixture and
+compressed blockmap comparison; later exact59f5/run41508537631 fully executed the
+corrected bounded gates, including immutable historical DMG repair. Those results
+do not qualify this new peer implementation. Recent afb/run41522324008 failed to
+compile a reaction restart test (E0382); existing106bb95 corrected its shutdown
+receiver without weakening restart. This batch preserves that remote repair.
+
+The independent reviews are source reviews, not ACCEPT. Peer-to-Host crash
+handoff, replay publication/cross-writer epochs, power-loss, old/new binaries and
+same-question clarify conflict semantics remain unqualified. Backend137 is
+read-only/open/draft/unmerged at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23:
+both exact-head63-fixture runs passed; both production readiness jobs skipped.
+Current Worker identity and authorized afterId=0 service pagination remain open.
+Full source/legal/features, signed/installed platforms, Bot/UI/a11y/performance/
+soak/upgrade/rollback and independent ACCEPT are still required.
+
+Spec: `docs/specs/fbcp-gateway-peer-durability.md`.
+Evidence: `projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json`.
+
+
 ## Round31 — canonical reply identity recovery
 
 Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing

@@ -9215,6 +9215,7 @@ name = "mahayana-gateway"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "fs2",
  "mahayana-core",
  "mahayana-gateway-protocol",
  "serde",
@@ -9226,6 +9227,7 @@ dependencies = [
 name = "mahayana-gateway-peer"
 version = "0.1.0"
 dependencies = [
+ "fs2",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
