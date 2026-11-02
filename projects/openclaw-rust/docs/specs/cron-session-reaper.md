@@ -280,11 +280,12 @@ event schema changes, migration or new dependencies are
 required. Rollback is the bounded patch; a rollback also restores the known
 premature-event defect. Existing telemetry remains the observation surface.
 
-The separate Automation 30-minute deadline still fabricates an interrupted
-execution terminal after requesting cancellation and remains open. Event-loss
-and unknown-outcome durable custody, load/claim/settle reconciliation, restart
-and backend redelivery policy also remain open. This patch does not establish
-full cancellation, restart, cron/reaper or OCRM acceptance.
+That cancellation-publication patch leaves the separate Automation 30-minute
+deadline's fabricated interrupted execution terminal open. The bounded deadline
+correction below addresses that in-process wait only. Event-loss and
+unknown-outcome durable custody, load/claim/settle reconciliation, restart and
+backend redelivery policy remain open. Neither patch establishes full
+cancellation, restart, cron/reaper or OCRM acceptance.
 
 Definition of Done: the exact integrated H passes the selected shipping app
 tests and registry/terminal/outline contract targets in GitHub Actions, with
@@ -339,6 +340,81 @@ run the repaired shipping assertion and source controls at the new exact H,
 then the previously unreached shared contracts. Do not rerun unchanged b3 or
 label queued/cancelled successor runs passing. A further repeated signature
 requires a fresh independent causal/exhaustion assessment under root AGENTS.
+
+## Automation deadline and terminal supervision — 2026-11-02
+
+Contract: `AUTOMATION-DEADLINE-TERMINAL-v1`. Exact target base:
+`f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`; fixed upstream U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. This target-owner correction
+preserves the shipped history-acknowledgment and Runner terminal-publication
+contracts above. It adds no upstream source-read or acceptance claim.
+
+The Host's `run_local_automation_turn` currently returns `Interrupted` when
+its 30-minute deadline requests cancellation. The request does not prove that
+the registered Runner or its routed lease has ended. That return nevertheless
+allows `AutomationRunPath` to settle the guarded cron row and strict history,
+publish a terminal observation, release its in-flight key, and return a backend
+completion. It can also replace an already-queued genuine success with an
+interruption. Repair the existing Host waiter rather than changing these
+downstream owners or weakening their settlement acknowledgments.
+
+- DEADLINE-01: the existing deadline requests cancellation at most once for
+  the same stream, with the existing timeout reason. Cancellation acceptance,
+  rejection or an already-cancelled token is not an execution terminal. Keep
+  the original event subscription, synchronous execution waiter and Automation
+  in-flight/history ownership until a matching genuine Runner terminal arrives.
+- DEADLINE-02: check the event receiver before applying deadline cancellation;
+  a matching terminal from that receive wins. Only the existing
+  stream/channel-qualified terminal mapper
+  determines completed, failed or interrupted execution. Preserve waiting-user
+  projection, upgrade-quiescing annotation and final fence attachment. A frozen
+  or queued terminal cannot be rewritten by the deadline.
+- DEADLINE-03: each receive remains bounded by the existing 250 ms polling
+  interval. Before expiry it may shorten to the remaining deadline; after the
+  single cancellation request it uses a positive polling interval, avoiding
+  a zero-timeout busy loop. Continued supervision until the actual terminal is
+  deliberate: the 30-minute boundary is a cancellation deadline, not a second
+  terminal authority or a hard limit on this synchronous wait.
+- DEADLINE-04: extract a private waiter/clock seam used by the shipping path.
+  Deterministic tests reuse the real registry, event hub, routed lease and
+  terminal snapshot/finalizer seams. A channel-held worker must remain owned
+  after the waiter crosses the deadline; nonterminal or foreign-stream events
+  cannot settle it. Release publishes the actual terminal after existing owner
+  retirement. A queued-success-at-deadline control must preserve success without
+  requesting cancellation. Retain all pre-existing cancellation/terminal tests.
+- DEADLINE-05: exercise the same waiter inside the real `AutomationRuntime` /
+  admitted Session store / `AutomationRunPath` boundary. While the worker is
+  held, history and the cron row remain running, the in-flight key remains
+  claimed, a duplicate scheduled admission cannot execute, and no terminal
+  observation or backend-completion projection is produced. After the genuine
+  terminal, strict history and cron settlement,
+  observation, in-flight release and the existing completion mapping proceed
+  normally. This is an in-process ownership oracle, not real backend delivery
+  or restart acceptance.
+
+Implementation is confined to the existing Host application and tests in
+`source/host/app/src/main.rs`, this spec, and the parent-owned scoped Actions
+selection/evidence record. No persisted format, public outcome, event schema,
+permission, dependency or runtime owner changes are required. Existing Runner
+finalizer ordering, cancellation policy, queue admission and row fences remain
+authoritative. Rollback is the bounded patch and restores the premature deadline
+settlement defect; there is no data migration.
+
+Channel disconnection still follows the existing error return, and Host loss
+can still leave durable running/unknown state. Event-loss reconciliation,
+durable unknown-outcome custody, load/claim/settle recovery and backend redelivery
+remain open. A Runner that never publishes its real terminal keeps this waiter
+supervising; this patch does not add a recovery policy or synthesize completion
+to release that ownership. Those limits must remain explicit in delivery claims.
+
+Definition of Done: independent source/spec review and exact-integrated-H
+GitHub Actions results for the new shipping waiter oracles and retained
+Automation/history/Runner contracts. Authored tests are not execution evidence;
+no local executable validation is permitted, and all global acceptance flags
+and U remain unchanged pending their own gates. The existing canonical Host,
+Automation and Session owners at the exact target base provide source authority
+for this narrow repair; unavailable real backend/service acceptance stays
+separate and cannot be promoted by these local-owner oracles.
 
 ## Verification and Definition of Done
 

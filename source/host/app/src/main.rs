@@ -5871,6 +5871,52 @@ fn automation_terminal_from_event(
     }
 }
 
+fn wait_for_automation_terminal(
+    receiver: &mpsc::Receiver<serde_json::Value>,
+    runner_registry: &TranscriptRunnerRegistry,
+    stream_id: &str,
+    deadline: Instant,
+    mut now: impl FnMut() -> Instant,
+) -> Result<AutomationExecutionResult, String> {
+    let mut deadline_cancel_requested = false;
+    loop {
+        let current = now();
+        let wait = if deadline_cancel_requested {
+            Duration::from_millis(250)
+        } else {
+            deadline
+                .saturating_duration_since(current)
+                .min(Duration::from_millis(250))
+        };
+        // Even at the deadline, receive a queued terminal before requesting
+        // cancellation. The Runner finalizer remains the terminal authority.
+        match receiver.recv_timeout(wait) {
+            Ok(event) => {
+                if let Some(mut result) = automation_terminal_from_event(&event, stream_id) {
+                    if let Ok(AutomationExecutionResult::Interrupted {
+                        quiesced_for_upgrade,
+                        ..
+                    }) = &mut result
+                    {
+                        *quiesced_for_upgrade = runner_registry.is_quiescing_for_upgrade();
+                    }
+                    return result;
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                return Err("Host event bus disconnected during automation turn".into());
+            }
+        }
+        if !deadline_cancel_requested && now() >= deadline {
+            let _ = runner_registry.cancel_stream(stream_id, "automation turn timed out");
+            // A cancellation request is not settlement. Keep this subscription
+            // and caller ownership until the genuine terminal is received.
+            deadline_cancel_requested = true;
+        }
+    }
+}
+
 fn resolve_admitted_automation_session_key(
     session_workers: &ProductionSessionWorkers,
     agent_id: &str,
@@ -6006,50 +6052,19 @@ fn run_local_automation_turn(
         return Err(error);
     }
 
-    let deadline = Instant::now() + Duration::from_secs(30 * 60);
-    loop {
-        let now = Instant::now();
-        if now >= deadline {
-            let _ = deps
-                .runner_registry
-                .cancel_stream(&stream_id, "automation turn timed out");
-            return Ok(attach_automation_run_fences(
-                &deps,
-                agent_id,
-                &stream_id,
-                AutomationExecutionResult::Interrupted {
-                    detail: "Interrupted before it finished.".into(),
-                    quiesced_for_upgrade: deps.runner_registry.is_quiescing_for_upgrade(),
-                },
-            ));
-        }
-        let wait = deadline
-            .saturating_duration_since(now)
-            .min(Duration::from_millis(250));
-        match receiver.recv_timeout(wait) {
-            Ok(event) => {
-                if let Some(mut result) = automation_terminal_from_event(&event, &stream_id) {
-                    if let Ok(AutomationExecutionResult::Interrupted {
-                        quiesced_for_upgrade,
-                        ..
-                    }) = &mut result
-                    {
-                        *quiesced_for_upgrade = deps.runner_registry.is_quiescing_for_upgrade();
-                    }
-                    return Ok(attach_automation_run_fences(
-                        &deps,
-                        agent_id,
-                        &stream_id,
-                        result?,
-                    ));
-                }
-            }
-            Err(mpsc::RecvTimeoutError::Timeout) => continue,
-            Err(mpsc::RecvTimeoutError::Disconnected) => {
-                return Err("Host event bus disconnected during automation turn".into());
-            }
-        }
-    }
+    let result = wait_for_automation_terminal(
+        &receiver,
+        &deps.runner_registry,
+        &stream_id,
+        Instant::now() + Duration::from_secs(30 * 60),
+        Instant::now,
+    )?;
+    Ok(attach_automation_run_fences(
+        &deps,
+        agent_id,
+        &stream_id,
+        result,
+    ))
 }
 
 fn attach_automation_run_fences(
@@ -18111,6 +18126,249 @@ mod tests {
             span: span.clone(), context: None, trace_id: None, span_id: None,
         };
         (span, trace)
+    }
+
+    #[test]
+    fn automation_deadline_retains_real_run_ownership_until_worker_terminal() {
+        use mahayana_host_runtime::automations::automation::AutomationSpec;
+        use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+        use mahayana_host_runtime::extensions::transcript::automation_run_path::{
+            AutomationRunObservation, AutomationRunTrigger, FireAutomationOutcome,
+        };
+        use mahayana_host_runtime::extensions::transcript::automation_runtime::AutomationRuntime;
+        use std::sync::{Arc, Mutex, mpsc};
+        use std::time::{Duration, Instant};
+        use serde_json::json;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+            fixture.root.join("agents"), 500,
+        ));
+        let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+        let agent_id = sessions.create_session(None, "user", None).expect("agent").id;
+        let automations = Arc::new(AutomationRuntime::new(Arc::clone(&workers)));
+        let (created, _) = automations.create_agent_automation(&agent_id, &AutomationSpec {
+            name: "Deadline ownership".into(),
+            prompt: "Inspect the queue".into(),
+            trigger: json!({"type":"cron","schedule":"@daily"}),
+            is_enabled: Some(true),
+        }).expect("real automation definition");
+        let automation_id = created[0].id.clone();
+        let store = sessions.automation_store_for(&agent_id).expect("admitted store");
+        let observations = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+        let sink = Arc::clone(&observations);
+        automations.run_path().set_run_reporter(Some(Arc::new(move |report| {
+            sink.lock().unwrap().push(report.clone());
+        })));
+
+        let stream_id = "deadline-held-stream";
+        let run_id = "deadline-held-run";
+        let receiver = fixture.events.subscribe();
+        let (cancellation, mut lease) = fixture.admit_with_source(&agent_id, stream_id, "automation");
+        let terminal_ownership = Arc::new(Mutex::new(Vec::new()));
+        let terminal_sink = Arc::clone(&terminal_ownership);
+        let terminal_registry = Arc::clone(&fixture.registry);
+        let terminal_runtime = Arc::clone(&fixture.runtime);
+        let terminal_agent = agent_id.clone();
+        let listener = fixture.events.subscribe_listener(move |event| {
+            if automation_terminal_from_event(event, stream_id).is_some() {
+                terminal_sink.lock().unwrap().push((
+                    terminal_registry.active_stream_ids_for_agent(&terminal_agent),
+                    terminal_runtime.has_routed_turn_lease(&terminal_agent, stream_id),
+                    terminal_runtime.is_agent_running(&terminal_agent),
+                    event.clone(),
+                ));
+            }
+        });
+
+        let worker_registry = Arc::clone(&fixture.registry);
+        let worker_runtime = Arc::clone(&fixture.runtime);
+        let worker_events = fixture.events.clone();
+        let worker_agent = agent_id.clone();
+        let worker_cancellation = cancellation.clone();
+        let structured = Mutex::new(fixture.telemetry.logs.start_turn(&agent_id, "automation", None));
+        let (release, held) = mpsc::channel();
+        let (ready, worker_ready) = mpsc::channel();
+        let (published, terminal_published) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            ready.send(()).expect("worker holds the real lease");
+            held.recv_timeout(Duration::from_secs(10)).expect("release actual worker");
+            let terminal = super::RoutedProviderTerminal::capture(
+                stream_id, false, &worker_cancellation,
+                Ok("provider returned after deadline cancellation".into()), 2, true,
+            );
+            worker_runtime.end_provider_run_with_kind(&worker_agent, false);
+            worker_registry.finish_routed_provider(stream_id);
+            lease.settle();
+            terminal.finalize_observations(&structured, None);
+            terminal.publish(&worker_events);
+            published.send(()).expect("genuine terminal published");
+        });
+        worker_ready.recv_timeout(Duration::from_secs(10)).expect("held worker admission");
+
+        let waiter_registry = Arc::clone(&fixture.registry);
+        let waiter_automations = Arc::clone(&automations);
+        let waiter_agent = agent_id.clone();
+        let waiter_automation = automation_id.clone();
+        let clock_cancellation = cancellation.clone();
+        let (polling, after_deadline) = mpsc::channel();
+        let (resume, resume_waiter) = mpsc::channel();
+        let (completed, completion) = mpsc::channel();
+        let waiter = std::thread::spawn(move || {
+            let outcome = waiter_automations.run_server_scheduled_automation_with(
+                &waiter_agent, &waiter_automation, run_id.into(), None, |_| {
+                    let deadline = Instant::now();
+                    super::wait_for_automation_terminal(
+                        &receiver, &waiter_registry, stream_id, deadline, || {
+                            if clock_cancellation.is_cancelled() {
+                                // Reaching the next receive after the real token
+                                // changed proves continued supervision causally.
+                                polling.send(()).expect("announce next wait");
+                                resume_waiter.recv_timeout(Duration::from_secs(10))
+                                    .expect("allow next receive");
+                            }
+                            deadline
+                        },
+                    )
+                },
+            );
+            let projected_completion = automation_fire_completion(outcome.clone());
+            completed.send((outcome, projected_completion)).expect("completion boundary");
+        });
+        after_deadline.recv_timeout(Duration::from_secs(10)).expect("waiter continues after deadline");
+        assert!(cancellation.is_cancelled());
+        assert_eq!(cancellation.reason().as_deref(), Some("automation turn timed out"));
+        assert_eq!(fixture.registry.active_stream_ids_for_agent(&agent_id), vec![stream_id]);
+        assert!(fixture.runtime.has_routed_turn_lease(&agent_id, stream_id));
+        assert!(fixture.runtime.is_agent_running(&agent_id));
+        assert!(automations.run_path().is_in_flight(&agent_id, &automation_id));
+        let running_history = store.read_runs(&automation_id);
+        assert_eq!(running_history.len(), 1);
+        assert_eq!(running_history[0].id, run_id);
+        assert_eq!(running_history[0].status, "running");
+        assert!(running_history[0].finished_at.is_none());
+        let history_bytes = fs::read(store.runs_path(&automation_id)).unwrap();
+        let running_rows = workers.list_cron_session_runs(&agent_id).unwrap();
+        assert_eq!(running_rows.len(), 1);
+        assert_eq!(running_rows[0].run_id, run_id);
+        assert_eq!(running_rows[0].state, "running");
+        assert!(running_rows[0].terminal_outcome.is_none());
+        assert!(!running_rows[0].fence_state_known);
+        assert!(observations.lock().unwrap().is_empty());
+        assert!(terminal_ownership.lock().unwrap().is_empty());
+        assert!(matches!(completion.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        let duplicate = automations.run_server_scheduled_automation_with(
+            &agent_id, &automation_id, "deadline-duplicate-run".into(), None, |_| {
+                panic!("the held Automation must retain its in-flight admission");
+            },
+        ).expect("duplicate admission control");
+        assert_eq!(duplicate, None);
+
+        fixture.events.publish(json!({
+            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+            "payload":{"streamId":stream_id,"type":"delta","content":"still unwinding"},
+        }));
+        resume.send(()).expect("consume nonterminal delta");
+        after_deadline.recv_timeout(Duration::from_secs(10)).expect("delta did not settle waiter");
+
+        // A genuine terminal from another registered task is also insufficient.
+        let (foreign_cancellation, mut foreign_lease) = fixture.admit("foreign-agent", "foreign-stream");
+        let foreign_terminal = super::RoutedProviderTerminal::capture(
+            "foreign-stream", false, &foreign_cancellation, Ok("other task completed".into()), 0, false,
+        );
+        fixture.runtime.end_provider_run_with_kind("foreign-agent", false);
+        fixture.registry.finish_routed_provider("foreign-stream");
+        foreign_lease.settle();
+        let foreign_structured = Mutex::new(fixture.telemetry.logs.start_turn("foreign-agent", "connector", None));
+        foreign_terminal.finalize_observations(&foreign_structured, None);
+        foreign_terminal.publish(&fixture.events);
+        resume.send(()).expect("consume foreign terminal");
+        after_deadline.recv_timeout(Duration::from_secs(10)).expect("foreign terminal did not settle waiter");
+        assert_eq!(fs::read(store.runs_path(&automation_id)).unwrap(), history_bytes);
+        assert_eq!(workers.list_cron_session_runs(&agent_id).unwrap(), running_rows);
+        assert!(automations.run_path().is_in_flight(&agent_id, &automation_id));
+        assert!(fixture.runtime.has_routed_turn_lease(&agent_id, stream_id));
+        assert!(observations.lock().unwrap().is_empty());
+        assert!(terminal_ownership.lock().unwrap().is_empty());
+        assert!(matches!(completion.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+        release.send(()).expect("release actual Runner finalizer");
+        terminal_published.recv_timeout(Duration::from_secs(10)).expect("actual terminal is queued");
+        resume.send(()).expect("receive actual Runner terminal");
+        let (outcome, projected_completion) = completion.recv_timeout(Duration::from_secs(10))
+            .expect("settlement only after genuine Runner terminal");
+        worker.join().expect("actual worker finalizer");
+        waiter.join().expect("Automation settlement waiter");
+        assert_eq!(outcome, Ok(Some(FireAutomationOutcome::Interrupted)));
+        assert_eq!(projected_completion, Some(super::FireCompletion::failed(
+            "Automation run was interrupted on the Sand box",
+        )));
+        assert!(!automations.run_path().is_in_flight(&agent_id, &automation_id));
+        let history = store.read_runs(&automation_id);
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].id, run_id);
+        assert_eq!(history[0].status, "error");
+        assert!(history[0].finished_at.is_some());
+        let rows = workers.list_cron_session_runs(&agent_id).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].run_id, run_id);
+        assert_eq!(rows[0].state, "terminal");
+        assert_eq!(rows[0].terminal_outcome.as_deref(), Some("interrupted"));
+        let observed = observations.lock().unwrap().clone();
+        assert_eq!(observed.len(), 1);
+        assert_eq!(observed[0].automation_run_id.as_deref(), Some(run_id));
+        assert_eq!(observed[0].outcome, FireAutomationOutcome::Interrupted);
+        assert_eq!(observed[0].trigger, AutomationRunTrigger::Schedule);
+        assert!(!observed[0].quiesced_for_upgrade);
+        let terminals = terminal_ownership.lock().unwrap();
+        assert_eq!(terminals.len(), 1);
+        assert!(terminals[0].0.is_empty());
+        assert!(!terminals[0].1);
+        assert!(!terminals[0].2);
+        assert_eq!(terminals[0].3["payload"]["type"], "cancelled");
+        assert_eq!(terminals[0].3["payload"]["sentMessageCount"], 2);
+        assert_eq!(terminals[0].3["payload"]["reacted"], true);
+        drop(terminals);
+        drop(listener);
+        drop(foreign_lease);
+        drop(foreign_structured);
+        automations.dispose();
+        workers.shutdown();
+        drop(automations);
+        drop(sessions);
+        drop(workers);
+        fixture.close();
+    }
+
+    #[test]
+    fn automation_deadline_preserves_queued_runner_success() {
+        use std::sync::{Mutex, mpsc};
+        use std::time::Instant;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let receiver = fixture.events.subscribe();
+        let (cancellation, mut lease) = fixture.admit_with_source("queued-agent", "queued-stream", "automation");
+        let terminal = super::RoutedProviderTerminal::capture(
+            "queued-stream", false, &cancellation, Ok("completed at the deadline".into()), 1, false,
+        );
+        fixture.runtime.end_provider_run_with_kind("queued-agent", false);
+        fixture.registry.finish_routed_provider("queued-stream");
+        lease.settle();
+        let structured = Mutex::new(fixture.telemetry.logs.start_turn("queued-agent", "automation", None));
+        terminal.finalize_observations(&structured, None);
+        terminal.publish(&fixture.events);
+        let deadline = Instant::now();
+        let result = super::wait_for_automation_terminal(
+            &receiver, &fixture.registry, "queued-stream", deadline, || deadline,
+        );
+        assert_eq!(result, Ok(AutomationExecutionResult::Completed));
+        assert!(!cancellation.is_cancelled());
+        assert!(fixture.registry.active_stream_ids_for_agent("queued-agent").is_empty());
+        assert!(!fixture.runtime.has_routed_turn_lease("queued-agent", "queued-stream"));
+        assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        drop(lease);
+        drop(structured);
+        fixture.close();
     }
 
     #[test]
