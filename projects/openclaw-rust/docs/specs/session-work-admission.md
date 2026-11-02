@@ -1801,6 +1801,86 @@ command/step exit records and artifact; do not duplicate its command capture.
 Compiler bindings and declared passed fields cannot replace executed cases.
 This capture repair starts no separate workflow or gate.
 
+### ORT-RECOVERY-ORACLE-02 — current producer identity
+
+Decision **FIX / TEST_FLAW** against H
+`233e165d5a8f5ff4e36449132615baeebdc728df`, Actions `41494060480`, Host job
+`125446795341`, Recovery command `integration-contracts`: the original-turn
+exclusion fixture expects every special producer to classify as `turn`.
+`OCRM-RUNNER-CANCEL-TERMINAL-v1` CANCEL-01a already requires the real channel
+producer to retain `connector` while using `RunLane::User`. The fixture fails
+on that obsolete source assertion before exercising original-turn exclusion.
+Do not revert the production classifier or the valid cancellation/redrive rule.
+
+On integration base `56386a66a1f2944545cee35b58d10cb085e3c292`, give each of
+the existing nine fixture rows an explicit expected source: `connector` for
+the connector row and `turn` for the eight flag-only rows. Assert the existing
+User lane for every row and retain real Session persistence, nonduplicate
+acceptance, absent original-model binding and final lease settlement. Preserve
+the ordinary-user positive and all other recovery/cancellation assertions.
+Only this fixture and this contract change; no production policy, format,
+workflow selector, fixed U or completion flag changes. Freeze for independent
+review, then run the affected target and retained shared gates in Actions on
+the integrated H. The separately investigated original-turn producer failures
+are classified below; they do not justify changing this producer contract.
+
+### ORT-RECOVERY-CODEC-01 — generated MCP JSON reaches durable recovery
+
+Decision **FIX / IMPL_BUG** against the same H/run/job and captured integration
+command: four original-turn parents abort in their real `produce-original`
+child with stack overflow. The actual effect bridge returns
+`{"receipt":"committed"}`; `generated_agent_turn_stream::mcp_generated_result`
+places it in `McpSuccess.structuredContent`, then the existing generated
+occurrence codec serializes it. That codec pre-wraps `Struct.fields` and
+`ListValue.values` before their descriptor-defined `google.protobuf.Value`
+consumer wraps them again, creating a non-decreasing recursion. This is a
+production encoding failure, not a stack-capacity or runner-environment fault.
+
+On base `56386a66a1f2944545cee35b58d10cb085e3c292`, keep the existing
+Transcript/generated-codec owner, frozen generated schema, field numbers,
+tool identity, timestamps, journal and recovery ownership. Preserve raw JSON
+members in the Struct/ListValue projections; wrap each value exactly once at
+the Value boundary. Accept all JSON kinds, nested and empty containers, and
+ordinary user keys such as `stringValue`, `structValue`, `fields` and `values`.
+Do not infer an already-wrapped message from those keys, change the tool
+fixture to an empty result, raise stack limits or bypass checkpoint emission.
+
+The existing `generated_occurrence_codec_contract` must independently decode
+the emitted MCP args/result wire with the already-used `prost-types` contract
+and compare explicit values, including the exact original nonempty receipt.
+It must not depend solely on this codec's own decoder. Add that whole target
+to the existing Recovery command and evidence target index. Retain the full
+`production_checkpoint_restart_contract`: actual one-time effect, canonical
+blobs, model/user/admission/custody refusal, closed-process reopen, exact
+marker/ACK repair and no provider request on recovery. Review the complete
+change, then obtain affected shipping compilation and actual codec/restart
+execution on the integrated H in Actions before claiming this repair verified.
+No storage migration or new dependency is needed; ordinary commit rollback
+restores the prior code but also its known defect. Fixed U, literal source
+reading history and all global completion flags remain unchanged.
+
+### ORT-RECOVERY-ORACLE-03 — deterministic loopback request and failure evidence
+
+Decision **FIX / TEST_FLAW** for the adjacent restart fixture. Its listener is
+nonblocking but its accepted stream enters a blocking, timeout-bounded HTTP
+reader without explicitly clearing nonblocking mode. Existing model/provider
+fixtures already establish the required mode. Also, a failing child panics
+before `server.finish`, and Drop discards the worker's error. The one captured
+Transport failure therefore does not establish its socket errno or prove an
+environment fault; preserve that limitation while correcting the fixture.
+
+The real reader must set blocking mode before its existing read/write timeouts
+and retain header/body bounds, Content-Length contract and request deadline.
+Add a deterministic control that explicitly marks the accepted stream
+nonblocking and proves the reader clears it and reads the unchanged JSON.
+No child success is accepted until its server worker has been boundedly joined;
+collect child and server outcomes together even on failure, with stage-specific
+errors and without credential-bearing request bodies. Preserve strict child
+PID/token receipts, owner-close ordering, all original state/refusal checks and
+the no-extra-provider-call oracle. Do not widen HTTP protocol support or add
+retries to explain an error whose underlying cause was not captured. Execute
+the complete affected restart target in the same frozen Actions campaign.
+
 ## References
 
 - `projects/openclaw-rust/decisions/2026-11-01-session-work-admission-owner-contract.md`

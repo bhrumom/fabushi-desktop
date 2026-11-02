@@ -570,24 +570,25 @@ fn original_turn_binding_preserves_accepted_raw_digest_and_durable_user_identity
 }
 
 #[test]
-fn original_turn_binding_excludes_special_raw_producers_even_when_dispatch_maps_to_turn() {
+fn original_turn_binding_excludes_special_raw_producers_on_the_user_lane() {
     use mahayana_host_runtime::extensions::transcript::production_runtime::classify_send_dispatch;
+    use mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane;
 
-    for (name, patch) in [
-        ("connector", serde_json::json!({"requestSource":"connector"})),
-        ("hidden", serde_json::json!({"hidden":true})),
-        ("fork", serde_json::json!({"isFork":true})),
-        ("child", serde_json::json!({"parentAgentId":"parent"})),
-        ("group-context", serde_json::json!({"groupContext":{}})),
-        ("no-visible-user", serde_json::json!({"appendUserMessage":false})),
-        ("skip-ack", serde_json::json!({"skipAckObligation":true})),
-        ("upgrade-flag", serde_json::json!({"upgradeResume":true})),
-        ("ack-flag", serde_json::json!({"ackRedrive":true})),
+    for (name, patch, expected_source) in [
+        ("connector", serde_json::json!({"requestSource":"connector"}), "connector"),
+        ("hidden", serde_json::json!({"hidden":true}), "turn"),
+        ("fork", serde_json::json!({"isFork":true}), "turn"),
+        ("child", serde_json::json!({"parentAgentId":"parent"}), "turn"),
+        ("group-context", serde_json::json!({"groupContext":{}}), "turn"),
+        ("no-visible-user", serde_json::json!({"appendUserMessage":false}), "turn"),
+        ("skip-ack", serde_json::json!({"skipAckObligation":true}), "turn"),
+        ("upgrade-flag", serde_json::json!({"upgradeResume":true}), "turn"),
+        ("ack-flag", serde_json::json!({"ackRedrive":true}), "turn"),
     ] {
         let fixture = OriginalAdmissionFixture::new(name);
         let mut args = fixture.args(name);
         args.as_object_mut().unwrap().extend(patch.as_object().unwrap().clone());
-        assert_eq!(classify_send_dispatch(&args).unwrap().1, "turn", "{name}");
+        assert_eq!(classify_send_dispatch(&args).unwrap(), (RunLane::User, expected_source), "{name}");
         let accepted = fixture.runtime.accept_routed_send(&args, |accepted| {
             fixture.persist(&args, accepted)
         }).unwrap();

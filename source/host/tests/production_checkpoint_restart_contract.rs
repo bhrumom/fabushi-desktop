@@ -723,33 +723,43 @@ struct OriginalTurnWireServer {
 }
 
 fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
-    stream.set_read_timeout(Some(Duration::from_secs(2))).map_err(|error| error.to_string())?;
-    stream.set_write_timeout(Some(Duration::from_secs(2))).map_err(|error| error.to_string())?;
+    // Match the existing model/provider fixtures when accepted sockets inherit
+    // the listener's nonblocking mode. Both directions remain timeout-bounded.
+    stream.set_nonblocking(false)
+        .map_err(|error| format!("original turn request blocking mode: {error}"))?;
+    stream.set_read_timeout(Some(Duration::from_secs(2)))
+        .map_err(|error| format!("original turn request read timeout: {error}"))?;
+    stream.set_write_timeout(Some(Duration::from_secs(2)))
+        .map_err(|error| format!("original turn request write timeout: {error}"))?;
     let deadline = Instant::now() + Duration::from_secs(4);
     let mut bytes = Vec::new();
     let mut chunk = [0_u8; 4096];
     let header_end = loop {
         if Instant::now() >= deadline { return Err("original turn request deadline".into()); }
-        let count = stream.read(&mut chunk).map_err(|error| error.to_string())?;
+        let count = stream.read(&mut chunk)
+            .map_err(|error| format!("original turn request headers: {error}"))?;
         if count == 0 { return Err("closed original turn request headers".into()); }
         bytes.extend_from_slice(&chunk[..count]);
         if let Some(index) = bytes.windows(4).position(|part| part == b"\r\n\r\n") { break index + 4; }
         if bytes.len() > 64 * 1024 { return Err("oversized original turn headers".into()); }
     };
-    let headers = std::str::from_utf8(&bytes[..header_end]).map_err(|error| error.to_string())?;
+    let headers = std::str::from_utf8(&bytes[..header_end])
+        .map_err(|error| format!("original turn request header encoding: {error}"))?;
     let length = headers.lines().find_map(|line| {
         let (name, value) = line.split_once(':')?;
         name.eq_ignore_ascii_case("content-length")
             .then(|| value.trim().parse::<usize>().ok()).flatten()
-    }).ok_or("original turn request has no content length")?;
+    }).ok_or("original turn request headers: missing or invalid content length")?;
     if length > 1024 * 1024 { return Err("oversized original turn request".into()); }
     while bytes.len() < header_end + length {
         if Instant::now() >= deadline { return Err("original turn body deadline".into()); }
-        let count = stream.read(&mut chunk).map_err(|error| error.to_string())?;
+        let count = stream.read(&mut chunk)
+            .map_err(|error| format!("original turn request body: {error}"))?;
         if count == 0 { return Err("closed original turn request body".into()); }
         bytes.extend_from_slice(&chunk[..count]);
     }
-    serde_json::from_slice(&bytes[header_end..header_end + length]).map_err(|error| error.to_string())
+    serde_json::from_slice(&bytes[header_end..header_end + length])
+        .map_err(|error| format!("original turn request JSON: {error}"))
 }
 
 impl OriginalTurnWireServer {
@@ -784,7 +794,7 @@ impl OriginalTurnWireServer {
                         thread::sleep(Duration::from_millis(2));
                         continue;
                     }
-                    Err(error) => return Err(error.to_string()),
+                    Err(error) => return Err(format!("original turn Responses accept: {error}")),
                 };
                 let request = original_wire_request(&mut stream)?;
                 let ordinal = {
@@ -811,37 +821,82 @@ impl OriginalTurnWireServer {
                 write!(stream,
                     "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                     body.len(),
-                ).map_err(|error| error.to_string())?;
+                ).map_err(|error| format!("original turn response write: {error}"))?;
             }
             Ok(())
         });
         Self { origin, credential, requests, stop, worker: Some(worker) }
     }
 
-    fn finish(&mut self) {
+    fn finish(&mut self) -> Result<(), String> {
         self.stop.store(true, Ordering::Release);
-        if let Some(worker) = self.worker.take() {
+        if let Some(worker) = self.worker.as_ref() {
             let deadline = Instant::now() + Duration::from_secs(5);
             while !worker.is_finished() && Instant::now() < deadline {
                 thread::sleep(Duration::from_millis(2));
             }
-            assert!(worker.is_finished(), "owned Responses worker did not stop within its bound");
-            worker.join().expect("original Responses worker panic").expect("original Responses worker result");
+            if !worker.is_finished() {
+                // Retain this exact handle for the bounded Drop cleanup path.
+                return Err("owned Responses worker did not stop within its bound".into());
+            }
+            return self.worker.take().expect("observed owned Responses worker")
+                .join().map_err(|_| "original Responses worker panic".to_string())?;
         }
+        Ok(())
     }
 }
 
 impl Drop for OriginalTurnWireServer {
     fn drop(&mut self) {
-        self.stop.store(true, Ordering::Release);
-        if let Some(worker) = self.worker.take() {
-            let deadline = Instant::now() + Duration::from_secs(5);
-            while !worker.is_finished() && Instant::now() < deadline {
-                thread::sleep(Duration::from_millis(2));
-            }
-            if worker.is_finished() { let _ = worker.join(); }
+        if let Err(error) = self.finish() {
+            eprintln!("owned original Responses worker cleanup failed: {error}");
         }
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn original_turn_wire_reader_clears_forced_nonblocking_and_preserves_json() {
+    use std::os::fd::AsRawFd;
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let mut client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+    client.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
+    let (mut stream, _) = listener.accept().unwrap();
+    stream.set_nonblocking(true).unwrap();
+    let before = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
+    assert!(before >= 0);
+    assert_ne!(before & libc::O_NONBLOCK, 0);
+    let expected = json!({"model":ORIGINAL_MODEL,"input":[{"content":"original request"}]});
+    let body = serde_json::to_vec(&expected).unwrap();
+    client.write_all(format!(
+        "POST /v1/responses HTTP/1.1\r\nContent-Length: {}\r\n\r\n", body.len(),
+    ).as_bytes()).unwrap();
+    client.write_all(&body).unwrap();
+
+    assert_eq!(original_wire_request(&mut stream).expect("bounded original turn reader"), expected);
+    let after = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
+    assert!(after >= 0);
+    assert_eq!(after & libc::O_NONBLOCK, 0, "the actual reader restores blocking I/O");
+    assert_eq!(stream.read_timeout().unwrap(), Some(Duration::from_secs(2)));
+    assert_eq!(stream.write_timeout().unwrap(), Some(Duration::from_secs(2)));
+}
+
+#[test]
+fn original_turn_wire_worker_retains_request_error_without_header_contents() {
+    let fixture = Fixture::new("original-wire-worker-error", InitialState::NoCheckpoint);
+    let mut server = OriginalTurnWireServer::new(&fixture.root, 1, false);
+    let mut client = TcpStream::connect(server.origin.strip_prefix("http://").unwrap()).unwrap();
+    client.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+    client.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
+    client.write_all(b"POST /v1/responses HTTP/1.1\r\nAuthorization: private-fixture-marker\r\n\r\n").unwrap();
+    let mut byte = [0_u8; 1];
+    assert_eq!(client.read(&mut byte).expect("worker closes the refused request"), 0);
+    let error = server.finish().expect_err("a joined failing worker cannot become success");
+    assert_eq!(error, "original turn request headers: missing or invalid content length");
+    assert!(!error.contains("private-fixture-marker"));
+    assert!(server.requests.lock().unwrap().is_empty());
+    assert!(server.worker.is_none(), "the exact failed worker was joined");
 }
 
 struct OriginalEffectBridge {
@@ -1209,9 +1264,14 @@ fn produced_original_fixture(
     fixture.original_invocations = invocations;
     fixture.original_compaction = original_compaction;
     let mut server = OriginalTurnWireServer::new(&fixture.root, invocations, empty_final);
-    let receipt = fixture.run_child("produce-original", ReopenExpectation::ProduceOriginal, Some(&server))
-        .assert_completed();
-    server.finish();
+    let child = fixture.run_child("produce-original", ReopenExpectation::ProduceOriginal, Some(&server));
+    // Capture the server result even when the producer fails, before any panic
+    // can transfer cleanup to Drop and hide the request/response failure phase.
+    let server_result = server.finish();
+    assert!(server_result.is_ok() && child.result.as_ref().is_ok_and(|status| status.success()),
+        "original turn producer failed: child={:?}; Responses worker={server_result:?}\n{}",
+        child.result, child.logs);
+    let receipt = child.assert_completed();
     let requests = server.requests.lock().expect("actual provider request capture");
     assert_eq!(requests.len(), invocations + 1, "one real tool continuation plus each generated invocation");
     assert!(requests.iter().all(|request| request["model"] == ORIGINAL_MODEL));

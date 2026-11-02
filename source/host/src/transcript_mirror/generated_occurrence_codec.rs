@@ -179,14 +179,10 @@ fn encode_generated_json_message(value: &Value, type_name: &str) -> Result<Vec<u
             let object = value
                 .as_object()
                 .ok_or_else(|| "generated google.protobuf.Struct JSON must be an object".to_string())?;
+            // The fields descriptor wraps each raw member at the Value boundary.
             owned = Value::Object(Map::from_iter([(
                 "fields".to_string(),
-                Value::Object(
-                    object
-                        .iter()
-                        .map(|(key, value)| (key.clone(), generated_value_message(value)))
-                        .collect(),
-                ),
+                Value::Object(object.clone()),
             )]));
             &owned
         }
@@ -196,7 +192,7 @@ fn encode_generated_json_message(value: &Value, type_name: &str) -> Result<Vec<u
                 .ok_or_else(|| "generated google.protobuf.ListValue JSON must be an array".to_string())?;
             owned = Value::Object(Map::from_iter([(
                 "values".to_string(),
-                Value::Array(values.iter().map(generated_value_message).collect()),
+                Value::Array(values.clone()),
             )]));
             &owned
         }
