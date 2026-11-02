@@ -503,4 +503,102 @@ mod physical_guard_tests {
         successor.lock.release().unwrap();
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[cfg(unix)]
+    struct RestoreDirectoryPermissions {
+        path: PathBuf,
+        original: Option<fs::Permissions>,
+    }
+
+    #[cfg(unix)]
+    impl RestoreDirectoryPermissions {
+        fn deny_unlink(path: &Path) -> Self {
+            use std::os::unix::fs::PermissionsExt;
+            let restore = Self {
+                path: path.to_path_buf(),
+                original: Some(fs::metadata(path).unwrap().permissions()),
+            };
+            fs::set_permissions(path, fs::Permissions::from_mode(0o500))
+                .expect("make owned directory readable/searchable but not writable");
+            restore
+        }
+
+        fn restore(&mut self) {
+            if let Some(original) = self.original.as_ref() {
+                fs::set_permissions(&self.path, original.clone())
+                    .expect("restore owned directory permissions");
+                self.original = None;
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    impl Drop for RestoreDirectoryPermissions {
+        fn drop(&mut self) {
+            if let Some(original) = self.original.as_ref() {
+                let _ = fs::set_permissions(&self.path, original.clone());
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    fn assert_pid_unlink_failure_with_live_duplicate(explicit_retry: bool) {
+        let root = root(if explicit_retry { "unlink-retry" } else { "unlink-drop" });
+        let path = root.join("host.lock");
+        let pid = std::process::id();
+        let mut owner = Some(acquire_host_lock(&path, pid).unwrap());
+        let duplicate = owner.as_ref().unwrap().lock.guard.lock().unwrap()
+            .as_ref().unwrap().file.try_clone().unwrap();
+        let projection = fs::read(&path).unwrap();
+        let mut permissions = RestoreDirectoryPermissions::deny_unlink(&root);
+
+        assert_eq!(read_lock_pid(&path), Some(pid));
+        let error = owner.as_ref().unwrap().lock.release()
+            .expect_err("fixture must establish an actual matching-PID unlink refusal");
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(fs::read(&path).unwrap(), projection);
+        assert_eq!(acquire_host_lock(&path, pid).unwrap_err().kind(), io::ErrorKind::WouldBlock);
+        assert!(owner.as_ref().unwrap().lock.guard.lock().unwrap()
+            .as_ref().unwrap().held, "explicit failure must retain an owned retry capability");
+
+        if explicit_retry {
+            permissions.restore();
+            owner.as_ref().unwrap().lock.release().expect("retry after actual unlink repair");
+            assert!(!path.exists());
+        } else {
+            drop(owner.take());
+            assert_eq!(fs::read(&path).unwrap(), projection,
+                "destruction cannot remove the still-protected PID projection");
+            permissions.restore();
+        }
+
+        let successor = acquire_host_lock(&path, pid)
+            .expect("successor must enter while the old duplicate remains open");
+        if let Some(old) = owner.as_ref() {
+            old.lock.release().expect("repeated old release must preserve the successor");
+        }
+        drop(owner);
+        assert_eq!(read_lock_pid(&path), Some(pid));
+        assert_eq!(acquire_host_lock(&path, pid).unwrap_err().kind(), io::ErrorKind::WouldBlock);
+        drop(duplicate);
+        assert_eq!(read_lock_pid(&path), Some(pid));
+        assert_eq!(acquire_host_lock(&path, pid).unwrap_err().kind(), io::ErrorKind::WouldBlock);
+        successor.lock.release().unwrap();
+        assert!(!path.exists());
+        drop(successor);
+        drop(permissions);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn failed_explicit_pid_removal_retains_custody_until_owned_retry_succeeds() {
+        assert_pid_unlink_failure_with_live_duplicate(true);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn ordinary_drop_unlocks_when_matching_pid_removal_still_fails() {
+        assert_pid_unlink_failure_with_live_duplicate(false);
+    }
 }

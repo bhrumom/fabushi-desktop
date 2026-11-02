@@ -1068,6 +1068,14 @@ Extend this existing owner, retaining HTR-01–04 and the shipping caller.
   an independent successor while the duplicate remains open; dropping the
   duplicate later must not disturb the successor. Prove failed admission and
   failed PID-removal cleanup retain the same physical-custody rules.
+  For Unix PID-removal failure, require an actual `PermissionDenied` from the
+  public release while the matching projection remains readable and unchanged.
+  Keep the real guard duplicate open: a failed explicit release must retain
+  contention and permit retry after permissions are restored; destruction while
+  removal still fails must release custody before that duplicate closes. After
+  restoring permissions, same-PID successor admission and later old cleanup must
+  preserve the successor. Restore the owned directory permissions on unwind;
+  a fixture that cannot establish the real refusal is not a passing control.
 
 HPG-RELEASE-01 evidence: at `be07ae46b199d712f689fb0b0a67594f327efcad`, Actions
 `41456741305` / job `125320096231` passed shipping, configuration, application
