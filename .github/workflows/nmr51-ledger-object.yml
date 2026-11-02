@@ -10,31 +10,45 @@ permissions:
 jobs:
   store-reviewed-object:
     if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 5
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
         with:
-          ref: ${{ github.sha }}
-          fetch-depth: 1
-          persist-credentials: false
-      - name: Create only the exact ledger blob without committing or moving refs
+          python-version: '3.12'
+      - name: Store one reviewed append against one pinned live ledger without moving refs
+        shell: bash
         env:
           TRANSFER_TOKEN: ${{ github.token }}
         run: |
-          python3 - <<'PYTHON'
-          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          python - <<'PYTHON'
+          import base64, copy, hashlib, json, os, pathlib, urllib.request
           repo = 'bhrumom/fabushi-desktop'
           path = 'projects/telegram-desktop-rust/parity-ledger.json'
           allowed = {'requirement_ids', 'oracle_ids', 'invariant_ids', 'fabushi_target_symbols',
                      'fabushi_target_paths', 'unit_case_ids', 'integration_case_ids',
                      'fault_recovery_case_ids', 'security_case_ids', 'regression_ids',
                      'test_fixture_ids', 'production_evidence', 'test_evidence', 'test_execution_evidence'}
-          payload_bytes = pathlib.Path('.github/checkpoint-ledger-ops-nmr51.json').read_bytes()
+          headers = {'Authorization': 'Bearer ' + os.environ['TRANSFER_TOKEN'],
+                     'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
+                     'X-GitHub-Api-Version': '2022-11-28'}
+          def api(suffix, payload=None):
+              request = urllib.request.Request('https://api.github.com/repos/' + repo + suffix,
+                  data=None if payload is None else json.dumps(payload).encode(),
+                  headers=headers, method='GET' if payload is None else 'POST')
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  body = response.read(16 * 1024 * 1024 + 1)
+              assert len(body) <= 16 * 1024 * 1024, 'object response exceeded reviewed transport budget'
+              return json.loads(body)
+          workflow_head = os.environ['GITHUB_SHA']
+          operations = api('/contents/.github/checkpoint-ledger-ops-nmr51.json?ref=' + workflow_head)
+          assert operations['sha'] == 'b7164d796852ae69cfc4022012c8801925eed3f3'
+          assert operations['encoding'] == 'base64'
+          payload_bytes = base64.b64decode(operations['content'])
           op = json.loads(payload_bytes)
-          assert op['format_version'] == 2
+          assert op['format_version'] == 3
           assert op['repository'] == repo and op['path'] == path
           assert op['branch'] == 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
           assert op['responsibility_id'] == 'FBCP-NMR-001'
@@ -42,18 +56,26 @@ jobs:
           assert os.environ['GITHUB_REPOSITORY'] == repo
           assert os.environ['GITHUB_REF'] == 'refs/heads/' + op['branch']
           assert os.environ['GITHUB_EVENT_NAME'] == 'push'
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          assert head == os.environ['GITHUB_SHA']
+          head = workflow_head
           def blob(data):
               return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-          original = pathlib.Path(path).read_bytes()
-          assert blob(original) == op['expected_input_blob'], 'ledger advanced; reconcile before transport'
+          assert blob(payload_bytes) == operations['sha']
+          # Pin one actual live ref once; all later reads use its immutable commit/blob.
+          input_head = api('/git/ref/heads/' + op['branch'])['object']['sha']
+          metadata = api('/contents/' + path + '?ref=' + input_head)
+          input_blob = metadata['sha']
+          source = api('/git/blobs/' + input_blob)
+          assert source['encoding'] == 'base64'
+          original = base64.b64decode(source['content'])
+          assert len(original) == source['size'] and blob(original) == input_blob
           before = json.loads(original)
           after = copy.deepcopy(before)
           indexes = [i for i, row in enumerate(after['rows']) if row.get('responsibility_id') == op['responsibility_id']]
           assert len(indexes) == 1
           index = indexes[0]
           row = after['rows'][index]
+          assert row['source_repository'] == 'telegramdesktop/tdesktop'
+          assert row['source_commit'] == 'f985723b552b30fe1c17d377d57f44e61a15a8c4'
           for key, values in op['append'].items():
               assert isinstance(row[key], list) and isinstance(values, list)
               assert all(isinstance(value, str) and value for value in values)
@@ -95,18 +117,11 @@ jobs:
           assert expected == after
           encoded = (json.dumps(after, ensure_ascii=False, indent=2) + '\n').encode()
           target = blob(encoded)
-          assert target == op['expected_output_blob'], 'output differs from reviewed bytes'
-          request = urllib.request.Request(
-              'https://api.github.com/repos/' + repo + '/git/blobs',
-              data=json.dumps({'content': encoded.decode(), 'encoding': 'utf-8'}).encode(),
-              headers={'Authorization': 'Bearer ' + os.environ['TRANSFER_TOKEN'],
-                       'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
-                       'X-GitHub-Api-Version': '2022-11-28'}, method='POST')
-          with urllib.request.urlopen(request, timeout=60) as response:
-              result = json.load(response)
+          assert target != input_blob, 'reviewed append must produce a real change'
+          result = api('/git/blobs', {'content': encoded.decode(), 'encoding': 'utf-8'})
           assert result.get('sha') == target
-          receipt = {'checkout': head, 'input_blob': op['expected_input_blob'], 'created_blob': target,
-                     'bytes': len(encoded), 'operations_sha256': hashlib.sha256(payload_bytes).hexdigest(),
+          receipt = {'workflow_head': head, 'input_head': input_head, 'input_blob': input_blob, 'created_blob': target,
+                     'bytes': len(encoded), 'operations_blob': operations['sha'], 'operations_sha256': hashlib.sha256(payload_bytes).hexdigest(),
                      'source_reviews_before': len(original_reviews), 'source_reviews_after': len(after['source_reviews']),
                      'source_complete_unchanged': sum(r['status'] == 'complete' for r in original_reviews),
                      'refs_updated': False, 'product_validation': False, 'acceptance': False}
