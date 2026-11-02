@@ -4195,7 +4195,7 @@ fn shipping_human_reaction_rejects_credential_change_while_response_body_is_stre
     let error = running.join().expect("reaction thread").expect_err("stale body response");
     assert!(error.contains("credential"), "{error}");
     assert_eq!(owner.get_transcript_entries().expect("unmodified target"), vec![original]);
-    assert_eq!(owner.get_metadata("humanReactionIntent").expect("pending intent")["active"], true);
+    assert_eq!(owner.get_metadata("humanReactionIntent").expect("pending intent").expect("staged intent")["active"], true);
     assert!(server.join().expect("old POST").starts_with("POST /api/social/messages/778/reactions "));
     runtime.shutdown();
     drop(owner);
