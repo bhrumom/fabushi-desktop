@@ -848,6 +848,12 @@ The existing Session/AgentDb/AgentStore owners retain their boundaries:
   before writing blobs. The existing database root/confirmation CAS must
   require an explicit string root in its compared metadata image, so missing
   or wrong-typed fields cannot race that check and match an empty base.
+  Both CAS operations compare decoded byte identity for nonempty hexadecimal
+  roots, accepting the case and outer whitespace already accepted by checked
+  recovery. They retain the raw metadata CAS/concurrency predicate. Only the
+  literal empty string represents an initialized empty root; whitespace-only
+  or malformed hexadecimal strings cannot become an empty-base commit, and
+  non-ASCII invalid hexadecimal must refuse without panicking.
 - Valid empty-root legacy recovery continues through the existing maintenance
   owner and root CAS. If that owner recovers a root, any already-cached
   AgentStore is refreshed through the same checked reset before consumption.
@@ -862,6 +868,13 @@ refused publication without a new blob or user confirmation; and actual
 HostRunnerComposition watermark/epoch/sink refusal and recovery. Retain
 legacy reset, materialization, maintenance and checkpoint
 regression coverage. All executable validation remains in GitHub Actions.
+The continuation oracle must reopen normalized ordinary and legacy fixed-root
+checkpoints, then advance both the generic root and real user-confirmation
+checkpoint paths. Refused raw roots preserve metadata, transcript, generation
+and notifications. Separate owned OS-process controls reopen empty, present
+empty, user and legacy fixed-root states; six persisted fault classes refuse
+repeatedly without rewriting durable bytes and recover after explicit repair.
+These process controls cover storage/Host readiness, not provider replay.
 
 This bounded contract does not add a Runner checkpoint load/claim/settle API,
 bind upgrade markers to the original stream/model/generation, or authorize

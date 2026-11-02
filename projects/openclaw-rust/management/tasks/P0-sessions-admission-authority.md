@@ -5,7 +5,7 @@ Unit: `OCRM-UNIT-SESSIONS-001`
 Candidate requirements: `OCRM-R04`, `OCRM-R08`, `OCRM-AC08`  
 Dossier: `projects/openclaw-rust/dossiers/sessions-admission-scoped.md`  
 Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` / tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`
-Current discovery subject: `projects/openclaw-rust/upstream.lock.json::live_candidate` (discovery-only; do not reuse this unit's historical inventory or provenance without rebaseline).
+Fixed implementation subject: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; historical unit reads and later discovery candidates do not replace this subject or confer scoped authority.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
 ## 2026-11-02 bounded production checkpoint-root recovery
@@ -29,6 +29,25 @@ provider/device/package recovery and final acceptance remain pending. No global
 completion flag is promoted and no local executable validation is used.
 
 ## Atomic closed behavior
+
+### Root identity continuation and actual process reopen — 2026-11-02
+
+On integration parent `7382badafe5c3a793835b7760bf3ab54e7fb54c9`, checked
+recovery accepts uppercase/outer-whitespace nonempty root encodings, while the
+two DB CAS edges compare literal spelling. The same Session can reopen but
+cannot commit its next checkpoint. Compare decoded identity at those edges,
+retain the raw metadata CAS, and refuse whitespace-only or malformed roots.
+Preserve valid legacy fixed IDs and all incoming root-refusal/journal controls.
+
+`checkpoint_root_identity_contract.rs` exercises real reopened AgentStore and
+shipping user-confirmation paths plus write-free malformed-root controls.
+`production_checkpoint_restart_contract.rs` closes all original owners and
+uses 22 owned child launches for initialized/present-empty/user/fixed-root
+states, six fault classes, repeated refusal and explicit repair. It checks
+watermark/epoch and raw metadata/transcript/blob/mirror custody. These are
+storage/Host prerequisites; provider replay and unknown-effect settlement
+remain open. Exact-H Actions and independent review are required; source
+closure and all global acceptance flags remain unchanged.
 
 Session requests enter through canonical Fabushi session API → classify session key kind and enforce harness namespace reservation → check peer-to-peer communication admission policy → track conversation turn correlations and pending turn settlements → apply scoped model overrides → admit work and manage archive/restore lifecycle under single SQLite agent store.
 

@@ -1890,7 +1890,11 @@ impl SandAgentDb {
             else {
                 return Ok(None);
             };
-            if current_root != encode_hex(expected_root) {
+            let current_root_bytes = decode_hex(current_root)
+                .map_err(AgentDbProjectionError::LatestRootHex)?;
+            if (current_root_bytes.is_empty() && !current_root.is_empty())
+                || current_root_bytes.as_slice() != expected_root
+            {
                 return Ok(None);
             }
 
@@ -2001,7 +2005,11 @@ impl SandAgentDb {
         else {
             return Ok(false);
         };
-        if current != encode_hex(expected_root) {
+        let current_bytes = decode_hex(current)
+            .map_err(AgentDbProjectionError::LatestRootHex)?;
+        if (current_bytes.is_empty() && !current.is_empty())
+            || current_bytes.as_slice() != expected_root
+        {
             return Ok(false);
         }
         let Some(object) = metadata.as_object_mut() else {
@@ -6477,6 +6485,9 @@ fn encode_hex(bytes: &[u8]) -> String {
 
 fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
     let clean = raw.trim();
+    if !clean.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("hex string contains non-hexadecimal characters".into());
+    }
     if clean.len() % 2 != 0 {
         return Err("odd-length hex string".into());
     }

@@ -66,6 +66,8 @@
         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/checkpoint_root_identity_contract.rs",
+        "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
@@ -271,6 +273,8 @@
         "source/host/tests/session_conversation_state_contract.rs",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/checkpoint_root_identity_contract.rs",
+        "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"
@@ -1284,6 +1288,8 @@
         "source/host/tests/session_conversation_state_contract.rs",
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/checkpoint_root_identity_contract.rs",
+        "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md"

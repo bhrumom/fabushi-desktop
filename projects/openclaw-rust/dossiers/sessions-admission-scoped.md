@@ -897,3 +897,25 @@ This is static producer-to-owner evidence for the automation FileStore write
 edge. It does not create per-run session rows or close the cron-session reaper,
 detached-result lifecycle, exact-head verification, runtime acceptance, or any
 global completion flag.
+
+## Checkpoint root spelling and process readiness — 2026-11-02
+
+Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`; the historical
+source/read facts in this dossier are unchanged. This bounded target repair
+extends `SWA-ROOT-RECOVERY-v1` on `7382badafe5c3a793835b7760bf3ab54e7fb54c9`.
+The retained `source/packages/agent-kv/agent-store.ts` metadata serde represents
+roots as bytes and its `handleCheckpoint` still exposes `fixedRootBlobId`.
+The production Rust strict read accepts normalized nonempty hexadecimal IDs.
+The existing DB CAS must compare that same byte identity, retaining its raw
+metadata concurrency fence; whitespace-only/malformed roots still refuse.
+No new root hash/length policy, schema, Agent loop or state owner is introduced.
+
+The actual Session → AgentStore → Host checkpoint sink chain is exercised by
+the root identity target. Separate-process tests close the first workers,
+reopen real stored state through production readiness/watermark/epoch/sink
+consumers, preserve opaque protobuf fields and fixed-ID compatibility, and
+require unchanged durable bytes on repeated failure before explicit repair.
+Their ignored child entrypoint is explicitly launched by four parent tests.
+These source/oracle additions await exact-H Actions; complete source authority,
+dependency closure, provider replay, effect settlement and acceptance remain
+open. No historical read or full responsibility status is promoted.

@@ -15911,6 +15911,8 @@
         "source/host/src/runner/production_agent_checkpoint.rs",
         "source/host/src/host_runner_composition.rs",
         "source/host/tests/production_agent_store_recovery_contract.rs",
+        "source/host/tests/checkpoint_root_identity_contract.rs",
+        "source/host/tests/production_checkpoint_restart_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "existing_owner_candidates": [
