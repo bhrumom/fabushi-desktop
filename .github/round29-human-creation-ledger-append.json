@@ -1,0 +1,45 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 29,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "authored_code_commit": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+  "expected_input_blob": "714a817763b6bcb6ed89a0e9e37f3ae728d4b906",
+  "expected_output_blob": "6fc0252f48c5b4c290cdc4f7aab5613da9e01e3c",
+  "row_id": "FBCP-NMR-001",
+  "append": {
+    "requirement_ids": [
+      "NMR-CREATE-01b",
+      "NMR-CREATE-01c",
+      "NMR-CREATE-01d",
+      "NMR-AC-CREATE-01",
+      "FBCP-HUMAN-CREATE-04"
+    ],
+    "fabushi_target_paths": [
+      "source/host/src/extensions/session/agent_db_recovery.rs",
+      "source/host/src/extensions/session/human_creation_tests.rs",
+      "source/host/src/extensions/session/agent_db.rs",
+      "source/host/src/extensions/session/human_creation_storage_tests.rs",
+      "source/host/src/extensions/session/production.rs"
+    ],
+    "fabushi_target_symbols": [
+      "ProductionSessionWorkers::create_human_conversation",
+      "SandAgentDb::open_human_conversation_store",
+      "probe_human_conversation_store"
+    ],
+    "unit_case_ids": [
+      "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen"
+    ],
+    "fault_recovery_case_ids": [
+      "source/host/src/extensions/session/human_creation_tests.rs#corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings"
+    ],
+    "test_evidence": [
+      "projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json"
+    ],
+    "test_execution_evidence": [
+      "Round29 retained failure at exactf544e9b3161d758141e1b419bcdab22cc522952e/run41526852400/job125556686433: retainedTranscript3/Human63/resource3 passed; creation11passed/1failed because original NOTADB sidecars disappeared; storage3/sharebox/journal/Agent/credential/HTTP thereafter unexecuted. The byte-preservation oracle was not weakened. Concurrent9b9cadd7d5b7cc3b7a294568fa26a3919c35021f added the existing magic preflight and f95a33b13672095d68c6ca731f2f42e6c10b9890 added the six-byte header control; both are preserved. Exact8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1 requires a complete100-byte header and adds valid-magic truncation/full-length NOTADB controls to the same creation case. Run41528875268 was queued at registration preparation, not a pass; the canonical linked receipt records subsequent exact-H execution. No acceptance promotion."
+    ]
+  },
+  "note": "\nRound29 Human creation integrity registration: close the missing canonical mapping for existing NMR-CREATE-01b/c/d, NMR-AC-CREATE-01 and FBCP-HUMAN-CREATE-04 in the same Session/SandAgentDb owner. The existing corruption case now retains six data variants (original NOTADB, concurrent six-byte short header, valid-magic truncated header, full-length invalid magic, corrupt schema and corrupt data page), with unchanged complete-directory bytes, repeated/restarted refusal and no-owner/no-live-handle assertions. The registered valid uncheckpointed-WAL atomic-winner/reopen case is the positive boundary. Creation12/storage3 counts remain; no new owner, public schema, dependency or data migration. Production8b preserves both concurrent fixes and changes only full-header admission plus two subcases. Arbitrary valid-header/hot-or-corrupt-WAL recovery, multi-process races, source/legal/platform/real-service/Bot and independent acceptance remain open. All prior rows, source reviews, scalar execution pointers and acceptance state are unchanged."
+}
