@@ -6835,8 +6835,11 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
     let legacy_source = legacy_args["sourceConversationId"].as_str().unwrap();
     let legacy_target = legacy_args["destinationConversationIds"][0].as_str().unwrap();
+    let legacy_source_entry_id = legacy_args["sourceEntryId"].as_str().unwrap();
     let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    let legacy_participants = legacy_owner.get_metadata("participantIds").unwrap().unwrap();
     // Reproduce the actual pre-journal production nonce: SHA256 of the
     // request ID, one NUL byte, then this destination conversation ID.
     use sha2::Digest;
@@ -6851,22 +6854,62 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
         "sourceEntryId":legacy_args["sourceEntryId"],
         "privacy":{"dropSenderNames":false,"dropCaptions":false}
     });
-    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap()
-        .append_transcript_entry(&json!({
-            "id":format!("human-message:{legacy_nonce}"),"kind":"message","role":"user",
-            "authorKind":"human","authorId":"1","content":"legacy forward content",
-            "clientNonce":legacy_nonce.as_str(),"timestampMs":1000.0,
-            "delivery":"pending","forwardContext":context
-        })).unwrap());
+    let legacy_pending = json!({
+        "id":format!("human-message:{legacy_nonce}"),"kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","content":"legacy forward content",
+        "clientNonce":legacy_nonce.as_str(),"timestampMs":1000.0,
+        "delivery":"pending","forwardContext":context.clone()
+    });
+    assert!(legacy_target_owner.append_transcript_entry(&legacy_pending).unwrap());
+    assert!(legacy_owner.set_metadata("participantIds", json!(["2", "9"])).unwrap());
+    // Genuine legacy intent has no batch journal to carry a policy denial.
+    // Persist both the old outbox and revoked membership, then use fresh owners
+    // to prove restart cannot turn that readable source into permission to send.
+    legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
+    let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
+    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
+    assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
+    assert_eq!(legacy_owner.get_metadata("participantIds").unwrap(), Some(json!(["2", "9"])));
+    let denied = legacy_runtime.sync_human_conversation(legacy_target)
+        .expect_err("reopened genuine legacy intent must reauthorize source membership");
+    assert!(denied.contains("participant"), "{denied}");
+    assert_eq!(legacy_server.post_count(), 0);
+    assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+
+    assert!(legacy_owner.set_metadata("participantIds", legacy_participants).unwrap());
+    let mut changed_source = legacy_owner.get_transcript_entries().unwrap().into_iter()
+        .find(|entry| entry["id"].as_str() == Some(legacy_source_entry_id)).unwrap();
+    changed_source["content"] = json!("source edited after the legacy intent was persisted");
+    changed_source["protectedContent"] = json!(true);
+    legacy_owner.update_transcript_entry(legacy_source_entry_id, &changed_source).unwrap().unwrap();
+    let denied = legacy_runtime.sync_human_conversation(legacy_target)
+        .expect_err("genuine legacy intent must reauthorize the current source protection");
+    assert!(denied.contains("protected"), "{denied}");
+    assert_eq!(legacy_server.post_count(), 0);
+    assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+
+    changed_source.as_object_mut().unwrap().remove("protectedContent");
+    legacy_owner.update_transcript_entry(legacy_source_entry_id, &changed_source).unwrap().unwrap();
     let legacy_rows = legacy_runtime.sync_human_conversation(legacy_target)
-        .expect("readable genuine legacy forward remains replayable");
+        .expect("restored source permission resumes the same genuine legacy intent");
     assert_eq!(legacy_server.post_count(), 1);
     assert_eq!(legacy_rows.len(), 1);
     assert_eq!(legacy_rows[0]["delivery"], "sent");
     assert_eq!(legacy_rows[0]["clientNonce"].as_str(), Some(legacy_nonce.as_str()));
     assert_eq!(legacy_rows[0]["forwardContext"], context);
+    assert_eq!(legacy_rows[0]["content"], legacy_pending["content"]);
+    assert_ne!(legacy_rows[0]["content"], changed_source["content"]);
+    let submitted = {
+        let state = legacy_server.state.lock().expect("legacy submitted snapshot");
+        fixture_request_json(state.requests.iter()
+            .find(|request| request.starts_with("POST /api/social/messages ")).unwrap())
+    };
+    assert_eq!(submitted["text"], legacy_pending["content"], "permission restoration cannot replace the saved payload");
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
-    legacy_runtime.shutdown(); drop(legacy_owner); drop(legacy_runtime);
+    legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
     legacy_server.finish(); fs::remove_dir_all(legacy_root).expect("remove genuine legacy fixture");
 }
 

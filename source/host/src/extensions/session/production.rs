@@ -2391,7 +2391,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "persisted Human pending nonce is invalid".to_string())?;
         let author = entry.get("authorId").and_then(serde_json::Value::as_str)
             .ok_or_else(|| "persisted Human pending author is invalid".to_string())?;
-        let mut readable_legacy_source = false;
+        let mut legacy_source_reference = None;
         if let Some(context) = context.filter(|value|
             ["sourceConversationId", "sourceEntryId", "requestId"].iter()
                 .any(|key| value.get(*key).is_some())
@@ -2420,7 +2420,12 @@ impl ProductionSessionWorkers {
             legacy_digest.update(request.as_bytes());
             legacy_digest.update([0_u8]);
             legacy_digest.update(conversation_id.as_bytes());
-            readable_legacy_source = nonce == format!("human-forward-{:x}", legacy_digest.finalize());
+            if nonce == format!("human-forward-{:x}", legacy_digest.finalize()) {
+                let source_entry = context.get("sourceEntryId").and_then(serde_json::Value::as_str)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| "persisted Human forward source entry is invalid".to_string())?;
+                legacy_source_reference = Some((source, source_entry));
+            }
         }
         // Older rows did not have the independent marker. If their entire
         // context was lost/replaced, their stable target nonce still identifies
@@ -2450,9 +2455,14 @@ impl ProductionSessionWorkers {
                 return Ok(true);
             }
         }
-        if !readable_legacy_source {
+        let Some((source, source_entry)) = legacy_source_reference else {
             return Err("persisted Human forward ownership is unresolved; retain pending intent until its source can be recovered".into());
-        }
+        };
+        // Legacy compatibility is not a permission bypass. Use the same
+        // current source policy as new batches before ordinary outbox replay;
+        // retain the original pending payload and report any source denial.
+        self.authorize_forward_source(source, source_entry)
+            .map_err(|error| error.to_string())?;
         Ok(false)
     }
 

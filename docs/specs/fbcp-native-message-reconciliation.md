@@ -1057,12 +1057,22 @@ Preserve genuine readable pre-journal replay, existing pinned-byte guarantees
 and NMR-49 reply repair. This compatibility claim binds to the actual 2a007088
 legacy path; it does not promise automatic repair of arbitrary lost provenance.
 
+A readable legacy source and correct old nonce are compatibility evidence only.
+Before allowing generic replay, reuse `authorize_forward_source` to require
+current source membership and an existing settled, unprotected, nonempty source
+message. A policy or storage rejection returns an error before any upload or
+message POST and preserves the complete original pending row; do not create a
+replacement journal or replace its saved payload with newly edited source text.
+After permission is restored, the same nonce and original snapshot may resume.
+
 NMR-AC-38 ownership continuation adds one actual killed-process/SQLite/HTTP
 case: durable marker before first POST; revoked-source pending rows with future
 or missing context version, changed request marker, missing context and retained
 nonce; unavailable source combined with missing/replaced-unrelated context;
 corrupt source refusal; and a readable genuine legacy control using the real
-pre-journal nonce algorithm.
+pre-journal nonce algorithm, with real shutdown/reopen under revoked source
+membership, protected-source refusal, and restored-permission delivery of the
+original pending text after the source text was edited.
 The complete original intent and pending payload must remain retained. Tests
 execute only at exact-H GitHub Actions. NMR-50 retains nonblocking batch recovery;
 this extension does not replace that work or change public commands/service APIs.
