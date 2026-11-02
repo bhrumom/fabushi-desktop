@@ -388,9 +388,10 @@ fn public_writers_share_current_roster_reconciliation(shipping: &str) -> bool {
         && gateway.contains("ifmatches!(method,\"getHostSettings\"|\"setHostSettings\"){\
             returnself.call_public_settings_command(method,&args);}")
         && shared.contains("dispatch_public_settings_command(&self.settings,method,args,\
-            |trusted,permission_changed|{")
-        && shared.contains("self.roster_bookkeeping.lock().unwrap_or_else(\
-            |poisoned|poisoned.into_inner()).apply_current_settings(&self.settings);")
+            |trusted,permission_changed|{report_agent_roster_security_findings(trusted);\
+            self.roster_bookkeeping.lock().unwrap_or_else(\
+            |poisoned|poisoned.into_inner()).apply_current_settings(&self.settings);\
+            ifpermission_changed{self.local_tool_permission.note_permission_changed();}})")
         && adapter.contains("if!matches!(method,\"config.set\"|\"setHostSettings\"){\
             returnErr(GatewayCommandError::UnknownMethod(method.into()));}")
         && adapter.contains("letcommitted=settings.set_public_host_settings_if_current(\
@@ -425,4 +426,16 @@ fn roster_shared_write_wiring_oracle_rejects_bypassed_or_stale_consumers() {
     }
     let ambiguous = format!("fndispatch_public_settings_command({source}");
     assert!(!public_writers_share_current_roster_reconciliation(&ambiguous));
+
+    let roster = "self.roster_bookkeeping.lock().unwrap_or_else(\
+        |poisoned|poisoned.into_inner()).apply_current_settings(&self.settings);";
+    let dispatch = "dispatch_public_settings_command(&self.settings,method,args,\
+        |trusted,permission_changed|{";
+    assert_eq!(source.matches(roster).count(), 1, "relocation must select the actual roster chain once");
+    assert_eq!(source.matches(dispatch).count(), 1, "relocation must select the actual dispatcher once");
+    let precommit = source.replacen(roster, "", 1)
+        .replacen(dispatch, &format!("{roster}{dispatch}"), 1);
+    assert_ne!(precommit, source);
+    assert!(!public_writers_share_current_roster_reconciliation(&precommit),
+        "reconciliation before commit cannot satisfy the committed-callback wiring oracle");
 }

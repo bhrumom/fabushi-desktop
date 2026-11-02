@@ -249,3 +249,11 @@ The failed-H shipping and Native workspace locked compilation passed, but
 this failure prevented App/Recovery/Coordinator validation and cannot verify
 the completed batch. Freeze the correction and require new exact-H Actions;
 no production behavior, source authority or global acceptance flag changes.
+
+The shared-method source check must bind the roster mutex/current-owner chain
+inside the callback passed to the actual dispatcher. Two independent presence
+checks also accept moving reconciliation before the write, which would leave
+attachments on the old Agent. Keep all route, missing-boundary and stale-read
+negatives above; add an actual-source relocation control that moves the same
+chain before dispatch and must fail the wiring oracle. Production code and the
+original delayed-receipt runtime assertions remain unchanged.
