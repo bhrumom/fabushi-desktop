@@ -635,7 +635,7 @@ impl PlatformRequestHost {
         let response = match serde_json::from_str::<HostRequest>(input) {
             Ok(request) if request.method == "platform.request" => {
                 let id = request.id;
-                match self.product.execute("mahayana.platform.request", &request.params) {
+                match execute_platform_request(&self.product, &request.params) {
                     Ok(result) => HostResponse {
                         id,
                         ok: true,
@@ -676,6 +676,17 @@ pub fn is_platform_request_json(input: &str) -> bool {
     serde_json::from_str::<HostRequest>(input)
         .map(|request| request.method == "platform.request")
         .unwrap_or(false)
+}
+
+fn execute_platform_request(
+    product: &MahayanaProductClient,
+    params: &Value,
+) -> Result<Value, mahayana_product::ProductError> {
+    if surface_platform() == SurfacePlatform::Electron {
+        product.execute_session_owned_platform_request(params)
+    } else {
+        product.execute("mahayana.platform.request", params)
+    }
 }
 
 
@@ -835,9 +846,7 @@ impl AppHost {
             "settings.mutateNetworkProxy" => self.settings_mutate_network_proxy(params),
             "settings.setNetworkProxyEnabled" => self.settings_set_network_proxy_enabled(params),
             method if method.starts_with("feature.") => self.handle_feature(method, params),
-            "platform.request" => self
-                .product
-                .execute("mahayana.platform.request", &params)
+            "platform.request" => execute_platform_request(&self.product, &params)
                 .map_err(|error| AppHostError::Operation(error.to_string())),
             "plugin.permissions" => self.plugin_permissions(params),
             "plugin.permission.grant" => self.set_permission(params, true),

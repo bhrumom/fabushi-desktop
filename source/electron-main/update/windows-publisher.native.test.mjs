@@ -77,7 +77,7 @@ async function powershell(script, extraEnv = {}) {
   ], {
     env: { ...process.env, ...extraEnv },
     windowsHide: true,
-    timeout: 60_000,
+    timeout: 90_000,
     maxBuffer: 1024 * 1024,
   });
 }

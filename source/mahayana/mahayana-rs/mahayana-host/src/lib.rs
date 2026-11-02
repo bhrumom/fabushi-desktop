@@ -53,7 +53,7 @@ use mahayana_product::default_product_surface_state_path;
 use mahayana_runtime_core::MahayanaRuntime;
 #[cfg(not(target_arch = "wasm32"))]
 pub use mahayana_runtime_core::{MiniAppRuntimeStorePort, RuntimeStoreError};
-use mahayana_runtime_core::RuntimeBuilder;
+use mahayana_runtime_core::{RetainedConversationPolicy, RuntimeBuilder};
 use mahayana_runtime_core::RuntimeError;
 use mahayana_social::MahayanaSocialConversationProvider;
 use std::collections::BTreeMap;
@@ -177,6 +177,17 @@ impl MahayanaHost {
     }
 
     pub fn create(config: HostCreateConfig) -> Result<Self, HostError> {
+        Self::create_with_conversation_owner(config, false)
+    }
+
+    /// The shipping desktop Session/Transcript owns Human conversation I/O.
+    /// This specific composition retires the parallel generic Social provider;
+    /// ordinary library/mobile/CLI construction is unchanged.
+    pub fn create_with_session_transcript_owner(config: HostCreateConfig) -> Result<Self, HostError> {
+        Self::create_with_conversation_owner(config, true)
+    }
+
+    fn create_with_conversation_owner(config: HostCreateConfig, session_owned: bool) -> Result<Self, HostError> {
         ensure_native_host_handoff(&config)?;
         let api_base_url = configured_product_api_base_url()?;
         let product_client = match (
@@ -211,7 +222,7 @@ impl MahayanaHost {
             (None, None) => MahayanaProductClient::default(),
         };
         Ok(Self {
-            runtime: Arc::new(build_runtime(config, product_client.clone())?),
+            runtime: Arc::new(build_runtime(config, product_client.clone(), session_owned)?),
             product_client,
         })
     }
@@ -363,6 +374,7 @@ pub fn default_product_session_path() -> PathBuf {
 fn build_runtime(
     create: HostCreateConfig,
     product_client: MahayanaProductClient,
+    session_owned: bool,
 ) -> Result<MahayanaRuntime, HostError> {
     let mut runtime_config = create.runtime.clone();
     if runtime_config.remote_agent_enabled {
@@ -404,9 +416,12 @@ fn build_runtime(
     }
 
     let mut builder = RuntimeBuilder::new(runtime_config.clone());
+    if session_owned {
+        builder = builder.with_retained_conversation_policy(RetainedConversationPolicy::PreserveSocialContacts);
+    }
     #[cfg(feature = "codex-compat")]
     let mut compatibility_conversation_providers: Vec<Arc<dyn ConversationProvider>> = Vec::new();
-    if let Some(token) = session_token.as_ref() {
+    if !session_owned && let Some(token) = session_token.as_ref() {
         let provider = Arc::new(MahayanaSocialConversationProvider::new(
             product_client.clone(),
             Some(token.clone()),

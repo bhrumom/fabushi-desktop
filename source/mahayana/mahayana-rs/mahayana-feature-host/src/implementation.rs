@@ -483,7 +483,11 @@ impl FeatureHostController {
             .data_dir
             .as_ref()
             .map(|data_dir| data_dir.join("workflows"));
-        let runtime = MahayanaHost::create(host_config)?;
+        let runtime = if platform == SurfacePlatform::Electron {
+            MahayanaHost::create_with_session_transcript_owner(host_config)?
+        } else {
+            MahayanaHost::create(host_config)?
+        };
         let info = HostInfo {
             runtime_version: format!("mahayana-abi-{}", runtime.status().runtime_abi_version),
             protocol_version: HOST_PROTOCOL_VERSION.to_string(),
@@ -1023,6 +1027,19 @@ impl FeatureHostController {
     }
 
     pub fn execute(&self, command: FeatureCommand) -> Result<CommandAccepted, FeatureHostError> {
+        if self.config.mode == HostMode::Production && self.info.platform == SurfacePlatform::Electron {
+            match &command {
+                FeatureCommand::ConversationOpen { conversation_id, .. }
+                    if conversation_id.trim().starts_with("mahayana:contact:") => {
+                    return Err(FeatureHostError::Contract("social conversations are unavailable in the desktop host; use the Session/Transcript owner".into()));
+                }
+                FeatureCommand::ChatSend { conversation_id: Some(conversation_id), .. }
+                    if conversation_id.trim().starts_with("mahayana:contact:") => {
+                    return Err(FeatureHostError::Contract("social conversations are unavailable in the desktop host; use the Session/Transcript owner".into()));
+                }
+                _ => {}
+            }
+        }
         if let FeatureCommand::MessagingExecute {
             request_id,
             envelope,

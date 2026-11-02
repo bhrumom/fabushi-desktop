@@ -2401,15 +2401,42 @@ impl MahayanaProductClient {
         self.get_json("/api/plugins/registry", &[], token.as_deref())
     }
 
+    /// Desktop Human-message HTTP belongs to the canonical Session/Transcript
+    /// owner. Keep this explicit construction/caller choice out of request JSON
+    /// so a renderer cannot opt back into the generic message transport.
+    pub fn execute_session_owned_platform_request(
+        &self,
+        request: &Value,
+    ) -> Result<Value, ProductError> {
+        self.platform_request_with_owner(request, true)
+    }
+
     /// Executes one same-origin platform request with the active Rust-owned
     /// session. UI shells supply business data but never receive bearer or
     /// refresh credentials.
     fn platform_request(&self, request: &Value) -> Result<Value, ProductError> {
+        self.platform_request_with_owner(request, false)
+    }
+
+    fn platform_request_with_owner(
+        &self,
+        request: &Value,
+        session_owned: bool,
+    ) -> Result<Value, ProductError> {
         let method = required_string(request, "method")?.to_ascii_uppercase();
         if !matches!(method.as_str(), "GET" | "POST" | "PUT" | "PATCH" | "DELETE") {
             return Err(ProductError::InvalidParameter("method"));
         }
         let path = safe_platform_path(required_string(request, "path")?)?;
+        // Bind both the request path and the actual configured target before
+        // reading credentials. This policy is chosen by the desktop caller,
+        // never by a field supplied by the renderer.
+        let session_target = if session_owned {
+            session_owned_platform_path(path)?;
+            Some(session_owned_platform_target(&self.effective_api_base_url()?, path)?)
+        } else {
+            None
+        };
         let method = reqwest::Method::from_bytes(method.as_bytes())
             .map_err(|_| ProductError::InvalidParameter("method"))?;
         let authenticated = request
@@ -2423,8 +2450,11 @@ impl MahayanaProductClient {
         let query = request.get("query").and_then(Value::as_object);
         if native_desktop_session::enabled() {
             native_desktop_session::reject_auth_mutation(path, method.as_str())?;
-            let mut url = url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
-                .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?;
+            let mut url = match session_target {
+                Some(url) => url,
+                None => url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
+                    .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?,
+            };
             if let Some(query) = query {
                 let mut pairs = url.query_pairs_mut();
                 for (name, value) in query {
@@ -2448,11 +2478,15 @@ impl MahayanaProductClient {
             return Ok(json!({"@type":"mahayana.platform.response", "ok":(200..300).contains(&status),
                 "statusCode":status, "contentType":content_type, "bodyText":body_text, "data":data}));
         }
-        let client = http_client()?;
+        let client = if session_owned { session_owned_http_client()? } else { http_client()? };
 
         let send = |base_url: &str| -> Result<(u16, Option<String>, String), ProductError> {
-            let mut url = url::Url::parse(&format!("{}{}", base_url.trim_end_matches('/'), path))
-                .map_err(|error| ProductError::Configuration(error.to_string()))?;
+            let mut url = if session_owned {
+                session_owned_platform_target(base_url, path)?
+            } else {
+                url::Url::parse(&format!("{}{}", base_url.trim_end_matches('/'), path))
+                    .map_err(|error| ProductError::Configuration(error.to_string()))?
+            };
             if let Some(query) = query {
                 let mut pairs = url.query_pairs_mut();
                 for (name, value) in query {
@@ -3375,6 +3409,15 @@ fn http_client() -> Result<reqwest::blocking::Client, ProductError> {
     build_http_client(false)
 }
 
+fn session_owned_http_client() -> Result<reqwest::blocking::Client, ProductError> {
+    reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(30))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|error| ProductError::Configuration(error.to_string()))
+}
+
 fn native_http_client() -> Result<reqwest::blocking::Client, ProductError> {
     reqwest::blocking::Client::builder()
         .connect_timeout(Duration::from_secs(10))
@@ -3524,6 +3567,57 @@ fn safe_platform_path(value: &str) -> Result<&str, ProductError> {
         .ok_or(ProductError::InvalidParameter("path"))
 }
 
+fn session_owned_platform_path(value: &str) -> Result<&str, ProductError> {
+    let path = safe_platform_path(value)?;
+    // Apply the same URL parser used by platform_request before deciding the
+    // resource. In particular, percent-encoded dot segments can change which
+    // resource a syntactically relative path reaches.
+    let normalized = url::Url::parse(&format!("https://platform.invalid{path}"))
+        .map_err(|_| ProductError::InvalidParameter("path"))?;
+    for candidate in [path, normalized.path()] {
+        let Some(rest) = candidate.strip_prefix("/api/") else { continue };
+        let mut segments = rest.split('/');
+        let category = segments.next().unwrap_or("");
+        let canonical = |segment: &str| {
+            !segment.is_empty() && segment.bytes().all(|byte| {
+                byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'_' | b'-')
+            })
+        };
+        if !canonical(category) {
+            return Err(ProductError::InvalidParameter("path"));
+        }
+        if category == "social" {
+            let resource = segments.next().unwrap_or("");
+            if !canonical(resource) {
+                return Err(ProductError::InvalidParameter("path"));
+            }
+            if resource == "messages" {
+                return Err(ProductError::Configuration(
+                    "Desktop Human messages are owned by Session/Transcript".into(),
+                ));
+            }
+        }
+    }
+    Ok(path)
+}
+
+fn session_owned_platform_target(base: &str, path: &str) -> Result<url::Url, ProductError> {
+    let invalid_base = || ProductError::Configuration(
+        "Desktop platform API base must be an HTTP(S) origin".into(),
+    );
+    let origin = url::Url::parse(base).map_err(|_| invalid_base())?;
+    if !matches!(origin.scheme(), "http" | "https") || origin.host_str().is_none()
+        || !origin.username().is_empty() || origin.password().is_some()
+        || origin.path() != "/" || origin.query().is_some() || origin.fragment().is_some()
+    {
+        return Err(invalid_base());
+    }
+    let url = url::Url::parse(&format!("{}{}", base.trim_end_matches('/'), path))
+        .map_err(|_| invalid_base())?;
+    session_owned_platform_path(url.path())?;
+    Ok(url)
+}
+
 fn decode_value<T: for<'de> Deserialize<'de>>(value: Value) -> Result<T, ProductError> {
     serde_json::from_value(value).map_err(|error| ProductError::Response(error.to_string()))
 }
@@ -3653,6 +3747,182 @@ pub fn redact_secrets(value: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn session_owned_platform_client(base: &str) -> MahayanaProductClient {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-platform-owner-{}-{}", std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+                .expect("fixture clock").as_nanos(),
+        ));
+        MahayanaProductClient::new_with_surface_state_path(
+            base.to_owned(), root.join("session.json"), root.join("surface.json"),
+        )
+    }
+
+    fn session_owned_platform_http_fixture() -> (String, std::thread::JoinHandle<String>) {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("loopback fixture");
+        let origin = format!("http://{}", listener.local_addr().expect("fixture address"));
+        listener.set_nonblocking(true).expect("bounded accept");
+        let server = std::thread::spawn(move || {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        assert!(std::time::Instant::now() < deadline, "expected one product HTTP request");
+                        std::thread::sleep(std::time::Duration::from_millis(5));
+                    }
+                    Err(error) => panic!("fixture accept: {error}"),
+                }
+            };
+            stream.set_read_timeout(Some(std::time::Duration::from_secs(2))).expect("read bound");
+            let mut bytes = Vec::new();
+            let mut buffer = [0; 1024];
+            while !bytes.windows(4).any(|window| window == b"\r\n\r\n") {
+                let count = stream.read(&mut buffer).expect("HTTP request");
+                assert!(count > 0 && bytes.len() + count <= 16_384, "bounded complete headers");
+                bytes.extend_from_slice(&buffer[..count]);
+            }
+            let body = r#"{"ownerControl":"existing-product-transport"}"#;
+            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).expect("fixture response");
+            String::from_utf8(bytes).expect("ASCII request headers")
+        });
+        (origin, server)
+    }
+
+    #[test]
+    fn session_owned_platform_rejects_message_routes_before_credentials() {
+        let client = session_owned_platform_client("http://127.0.0.1:1");
+        for method in ["GET", "POST", "PUT", "PATCH", "DELETE"] {
+            for path in ["/api/social/messages", "/api/social/messages/7", "/api/social/messages/7/reactions", "/api/social/messages/read"] {
+                for authenticated in [true, false] {
+                    let error = client.execute_session_owned_platform_request(&json!({
+                        "method": method, "path": path, "authenticated": authenticated,
+                        "body": {"text": "private-message-sentinel"},
+                    })).expect_err("message owner must reject before credentials or transport");
+                    assert!(error.to_string().contains("Desktop Human messages are owned by Session/Transcript"));
+                    assert!(!error.to_string().contains("private-message-sentinel"));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn session_owned_platform_rejects_normalized_and_ambiguous_route_aliases() {
+        for path in [
+            "/api/social/%6dessages", "/api/SOCIAL/messages", "/api/social/Messages",
+            "/api/social/messages;mode=compat", "/api/social%2fmessages",
+            "/api//social/messages", "/api/./social/messages", "/api/%73ocial/messages",
+            "/api/other/%2e%2e/social/messages", "/v1/other/%2e%2e/%2e%2e/api/social/messages",
+            "/api/social/friends/%2e%2e/messages", "/api/social/messages?alias=friends",
+        ] {
+            assert!(session_owned_platform_path(path).is_err(), "alias reached message transport: {path}");
+        }
+        for path in ["/api/social/friends", "/api/social/friends/opaque%20id", "/api/agents/opaque%20id", "/v1/marketplace/plugins"] {
+            assert_eq!(session_owned_platform_path(path), Ok(path));
+        }
+    }
+
+    #[test]
+    fn session_owned_platform_preserves_existing_contact_transport() {
+        let (origin, server) = session_owned_platform_http_fixture();
+        let client = session_owned_platform_client(&origin);
+        let response = client.execute_session_owned_platform_request(&json!({
+            "method": "GET", "path": "/api/social/friends", "authenticated": false,
+            "query": {"limit": 2},
+        })).expect("unrelated contact HTTP remains available");
+        assert_eq!(response["statusCode"], 200);
+        assert_eq!(response["data"]["ownerControl"], "existing-product-transport");
+        let request = server.join().expect("fixture completed");
+        assert!(request.starts_with("GET /api/social/friends?limit=2 HTTP/1.1\r\n"));
+        assert!(!request.to_ascii_lowercase().contains("authorization:"));
+    }
+
+    #[test]
+    fn session_owned_platform_rejects_non_origin_base_before_credentials() {
+        for base in [
+            "http://127.0.0.1:1/api/social/messages",
+            "http://127.0.0.1:1/?route=/api/social/messages",
+            "http://127.0.0.1:1/#/api/social/messages",
+            "http://user@127.0.0.1:1",
+        ] {
+            let client = session_owned_platform_client(base);
+            for authenticated in [true, false] {
+                let error = client.execute_session_owned_platform_request(&json!({
+                    "method": "POST", "path": "/v1/control", "authenticated": authenticated,
+                })).expect_err("configured base cannot change the resource owner");
+                assert_eq!(error.to_string(), "product API configuration failed: Desktop platform API base must be an HTTP(S) origin");
+            }
+        }
+    }
+
+    #[test]
+    fn session_owned_platform_never_follows_redirects_to_messages() {
+        use std::io::{Read, Write};
+        for status in [307, 308] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("redirect fixture");
+            let origin = format!("http://{}", listener.local_addr().expect("fixture address"));
+            listener.set_nonblocking(true).expect("bounded redirect accept");
+            let (finished, completion) = std::sync::mpsc::channel::<()>();
+            let server = std::thread::spawn(move || {
+                let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+                let mut requests = Vec::new();
+                loop {
+                    match listener.accept() {
+                        Ok((mut stream, _)) => {
+                            stream.set_read_timeout(Some(std::time::Duration::from_secs(2))).expect("read bound");
+                            let mut bytes = Vec::new();
+                            let mut buffer = [0; 1024];
+                            while !bytes.windows(4).any(|window| window == b"\r\n\r\n") {
+                                let count = stream.read(&mut buffer).expect("redirect request");
+                                assert!(count > 0 && bytes.len() + count <= 16_384, "bounded headers");
+                                bytes.extend_from_slice(&buffer[..count]);
+                            }
+                            requests.push(String::from_utf8(bytes).expect("ASCII request"));
+                            if requests.len() == 1 {
+                                write!(stream, "HTTP/1.1 {status} Redirect\r\nLocation: /api/social/messages\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").expect("redirect response");
+                            } else {
+                                write!(stream, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").expect("unexpected follow-up response");
+                            }
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            match completion.try_recv() {
+                                Ok(()) | Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
+                                Err(std::sync::mpsc::TryRecvError::Empty) => {},
+                            }
+                            assert!(std::time::Instant::now() < deadline, "bounded redirect exchange");
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                        Err(error) => panic!("redirect accept: {error}"),
+                    }
+                }
+                requests
+            });
+            let response = session_owned_platform_client(&origin).execute_session_owned_platform_request(&json!({
+                "method": "POST", "path": "/api/social/friends", "authenticated": false,
+            }));
+            let _ = finished.send(());
+            let requests = server.join().expect("redirect fixture completed");
+            let response = response.expect("return the original redirect without following it");
+            assert_eq!(response["statusCode"], status);
+            assert_eq!(response["ok"], false);
+            assert_eq!(requests.len(), 1, "a redirected message transport bypassed the owner");
+            assert!(requests[0].starts_with("POST /api/social/friends HTTP/1.1\r\n"));
+            assert!(!requests[0].to_ascii_lowercase().contains("authorization:"));
+        }
+    }
+
+    #[test]
+    fn session_owned_platform_does_not_change_other_product_entrypoints() {
+        let (origin, server) = session_owned_platform_http_fixture();
+        let client = session_owned_platform_client(&origin);
+        let response = client.execute("mahayana.platform.request", &json!({
+            "method": "GET", "path": "/api/social/messages", "authenticated": false,
+        })).expect("non-desktop compatibility entrypoint keeps its owner");
+        assert_eq!(response["statusCode"], 200);
+        assert!(server.join().expect("fixture completed").starts_with("GET /api/social/messages HTTP/1.1\r\n"));
+    }
 
     #[test]
     fn platform_query_accepts_native_scalar_values_without_stringifying_structures() {

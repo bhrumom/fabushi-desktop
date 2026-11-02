@@ -4,12 +4,14 @@
 
 use base64::Engine as _;
 use fabushi_telegram_storage::{EncryptedSqliteStore, StorageKey};
-use mahayana_app_host::{AppHost, AppHostFeatureMode, HostRequest};
+use mahayana_app_host::{AppHost, AppHostFeatureMode, HostRequest, PlatformRequestHost};
+use mahayana_host::{HostCreateConfig, MahayanaHost};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::net::TcpListener;
 use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -34,6 +36,10 @@ const UPSERT_COLLISION_ID: &str = "retained-upsert-collision";
 const LEGACY_KEY: [u8; 32] = [11; 32];
 const LEGACY_METADATA: &[u8] = b"public retained encrypted metadata; no real account";
 const STANDALONE_MESSAGING_ERROR: &str = "host operation failed: standalone messaging is unavailable in the desktop host; use the Session/Transcript owner";
+const SOCIAL_OWNER_ERROR: &str = "host operation failed: social conversations are unavailable in the desktop host; use the Session/Transcript owner";
+const SOCIAL_HTTP_OWNER_ERROR: &str = "host operation failed: product API configuration failed: Desktop Human messages are owned by Session/Transcript";
+const BOT_SOCIAL: &str = "Public retained social-owner Agent";
+const SOCIAL_TEXT: &str = "Public retained Human payload; never send or reinterpret as Agent input.\0Unicode: 人";
 
 struct TestDirectory(PathBuf);
 
@@ -849,14 +855,15 @@ fn legacy_child_case(root: &Path, restart: bool) {
 
 fn run_child(root: &Path, mode: &str) {
     let issuer = if mode == "production" || mode.starts_with("legacy-")
+        || mode.starts_with("social-")
         || (mode.starts_with("messaging-") && mode != "messaging-isolated")
     {
         PRODUCTION
     } else {
         ISOLATED
     };
-    let mut child = Command::new(std::env::current_exe().expect("test executable"))
-        .args([TEST_NAME, "--exact", "--nocapture"])
+    let mut command = Command::new(std::env::current_exe().expect("test executable"));
+    command.args([TEST_NAME, "--exact", "--nocapture"])
         .env_clear()
         .env("PATH", std::env::var_os("PATH").unwrap_or_default())
         .env(CHILD_MODE, mode)
@@ -886,13 +893,39 @@ fn run_child(root: &Path, mode: &str) {
         .env("TMPDIR", root.join("tmp"))
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()
+        .stderr(Stdio::inherit());
+    // Keep the production issuer identity needed by the registration control,
+    // while routing any unexpected reqwest transport to this owned rejection
+    // proxy. No inherited proxy bypass or real service is needed by the test.
+    let network_fence = if mode.starts_with("social-") {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("owned rejection proxy");
+        listener.set_nonblocking(true).expect("nonblocking proxy observation");
+        let proxy = format!("http://{}", listener.local_addr().expect("proxy address"));
+        for name in ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"] {
+            command.env(name, &proxy);
+        }
+        command.env("NO_PROXY", "").env("no_proxy", "");
+        Some(listener)
+    } else {
+        None
+    };
+    let mut child = command.spawn()
         .expect("spawn isolated integration-test process");
     let deadline = Instant::now() + Duration::from_secs(45);
+    let mut unexpected_transports = 0;
     loop {
+        if let Some(listener) = &network_fence {
+            while let Ok((mut socket, _)) = listener.accept() {
+                unexpected_transports += 1;
+                socket.set_write_timeout(Some(Duration::from_secs(1))).expect("proxy write bound");
+                // Reject CONNECT and plain HTTP alike, without reading or
+                // returning the synthetic credential or request body.
+                let _ = socket.write_all(b"HTTP/1.1 502 Forbidden fixture transport\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            }
+        }
         if let Some(status) = child.try_wait().expect("poll test child") {
             assert!(status.success(), "Native AppHost child case failed: {mode}");
+            assert_eq!(unexpected_transports, 0, "social owner dispatched unexpected HTTP: {mode}");
             return;
         }
         if Instant::now() >= deadline {
@@ -918,6 +951,10 @@ fn native_desktop_account_handoff() {
                 mode == "messaging-restart",
                 if mode == "messaging-isolated" { ISOLATED } else { PRODUCTION },
             );
+            return;
+        }
+        if matches!(mode.as_str(), "social-first" | "social-restart" | "social-repeat") {
+            social_child_case(&root, mode == "social-first");
             return;
         }
         assert!(matches!(
@@ -1304,6 +1341,198 @@ fn native_standalone_messaging_preserves_snapshot_blob_access_and_other_accounts
 #[test]
 fn native_standalone_messaging_preserves_corrupt_and_interrupted_stores() {
     retained_messaging_case(true);
+}
+
+fn assert_production_social_registry_selection(root: &Path) {
+    let config = |label: &str| {
+        let base = root.join(label);
+        fs::create_dir_all(base.join("workspace")).expect("isolated Host workspace");
+        HostCreateConfig {
+            runtime: mahayana_core::RuntimeConfig {
+                data_dir: Some(base.join("runtime")),
+                workspace_roots: vec![base.join("workspace")],
+                ..Default::default()
+            },
+            product_session_path: Some(base.join("account-session.json")),
+            product_surface_state_path: Some(base.join("product-surface.json")),
+            product_storage_passphrase: Some("public-social-owner-storage-passphrase".into()),
+            cwd: Some(base.join("workspace")),
+            inherit_installed_plugins: Some(false),
+            ..Default::default()
+        }
+    };
+    // The same production-issuer Native credential can register Social in an
+    // ordinary Host. An isolated issuer would not exercise that former path.
+    let generic = MahayanaHost::create(config("ordinary-host-control"))
+        .expect("ordinary Host retains its supported provider composition");
+    let ordinary = generic.status().providers;
+    assert!(ordinary.iter().any(|provider| provider == "mahayana-social"));
+    assert!(ordinary.iter().any(|provider| provider == "mahayana-ai"));
+    assert!(ordinary.iter().any(|provider| provider == "miniapp"));
+    drop(generic);
+    let owned = MahayanaHost::create_with_session_transcript_owner(config("session-owned-host-control"))
+        .expect("Session/Transcript-owned Host");
+    let providers = owned.status().providers;
+    let expected = ordinary.into_iter()
+        .filter(|provider| provider != "mahayana-social")
+        .collect::<Vec<_>>();
+    assert_eq!(providers, expected, "only the generic social writer is retired");
+    drop(owned);
+}
+
+fn social_sqlite_image(host: &AppHost) -> Value {
+    host.mini_app_store_port().expect("real RuntimeStore port")
+        .with_connection::<_, rusqlite::Error>(|connection| {
+            let mut image = serde_json::Map::new();
+            for table in ["conversations", "turns", "runs", "turn_requests", "pending_intents", "handoff_dispatch"] {
+                let mut statement = connection.prepare(&format!("SELECT * FROM {table} ORDER BY 1"))?;
+                let columns = statement.column_count();
+                let rows = statement.query_map([], |row| {
+                    (0..columns).map(|column| {
+                        Ok(match row.get_ref(column)? {
+                            rusqlite::types::ValueRef::Null => Value::Null,
+                            rusqlite::types::ValueRef::Integer(value) => json!(value),
+                            rusqlite::types::ValueRef::Real(value) => json!(value),
+                            rusqlite::types::ValueRef::Text(bytes) => json!(String::from_utf8(bytes.to_vec()).expect("fixture SQLite UTF-8")),
+                            rusqlite::types::ValueRef::Blob(bytes) => json!({"blob": base64::engine::general_purpose::STANDARD.encode(bytes)}),
+                        })
+                    }).collect::<Result<Vec<_>, rusqlite::Error>>()
+                })?.collect::<Result<Vec<_>, _>>()?;
+                image.insert(table.into(), json!(rows));
+            }
+            Ok(Value::Object(image))
+        }).expect("read retained social rows through original RuntimeStore connection")
+}
+
+fn seed_social_waiting_turn(host: &AppHost) {
+    // Use the actual initialized schema and RuntimeStore-owned connection.
+    // WaitingUser is deliberate: even an old binary must fail this preservation
+    // assertion without sending this synthetic text to a real service.
+    host.mini_app_store_port().expect("real RuntimeStore fixture port")
+        .with_connection::<_, rusqlite::Error>(|connection| {
+            let transaction = connection.transaction()?;
+            transaction.execute(
+                "INSERT INTO conversations(conversation_id, updated_at_ms) VALUES (?1, 71)",
+                ["mahayana:contact:public-retained-contact"],
+            )?;
+            transaction.execute(
+                "INSERT INTO turns(turn_id, conversation_id, user_message_id, created_at_ms, state, active_run_id)
+                 VALUES ('public-social-turn', ?1, 'public-social-message', 72, 'waiting-user', 'public-social-run')",
+                ["mahayana:contact:public-retained-contact"],
+            )?;
+            transaction.execute(
+                "INSERT INTO runs(run_id, turn_id, generation, provider, started_at_ms, finished_at_ms, state)
+                 VALUES ('public-social-run', 'public-social-turn', 4, 'mahayana-social', 73, NULL, 'waiting-user')",
+                [],
+            )?;
+            transaction.execute(
+                "INSERT INTO turn_requests(turn_id, message_id, text, inference_provider, hidden, updated_at_ms)
+                 VALUES ('public-social-turn', 'public-social-message', ?1, NULL, 0, 74)",
+                [SOCIAL_TEXT],
+            )?;
+            transaction.execute(
+                "INSERT INTO pending_intents(intent_id, turn_id, run_id, kind, payload_json, created_at_ms)
+                 VALUES ('public-social-ask', 'public-social-turn', 'public-social-run', 'ask-user', ?1, 75)",
+                [" {\"retainedUnknownField\": [1, true, \"人\"], \"publicPayload\": \"preserve original spacing\"} "],
+            )?;
+            transaction.commit()
+        }).expect("seed durable historical social turn without dispatch");
+}
+
+fn assert_social_entries_unavailable(host: &AppHost, lane: &PlatformRequestHost) {
+    for conversation in ["mahayana:contact:42", " \tmahayana:contact:42\n"] {
+        for command in [
+            json!({"type": "conversation.open", "requestId": "retired-open", "conversationId": conversation}),
+            json!({"type": "chat.send", "requestId": "retired-send", "conversationId": conversation,
+                "agentId": "mahayana-assistant", "text": SOCIAL_TEXT, "mode": "agent"}),
+        ] {
+            for params in [command.clone(), json!({"command": command})] {
+                let response = identified_request(host, "social-owner", "feature.execute", params);
+                assert!(!response.ok);
+                assert!(response.result.is_none());
+                assert_eq!(response.error.as_deref(), Some(SOCIAL_OWNER_ERROR));
+            }
+        }
+    }
+    for authenticated in [false, true] {
+        for (method, path) in [
+            ("POST", "/api/social/messages"),
+            ("GET", "/api/social/messages"),
+            ("PATCH", "/api/social/messages/1"),
+            ("DELETE", "/api/social/messages/1"),
+            ("POST", "/api/social/messages/1/reactions"),
+        ] {
+            let params = json!({"method": method, "path": path, "authenticated": authenticated,
+                "body": {"text": SOCIAL_TEXT, "contact": "public-contact"}});
+            let response = identified_request(host, "social-http-owner", "platform.request", params.clone());
+            assert!(!response.ok);
+            assert!(response.result.is_none());
+            assert_eq!(response.error.as_deref(), Some(SOCIAL_HTTP_OWNER_ERROR));
+            let response: Value = serde_json::from_str(&lane.dispatch_json(&json!({
+                "id": "social-http-lane-owner", "method": "platform.request", "params": params,
+            }).to_string())).expect("decode real platform lane response");
+            assert_eq!(response["id"], "social-http-lane-owner");
+            assert_eq!(response["ok"], false);
+            assert!(response["result"].is_null());
+            assert_eq!(response["error"], SOCIAL_HTTP_OWNER_ERROR);
+            assert!(!response.to_string().contains("Public retained Human payload"));
+        }
+    }
+    // Rejected intents cannot publish chat/history results or copy their body
+    // into the feature event stream. Ordinary account/Agent events are allowed.
+    for _ in 0..256 {
+        let response = identified_request(host, "social-event-check", "feature.receive", json!({"timeoutMs": 0}));
+        assert!(response.ok);
+        let event = response.result.expect("feature event result");
+        if event.is_null() {
+            return;
+        }
+        assert_ne!(event["type"], "chat.message");
+        assert_ne!(event["type"], "conversation.opened");
+        assert!(!event.to_string().contains("Public retained Human payload"));
+    }
+    panic!("social owner fixture event queue did not settle");
+}
+
+fn social_child_case(root: &Path, first: bool) {
+    let credential = root.join("native-credential.json");
+    let expected_credential = replace_native_credential(&credential, PRODUCTION, "123");
+    assert_production_social_registry_selection(root);
+    let host = production_host(root);
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("production Native scope").account_id, "123");
+    let baseline = root.join("public-social-retention-before.json");
+    if first {
+        create(&host, BOT_SOCIAL);
+        seed_social_waiting_turn(&host);
+        fs::write(&baseline, serde_json::to_vec(&social_sqlite_image(&host)).expect("retained SQLite baseline"))
+            .expect("write owned test baseline");
+    } else {
+        assert!(contains_bot(&host, BOT_SOCIAL), "normal Agent remains available after restart");
+    }
+    let before: Value = serde_json::from_slice(&fs::read(&baseline).expect("original retained baseline"))
+        .expect("decode retained baseline");
+    assert_eq!(social_sqlite_image(&host), before, "restart changed historical social state or payload");
+    let lane = PlatformRequestHost::new(root.join("app-host"))
+        .expect("production lightweight platform lane uses Native owner");
+    assert_social_entries_unavailable(&host, &lane);
+    assert_eq!(fs::read(&credential).expect("Native credential after denied requests"), expected_credential);
+    assert_eq!(social_sqlite_image(&host), before);
+    fs::remove_file(&credential).expect("Native logout fixture");
+    assert_eq!(auth(&host)["loggedIn"], false);
+    assert_social_entries_unavailable(&host, &lane);
+    assert_eq!(social_sqlite_image(&host), before, "unauthenticated denials changed retained data");
+    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    drop(lane);
+    drop(host);
+}
+
+#[test]
+fn native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass() {
+    let root = test_directory("social-owner");
+    for mode in ["social-first", "social-restart", "social-repeat"] {
+        run_child(&root.0, mode);
+    }
 }
 
 
