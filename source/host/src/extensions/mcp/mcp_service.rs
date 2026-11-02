@@ -155,6 +155,7 @@ pub fn to_plugin_summary(
 pub trait PluginSkillsPort: Send + Sync {
     fn sync(&self, trigger: &str) -> Result<Vec<Value>, String>;
     fn status(&self) -> Value;
+    fn observe_confirmed_uninstall(&self, plugin_id: &str) -> Result<(), String>;
     fn remove_live_references(&self, source_urls: &[String]);
 }
 
@@ -310,10 +311,14 @@ impl McpHostService {
             .unwrap_or_default();
         let (removed, reason) = self.backend.uninstall_plugin(plugin_id)?;
         if removed {
-            if let Some(skills) = &self.plugin_skills {
-                skills.remove_live_references(&source_urls);
-                let _ = skills.sync("uninstall");
-            }
+            let skills = self.plugin_skills.as_ref().ok_or_else(|| {
+                "plugin uninstall confirmed, but local skill admission could not be retired: plugin skills owner is unavailable".to_string()
+            })?;
+            skills.observe_confirmed_uninstall(plugin_id).map_err(|error| {
+                format!("plugin uninstall confirmed, but local skill admission could not be retired: {error}")
+            })?;
+            skills.remove_live_references(&source_urls);
+            let _ = skills.sync("uninstall");
         }
         Ok(json!({
             "removed": removed,

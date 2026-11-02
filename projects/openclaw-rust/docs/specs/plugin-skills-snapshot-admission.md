@@ -615,3 +615,92 @@ keep the prior unchanged-refresh and new-denial controls. Existing
 `extensions::mcp::plugin_skills::sync_tests` is the Actions entrypoint. This is
 truthful reporting of the existing permission transition; no UI refresh, durable
 revocation, external effect or full lifecycle acceptance is claimed.
+
+### Confirmed uninstall live admission — OCRM-PLUGIN-UNINSTALL-LIVE-v1
+
+Decision `PS-UNINSTALL-LIVE-01 — FIX / IMPL_BUG`, before implementation,
+at exact base `736b862a7646351e1e25558d9ba81879a5d606e4`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. The actual Runner management
+sink calls `McpHostService::uninstall_plugin`. After the existing backend
+confirms `removed: true`, that service currently removes only legacy live
+references and ignores a subsequent Skills sync failure. The existing
+canonical cache and materialized skill bytes can therefore remain eligible
+for later Session/Runner reads. Existing strict cache and live-reader controls
+are correct consumers; the confirmed uninstall never reaches their owner.
+
+This batch closes that in-process observation-to-new-read boundary. It does
+not label an uninstall as an authentication failure and does not change the
+cache schema or introduce a second permission registry.
+
+- **PS-UNINSTALL-01:** add the required internal
+  `PluginSkillsPort::observe_confirmed_uninstall(&self, plugin_id: &str)
+  -> Result<(), String>` operation. The production adapter delegates to the
+  same method on `SandPluginSkillsService`. After a confirmed `removed=true`,
+  call it before any legacy cleanup or best-effort refresh. Invalid canonical
+  identity or an unavailable owner is an explicit error, never silently
+  accepted as a complete local revocation. `removed=false` and backend errors
+  do not manufacture a confirmed fact. Preserve the backend's ordinary
+  removed/reason result and all existing install/uninstall controls.
+- **PS-UNINSTALL-02:** keep confirmed-uninstall state private to the existing
+  admission owner, distinct from canonical authentication refusals. Its stable
+  read-only reader denies the exact canonical ID, including warm cache reads.
+  Keep unrelated plugins, user/managed workflows and publisher checks intact.
+  Do not write a fabricated `authBlocked` entry, delete preserved materialized
+  files, or infer identities from names, slugs, source URLs or directories.
+- **PS-UNINSTALL-03:** capture the current owner-local uninstall observation
+  identity before each actual loader invocation. Serialize a new confirmed
+  fact with existing publication ordering. A pass that began before that fact
+  cannot import/release it through an old success, publish its staged image,
+  prune against that image or report successful publication. Reject it with an
+  explicit stale-pass error and retain the old files plus the new live refusal.
+  No callback or loader call runs under publication/state/admission locks.
+  Reuse the existing coalescing and one-writer loop; add no scheduler.
+  The ordering point is final publication: if that commit happened before
+  the fact, its truthful publication report may finish later outside locks,
+  as PS-06 already permits. Returned records still use current live admission.
+  A prune not yet entered skips if the observation identity has changed; a
+  prune already holding publication finishes before the fact can linearize.
+  This `PS-UNINSTALL-ORDER-01` clarification preserves PS-LIVE-10 and does not
+  authorize an old staged image to commit after a newer fact.
+- **PS-UNINSTALL-04:** a later pass must obtain a fully valid authoritative
+  listing and freshly materialize this exact ID before releasing its live
+  uninstall refusal, only after its corresponding valid snapshot commits and
+  strict readback succeeds. This permits a legitimate reinstall, including by
+  another client and a successful plugin with zero skills. A listed unresolved
+  fallback, load/stage/rename error, current authentication denial or stale pass
+  cannot release it. Fresh success on another ID cannot release this one.
+  Existing authentication-denial reconciliation is unchanged. The successful
+  report includes this real admission transition even if disk identities match.
+- **PS-UNINSTALL-05:** same-root successor construction keeps the exact stable
+  reader and observation state. Predecessor load/stage work cannot overwrite or
+  release it after retirement; a disposed/replaced service refuses a new local
+  observation explicitly. Do not claim that a late remote action on a retired
+  MCP instance is settled by this local operation. Preserve existing handoff,
+  cleanup ordering, startup roots, close/poll and coalescing behavior.
+
+The focused oracle must use the actual MCP service and Skills owner, actual
+cache/files and Session-opened workflow reads; fake only backend/loader I/O.
+After confirmed uninstall and failed refresh, retained and newly opened reads
+must exclude only the target while its old cache/file bytes remain intact.
+Exercise list/get/update and the existing real workflow prompt builder; retain
+unrelated plugin/user controls. Use bounded channels at actual load and stage
+boundaries to prove that pre-fact success cannot republish/release. Cover the
+opposite commit-before-fact order, fresh post-fact success and zero skills,
+publication failures, false/error backend results, malformed IDs, same-root
+replacement and truthful changed reporting. Keep every prior valid assertion.
+Use the existing `mcp_service_contract`, plugin/workflow/Session targets and
+`extensions::mcp::plugin_skills::sync_tests` selection in GitHub Actions only;
+freeze exact H, independently review the complete delta, then read actual logs.
+
+The in-memory fact survives same-Host stop/start through the existing shared
+reader. If the later authoritative cache publication fails, process loss still
+loses this observation; a fresh process can read the old committed snapshot.
+That durable restart boundary remains explicitly **blocked**, with no restart
+acceptance claim. Closing it needs an existing-owner durable intent/publication
+contract before external mutation, strict migration and unknown-outcome
+reconciliation; disguising uninstall as `authBlocked` is rejected. Successful
+ordinary authoritative cache retirement retains its existing restart behavior.
+Already captured prompts, in-flight effects, stale remote-command completion,
+all MCP grants/OAuth and real ecosystem/UI/platform acceptance also remain open.
+Rollback loses this live protection. No OCRM source authority or global flag
+is promoted by this target-source correction.

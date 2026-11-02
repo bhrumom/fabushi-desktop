@@ -1510,7 +1510,7 @@ fn missing_or_malformed_readback_never_releases_a_live_refusal() {
         }
         assert!(reader.is_denied("9"));
         assert!(h.service.state.try_lock().is_ok());
-        assert!(h.service.admission.denied.try_lock().is_ok());
+        assert!(h.service.admission.state.try_lock().is_ok());
         gate.release.send(()).unwrap();
         assert_eq!(
             release_attempt.finish().unwrap_err(),
@@ -1650,7 +1650,7 @@ fn poisoned_admission_fails_closed_for_retained_and_successor_readers_without_re
     let reader = h.service.admission_reader();
     let admission = Arc::clone(&h.service.admission);
     assert!(thread::spawn(move || {
-        let _guard = admission.denied.lock().unwrap();
+        let _guard = admission.state.lock().unwrap();
         panic!("poison the private admission mutex");
     }).join().is_err());
     assert!(reader.is_denied("9"));
@@ -1658,7 +1658,12 @@ fn poisoned_admission_fails_closed_for_retained_and_successor_readers_without_re
     assert!(h.service.current().is_empty());
     assert_eq!(h.service.current_index().unwrap().skills, seed);
     assert_eq!(
-        h.step("poisoned-refresh", LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap_err(),
+        h.call("poisoned-refresh").finish().unwrap_err(),
+        "plugin skills live admission poisoned",
+    );
+    h.assert_calls(1);
+    assert_eq!(
+        h.service.observe_confirmed_uninstall("9").unwrap_err(),
         "plugin skills live admission poisoned",
     );
     assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
@@ -1816,7 +1821,7 @@ fn old_cleanup_holds_only_publication_and_finishes_before_successor_materializat
     gate.wait();
     assert!(matches!(h.service.publication.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
     assert!(h.service.state.try_lock().is_ok());
-    assert!(h.service.admission.denied.try_lock().is_ok());
+    assert!(h.service.admission.state.try_lock().is_ok());
     assert!(sentinel.exists());
     let next_loaded = new_successor_plugin(&h.root);
     let new_file = next_loaded.plugins[0].install_path.join("skills/test/SKILL.md");
@@ -1845,5 +1850,449 @@ fn old_cleanup_holds_only_publication_and_finishes_before_successor_materializat
     assert_eq!(record_ids(&records), vec!["11"]);
     assert_eq!(fs::read_to_string(&new_file).unwrap(), "successor materialized skill content");
     assert_eq!(successor.current(), records);
+    assert_eq!(h.events.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn confirmed_uninstall_refuses_only_the_exact_id_in_retained_and_new_workflow_stores() {
+    use crate::workflows::workflow_library::{WorkflowSpec, get_global_workflows_dir};
+    use crate::workflows::workflow_store::FileWorkflowStore;
+
+    let h = Harness::new();
+    let mut loaded = two_plugins(&h.root, "retained");
+    loaded.publisher_facts.insert("9".into(), PublisherFacts {
+        publisher_user_id: Some(12), marketplace_team_id: Some(34),
+    });
+    let seed = h.step("seed", LoadStep::Loaded(loaded)).unwrap();
+    let files = skill_file_bytes(&seed);
+    let bytes = fs::read(h.root.cache_path()).unwrap();
+    let sentinel = h.root.sentinel();
+    let reader = h.service.admission_reader();
+    let store = || FileWorkflowStore::new(
+        h.root.0.join("agents/owner"), get_global_workflows_dir(&h.root.0),
+    ).with_plugin_skills_admission(Arc::clone(&reader));
+    let retained = store();
+    let before = retained.get("plugin-9-test").unwrap();
+    assert!(before.published_by_current_user);
+    assert_eq!(before.body, "plugin original skill content");
+    assert!(retained.get("plugin-10-test").is_some());
+    let user = retained.create(&WorkflowSpec {
+        name: "Unrelated user control".into(), description: "USER_CONTROL".into(),
+        body: "USER_BODY".into(), trigger: None, source_ref: None,
+    }).unwrap().unwrap();
+
+    for invalid in ["", " ", " 9", "9 ", "\t9"] {
+        assert_eq!(
+            h.service.observe_confirmed_uninstall(invalid).unwrap_err(),
+            "confirmed plugin uninstall requires a canonical plugin ID",
+        );
+        assert!(!reader.is_denied("9"));
+        assert_eq!(h.service.current(), seed);
+    }
+    h.service.observe_confirmed_uninstall("99").unwrap();
+    assert!(reader.is_denied("99"));
+    assert!(!reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    assert_eq!(h.service.current(), seed);
+
+    h.service.observe_confirmed_uninstall("9").unwrap();
+    assert!(reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    assert!(h.service.current_auth_blocked().is_empty());
+    assert_eq!(h.service.current_index().unwrap().skills, seed);
+    assert_eq!(record_ids(&h.service.current()), vec!["10"]);
+    assert_eq!(h.step("offline-after-uninstall", LoadStep::Failed).unwrap_err(), "fixture loader failure");
+    let reopened = store();
+    for workflows in [&retained, &reopened] {
+        assert!(workflows.get("plugin-9-test").is_none());
+        assert!(workflows.list().iter().all(|record| record.plugin_id.as_deref() != Some("9")));
+        assert_eq!(workflows.get("plugin-10-test").unwrap().body, "other original skill content");
+        assert_eq!(workflows.get(&user.id).unwrap().body, "USER_BODY");
+        assert!(workflows.update("plugin-9-test", &WorkflowSpec {
+            name: "Refused edit".into(), description: "must not touch".into(),
+            body: "MUST_NOT_WRITE".into(), trigger: None, source_ref: None,
+        }).unwrap().is_none());
+    }
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+    assert_skill_file_bytes(&files);
+    assert!(sentinel.exists());
+    assert!(h.root.staged_files().is_empty());
+    let events = h.events.lock().unwrap();
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[1].outcome, "failed");
+    assert_eq!(events[1].skill_count, 1);
+    drop(events);
+    h.assert_calls(2);
+
+    h.service.dispose();
+    assert_eq!(
+        h.service.observe_confirmed_uninstall("10").unwrap_err(),
+        "plugin skills owner is disposed; confirmed uninstall was not observed",
+    );
+    assert!(reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    assert_eq!(record_ids(&h.call("disposed").finish().unwrap()), vec!["10"]);
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+    h.assert_calls(2);
+}
+
+#[cfg(unix)]
+#[test]
+fn confirmed_uninstall_refuses_a_proven_warm_workflow_body_cache_hit() {
+    use crate::workflows::workflow_library::get_global_workflows_dir;
+    use crate::workflows::workflow_store::FileWorkflowStore;
+
+    let h = Harness::new();
+    let seed = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+    let target = PathBuf::from(&seed.iter().find(|record| record.plugin_id == "9").unwrap().file_path);
+    let old_time = std::time::UNIX_EPOCH + Duration::from_secs(1_000);
+    for path in [h.root.cache_path(), target.clone(), target.parent().unwrap().to_path_buf()] {
+        fs::File::open(&path).unwrap().set_modified(old_time).unwrap();
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), old_time);
+    }
+    let reader = h.service.admission_reader();
+    let store = || FileWorkflowStore::new(
+        h.root.0.join("agents/warm"), get_global_workflows_dir(&h.root.0),
+    ).with_plugin_skills_admission(Arc::clone(&reader));
+    let warm = store();
+    assert_eq!(warm.get("plugin-9-test").unwrap().body, "plugin original skill content");
+    let old_body = fs::read_to_string(&target).unwrap();
+    let new_body = old_body.replace("original", "replaced");
+    assert_ne!(new_body, old_body);
+    assert_eq!(new_body.len(), old_body.len());
+    fs::write(&target, &new_body).unwrap();
+    fs::File::open(&target).unwrap().set_modified(old_time).unwrap();
+    assert_eq!(warm.get("plugin-9-test").unwrap().body, old_body, "actual body cache hit");
+    assert_eq!(store().get("plugin-9-test").unwrap().body, new_body, "cold-reader control");
+    let bytes = fs::read(h.root.cache_path()).unwrap();
+
+    h.service.observe_confirmed_uninstall("9").unwrap();
+    assert!(warm.get("plugin-9-test").is_none());
+    assert!(store().get("plugin-9-test").is_none());
+    assert!(warm.get("plugin-10-test").is_some());
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+    assert_eq!(fs::read_to_string(&target).unwrap(), new_body);
+    assert!(h.service.current_auth_blocked().is_empty());
+}
+
+#[test]
+fn confirmed_uninstall_fences_an_old_load_and_queued_pass_captures_when_it_really_loads() {
+    let h = Harness::new();
+    let seed = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+    let files = skill_file_bytes(&seed);
+    let bytes = fs::read(h.root.cache_path()).unwrap();
+    let sentinel = h.root.sentinel();
+    let old = h.call("old-load");
+    h.enter(2);
+    let queued = h.call("queued-before-uninstall");
+    h.pending("queued-before-uninstall");
+    h.service.observe_confirmed_uninstall("9").unwrap();
+    let reader = h.service.admission_reader();
+    let mut stale = two_plugins(&h.root, "must-not-publish");
+    stale.auth_blocked.push(auth_block("10"));
+    h.release.send(LoadStep::Loaded(stale)).unwrap();
+    assert_eq!(old.finish().unwrap_err(), "plugin skills sync superseded by a confirmed uninstall");
+    h.enter(3);
+    assert!(reader.is_denied("9"));
+    assert!(!reader.is_denied("10"), "stale load cannot import its auth refusal");
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+    assert_skill_file_bytes(&files);
+    assert!(h.root.staged_files().is_empty());
+    assert!(sentinel.exists());
+    assert_eq!(h.events.lock().unwrap().len(), 1, "stale pass did not report publication success");
+
+    // This caller queued before the fact, but its actual load starts after it.
+    // It is a legitimate authoritative restoration, not a stale generation.
+    h.release.send(LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap();
+    assert_eq!(record_ids(&queued.finish().unwrap()), vec!["10", "9"]);
+    assert!(!reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    assert_eq!(h.events.lock().unwrap().len(), 2);
+    h.assert_calls(3);
+}
+
+#[test]
+fn confirmed_uninstall_fences_owned_staging_even_when_the_same_id_was_already_observed() {
+    for already_observed in [false, true] {
+        let gate = PublicationGate::after_seed();
+        let h = Harness::with_now(Arc::clone(&gate.now));
+        let seed = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+        let files = skill_file_bytes(&seed);
+        let bytes = fs::read(h.root.cache_path()).unwrap();
+        let sentinel = h.root.sentinel();
+        if already_observed {
+            h.service.observe_confirmed_uninstall("9").unwrap();
+        }
+        let old = h.call("old-staged-success");
+        h.enter(2);
+        h.release.send(LoadStep::Loaded(two_plugins(&h.root, "must-not-publish"))).unwrap();
+        gate.wait();
+        assert_eq!(h.root.staged_files().len(), 1);
+        assert!(h.service.state.try_lock().is_ok());
+        assert!(h.service.admission.state.try_lock().is_ok());
+        h.service.observe_confirmed_uninstall("9").unwrap();
+        assert!(h.service.admission_reader().is_denied("9"));
+        gate.release.send(()).unwrap();
+        assert_eq!(old.finish().unwrap_err(), "plugin skills sync superseded by a confirmed uninstall");
+        assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+        assert_skill_file_bytes(&files);
+        assert!(h.root.staged_files().is_empty());
+        assert!(sentinel.exists());
+        assert_eq!(record_ids(&h.service.current()), vec!["10"]);
+        assert!(h.service.current_auth_blocked().is_empty());
+        assert_eq!(h.events.lock().unwrap().len(), 1);
+        h.assert_calls(2);
+    }
+}
+
+#[test]
+fn confirmed_uninstall_survives_fresh_publication_failures_and_unresolved_fallback_until_fresh_success() {
+    for failed_rename in [false, true] {
+        let gate = failed_rename.then(PublicationGate::after_seed);
+        let h = match &gate {
+            Some(gate) => Harness::with_now(Arc::clone(&gate.now)),
+            None => Harness::new(),
+        };
+        let seed = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+        let files = skill_file_bytes(&seed);
+        let bytes = fs::read(h.root.cache_path()).unwrap();
+        let sentinel = h.root.sentinel();
+        let reader = h.service.admission_reader();
+        h.service.observe_confirmed_uninstall("9").unwrap();
+        if let Some(gate) = &gate {
+            let fresh = h.call("fresh-rename-failure");
+            h.enter(2);
+            h.release.send(LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap();
+            gate.wait();
+            let staged = h.root.staged_files();
+            assert_eq!(staged.len(), 1);
+            fs::remove_file(&staged[0]).unwrap();
+            gate.release.send(()).unwrap();
+            assert!(fresh.finish().is_err());
+        } else {
+            let mut invalid = two_plugins(&h.root, "fresh");
+            invalid.plugins[1].install_path = PathBuf::from("relative/other");
+            assert_eq!(
+                h.step("fresh-stage-failure", LoadStep::Loaded(invalid)).unwrap_err(),
+                "invalid plugin skills cache snapshot",
+            );
+        }
+        assert!(reader.is_denied("9"));
+        assert!(!reader.is_denied("10"));
+        assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+        assert_skill_file_bytes(&files);
+        assert!(sentinel.exists());
+        assert_eq!(h.events.lock().unwrap().len(), 1);
+        assert!(h.step("fresh-offline", LoadStep::Failed).is_err());
+        assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+        assert!(h.service.current_auth_blocked().is_empty());
+
+        let mut partial = two_plugins(&h.root, "unresolved");
+        partial.plugins.clear();
+        let retained = h.step("partial", LoadStep::Loaded(partial)).unwrap();
+        assert_eq!(record_ids(&retained), vec!["10"]);
+        assert_eq!(retained[0].plugin_version, "retained");
+        assert_eq!(record_ids(&h.service.current_index().unwrap().skills), vec!["10"]);
+        assert!(reader.is_denied("9"));
+        assert!(h.service.current_auth_blocked().is_empty(), "uninstall is not an auth failure");
+        assert!(sentinel.exists());
+        let mut other_success = two_plugins(&h.root, "other-only");
+        other_success.plugins.remove(0);
+        assert_eq!(record_ids(&h.step("other-only", LoadStep::Loaded(other_success)).unwrap()), vec!["10"]);
+        assert!(reader.is_denied("9"), "another ID cannot release the uninstall");
+
+        let mut denied = two_plugins(&h.root, "current-denial");
+        denied.auth_blocked.push(auth_block("9"));
+        assert_eq!(record_ids(&h.step("auth-denial-wins", LoadStep::Loaded(denied)).unwrap()), vec!["10"]);
+        assert!(reader.is_denied("9"));
+        assert_eq!(blocked_ids(&h.service), vec!["9"]);
+        let mut empty_success = two_plugins(&h.root, "zero-skills");
+        empty_success.plugins[0].skills.clear();
+        assert_eq!(record_ids(&h.step("fresh-zero-skills", LoadStep::Loaded(empty_success)).unwrap()), vec!["10"]);
+        assert!(!reader.is_denied("9"));
+        assert!(h.service.current_auth_blocked().is_empty());
+        assert!(!sentinel.exists());
+        assert_eq!(record_ids(&h.step("fresh-reinstall", LoadStep::Loaded(two_plugins(&h.root, "restored"))).unwrap()), vec!["10", "9"]);
+        assert!(!reader.is_denied("9"));
+        assert_skill_file_bytes(&files);
+        h.assert_calls(8);
+    }
+}
+
+#[test]
+fn confirmed_uninstall_equal_identity_restoration_reports_changed_once_including_zero_skills() {
+    for zero_skills in [false, true] {
+        let h = Harness::new();
+        let mut loaded = two_plugins(&h.root, "same-version");
+        if zero_skills {
+            loaded.plugins[0].skills.clear();
+        }
+        let seed = h.step("seed", LoadStep::Loaded(loaded.clone())).unwrap();
+        let bytes = fs::read(h.root.cache_path()).unwrap();
+        let index = h.service.current_index().unwrap();
+        let reader = h.service.admission_reader();
+        h.service.observe_confirmed_uninstall("9").unwrap();
+        assert!(reader.is_denied("9"));
+        assert!(h.service.current_auth_blocked().is_empty());
+        for (trigger, changed) in [("fresh-restoration", true), ("unchanged", false)] {
+            assert_eq!(h.step(trigger, LoadStep::Loaded(loaded.clone())).unwrap(), seed);
+            assert!(!reader.is_denied("9"));
+            assert_eq!(h.service.current_index().unwrap(), index);
+            assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+            let events = h.events.lock().unwrap();
+            let report = events.last().unwrap();
+            assert_eq!(report.trigger, trigger);
+            assert_eq!(report.outcome, "ok");
+            assert_eq!(report.changed, changed);
+            assert_eq!(report.skill_count, seed.len());
+        }
+        h.assert_calls(3);
+    }
+}
+
+#[test]
+fn confirmed_uninstall_is_not_released_by_missing_or_malformed_commit_readback() {
+    for missing in [false, true] {
+        let gate = BoundaryGate::at_visit(2);
+        let h = Harness::with_hooks(
+            Arc::new(|| 1_000),
+            ServiceTestHooks { after_rename: Some(Arc::clone(&gate.pause)), ..ServiceTestHooks::default() },
+        );
+        let seed = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+        let bytes = fs::read(h.root.cache_path()).unwrap();
+        let files = skill_file_bytes(&seed);
+        let sentinel = h.root.sentinel();
+        let reader = h.service.admission_reader();
+        h.service.observe_confirmed_uninstall("9").unwrap();
+        let fresh = h.call("fresh-readback-failure");
+        h.enter(2);
+        h.release.send(LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap();
+        gate.wait();
+        if missing {
+            fs::remove_file(h.root.cache_path()).unwrap();
+        } else {
+            fs::write(h.root.cache_path(), b"{malformed").unwrap();
+        }
+        assert!(reader.is_denied("9"));
+        assert!(h.service.state.try_lock().is_ok());
+        assert!(h.service.admission.state.try_lock().is_ok());
+        gate.release.send(()).unwrap();
+        assert_eq!(fresh.finish().unwrap_err(), "could not read committed plugin skills snapshot");
+        // Restore the prior allowed disk image, proving refusal comes from the
+        // real owner rather than only from an unreadable cache in this fixture.
+        fs::write(h.root.cache_path(), &bytes).unwrap();
+        assert_eq!(record_ids(&h.service.current()), vec!["10"]);
+        assert!(reader.is_denied("9"));
+        assert!(!reader.is_denied("10"));
+        assert!(h.service.current_auth_blocked().is_empty());
+        assert_skill_file_bytes(&files);
+        assert!(sentinel.exists());
+        assert_eq!(h.events.lock().unwrap().len(), 1);
+        assert_eq!(record_ids(&h.step("fresh-valid-readback", LoadStep::Loaded(two_plugins(&h.root, "fresh"))).unwrap()), vec!["10", "9"]);
+        assert!(!reader.is_denied("9"));
+        h.assert_calls(3);
+    }
+}
+
+#[test]
+fn confirmed_uninstall_same_root_successor_keeps_fact_and_rejects_retired_observations() {
+    let h = Harness::new();
+    h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+    h.service.observe_confirmed_uninstall("9").unwrap();
+    let reader = h.service.admission_reader();
+    let old = h.call("old-load");
+    h.enter(2);
+    let successor = h.service.successor_with_loader(Arc::new(StaticLoader(
+        two_plugins(&h.root, "successor"),
+    ))).unwrap();
+    assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));
+    assert!(reader.is_denied("9"));
+    assert_eq!(record_ids(&successor.current()), vec!["10"]);
+    assert_eq!(
+        h.service.observe_confirmed_uninstall("10").unwrap_err(),
+        "plugin skills owner is disposed; confirmed uninstall was not observed",
+    );
+    assert!(!reader.is_denied("10"));
+    assert_eq!(record_ids(&successor.sync("fresh-successor").unwrap()), vec!["10", "9"]);
+    assert!(!reader.is_denied("9"));
+    let bytes = fs::read(h.root.cache_path()).unwrap();
+    let mut stale = two_plugins(&h.root, "old-must-not-publish");
+    stale.auth_blocked.push(auth_block("9"));
+    h.release.send(LoadStep::Loaded(stale)).unwrap();
+    assert_eq!(record_ids(&old.finish().unwrap()), vec!["10", "9"]);
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+    assert!(!reader.is_denied("9"));
+    h.service.dispose();
+    successor.observe_confirmed_uninstall("10").unwrap();
+    assert!(reader.is_denied("10"));
+    assert!(!reader.is_denied("9"));
+    assert_eq!(record_ids(&successor.current()), vec!["9"]);
+    assert_eq!(h.events.lock().unwrap().len(), 1);
+    h.assert_calls(2);
+}
+
+#[test]
+fn confirmed_uninstall_after_commit_skips_old_prune_and_filters_return_but_keeps_commit_report() {
+    let gate = BoundaryGate::at_visit(2);
+    let h = Harness::with_hooks(
+        Arc::new(|| 1_000),
+        ServiceTestHooks { after_commit: Some(Arc::clone(&gate.pause)), ..ServiceTestHooks::default() },
+    );
+    h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+    let sentinel = h.root.sentinel();
+    let committed = h.call("commit-before-fact");
+    h.enter(2);
+    h.release.send(LoadStep::Loaded(two_plugins(&h.root, "committed"))).unwrap();
+    gate.wait();
+    let bytes = fs::read(h.root.cache_path()).unwrap();
+    assert_eq!(record_ids(&h.service.current()), vec!["10", "9"]);
+    assert!(sentinel.exists());
+    h.service.observe_confirmed_uninstall("9").unwrap();
+    assert_eq!(record_ids(&h.service.current()), vec!["10"]);
+    gate.release.send(()).unwrap();
+    assert_eq!(record_ids(&committed.finish().unwrap()), vec!["10"]);
+    assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+    assert!(sentinel.exists(), "new observation fences old cleanup after the valid commit");
+    let events = h.events.lock().unwrap();
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[1].outcome, "ok");
+    assert_eq!(events[1].trigger, "commit-before-fact");
+    assert_eq!(events[1].skill_count, 2, "report describes the already-completed commit");
+    assert!(h.service.admission_reader().is_denied("9"));
+}
+
+#[test]
+fn confirmed_uninstall_orders_after_an_entered_prune_without_holding_reader_or_state_locks() {
+    let gate = BoundaryGate::at_visit(1);
+    let h = Harness::with_hooks(
+        Arc::new(|| 1_000),
+        ServiceTestHooks { prune_locked: Some(Arc::clone(&gate.pause)), ..ServiceTestHooks::default() },
+    );
+    let sentinel = h.root.sentinel();
+    let committed = h.call("prune-before-fact");
+    h.enter(1);
+    h.release.send(LoadStep::Loaded(two_plugins(&h.root, "committed"))).unwrap();
+    gate.wait();
+    assert!(matches!(h.service.publication.try_lock(), Err(std::sync::TryLockError::WouldBlock)));
+    assert!(h.service.state.try_lock().is_ok());
+    assert!(h.service.admission.state.try_lock().is_ok());
+    let service = Arc::clone(&h.service);
+    let (enter_tx, entering) = mpsc::channel();
+    let (done_tx, done) = mpsc::channel();
+    let observer = thread::spawn(move || {
+        enter_tx.send(()).unwrap();
+        done_tx.send(service.observe_confirmed_uninstall("9")).unwrap();
+    });
+    entering.recv_timeout(DEADLINE).unwrap();
+    assert!(matches!(done.try_recv(), Err(TryRecvError::Empty)));
+    assert!(!h.service.admission_reader().is_denied("9"));
+    assert!(sentinel.exists());
+    gate.release.send(()).unwrap();
+    committed.finish().unwrap();
+    done.recv_timeout(DEADLINE).unwrap().unwrap();
+    observer.join().unwrap();
+    assert!(!sentinel.exists(), "the prune entered before the observation linearized");
+    assert!(h.service.admission_reader().is_denied("9"));
+    assert_eq!(record_ids(&h.service.current()), vec!["10"]);
     assert_eq!(h.events.lock().unwrap().len(), 1);
 }
