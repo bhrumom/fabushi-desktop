@@ -1,7 +1,7 @@
 # Native Human call credential lifetime
 
 Spec ID: FBCP-CALL-CREDENTIAL-001
-Status: active; implementation and independent source review complete; exact-H execution pending
+Status: bounded AC-CALL-CRED-01–03 passed at523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6; shipping/full product acceptance pending
 Task: 20bf9475-a885-4314-b509-bea53ef8849f, round 1
 Date: 2026-11-02
 
@@ -9,7 +9,7 @@ Date: 2026-11-02
 
 Independent source inspection at shared checkpoint 2d03120fe107b94f389409ac4f6890947940af4e (production blob3a7b85fb2b9079d3bf917dc4bc630290fbe31162, native client blob990eeb5a9e4906e2eafbd4bf0bc86f6456b16406) found an account-lifetime gap. HumanCallControls sends transitionCallSession through the existing Session gateway. Production sync checks identity before a Native GET, but the call HTTP methods do not fence the complete credential after consuming its body. A held valid call GET can cross a credential replacement from Human1 to Human2. The subsequent event POST independently reloads credentials and can emit the original Human1 command with Human2's bearer/device. A later sync can return an error only after this effect.
 
-This is source-derived until the response-barrier contract runs. Both Humans may be legitimate participants in the same call, but no assumption about deployed backend acceptance is needed: zero event POST is the decisive negative oracle.
+The response-barrier contract exercised this source-derived path at exact523c8ca/run41525143801/job125550827148; six credential cases and retained5+3+1 passed, with separate bounded independent assessment. Both Humans may be legitimate participants in the same call, but no assumption about deployed backend acceptance is needed: zero event POST is the decisive negative oracle.
 
 ## Requirements and existing owners
 

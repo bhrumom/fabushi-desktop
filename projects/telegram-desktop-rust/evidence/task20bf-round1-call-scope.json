@@ -3,7 +3,7 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "call-scope-subset-qualified; credential-batch-source-reviewed-awaiting-containing-H",
+  "status": "two-bounded-call-contract-batches-qualified; media-capture-implementation-active; final-gates-open",
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
@@ -73,7 +73,7 @@
     "HumanCallControls.start -> createCallSession {scopeId, participantIds}",
     "Session gateway -> ProductionSessionWorkers::create_call_session",
     "canonical Human conversation metadata supplies participants",
-    "FabushiNativeMessagingClient::create_human_call -> POST /api/social/calls",
+    "FabushiNativeMessagingClient::create_human_call_for_user -> POST /api/social/calls",
     "existing CallSessionStore persists admitted call ID/scope",
     "existing get/transition/discovery/reopen return the same logical call"
   ],
@@ -311,7 +311,7 @@
     {
       "id": 4,
       "condition": "User-behavior batches include ingress/rules/permissions/persistence/service/events/UI/failure/cancel/restart and tests",
-      "evidence": "Call canonical-pair production guard and5+3+1 gateway/HTTP/SQLite cases passed exact8bcfd. The following account-lifetime batch adds five Native family fences/eight production bindings and six independently source-reviewed recovery contracts; their containing-H execution is pending. Full call/media lifetime remains open.",
+      "evidence": "Existing-owner canonical-pair and credential-lifetime batches passed exact523 Native15 total call cases, including6 new body-barrier/recovery cases. Media capture acquire/attach/stop/dispose batch is implementing under committed spec1094. Full call/media and final gates remain open.",
       "complete": false
     },
     {
@@ -329,7 +329,7 @@
     {
       "id": 7,
       "condition": "Implementation and tests together; freeze H; minimal Actions validation with exact-input reuse",
-      "evidence": "Exact8bcfd Actions passed5+3+1 call cases and retained Human54/Agent4/journal12/otherreconcile; source157/schema37/candidate passed. Shippingjob125537147935 queued. No local execution or unchanged-failure reruns.",
+      "evidence": "Exact523 passed credential6+scope5+shipping3+local1, retained Human62/Agent/forward/UI/FFI, source157/schema37/candidate. macOS shipping125550827119 queued. All execution is Actions-only; prior exact8bc proof remains separately scoped.",
       "complete": false
     },
     {
@@ -341,7 +341,7 @@
     {
       "id": 9,
       "condition": "Unique inventory/ledger/RTM separates source, implementation, wiring, authored tests, execution and independent acceptance; schema/validator aligned",
-      "evidence": "Prepared single canonical185-row ledger5b69d6e preserves exact shared184 rows/sixreviews and passes unchanged schemae52 in Actions41524317837; old8bc scope execution versus new six authored credential cases is explicit. Full candidate/product/ACCEPT remains false; final containing-H source gate still required.",
+      "evidence": "Canonical185-row ledger preserves shared rows/reviews; schema and unaccepted candidate passed exact523. New exact523 execution and bounded independent AC assessment are recorded here; exact ledger execution patch is being prepared separately without acceptance promotion.",
       "complete": false
     },
     {
@@ -358,35 +358,28 @@
     }
   ],
   "acceptance": {
-    "batch_runtime": "bounded-call-AC01/02-supported; shipping and integration pending",
+    "batch_runtime": "bounded CALL-SCOPE AC01/02 and CALL-CRED AC01/02/03 supported; macOS shipping, PR integration and full product acceptance pending",
     "whole_call": false,
     "full_migration": false,
     "independent_accept": false,
-    "shipping_sha": null
+    "shipping_sha": null,
+    "credential_batch": "bounded-AC01/02/03-supported; not full shipping or product ACCEPT"
   },
   "remaining_blockers": [
-    "Exact8bcfd reconciliation/source/UI/Electron/Windows jobs passed; shipping job125537147935 stillqueued. PR191 remains draft/unmerged and requires latest-target overlap/ledger reconciliation.",
+    "Exact523c8ca bounded call credential/scope, retained reconciliation/UI/Electron/Windows/FFI and source jobs passed. macOS shipping job125550827119 remains queued; overall Native run has no success conclusion. PR191 remains draft/unmerged.",
     "Historical wrong-scope call records require separately scoped diagnosis/recovery; this batch does not silently alter user data.",
-    "Real call service credentials, account/device cases, deployed authorization, media/ICE/TURN, credential rotation, supported platform packages, UI/a11y, performance/soak and complete Bot regression remain required.",
-    "Complete source review dispositions and generated/build/external/LFS/legal closure remain unaccepted.",
-    "Independent CALL-CRED-01–06 account/device credential-lifetime repair is being authored. No execution proof for that new delta yet."
+    "Deployed real-service/account/device authorization and revocation, real media/ICE/TURN, Coordinator pending-dispatch epoch, supported packages, full UI/a11y, performance/soak, upgrade/rollback and complete Bot regression remain required.",
+    "Complete source dispositions and generated/build/external/LFS/legal closure remain unaccepted; global unknown/unread remain null and all acceptance flags false.",
+    "HumanCallControls capture acquisition/stop/disposal/lifetime repair is implementing under committed spec1094; no media implementation execution or hardware acceptance is claimed yet."
   ],
-  "next_action": "Run the containing-H credential6 + scope5 + shipping3 + local1 contracts with current shared gates; inspect exact failures before any retry.",
+  "next_action": "Finish and independently review current HumanCallControls capture lifetime implementation/tests, then qualify its containing H in Actions; retain queued shipping gate.",
   "github_delivery": {
-    "preparation_commit": "9e959272d40c0dbceb396fb894151114575b1512",
-    "preparation_full_sha_and_five_files_readback": true,
-    "implementation_commit": "249675ae30502e72e495a4c6aee53e8214f82bd1",
-    "integration_into_shared_checkpoint": false,
-    "current_verified_h": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
-    "current_commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/8bcfd464691534acaa04b13852cd523ab49a3dcc",
-    "full_sha_and_changed_files_readback": true,
-    "pr": {
-      "number": 191,
-      "url": "https://github.com/bhrumom/fabushi-desktop/pull/191",
-      "draft": true,
-      "merged": false,
-      "target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
-    }
+    "commit": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+    "url": "https://github.com/bhrumom/fabushi-desktop/commit/523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+    "remote_commit_and_files_reread": true,
+    "review_pr": "https://github.com/bhrumom/fabushi-desktop/pull/191",
+    "main_changed": false,
+    "merged": false
   },
   "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
   "corrections": [
@@ -426,7 +419,7 @@
     "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "authored_base": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
     "shared_reconciliation_input": "00036927d789913f08062cd303475fc5c55d57f2",
-    "status": "authored-and-independent-source-reviewed; containing-H Actions pending",
+    "status": "bounded-AC-CALL-CRED-01-through-03-passed; broader shipping/product gates open",
     "production_change": "Five Native call HTTP families bind fixed Session Human before transport and compare existing six fields after response body; signal sender device uses the exact outgoing credential. Eight shipping Session call sites use explicit bound APIs. Existing selected-pair guard retained.",
     "source_owner_reviewer": "/root/call_credential_source_review",
     "frozen_code_reviewer": "/root/current_gap_read/call_credential_frozen_review",
@@ -446,10 +439,31 @@
     ],
     "expected_count": 6,
     "execution": {
-      "head": null,
-      "run": null,
-      "job": null,
-      "conclusion": null
+      "head": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+      "run": 41525143801,
+      "attempt": 1,
+      "job": 125550827148,
+      "conclusion": "success",
+      "environment": "Ubuntu24.04.5",
+      "counts": {
+        "credential": 6,
+        "scope": 5,
+        "shipping_call": 3,
+        "local_lifecycle": 1,
+        "human": 62,
+        "upload": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "agent_nonce": 4,
+        "private_settlement": 3,
+        "gateway_http": 1
+      },
+      "failed": 0,
+      "ignored": 0,
+      "artifact": 13179882022,
+      "digest": "sha256:8defdbefda95277677c14067bc3c7f0e946439d07edb91634fbe02eb23b5d77d",
+      "artifact_bytes": 59527,
+      "archive_rehashed_independently": false
     },
     "recovery_boundary": "Rejected post-body acknowledgments do not undo an admitted remote mutation; existing discovery/replay must recover it without another POST.",
     "limits": [
@@ -462,6 +476,92 @@
       "production": "b2daaab48b10f11580534b11b5b423e0a5016f4d",
       "workflow": "3bf0dd3b35b8672095595cc76a2b78c646b7bd87",
       "tests": "9ef2ce91a0ad29dd6515e3cb986a7748c4415da0"
+    },
+    "independent_execution_review": {
+      "reviewer": "/root/call_credential_source_review",
+      "verdict": "Direct positive evidence supports bounded AC-CALL-CRED-01,02,03; no concrete implementation/oracle/integration defect within scope.",
+      "method": "Exact source/spec/test/workflow identities and full completed Native/source logs plus artifact metadata reread independently.",
+      "limits": [
+        "Logical SQLite snapshots and in-process owner reopening; no process-kill/power-loss qualification",
+        "Six-field snapshot comparison does not establish atomic revocation or ABA detection",
+        "Admitted remote effects recover through discovery/replay; no remote rollback",
+        "Controlled loopback backend, not deployed service or real hardware/media",
+        "Artifact upload/server digest agrees; archive not independently downloaded/rehashed"
+      ]
+    },
+    "source_execution": {
+      "head": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+      "run": 41525143819,
+      "attempt": 1,
+      "contract_job": 125550826014,
+      "candidate_job": 125551094148,
+      "conclusion": "success",
+      "source_tests": 157,
+      "schema_tests": 37,
+      "schema_errors": 0,
+      "source_artifact": {
+        "id": 13179407104,
+        "digest": "sha256:22106d32174da2516e57aab033f00a66b38680888d0588cd59453a9757a8cd84"
+      },
+      "candidate_artifact": {
+        "id": 13179302657,
+        "digest": "sha256:68e6a24fd18b3d6e85ca929f437b0bfd1a7aee3a27eca544c8d1499df42fc8b4"
+      },
+      "source_identities": 16381,
+      "responsibilities": 185,
+      "source_reviews": 6,
+      "complete_reviews": 2,
+      "unknown": null,
+      "unread": null,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false
+    },
+    "retained_jobs": {
+      "ui": {
+        "job": 125550827129,
+        "conclusion": "success",
+        "counts": {
+          "transcript": 29,
+          "human_cursor": 17,
+          "settlement": 5,
+          "forward_dialog_chromium": 16
+        },
+        "artifact": 13178184365,
+        "digest": "sha256:8fc4565543be8eb77ecb9b1c9126fcb716aba20b6536847d6ed4fdaf7f095363"
+      },
+      "direct_ffi": {
+        "job": 125550827316,
+        "conclusion": "success",
+        "passed": 15,
+        "ignored": 1,
+        "scope": "existing controlled compatibility gate; ignored live case is not acceptance",
+        "artifact": 13179731366,
+        "digest": "sha256:f68ea5fd7c3d8b010121f90ecce7f6e6bcdda039d7b4376dc6e2f7681a13ec69"
+      },
+      "electron": {
+        "job": 125550827494,
+        "conclusion": "success",
+        "artifact": 13178488131,
+        "digest": "sha256:d47237d737a2cfcc8bba57d86c82633672b87e86e6a91b92bc51dc2493a55699"
+      },
+      "windows_publisher": {
+        "job": 125550827280,
+        "conclusion": "success",
+        "artifact": 13179526943,
+        "digest": "sha256:1bfd0401a59355c3d4c079d3023151eba64baa95df6bb6311984577fc46fe554"
+      },
+      "shipping_compile": {
+        "job": 125550827119,
+        "status": "queued",
+        "conclusion": null
+      },
+      "native_auth_matrix": {
+        "job": 125550828995,
+        "status": "skipped",
+        "scope": "not selected on push"
+      }
     }
   },
   "integration_reconciliation": {
@@ -474,8 +574,8 @@
     "preserved": "Shared reaction/history/forward recovery, retained-direct-ffi job, Human62/Transcript29/package-scope10/promotion7 gate sources and shared184 ledger rows; only call regions and declared workflow additions changed.",
     "ledger_input": "260c5dac9312c1cb4d456a2643c1f7313124adef",
     "schema": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
-    "qualification": "New combined H required; no prior runtime result is attributed to the credential implementation.",
-    "independent_verdict": "APPROVED source-only by /root/call_credential_source_review: only declared call regions/workflow additions differ from pinned shared input; all message/recovery/direct-FFI and gates preserved; no concrete merge defect. Runtime qualification pending.",
+    "qualification": "Combined exact523c8ca completed bounded credential/scope and source qualification; prior8bc results remain historical. macOS shipping and full product/integration gates remain open.",
+    "independent_verdict": "Prepublication source-only merge review approved unchanged shared message/recovery/direct-FFI inputs and gates with no concrete merge defect. Subsequent exact523 runtime assessment supports bounded credential AC01–03; see credential_batch.independent_execution_review. Full product ACCEPT is not granted.",
     "ledger_preparation": {
       "acceptance_changed": false,
       "base_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
@@ -504,5 +604,12 @@
       "reviewer": "/root/call_credential_source_review",
       "verdict": "focused source-only rereview approved; only authorized two selector changes"
     }
+  },
+  "media_capture_batch": {
+    "spec_commit": "1094ce758bef0ca937e0a75721994c05c2e1019b",
+    "spec": "docs/specs/fbcp-call-media-capture-lifetime.md",
+    "source_owner_review": "existing owners approved; distinct responsibility needed",
+    "status": "implementation in progress; no execution claim",
+    "prior_target_blob": "8e5c4cbe5b3c9fb7f0d51d43300ccdeb2d2ac99e"
   }
 }
