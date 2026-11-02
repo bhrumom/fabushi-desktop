@@ -89,6 +89,90 @@
     "native_tools": "The staged Rust job records visible Xcode, clang, SDK and optional CMake identities. This is runner inventory, not proof of every build-script invocation or generated/legal closure",
     "preserved": "All existing behavior tests, real browser/resource/privacy probes, budgets, lifecycle owners, direct versions, dependency locks, permissions and release acceptance requirements"
   },
+  "followup_input_execution": {
+    "head_sha": "1abefb6e48141bc753c856ddf92705591ad7e851",
+    "run_id": 41520738119,
+    "job_id": 125535763794,
+    "conclusion": "success",
+    "artifact_id": 13176499119,
+    "artifact_digest": "sha256:ade6ad02104d9d1149c3526cf3554712c9ac4763ac8049e1502b596fc33afee8",
+    "scope": "Locked input verification only. The three macOS binary jobs were queued when this record was prepared"
+  },
+  "bounded_dependency_review": {
+    "review_base": "e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e",
+    "scope": "Actual worker interfaces, configuration, listener lifetime and two upstream LICENSE texts; not a whole-package source or legal acceptance",
+    "fabushi_blobs": {
+      "source/fabushi-network-worker/main.go": "4d96dcb5f07f2f003beb5e3f348ad95d8fb93978",
+      "source/fabushi-network-worker/encrypted_store.go": "3451d310c77beba93a5ec83a08e624ad0a9f36a9",
+      "source/fabushi-network-worker/protocol.go": "b7e41b1847b039cbb01f4390b41c905a72dd8cf2"
+    },
+    "modules": [
+      {
+        "module": "tailscale.com",
+        "version": "v1.104.1",
+        "source_commit": "9a522a9786c97eb7910c01ccb7bd66557b04c910",
+        "sum": "h1:9GNOm9Izqll9RH5jA5NWcLiCzXi/WtqY4EHQY2Dy2zk=",
+        "go_mod_sum": "h1:Cb1XjScRgSOeRD7NW6uCEznme782WiOU9IxqyTWoRf0=",
+        "origin_source": "https://proxy.golang.org/tailscale.com/@v/v1.104.1.info",
+        "checksum_source": "https://sum.golang.org/lookup/tailscale.com@v1.104.1",
+        "license": "BSD-3-Clause",
+        "license_blob": "ed6e4bb6d6ba6a9eef28bc54b350adab57c12f14",
+        "license_source": "https://github.com/tailscale/tailscale/blob/9a522a9786c97eb7910c01ccb7bd66557b04c910/LICENSE"
+      },
+      {
+        "module": "github.com/tailscale/web-client-prebuilt",
+        "version": "v0.0.0-20260917222731-e0ed2d0d0fea",
+        "source_commit": "e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd",
+        "sum": "h1:ah5jt6ZnxMvNclt6kBBoLcMpLLjMA44PTsnov2y7gpU=",
+        "go_mod_sum": "h1:agQPE6y6ldqCOui2gkIh7ZMztTkIQKH049tv8siLuNQ=",
+        "origin_source": "https://proxy.golang.org/github.com/tailscale/web-client-prebuilt/@v/v0.0.0-20260917222731-e0ed2d0d0fea.info",
+        "checksum_source": "https://sum.golang.org/lookup/github.com/tailscale/web-client-prebuilt@v0.0.0-20260917222731-e0ed2d0d0fea",
+        "license": "BSD-3-Clause",
+        "license_blob": "394db19e4aa5c648b2c73741f184134fe1f22f68",
+        "license_source": "https://github.com/tailscale/web-client-prebuilt/blob/e0ed2d0d0fea36f1a3d11a2724eabed86e333bfd/LICENSE"
+      }
+    ],
+    "identity_boundary": "The acquisition JSON had no Origin fields. Official Go proxy Origin and checksum lookup fields were read and compared with the captured inputs; no local cryptographic verification was performed",
+    "read_contracts": [
+      "Custom encryptedStateStore is passed to tsnet.Server.Store. Its mutex, ErrStateNotExist and nil-delete semantics match the read ipn.StateStore interface; this does not prove all StateDir files are encrypted or all platform/power-loss behavior",
+      "SetNoLogsNoSupport reaches the upstream noop logtail transport. This disables that upload path, not creation of all auxiliary log files",
+      "Start then ready means worker protocol initialization, not tailnet Running or real connectivity. G15 independently waits for Running",
+      "RunWebClient=false controls remote exposure. Default ipnlocal -> client/web -> prebuilt.FS -> embed build references remain; no actual binary resource exclusion is claimed",
+      "Fixed tsnet listener Close unregisters/closes the listener but does not reclaim a connection already returned by Accept"
+    ],
+    "upstream_blob_anchors": {
+      "tailscale/tsnet/tsnet.go": "8aaef641057285812ae59ebf320509de4951a349",
+      "tailscale/ipn/store.go": "49007c14e387b2fd124e155cb18f49a839365918",
+      "tailscale/ipn/ipnlocal/web_client.go": "6d4141ac5e5e98d8d4ac56544da477ec5ff4ed11",
+      "tailscale/client/web/assets.go": "bdbc8a42de2e130f044d56984b0ebb105703654c",
+      "web-client-prebuilt/embed.go": "fe30e16f9fb15ea0a8c222ea5faab159889cbe40"
+    },
+    "remaining": [
+      "Generated prebuilt JS/CSS/font contents, exact generating Tailscale source/JS lock/run and third-party notices remain unreviewed",
+      "No supported-platform package license inclusion, real web exposure, complete registry/Go source disposition or legal acceptance is claimed",
+      "The existing Git-OID source review fields must not be populated with fabricated SHA256 or Go h1 identities; future registration must preserve these real external input identities in the existing acquisition authority"
+    ],
+    "accepted": false
+  },
+  "listener_ownership_repair": {
+    "requirement": "FDN-WORKER-LISTEN-01 / FDN-WORKER-LISTEN-AC-01",
+    "classification": "Source-observed implementation defect; no pre-fix behavioral run is claimed",
+    "failure": "The old buffered Accept result could retain an accepted connection after the timeout branch won; it never entered streams and listener Close did not reclaim it",
+    "production_wiring": "Existing main.go run streamListen -> acceptPeer -> existing streams map; no new protocol, permission, state or process owner",
+    "ownership": "Synchronous Accept with cancellation-driven listener Close; shared sync.Once serializes cleanup. Unadmitted connections close on cancellation, wrong peer or Accept error. Successful admission transfers the matching connection to its caller",
+    "tests_authored": [
+      "TestAcceptPeerExpiredBeforeAccept",
+      "TestAcceptPeerCancellationUnblocksAccept",
+      "TestAcceptPeerClosesLateConnectionAfterCancellation",
+      "TestAcceptPeerRejectsWrongPeerAndTransfersMatchingConnection",
+      "TestAcceptPeerStopsOnAcceptError"
+    ],
+    "oracles": "Controlled listener ordering, zero/one/two Accept observations, actual net.Pipe EOF and successful ping/pong after listener closure; timeouts only guard hangs",
+    "execution": "Pending containing-H GitHub Actions: preserved 13 plus 5 new top-level Go cases, zero failed/skipped; existing three-platform worker/Host checks and actual macOS worker binary gates retained",
+    "local_or_htch_runtime_execution": "not performed",
+    "dependency_versions_changed": false,
+    "accepted": false
+  },
   "remaining": [
     "Exact containing-H locked-input verification, actual macOS auxiliary binaries and existing lifecycle tests",
     "Detailed registry/Go source, generated-input and legal disposition; first pinning does not constitute semantic source review",

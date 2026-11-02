@@ -119,6 +119,41 @@ Required for this slice:
    `resolve_network_worker_executable`, and its packaged acceptance records that
    resource before any production release promotion.
 
+### Bounded listener ownership (FDN-WORKER-LISTEN-01)
+
+At `e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e`, `streamListen` transfers an
+Accept result through a buffered channel. If the timeout branch wins after
+Accept succeeds, the connection can remain in that channel, outside `streams`;
+closing the listener does not reclaim an already accepted connection. This is
+a source-observed ownership defect, not an executed pre-fix reproduction.
+
+The existing worker must own the listener until a matching connection is
+admitted or the bounded attempt fails. Cancellation/deadline closes the listener
+and unblocks Accept. Every non-nil connection that is not transferred to the
+existing session map must be closed, including results arriving after cancellation
+and a connection returned together with an Accept error. Accept errors end the
+attempt rather than spin until its deadline. Wrong peers are closed and may be
+followed by another accept only within the same deadline. The cancellation check
+before successful admission is the transfer boundary; cancellation after transfer
+must not close the caller-owned connection. Close the listener on every exit.
+
+Keep the existing tailnet peer/port checks, session limits, wire event/error codes,
+private stdin protocol, process owner and pinned dependencies. Do not add a
+parallel transport, change authorization or make unrelated command scheduling
+asynchronous. Existing parent-EOF and real-service qualification remain required.
+
+FDN-WORKER-LISTEN-AC-01 requires deterministic Actions-only cases for an expired
+attempt before Accept, cancellation of a blocked Accept, a successful connection
+returned after cancellation, wrong-peer rejection followed by a usable matching
+connection, and terminal Accept failure with or without a returned connection.
+Use controlled listener scheduling and actual connection EOF/read/write observations;
+timeouts in tests are hang guards, not probabilistic race timing. Preserve the
+existing 13 Go cases and execute the resulting 18-case suite at the containing H.
+Run the existing cross-platform worker and Host supervisor checks, plus the actual
+macOS binary source check. These bounded tests do not grant live-network, signed
+package, source/legal or independent acceptance. Rollback changes code only and
+does not migrate or delete worker state.
+
 ## Non-goals / still pending
 
 This slice does not satisfy G02/G03/G05/G16 by itself. Still pending:
