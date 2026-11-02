@@ -28,6 +28,9 @@ use super::agent_db::{
     set_persisted_introduction_pending, set_persisted_memory_prompt_snapshot,
     update_persisted_transcript_entry,
 };
+use super::forward_batch_journal::{
+    HumanForwardBatch, load_forward_batches, store_forward_batch,
+};
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
@@ -2372,6 +2375,9 @@ impl ProductionSessionWorkers {
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
+        // Resume the source-owned plan before taking a destination mutation
+        // lock. Forward delivery itself takes destination locks and performs HTTP.
+        self.resume_human_forward_batches()?;
         const PAGE_LIMIT: usize = 200;
         const MAX_GAP_PAGES: usize = 32;
         const MAX_SAFE_ID: u64 = 9_007_199_254_740_991;
@@ -2398,6 +2404,12 @@ impl ProductionSessionWorkers {
                     && entry.get("clientNonce").and_then(serde_json::Value::as_str).is_some()
             }).collect::<Vec<_>>();
         for entry in pending {
+            // A v1 forwarding outbox belongs to its source's complete durable
+            // batch. A removed/protected source cannot be bypassed by the
+            // generic destination pending-send recovery route.
+            if entry.pointer("/forwardContext/batchVersion").and_then(serde_json::Value::as_u64) == Some(1) {
+                continue;
+            }
             let Some(nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) else { continue; };
             let text = entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
             let reply = entry.get("replyToId").and_then(serde_json::Value::as_str);
@@ -2501,6 +2513,7 @@ impl ProductionSessionWorkers {
                 self.local_human_id()?
             ));
         }
+        self.resume_human_forward_batches()?;
         for friend in client.list_friends()? {
             let peer_human_id = fabushi_identity_text(&friend.user_id)?;
             let title = friend.display_name.trim();
@@ -2798,6 +2811,174 @@ impl ProductionSessionWorkers {
         Ok(recipients)
     }
 
+    /// The same private Native credential owner supplies account and issuer;
+    /// a token or device-session refresh does not rewrite durable intent.
+    fn human_forward_scope(&self) -> Result<(String, String), String> {
+        let account = self.local_human_id()?.to_string();
+        let issuer = if let Some(client) = self.shipping_native_messaging()? {
+            let (bound_account, issuer) = client.forward_account_scope()?;
+            if bound_account != account {
+                return Err("Fabushi native messaging credential changed Human account".into());
+            }
+            issuer
+        } else {
+            "local-only".to_string()
+        };
+        Ok((account, issuer))
+    }
+
+    /// Scan even now-ineligible source records, so removing a conversation
+    /// cannot free its old request ID for another source under one account.
+    fn find_forward_request(
+        &self, account: &str, issuer: &str, request_id: &str,
+    ) -> Result<Option<HumanForwardBatch>, String> {
+        let root = get_native_conversations_root(&self.agents_root);
+        let entries = match fs::read_dir(root) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error.to_string()),
+        };
+        let mut matched: Option<HumanForwardBatch> = None;
+        for entry in entries {
+            let entry = entry.map_err(|error| error.to_string())?;
+            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
+                continue;
+            }
+            let id = entry.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
+            let owner = self.open_human_conversation_db_owner(&id)?;
+            for batch in load_forward_batches(&owner, &id)? {
+                if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
+                    if matched.is_some() {
+                        return Err("Human forward request identity is duplicated across source conversations".into());
+                    }
+                    matched = Some(batch);
+                }
+            }
+        }
+        Ok(matched)
+    }
+
+    fn authorize_forward_source(&self, source_id: &str, source_entry_id: &str) -> Result<serde_json::Value, String> {
+        let owner = self.open_human_conversation_db_owner(source_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a participant in the source conversation".into());
+        }
+        let entry = owner.get_transcript_entries().map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
+            .ok_or_else(|| "forwardHumanMessage source message is missing".to_string())?;
+        if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+        {
+            return Err("forwardHumanMessage source must be a settled canonical message".into());
+        }
+        if entry.get("protectedContent").and_then(serde_json::Value::as_bool) == Some(true) {
+            return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
+        }
+        if entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default().trim().is_empty()
+            && !entry.get("attachments").and_then(serde_json::Value::as_array).is_some_and(|a| !a.is_empty())
+        {
+            return Err("forwardHumanMessage source has no forwardable content".into());
+        }
+        Ok(entry)
+    }
+
+    fn deliver_forward_batch(
+        &self, source_id: &str, request_id: &str, requested: Option<&[String]>,
+    ) -> Result<HumanForwardBatch, String> {
+        let (account, issuer) = self.human_forward_scope()?;
+        let serial = self.human_message_lock(&format!("forward-batch:{account}:{issuer}:{request_id}"))?;
+        let _exclusive = serial.lock().map_err(|_| "Human forward batch lock poisoned".to_string())?;
+        let owner = self.open_human_conversation_db_owner(source_id)?;
+        let mut batch = load_forward_batches(&owner, source_id)?.into_iter().find(|item|
+            item.account_id == account && item.issuer == issuer && item.request_id == request_id
+        ).ok_or_else(|| "forwardHumanMessage durable request was not found".to_string())?;
+        if let Some(subset) = requested {
+            if !batch.contains_requested(subset) {
+                return Err("forwardHumanMessage request may not expand its original destination set".into());
+            }
+        }
+        for index in 0..batch.destinations.len() {
+            let target = &batch.destinations[index];
+            if target.completed || requested.is_some_and(|subset|
+                !subset.iter().any(|id| id == &target.conversation_id)
+            ) {
+                continue;
+            }
+            // Reauthorize before *each* network dispatch, not merely when the
+            // original snapshot was accepted. The immutable payload never
+            // changes when the source text is later edited.
+            self.authorize_forward_source(source_id, &batch.source_entry_id)?;
+            if self.human_forward_scope()? != (account.clone(), issuer.clone()) {
+                return Err("Fabushi native messaging credential changed Human account or issuer".into());
+            }
+            let destination_id = target.conversation_id.clone();
+            let nonce = target.client_nonce.clone();
+            let result = (|| -> Result<serde_json::Value, String> {
+                let destination_owner = self.open_human_conversation_db_owner(&destination_id)?;
+                let metadata = destination_owner.read_metadata().map_err(|error| error.to_string())?;
+                let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+                    .ok_or_else(|| "forward destination participants are invalid".to_string())?;
+                if participants.len() != 2 || !self.metadata_has_local_human(&metadata)? {
+                    return Err("forward destination is not an authorized Human conversation".into());
+                }
+                let permitted = fabushi_messaging_core::recipient_search_authorized(
+                    fabushi_messaging_core::RecipientAuthorizationInput::direct_default(true),
+                    fabushi_messaging_core::RecipientSearchRequirements {
+                        require_media: !batch.attachments.is_empty(),
+                        ..fabushi_messaging_core::RecipientSearchRequirements::default()
+                    },
+                );
+                if !permitted {
+                    return Err("forward destination rejected the source message policy".into());
+                }
+                self.append_human_message_with_context(
+                    &destination_id, &batch.text, &nonce, None, None,
+                    &batch.attachments, Some(&batch.context), None,
+                )
+            })();
+            match result {
+                Ok(_) => {
+                    batch.destinations[index].completed = true;
+                    batch.destinations[index].error = None;
+                }
+                Err(error) => {
+                    batch.destinations[index].completed = false;
+                    batch.destinations[index].error = Some(error);
+                }
+            }
+            // A failed progress write must stop any later destination. A
+            // successfully sent destination can replay through its canonical
+            // nonce after a crash between its HTTP settlement and this write.
+            store_forward_batch(&owner, &batch)?;
+        }
+        Ok(batch)
+    }
+
+    fn resume_human_forward_batches(&self) -> Result<(), String> {
+        if self.shipping_native_messaging()?.is_none() { return Ok(()); }
+        let (account, issuer) = self.human_forward_scope()?;
+        for conversation in self.list_human_conversations()? {
+            let Some(source_id) = conversation.get("id").and_then(serde_json::Value::as_str) else { continue };
+            let owner = self.open_human_conversation_db_owner(source_id)?;
+            for batch in load_forward_batches(&owner, source_id)? {
+                if batch.account_id != account || batch.issuer != issuer
+                    || batch.destinations.iter().all(|target| target.completed)
+                { continue; }
+                // Do not erase or bypass an invalid source on recovery. An
+                // unavailable source retains the original intent, and no
+                // destination is sent without reauthorization.
+                self.authorize_forward_source(source_id, &batch.source_entry_id)?;
+                self.deliver_forward_batch(source_id, &batch.request_id, None)?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn forward_human_message(
         &self,
         source_conversation_id: &str,
@@ -2811,141 +2992,88 @@ impl ProductionSessionWorkers {
         if client_nonce.is_empty() || client_nonce.len() > 200 {
             return Err("forwardHumanMessage requires a valid clientNonce".into());
         }
+        let source_entry_id = source_entry_id.trim();
+        if source_entry_id.is_empty() {
+            return Err("forwardHumanMessage requires a sourceEntryId".into());
+        }
         if destination_conversation_ids.is_empty() {
             return Err("forwardHumanMessage requires at least one destination".into());
         }
-
-        let mut seen_destinations = BTreeSet::new();
+        let mut seen = BTreeSet::new();
         let mut destinations = Vec::new();
-        for destination in destination_conversation_ids {
-            let destination = destination.trim();
-            if destination.is_empty() {
+        for id in destination_conversation_ids {
+            let id = id.trim();
+            if id.is_empty() {
                 return Err("forwardHumanMessage destination id must not be empty".into());
             }
-            if seen_destinations.insert(destination.to_string()) {
-                destinations.push(destination.to_string());
-            }
+            if seen.insert(id.to_string()) { destinations.push(id.to_string()); }
         }
         if destinations.len() > 32 {
             return Err("forwardHumanMessage supports at most 32 unique destinations".into());
         }
-
-        let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
-        let source_metadata = source_owner.read_metadata().map_err(|error| error.to_string())?;
-        if !self.metadata_has_local_human(&source_metadata)? {
-            return Err("local Human identity is not a participant in the source conversation".into());
-        }
-        let source_entry_id = source_entry_id.trim();
-        let source_entry = source_owner
-            .get_transcript_entries()
-            .map_err(|error| error.to_string())?
-            .into_iter()
-            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(source_entry_id))
-            .ok_or_else(|| "forwardHumanMessage source message is missing".to_string())?;
-        if source_entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
-            || source_entry.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
-        {
-            return Err("forwardHumanMessage source must be a settled canonical message".into());
-        }
-        if source_entry
-            .get("protectedContent")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-        {
-            return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
-        }
-
-        let source_text = source_entry
-            .get("content")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
-        let attachments = source_entry
-            .get("attachments")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        if source_text.trim().is_empty() && attachments.is_empty() {
-            return Err("forwardHumanMessage source has no forwardable content".into());
-        }
-
-        let privacy = fabushi_messaging_core::ForwardPrivacy {
-            drop_sender_names,
-            drop_captions,
-        }
-        .normalized();
-        let drop_sender_names = privacy.drop_sender_names;
-        let drop_captions = privacy.drop_captions;
-        let forwarded_text = if drop_captions && !attachments.is_empty() {
-            ""
+        let privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions }.normalized();
+        let (account, issuer) = self.human_forward_scope()?;
+        // Serialize request-ID discovery and initial source persistence by
+        // account/issuer. Release this short lane before destination locks/HTTP.
+        let staging = self.human_message_lock(&format!("forward-account:{account}:{issuer}"))?;
+        let stage_guard = staging.lock().map_err(|_| "Human forward staging lock poisoned".to_string())?;
+        let existing = self.find_forward_request(&account, &issuer, client_nonce)?;
+        if let Some(ref prior) = existing {
+            if prior.source_conversation_id != source_conversation_id || prior.source_entry_id != source_entry_id {
+                return Err("forwardHumanMessage clientNonce already belongs to another source message".into());
+            }
+            if prior.context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool)
+                != Some(privacy.drop_sender_names)
+                || prior.context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool)
+                    != Some(privacy.drop_captions)
+            {
+                return Err("forwardHumanMessage clientNonce already identifies different privacy".into());
+            }
+            if !prior.contains_requested(&destinations) {
+                return Err("forwardHumanMessage request may not expand its original destination set".into());
+            }
         } else {
-            source_text
-        };
-        let mut forward_context = serde_json::json!({
-            "requestId": client_nonce,
-            "sourceConversationId": source_conversation_id,
-            "sourceEntryId": source_entry_id,
-            "privacy": {
-                "dropSenderNames": drop_sender_names,
-                "dropCaptions": drop_captions,
-            },
-        });
-        if !drop_sender_names {
-            let mut origin = serde_json::Map::new();
-            if let Some(author_id) = source_entry.get("authorId").cloned() {
-                origin.insert("authorId".into(), author_id);
+            let source_entry = self.authorize_forward_source(source_conversation_id, source_entry_id)?;
+            let source_text = source_entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
+            let attachments = source_entry.get("attachments")
+                .and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
+            let text = if privacy.drop_captions && !attachments.is_empty() {
+                String::new()
+            } else {
+                source_text.to_string()
+            };
+            let mut context = serde_json::json!({
+                "batchVersion": 1,
+                "requestId": client_nonce,
+                "sourceConversationId": source_conversation_id,
+                "sourceEntryId": source_entry_id,
+                "privacy": {
+                    "dropSenderNames": privacy.drop_sender_names,
+                    "dropCaptions": privacy.drop_captions,
+                },
+            });
+            if !privacy.drop_sender_names {
+                let mut origin = serde_json::Map::new();
+                for key in ["authorId", "authorName"] {
+                    if let Some(value) = source_entry.get(key).cloned() { origin.insert(key.into(), value); }
+                }
+                if !origin.is_empty() {
+                    context.as_object_mut().expect("forward context object")
+                        .insert("origin".into(), serde_json::Value::Object(origin));
+                }
             }
-            if let Some(author_name) = source_entry.get("authorName").cloned() {
-                origin.insert("authorName".into(), author_name);
-            }
-            if !origin.is_empty() {
-                forward_context
-                    .as_object_mut()
-                    .expect("forward context is an object")
-                    .insert("origin".into(), serde_json::Value::Object(origin));
-            }
+            let batch = HumanForwardBatch::new(
+                account, issuer, client_nonce.to_string(), source_conversation_id.to_string(),
+                source_entry_id.to_string(), text, attachments, context, &destinations,
+            );
+            let source_owner = self.open_human_conversation_db_owner(source_conversation_id)?;
+            // The complete ordered batch (including destinations not yet
+            // dispatched) commits atomically before the first POST.
+            store_forward_batch(&source_owner, &batch)?;
         }
-
-        let mut settlement = Vec::with_capacity(destinations.len());
-        for destination_conversation_id in destinations {
-            let mut digest = Sha256::new();
-            digest.update(client_nonce.as_bytes());
-            digest.update([0]);
-            digest.update(destination_conversation_id.as_bytes());
-            let destination_nonce = format!("human-forward-{:x}", digest.finalize());
-
-            match self.append_human_message_with_context(
-                &destination_conversation_id,
-                forwarded_text,
-                &destination_nonce,
-                None,
-                None,
-                &attachments,
-                Some(&forward_context),
-                None,
-            ) {
-                Ok(entry) => settlement.push(serde_json::json!({
-                    "conversationId": destination_conversation_id,
-                    "clientNonce": destination_nonce,
-                    "status": "sent",
-                    "entry": entry,
-                })),
-                Err(error) => settlement.push(serde_json::json!({
-                    "conversationId": destination_conversation_id,
-                    "clientNonce": destination_nonce,
-                    "status": "failed",
-                    "error": error,
-                })),
-            }
-        }
-
-        Ok(serde_json::json!({
-            "requestId": client_nonce,
-            "privacy": {
-                "dropSenderNames": drop_sender_names,
-                "dropCaptions": drop_captions,
-            },
-            "destinations": settlement,
-        }))
+        drop(stage_guard);
+        let batch = self.deliver_forward_batch(source_conversation_id, client_nonce, Some(&destinations))?;
+        Ok(batch.response(&destinations))
     }
 
     pub fn append_human_message(
@@ -4116,13 +4244,8 @@ mod sharebox_shipping_tests {
 
         let changed = workers
             .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, false)
-            .unwrap();
-        assert_eq!(
-            changed.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
-            Some("failed"),
-        );
-        assert!(changed.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
-            .is_some_and(|error| error.contains("forward context")));
+            .expect_err("privacy reuse cannot change a persisted batch");
+        assert!(changed.contains("different privacy"));
 
         workers.shutdown();
 

@@ -377,6 +377,17 @@ impl FabushiNativeMessagingClient {
         })
     }
 
+    /// A durable forward request binds to the Native account and issuer, not
+    /// the bearer token or rotating device session. Legacy credential files
+    /// remain supported through the same private service-origin checks.
+    pub(super) fn forward_account_scope(&self) -> Result<(String, String), String> {
+        let credentials = self.read_bound_credentials()?;
+        Ok((
+            fabushi_identity_text(&credentials.user_id)?,
+            credential_issuer(credentials.issuer.as_deref())?,
+        ))
+    }
+
     /// Read only the existing private credential owner and produce a bounded
     /// local claim. The bearer token and raw sessionId remain private here.
     pub fn credential_claim(&self) -> Result<FabushiNativeCredentialClaim, String> {

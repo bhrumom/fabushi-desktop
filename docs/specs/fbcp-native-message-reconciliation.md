@@ -2,9 +2,9 @@
 
 Status: active  
 Spec ID: FBCP-NMR-001  
-Updated: 2026-11-02  
+Updated: 2026-11-03
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–26
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–27
 
 ## Context and goal
 
@@ -908,6 +908,81 @@ durability before the first destination dispatch, restart recovery of an
 unsubmitted destination, and remote forward provenance are separate known
 gaps. Backend #137 remains read-only, and all release/independent ACCEPT gates
 remain blocked. Preserve U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+
+### Round 27 durable forwarding batches (NMR-47 / NMR-AC-38)
+
+Prerequisite recovery: exact `2a00708897e17c76194e0811a083ef6cd315d674`
+run41500770749/UI125467351076 compiled the renderer and passed Transcript16
+and settlement5, then all twelve Chromium cases timed out awaiting the fixture
+mount, before reaching behavior assertions. Preserve that `TEST_FLAW` evidence;
+it does not prove twelve product failures. Use a Vite-root module entry that
+imports the external fixture through Vite's module resolver, retain complete
+Vite/page/network diagnostics and bootstrap screenshots, and rerun all twelve
+actual behavior cases. The query-change case must change the query during an
+in-flight send; the positive control must exercise real keyboard focus/selection
+and capture four actual theme/viewport screenshots. These strengthen the
+declared oracle; they do not grant packaged visual/accessibility acceptance.
+
+At `2a00708897e17c76194e0811a083ef6cd315d674`, Session persists an individual
+destination only when its turn in the forwarding loop begins. Process exit
+after the first dispatch loses every later destination and the renderer's
+request identity. Reopening a destination outbox cannot reconstruct that
+missing user intent. This batch closes that Session-owned durability gap.
+
+- NMR-47a: Persist one versioned whole-batch record in the existing source
+  conversation's SandAgentDb before any destination dispatch. Bind the record
+  to the active Human account and Native issuer (never bearer/session secrets),
+  request ID, source conversation/entry, normalized privacy, immutable submitted
+  text/attachment/provenance snapshot, ordered deduplicated destination IDs and
+  their existing deterministic nonces. No second database, queue owner or
+  message writer is introduced. An absent field means no pre-existing batches;
+  malformed/unknown-version state fails closed and is not overwritten.
+- NMR-47b: Serialize batch staging/progress with a dedicated key in the existing
+  Session lock registry. A short account/issuer staging lane checks existing
+  durable source journals so the same actor cannot rebind a request to another
+  source, including a source whose membership was later removed. Release that
+  lane before network work. Do not hold a source conversation mutation guard while
+  acquiring destination mutation guards. Every progress write must succeed
+  durably; a failed write stops further dispatch. A crash after destination
+  settlement but before batch progress is stored reuses the destination's
+  canonical nonce/outbox settlement, never creates another message.
+- NMR-47c: Identical retries and an original-destination subset retain the
+  initial batch identity and snapshot. Reject nonce reuse for another source
+  entry, privacy choice or expanded destination set before dispatch. Source
+  edits do not rewrite the accepted payload. Before unfinished work, recheck
+  source membership, source existence/forwardability/protection and destination
+  membership through the existing owners. Removed/protected sources, malformed
+  state, account/issuer changes and missing credentials cannot authorize sends.
+  Preserve records and outstanding destinations for recovery; credential
+  refresh for the same account/issuer remains recoverable.
+- NMR-47d: The existing `syncHumanConversation` and startup/refresh
+  `syncHumanConversations` path discovers and resumes persisted incomplete
+  batches, including destinations that had no individual outbox entry before
+  process exit. Use the existing append/HTTP/resource/event path and per-send
+  credential settlement fencing. Already settled destinations stay idempotent;
+  independent destination errors are durable, visible in the existing result
+  envelope and retryable. Preserve original destinations even when the UI
+  retries only a failed subset. Limit each batch to the existing 32 unique
+  destinations. No backend API, public command or service schema changes.
+- NMR-AC-38: At exact-H Actions, exercise the actual Session/SQLite/loopback
+  and gateway path: durable complete intent before the first POST; process
+  termination with an unsubmitted destination and restart through ordinary
+  sync; ambiguous accepted first POST and idempotent replay; immutable source
+  snapshot; changed source/privacy/expanded-destination nonce negatives;
+  missing/protected source and account/issuer rejection; concurrent/repeated
+  submit; failure of durable staging/progress before further dispatch; and
+  preservation of existing message/Agent/credential contracts. Keep the actual
+  renderer, Transcript16, settlement5, Chromium12 and shipping gates. Tests
+  run only in GitHub Actions; local source reading/diff preparation is allowed.
+
+Rollback retains the additional metadata and all transcript/resource rows;
+older code ignores the batch metadata and must not delete it. Reapplying the
+change can resume the same identities. An older binary cannot recover a
+never-submitted destination, so rollback is not full batch-recovery acceptance.
+Remote provenance fidelity, full source/legal closure, real production
+service/pagination, supported signed packages, Bot regression and independent
+ACCEPT/release gates remain open. Backend PR #137 is not modified or deployed.
+
 
 
 

@@ -3,28 +3,28 @@
 Status: active / normative schema  
 Matrix ID: FQT-RTM-001  
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
-Updated: 2026-11-02
+Updated: 2026-11-03
 
-## Round 26 — bounded exact-H execution and forwarding lifetime
+## Round 27 — durable forward batch and fixture recovery
 
-Evidence: `projects/telegram-desktop-rust/evidence/round26-forward-account-lifetime.json`.
-Inspected H=`a1196f00230f3307ce0bd9c704ef5c4a7c9a4044`, run41496846317,
-attempt1, completed/success. New NMR-46 source in this commit requires its own
-containing-H execution; the results below do not qualify unexecuted changes.
+Evidence: `projects/telegram-desktop-rust/evidence/round27-forward-batch-recovery.json`.
+Base H=`2a00708897e17c76194e0811a083ef6cd315d674`, run41500770749,
+attempt1, completed/failure. Baseline successes below do not qualify new source; containing-H
+execution remains pending at preparation and is bound by the Actions artifacts.
 
 | Requirement / oracle | Existing production owner | Verified execution / remaining boundary |
 | --- | --- | --- |
-| NMR-46 / NMR-AC-37 | ProductionRenderer account generation, ForwardMessageDialog lifetime and same roster projection | Chromium12 plus projection5 authored; Transcript16 and renderer build retained; new-H execution pending |
-| NMR-40 | Locked electron-builder FileSet/copy of same-job built AppHost | shipping125453933989: actual-copy4 passed; missing binary input, invalid hash and valid-but-unequal hash rejected; one real Darwin resource, not full signed installer |
-| Social recovery / HTTP owner | Existing retained Social provider and session-owned platform HTTP boundary | shipping125453933989: Social9 / HTTP6 passed, fail0 ignored0 |
-| Gateway forwarding / Human settlement | Existing authenticated Gateway → Session/Transcript | reconciliation125453934163: Gateway HTTP1 / Human33 / Agent4 / private3 passed; HTTP test uses TestApi echo, real-service end-to-end remains open |
-| EUS-WIN-01–04 | Existing main-process publisher policy and Windows installer | Windows125453934371: native11 pass/fail0/skip0; owned test certs0 after cleanup. Electron125453934276: controlled28 pass. Formal publisher approval and signed release are absent |
-| EUS-01–06 / EUS-WIN-05–06 | Existing update service, Settings and apply-marker | Electron source16 and actual build passed; unchanged marker/data owners. Real install/upgrade/rollback and independent ACCEPT remain blocked |
+| NMR-46 / NMR-AC-37 recovery | Existing ForwardMessageDialog, account-generation and renderer roster projection | Base UI125467351076: renderer build, Transcript16 and settlement5 pass; Chromium12 fail before fixture mount. Vite-root entry and complete diagnostics repaired; actual query/focus/theme evidence requires new-H execution. |
+| NMR-47a/b / NMR-AC-38 | Source SandAgentDb whole-batch intent; destination Session/Transcript settlement | Five new HTTP/SQLite/process cases authored; whole intent before first POST, killed-process restart and SQLite staging/progress failure. Human38 and owner-unit5 required at containing H. |
+| NMR-47c/d / NMR-AC-38 | Existing account/issuer credentials, forward source lane and source/startup/destination sync | Original snapshot/subset identity, cross-source conflicts, permission/corruption negatives, legacy pending adoption, marked-outbox origin checks and concurrent-submit contract; no local execution. |
+| Gateway / Human / Agent preservation | Existing authenticated Gateway and Session writers | Base reconciliation125467351049: Human33/Agent4/private3/Gateway1 passed. New containing-H gate retains those categories. |
+| Native package / Social / transport | Existing AppHost shipping composition and package resource copy | Base shipping125467351072 was cancelled without runner steps/logs; cancellation cause unverified. New containing-H shipping gate remains required. |
+| Electron / Windows preservation | Existing main-process update/publisher and account lifecycle | Base Electron125467350610: carrier10/account8/resources3/source16/publisher28/metadata18 plus build; Windows125467351150 native Authenticode11 passed. CI certificates are not formal publisher authority. |
 
-Fixed-U source_reviews remains absent; source/product/independent acceptance
-remain false. Backend #137 is read-only, open/draft/unmerged; no deployment.
-Historical receipts below preserve their original H and scope.
-
+Source_reviews remains absent; source/product/independent acceptance remain
+false. Backend #137 is open/draft/unmerged and read-only. Remote provenance,
+resource retention, real service/pagination and full packaged visual/a11y,
+signed release, Bot, performance/soak and independent ACCEPT remain open.
 ## Round 21 explicit update source and exact-H evidence
 
 Authority: `docs/specs/electron-update-source-authority.md` EUS-01–06 and
@@ -151,7 +151,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–37 | NMR-01–06,09,18–20,31–46 | Existing Session/Transcript Human admission; renderer account/lifetime and Native/Settings/package owners | H a119: Human33/Agent4/private3/Gateway1; Social9/HTTP6; AppHost12/Native7/FeatureHost7/Host6/ABI7/CLI3; executable5/lib11; metadata18/copy4 | Real HTTP/Host/SQLite and subprocess restart; full signed packages remain open | UI16 passed at a119; Chromium12/projection5 authored for NMR46; full visual/a11y pending | Account/lifetime negatives plus retained permission/nonce/reaction/recovery; performance/soak pending | REG-NMR-FORWARD-ACCOUNT-001 and retained message/ABI controls | Round26 receipt: exact a119/run41496846317 terminal success; new NMR46 containing-H execution pending | Frozen independent source reviews; full independent ACCEPT pending | IMPLEMENTED; scoped execution only; full product acceptance BLOCKED |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–38 | NMR-01–06,09,18–20,31–47 | Existing Session/Transcript whole forwarding intent, account scope and destination settlement | Base 2a007088: Human33/Agent4/private3/Gateway1; Electron and Windows pass; shipping queued at preparation | New real process termination, full batch before POST, SQLite persistence failure, immutable retries and recovery negatives authored | Base renderer/Transcript16/settlement5 pass; Chromium12 fixture failure retained and repaired; new-H execution required | Existing permission/nonce/reaction/recovery retained; Human38 plus forward-owner5 required | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 process/permission/durable-write cases | Round27 receipt binds baseline logs and containing-H Actions artifact names; no assumed pass | Independent source review only; full independent ACCEPT pending | IMPLEMENTED; new execution pending at preparation; full acceptance BLOCKED |
 | TDRP-UPDATER-DISCOVERY-AUTHORITY-001 | critical | EUS-01–06 / EUS-WIN-01–06 | Explicit source and exact publisher/bytes/one-use invariants | Existing updater/service/Windows installer and Settings | At a119: source16, controlled publisher28, native Windows11; zero failures/skips | Controlled ports and native CI signer; authorized real signed install/upgrade/rollback open | Existing Settings helper; full visual/a11y pending | Source/redirect/abort/marker and signature/publisher/tamper/one-use negatives; performance/soak pending | Existing valid source scheduling and marker recovery | Round26 receipt: run41496846317 Electron125453934276/Windows125453934371 success | Bounded frozen review; release ACCEPT pending | IMPLEMENTED / BOUNDED TESTS EXECUTED; source/product/release BLOCKED |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
@@ -320,6 +320,7 @@ Authorship/evidence boundary: the original strengthened ten-case blob `127700079
 The bounded Host gate passed at exact95/run41403643662. Every subsequent message change remains gated by NMR-AC-06/07/08/09/10/11/12: both named message jobs on one exact H, actual thirteen Human and four Agent nonce cases, locked AppHost compilation, response normalization, both bare future-salts library fixtures, full protocol/TCP including its live case, proxy rejection and credential-schema cases. A skipped step, diagnostic lock generation, test authorship or old-H result is not a pass. Use the existing round3 evidence receipt for execution records; no second result ledger.
 
 Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-message application and identity-transition sections recorded in `research/native-message-known-overlap-fixed-u.md`. It does not close whole upstream files or change inventory/source_reviews/unknown/unread/source acceptance. Known-message refresh, durable history-range coverage, read-state/visible receipt behavior, distinct-emoji/whole-payload bounds and stale mutation/refresh ordering remain separate open work. Full native-service, UI/package/platform, performance/soak, complete Bot regression and independent ACCEPT remain open.
+
 
 
 

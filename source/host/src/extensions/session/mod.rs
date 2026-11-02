@@ -16,6 +16,7 @@ pub mod session_paths;
 pub mod session_recovery;
 pub mod session_maintenance;
 pub mod session_materialization;
+pub mod forward_batch_journal;
 pub mod native_messaging;
 pub mod session_conversation_state;
 pub mod session_projection;
