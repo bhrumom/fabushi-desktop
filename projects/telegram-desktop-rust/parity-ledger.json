@@ -50721,19 +50721,74 @@
     {
       "source_repository": "telegramdesktop/tdesktop",
       "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
-      "source_path": ".github/workflows/mac_packaged.yml",
-      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
-      "additional_source_identities": [],
-      "source_kind": "packaging",
-      "module_id": "tdesktop.packaging.update-source-trust",
+      "source_path": "Telegram/SourceFiles/core/update_checker.cpp",
+      "source_blob_sha": "73eee14f179d769854237640b246858959808736",
+      "additional_source_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_checker.h",
+          "object": "458ffc75a972bcf39039413ec1e22e854cce2cc3"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/storage/localstorage.cpp",
+          "object": "d71385083c0e940580398612fb65e522afc768b1"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+          "object": "d25fe3b72298fab371854f80186ee8e4777ea087"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_channel.h",
+          "object": "342e385f07b771303a112a15895e7cfb2bb612de"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/cmake/telegram_options.cmake",
+          "object": "049f39cc92d6c798ab9c6df6aa9829ee2ae2a02c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/application.cpp",
+          "object": "7172206f5c1e540e19c90798e9a9e5721276cc53"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/settings/sections/settings_advanced.cpp",
+          "object": "e06c1cc267c9b6ad63475bf6cf3caf75f4179246"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": ".github/workflows/mac_packaged.yml",
+          "object": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc"
+        }
+      ],
+      "source_kind": "source",
+      "module_id": "tdesktop.core.update-discovery-authority",
       "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
       "source_symbols": [
-        "on.push.branches-ignore: public-canary/private-canary",
-        "on.push.paths-ignore",
-        "on.pull_request.paths-ignore",
-        "jobs.macos.runs-on conditional depot-macos-latest/macos-latest",
-        "strategy.matrix.defines: empty",
-        "TDE2E/TLOTTIE/WALLET_ENGINE/RUST_PATCHES/RUST_TOOLCHAIN pin set"
+        "core/update_checker.cpp::GetUpdaterInstance (298-305): shared updater authority",
+        "core/update_checker.cpp::LookupCanaryPrivateSession (307-325): configured private source membership",
+        "core/update_checker.cpp::HttpChecker::{start,gotResponse,handleResponse,clearSentRequest,gotFailure,parseOldResponse,parseResponse,validateLatestUrl,~HttpChecker} (734-878)",
+        "core/update_checker.cpp::MtpChecker::{start,startCanary} (1010-1040,1128-1189): source-mode selection and canary admission",
+        "core/update_checker.cpp::Updater::{handleReady,handleFailed,handleChecking,scheduleNext,stop,start,startImplementation,checkerDone,checkerFail,handleTimeout,tryLoaders} (1624-1886)",
+        "storage/localstorage.cpp::{AutoupdatePrefix,autoupdatePrefixFile,readAutoupdatePrefixRaw,writeAutoupdatePrefix,readAutoupdatePrefix} (528-586)",
+        "mtproto/mtp_instance.cpp::configLoadDone autoupdate_url_prefix forwarding (930-961)",
+        "core/update_channel.h::{BuildUpdateChannel,BuildIsCanary,RunningUpdateVersion} and canary configuration (1-89)",
+        "Telegram/cmake/telegram_options.cmake update channel/canary option validation (50-115)",
+        "core/application.cpp::activeSessionChanges -> UpdateChecker::setMtproto (196-226)",
+        "settings/sections/settings_advanced.cpp updater controls and event consumers (1035-1245; incomplete enclosing apply callback)",
+        "core/update_checker.h::UpdateChecker (1-61)"
       ],
       "capability_ids": [
         "UPDATE-INSTALL-ROLLBACK"
@@ -50743,8 +50798,8 @@
         "Fabushi approved Native issuer origin policy",
         "Existing update Settings and apply marker"
       ],
-      "source_analysis_path": "docs/specs/electron-update-source-authority.md",
-      "behavior_contract": "Separate upstream Mac package/update provenance from the recovered Electron updater's unauthorized third-party default. Existing Electron owner requires explicit approved main-process source and fails closed before network I/O for absent/invalid sources. The source packaging workflow is contextual upstream provenance only, not asserted as the origin of Cursor URL logic.",
+      "source_analysis_path": "projects/telegram-desktop-rust/evidence/round21-update-source-authority.json",
+      "behavior_contract": "Fixed-U core/update_checker.cpp and the exact additional source ranges supply a partial product contract for update-source configuration, selection, admission and single-updater lifecycle. The recovered Cursor default is a target defect, not an upstream endpoint to inherit. The existing Electron owner requires an explicit approved main-process source, uses the explicit compatibility variable only when primary is absent, and fails closed before network I/O for missing/invalid selected sources. A present blank or invalid primary never falls back. The prior macOS workflow remains build/provenance context only. Existing Windows exact-subject/certificate-pin authorization and apply-marker recovery remain intact. Full upstream updater, official service, artifact provenance, signed supported-platform install/upgrade/rollback and independent ACCEPT remain open.",
       "state_machine": "Electron startup -> immutable explicit main-process feed config -> shared Fabushi origin validation -> disabled reason or existing track/timer/check state machine -> approved manifest GET with redirect refusal -> existing download/stage/install owner. Unconfigured start still settles previously persisted apply marker before returning.",
       "side_effects": [
         "Remove historical api2.cursor.sh implicit default; no outbound update check when unconfigured.",
@@ -50795,7 +50850,10 @@
         "source/electron-main/update/update-telemetry.ts",
         "frontend/src/recovered/contracts/desktop-bridge.ts",
         "frontend/src/recovered/features/settings/overlay/updates.ts",
-        "source/electron-main/update/update-source.contract.test.mjs"
+        "source/electron-main/update/update-source.contract.test.mjs",
+        "source/electron-main/update/win32-installer.ts",
+        "source/electron-main/update/windows-publisher.contract.test.mjs",
+        "source/electron-main/update/windows-publisher.native.test.mjs"
       ],
       "fabushi_target_symbols": [
         "configuredUpdateFeedBaseUrl",
@@ -50832,7 +50890,6 @@
       "blockers": [
         "Real authorized update feed service/publisher deployment and metadata/artifact provenance not verified.",
         "Signed Mac/Windows platform package, real install, restart and rollback not accepted.",
-        "Actions execution of 16 new contracts and actual Electron/renderer build pending at new containing H.",
         "Full fixed-U source/legal review and independent FBCP/TDRP ACCEPT open."
       ],
       "production_entrypoints": [
@@ -50859,12 +50916,12 @@
         "exact-base:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:attempt1:electron125384978181:16 update-source pass; no Windows publisher test in base",
         "authored-not-run:5d271ff0c03d8f01368ca44026d14cd7519ad6bd:windows-publisher.contract.test.mjs 28; windows-publisher.native.test.mjs 11; real-AppHost well-formed unequal hash negative"
       ],
-      "target_commit": "5d271ff0c03d8f01368ca44026d14cd7519ad6bd",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+      "workflow_run": 41514576570,
+      "run_attempt": 1,
+      "job": 125514709195,
+      "artifact_id": 13174044080,
+      "artifact_digest": "sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042",
       "composition_root": "Existing production Electron main update service (no second updater)",
       "composition_slot": "Explicit source configuration and validated update-feed request under existing installer",
       "capability_component": "Updater feed-source authorization, disabled-state projection and marker-safe recovery",
@@ -51038,13 +51095,16 @@
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
       "test_execution_evidence": [
-        "historical-only:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:electron125384978181 success:source16 carrier10 auth8 fixture-copy3 metadata18"
+        "historical-only:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:electron125384978181 success:source16 carrier10 auth8 fixture-copy3 metadata18",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709195:completed/success:carrier10/auth8/fixture-copy3/EUS-source16/controlled-publisher28/metadata18; all zero fail/cancel/skip; actual Electron build and historical immutable ZIP/DMG metadata experiment; artifact13174044080 sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042; bounded component proof, no formal release ACCEPT",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709141:completed/success:Transcript16/forward-settlement5/actual Chromium forward-dialog16; all zero fail/cancel/skip; actual renderer build; artifact13174992345 sha256:5e74e7f2364d4617535fb3679349e98e3903701e2f0eb89a402bbe40b7df4bc5; bounded component proof, no formal release ACCEPT",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570@73cc6e1cc9fa871e5f80931979606ac9ee810551:attempt1:job125514709410:completed/success:native Authenticode/PowerShell/Unicode11; all zero fail/cancel/skip; CI-only inert fixture, capturedSpawns1/executedFixtureExecutables0/remainingOwnedCertificates0; artifact13173833468 sha256:d73ab6369a98dc748f955e8a1642af28a2dffbed3d9727e7e526b20eeb1147a5; bounded component proof, no formal release ACCEPT"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
-      "license_and_provenance": "Source identity is the fixed-U macOS packaged workflow as updater/release provenance context, not evidence that upstream code supplied Cursor's default feed. Recovered updater origin is the live Fabushi implementation; no upstream code copy or new license closure is claimed. Full source-review evidence is pending.",
+      "license_and_provenance": "Primary product source is telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/core/update_checker.cpp@73eee14f179d769854237640b246858959808736. Exact additional identities and actual selected deep-read ranges are in the partial audit in projects/telegram-desktop-rust/evidence/round21-update-source-authority.json. Prior mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc was read fully as tooling context; its floating build acquisitions remain open. No whole-file or full-updater review, legal closure, Telegram endpoint/key authorization or formal Fabushi release acceptance is asserted. All earlier recovered-source and Windows provenance remains.",
       "reviewer": null,
-      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json."
+      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json.\nRound21 source/evidence reconciliation: primary mapping now names the actual partial core discovery logic; macOS packaging remains contextual provenance. Fixed-U selected ranges were deeply read, without claiming the full source file/updater complete. Exact73cc/run41514576570 supplies actual EUS16/publisher28/native-Windows11 and Electron/renderer build evidence. Earlier authored/pending statements remain dated history; target_commit now binds the executed Electron component, not a complete migration or later checkpoint execution. Existing six source_reviews (two complete, four pending), other183 responsibility rows, counters, source candidate, locks and acceptance states are unchanged. Current Rust recovery changes after73cc require their own exact-H evidence. This source-map correction is not another product feature. Official feed/publisher authorization, package provenance, signed install/upgrade/rollback, full source/legal closure and independent ACCEPT remain open. See resumption in the same receipt."
     }
   ],
   "rebaseline_candidate": {
