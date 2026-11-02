@@ -1374,6 +1374,22 @@ the actual injected-store consumer. It must not require the old unlocked Host
 call spelling or accept a comment-only substitute. This follows the constructor
 repair above and is not an independently observed Actions failure.
 
+`WFM-DURABLE-ORACLE-01 — FIX / TEST_FLAW`: at
+`800f166b8e30aa79e55435804dd514f915728332`, Actions `41444393335`, job
+`125273785585`, the malformed-admission fixture's `sessionId` case did not
+actually change the native admission record. `SessionWorkAdmissionRecord`
+serializes `session_id`, `session_key` and `lifecycle_revision`; the injected
+camelCase members were ignored while the genuine identity remained valid.
+Correct the fixture to replace existing native serialized fields and assert
+that decoding the injected image changes the original typed record before
+writing it to the real SQLite authority. Preserve missing/invalid-JSON,
+foreign/blank identity, blank revision, stale-generation, archive/deletion,
+constructor refusal, unchanged workflow/legacy bytes and unbound legacy
+compatibility assertions. Do not change the stored schema or production
+admission policy to accommodate this oracle. Independently review the narrow
+spec/test correction and execute the complete selected AgentState, Session,
+composition and shared recovery targets on the resulting exact H in Actions.
+
 ## References
 
 - `projects/openclaw-rust/decisions/2026-11-01-session-work-admission-owner-contract.md`

@@ -541,13 +541,18 @@ mod live_admission {
             ("invalid JSON", Some("not-json".into())),
         ];
         for (field, value) in [
-            ("sessionId", "another-agent"),
-            ("sessionKey", "agent:another-agent:main"),
-            ("sessionKey", ""),
-            ("lifecycleRevision", ""),
+            ("session_id", "another-agent"),
+            ("session_key", "agent:another-agent:main"),
+            ("session_key", ""),
+            ("lifecycle_revision", ""),
         ] {
             let mut malformed = serde_json::to_value(&admission).unwrap();
-            malformed[field] = json!(value);
+            *malformed.get_mut(field)
+                .expect("fault must replace an existing native admission field") = json!(value);
+            let decoded = serde_json::from_value::<
+                mahayana_host_runtime::extensions::session::agent_db::SessionWorkAdmissionRecord,
+            >(malformed.clone()).unwrap();
+            assert_ne!(decoded, admission, "fault must change the typed admission: {field}");
             faults.push((field, Some(malformed.to_string())));
         }
         for (label, raw) in faults {
