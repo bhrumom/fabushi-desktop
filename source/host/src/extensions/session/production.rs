@@ -148,6 +148,20 @@ impl ProductionMaterializedSession {
     }
 }
 
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HumanCreationStage {
+    BeforeLock,
+    Locked,
+    BeforeInitialize,
+    BeforePublish,
+}
+
+#[cfg(test)]
+type HumanCreationHook = Arc<
+    dyn Fn(HumanCreationStage, &str, Option<&Arc<SandAgentDb>>) + Send + Sync,
+>;
+
 /// Shipping Host owner for the Grok session materialization worker boundary.
 ///
 /// The pool is retained for the Host lifetime so per-agent blob workers are
@@ -163,6 +177,8 @@ pub struct ProductionSessionWorkers {
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     human_message_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    #[cfg(test)]
+    human_creation_hook: Option<HumanCreationHook>,
     agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
@@ -319,6 +335,8 @@ impl ProductionSessionWorkers {
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             human_message_locks: Mutex::new(BTreeMap::new()),
+            #[cfg(test)]
+            human_creation_hook: None,
             agent_store_owners: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
@@ -2692,74 +2710,140 @@ impl ProductionSessionWorkers {
             digest.update(participant_id.as_bytes());
         }
         let conversation_id = format!("human-direct-{:x}", digest.finalize());
+        let serial = self.human_message_lock(&conversation_id)?;
+        #[cfg(test)]
+        self.observe_human_creation(HumanCreationStage::BeforeLock, &conversation_id, None);
+        let _exclusive = serial.lock()
+            .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+        #[cfg(test)]
+        self.observe_human_creation(HumanCreationStage::Locked, &conversation_id, None);
+
+        // The canonical path is shared by every discovery of this pair. Keep
+        // creation in the same mutation lane as send/sync through publication.
         let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
             .map_err(|error| error.to_string())?;
-        if db_path.is_file() {
-            let owner = self.open_human_conversation_db_owner(&conversation_id)?;
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if !self.metadata_has_local_human(&metadata)? {
-                return Err("existing Human conversation does not contain the local identity".into());
-            }
-            let existing_participants = metadata
-                .get("participantIds")
-                .and_then(serde_json::Value::as_array)
-                .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
-            if !existing_participants
-                .iter()
-                .any(|value| value.as_str() == Some(peer_human_id))
-            {
-                return Err("existing Human conversation does not contain the requested peer".into());
-            }
-            let existing_title = metadata
-                .get("title")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(peer_human_id);
-            return Ok(serde_json::json!({
-                "id": conversation_id,
-                "kind": "human",
-                "title": existing_title,
-                "participantIds": metadata.get("participantIds").cloned().unwrap_or_else(|| serde_json::json!([])),
-            }));
-        }
-        let conversation_dir = db_path
-            .parent()
-            .ok_or_else(|| "native conversation database has no parent".to_string())?;
-        fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
-        let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
-        );
-        let display_title = if title.is_empty() { peer_human_id } else { title };
-        let created_at = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as f64;
-        let metadata = serde_json::json!({
-            "conversationKind": "human",
-            "conversationId": conversation_id,
-            "title": display_title,
-            "participantIds": [local_human_id, peer_human_id],
-            "createdAt": created_at,
-            "lastActivityAt": 0.0,
-        });
-        if !owner
-            .initialize_metadata_if_missing(metadata)
-            .map_err(|error| error.to_string())?
-        {
-            owner.close(false);
-            let _ = fs::remove_dir_all(conversation_dir);
-            return Err("failed to initialize native Human conversation metadata".into());
-        }
-        self.db_owners
+        let key = Self::native_conversation_owner_key(&conversation_id);
+        let cached_owner = self.db_owners
             .lock()
             .map_err(|_| "conversation db owner map poisoned".to_string())?
-            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
+            .get(&key)
+            .cloned();
+        let owner = match cached_owner {
+            Some(owner) => owner,
+            None => {
+                let conversation_dir = db_path
+                    .parent()
+                    .ok_or_else(|| "native conversation database has no parent".to_string())?;
+                fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
+                Arc::new(
+                    SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
+                        .map_err(|error| error.to_string())?,
+                )
+            }
+        };
+        // A schema-only store left by an interrupted/failed initialization is
+        // retryable. read_metadata alone would synthesize Agent defaults here.
+        if owner.read_kv("metadata").map_err(|error| error.to_string())?.is_none() {
+            let display_title = if title.is_empty() { peer_human_id } else { title };
+            let created_at = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as f64;
+            let metadata = serde_json::json!({
+                "conversationKind": "human",
+                "conversationId": conversation_id,
+                "title": display_title,
+                "participantIds": [local_human_id, peer_human_id],
+                "createdAt": created_at,
+                "lastActivityAt": 0.0,
+            });
+            #[cfg(test)]
+            self.observe_human_creation(
+                HumanCreationStage::BeforeInitialize, &conversation_id, Some(&owner),
+            );
+            // false can mean existing metadata or a busy write, never ownership
+            // of this directory. Validate durable metadata below in either case.
+            let _ = owner.initialize_human_metadata_if_empty(metadata)
+                .map_err(|error| error.to_string())?;
+        }
+        let conversation = Self::human_creation_summary(
+            &owner, &conversation_id, local_human_id, peer_human_id,
+        )?;
+        #[cfg(test)]
+        self.observe_human_creation(
+            HumanCreationStage::BeforePublish, &conversation_id, Some(&owner),
+        );
+        // Read-side openers do not take the mutation lock and may have published
+        // a valid owner after initialization. Retain that Arc; dropping only our
+        // unpublished candidate must never close or replace the cached winner.
+        let published_owner = {
+            let mut owners = self.db_owners.lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            Arc::clone(owners.entry(key).or_insert_with(|| Arc::clone(&owner)))
+        };
+        if Arc::ptr_eq(&owner, &published_owner) {
+            Ok(conversation)
+        } else {
+            Self::human_creation_summary(
+                &published_owner, &conversation_id, local_human_id, peer_human_id,
+            )
+        }
+    }
+
+    fn human_creation_summary(
+        owner: &SandAgentDb,
+        conversation_id: &str,
+        local_human_id: &str,
+        peer_human_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let Some(raw) = owner.read_kv("metadata").map_err(|error| error.to_string())? else {
+            return Err("failed to initialize native Human conversation metadata".into());
+        };
+        // The shared metadata decoder reads hex byte pairs. Reject non-ASCII
+        // corruption before it can slice through a UTF-8 character boundary.
+        if !raw.trim().is_ascii() {
+            return Err("existing Human conversation metadata encoding is invalid".into());
+        }
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human") {
+            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
+        }
+        if metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id) {
+            return Err("existing Human conversation identity does not match its canonical path".into());
+        }
+        let participants = metadata.get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .filter(|participants| participants.len() == 2 && participants.iter().all(serde_json::Value::is_string))
+            .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
+        if !participants.iter().any(|id| id.as_str() == Some(local_human_id)) {
+            return Err("existing Human conversation does not contain the local identity".into());
+        }
+        if !participants.iter().any(|id| id.as_str() == Some(peer_human_id)) {
+            return Err("existing Human conversation does not contain the requested peer".into());
+        }
+        let title = match metadata.get("title") {
+            Some(serde_json::Value::String(title)) => title.as_str(),
+            None => peer_human_id,
+            Some(_) => return Err("existing Human conversation title is invalid".into()),
+        };
         Ok(serde_json::json!({
             "id": conversation_id,
             "kind": "human",
-            "title": display_title,
-            "participantIds": [local_human_id, peer_human_id],
+            "title": title,
+            "participantIds": participants,
         }))
+    }
+
+    #[cfg(test)]
+    fn observe_human_creation(
+        &self,
+        stage: HumanCreationStage,
+        conversation_id: &str,
+        owner: Option<&Arc<SandAgentDb>>,
+    ) {
+        if let Some(hook) = &self.human_creation_hook {
+            hook(stage, conversation_id, owner);
+        }
     }
 
     pub fn open_human_conversation_db_owner(
@@ -4352,6 +4436,10 @@ impl ProductionSessionWorkers {
     }
 }
 
+
+#[cfg(test)]
+#[path = "human_creation_tests.rs"]
+mod human_creation_tests;
 
 #[cfg(test)]
 mod human_send_settlement_credential_tests {

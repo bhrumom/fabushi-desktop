@@ -1725,3 +1725,113 @@ output, reconciles the latest canonical ledger and publishes with
 `force=false` plus `expected_sha` CAS. Remove only this batch's temporary
 job/manifest after integration. This transport does not replace the sole ledger
 or alter the product validation requirements above.
+
+### Resumed round 24: concurrent Human creation safety (NMR-CREATE-01 / NMR-AC-CREATE-01)
+
+Integration base `2cda05eb62f049b32e8913fe464d3ee955c681f5` preserves the later
+forwarding, canonical history and reaction changes above. The real Coordinator/HTTP gateway permits overlapping
+Session calls. Two first discoveries of the same participant pair can both
+observe an absent canonical `store.db`; the slower creator may then find the
+other creator's metadata, interpret `initialize_metadata_if_missing == false`
+as ownership of a failed directory, and recursively remove that shared path.
+The initializer also returns false for a busy write. Neither result grants
+permission to delete the conversation. This is a source-proven defect, not a
+claim of an observed production data-loss incident.
+
+- NMR-CREATE-01a: Use the existing Session per-conversation mutation lock before the
+  first existence/open/initialization decision, through valid metadata and
+  owner publication. Same-pair creation and ordinary mutations share that
+  lane; a different pair must still progress. Do not introduce another owner,
+  database, global network lock or public command/schema.
+- NMR-CREATE-01b: Reuse an existing valid Human conversation's canonical identity,
+  participants, title and durable transcript/outbox/checkpoint state. A losing
+  creation/open attempt must not replace or close an already published owner.
+  Initialization refusal, busy or error must preserve the directory, database
+  and unrelated files. No recursive deletion is permitted as initialization
+  cleanup. Absent metadata in a truly empty schema-only store after interrupted
+  initialization may be retried through this same owner; malformed or incompatible metadata fails closed
+  without overwriting it or reporting a successful conversation.
+- NMR-CREATE-01c: Reconcile with the current FBCP-HUMAN-CREATE-01/03 task:
+  SQLite must atomically establish that metadata, other KV data, transcript
+  rows and blob rows are absent before inserting Human metadata. A populated
+  store with missing identity is an integrity refusal, never permission to
+  adopt its messages. Use the existing SandAgentDb owner and leave general
+  Agent metadata initialization consumers compatible. Distinct worker/SQLite
+  owners must preserve the first committed identity and metadata; a per-instance
+  mutex alone is not cross-handle authority.
+- NMR-CREATE-01d: Creation's store opening and reads must not quarantine, reset
+  or salvage an existing corrupt/NOTADB store into an apparently empty one.
+  Preserve the original database and sidecar contents on refusal, do not cache
+  a successful owner, and retain valid WAL-backed committed identity. Use the
+  current SandAgentDb and recovery options without changing general Agent
+  recovery consumers. This binds the current FBCP-HUMAN-CREATE-04 amendment.
+  The implementation candidate disables automatic corruption recovery on the
+  existing configured opener. With no nonempty WAL or rollback journal, first
+  check the existing main DB through immutable read-only SQLite before any
+  journal-mode/schema writes. Sidecar-backed snapshots remain with the existing
+  WAL-aware owner. Exact-H byte-preservation tests must decide this boundary
+  before qualification, including a corrupt data page with a readable schema
+  in DELETE journal mode. Arbitrary hot/corrupt-sidecar recovery remains open. The unpublished readonly_shm probe is withdrawn:
+  the locked SQLite3.51.3 has a known corrupt-WAL read-overrun in that path.
+  No dependency upgrade or full arbitrary-WAL/crash acceptance is claimed.
+- NMR-AC-CREATE-01: Add focused real-SQLite behavioral cases in the existing Host
+  owner tests, selected explicitly by the Actions reconciliation job. Force
+  the same-pair scheduling interleaving with owned barriers/channels, exercise
+  another pair while one creation is paused, and verify repeated/restarted
+  creation retains metadata, transcript, pending state and the live owner.
+  Exercise initialization refusal and storage failure at the initializer
+  rather than accidentally at schema opening; preserve a sibling sentinel and
+  prove retry after an empty initialization failure. Test incompatible stored
+  metadata refusal. A bounded wait may diagnose deadlock but arbitrary sleeps
+  or probabilistic thread collisions do not prove this regression. Record
+  exact selected/executed counts, with zero ignored or skipped cases, at the
+  containing H. Add distinct-worker/SQLite-handle first-writer controls and
+  missing-metadata KV/transcript/blob refusal cases with unchanged durable rows.
+  Retain current Human62/resource3, sharebox1, journal12, Agent4, credential3 and
+  gateway1 contracts and all applicable shipping/UI/Windows evidence.
+  The existing selected ambiguous-dispatch/restart contract must enter through
+  the shipping `createHumanConversation` gateway command, then retain its actual
+  Native HTTP, SQLite, pending/settled event and single-message recovery oracles.
+  The current upstream reconciliation job already uses Ubuntu at the same H.
+  Add creation12 and atomic-storage3 to that existing job, retaining its Human62
+  selected gateway and all other checks; no duplicate Linux job is needed.
+  macOS shipping and full supported-platform acceptance remain independent gates.
+  Preserve concurrent106bb95b's E0382 fixture repair: cleanup shuts down the
+  restarted runtime after the original was dropped. That exact H passed
+  Human62 and its retained reconciliation gates; it does not execute this
+  batch's new creation12/storage3.
+
+Tests and builds execute only in GitHub Actions. Test-only scheduling seams
+must not become public product APIs or global mutable state. No data migration
+or deletion is required. Rollback keeps all persisted rows and files, but an
+older binary has the known creation race and is not a safe recovery proof.
+This batch qualifies the shared Session mutation lane and the SQLite atomic
+initialization boundary across distinct owners. Whole independent AppHost process
+lifecycle and complete crash/release acceptance remain open conditions. Fixed U, full source/legal closure, current
+production backend pagination, formal publisher, real signed package
+installation/upgrade/rollback, Bot regression and independent ACCEPT remain
+unchanged and blocked.
+
+### Desktop resource-owner recovery qualification (NMR-HTTP-OWNER-01 / NMR-AC-HTTP-OWNER-01)
+
+The containing base already rejects desktop generic HTTP `messages` and
+`message-resources` at the existing ProductClient boundary. Keep that behavior
+and its current error contract. Native Session upload/download remains the
+authorized message-resource path; non-desktop ProductClient and MiniApp
+package-resource paths retain their current owners.
+
+- NMR-HTTP-OWNER-01: Qualify both actual desktop HTTP dispatch surfaces, including a
+  forged request `sessionOwned:false`, UUID resource descendants, each admitted
+  HTTP verb, and authenticated/unauthenticated requests. The composition, not
+  the request body, chooses Session ownership. Reject before credential/network
+  work; never publish rejected payloads as chat/history events. Real 307/308
+  resource redirects must remain unfollowed, with contacts and non-desktop
+  resource HTTP positive controls.
+- NMR-AC-HTTP-OWNER-01: Extend the existing six HTTP-owner cases and seven Native AppHost
+  cases without inflating top-level counts. In the real AppHost child/restart
+  fixture, switch account `123 -> 456 -> 123 -> logout`, verify Agent isolation
+  and restoration, and compare retained Social SQLite plus exact credential
+  bytes after every refusal. Keep all current alias cases, URI normalization,
+  existing message/Agent/MiniApp behavior and zero-network controls. These
+  tests execute only in containing-H Actions and do not prove a real backend
+  cross-account vulnerability, service readiness or final acceptance.

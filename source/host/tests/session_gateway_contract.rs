@@ -1492,14 +1492,30 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
         )
     };
 
-    let runtime = make_runtime();
-    let created = runtime
-        .create_human_conversation("2", "Peer")
-        .expect("Human conversation");
+    let runtime = Arc::new(make_runtime());
+    let created = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({"localHumanId":"1", "peerHumanId":"2", "title":"Peer"}),
+    );
+    assert_eq!(created["kind"], "human");
     let conversation_id = created["id"]
         .as_str()
         .expect("conversation id")
         .to_string();
+    let events = Arc::new(std::sync::Mutex::new(Vec::<serde_json::Value>::new()));
+    let captured = Arc::clone(&events);
+    let event_id = conversation_id.clone();
+    let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
+        if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(event_id.as_str())
+            && mutation.get("entries").and_then(serde_json::Value::as_array).is_some_and(|entries| {
+                entries.iter().any(|entry| entry["clientNonce"].as_str() == Some("durable-send-1"))
+            })
+        {
+            captured.lock().expect("creation recovery event capture")
+                .push(serde_json::Value::Object(mutation.clone()));
+        }
+    });
     let first_error = runtime
         .append_human_message(
             &conversation_id,
@@ -1528,9 +1544,18 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
         pending[0]["remoteDispatchAttachments"][0]["resourceId"],
         "durable-resource-1"
     );
+    assert!(events.lock().unwrap().iter().any(|event| {
+        event["entries"].as_array().is_some_and(|entries| entries.iter().any(|entry| {
+            entry["clientNonce"] == "durable-send-1" && entry["delivery"] == "pending"
+        }))
+    }), "gateway-created conversation publishes its durable pending message");
     runtime.shutdown();
+    drop(pending_owner);
+    drop(runtime);
 
-    let restarted = make_runtime();
+    let restarted = Arc::new(make_runtime());
+    assert_eq!(dispatch(&restarted, "createHumanConversation",
+        json!({"localHumanId":"1", "peerHumanId":"2", "title":"Must keep persisted title"})), created);
     let settled = restarted
         .sync_human_conversation(&conversation_id)
         .expect("restart sync settles pending send");
@@ -1543,7 +1568,15 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
         "durable-resource-1"
     );
     assert_eq!(settled[0].get("remoteDispatchAttachments"), None);
+    assert!(events.lock().unwrap().iter().any(|event| {
+        event["entries"].as_array().is_some_and(|entries| entries.iter().any(|entry| {
+            entry["clientNonce"] == "durable-send-1" && entry["remoteMessageId"] == "21"
+                && entry["delivery"] == "sent"
+        }))
+    }), "canonical settlement publishes the recovered message from the same owner");
+    subscription.unsubscribe();
     restarted.shutdown();
+    drop(restarted);
 
     let requests = server.join().expect("durable send fixture");
     assert_eq!(requests.len(), 5);

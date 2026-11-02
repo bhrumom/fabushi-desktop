@@ -236,6 +236,14 @@ jobs:
           grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
+      - name: Concurrent Human creation and non-destructive initialization recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation.log
+          grep -Fq 'test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_storage_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation-storage.log
+          grep -Fq 'test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation-storage.log
       - name: Durable forwarding sharebox owner contract
         shell: bash
         run: |

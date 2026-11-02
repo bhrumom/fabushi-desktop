@@ -3795,18 +3795,25 @@ mod tests {
     fn session_owned_platform_rejects_message_routes_before_credentials() {
         let client = session_owned_platform_client("http://127.0.0.1:1");
         for method in ["GET", "POST", "PUT", "PATCH", "DELETE"] {
-            for path in [
-                "/api/social/messages", "/api/social/messages/7",
-                "/api/social/messages/7/reactions", "/api/social/messages/read",
-                "/api/social/message-resources", "/api/social/message-resources/7",
-                "/api/social/message-resources/7/download", "/api/social/message-resources/upload",
+            for (path, expected) in [
+                ("/api/social/messages", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/messages/7", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/messages/7/reactions", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/messages/read", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/message-resources", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/message-resources/7", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/message-resources/7/download", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/message-resources/upload", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/message-resources/12345678-1234-1234-1234-123456789abc", "Desktop Human messages are owned by Session/Transcript"),
+                ("/api/social/message-resources/12345678-1234-1234-1234-123456789abc/download", "Desktop Human messages are owned by Session/Transcript"),
             ] {
                 for authenticated in [true, false] {
                     let error = client.execute_session_owned_platform_request(&json!({
                         "method": method, "path": path, "authenticated": authenticated,
+                        "sessionOwned": false,
                         "body": {"text": "private-message-sentinel"},
                     })).expect_err("message owner must reject before credentials or transport");
-                    assert!(error.to_string().contains("Desktop Human messages are owned by Session/Transcript"));
+                    assert_eq!(error.to_string(), format!("product API configuration failed: {expected}"));
                     assert!(!error.to_string().contains("private-message-sentinel"));
                 }
             }
@@ -3823,9 +3830,12 @@ mod tests {
             "/api/social/friends/%2e%2e/messages", "/api/social/messages?alias=friends",
             "/api/social/%6dessage-resources", "/api/SOCIAL/message-resources",
             "/api/social/message-resources;mode=legacy",
+            "/api/social/Message-resources", "/api/social/message-resources;mode=compat",
+            "/api/social%2fmessage-resources", "/api/social/message-resources%2fresource-id",
             "/api//social/message-resources", "/api/./social/message-resources",
-            "/api/other/%2e%2e/social/message-resources",
+            "/api/%73ocial/message-resources", "/api/other/%2e%2e/social/message-resources",
             "/v1/other/%2e%2e/%2e%2e/api/social/message-resources",
+            "/api/social/friends/%2e%2e/message-resources/12345678-1234-1234-1234-123456789abc",
             "/api/social/message-resources?alias=friends",
         ] {
             assert!(session_owned_platform_path(path).is_err(), "alias reached message transport: {path}");
@@ -3871,7 +3881,12 @@ mod tests {
     #[test]
     fn session_owned_platform_never_follows_redirects_to_messages() {
         use std::io::{Read, Write};
-        for status in [307, 308] {
+        for (status, target) in [
+            (307, "/api/social/messages"),
+            (308, "/api/social/messages"),
+            (307, "/api/social/message-resources/12345678-1234-1234-1234-123456789abc"),
+            (308, "/api/social/message-resources/12345678-1234-1234-1234-123456789abc"),
+        ] {
             let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("redirect fixture");
             let origin = format!("http://{}", listener.local_addr().expect("fixture address"));
             listener.set_nonblocking(true).expect("bounded redirect accept");
@@ -3892,7 +3907,7 @@ mod tests {
                             }
                             requests.push(String::from_utf8(bytes).expect("ASCII request"));
                             if requests.len() == 1 {
-                                write!(stream, "HTTP/1.1 {status} Redirect\r\nLocation: /api/social/messages\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").expect("redirect response");
+                                write!(stream, "HTTP/1.1 {status} Redirect\r\nLocation: {target}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").expect("redirect response");
                             } else {
                                 write!(stream, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").expect("unexpected follow-up response");
                             }
@@ -3926,13 +3941,19 @@ mod tests {
 
     #[test]
     fn session_owned_platform_does_not_change_other_product_entrypoints() {
-        let (origin, server) = session_owned_platform_http_fixture();
-        let client = session_owned_platform_client(&origin);
-        let response = client.execute("mahayana.platform.request", &json!({
-            "method": "GET", "path": "/api/social/messages", "authenticated": false,
-        })).expect("non-desktop compatibility entrypoint keeps its owner");
-        assert_eq!(response["statusCode"], 200);
-        assert!(server.join().expect("fixture completed").starts_with("GET /api/social/messages HTTP/1.1\r\n"));
+        for path in [
+            "/api/social/messages",
+            "/api/social/message-resources/12345678-1234-1234-1234-123456789abc",
+        ] {
+            let (origin, server) = session_owned_platform_http_fixture();
+            let client = session_owned_platform_client(&origin);
+            let response = client.execute("mahayana.platform.request", &json!({
+                "method": "GET", "path": path, "authenticated": false,
+            })).expect("non-desktop compatibility entrypoint keeps its owner");
+            assert_eq!(response["statusCode"], 200);
+            assert_eq!(response["data"]["ownerControl"], "existing-product-transport");
+            assert!(server.join().expect("fixture completed").starts_with(&format!("GET {path} HTTP/1.1\r\n")));
+        }
     }
 
     #[test]
