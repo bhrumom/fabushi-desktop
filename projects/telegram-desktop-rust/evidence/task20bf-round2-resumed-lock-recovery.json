@@ -1,0 +1,65 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 2,
+  "recorded_at": "2026-11-03T04:06:45+08:00",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "original_run": {
+    "id": 41381218656,
+    "head_sha": "c749a7b2e05db641266e966ccc27a23834be164b",
+    "human_job": 125072247604,
+    "human_result": "failure: valid Host lock; test compilation E0599 calling absent react_human_message; no behavior executed",
+    "shipping_job": 125072247204,
+    "shipping_result": "failure: AppHost lock drift; broad generate-lockfile diagnostics were not adopted"
+  },
+  "this_round_first_delivery": {
+    "sha": "3fc232546a7ed3fb1497b472bf99055146e3368b",
+    "parent_sha": "c749a7b2e05db641266e966ccc27a23834be164b",
+    "publication": "force=false, expected_sha=parent; branch/commit/file content read back via GitHub API",
+    "changes": [
+      "AppHost lock: five dependency edges to already locked network/runtime packages; no registry version/checksum upgrades",
+      "Host Cargo.lock unchanged: blob59748a9d9f865f4bc910f582ce7814aac59807a9",
+      "Legacy nonce fixture calls existing toggle_human_message_reaction; existing assertions retained"
+    ],
+    "run": 41390349337,
+    "human": {
+      "job": 125100142485,
+      "conclusion": "success",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "artifact_id": 13117166843,
+      "artifact_digest": "sha256:367102011bfbdc9d86a34db3eb2200b425628c943531d2881f5d02dde03afac1"
+    },
+    "shipping": {
+      "job": 125100142212,
+      "conclusion": "failure",
+      "classification": "implementation/composition defect after accepted lock",
+      "artifact_id": 13117406343,
+      "artifact_digest": "sha256:2b6c2fe8e58af4815c89c4216bab6fae434767a04bf210dd1d99e9f8c9d83de5"
+    }
+  },
+  "resumption": {
+    "interrupted_candidate_tree": "19e0da5bfdf2e6b59b7cb9839000385cc02c8d63",
+    "candidate_published": false,
+    "current_base": "ecdee0c52835742e36366238131ac72b8753c894",
+    "observed_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "disposition": "Preserve all concurrent migration commits. The stale protocol/source-review/doc/ledger candidate is not applied over current work. Later canonical repairs, source guards, message/forward recovery, retained-state isolation and stronger gates remain unchanged.",
+    "current_human_expectation": "Human44, sharebox1, journal12, Agent4, credential3, gateway1",
+    "current_shipping_expectation": "actual AppHost build/package copy, retained owner suites, normalization6, future-salts2, protocol122, TCP9 including the live probe, proxy4 and Native credential1; preserve all workflow gates",
+    "ledger_transport": "Concurrent round18/NMR49/round24 prepared objects share a base and may replace the same FBCP-NMR row; this patch does not adopt a stale whole-ledger object. Preserve all source reviews and reconcile shared row contributions before a separate CAS."
+  },
+  "current_patch": {
+    "requirement": "FBCP-NMR-001 NMR-10 diagnostic qualification",
+    "behavior": "On actual lock errors only, resolve from the existing affected lock with cargo metadata and retain a diagnostic diff. Unrelated failures do not regenerate locks. All acceptance commands keep --locked and original failed verdicts.",
+    "diagnostic_review": "Omit --no-deps: Cargo's output_metadata no_deps branch returns without build_resolve_graph/resolve_ws_with_opts, so it cannot provide the intended lock-resolution diagnostic. Primary source: https://doc.rust-lang.org/stable/nightly-rustc/src/cargo/ops/cargo_metadata.rs.html",
+    "validation": "pending containing-H GitHub Actions; no local or htch-runtime executable validation",
+    "production_code_or_dependency_versions_changed": false,
+    "independent_acceptance": false
+  },
+  "remaining_gates": [
+    "Two required message jobs terminal success with actually executed behaviors at the same containing H before dependent work",
+    "Current source/legal closure and exact shared-ledger reconciliation",
+    "Real production services, supported signed packages, full UI/accessibility/temporal/Bot/performance/soak and upgrade/rollback acceptance",
+    "Independent ACCEPT and final shipping SHA/artifact alignment"
+  ]
+}

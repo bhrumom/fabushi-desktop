@@ -1341,20 +1341,78 @@ impl SandAgentDb {
             return Ok(None);
         };
         let updated = self.run_write_value("settleTranscriptEntryIdentity", |db| {
-            let present = db
-                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| row.get::<_, String>(0))
-                .optional()?
-                .is_some();
-            if !present {
-                return Ok((None, false));
+            // The owner write wrapper serializes access but does not start a
+            // transaction. Parent identity and unsent reply edges must commit
+            // together, including when a child write or COMMIT is rejected.
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+                let Some(current) = read_transcript_entry_from_db(db, entry_id)? else {
+                    return Ok(Vec::new());
+                };
+                let author = current.get("authorId").and_then(serde_json::Value::as_str);
+                let nonce = current.get("clientNonce").and_then(serde_json::Value::as_str);
+                let remote_id = next.get("remoteMessageId").and_then(serde_json::Value::as_str);
+                let repair_replies = entry_id != next_id
+                    && current.get("authorKind").and_then(serde_json::Value::as_str) == Some("human")
+                    && current.get("remoteMessageId").is_none()
+                    && matches!(current.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
+                    && author.is_some()
+                    && author == next.get("authorId").and_then(serde_json::Value::as_str)
+                    && nonce.is_some_and(|nonce| !nonce.is_empty() && entry_id == format!("human-message:{nonce}"))
+                    && nonce == next.get("clientNonce").and_then(serde_json::Value::as_str)
+                    && next.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+                    && remote_id.is_some_and(|id| !id.is_empty() && next_id == format!("human-server-message:{id}"));
+                if db.execute(
+                    "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
+                    params![next_id, next.to_string(), entry_id],
+                )? != 1 {
+                    return Err(rusqlite::Error::QueryReturnedNoRows);
+                }
+                let mut updated = vec![next.clone()];
+                if repair_replies {
+                    for mut child in read_transcript_entries_from_db(db)? {
+                        if child.get("authorId").and_then(serde_json::Value::as_str) != author
+                            || child.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                            || child.get("remoteMessageId").is_some()
+                            || !matches!(child.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
+                            || child.get("replyToId").and_then(serde_json::Value::as_str) != Some(entry_id)
+                        {
+                            continue;
+                        }
+                        let Some(child_id) = child.get("id").and_then(serde_json::Value::as_str).map(str::to_owned) else {
+                            continue;
+                        };
+                        if !child.get("clientNonce").and_then(serde_json::Value::as_str)
+                            .is_some_and(|nonce| !nonce.is_empty() && child_id == format!("human-message:{nonce}"))
+                        {
+                            continue;
+                        }
+                        child["replyToId"] = serde_json::json!(next_id);
+                        if db.execute(UPDATE_TRANSCRIPT_ENTRY_SQL, params![child.to_string(), child_id])? != 1 {
+                            return Err(rusqlite::Error::QueryReturnedNoRows);
+                        }
+                        updated.push(child);
+                    }
+                }
+                Ok(updated)
+            })();
+            match result {
+                Ok(updated) => {
+                    if let Err(error) = db.execute_batch("COMMIT") {
+                        let _ = db.execute_batch("ROLLBACK");
+                        return Err(error);
+                    }
+                    let changed = !updated.is_empty();
+                    Ok((updated, changed))
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
             }
-            let changed = db.execute(
-                "UPDATE transcript_entries SET id = ?1, entry = ?2 WHERE id = ?3",
-                params![next_id, next.to_string(), entry_id],
-            )? > 0;
-            Ok((changed.then(|| next.clone()), changed))
         })?;
-        if let Some(entry) = updated.as_ref() {
+        let settled = updated.first().cloned();
+        if settled.is_some() {
             if entry_id != next_id {
                 let mut mutation = serde_json::Map::new();
                 mutation.insert("kind".into(), serde_json::Value::String("entry-deleted".into()));
@@ -1362,9 +1420,9 @@ impl SandAgentDb {
                 mutation.insert("entryId".into(), serde_json::Value::String(entry_id.to_string()));
                 publish_transcript_mutation(&mutation);
             }
-            publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+            publish_entries_upserted(&self.db_path, updated);
         }
-        Ok(updated)
+        Ok(settled)
     }
 
     pub fn delete_transcript_entry(
@@ -3255,3 +3313,4 @@ fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
     }
     Ok(output)
 }
+

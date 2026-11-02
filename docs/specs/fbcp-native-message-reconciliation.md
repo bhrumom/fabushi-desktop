@@ -52,6 +52,7 @@ Actions reuses the existing native-service contract workflow and Host test harne
 Run `41381218656` at `c749a7b2e05db641266e966ccc27a23834be164b` ended with two distinct failures. AppHost job `125072247204` rejected its stale lock under `--locked`; Human job `125072247604` accepted the Host lock and compiled the library, then failed with E0599 because the new legacy-nonce fixture called nonexistent `react_human_message` instead of the existing `toggle_human_message_reaction`. No Human behavior test executed. The subsequent unconditional-on-failure `generate-lockfile` diagnostics are not acceptance and their unrelated registry upgrades must not be adopted.
 
 - NMR-10: Repair only demonstrated missing dependency edges, preserving manifest constraints and every existing registry package version/checksum. The AppHost lock must include the current network/runtime manifest edges to already locked `rustls`, `serde_json`, `sha1 0.10.7`, `webpki-roots 0.26.11` and `serde`. Keep the already accepted `source/host/Cargo.lock` unchanged unless new causal evidence proves a necessary correction.
+- NMR-10 diagnostic qualification: On later exact-H failures, resolve from the existing lock only when the affected Cargo log reports a lock-file error. Use Cargo metadata to retain existing version selections and preserve its diff as diagnostic-only evidence; compiler, test, count, service and packaging failures must not trigger `generate-lockfile`. All acceptance commands retain `--locked`; a diagnostic never reruns or changes a failed verdict.
 - NMR-11: Correct the fixture to the existing production reaction entry without adding a second runtime method or weakening its content, nonce, persistence, restart and HTTP assertions. Classify this failure as `TEST_FLAW`; retain the failed run.
 - NMR-AC-06: After non-force compare-and-swap publication and remote content/SHA readback, both `native-message-reconciliation` and `native-message-shipping-compile` must terminate successfully on the same exact H with `--locked`. The Human log must show all ten selected behavior tests actually ran with zero failures/ignored cases. A successful diagnostic/upload, skipped test or old-H result is insufficient. Dependent message batches remain gated until these conditions hold; loopback/compile success does not grant final service, UI, package or migration acceptance.
 
@@ -1211,10 +1212,192 @@ integrate the sole canonical ledger, and remove this temporary delivery job.
 Existing schema/source and product gates remain required; object creation is
 neither validation nor acceptance evidence.
 
+## NMR-50 — Forward recovery must not stall history or cross account boundaries
 
+Discovery base: `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`; fixed U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`. This batch extends the existing
+`ProductionSessionWorkers` / native messaging / canonical SQLite owners. The
+public gateway, journal schema, composition and account authority stay the same.
 
+The current automatic recovery path waits for a batch mutex held across HTTP,
+before ordinary history sync can run. A forward already accepted by the service
+but awaiting its response therefore blocks the history settlement that could
+confirm it. Roster sync also scans all batches again for every friend, multiplying
+failed send attempts. Its friends request lacks the full credential fence already
+required of message history, and can create old-account conversations from a
+response completed after credential rotation. Root review decisions: FIX all
+three implementation defects within the existing owner.
 
+### Required behavior
 
+- **NMR-50a:** Explicit forward callers retain serialized, durable request
+  semantics. Automatic recovery must skip a batch already held by an active
+  executor and continue ordinary history synchronization, including the active
+  forward's destination. Acquire the batch lock once; do not release and reacquire
+  it between admission and delivery. Lock poison, corrupt journals and storage
+  errors remain failures. Skipping an active batch must neither alter its journal
+  nor issue duplicate POSTs; later direct/roster sync can resume it after release
+  or process restart. Preserve the NMR-25 history/send settlement contract and
+  NMR-47/NMR-48 journal CAS, source authorization and attachment guarantees.
+- **NMR-50b:** One top-level `syncHumanConversations` performs at most one recovery
+  scan. Its internal per-friend history sync must not repeat that scan. Direct
+  `syncHumanConversation` continues to recover once. A failed target remains
+  durable and retryable on the next invocation; unrelated histories still advance.
+- **NMR-50c:** Roster retrieval must bind to the active Host Human account before
+  HTTP and verify the entire credential snapshot after consuming the response
+  body, including user, device, token, session, expiry and issuer. A mismatch
+  rejects the response before conversation creation, metadata updates, events,
+  history requests or call sync. Retain the compatible native client API through
+  a private bound implementation. Restoring valid credentials must permit normal
+  synchronization and persist only the authorized roster.
+- **NMR-50d:** A forward awaiting Coordinator readiness has not yet been admitted
+  by the Host. Recheck its original account generation and dialog lifetime at
+  the actual request-frame boundary, after readiness and immediately before
+  pending registration/posting. Closing, unmounting, replacing the source or
+  switching accounts before that boundary rejects the old request without a
+  mutation frame. Add an optional local call precondition, compatible with
+  existing callers; never serialize callbacks into the gateway payload or add
+  a second account authority. Once posted, retain the existing durable Host
+  intent and response settlement semantics; closing the presentation does not
+  cancel, discard or reinterpret an accepted batch.
 
+### Verification and completion
 
+Use the existing real Host/loopback service/SQLite integration harness, executed
+only in GitHub Actions at the frozen batch H. A response barrier must demonstrate
+that both unrelated and destination history sync complete while a forward POST
+response remains held, with one canonical destination message and no extra POST.
+Always release the barrier before joining workers on a failing assertion. A
+multi-friend roster fixture must count exactly one failed recovery POST per
+invocation and show recovery on a later invocation. Wrong-user roster binding
+must produce zero HTTP; delayed-body rotation cases must cover all six credential
+fields and prove unchanged persisted conversations/metadata and no downstream
+request/event, followed by successful retry and reopen.
 
+Exercise NMR-50d through the actual Coordinator client and a controlled port,
+including a disconnect/readiness wait, account and dialog retirement, a live
+positive control and retirement after posting. Preserve the 16 existing actual
+Chromium picker cases and all delivery/Agent projections. A component mock that
+registers a forward immediately cannot prove the delayed frame boundary.
+
+Retain all existing Human, forward-journal, Agent and credential regressions and
+the actual AppHost compile gate; use the current Actions workflow without a
+parallel test framework. Independent code/spec review and exact-H positive
+execution evidence are required for this batch. Queued or unrun checks remain
+pending. No final source, real-service, supported-platform, UI/accessibility,
+soak, upgrade/rollback or shipping acceptance is implied. Rollback is an ordinary
+code revert; no user data or journal migration/deletion is required.
+
+### Resumed round 18 live-head correction — CLI/gateway production features (NMR-CLI-HOST-01 / NMR-AC-CLI-HOST-01)
+
+The resumed read binds to `59f5fa24827812f78336c464995d161f403dedfb`,
+preserving all intervening migration work. Run41508537631 passes the current
+CLI3/gateway-executable5/library11 suites, but those commands build test
+targets. The CLI manifest removed its normal FFI edge without retaining
+the Host `desktop-full` and `local-only` features previously supplied by
+FFI defaults. Workspace and FeatureHost edges disable Host defaults.
+
+This is a production composition defect. Host's feature-gated native
+construction installs NativeEngine/ResponsesModelRuntime and its routing/
+Agent-control backend. Without the feature, the fallback still advertises
+`mahayana-ai` and `miniapp`, but uses UnavailableAgentBackend. Merely checking
+provider names, status, Ready, a test-support backend or a workspace-wide
+feature-unified test build cannot establish working native Agent behavior.
+
+- NMR-CLI-HOST-01: Explicitly enable the two existing Host features on the CLI's
+  normal dependency. Preserve direct Host ownership, existing CLI/gateway
+  configuration, approvals, lifecycle and storage. Do not restore FFI as a
+  normal/dev dependency, change any external C ABI, introduce a new provider,
+  alter public RPC/model policy or upgrade dependencies.
+- NMR-AC-CLI-HOST-01: In the existing shipping job, separately record the CLI-root
+  normal/build package and feature graph and build both actual executables
+  with the locked ci profile and a single CLI package root. Require both
+  Host features and absence of the legacy FFI/Telegram production graph.
+  Save both real executables, SHA256/format/defined-symbol/linked-library
+  inventories and an exact-source receipt in the same immutable artifact.
+- Run each built executable through its existing entrypoint in a bounded
+  child process using a synthetic MAHAYANA_HOME and workspace. A managed
+  model configured with a plain-HTTP endpoint must be rejected by the native
+  model HTTPS policy before any request; the unavailable fallback skips that
+  construction and would incorrectly succeed. Also retain successful ordinary
+  CLI status/gateway session-list and clean shutdown controls. This is an
+  actual production-binary branch oracle, not external model acceptance.
+- Strengthen each existing private RuntimeHandle status/Ready control with
+  the real `mahayana.mcp.servers` command in its isolated synthetic root.
+  NativeAgentBackend returns the empty local server list for a fresh root;
+  UnavailableAgentBackend returns an error. This existing capability gives a
+  local positive control for the actual native Agent-control backend without
+  accounts, remote model calls or an injected EngineBackend. Provider names
+  alone remain insufficient. Keep the current3/5/11 cases, durable state/reopen
+  checks and all legacy refusal, retained-data and AppHost/Session gates.
+
+All execution remains in GitHub Actions. The initial99 run and the completed59
+run remain separate exact-input evidence. External FFI clients, authenticated
+model services, full Bot/installed application acceptance and final ACCEPT
+remain open; a successful compiler or binary-identity check alone closes none
+of those broader gates.
+
+### Resumed round 18 installer receipt placement (NMR-PACKAGE-DELIVERY-01 / NMR-AC-PACKAGE-DELIVERY-01)
+
+The same59 source writes final-byte macOS metadata to RUNNER_TEMP, then adds
+that receipt to the installer artifact beside desktop/release patterns.
+upload-artifact uses the least common ancestor of input paths. This changes
+the installer ZIP member paths, and the JSON receipt is itself outside the
+existing promotion owner's exact allowed installer member set. The current
+promotion consumer rejects either condition. No new59 signed installer has
+been observed, so this finding is a deterministic producer/consumer source
+mismatch, not a fabricated release failure.
+
+- NMR-PACKAGE-DELIVERY-01: Keep the installer artifact's existing release-directory ZIP/DMG,
+  blockmaps, latest-mac.yml and SHA256SUMS.txt paths. Put the final-byte receipt
+  in the existing packaged-acceptance evidence artifact, where mixed evidence
+  paths are already expected. Preserve the receipt, its exact source binding,
+  all metadata verification and signing/installation gates.
+- NMR-AC-PACKAGE-DELIVERY-01: Keep promotion's member whitelist unchanged. Reuse its existing
+  six contract tests in the focused Electron job and review both producer
+  upload path lists against the consumer. These tests do not execute the
+  upload action or qualify a signed installer; final exact-source package
+  generation, archive-member readback, installation and promotion acceptance
+  remain mandatory before release.
+
+This batch performs no release dispatch, publication, backend mutation, merge
+or deployment.
+
+### Native resource upload service limit (NMR-51 / NMR-AC-42)
+
+The original product prerequisite remains exact59f5fa/run41508537631, whose five
+applicable message jobs and actual suites succeeded. Resume at exact3c9995a
+preserves all later forwarding, byte-snapshot, reply-recovery and source work.
+Current `bhrumom/fabushi-backend@687718ce9e0083aa124d29005bcce4051d357919`,
+`fabushi/web/src/handlers/friends.js` blob
+`6179f3ce8e223f4e0bd9664885871e134f4488a8` permits only nonempty resources of
+at most 25 * 1024 * 1024 bytes. Shared Agent videos may be 200 MiB. The current
+Native path/buffer upload and forwarding snapshot limits incorrectly permit
+32 MiB; the shared download32MiB budget has a different responsibility.
+
+- NMR-51: Use one 25 MiB service upload bound for Native file and byte-buffer
+  entrypoints and the existing forward snapshot reader/validator. This corrects
+  NMR-48's upload32MiB and six-times32MiB wording to 25MiB and six-times25MiB.
+  Preserve nonregular/symlink refusal, path and opened-handle checks, digest
+  validation, atomic snapshots, complete-target prevalidation, credential
+  fencing and all durable journal/error state. Bound file reads to limit+1.
+  Reject empty/oversized inputs before multipart/HTTP, without changing the
+  shared Agent video or downloaded-resource budgets, schema, stores or owners.
+- NMR-AC-42: Execute a real Human gateway/SQLite recovery case: oversized
+  video fails twice with zero HTTP, including after restart, retaining the
+  original pending/error/nonce; corrected same input recovers once with the
+  same nonce and exactly resourcePOST/messagePOST/resourceGET. Execute reader
+  cases with the literal service25MiB boundary, empty/partial-read failures and
+  actual limit+1 consumption. Prove the buffer entrypoint rejects before auth
+  and HTTP; preserve the existing exact-limit and oversized forwarding oracles.
+  All current Human/forward-journal/Agent/credential/shipping/protocol/TCP/UI/
+  Electron/Windows gates must succeed at containing H in GitHub Actions.
+
+This is a bounded service contract correction, not full UI retry acceptance.
+Current UI retry creates a fresh nonce, omits reply and cannot recommit an
+already committed attachment through the staging-only bridge; that dependent
+consumer needs its own verified Host-authoritative recovery batch. Existing
+UI failure notice/draft restoration was traced, not visually accepted.
+Fixed-U source review is limited to `PrepareMediaList` and `Uploader::readDocPart`
+sections; no complete upstream-file review, source/legal closure, deployed
+service/package/platform/Bot or independent ACCEPT is claimed.

@@ -324,6 +324,8 @@ function messageText(entry: Record<string, unknown>): string | null {
 
 function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["delivery"] {
   const candidate = entry.delivery ?? entry.status;
+  // A Host dispatch has not settled its canonical remote identity yet.
+  if (candidate === "dispatching") return "pending";
   if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;
   if (entry.pending === true || entry.isPending === true) return "pending";
   if (entry.failed === true || entry.isFailed === true) return "failed";
@@ -715,3 +717,4 @@ export function projectComputerStatus(value: unknown, isStarting = false): Compu
     handoff: isRecord(value.handoff) ? value.handoff : null
   };
 }
+

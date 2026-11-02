@@ -2413,6 +2413,17 @@ impl ProductionSessionWorkers {
                     && entry.get("clientNonce").and_then(serde_json::Value::as_str).is_some()
             }).collect::<Vec<_>>();
         for entry in pending {
+            // Earlier parents in this ordered replay may have atomically
+            // repaired this child's reply edge. Consume the current durable
+            // row, not the reply ID captured in the initial pending snapshot.
+            let Some(entry) = owner.get_transcript_entries().map_err(|error| error.to_string())?
+                .into_iter().find(|current| {
+                    current.get("id") == entry.get("id")
+                        && current.get("clientNonce") == entry.get("clientNonce")
+                        && current.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id.as_str())
+                        && current.get("remoteMessageId").is_none()
+                        && matches!(current.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
+                }) else { continue; };
             // A v1 forwarding outbox belongs to its source's complete durable
             // batch. A removed/protected source cannot be bypassed by the
             // generic destination pending-send recovery route.
@@ -2646,22 +2657,29 @@ impl ProductionSessionWorkers {
             .db_owners
             .lock()
             .map_err(|_| "conversation db owner map poisoned".to_string())?;
-        if let Some(owner) = owners.get(&key) {
-            return Ok(Arc::clone(owner));
+        if let Some(owner) = owners.get(&key).cloned() {
+            // An independent SQLite writer may have changed this source after
+            // the owner was cached. Cached handles cannot bypass the same
+            // conversation identity check as a freshly opened source.
+            drop(owners);
+            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+            if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+                || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
+            {
+                return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
+            }
+            return Ok(owner);
         }
         let owner = Arc::new(
             SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
-        if owner
-            .get_metadata("conversationKind")
-            .map_err(|error| error.to_string())?
-            .and_then(|value| value.as_str().map(ToOwned::to_owned))
-            .as_deref()
-            != Some("human")
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
         {
             owner.close(false);
-            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
+            return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
         }
         owners.insert(key, Arc::clone(&owner));
         Ok(owner)
@@ -3131,6 +3149,55 @@ impl ProductionSessionWorkers {
         Ok(batch.response(&destinations))
     }
 
+    fn normalize_human_reply_identity(
+        existing: &[serde_json::Value],
+        requested: Option<&str>,
+        local_human_id: &str,
+    ) -> Result<Option<String>, String> {
+        let Some(reply_id) = requested.map(str::trim).filter(|id| !id.is_empty()) else {
+            return Ok(None);
+        };
+        let local_nonce = reply_id.strip_prefix("human-message:");
+        if let Some(target) = existing.iter().find(|row| {
+            row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+        }) {
+            if local_nonce.is_some_and(|nonce| {
+                nonce.is_empty()
+                    || target.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
+                    || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                    || target.get("clientNonce").and_then(serde_json::Value::as_str) != Some(nonce)
+            }) {
+                return Err("sendHumanMessage local reply identity conflicts with its author or nonce".into());
+            }
+            return Ok(Some(reply_id.to_string()));
+        }
+        // Older versions could rekey the parent while leaving a durable local
+        // reply ID behind. Its exact nonce is evidence only for this author's
+        // row in this conversation; peer provenance and other stores are never
+        // aliases. Ambiguous or damaged canonical rows remain fail-closed.
+        let nonce = local_nonce.filter(|nonce| !nonce.is_empty())
+            .ok_or_else(|| "sendHumanMessage reply target is not in this Human conversation".to_string())?;
+        let mut candidates = existing.iter().filter(|row| {
+            row.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                && row.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+        });
+        let target = candidates.next()
+            .ok_or_else(|| "sendHumanMessage reply target is not in this Human conversation".to_string())?;
+        if candidates.next().is_some() {
+            return Err("sendHumanMessage local reply nonce has ambiguous canonical identities".into());
+        }
+        let remote_id = target.get("remoteMessageId").map(fabushi_identity_text).transpose()?
+            .ok_or_else(|| "sendHumanMessage local reply has no canonical remote identity".to_string())?;
+        let canonical_id = format!("human-server-message:{remote_id}");
+        if target.get("id").and_then(serde_json::Value::as_str) != Some(canonical_id.as_str())
+            || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+            || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+        {
+            return Err("sendHumanMessage local reply canonical identity is inconsistent".into());
+        }
+        Ok(Some(canonical_id))
+    }
+
     pub fn append_human_message(
         &self,
         conversation_id: &str,
@@ -3193,16 +3260,8 @@ impl ProductionSessionWorkers {
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
-        let normalized_reply = reply_to_id
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        if let Some(reply_id) = normalized_reply {
-            if !existing.iter().any(|entry| {
-                entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
-            }) {
-                return Err("sendHumanMessage reply target is not in this Human conversation".into());
-            }
-        }
+        let normalized_reply_id = Self::normalize_human_reply_identity(&existing, reply_to_id, sender_id)?;
+        let normalized_reply = normalized_reply_id.as_deref();
         let normalized_attachments = attachments
             .iter()
             .map(|attachment| {
@@ -3244,7 +3303,20 @@ impl ProductionSessionWorkers {
         }) {
             let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
             let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
+            let persisted_reply = Self::normalize_human_reply_identity(
+                &existing, entry.get("replyToId").and_then(serde_json::Value::as_str), sender_id,
+            )?;
+            let same_reply = persisted_reply.as_deref() == normalized_reply;
+            if let Some(dispatched_reply) = entry.get("remoteReplyToMessageId") {
+                let expected = normalized_reply.and_then(|reply_id| existing.iter().find(|row| {
+                    row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+                })).and_then(|row| row.get("remoteMessageId"))
+                    .map(fabushi_identity_text).transpose()?;
+                let dispatched_reply = fabushi_identity_text(dispatched_reply)?;
+                if expected.as_deref() != Some(dispatched_reply.as_str()) {
+                    return Err("sendHumanMessage reply conflicts with its dispatched remote identity".into());
+                }
+            }
             let same_attachments = match entry.get("attachments").and_then(serde_json::Value::as_array) {
                 Some(values) => values.len() == normalized_attachments.len()
                     && values.iter().zip(normalized_attachments.iter()).all(|(current, requested)| {
@@ -3267,6 +3339,11 @@ impl ProductionSessionWorkers {
                 Some("pending" | "dispatching")
             ) {
                 return Err("sendHumanMessage clientNonce is not in a retryable settlement state".into());
+            }
+            if entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                || entry.get("id").and_then(serde_json::Value::as_str) != Some(format!("human-message:{client_nonce}").as_str())
+            {
+                return Err("sendHumanMessage pending identity is not a local Human outbox row".into());
             }
             existing_pending = Some(entry.clone());
         }
@@ -3292,6 +3369,9 @@ impl ProductionSessionWorkers {
                 if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
                 entry
             });
+            if let Some(reply_id) = normalized_reply {
+                pending_entry["replyToId"] = serde_json::json!(reply_id);
+            }
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
                 && !owner.append_transcript_entry(&pending_entry).map_err(|error| error.to_string())?
             {
@@ -4361,4 +4441,5 @@ mod sharebox_shipping_tests {
         let _ = fs::remove_dir_all(root);
     }
 }
+
 
