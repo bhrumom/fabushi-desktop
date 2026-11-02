@@ -194,6 +194,25 @@ at preparation; historical execution does not qualify later changed code.
 | NMR-44 / AC-35 | Runtime lifecycle owner; v1 cannot revive interrupted runs/duplicate terminals |3 lifecycle cases in full lib9 | Compiled at base; lib9 execution blocked by executable fixture failure |
 | NMR-45 / AC-36 | Real persistent request registry with UUID-owned fixture, lastError/restoredRequests and stable srq-ID | Keep executable5; first1/duplicate0, disk and memory unchanged, reopen retains request, independent store issues1 | TEST_FLAW repaired in tests; containing-H execution required |
 
+## Round 30 — exact recovery gate classification
+
+Original06fb/run41512635210 has four passing execution jobs; reconciliation
+was cancelled before runner assignment, so Human39/journal5 were not executed.
+Later d261afe/run41521138485 passed Human54/journal12 with mixed stale snapshots
+and26 cold/cached corruption controls. Preserve the newer beafc6fc concurrent
+CAS valid-intent, zero-busy-callback, raw-byte and fresh-retry/reopen oracle.
+Exact afb34b49/run41522324008 failed before Human62 execution with Rust E0382 in
+the reaction-restart fixture: it reused `runtime` after drop. Concurrent
+`106bb95ba97ef7722e9523285783824393039bc0` closes the live `restarted` owner;
+the exact remote test blob matches the independently reviewed one-line fix and
+retains all lifecycle, durability, event and HTTP assertions. This is TEST_FLAW,
+not evidence of a product failure. Exact106bb95/run41523018920 subsequently
+passed Human62/resource3/sharebox1/journal12/Agent4/credential3/HTTP1, including
+the newer CAS and corruption controls; UI/Electron/Windows also pass. Shipping
+125543545357 is queued at2026-11-02T20:54Z; overall pass, independent ACCEPT and
+release remain blocked. Evidence:
+`projects/telegram-desktop-rust/evidence/round30-forward-recovery-qualification.json`.
+
 ## Rule
 
 每个 applicable requirement/AC 必须追到 oracle/invariant、test case IDs、execution evidence 与 verdict；test 也必须反查 requirement。`TBD` 仅可 planning，不能 verified/release。
