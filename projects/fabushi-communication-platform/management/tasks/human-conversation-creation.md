@@ -49,7 +49,11 @@ work and must be preserved.
   a failed creator.
 - **FBCP-HUMAN-CREATE-04:** Busy, storage, decoding and initialization failures
   retain retryable state and return a truthful failure when no valid winner can
-  be read. Cache/publication follows durable identity validation. Retrying or
+  be read. Creation must open/read without automatic corruption quarantine or
+  reset: a corrupt/NOTADB store is not a schema-only interrupted creation.
+  Preserve original bytes and sidecars and do not cache a successful owner on
+  that failure; generic Agent recovery semantics remain unchanged.
+  Cache/publication follows durable identity validation. Retrying or
   reopening after the failure converges to the same conversation ID. Existing
   Human/Agent isolation, participant admission, account authority and ordinary
   send/roster/forward recovery remain in force.
@@ -96,3 +100,4 @@ This batch does not prove full source/legal closure, remote service deployment,
 cross-platform packaged behavior, all Bot regressions, visual/accessibility,
 upgrade/rollback, performance/soak or independent product ACCEPT. Those original
 requirements remain open.
+

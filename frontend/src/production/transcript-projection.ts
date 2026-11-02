@@ -42,6 +42,14 @@ export function mergeAuthoritativeTranscriptMessage(
   incoming: TranscriptMessage,
   options: { preserveCurrentId?: boolean } = {},
 ): TranscriptMessage {
+  if (isCanonicalHumanSend(current) && isLocalSendPlaceholder(incoming)
+    && transcriptEntriesCorrelate(current, incoming)) {
+    return {
+      ...incoming,
+      ...current,
+      attachments: mergeTranscriptAttachments(incoming.attachments, current.attachments),
+    };
+  }
   return {
     ...current,
     ...incoming,
@@ -55,9 +63,70 @@ export function mergeAuthoritativeTranscriptMessage(
 
 export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
   if (left.id === right.id) return true;
-  return left.kind === "message" && right.kind === "message"
-    && left.clientNonce != null && right.clientNonce != null
-    && left.clientNonce === right.clientNonce;
+  if (left.kind !== "message" || right.kind !== "message"
+    || left.clientNonce == null || right.clientNonce == null
+    || left.clientNonce !== right.clientNonce) return false;
+  if (left.authorKind !== "human" && right.authorKind !== "human") return true;
+  if (left.clientNonce.length === 0) return false;
+  if (left.authorKind === "human" && right.authorKind === "human") {
+    return typeof left.authorId === "string" && left.authorId.trim().length > 0
+      && left.authorId === right.authorId;
+  }
+  // Existing local optimistic placeholders precede the Host's author binding.
+  // Only their exact local ID may bridge to an admitted Host Human send; an
+  // arbitrary Agent or remote message with the same nonce cannot do so.
+  const human = left.authorKind === "human" ? left : right;
+  const optimistic = left.authorKind === "human" ? right : left;
+  return optimistic.authorKind === undefined && optimistic.role === "user"
+    && optimistic.id === `pending-${optimistic.clientNonce}`
+    && typeof human.authorId === "string" && human.authorId.trim().length > 0
+    && (isLocalSendPlaceholder(human) || isCanonicalHumanSend(human));
+}
+
+function isLocalSendPlaceholder(entry: ConversationTranscriptEntry): entry is TranscriptMessage {
+  if (entry.kind !== "message" || entry.clientNonce == null || entry.clientNonce.length === 0) return false;
+  if (entry.authorKind !== "human") return entry.id === `pending-${entry.clientNonce}`;
+  return typeof entry.authorId === "string" && entry.authorId.trim().length > 0
+    && entry.remoteMessageId === undefined
+    && entry.id === `human-message:${entry.clientNonce}`
+    && (entry.delivery === "pending" || entry.delivery === "queued" || entry.delivery === "failed");
+}
+
+function isCanonicalHumanSend(entry: ConversationTranscriptEntry): entry is TranscriptMessage {
+  return entry.kind === "message" && entry.authorKind === "human"
+    && typeof entry.authorId === "string" && entry.authorId.trim().length > 0
+    && typeof entry.clientNonce === "string" && entry.clientNonce.length > 0
+    && typeof entry.remoteMessageId === "string" && entry.remoteMessageId.length > 0
+    && entry.id === `human-server-message:${entry.remoteMessageId}`;
+}
+
+/** Older pages share the root's ID merge and Human settlement identity rules. */
+export function mergeOlderTranscriptEntries(
+  currentEntries: readonly ConversationTranscriptEntry[],
+  olderEntries: readonly ConversationTranscriptEntry[],
+): ConversationTranscriptEntry[] {
+  const currentIds = new Set(currentEntries.map((entry) => entry.id));
+  const seen = new Set<string>();
+  const merged: ConversationTranscriptEntry[] = [];
+  for (const entry of olderEntries) {
+    if (currentIds.has(entry.id) || seen.has(entry.id)) continue;
+    seen.add(entry.id);
+    merged.push(entry);
+  }
+  for (const entry of currentEntries) {
+    if (seen.has(entry.id)) continue;
+    seen.add(entry.id);
+    merged.push(entry);
+  }
+  const settled = new Map<string, TranscriptMessage[]>();
+  for (const entry of merged) {
+    if (!isCanonicalHumanSend(entry)) continue;
+    const candidates = settled.get(entry.clientNonce!) ?? [];
+    candidates.push(entry);
+    settled.set(entry.clientNonce!, candidates);
+  }
+  return merged.filter((entry) => !isLocalSendPlaceholder(entry) || entry.authorKind !== "human"
+    || !(settled.get(entry.clientNonce!) ?? []).some((canonical) => transcriptEntriesCorrelate(entry, canonical)));
 }
 
 /** Apply updates captured during this read only to rows in its returned window. */
@@ -76,14 +145,19 @@ export function applyTranscriptReadUpdates(
 
 function entryIndex(entries: readonly ConversationTranscriptEntry[]) {
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
-  const byNonce = new Map<string, ConversationTranscriptEntry>();
+  const byNonce = new Map<string, ConversationTranscriptEntry[]>();
   for (const entry of entries) {
-    if (entry.kind === "message" && entry.clientNonce != null && !byNonce.has(entry.clientNonce)) {
-      byNonce.set(entry.clientNonce, entry);
-    }
+    if (entry.kind !== "message" || entry.clientNonce == null) continue;
+    const candidates = byNonce.get(entry.clientNonce) ?? [];
+    candidates.push(entry);
+    byNonce.set(entry.clientNonce, candidates);
   }
-  return (entry: ConversationTranscriptEntry): ConversationTranscriptEntry | undefined =>
-    byId.get(entry.id) ?? (entry.kind === "message" && entry.clientNonce != null ? byNonce.get(entry.clientNonce) : undefined);
+  return (entry: ConversationTranscriptEntry): ConversationTranscriptEntry | undefined => {
+    const direct = byId.get(entry.id);
+    if (direct != null || entry.kind !== "message" || entry.clientNonce == null) return direct;
+    const matches = (byNonce.get(entry.clientNonce) ?? []).filter((candidate) => transcriptEntriesCorrelate(candidate, entry));
+    return matches.find(isCanonicalHumanSend) ?? matches[0];
+  };
 }
 
 /** Full Host snapshot in canonical order, retaining unresolved local sends. */
@@ -96,16 +170,19 @@ export function reconcileAuthoritativeTranscriptBaseline(
   const baseline: ConversationTranscriptEntry[] = [];
   for (const entry of incoming) {
     if (seen.has(entry.id)) continue;
-    seen.add(entry.id);
     const previous = currentEntry(entry);
-    baseline.push(previous?.kind === "message" && entry.kind === "message"
+    const next = previous?.kind === "message" && entry.kind === "message"
       ? mergeAuthoritativeTranscriptMessage(previous, entry)
-      : entry);
+      : entry;
+    seen.add(entry.id);
+    if (next.id !== entry.id && seen.has(next.id)) continue;
+    seen.add(next.id);
+    baseline.push(next);
   }
   const baselineEntry = entryIndex(baseline);
   for (const entry of current) {
     if (entry.kind === "message" && entry.role === "user" && entry.clientNonce != null
-      && entry.id.startsWith("pending-") && baselineEntry(entry) == null && !seen.has(entry.id)) {
+      && isLocalSendPlaceholder(entry) && baselineEntry(entry) == null && !seen.has(entry.id)) {
       seen.add(entry.id);
       baseline.push(entry);
     }
@@ -124,7 +201,7 @@ export function reconcileTranscriptFeedBaseline(
     const live = currentEntry(entry);
     if (live == null || !liveEntryIds.has(live.id)) return entry;
     // A real acknowledgement still replaces an optimistic nonce placeholder.
-    if (live.id.startsWith("pending-") && !entry.id.startsWith("pending-")) return entry;
+    if (isLocalSendPlaceholder(live) && !isLocalSendPlaceholder(entry)) return entry;
     return live.kind === "message" && entry.kind === "message"
       ? mergeAuthoritativeTranscriptMessage(entry, live)
       : live;
@@ -180,7 +257,7 @@ export function reconcileTranscriptTail(
     // first observed during this read may be newer than the tail itself.
     const appendedDuringRead = (entry: ConversationTranscriptEntry) =>
       (liveEntryIds.has(entry.id) && priorEntry(entry) == null)
-      || (entry.kind === "message" && entry.id.startsWith("pending-"));
+      || isLocalSendPlaceholder(entry);
     current.filter((entry) => !appendedDuringRead(entry)).forEach(appendCached);
     incoming.forEach((entry) => append(resolvedEntry(entry) ?? entry));
     current.filter(appendedDuringRead).forEach(appendCached);
@@ -210,3 +287,4 @@ export function reconcileTranscriptRefresh(
   const changedIds = new Set(current.filter((entry) => priorEntry(entry) !== entry).map((entry) => entry.id));
   return reconcileTranscriptFeedBaseline(current, incoming, changedIds);
 }
+

@@ -33,6 +33,7 @@ use super::forward_batch_journal::{
     snapshot_forward_attachments, store_forward_batch,
 };
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
@@ -1877,6 +1878,29 @@ impl ProductionSessionWorkers {
         format!("conversation:{conversation_id}")
     }
 
+    // Every Human row writer holds the existing conversation mutation lane.
+    // Reconcile activity after the durable row write, and also on replay so a
+    // crash between the two commits cannot leave the roster permanently stale.
+    fn update_human_activity(owner: &SandAgentDb, timestamp_ms: f64) -> Result<(), String> {
+        if owner.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
+        let latest = owner.get_metadata("lastActivityAt")
+            .map_err(|error| error.to_string())?
+            .as_ref().and_then(serde_json::Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or(timestamp_ms).max(timestamp_ms);
+        if !owner.set_metadata("lastActivityAt", serde_json::json!(latest))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Human message activity was not durably updated".into());
+        }
+        Ok(())
+    }
+
     fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
         match (&self.native_messaging, self.native_messaging_required) {
             (Some(client), _) => Ok(Some(client.as_ref())),
@@ -2259,9 +2283,10 @@ impl ProductionSessionWorkers {
                 }
             }
             if current == &entry {
+                Self::update_human_activity(owner, timestamp_ms)?;
                 return Ok(current.clone());
             }
-            return owner
+            let refreshed = owner
                 .update_transcript_entry(
                     entry
                         .get("id")
@@ -2270,7 +2295,9 @@ impl ProductionSessionWorkers {
                     &entry,
                 )
                 .map_err(|error| error.to_string())?
-                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
+                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string())?;
+            Self::update_human_activity(owner, timestamp_ms)?;
+            return Ok(refreshed);
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
@@ -2296,10 +2323,12 @@ impl ProductionSessionWorkers {
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return owner
+                let settled = owner
                     .settle_transcript_entry_identity(current_id, &entry)
                     .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
+                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string())?;
+                Self::update_human_activity(owner, timestamp_ms)?;
+                return Ok(settled);
             }
         }
         if !owner
@@ -2312,11 +2341,12 @@ impl ProductionSessionWorkers {
                 .into_iter()
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+            let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                .unwrap_or(timestamp_ms);
+            Self::update_human_activity(owner, timestamp)?;
             return Ok(replay);
         }
-        let _ = owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?;
+        Self::update_human_activity(owner, timestamp_ms)?;
         Ok(entry)
     }
 
@@ -2325,6 +2355,87 @@ impl ProductionSessionWorkers {
             .map_err(|_| "Human conversation mutation lock registry poisoned".to_string())?;
         Ok(Arc::clone(locks.entry(conversation_id.to_string())
             .or_insert_with(|| Arc::new(Mutex::new(())))))
+    }
+
+    fn pending_human_forward_is_batch_owned(
+        &self, conversation_id: &str, entry: &serde_json::Value,
+    ) -> Result<bool, String> {
+        // A damaged version must not turn source-owned intent into an ordinary
+        // send. The separate marker also survives replacement of its context.
+        if entry.get("forwardBatchOwned").is_some() {
+            return Ok(true);
+        }
+        let context = entry.get("forwardContext");
+        if context.is_some_and(|value| value.get("batchVersion").is_some()) {
+            return Ok(true);
+        }
+        let nonce = entry.get("clientNonce").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "persisted Human pending nonce is invalid".to_string())?;
+        let author = entry.get("authorId").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "persisted Human pending author is invalid".to_string())?;
+        let mut readable_legacy_source = false;
+        if let Some(context) = context.filter(|value|
+            ["sourceConversationId", "sourceEntryId", "requestId"].iter()
+                .any(|key| value.get(*key).is_some())
+        ) {
+            let source = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| "persisted Human forward source is invalid".to_string())?;
+            let request = context.get("requestId").and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| "persisted Human forward request is invalid".to_string())?;
+            // Use the same strict cached/cold source owner as batch recovery.
+            // Unreadable or malformed storage cannot prove legacy ownership.
+            let owner = self.open_human_conversation_db_owner(source)?;
+            if load_forward_batches(&owner, source)?.iter().any(|batch|
+                (batch.request_id == request && batch.account_id == author)
+                    || batch.destinations.iter().any(|target|
+                        target.conversation_id == conversation_id && target.client_nonce == nonce
+                    )
+            ) {
+                return Ok(true);
+            }
+            // The pre-journal shipping path used this exact nonce contract.
+            // A readable but unrelated source alone cannot authorize downgrade
+            // of a v1 target whose real source/journal is no longer available.
+            let mut legacy_digest = Sha256::new();
+            legacy_digest.update(request.as_bytes());
+            legacy_digest.update([0_u8]);
+            legacy_digest.update(conversation_id.as_bytes());
+            readable_legacy_source = nonce == format!("human-forward-{:x}", legacy_digest.finalize());
+        }
+        // Older rows did not have the independent marker. If their entire
+        // context was lost/replaced, their stable target nonce still identifies
+        // the source batch. Unrelated ordinary reply metadata is not itself a
+        // forwarding identity, and genuine legacy nonces remain replayable.
+        if !nonce.starts_with("human-forward-") { return Ok(false); }
+        let entries = match fs::read_dir(get_native_conversations_root(&self.agents_root)) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err("persisted Human forward ownership cannot be resolved from unavailable source stores".into());
+            }
+            Err(error) => return Err(error.to_string()),
+        };
+        for source in entries {
+            let source = source.map_err(|error| error.to_string())?;
+            if !source.file_type().map_err(|error| error.to_string())?.is_dir() { continue; }
+            let source_id = source.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
+            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            if load_forward_batches(&owner, &source_id)?.iter().any(|batch|
+                batch.destinations.iter().any(|target|
+                    target.conversation_id == conversation_id && target.client_nonce == nonce
+                )
+            ) {
+                return Ok(true);
+            }
+        }
+        if !readable_legacy_source {
+            return Err("persisted Human forward ownership is unresolved; retain pending intent until its source can be recovered".into());
+        }
+        Ok(false)
     }
 
     fn acquire_human_send_settlement_guard<'a>(
@@ -2398,7 +2509,7 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         let Some(client) = self.shipping_native_messaging()? else {
-            return owner.get_transcript_entries().map_err(|error| error.to_string());
+            return owner.get_human_transcript_entries().map_err(|error| error.to_string());
         };
         let local_human_id = self.local_human_id()?.to_string();
         if client.identity()?.user_id != local_human_id {
@@ -2424,10 +2535,9 @@ impl ProductionSessionWorkers {
                         && current.get("remoteMessageId").is_none()
                         && matches!(current.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
                 }) else { continue; };
-            // A v1 forwarding outbox belongs to its source's complete durable
-            // batch. A removed/protected source cannot be bypassed by the
-            // generic destination pending-send recovery route.
-            if entry.pointer("/forwardContext/batchVersion").and_then(serde_json::Value::as_u64) == Some(1) {
+            // A source-owned forwarding outbox never becomes a generic send
+            // because its version/context was damaged or replaced.
+            if self.pending_human_forward_is_batch_owned(conversation_id, &entry)? {
                 continue;
             }
             let Some(nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) else { continue; };
@@ -2518,7 +2628,7 @@ impl ProductionSessionWorkers {
         }
         if let Some(error) = rejected { return Err(error); }
         // Full 32-page windows persist a nonterminal cursor for the next sync/restart.
-        owner.get_transcript_entries().map_err(|error| error.to_string())
+        owner.get_human_transcript_entries().map_err(|error| error.to_string())
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
@@ -3161,13 +3271,32 @@ impl ProductionSessionWorkers {
         if let Some(target) = existing.iter().find(|row| {
             row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
         }) {
-            if local_nonce.is_some_and(|nonce| {
-                nonce.is_empty()
+            if let Some(nonce) = local_nonce {
+                if nonce.is_empty()
+                    || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
                     || target.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
                     || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
                     || target.get("clientNonce").and_then(serde_json::Value::as_str) != Some(nonce)
-            }) {
-                return Err("sendHumanMessage local reply identity conflicts with its author or nonce".into());
+                    || target.get("remoteMessageId").is_some()
+                    || !matches!(target.get("delivery").and_then(serde_json::Value::as_str),
+                        Some("pending" | "dispatching" | "sent"))
+                {
+                    return Err("sendHumanMessage local reply identity conflicts with its author, nonce or settlement".into());
+                }
+                return Ok(Some(reply_id.to_string()));
+            }
+            let remote_id = target.get("remoteMessageId")
+                .map(fabushi_identity_text).transpose()
+                .map_err(|error| format!("sendHumanMessage reply remote identity is invalid: {error}"))?
+                .ok_or_else(|| "sendHumanMessage reply has no canonical remote identity".to_string())?;
+            if reply_id != format!("human-server-message:{remote_id}")
+                || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+                || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+                || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                || !target.get("authorId").and_then(serde_json::Value::as_str)
+                    .is_some_and(|author| !author.trim().is_empty())
+            {
+                return Err("sendHumanMessage reply canonical identity is inconsistent".into());
             }
             return Ok(Some(reply_id.to_string()));
         }
@@ -3190,6 +3319,7 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "sendHumanMessage local reply has no canonical remote identity".to_string())?;
         let canonical_id = format!("human-server-message:{remote_id}");
         if target.get("id").and_then(serde_json::Value::as_str) != Some(canonical_id.as_str())
+            || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
             || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
             || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
         {
@@ -3296,6 +3426,9 @@ impl ProductionSessionWorkers {
                 .unwrap_or_default()
                 .as_millis() as f64
         });
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
         let mut existing_pending: Option<serde_json::Value> = None;
         if let Some(entry) = existing.iter().find(|entry| {
             entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
@@ -3332,6 +3465,9 @@ impl ProductionSessionWorkers {
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
             {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(timestamp_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             if !matches!(
@@ -3372,10 +3508,21 @@ impl ProductionSessionWorkers {
             if let Some(reply_id) = normalized_reply {
                 pending_entry["replyToId"] = serde_json::json!(reply_id);
             }
+            if forward_context.is_some_and(|context| context.get("batchVersion").is_some()) {
+                pending_entry.as_object_mut().expect("Human pending message must be an object")
+                    .insert("forwardBatchOwned".into(), serde_json::json!(true));
+            }
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
                 && !owner.append_transcript_entry(&pending_entry).map_err(|error| error.to_string())?
             {
                 return Err("Human pending send could not be durably recorded before dispatch".into());
+            }
+            if existing.iter().any(|entry| entry.get("id") == pending_entry.get("id")
+                && entry.get("forwardBatchOwned") != pending_entry.get("forwardBatchOwned"))
+            {
+                owner.update_transcript_entry(&local_entry_id, &pending_entry)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "Human forward ownership could not be durably recorded before dispatch".to_string())?;
             }
 
             let dispatch_result = (|| -> Result<serde_json::Value, String> {
@@ -3505,7 +3652,13 @@ impl ProductionSessionWorkers {
                 });
                 let remote = match response {
                     Ok(remote) => remote,
-                    Err(FabushiHumanSendError::Transport(error)) => return settled.cloned().ok_or(error),
+                    Err(FabushiHumanSendError::Transport(error)) => {
+                        let settled = settled.ok_or(error)?;
+                        let timestamp = settled.get("timestampMs").and_then(serde_json::Value::as_f64)
+                            .unwrap_or(timestamp_ms);
+                        Self::update_human_activity(&owner, timestamp)?;
+                        return Ok(settled.clone());
+                    }
                     Err(FabushiHumanSendError::Rejected(error)) => return Err(error),
                 };
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
@@ -3534,6 +3687,9 @@ impl ProductionSessionWorkers {
                     // nonce, resources, reply or malformed reaction summary.
                     // A valid late acknowledgement has no freshness authority
                     // over reactions/receipts already persisted by sync or POST.
+                    let timestamp = settled.get("timestampMs").and_then(serde_json::Value::as_f64)
+                        .unwrap_or(timestamp_ms);
+                    Self::update_human_activity(&owner, timestamp)?;
                     return Ok(settled.clone());
                 }
                 self.materialize_remote_human_message(&owner, &remote)
@@ -3605,16 +3761,12 @@ impl ProductionSessionWorkers {
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "native Human message was not durably appended".to_string())?;
             if replay == entry {
+                Self::update_human_activity(&owner, timestamp_ms)?;
                 return Ok(replay);
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("native Human message activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, timestamp_ms)?;
         Ok(entry)
     }
 
@@ -3641,6 +3793,11 @@ impl ProductionSessionWorkers {
                     .into(),
             );
         }
+        if !completed_at_ms.is_finite() {
+            return Err("Human handoff Agent activity timestamp must be finite".into());
+        }
+        let serial = self.human_message_lock(conversation_id)?;
+        let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -3665,6 +3822,9 @@ impl ProductionSessionWorkers {
             let same_stream =
                 entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             return Err("Human handoff stream already identifies different Agent content".into());
@@ -3699,16 +3859,14 @@ impl ProductionSessionWorkers {
             let same_stream =
                 replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(replay);
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(completed_at_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("Human handoff Agent activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, completed_at_ms)?;
         Ok(entry)
     }
 
@@ -3886,22 +4044,22 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_entries()
+            .get_human_transcript_entries()
             .map_err(|error| error.to_string())
     }
 
     pub fn read_human_conversation_transcript_tail(
         &self,
         conversation_id: &str,
-        query: TranscriptWindowQuery,
-    ) -> Result<TranscriptPage, String> {
+        query: impl Into<HumanTranscriptPageQuery>,
+    ) -> Result<HumanTranscriptPage, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_tail(query)
+            .get_human_transcript_tail(query.into())
             .map_err(|error| error.to_string())
     }
 

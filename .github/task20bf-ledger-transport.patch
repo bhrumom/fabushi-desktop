@@ -1,8 +1,8 @@
 diff --git a/projects/telegram-desktop-rust/parity-ledger.json b/projects/telegram-desktop-rust/parity-ledger.json
-index 59d18f5d..ccd53e8c 100644
+index e88c7589..6cf30e86 100644
 --- a/projects/telegram-desktop-rust/parity-ledger.json
 +++ b/projects/telegram-desktop-rust/parity-ledger.json
-@@ -1982,7 +1982,8 @@
+@@ -2001,7 +2001,8 @@
          "pub fn clear_caption(&mut self)",
          "ClientCommand::ForwardMessage",
          "Command::ForwardMessage",
@@ -12,7 +12,7 @@ index 59d18f5d..ccd53e8c 100644
        ],
        "target_language": "Rust",
        "language_rationale": "Forward privacy changes canonical persisted message content/provenance and replay semantics, so it belongs below the renderer in the existing Rust messaging domain.",
-@@ -2030,12 +2031,15 @@
+@@ -2049,12 +2050,15 @@
          "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
          "path:source/host/src/extensions/session/production.rs#forward_human_message",
          "path:source/host/Cargo.toml#fabushi-messaging-core",
@@ -30,7 +30,7 @@ index 59d18f5d..ccd53e8c 100644
        ],
        "target_commit": "21ab7870a3ba3129172942d722befb83c321f413",
        "workflow_run": null,
-@@ -2103,17 +2107,21 @@
+@@ -2122,17 +2126,21 @@
        "motion_contract": "No new motion.",
        "reduced_motion_contract": "No new motion.",
        "visual_baseline_ids": [],
@@ -55,7 +55,7 @@ index 59d18f5d..ccd53e8c 100644
        ],
        "invariant_ids": [
          "INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001",
-@@ -2125,7 +2133,9 @@
+@@ -2144,7 +2152,9 @@
          "FWD-UI-04",
          "FWD-UI-05"
        ],
@@ -66,7 +66,7 @@ index 59d18f5d..ccd53e8c 100644
        "property_state_case_ids": [
          "PROP-TDRP-SHARE-FORWARD-PRIVACY-001"
        ],
-@@ -2140,7 +2150,8 @@
+@@ -2159,7 +2169,8 @@
          "TEMP-TDRP-SHARE-FORWARD-PRIVACY-001"
        ],
        "fault_recovery_case_ids": [
@@ -76,7 +76,7 @@ index 59d18f5d..ccd53e8c 100644
        ],
        "ui_functional_case_ids": [
          "ForwardMessageDialog.behavior.test.mjs:partial retry only sends failed destination with stable identity",
-@@ -2172,12 +2183,14 @@
+@@ -2191,12 +2202,14 @@
        ],
        "coverage_matrix_status": "pending",
        "flake_status": "stable",
@@ -93,3 +93,138 @@ index 59d18f5d..ccd53e8c 100644
        "additional_source_identities": [
          {
            "repository": "telegramdesktop/tdesktop",
+@@ -28807,8 +28820,8 @@
+         "CAP-PROXY-SETTINGS-STATE-PERSISTENCE"
+       ],
+       "dependency_ids": [
+-        "future canonical Fabushi Settings/application state owner",
+-        "unified product settings persistence/recovery owner",
++        "existing shipping AppHost ProductSettingsOwner v2",
++        "existing product-settings.json persistence/recovery owner",
+         "existing canonical typed proxy config/value semantics"
+       ],
+       "source_analysis_path": "projects/telegram-desktop-rust/evidence/round130-unified-settings-network-proxy-ui-20261101.md",
+@@ -28877,7 +28890,10 @@
+         "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/desktop.ts",
+         "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+         "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/panels.tsx",
+-        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/network-proxy.tsx"
++        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/network-proxy.tsx",
++        "bhrumom/fabushi-desktop:frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs",
++        "bhrumom/fabushi-desktop:desktop/network-proxy-settings-test.tsx",
++        "bhrumom/fabushi-desktop:desktop/network-proxy-settings-test.html"
+       ],
+       "fabushi_target_symbols": [
+         "ProductSettingsOwner",
+@@ -28895,7 +28911,9 @@
+         "NetworkProxySettingsPanel",
+         "DesktopBridge.networkProxy",
+         "getNetworkProxySettings",
+-        "mutateNetworkProxySettings"
++        "mutateNetworkProxySettings",
++        "readNetworkProxySettings",
++        "networkProxyPublicationAvailability"
+       ],
+       "target_language": "Rust for source-neutral settings state/persistence + existing React/TypeScript Settings projection",
+       "language_rationale": "The fixed-U non-UI state/mutation/persistence responsibility belongs in the canonical product Settings owner, not Telegram runtime/network code; UI remains a projection of that source-neutral state.",
+@@ -28908,7 +28926,7 @@
+       "state_owner": "Canonical source-neutral ProductSettingsOwner composed by the existing shipping AppHost; full proxy mode/list/selection/rotation expansion remains in this same owner.",
+       "lifecycle_owner": "Existing AppHost owns ProductSettingsOwner lifecycle/persistence; Native composition has no TelegramClientLease/RuntimeClient. A Native carrier must consume this owner in a separately qualified batch.",
+       "persistence_and_restart": "ProductSettingsOwner version 2 is the single durable source. Existing Fabushi version 1 {network.proxyEnabled} is migrated in place on open: true -> Enabled, false -> System, with all other fields initialized to fixed-U defaults. The migrated v2 document is persisted before the owner becomes available. Malformed/missing/unsupported versions fail closed. Historical TDesktop outer Core::Settings bytes are not guessed without an explicit import source/version boundary.",
+-      "concurrency_and_cancellation": "The owner serializes mutations under its existing mutex and persists the complete next state before publishing the only currently supported downstream projection. No socket/checker/timer/carrier lifecycle is stored in Settings. setSelectedAndMode prevents a torn selection/mode write.",
++      "concurrency_and_cancellation": "The owner serializes mutations under its existing mutex and persists the complete next state before publishing the only currently supported downstream projection. No socket/checker/timer/carrier lifecycle is stored in Settings. setSelectedAndMode prevents a torn selection/mode write. PS-UI-03/04: the existing desktop adapter serializes its in-flight proxy mutation per bridge and makes reopened reads wait for settlement before canonical get. The mounted Settings surface fences callbacks by bridge/open lifetime and prevents rapid duplicate dispatch; close retires presentation without cancelling an accepted Host write. No automatic write retry or second durable state is introduced.",
+       "security_boundary": "Durable proxy endpoint records include fixed-U host/port/user/password fields because they are product settings; no proxy secret is logged, copied into ui_state, or persisted in Telegram runtime storage. Runtime resolved IPs/expiry, sockets, checker state and timers are excluded.",
+       "network_service_dependencies": [
+         "None for the settings state/persistence responsibility itself; carrier use is a downstream projection."
+@@ -28919,7 +28937,8 @@
+       "coverage_disposition": "rewritten",
+       "blockers": [
+         "Exact59/run41508537631 composition12/Native7 passed current Settings and proxy16orders/48removals/48repeat noops/all6 complete permutations. Preserve this later coverage; do not apply the superseded42-case proposal.",
+-        "Native proxy/rotation transport, complete Settings UI/a11y/platform acceptance, secret-at-rest and full data migration/rollback acceptance remain open."
++        "Native proxy/rotation transport, complete Settings UI/a11y/platform acceptance, secret-at-rest and full data migration/rollback acceptance remain open.",
++        "PS-UI-01..05 mounted Settings extension is implemented with 18 authored browser cases; containing-H Actions and independent review must be recorded before this extension is qualified. Existing Native proxy transport, full Settings/platform/a11y, secret-at-rest, migration/rollback and independent ACCEPT remain open."
+       ],
+       "production_entrypoints": [
+         "settings.snapshot",
+@@ -28973,7 +28992,8 @@
+         "desktop-round99-settings-surface-blob:f5450c500e7b5429f030a561b9c8804700a28deb",
+         "desktop-round99-settings-panel-blob:1cb5508daf79ea12458124b09ee497c4c08fd618",
+         "desktop-round99-network-proxy-ui-blob:cacc51a80b52af034354a170dc42645144cd6717",
+-        "projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json"
++        "projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json",
++        "projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json#settings_proxy_settlement_extension"
+       ],
+       "test_evidence": [
+         "Authored contract vectors are recorded in docs/specs/telegram-proxy-settings-state-persistence.md@e31a0d4f4d9f9286f7af35562c7d9edac6687487; no executable contract was run.",
+@@ -28984,7 +29004,8 @@
+         "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_settings_owner_persists_typed_proxy_state at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2283. Oracle: Opens owner, updates typed proxy list/selection/mode, drops and reopens it, then verifies persisted values. Limits:  No execution/ACCEPT asserted by this binding.",
+         "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_proxy_list_mutations_preserve_fixed_u_preferred_index_invariants at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2309. Oracle: Normalizes invalid/duplicate preferred indices and verifies index shifts through insert/remove/reset. Limits:  No execution/ACCEPT asserted by this binding.",
+         "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_proxy_rotation_timeout_and_promotion_match_fixed_u at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2343. Oracle: Clamps timeout, promotes a proxy and observes duplicate promotion returning false without duplicate ordering. Limits:  No execution/ACCEPT asserted by this binding.",
+-        "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_settings_owner_fails_closed_on_malformed_persistence at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2369. Oracle: Opening an actually malformed on-disk settings file returns an error. Limits:  No execution/ACCEPT asserted by this binding."
++        "Authored-case static binding: source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_settings_owner_fails_closed_on_malformed_persistence at 2fd8d7623a1cfa00b09e90a2d81535c6550425df, blob fca0e3578e50ab91311baa014c309a292b9157e0, line 2369. Oracle: Opening an actually malformed on-disk settings file returns an error. Limits:  No execution/ACCEPT asserted by this binding.",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs: authored 18 actual SettingsDesktopSurface browser cases for canonical same-value normalization, five availability descriptors, duplicate/pending controls with independent Theme use, failed draft retries, close/unmount/bridge ABA, read-after-write and fixed initial-read failure/Retry. Execution pending at containing-H freeze; fixture supplies only bridge outcomes and no duplicate Settings reducer."
+       ],
+       "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
+       "workflow_run": 41508537631,
+@@ -29029,9 +29050,9 @@
+       "search_permission_contract": "Unchanged.",
+       "search_local_remote_contract": "Not applicable.",
+       "responsive_disposition": "Source uses the existing Settings responsive container plus a two-column proxy endpoint field grid that collapses to one column at <=700px. Runtime/visual validation is not-run.",
+-      "accessibility_contract": "Uses existing semantic SandSelect/SandSwitch/SandButton controls, explicit labels for endpoint fields, status text for invalid selected/list relation, and password inputs for secrets. Accessibility execution evidence remains not-run.",
++      "accessibility_contract": "Uses existing semantic SandSelect/SandSwitch/SandButton controls, explicit labels for endpoint fields, status text for invalid selected/list relation, and password inputs for secrets. Accessibility execution evidence remains not-run. PS-UI-02/03 exposes fixed availability and saving statuses, labeled fieldset aria-busy and disabled proxy controls; publication values and raw transport errors are not echoed. The authored mounted Chromium cases are not full accessibility acceptance.",
+       "keyboard_contract": "Reuses canonical keyboard-capable SandSelect/SandSwitch/SandButton and native inputs; no custom key handler or focus trap is introduced. Keyboard acceptance remains not-run.",
+-      "state_continuity_contract": "Authoritative ProductSettingsOwner mutation settlement replaces the projected networkProxy snapshot. Renderer endpoint drafts are transient edit buffers only; reload/restart restore remains owned by ProductSettingsOwner persistence. selected/list do not become carrier-owned truth.",
++      "state_continuity_contract": "Authoritative ProductSettingsOwner mutation settlement replaces the projected networkProxy snapshot. Renderer endpoint drafts are transient edit buffers only; reload/restart restore remains owned by ProductSettingsOwner persistence. selected/list do not become carrier-owned truth. PS-UI-01/04 explicitly applies returned canonical values even when normalization equals the previous value, preserves a failed endpoint/timeout draft, suppresses retired callbacks, and reloads the owner after accepted writes. Failed reads expose the existing Retry fallback without editable fabricated defaults.",
+       "ui_acceptance_scenarios": [
+         "Load Settings General and project mode/selected/list/flags/rotation from authoritative ProductSettingsOwner v2.",
+         "Edit mode and verify authoritative settlement without creating a second UI/store truth.",
+@@ -29081,7 +29102,12 @@
+         "NMR-38",
+         "NMR-41",
+         "NMR-AC-28",
+-        "NMR-AC-32"
++        "NMR-AC-32",
++        "PS-UI-01",
++        "PS-UI-02",
++        "PS-UI-03",
++        "PS-UI-04",
++        "PS-UI-05"
+       ],
+       "oracle_ids": [
+         "ORA-TDRP-PROXY-SETTINGS-STATE-PERSISTENCE-001"
+@@ -29111,16 +29137,23 @@
+         "E2E-TDRP-PROXY-SETTINGS-RESTORE-001"
+       ],
+       "temporal_case_ids": [
+-        "TEMPORAL-TDRP-PROXY-SETTINGS-RESTART-001"
++        "TEMPORAL-TDRP-PROXY-SETTINGS-RESTART-001",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-03 reopen waits for an accepted pending write before its authoritative get",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-03 rejected pending write releases the reopened read and permits a new explicit save"
+       ],
+       "ui_functional_case_ids": [
+-        "UI-TDRP-PROXY-SETTINGS-001"
++        "UI-TDRP-PROXY-SETTINGS-001",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-01 canonical timeout normalizes 10 to 0 to the same returned 10",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-03 pending disables all proxy controls and rapid duplicate save while Theme remains usable"
+       ],
+       "visual_case_ids": [],
+       "accessibility_case_ids": [],
+       "fault_recovery_case_ids": [
+         "FAULT-TDRP-PROXY-SETTINGS-MALFORMED-STATE-001",
+-        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_settings_owner_fails_closed_on_malformed_persistence"
++        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs#product_settings_owner_fails_closed_on_malformed_persistence",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-04 endpoint failure retains the exact draft and retries through the real mutation boundary",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-04 timeout failure retains its draft until a successful normalized retry",
++        "frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs#PS-UI-04 initial proxy read failure shows a fixed fallback and Retry rereads without mutation"
+       ],
+       "performance_case_ids": [],
+       "security_case_ids": [
+@@ -29148,7 +29181,7 @@
+       "acceptance_reviewer": null,
+       "reviewer": null,
+       "license_and_provenance": "Behavioral provenance is fixed-U Core::SettingsProxy/Core::Settings/localstorage/connection_box/application/proxy_rotation_manager. No upstream C++ copied and no parallel settings store introduced.",
+-      "notes": "Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[114]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: Current source has genuine migration/reopen/list-state tests in the existing ProductSettingsOwner. The historical round130 dossier's then-unwired comment must not override the later implementation now present. This establishes authored owner/state/persistence cases; it is not full native-shell restart/UI/platform acceptance or secret-at-rest qualification. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.\nResumed round18 current readback replaces the former active not-run/old-carrier description. Initial99/run41456371872 actually passed30 subcases, with missing complete permutations recorded as TEST_FLAW. Subsequent independent work at59 already expanded this to16orders/48removals/48repeats/all6 permutations and passed composition12/Native7; that implementation is retained unchanged. Settings17 typed calls cover15 variants; compatibility, invalid input, failed-write/recovery and subprocess restart passed within that bounded harness. Full Native proxy transport/UI/platform/secret-at-rest/independent acceptance remain open. Original source/counters and historical records stay unchanged. projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json\n\nRound19 resumed full-log verification closes the requested six-permutation execution evidence at exact94dcf7a while preserving current ProductSettingsOwner, retained data and all other responsibility fields. Complete Native profile consumption, full Settings/platform/security/upgrade/rollback and independent ACCEPT are not inferred from the matrix. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json",
++      "notes": "Task round99/source evidence round130. ProductSettingsOwner v2 is now projected and edited by the current complete Fabushi shipping SettingsDesktopSurface through source-neutral renderer/Main and coordinator MainData allowlists, with exact settings.snapshot/settings.mutateNetworkProxy Host methods. The complete main shipping tree was fused with the checkpoint migration tree in production commit a9cece6754710ab4f91dd9089e3d4eee9ffb4e57 so the UI/IPC paths retain their dependencies. No Telegram-specific UI/store/runtime was added and selected/list remain durable Settings state only; no selected-proxy carrier consumer is connected. UI/IPC/contracts were authored but not run; Stage-B executable validation remains not-run and accepted=false.\n\nHistorical noncanonical markers from 2fd8d7623a1cfa00b09e90a2d81535c6550425df / rows[114]: {\"accepted\":false,\"validation_status\":\"not-run\"}. Structural normalization asserts no new test execution, source acceptance or product acceptance.\n\nTDRP round 3 authored-case review at 2fd8d7623a1cfa00b09e90a2d81535c6550425df: Current source has genuine migration/reopen/list-state tests in the existing ProductSettingsOwner. The historical round130 dossier's then-unwired comment must not override the later implementation now present. This establishes authored owner/state/persistence cases; it is not full native-shell restart/UI/platform acceptance or secret-at-rest qualification. Existing source/implementation/production/history evidence is retained. Case names are authored traceability, not execution or independent acceptance; prior symbolic plans remain historical plans unless a concrete target symbol is cited.\nResumed round18 current readback replaces the former active not-run/old-carrier description. Initial99/run41456371872 actually passed30 subcases, with missing complete permutations recorded as TEST_FLAW. Subsequent independent work at59 already expanded this to16orders/48removals/48repeats/all6 permutations and passed composition12/Native7; that implementation is retained unchanged. Settings17 typed calls cover15 variants; compatibility, invalid input, failed-write/recovery and subprocess restart passed within that bounded harness. Full Native proxy transport/UI/platform/secret-at-rest/independent acceptance remain open. Original source/counters and historical records stay unchanged. projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json\n\nRound19 resumed full-log verification closes the requested six-permutation execution evidence at exact94dcf7a while preserving current ProductSettingsOwner, retained data and all other responsibility fields. Complete Native profile consumption, full Settings/platform/security/upgrade/rollback and independent ACCEPT are not inferred from the matrix. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json\n\nTask20bf round1 PS-UI-01..05 uses the existing SettingsDesktopSurface -> DesktopBridge.networkProxy -> Main RPC -> Coordinator MainData -> Native ProductSettingsOwner chain. It preserves the full mutation result, shows unavailable/unconfirmed publication without claiming routing, applies canonical timeout normalization, keeps failed drafts, fences pending/duplicate/stale callbacks, and uses canonical read-after-write on reopen. This is a current-owner defect repair, not a new upstream full-read or source-coverage increment. Prior exact59/94 execution records above remain historical bounded Rust evidence; they do not execute this new UI extension. New authored cases and current-H execution are tracked in projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json#settings_proxy_settlement_extension. No source, product, release or independent acceptance flag is promoted.",
+       "test_execution_evidence": [
+         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41508537631@59f5fa24827812f78336c464995d161f403dedfb:attempt1:job125494011097:completed/success:composition12/proxy16orders48removals48repeatedNoops/all6permutations; Native7/FeatureHost7/SocialRecovery9/SocialHttp6/Host6/ABI7/CLI3/gatewayExecutable5/gatewayLibrary11/normalization6/futureSalts2/protocol122/TCP9/proxy4/credential1/actualAppHostCopy4; three deliberate copy failures correctly rejected; artifact13173112803 sha256:a6017ef5b4b0b11fec3bf248df9c5c548e7e0a6c0519fe848110f76f48e9af7f",
+         "round19-resumption-20261102: exact94dcf7a2213808a8ded6baddaf069562d365c6d7/run41513767498 shipping125511939405 composition12 passed; proxy matrix16 ordered subsets/48 removals/48 repeated no-ops, all6 full permutations/18 full-permutation deletions,48 actual per-case markers. This is one existing Rust matrix test, not48 top-level cases. projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json"

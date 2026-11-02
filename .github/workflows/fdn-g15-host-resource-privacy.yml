@@ -44,6 +44,9 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           test "$(git status --porcelain)" = ""
+          git ls-files --error-unmatch -- source/fabushi-network-worker/go.mod source/fabushi-network-worker/go.sum source/host/Cargo.toml source/host/Cargo.lock > /dev/null
+          # Keep pre-probe evidence outside the required clean source tree.
+          sha256sum source/fabushi-network-worker/go.mod source/fabushi-network-worker/go.sum source/host/Cargo.toml source/host/Cargo.lock > "$RUNNER_TEMP/fdn-g15-source-input-sha256.txt"
 
       - name: Setup exact Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
@@ -58,17 +61,11 @@ jobs:
           set -euo pipefail
           test "$(go env GOVERSION)" = "go1.27.1"
           grep -Fx 'require tailscale.com v1.104.1' go.mod
-          # Reproduce the exact dependency lock sealed by current-main run
-          # 39061262418 artifact 12111532053
-          # (artifact digest sha256:38f62fc58a1e711d64647d45c40d8a4389f9a4875e0990e8bb2a55875eb594f2).
-          go mod tidy
-          test "$(sha256sum go.mod | awk '{print $1}')" = "31a956329d877ddfc7261f19aeccfbf3e06c83e290b7472d1197e72139526c13"
-          test "$(sha256sum go.sum | awk '{print $1}')" = "fff0813e7675eef0c378d524e9c3fa64b39226582b6d2b044cc188eae558fce3"
+          test "$(go list -mod=readonly -m -f '{{.Version}}' tailscale.com)" = v1.104.1
           go mod verify
-          CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o "$RUNNER_TEMP/fabushi-network-worker" .
+          CGO_ENABLED=0 go build -mod=readonly -trimpath -ldflags='-s -w' -o "$RUNNER_TEMP/fabushi-network-worker" .
           test -x "$RUNNER_TEMP/fabushi-network-worker"
-          git restore go.mod
-          rm -f go.sum
+          git diff --exit-code HEAD -- go.mod go.sum
           test "$(git status --porcelain)" = ""
 
       - name: Focused Host supervisor contract
@@ -78,17 +75,28 @@ jobs:
           rustup toolchain install 1.97.1 --profile minimal
           sudo apt-get update
           sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
-          test ! -e source/host/Cargo.lock
+          git ls-files --error-unmatch -- source/host/Cargo.toml source/host/Cargo.lock > /dev/null
           test ! -e source/host/target
           export CARGO_TARGET_DIR="$RUNNER_TEMP/fdn-g15-host-cargo-target"
-          cargo +1.97.1 test --manifest-path source/host/Cargo.toml --test network_worker_process_contract
-          rm -f source/host/Cargo.lock
+          cargo +1.97.1 test --locked --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+          git diff --exit-code HEAD -- source/host/Cargo.toml source/host/Cargo.lock
+          sha256sum -c "$RUNNER_TEMP/fdn-g15-source-input-sha256.txt"
           test ! -e source/host/target
           test "$(git status --porcelain)" = ""
 
       - name: Measure real Host-owned worker steady state and privacy
         shell: bash
         run: bash .github/scripts/fdn-g15-host-resource-privacy.sh evidence
+
+      - name: Record tracked source input identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum -c "$RUNNER_TEMP/fdn-g15-source-input-sha256.txt"
+          git diff --exit-code HEAD -- source/fabushi-network-worker/go.mod source/fabushi-network-worker/go.sum source/host/Cargo.toml source/host/Cargo.lock
+          cp "$RUNNER_TEMP/fdn-g15-source-input-sha256.txt" evidence/source-input-sha256.txt
+          printf '%s\n' "$EXPECTED_SHA" > evidence/source-sha.txt
+          sha256sum evidence/source-input-sha256.txt evidence/source-sha.txt >> evidence/SHA256SUMS
 
       - name: Static secret and privacy artifact scan
         shell: bash

@@ -32,6 +32,8 @@ jobs:
     name: Go worker / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    env:
+      GOTOOLCHAIN: local
     strategy:
       fail-fast: false
       matrix:
@@ -61,14 +63,17 @@ jobs:
         with:
           go-version: "1.27.1"
           cache-dependency-path: source/fabushi-network-worker/go.sum
-      - name: Resolve locked module graph
+      - name: Verify tracked module graph
         shell: bash
         run: |
           set -euo pipefail
-          go mod tidy
-          grep -F 'tailscale.com v1.104.1' go.mod
-          go list -m all > module-list.txt
-          grep -F 'tailscale.com v1.104.1' module-list.txt
+          git ls-files --error-unmatch -- go.mod go.sum > /dev/null
+          git diff --exit-code HEAD -- go.mod go.sum
+          grep -Fx 'require tailscale.com v1.104.1' go.mod
+          go list -mod=readonly -m all > module-list.txt
+          grep -Fx 'tailscale.com v1.104.1' module-list.txt
+          go mod verify
+          git diff --exit-code HEAD -- go.mod go.sum
       - name: Record Go dependency lock
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
@@ -89,13 +94,17 @@ jobs:
           test -z "$(gofmt -l .)"
       - name: Unit tests
         shell: bash
-        run: go test ./...
+        run: go test -mod=readonly ./...
       - name: Vet
         shell: bash
-        run: go vet ./...
+        run: go vet -mod=readonly ./...
       - name: Compile packaged worker
         shell: bash
-        run: go build ./...
+        run: go build -mod=readonly ./...
+      - name: Verify tracked Go inputs unchanged
+        if: always()
+        shell: bash
+        run: git diff --exit-code HEAD -- go.mod go.sum
 
   rust-host-supervisor:
     name: Rust Host supervisor
@@ -136,4 +145,8 @@ jobs:
           rustfmt --edition 2024 --check source/host/tests/network_worker_process_contract.rs
       - name: Test Host network worker supervisor
         shell: bash
-        run: cargo test --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+        run: |
+          set -euo pipefail
+          git ls-files --error-unmatch -- source/host/Cargo.toml source/host/Cargo.lock > /dev/null
+          cargo test --locked --manifest-path source/host/Cargo.toml --test network_worker_process_contract
+          git diff --exit-code HEAD -- source/host/Cargo.toml source/host/Cargo.lock

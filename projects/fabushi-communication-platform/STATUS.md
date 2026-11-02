@@ -173,6 +173,33 @@ H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
 9. full capability acceptance
 10. packaged/release acceptance
 
+## Resumed round 6 — durable Human history traversal (2026-11-02)
 
+The interrupted old round-6 candidate is not applied over later work. On the current checkpoint, NMR-PAGING-01/NMR-ACTIVITY-01 add bounded persistent Human page membership, opaque RPC/cache continuation, committed-update retry overlays and monotonic activity recovery through existing Session/Transcript and renderer owners. Existing full-credential fences, reply/forward journals, resource limits, shipping/source and Agent gates are preserved. Tests are authored at this checkpoint; exact containing-H Actions must establish execution. Historical 849 failure and f68 prerequisite success are separately recorded in `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. This is stage-A implementation, not source/real-service/package or independent ACCEPT.
 
+## Round27 resumed: source-owned forwarding pending recovery
+
+At exact936115b0aa578c340c74dd6aa7c71c362572bd72, renderer/Transcript18/
+settlement5/Chromium16, Electron, Windows11 and source157/schema37 passed;
+Human47 and shipping were still queued at the recorded audit. Exact59's five
+message jobs passed earlier; those results do not qualify later attachment,
+reply or upload-limit code. Original2a/run41500770749 remains a failed fixture
+run with cancelled shipping. Full log identities are retained in
+`projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json`.
+
+NMR-47g now keeps damaged/missing forwarding context under the original
+source journal owner. An independent pending marker is stored before effects;
+strict request/target-nonce lookup prevents generic replay after source denial.
+One actual child-kill/SQLite/HTTP matrix preserves the current reply and pinned
+attachment paths, with a prefixed legacy positive. New containing-H execution
+is not-run at preparation; the current gate adds one Human case (53 after the
+52-case pagination base). Concurrent NMR-50 work is retained.
+
+The canonical ledger receives only the two reviewed existing-row changes and
+current shipping-owner correction. Actions prepares the large blob with an
+exact-base guard and no ref writes; integration uses non-forced expected-head
+CAS. Six source reviews/two complete at936 are scoped historical counts; later
+source records remain preserved. Complete source/legal/product/platform/Bot/
+real-service and independent ACCEPT/release remain blocked. Backend PR137 is
+not modified, merged or deployed.
 

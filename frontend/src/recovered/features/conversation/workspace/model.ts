@@ -234,6 +234,10 @@ export interface TranscriptMessage {
   attachments?: DraftAttachment[];
   delivery?: TranscriptDelivery;
   clientNonce?: string;
+  /** Host-owned identity used to correlate Human settlement without crossing authors. */
+  authorKind?: "human";
+  authorId?: string;
+  remoteMessageId?: string;
   composedAtMs?: number;
   isStreaming?: boolean;
   replyToId?: string;
@@ -332,3 +336,4 @@ export interface TranscriptPermissionRequest {
 }
 
 export type ConversationTranscriptEntry = TranscriptMessage | TranscriptToolCall | TranscriptThinking | TranscriptNotice | TranscriptTimelineEvent | TranscriptTimeSeparator | TranscriptUnreadDivider | TranscriptComputerHandoff | TranscriptLocalToolPermission | TranscriptPermissionRequest | TranscriptCardEntry;
+

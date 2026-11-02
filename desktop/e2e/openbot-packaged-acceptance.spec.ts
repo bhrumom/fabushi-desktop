@@ -682,6 +682,55 @@ async function runLatencyProbe(page: Page, index: number, prompt: string): Promi
   };
 }
 
+async function capturePluginsPointerDiagnostics(page: Page, stage: string): Promise<void> {
+  let diagnostics: unknown;
+  try {
+    diagnostics = await withNodeDeadline('Plugins pointer diagnostics', 5_000, page.evaluate(() => {
+      const describe = (element: Element | null) => {
+        if (!element) return null;
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return {
+          tag: element.tagName,
+          classes: [...element.classList],
+          role: element.getAttribute('role'),
+          bounds: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+          style: {
+            position: style.position, zIndex: style.zIndex, pointerEvents: style.pointerEvents,
+            appRegion: style.getPropertyValue('-webkit-app-region') || style.getPropertyValue('app-region'),
+          },
+        };
+      };
+      const dialog = document.querySelector('[role="dialog"][aria-label="Plugins"]');
+      const buttons = dialog?.querySelectorAll('button[aria-label="Close"]') ?? [];
+      const button = buttons[0] ?? null;
+      const rect = button?.getBoundingClientRect();
+      const point = rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null;
+      const hit = point ? document.elementFromPoint(point.x, point.y) : null;
+      const ancestors = [];
+      for (let element = button?.parentElement; element && ancestors.length < 8; element = element.parentElement) {
+        ancestors.push(describe(element));
+      }
+      // Geometry and element identities only: do not copy conversation text,
+      // input values, account attributes, or the marketplace's HTML into logs.
+      return {
+        viewport: { width: innerWidth, height: innerHeight, devicePixelRatio },
+        closeCount: buttons.length, close: describe(button), point,
+        centerHitsClose: button != null && hit != null && (button === hit || button.contains(hit)),
+        hit: describe(hit), ancestors,
+        hitStack: point ? document.elementsFromPoint(point.x, point.y).slice(0, 8).map(describe) : [],
+        chrome: [...document.querySelectorAll('.sand-cover-drag, .sand-chat-header, .sand-window-controls')].map(describe),
+      };
+    }));
+  } catch (error) {
+    diagnostics = { captureError: error instanceof Error ? error.message : String(error) };
+  }
+  await withNodeDeadline('Persist Plugins pointer diagnostics', 5_000, writeFile(
+    path.join(evidenceRoot, `plugins-pointer-${stage}.json`),
+    JSON.stringify({ sourceSha, expectedSourceSha, capturedAt: Date.now(), stage, diagnostics }, null, 2),
+  ));
+}
+
 async function capturePluginsEvidence(page: Page): Promise<{ text: string; itemCount: number }> {
   const button = page.getByRole('button', { name: 'Plugins' });
   await expect(button).toBeVisible({ timeout: 20_000 });
@@ -693,9 +742,27 @@ async function capturePluginsEvidence(page: Page): Promise<{ text: string; itemC
   const text = ((await dialog.textContent()) ?? '').trim();
   const itemCount = await dialog.locator('article, [role="listitem"], button').count();
   expect(text.length, 'production Plugins surface must expose connector/catalog state').toBeGreaterThan(0);
-  await screenshot(page, '08-plugins-production-surface');
-  await dialog.getByRole('button', { name: 'Close' }).click();
-  await expect(dialog).toBeHidden();
+  await capturePluginsPointerDiagnostics(page, 'before-close');
+  await withNodeDeadline('Plugins screenshot', 5_000, page.screenshot({
+    path: path.join(evidenceRoot, 'screenshots', '08-plugins-production-surface.png'),
+    fullPage: true,
+    timeout: 4_000,
+  }));
+  try {
+    // The CDP-attached page does not inherit the runner's action timeout. Keep
+    // a real pointer click bounded so an obstruction retains its call log and
+    // reaches the trace cleanup before the overall 20-minute test deadline.
+    await withNodeDeadline('Plugins Close pointer click', 12_000,
+      dialog.getByRole('button', { name: 'Close', exact: true }).click({ timeout: 10_000 }));
+    await expect(dialog).toBeHidden({ timeout: 5_000 });
+  } catch (error) {
+    await withNodeDeadline('Persist Plugins Close error', 5_000, writeFile(
+      path.join(evidenceRoot, 'plugins-close-error.json'),
+      JSON.stringify({ sourceSha, expectedSourceSha, error: error instanceof Error ? error.stack || error.message : String(error) }, null, 2),
+    )).catch(() => undefined);
+    await capturePluginsPointerDiagnostics(page, 'after-close-error').catch(() => undefined);
+    throw error;
+  }
   return { text, itemCount };
 }
 
@@ -728,6 +795,10 @@ test.describe('signed candidate packaged acceptance', () => {
       'timings.json',
       'connectors.json',
       'trace.zip',
+      'trace-error.json',
+      'plugins-pointer-before-close.json',
+      'plugins-pointer-after-close-error.json',
+      'plugins-close-error.json',
     ]) {
       await rm(path.join(evidenceRoot, relativePath), { recursive: true, force: true });
     }
@@ -981,31 +1052,40 @@ test.describe('signed candidate packaged acceptance', () => {
       }, null, 2));
       acceptanceCompleted = true;
     } finally {
-      await writeFile(
-        path.join(evidenceRoot, 'runtime.log'),
-        runtimeLogs.map((row) => `[${new Date(row.at).toISOString()}] ${row.source}: ${row.text}`).join('\n'),
-      ).catch(() => undefined);
+      // Persist the failing candidate identity before asking CDP to flush a
+      // trace; an unresponsive transport must not erase that evidence.
       if (!acceptanceCompleted && pageForTrace) {
-        await pageForTrace.screenshot({
-          path: path.join(evidenceRoot, 'screenshots', '00-failure-state.png'),
-          fullPage: true,
-        }).catch(() => undefined);
-        await writeFile(path.join(evidenceRoot, 'failure.json'), JSON.stringify({
+        await withNodeDeadline('Packaged failure identity', 5_000, writeFile(path.join(evidenceRoot, 'failure.json'), JSON.stringify({
           sourceSha,
           expectedSourceSha,
           executable,
           url: pageForTrace.url(),
-        }, null, 2)).catch(() => undefined);
+        }, null, 2))).catch(() => undefined);
       }
+      // Flush the trace before any best-effort failure screenshot. Every CDP
+      // cleanup operation is bounded; the exact owned process is still stopped
+      // below if the renderer or transport cannot answer.
       if (traceStarted && traceContext) {
-        await traceContext.tracing.stop({
+        await withNodeDeadline('Packaged acceptance trace flush', 15_000, traceContext.tracing.stop({
           path: path.join(evidenceRoot, 'trace.zip'),
-        }).catch((error) => {
-          captureRuntimeLog('trace-error', error instanceof Error ? error.stack || error.message : String(error));
+        })).catch(async (error) => {
+          const detail = error instanceof Error ? error.stack || error.message : String(error);
+          captureRuntimeLog('trace-error', detail);
+          await withNodeDeadline('Persist packaged trace error', 5_000, writeFile(
+            path.join(evidenceRoot, 'trace-error.json'),
+            JSON.stringify({ sourceSha, expectedSourceSha, capturedAt: Date.now(), phase: 'trace-flush', error: detail }, null, 2),
+          )).catch(() => undefined);
         });
       }
+      if (!acceptanceCompleted && pageForTrace) {
+        await withNodeDeadline('Packaged failure screenshot', 5_000, pageForTrace.screenshot({
+          path: path.join(evidenceRoot, 'screenshots', '00-failure-state.png'),
+          fullPage: true,
+          timeout: 4_000,
+        })).catch(() => undefined);
+      }
       if (cdpBrowser) {
-        await cdpBrowser.close().catch(() => undefined);
+        await withNodeDeadline('Packaged CDP shutdown', 5_000, cdpBrowser.close()).catch(() => undefined);
       }
       if (appProcess && appProcess.exitCode == null && appProcess.signalCode == null) {
         appProcess.kill('SIGTERM');
@@ -1017,6 +1097,10 @@ test.describe('signed candidate packaged acceptance', () => {
           appProcess?.kill('SIGKILL');
         });
       }
+      await withNodeDeadline('Persist final packaged runtime log', 5_000, writeFile(
+        path.join(evidenceRoot, 'runtime.log'),
+        runtimeLogs.map((row) => `[${new Date(row.at).toISOString()}] ${row.source}: ${row.text}`).join('\n'),
+      )).catch(() => undefined);
     }
   });
 });

@@ -14,6 +14,32 @@ This file records the current production owners that FBCP must absorb into. It i
 
 ## Method
 
+### Round 18 — actual CLI Host and packaged runtime consumers
+
+Frozen production input `1b0e674b3e39292ae715a3eb50435d83e2cb8577`. CLI and gateway own
+`RuntimeHandle(MahayanaHost)`; their ordinary dependency explicitly selects
+`desktop-full` and `local-only`. NativeEngine/NativeAgentBackend and the existing
+local MCP owner retain lifecycle and command authority. Status/provider names
+alone were compatible with an unavailable fallback; real MCP assertions and
+single-root production binary/process checks now guard that composition.
+No FFI dependency, new runtime, provider, public schema or external ABI removal
+was added. The package workflow remains the final-byte owner and the unchanged
+promotion consumer remains the installer-member authority.
+
+The reviewed desktop path is Electron entry -> utilityProcess carrier ->
+Coordinator child process -> AppHost child process, using MessagePorts/stdio/HTTP.
+The complete selected non-Rust executable-surface scan at this H found no actual
+target C ABI caller; its1780 paths/1769 distinct blobs and exclusions are recorded
+in the caller index. Retained C exports and Dart/iOS comments do not identify a
+tracked caller or prove external absence. Keep historical SQLite, credentials
+and compatibility readers pending actual external-client evidence.
+
+Exact-H Electron/UI/Windows and promotion6 passed; Rust jobs were still queued at
+the recorded observation. Actual CLI binary/MCP/process and signed installer
+acceptance remain open. See the round18 delivery receipt and its exact run/blob
+identities. Concurrent Session/Transcript/forward/reply/resource owners are
+preserved; no message or account authority moves into the CLI or renderer.
+
 ### 2026-11-02 immutable forward picker intent (task20bf round1 resumed)
 
 Current inspected input is `59f5fa24827812f78336c464995d161f403dedfb` on the
@@ -192,6 +218,6 @@ Before using this inventory for implementation, compare the live PR #20 head to 
 
 PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected file-by-file at the ownership boundary. It advances send-pipeline/send-turn dispatch, workflow commands, runner registry/turn shell, Coordinator inference routing, and Session runtime behavior inside the same canonical Host Transcript/Runner/Coordinator architecture. `session-runtime.ts` now has a production Rust owner with focus/contact freshness, live-session ownership, deferred bounded-open activation/catch-up, snapshot/roster activation wiring, boot fallback ordering evidence, and focused contracts; `a5386793` is the first head that marks that row implemented, and only its own Actions may accept it. No FBCP product owner root moved in this delta.
 
+### Resumed round 6: existing Human history owner extension
 
-
-
+NMR-PAGING-01 uses `SandAgentDb` and `agent_db_transcript_pages` for both canonical full reads and durable bounded traversal indices; `ProductionSessionWorkers` and the existing gateway admit the scoped cursor. The existing renderer pagination/root-cache/projection owners carry it and preserve committed updates across failed older-page retries. NMR-ACTIVITY-01 keeps activity and Agent handoff in the existing per-conversation mutation lane and repairs interrupted row/metadata persistence on replay. No additional message owner or user-data migration is introduced. Later credential, reply/forward, legacy-retention and source work remains intact. These authored changes require containing-H Actions; this inventory is not an acceptance claim.

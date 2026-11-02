@@ -318,3 +318,9 @@ catalog-only
 | FPM-AC01 through FPM-AC08 | **blocked** | Exact-head GitHub Actions, app/device/store and independent release evidence not yet performed for this extension. |
 
 **Implementation precedence**: read AGENTS.md → current live SOURCE_OF_TRUTH/spec → current shipping graph → update design/ADR if necessary → code behind existing owners → GitHub Actions → exact-head compliance review → stage/release. FPM-001 enhances Plugins and OMA-001; it **does not** silently extend PR #42 migration completion criteria or downgrade Grok/FBCP gates.
+
+## 18. FPM-UI-CLOSE-01 — 兼容 Plugins overlay 的窗口交互回归（2026-11-02）
+
+在一级 route 迁移完成前，现有 ProductionRenderer / PluginsDesktopSurface 继续拥有同一个 overlay 状态；关闭不等待市场请求或凭据。1024×684 短窗口和较高窗口中，正常指针点击 Close 必须关闭并可重新打开，不能被 WindowChrome 的 52px 拖拽区或聊天标题栏截获。修复父 stacking context 与 native app-region，保留既有窗口控制区及其他 overlay，不新建 Marketplace owner。
+
+回归沿现有 Electron production renderer / 受控 Host 与本地 auth fixture；两种窗口尺寸各一例，以真实 pointer click、命中目标和几何证据证明关闭/重开，禁止 force click、JS dispatch 或延长总超时。签名包验收的 Close 使用短操作期限，点击前记录无内容的 bounds / elementFromPoint / computedStyle 诊断，失败保留错误与有界 screenshot / trace，避免一个控件耗尽 20 分钟。所有执行只在 exact-H GitHub Actions；受控 fixture 不代表真实账号、签名包或独立 ACCEPT。保留历史 run 41365802839 / candidate 6f770fb00e9f74f787a49a05b82eadebe585d75b 的失败，当前修复在取得新 H 执行证据前仍为未验证。

@@ -25,7 +25,7 @@ use crate::extensions::transcript::transcript_entry_ids::{
 };
 use uuid::Uuid;
 
-use super::agent_db_transcript_pages::{TranscriptPageQuery, TranscriptWindowQuery};
+use super::agent_db_transcript_pages::{HumanTranscriptPageQuery, TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
 use super::production::ProductionSessionWorkers;
 use super::session_profile_files::AgentProfileUpdate;
@@ -416,8 +416,14 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .map_err(SessionGatewayError::internal)
         }),
         "getHumanConversationTranscriptTail" => required_string(args, "conversationId").and_then(|conversation_id| {
-            let query = TranscriptWindowQuery {
+            let before_cursor = match args.get("beforeCursor") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(cursor)) if !cursor.is_empty() && cursor.len() <= 256 => Some(cursor.clone()),
+                Some(_) => return Err(SessionGatewayError::bad("invalid beforeCursor")),
+            };
+            let query = HumanTranscriptPageQuery {
                 before_seq: optional_i64(args, "beforeSeq"),
+                before_cursor,
                 limit: optional_i64(args, "limit").unwrap_or(200),
             };
             session
@@ -426,6 +432,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     json!({
                         "entries": page.entries,
                         "nextBeforeSeq": page.next_before_seq,
+                        "nextBeforeCursor": page.next_before_cursor,
                     })
                 })
                 .map_err(SessionGatewayError::internal)
@@ -945,3 +952,4 @@ fn optional_i64(args: &Value, field: &str) -> Option<i64> {
                 .map(|value| value.trunc() as i64)
         })
 }
+

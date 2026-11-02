@@ -4,6 +4,7 @@
 import {
   COORDINATOR_METHOD_TABLE,
   parseCoordinatorAgentThreadResponse,
+  parseCoordinatorHumanTranscriptPageResponse,
   parseCoordinatorTranscriptWindowResponse,
   type CoordinatorMethod
 } from "../../../../source/shared/rpc/coordinator";
@@ -203,6 +204,7 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
     return value;
   },
   "transcript-window": (value) => parseCoordinatorTranscriptWindowResponse(value) ?? MALFORMED_REPLY,
+  "human-transcript-page": (value) => parseCoordinatorHumanTranscriptPageResponse(value) ?? MALFORMED_REPLY,
   "agent-thread": (value) => parseCoordinatorAgentThreadResponse(value) ?? MALFORMED_REPLY,
   "acceptance-lookup": (value) => isSourceRecord(value) && typeof value.outcome === "string" ? value : MALFORMED_REPLY,
   "connect-url": (value) => isSourceRecord(value) && typeof value.url === "string" ? value : MALFORMED_REPLY,
@@ -527,7 +529,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   "feature.auth.telegramSendVerifyEmailCode": "auth",
   "feature.auth.telegramVerifyEmail": "auth",
   "feature.auth.telegramRefreshPasswordChallenge": "auth",
-  getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
+  getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", getHumanConversationTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
   sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
@@ -639,3 +641,4 @@ export function withCoordinatorSourceTelemetry(
     subscribeTransportState: (listener: CoordinatorTransportListener) => source.subscribeTransportState(listener)
   }) as RawPortCoordinatorSource;
 }
+

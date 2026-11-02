@@ -1036,6 +1036,37 @@ batch with a deleted/protected source currently aborts unrelated ordinary sync.
 The data format, command/service schema, unique Session/Transcript owner,
 Backend PR #137 read-only boundary and all final acceptance blockers remain.
 
+### NMR-47g: source-owned pending forwarding cannot become generic replay
+
+Generic destination replay must preserve ownership when a forward's context
+version is unsupported, malformed or missing. Persist an independent
+`forwardBatchOwned` marker before resource upload or message POST, including
+adoption of older v1 pending rows. Any explicit ownership/version marker stays
+under source-batch recovery. For markerless context with source/request fields,
+read the referenced source journal directly; a matching request or destination
+nonce remains owned even after membership removal. Missing or corrupt source
+storage cannot prove legacy ownership. A forwarding-shaped nonce without
+usable context must also be checked against the stored source journals; ordinary
+reply metadata alone is not a forwarding identity. If no journal matches, require
+a strict readable referenced source plus the actual pre-journal nonce contract
+`SHA256(request UTF-8 || NUL || destination UTF-8)` before generic replay. Old
+and v1 nonces share the same external format, so the prefix alone proves neither
+ownership nor legacy compatibility. Missing/replaced-unrelated context plus an
+unavailable source remains pending with an explicit unresolved-ownership error.
+Preserve genuine readable pre-journal replay, existing pinned-byte guarantees
+and NMR-49 reply repair. This compatibility claim binds to the actual 2a007088
+legacy path; it does not promise automatic repair of arbitrary lost provenance.
+
+NMR-AC-38 ownership continuation adds one actual killed-process/SQLite/HTTP
+case: durable marker before first POST; revoked-source pending rows with future
+or missing context version, changed request marker, missing context and retained
+nonce; unavailable source combined with missing/replaced-unrelated context;
+corrupt source refusal; and a readable genuine legacy control using the real
+pre-journal nonce algorithm.
+The complete original intent and pending payload must remain retained. Tests
+execute only at exact-H GitHub Actions. NMR-50 retains nonblocking batch recovery;
+this extension does not replace that work or change public commands/service APIs.
+
 ### Round 4 resumed batch: immutable forwarding attachment bytes (NMR-48)
 
 Prerequisite run `41508537631` at `59f5fa24827812f78336c464995d161f403dedfb`
@@ -1413,3 +1444,63 @@ uses force=false expected-head CAS, and removes the temporary job and input.
 This publication does not rerun unchanged product suites or grant acceptance;
 current Backend25MiB compatibility remains governed by NMR-51.
 
+## NMR-PAGING-01 — Durable Human history walks and monotonic activity
+
+Resumed round 6 discovery base:
+`1b0116fe9609f54f6a0581d26791d5e98bbe43b9`; fixed U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`. Preserve the later message,
+credential, forwarding, source-review and shipping work. The earlier unpublished
+round-6 working tree is not an integration base. This batch adds the remaining
+stable-pagination and activity-recovery behavior to the existing Session,
+SandAgentDb and unified renderer owners.
+
+- **NMR-PAGING-01a:** Human full reads use finite canonical timestamp, numeric
+  remote identity and physical sequence as a deterministic total order. A new
+  tail walk captures only ordered physical sequence identities in the existing
+  conversation SQLite KV. Its continuation uses an opaque versioned token,
+  qualified by conversation and participant identity. Keep at most 16 durable
+  walks; eviction, corrupt/missing/duplicate/non-integer indices, bad scope,
+  malformed tokens and contradictory legacy anchors fail explicitly. A walk
+  never silently resets to the first page. Original Agent sequence pagination
+  and legacy callers remain compatible.
+- **NMR-PAGING-01b:** Capture, index publication/eviction and the first page are
+  one transaction. Every continuation validates the complete index and reads
+  current canonical row payloads in that fixed membership order in one read
+  transaction. Later insertion, local-to-remote identity settlement and an
+  authoritative timestamp correction do not skip or repeat a member. A new
+  walk observes the new canonical order. Completed walks remain retryable until
+  bounded eviction. Reopen preserves both membership and exact continuation.
+  Closed/unavailable storage reports an error instead of a fabricated empty page.
+  No transcript payload or second message database is introduced.
+- **NMR-PAGING-01c:** Add optional beforeCursor/nextBeforeCursor to the existing
+  Human RPC path. Carry them through admission, projection, existing root cache,
+  cached-conversation restore, pagination and request-generation fencing.
+  Preserve existing ingestEntryUpdate/onPageApplied ownership and all current
+  clear/account/ABA behavior. Committed row updates received during a failed
+  older-page request remain an overlay until a later successful retry, so a
+  stale fetched page cannot undo a reaction or other canonical update.
+- **NMR-ACTIVITY-01:** Successful Human row materialization, canonical settlement
+  and idempotent replay reconcile metadata from its current value with a finite
+  timestamp using max. Failure to persist metadata is an error and retry repairs
+  the row/metadata interruption. Agent-to-Human handoff joins the existing
+  per-conversation message lane, retains nonce idempotency, and cannot regress
+  activity behind newer message state. Preserve the current full-credential
+  response/settlement fences, forwarding journal CAS, read-receipt instant
+  comparison and every existing mutation entrypoint.
+- **NMR-AC-PAGING-01:** Extend the current real Host/SQLite/loopback tests with
+  equal-time history/backfill walks, restart/retry, index corruption and bounded
+  eviction, a real native settlement moving the anchor timestamp, and blocked
+  history plus Agent handoff with monotonic activity and metadata recovery.
+  Add real pagination/RPC tests for opaque cursor propagation, failed retry
+  overlays and unchanged Agent requests. Retain all current Human44,
+  journal12, Agent4, credential3, renderer/projection/Chromium and shipping gates,
+  including later concurrent additions. Run only in GitHub Actions at the
+  containing exact H; inspect complete logs and actual counts.
+
+Rollback is an ordinary code revert: extra scoped KV indices can remain inert.
+Current Human production does not delete or clear physical transcript rows; any
+future such entrypoint must invalidate the walks or establish non-reused row
+identity before it is exposed. This batch does not claim a changefeed for older
+remote edits/reactions, multi-device or cancellation completeness, real Worker
+deployment, full source/legal closure, signed platforms, full UI/a11y/Bot/soak,
+upgrade/rollback acceptance, or independent ACCEPT.
