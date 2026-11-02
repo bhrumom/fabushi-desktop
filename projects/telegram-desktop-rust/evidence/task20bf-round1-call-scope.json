@@ -3,9 +3,9 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "production guard and five contracts integrated; exact containing-H Actions execution pending",
+  "status": "guard, five contracts, canonical responsibility row and owner/RTM published on isolated migration-line branch; exact-H Actions pending",
   "repository": "bhrumom/fabushi-desktop",
-  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
@@ -36,7 +36,8 @@
         "commit": "86c999e589c7b394223753855599dc80262cdafe",
         "delivered": false
       }
-    ]
+    ],
+    "isolation_reason": "Three expected-head attempts observed concurrent target advancement; all rejected mutations were read back. Created a child branch at the reviewed integration commit rather than retrying shared writes."
   },
   "authority": [
     {
@@ -94,7 +95,7 @@
   ],
   "verification": {
     "policy": "GitHub Actions only; no local executable validation or htch-runtime",
-    "implementation_head": null,
+    "implementation_head": "249675ae30502e72e495a4c6aee53e8214f82bd1",
     "workflow_run": null,
     "jobs": [],
     "artifacts": [],
@@ -207,7 +208,7 @@
     {
       "id": "delivery",
       "condition": "Current-round result committed/pushed and remote readback verifies exact SHA and files before final",
-      "evidence": "Pending publication/readback for this call-scope batch; prior unrelated commits are not used as this delivery.",
+      "evidence": "Current production commit249675ae30502e72e495a4c6aee53e8214f82bd1 is published on the derived migration branch; final current-H file readback, Actions and PR are still required.",
       "complete": false
     }
   ],
@@ -228,6 +229,8 @@
   "github_delivery": {
     "preparation_commit": "9e959272d40c0dbceb396fb894151114575b1512",
     "preparation_full_sha_and_five_files_readback": true,
-    "implementation_commit": null
-  }
+    "implementation_commit": "249675ae30502e72e495a4c6aee53e8214f82bd1",
+    "integration_into_shared_checkpoint": false
+  },
+  "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
 }
