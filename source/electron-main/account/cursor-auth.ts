@@ -280,7 +280,15 @@ export class SandCursorAuthService {
     if (!this.isCurrentAuthOperation(operationEpoch) || this.credentialUseRevoked || accessToken == null || refreshToken == null) throw new SandAuthSignInRequiredError();
     return shouldRefreshAccessToken(backendUrl, accessToken) ? await this.refreshAccessToken({ backendUrl, operationEpoch, refreshToken }) : accessToken;
   }
-  async peekAccessToken(): Promise<string | null> { if (this.credentialUseRevoked) return null; const [access, refresh] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]); return this.credentialUseRevoked || access == null || refresh == null ? null : access; }
+  async peekAccessToken(): Promise<string | null> {
+    const operationEpoch = this.authOperationEpoch;
+    const credentialMutation = this.credentialMutationTail;
+    if (this.credentialUseRevoked) return null;
+    await credentialMutation;
+    if (!this.isCurrentAuthOperation(operationEpoch) || credentialMutation !== this.credentialMutationTail || this.credentialUseRevoked) return null;
+    const [access, refresh] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]);
+    return !this.isCurrentAuthOperation(operationEpoch) || credentialMutation !== this.credentialMutationTail || this.credentialUseRevoked || access == null || refresh == null ? null : access;
+  }
   async exportTokens(): Promise<CursorTokens | null> { if (this.credentialUseRevoked) return null; const [accessToken, refreshToken] = await Promise.all([this.secrets.readSecret(ACCESS_TOKEN_SECRET_KEY), this.secrets.readSecret(REFRESH_TOKEN_SECRET_KEY)]); return this.credentialUseRevoked || accessToken == null || refreshToken == null ? null : { accessToken, refreshToken }; }
   async login(): Promise<SandAuthStatus> {
     this.abortActiveLogin(); const operationEpoch = this.advanceAuthOperationEpoch(); const controller = new AbortController(); this.loginAbortController = controller;

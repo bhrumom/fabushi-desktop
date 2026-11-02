@@ -656,11 +656,9 @@ impl SandPluginSkillsService {
         let staged = stage_plugin_skills_cache(
             &cache_dir,
             &PluginSkillsCacheWriteIndex {
-                current_user_id: Some(
-                    loaded.current_user_id.or_else(|| {
-                        previous.as_ref().and_then(|value| value.index.current_user_id)
-                    }),
-                ),
+                // Publisher identity belongs to this successful pass. Unknown
+                // current identity must not inherit an old account's edit grant.
+                current_user_id: Some(loaded.current_user_id),
                 skills: values,
                 auth_blocked: Some(auth_blocked),
             },
@@ -690,6 +688,8 @@ impl SandPluginSkillsService {
         if let Some(report) = &self.report_sync {
             let changed = previous.is_none()
                 || skill_records_identity(&previous_records) != skill_records_identity(&records)
+                || previous.as_ref().and_then(|value| value.index.current_user_id)
+                    != committed.index.current_user_id
                 || auth_blocks_identity(previous_blocks)
                     != auth_blocks_identity(committed.canonical_auth_blocked());
             report(PluginSkillsSyncEvent {

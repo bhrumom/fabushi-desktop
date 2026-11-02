@@ -3,7 +3,7 @@
 Contract: `OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1`  
 Status: implementation in progress; exact-H evidence and ecosystem acceptance pending  
 Discovery base: `3aa679586d76e446f76a1c94700ff7abab623d42`  
-Current integration base: `7382badafe5c3a793835b7760bf3ab54e7fb54c9`  
+Current integration base: `ecb6f6bd6f618975feca1a7b7b992255fb38fdb3`  
 Fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`
 
 ## Problem, flow and ownership
@@ -91,6 +91,70 @@ the same committed-snapshot admission helper.
   denial state, so a permission change cannot be reported unchanged merely
   because skill ID/version did not change. Preserve sync coalescing, panic
   recovery, recursive-sync refusal and valid existing permission controls.
+- PS-IDENTITY-01: after a successful authoritative refresh, publisher edit
+  eligibility comes only from that pass's current identity. The Electron SDK
+  edge must not memoize a successful `getMe` identity across refreshes. Capture
+  the existing account owner's credential for each pass and bind effective
+  listing, identity lookup and SDK Git authentication to that immutable
+  credential. Before returning the materialized result, compare the existing
+  account scope and backend context with the current account; changed, missing
+  or unreadable context rejects the pass. Same-account token renewal may pass
+  that scope check only with nonempty canonical account subjects in both
+  credentials; otherwise only an identical credential proves continuity.
+  This is a credential/currentness bridge, not a new account
+  identity or permission owner, and tokens are never logged or persisted here.
+  A failed or invalid `getMe` leaves the identity explicitly unknown while a
+  valid authoritative listing may still commit its ordinary eligible skills.
+  Rust writes that pass's identity, including unknown, without filling it from
+  an older snapshot. Unknown identity grants no publisher edit permission.
+  The existing sync `changed` report includes a changed current-user identity,
+  even when admitted skill IDs, versions and denials are otherwise identical.
+  Preserve the existing `FileWorkflowStore` publisher checks and successful
+  current-publisher editing, listing/denial reconciliation and file retention.
+- PS-IDENTITY-02: the account owner's non-refreshing credential read must
+  reject a read superseded by logout/login even if the later account is active
+  again. The retained default `SandCursorAuthService.peekAccessToken` captures
+  its existing auth-operation epoch and credential-mutation tail, awaits already
+  scheduled mutations before reading secrets, and returns unknown if either
+  identity changes before those reads complete. A new login can start before a
+  read while leaving A active until B is published, so the operation epoch alone
+  is insufficient. Reuse the existing account owner; add no public
+  port or second generation store. The current Fabushi product binding's
+  `FabushiAuthService.peekAccessToken` retains its existing epoch and issuer
+  checks, with the pending-login rule below. A causal held-secret-read test uses the real Sand service,
+  public logout/login and Host loader: the stale materialized A pass is refused,
+  then a fresh B pass succeeds. Also hold the read after B login starts but
+  before B credentials publish; completing that login cannot authorize old A.
+  This correction does not change `exportTokens`,
+  credential refresh policy or the post-response lifecycle limits below.
+- PS-IDENTITY-03: the actual Fabushi product account owner returns unknown from
+  `peekAccessToken` while its existing login controller is active, checking both
+  before and after the asynchronous `currentSession` read. Login's operation
+  epoch begins before new credentials publish, so a peek started during that
+  login must not treat the previously stored account as current. Keep the
+  existing epoch/issuer checks, ordinary stable-account reads and successful
+  fresh-account reads after login settles. A held browser-poll control uses the
+  real service and public login path through the Host loader: a materialized A
+  pass is refused during B login and a fresh B pass succeeds afterward. Inject
+  only network/secret-storage I/O for this local oracle, not the identity or
+  authorization decision. Other `currentSession` consumers, Host credential-file
+  publication races and full account revocation remain separate open work.
+
+### PS-IDENTITY-01 scope and existing account bridge
+
+The successful-refresh publisher correction starts from
+`f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`. The production MCP adapter retains
+one Host loader closure across `resetMcpManager`; account transition cleanup
+only resets the manager. The SDK edge therefore obtains identity on every
+pass, using the existing `getValidAccessToken`/`peekAccessToken` and
+`accountCacheScope` contract. The Rust service remains the cache/publisher
+admission owner and Session workflow commands remain its real edit consumers.
+No cache schema, RPC field, account lifecycle or second permission registry
+is added. The returned identity/currentness check cannot fence an account
+transition after the response has left the Electron edge. Immediate account
+switch revocation, failed-publication revocation, old active passes after that
+boundary, and original-process restart admission remain separate open work.
+Reopening the newly committed cache proves only this successful-refresh rule.
 
 ## Shared internal interface
 
@@ -127,6 +191,20 @@ stage/write failure preserves bytes/files; disposal between staging and rename
 with deterministic channels; success callbacks outside locks; partial load
 does not prune old materialization, complete empty may prune; SDK explicit
 false disables both pruning sites while normal callers retain behavior.
+
+PS-IDENTITY-01 controls use the same loader instance for consecutive A/B
+identities, a failed/invalid current-user lookup after prior success, immutable
+per-pass SDK credentials, account departure/change during a pass and
+same-account token renewal. PS-IDENTITY-02 also holds the actual default account
+service's asynchronous secret read across a completed logout/login transition;
+the loader must refuse that pass without relying on a mocked account-generation
+decision. These are local owner oracles, not real account-service acceptance.
+A real Rust service writes fresh snapshots consumed
+by `FileWorkflowStore`: an old publisher's edit must be refused with the actual
+skill bytes unchanged, both before and after reopening the committed store;
+unknown identity has the same refusal, and the current publisher can still
+edit. Preserve the existing own/foreign and snapshot-denial controls. Exact-H
+Actions and independent permission/currentness review remain required.
 
 Freeze the complete candidate and perform independent general and permission/
 lifecycle/oracle review. Record any finding decision before repairs. Acceptance

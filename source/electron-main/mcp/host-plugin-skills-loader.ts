@@ -15,6 +15,7 @@ import {
   createSandCursorBackendClient,
   getSandInferenceBackendUrl,
 } from "../../shared/node/cursor-backend/cursor-inference.js";
+import { accountCacheScope, parseJwtPayload } from "../../shared/node/cursor-token.js";
 
 export const HOST_PLUGIN_SKILLS_EFFECTIVE_PLUGINS_TIMEOUT_MS = 15_000;
 export const HOST_PLUGIN_SKILLS_CURRENT_USER_TIMEOUT_MS = 10_000;
@@ -37,7 +38,9 @@ export interface HostPluginSkillsLoaderDeps {
   readonly peekAccessToken: () => Promise<string | null>;
   readonly isSparsePluginClonesEnabled: () => boolean;
   readonly log?: (message: string) => void;
-  readonly dashboardClient?: HostPluginSkillsDashboardClient;
+  readonly createDashboardClient?: (
+    credentials: Pick<HostPluginSkillsLoaderDeps, "getAccessToken" | "getMachineId">,
+  ) => HostPluginSkillsDashboardClient;
   readonly createMarketplaceClient?: (
     getEffectiveUserPlugins: () => Promise<EffectivePluginsResponse>,
     options: BackendMarketplaceClientOptions,
@@ -189,27 +192,9 @@ export function createHostPluginSkillsLoader(
 ): () => Promise<HostPluginSkillsLoadResult> {
   const log = deps.log ?? ((message: string) => console.info(message));
   const pluginsRoot = join(deps.sandRootDir, "plugins");
-  const backendUrl = getSandInferenceBackendUrl();
-  const dashboard = deps.dashboardClient ?? (createSandCursorBackendClient(DashboardService, {
-    getAccessToken: async () => await deps.getAccessToken({ backendUrl }),
-    getMachineId: deps.getMachineId,
-  }) as unknown as HostPluginSkillsDashboardClient);
+  const createDashboardClient: NonNullable<HostPluginSkillsLoaderDeps["createDashboardClient"]> = deps.createDashboardClient ?? ((credentials) =>
+    createSandCursorBackendClient(DashboardService, credentials) as unknown as HostPluginSkillsDashboardClient);
   const createMarketplaceClient = deps.createMarketplaceClient ?? createBackendMarketplaceClient;
-  let currentUserId: number | null = null;
-
-  const resolveCurrentUserId = async (): Promise<number | null> => {
-    if (currentUserId != null) return currentUserId;
-    try {
-      const response = await dashboard.getMe(
-        {},
-        { timeoutMs: HOST_PLUGIN_SKILLS_CURRENT_USER_TIMEOUT_MS },
-      );
-      currentUserId = positiveNumber(response?.userId);
-    } catch (error) {
-      log(`[sand:plugin-skills] could not resolve the signed-in user: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    return currentUserId;
-  };
 
   return async () => {
     const listedCacheKeys: Array<{ marketplaceSlug: string; pluginId: string }> = [];
@@ -217,7 +202,26 @@ export function createHostPluginSkillsLoader(
     let publisherFacts: HostPluginSkillsLoadResult["publisherFacts"] = {};
     let currentUserIdForPass: number | null = null;
 
-    const accessToken = await deps.peekAccessToken();
+    const backendUrl = getSandInferenceBackendUrl();
+    const [accessToken, machineId] = await Promise.all([
+      deps.getAccessToken({ backendUrl }),
+      deps.getMachineId(),
+    ]);
+    if (accessToken.trim().length === 0) {
+      throw new Error("Plugin Skills require an authenticated account.");
+    }
+    if (getSandInferenceBackendUrl() !== backendUrl) {
+      throw new Error("Plugin Skills account context changed or became unavailable during refresh.");
+    }
+    const accountScope = accountCacheScope(accessToken);
+    const accountSubject = parseJwtPayload(accessToken)?.sub;
+    // The adapter survives account-manager resets. One refresh must use one
+    // credential for both identity facts and materialization; no user identity
+    // or credential is retained across passes.
+    const dashboard = createDashboardClient({
+      getAccessToken: async () => accessToken,
+      getMachineId: () => machineId,
+    });
     const client = createMarketplaceClient(
       async () => {
         const response = await dashboard.getEffectiveUserPlugins(
@@ -229,14 +233,25 @@ export function createHostPluginSkillsLoader(
         const metadata = metadataFromEffectiveListing(response);
         listedPluginIds = metadata.listedPluginIds;
         publisherFacts = metadata.publisherFacts;
-        currentUserIdForPass = await resolveCurrentUserId();
+        try {
+          const currentUser = await dashboard.getMe(
+            {},
+            { timeoutMs: HOST_PLUGIN_SKILLS_CURRENT_USER_TIMEOUT_MS },
+          );
+          currentUserIdForPass = positiveNumber(currentUser?.userId);
+        } catch {
+          currentUserIdForPass = null;
+          // Unknown identity may not inherit an earlier publisher's rights.
+          // Do not log arbitrary transport errors that could contain secrets.
+          log("[sand:plugin-skills] could not resolve the signed-in user for this refresh");
+        }
         return normalizeEffectiveUserPluginsResponse(metadata.response);
       },
       {
         marketplaceCacheRoot: join(pluginsRoot, "marketplaces"),
         listOptions: { enableInlinePlugins: true },
         sparsePluginClones: deps.isSparsePluginClonesEnabled(),
-        extraGitConfig: buildOriginTokenGitConfig(accessToken ?? undefined),
+        extraGitConfig: buildOriginTokenGitConfig(accessToken),
       },
     );
 
@@ -263,6 +278,23 @@ export function createHostPluginSkillsLoader(
 
     if (result.sourceUnavailable) {
       throw new Error("Plugin Skills marketplace source is unavailable.");
+    }
+    let currentContextMatches = false;
+    try {
+      const currentAccessToken = await deps.peekAccessToken();
+      const currentSubject = currentAccessToken == null ? undefined : parseJwtPayload(currentAccessToken)?.sub;
+      const sameKnownAccount = !!accountSubject && accountSubject.trim() === accountSubject
+        && !!currentSubject && currentSubject.trim() === currentSubject
+        && currentAccessToken != null && accountCacheScope(currentAccessToken) === accountScope;
+      currentContextMatches = currentAccessToken != null
+        && currentAccessToken.trim().length > 0
+        && (currentAccessToken === accessToken || sameKnownAccount)
+        && getSandInferenceBackendUrl() === backendUrl;
+    } catch {
+      // An unreadable current account cannot authorize a completed snapshot.
+    }
+    if (!currentContextMatches) {
+      throw new Error("Plugin Skills account context changed or became unavailable during refresh.");
     }
     for (const failure of result.failures) {
       log(`[sand:plugin-skills] plugin ${failure.pluginName} failed to load: ${failure.errorMessage}`);
