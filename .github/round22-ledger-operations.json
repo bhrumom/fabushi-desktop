@@ -1,11 +1,10 @@
 {
-  "schema": 1,
+  "schema": 2,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 22,
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
   "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
-  "expected_input_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
   "append": {
     "additional_source_identities": [
       {
@@ -30,7 +29,7 @@
       "recovered-execution:round22-windows-publisher-authority.json#interruption_recovery; preserves original8f cancellation/recovery, initial44f Windows fixture failure and exact59f complete logs/artifact evidence separately from subsequent qualified73cc component records"
     ]
   },
-  "note": "Round22 resumption: preserve every later updater/source, Social, forward, reply, resource and packaging change. The two fixed-U updater source records added here are product/high/deep-required/pending selected-section reviews, not complete reads; all six prior source_reviews remain unchanged. Historical exact59f run41508537631 is terminal success, with actual publisher28/native11 and the real AppHost well-formed unequal64hex negative. This append does not supersede the later73cc target/evidence already in this row or qualify newer message/package heads. Formal publisher approval, real signed installation/upgrade/rollback, complete source/legal and independent ACCEPT stay blocked. Full audit at the same round22 receipt.",
+  "note": "Round22 resumption: preserve every later updater/source, Social, forward, reply, resource and packaging change. The two fixed-U updater source records added here are product/high/deep-required/pending selected-section reviews, not complete reads; all prior source_reviews remain unchanged. Historical exact59f run41508537631 is terminal success, with actual publisher28/native11 and the real AppHost well-formed unequal64hex negative. This append does not supersede the later73cc target/evidence already in this row or qualify newer message/package heads. Formal publisher approval, real signed installation/upgrade/rollback, complete source/legal and independent ACCEPT stay blocked. Full audit at the same round22 receipt.",
   "source_reviews": [
     {
       "repository": "telegramdesktop/tdesktop",
@@ -67,10 +66,7 @@
       ]
     }
   ],
-  "expected_output_blob": "6cd94eeda37de8cfa061b7c5c71452a656086150",
-  "review_summary": {
-    "before": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six source review records comprise two complete option contracts and four pending draft/feedback mappings; global review counts remain undetermined and acceptance is false.",
-    "after": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Eight source review records comprise two complete option contracts, four pending draft/feedback mappings and two pending updater selected-section reviews; global review counts remain undetermined and acceptance is false."
-  },
-  "integration_evidence_blob": "de840b5bdd129b4711b32283b003ce8962731ae7"
+  "expected_evidence_before_blob": "d2f6e27fa13191c9ad8c289c1965281660204c55",
+  "required_updater_target": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+  "evidence_template_blob": "3abd2552c84ae263339d91610ce47a5276010cb2"
 }
