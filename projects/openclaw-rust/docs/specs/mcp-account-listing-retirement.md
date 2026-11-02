@@ -444,3 +444,28 @@ not replace the parent harness. Retain all raw logs, commands, digests and
 always-uploaded artifacts. This is controlled Linux HTTP/CLI/relay evidence,
 not real provider or packaged platform acceptance. RC-11's projection budget
 still applies only to the existing macOS recovery helper.
+
+### RC-11 recovery: production Todo fixture (2026-11-02)
+
+Decision **RC-11-TODO-01 — FIX / TEST_FLAW**. At subject
+`aa5a448e5758bd2b46aed92e699f56861ad0acdc`, Runtime run `41543476338`, Linux
+job `125613140173`, the `received-catalog-builder-regressions` command exited
+101 with E0277 at `sand_multitask_todo_tool_contract.rs:177`: `SandAgentDb`
+does not implement `MultitaskTodoState`. The production adapter is already
+`ProductionMultitaskTodoState`, which reads/writes through admitted Session
+operations. The old fixture predates this owner boundary and cannot decide the
+durable Todo behavior. Repair only its construction to match production; retain
+the actual materialized Session, raw persisted-KV assertion, merge/replace and
+rendered-result assertions. Rebuild the real adapter as well as the bridge so
+the persistence assertion does not depend on retaining an adapter instance.
+
+The other fourteen portable commands have successful command/capture outcomes;
+the sixteen portable new MCP cases and eight channel cases have actual unique
+positive rows. Retain these exact-aa5 observations without rebranding them as
+new-H evidence. The App cases were skipped. The later LPG receipt failed only
+because the skipped Automation step left its required MCP-composition receipt
+absent; its own Host, Coordinator and App commands passed. Keep that dependency
+gate and all original assertions. Recover the failed builder command and the
+unreached App/Automation/dependent receipt checks on the new frozen H through
+the existing scoped workflow; no runtime trait implementation, fallback, oracle
+deletion or local execution is authorized by this fixture correction.
