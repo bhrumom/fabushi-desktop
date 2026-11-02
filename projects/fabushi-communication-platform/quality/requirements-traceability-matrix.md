@@ -513,3 +513,30 @@ Original SQLite/sidecars/keys/readers are preserved. Backend PR137 remains
 open/draft and read-only; its skipped production readiness job is not service
 acceptance. External mobile/installer producer-consumer mismatches remain
 separately recorded gaps, with no external repository mutation.
+
+### Round 19 execution binding — journal, direct Host and Plugins Close
+
+Fixed upstream remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The code batch below is
+`682aea58b4fbac7b1b509c30fd565a12c4af5a2f`; later concurrent checkpoint changes require
+their own exact-H evidence. This annotation preserves the historical failures and all existing rows.
+
+| Existing requirement / owner | Actual execution and production binding | Remaining qualification |
+| --- | --- | --- |
+| NMR-47e / Session forward source journal | Expanded stale-snapshot oracle uses two SQLite handles, raw metadata preservation, terminal replay and reopen; exact682 reconciliation job125536673830 passed Human54/resource3/sharebox1/journal12/Agent4/credential3/forward HTTP1, including the expanded stale and concurrent-writer cases | Twelve journal cases are the top-level count; full forwarding service, migration and rollback acceptance remain open |
+| NMR-41 and NMR-CLI-HOST-01 / existing AppHost preferences and direct MahayanaHost consumers | Exact94dcf7a2213808a8ded6baddaf069562d365c6d7 shipping job125511939405 executed all six proxy permutations:16 ordered subsets,48 removals,48 repeated-removal no-ops,18 full-permutation deletions inside one Rust matrix; CLI3/gateway5/library11 passed, including eight valid approval aliases and nine invalid zero-dispatch controls | Original5281 shipping failed E0004 before approval tests; historical94 cannot qualify682 shipping125536674079, still queued without runner or steps at20:56:52 UTC. Current process controls4 and actual AppHost copy remain unexecuted |
+| NMR-PAGING-01c / existing Coordinator reply converter and Transcript | Preserve exact29 UI TS2741 failure after20 Transcript/17 cursor tests; concurrent977 repaired the missing human-transcript-page converter. Exact682 UI125536673715 passed20/17/settlement5/Chromium16 and renderer compilation | This preserves one message owner and projection; it is not full real-service, visual or accessibility acceptance |
+| FPM-UI-CLOSE-01 / ProductionRenderer overlay state and PluginsDesktopSurface onClose | Exact682 run41520998019/job125536673032 passed two real Electron pointer cases at1024x684 and1280x900, with four normal Close clicks and successful hides across initial/reopened states. Downloaded artifact13177399337 matches347040 bytes/SHA256c1eb66fd578f8321ca2f776d0566e2476f5990eaaf63aae435514efd52ae8f10; frame y52/z5002, hit-tests and no-drag confirmed | Controlled Host/loopback auth; native window button actions0. Reopened PNGs capture catalog loading. Current signed installer, full visual/a11y and real-service acceptance remain open |
+
+The bounded FFI review traces Electron carrier -> Coordinator -> AppHost -> FeatureHost -> MahayanaHost,
+and direct CLI/gateway Host construction. The retained FFI exports and five legacy link anchors stay in place:
+repository-external consumers remain unknown. The inspected production graph and source manifests do not
+constitute current-H binary or external-consumer acceptance.
+
+Evidence, full-log identities, actual artifact/geometry/trace records, bounded four-image review,
+source manifest and the latest authority refresh are recorded in
+`projects/telegram-desktop-rust/evidence/round19-resumed-terminal-progress.json`.
+The unique ledger already links that receipt; no source-review completion counters are promoted.
+Backend PR137 remains read-only/open/draft and unmerged. Complete source/legal accounting, current signed
+packages and stapling metadata, supported platforms, real services, Bot regressions, security/performance,
+soak, upgrade/rollback and independent ACCEPT remain required and unaccepted.
+
