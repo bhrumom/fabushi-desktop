@@ -1,0 +1,219 @@
+{
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 7,
+  "scope": "Existing NMR22/24/26 reaction admission, stable bounded history and Transcript completion/viewport follow-up; no release acceptance",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "upstream_tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "initial_run": {
+    "id": 41409695104,
+    "head_sha": "63da06b025fdf57088b432602fa35e3761d62c9b",
+    "attempt": 1,
+    "conclusion": "failure",
+    "jobs": [
+      {
+        "id": 125159664070,
+        "name": "native-message-reconciliation",
+        "conclusion": "failure",
+        "human": {
+          "executed": 16,
+          "passed": 14,
+          "failed": 2,
+          "ignored": 0
+        },
+        "agent_nonce": {
+          "executed": 0,
+          "status": "skipped"
+        }
+      },
+      {
+        "id": 125159664254,
+        "name": "native-message-shipping-compile",
+        "conclusion": "success",
+        "apphost": "locked ci compile success",
+        "passed": {
+          "normalization": 6,
+          "future_salts": 2,
+          "protocol": 122,
+          "tcp_including_live": 9,
+          "proxy": 4,
+          "native_credential": 1
+        }
+      }
+    ],
+    "failure": {
+      "classification": "TEST_FLAW",
+      "tests": [
+        "shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart",
+        "shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap"
+      ],
+      "root_cause": "Fixtures ended before the production latest-snapshot GET after ascending afterId coverage; request-prefix expectations also omitted afterId=0.",
+      "repair": "Reuse bounded fixture, include final latest-snapshot response, assert all four history requests and exact Unicode/reopen preservation; no production gate or assertion removed."
+    },
+    "full_logs_read": [
+      "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125159664070/logs",
+      "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125159664254/logs"
+    ],
+    "artifacts": [
+      {
+        "id": 13125660102,
+        "name": "native-message-reconciliation-63da06b025fdf57088b432602fa35e3761d62c9b",
+        "digest": "sha256:cda4b093139499c8d24741e2d529691f835a3e29724527cbaf08c98a1e7bcd3b",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13125660102",
+        "head_sha": "63da06b025fdf57088b432602fa35e3761d62c9b"
+      },
+      {
+        "id": 13125077027,
+        "name": "native-message-shipping-compile-63da06b025fdf57088b432602fa35e3761d62c9b",
+        "digest": "sha256:502fb19da9ceacac19953be5239ae529e0a1ab4c320ffa49923fe884e0728bad",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13125077027",
+        "head_sha": "63da06b025fdf57088b432602fa35e3761d62c9b"
+      }
+    ]
+  },
+  "prerequisite_recovery": {
+    "commit": "30b4b3952d7e5dab154548b2f5a3a6fef2545c26",
+    "parent": "63da06b025fdf57088b432602fa35e3761d62c9b",
+    "ref_update": {
+      "force": false,
+      "expected_sha": "63da06b025fdf57088b432602fa35e3761d62c9b"
+    },
+    "remote_commit_and_contents_verified": true,
+    "run": 41410242810,
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 125161396263,
+        "name": "native-message-reconciliation",
+        "conclusion": "success",
+        "human": {
+          "executed": 16,
+          "passed": 16,
+          "failed": 0,
+          "ignored": 0
+        },
+        "agent_nonce": {
+          "executed": 4,
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      {
+        "id": 125161395881,
+        "name": "native-message-shipping-compile",
+        "conclusion": "success",
+        "apphost": "locked ci compile success",
+        "passed": {
+          "normalization": 6,
+          "future_salts": 2,
+          "protocol": 122,
+          "tcp_including_live": 9,
+          "proxy": 4,
+          "native_credential": 1
+        }
+      }
+    ],
+    "full_logs_read": [
+      "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125161396263/logs",
+      "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125161395881/logs"
+    ],
+    "artifacts": [
+      {
+        "id": 13125950634,
+        "name": "native-message-reconciliation-30b4b3952d7e5dab154548b2f5a3a6fef2545c26",
+        "digest": "sha256:d4dafd37e4687fb18b027f165a49136ee7ae905152b052f1fefa68f323f40c9c",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13125950634",
+        "head_sha": "30b4b3952d7e5dab154548b2f5a3a6fef2545c26"
+      },
+      {
+        "id": 13125396951,
+        "name": "native-message-shipping-compile-30b4b3952d7e5dab154548b2f5a3a6fef2545c26",
+        "digest": "sha256:bd87f75803553bcf8b50e0923312bf0d4e933f8934abab2190f8fd3b7250db84",
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13125396951",
+        "head_sha": "30b4b3952d7e5dab154548b2f5a3a6fef2545c26"
+      }
+    ]
+  },
+  "resumption": {
+    "unpublished_preparation_base": "30b4b3952d7e5dab154548b2f5a3a6fef2545c26",
+    "remote_rediscovered": "3c9995a97c59d89824b2f6e0e49e72cef4825439",
+    "integration_base": "1a2b864aee290db21548262c983033d184cab356",
+    "disposition": "Preserved old preparation separately. Did not publish its blocking-send implementation, duplicate UI merger, stale ledger or old gate counts. Reconciled later reply, upload-limit, credential, forward, CLI, source-review and lock-diagnostic changes before this narrow delta."
+  },
+  "qualified_predecessor": {
+    "head": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+    "run": 41513767498,
+    "conclusion": "success",
+    "human_job": 125511939428,
+    "human": 44,
+    "journal": 12,
+    "agent_nonce": 4,
+    "shipping_job": 125511939405,
+    "ui_job": 125511939353,
+    "transcript": 16,
+    "forward_projection": 5,
+    "chromium": 12,
+    "boundary": "Full logs read; shipping expected digest-mismatch subprocess failure was the negative oracle, and its job passed. This predecessor does not qualify the new candidate."
+  },
+  "candidate": {
+    "base": "1a2b864aee290db21548262c983033d184cab356",
+    "production_blobs": {
+      "source/host/src/extensions/session/production.rs": "c48cbb088b47b62c2916e2bc9f2d499d2a685348",
+      "source/host/src/extensions/session/native_messaging.rs": "ac7a6367e5098ec98e5f39e45c5cde77c75e41b4",
+      "source/host/src/extensions/session/gateway.rs": "05435f95ad94242d1e81defdda148baca40bf86e",
+      "source/host/tests/session_gateway_contract.rs": "33a3299876a40afa7a00746c9292240fd75b721e",
+      "frontend/src/production/ProductionRenderer.tsx": "54b7b0b46a92029836031801cdc4905ed57c14e4",
+      "frontend/src/production/transcript-projection.ts": "f9bdb88ed2decc489d429ffeb7d1f07eeeeca310",
+      "frontend/src/production/transcript-projection.contract.test.ts": "ce484f8737e1857984254892211feb5ae315b33a",
+      "frontend/src/recovered/features/conversation/workspace/pagination.ts": "e629cfa5232a37ca734a9c8d8e26498eb001d390"
+    },
+    "human_authored": 55,
+    "human_new": 7,
+    "transcript_authored": 27,
+    "transcript_new": 9,
+    "execution_at_freeze": "not-run; use only containing exact-H GitHub Actions results",
+    "required_workflow": ".github/workflows/native-service-contracts.yml",
+    "execution_binding": "The commit containing the actual changes and canonical ledger is H. Existing jobs record github.sha and SHA-named artifacts; source/object transport is not execution or acceptance."
+  },
+  "review": [
+    {
+      "scope": "Current owner/caller audit against3c and preserved later changes",
+      "finding": "Reaction replay lacked target message/Human/participant admission and accepted padded durable emoji; renderer lacked per-entry/account/event completion fence; row-update commits consumed an in-flight older-page anchor.",
+      "decision": "FIX at existing Session, gateway, transcript-projection and pagination owners."
+    },
+    {
+      "scope": "Independent frozen production/UI review",
+      "finding": "New toggles normalized emoji; stored-target ID normalization admitted malformed values or staged a poisonous intent. Gateway required_string also trimmed emoji before worker admission.",
+      "decision": "FIX with raw canonical safe-ID admission before staging and replay; raw emoji only for reactHumanMessage gateway; retain generic string validation and all credential/send contracts."
+    },
+    {
+      "scope": "Static scope limitation",
+      "result": "Review is not runtime validation. No local executable validation; no new mounted reaction/visual/a11y acceptance is claimed. Seven Host cases and nine actual production helper cases are authored; current-H Actions still required."
+    },
+    {
+      "scope": "Final independent read-only review against76a84, retained unchanged source blobs after0e8c41c document/ledger integration",
+      "result": "No open blocking source/test-design findings. All592 added Host-test lines, gateway/raw identity admission, HTTP barriers, persistence/events, renderer completion and pagination anchors reviewed. Seven Host and nine Transcript cases authored; no execution or release acceptance claim."
+    }
+  ],
+  "actual_route": "Existing Human reaction control / transcript -> Coordinator -> Session gateway -> ProductionSessionWorkers -> issuer/account-bound Native client -> existing SandAgentDb and durable intent -> transcript events -> same cached/older-page projection and single Transcript.",
+  "requirements_review": {
+    "requested_run": "Exact63da requested run/logs/counts completed; minimal TEST_FLAW fixture correction30b4 remotely verified and actually passed.",
+    "fixed_source": "U retained. Canonical184-row ledger and six source reviews preserved; complete16381-identity risk review and external/generated/LFS/legal closure remain open.",
+    "risk_review": "Only existing selected fixed-U source sections claimed; all changed production/caller/state/recovery paths reviewed. No unread-to-read or source acceptance promotion.",
+    "existing_owner": "Session/Transcript/nativeclient/current renderer retained; no parallel message/reaction/database/UI owner. Later nonblocking send and old-runtime retirement changes preserved.",
+    "behavior_batch": "Actual target admission, stable page/restart negatives and renderer completion/viewport fixes plus tests; no plan-only product claim.",
+    "preservation": "No user-data deletion/migration; existing Agent, forward, credential, CLI/package and shipping tests preserved. Full Bot acceptance remains open.",
+    "shared_contracts": "Root integration retains gateway/spec/workflow/unique ledger; isolated tests/UI diffs reviewed. Existing NMR49/50/51 meanings preserved.",
+    "actions_only": "No local or htch-runtime build/test/lint/typecheck/schema/acceptance execution. New exact-H Actions required, no rerun-for-green.",
+    "causal_recovery": "Initial failures classified TEST_FLAW; independent review implementation gaps fixed. Later exact-H failures must be classified separately.",
+    "single_accounting": "Append only to existing FBCP-NMR-001; all other rows/source_reviews/source and acceptance fields retained. Current SOURCE01 validator changes preserved.",
+    "final_acceptance": "Incomplete: source/legal/product/realservice/packages/platform/visual/a11y/temporal/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain open.",
+    "delivery": "Use temporary exact-object transport only after interrupted large connector write; final root publication requires force=false, expected_sha CAS, remote full SHA/content readback, and exact-H gates."
+  },
+  "full_product_acceptance": false,
+  "independent_release_acceptance": false,
+  "local_executable_validation": "not-run"
+}

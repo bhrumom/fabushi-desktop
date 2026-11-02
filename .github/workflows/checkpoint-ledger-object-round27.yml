@@ -1,0 +1,97 @@
+name: Round 27 exact forwarding ledger object
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - '.github/checkpoint-ledger-ops-round27.json'
+      - '.github/workflows/checkpoint-ledger-object-round27.yml'
+permissions: {}
+jobs:
+  prepare:
+    if: github.repository == 'bhrumom/fabushi-desktop'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare only the reviewed existing-row blob
+        env:
+          GH_BLOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          spec = json.loads(pathlib.Path(".github/checkpoint-ledger-ops-round27.json").read_text())
+          target = "projects/telegram-desktop-rust/parity-ledger.json"
+          allowed = {"FBCP-NMR-001", "TDRP-R9-SHARE-FORWARD-IDEMPOTENCY-001"}
+          assert spec["target_path"] == target and set(spec["rows"]) == allowed
+          assert spec["acceptance_changed"] is False
+          assert subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() == os.environ["GITHUB_SHA"]
+          def git_blob(data):
+              return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+          original = pathlib.Path(target).read_bytes()
+          assert git_blob(original) == spec["base_blob"], "Canonical ledger changed; reconcile before retry"
+          before = json.loads(original)
+          assert before["upstream_commit"] == spec["fixed_upstream"]
+          after = copy.deepcopy(before)
+          fields = {"requirement_ids", "fabushi_target_paths", "fabushi_target_symbols", "production_entrypoints", "production_evidence", "test_evidence"}
+          originals = {row["responsibility_id"]: row for row in before["rows"]}
+          for identity, operations in spec["rows"].items():
+              matches = [row for row in after["rows"] if row["responsibility_id"] == identity]
+              assert len(matches) == 1
+              row = matches[0]
+              for key, values in operations.get("append", {}).items():
+                  assert key in fields and isinstance(row[key], list)
+                  for value in values:
+                      if value not in row[key]:
+                          row[key].append(value)
+              for key, replacement in operations.get("set", {}).items():
+                  assert key in {"existing_owner", "state_owner"}
+                  assert row[key] == replacement["expected"]
+                  row[key] = replacement["value"]
+              note = operations["notes"]
+              assert note not in row["notes"]
+              row["notes"] += "\n" + note
+          restored = copy.deepcopy(after)
+          for row in restored["rows"]:
+              identity = row["responsibility_id"]
+              if identity in spec["rows"]:
+                  operations = spec["rows"][identity]
+                  for key in set(operations.get("append", {})) | set(operations.get("set", {})) | {"notes"}:
+                      row[key] = copy.deepcopy(originals[identity][key])
+          assert restored == before, "Only reviewed existing-row fields may change"
+          payload = (json.dumps(after, ensure_ascii=False, indent=2) + "\n").encode()
+          expected_blob = git_blob(payload)
+          request = urllib.request.Request(
+              "https://api.github.com/repos/" + os.environ["GITHUB_REPOSITORY"] + "/git/blobs",
+              data=json.dumps({"content": payload.decode(), "encoding": "utf-8"}).encode(),
+              headers={"Authorization": "Bearer " + os.environ["GH_BLOB_TOKEN"],
+                       "Accept": "application/vnd.github+json", "Content-Type": "application/json",
+                       "X-GitHub-Api-Version": "2022-11-28"}, method="POST")
+          with urllib.request.urlopen(request, timeout=45) as response:
+              result = json.load(response)
+          assert result["sha"] == expected_blob
+          receipt = {"workflow_sha": os.environ["GITHUB_SHA"], "base_blob": spec["base_blob"],
+                     "prepared_blob": expected_blob, "ledger_sha256": hashlib.sha256(payload).hexdigest(),
+                     "ledger_bytes": len(payload), "changed_rows": sorted(allowed),
+                     "source_review_records_preserved": len(after.get("source_reviews", [])),
+                     "source_reviews_unchanged": after.get("source_reviews") == before.get("source_reviews"),
+                     "coverage_unchanged": after["coverage"] == before["coverage"],
+                     "refs_written": False, "acceptance_changed": False}
+          out = pathlib.Path("artifacts/round27-ledger-object")
+          out.mkdir(parents=True)
+          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round27-ledger-object-${{ github.sha }}
+          path: artifacts/round27-ledger-object/receipt.json
+          if-no-files-found: error
+          retention-days: 30

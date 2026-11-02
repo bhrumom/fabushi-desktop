@@ -152,5 +152,2974 @@
     "addendum": "docs/specs/fabushi-deferred-ci-migration.md §12-13",
     "new_spec": "docs/specs/electron-update-source-authority.md"
   },
-  "next": "Freeze/push containing exact H with nonforced expected_sha CAS, verify remote tree/blob/full SHA and execute focused Electron updater contracts, builds and still-missing shipping gates in GitHub Actions."
+  "next": "Freeze/push containing exact H with nonforced expected_sha CAS, verify remote tree/blob/full SHA and execute focused Electron updater contracts, builds and still-missing shipping gates in GitHub Actions.",
+  "original_snapshot_scope": "The original source/baseline_workflow/implementation/backend_read_only/next fields are the already-published initial round21 snapshot. Later verified facts are in resumption. Historical shipping cancellation, backend heads and former Windows publisher risk are not current pass/fail claims.",
+  "resumption": {
+    "prepared_from_exact_head": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+    "input_file_identities": {
+      "projects/telegram-desktop-rust/parity-ledger.json": {
+        "sha": "a95d76c46119474e36134456442aebe39f4e9760",
+        "sha256": "401f254113506ed2bcb1be21ed6a4ce4b74e71645e5c60801a1d110ddfa3a5f3",
+        "bytes": 3543593
+      },
+      "projects/telegram-desktop-rust/evidence/round21-update-source-authority.json": {
+        "sha": "6904ca0029457eb6da4ebdeee66ad861337c40bc",
+        "sha256": "67a621137f31cd5fced7f5544dc78e57898f8e9461cadef103535d37e2c72454",
+        "bytes": 7467
+      },
+      "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md": {
+        "sha": "60498664255292247d9d31d235e896448fac7137",
+        "sha256": "4f66c6b9725b06227a46db5b801ffad99f95d785761f5f216b27ea5a745ed73d",
+        "bytes": 44514
+      }
+    },
+    "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "scope": "Correct only the existing updater responsibility source mapping and bind actual component executions; append this receipt and RTM. Preserve every other ledger row, source review, lock, validator, current product implementation and historical record.",
+    "partial_fixed_U_updater_source_review": {
+      "schema": "fabushi-partial-updater-source-review-v1",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 21,
+      "inspected_at_utc": "2026-11-02 15:37:28 UTC",
+      "scope": {
+        "mode": "read-only",
+        "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "target_snapshot": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+        "target_changes_reviewed": false,
+        "repository_or_remote_writes": false,
+        "local_tests_builds_or_validators_executed": false,
+        "classification": "Partial source responsibility audit supporting an existing Fabushi Electron updater source-authority safety correction; not full Updater migration or independent acceptance."
+      },
+      "source_acquisition": {
+        "method": "GitHub connector GET file and tree reads pinned to U; live code search used only to discover mtp_instance.cpp, then fetched at U.",
+        "tree_walk": [
+          {
+            "path": "/",
+            "tree": "f985723b552b30fe1c17d377d57f44e61a15a8c4"
+          },
+          {
+            "path": "Telegram",
+            "tree": "33964f22e0134f01d68eb5e825094bc12592763a"
+          },
+          {
+            "path": "Telegram/SourceFiles",
+            "tree": "be2525ec02ada92a1e14a64f6d3e64e440c4ec08"
+          },
+          {
+            "path": "Telegram/SourceFiles/core",
+            "tree": "0a923e59c054f7d66cce1247c8a28ef021085d4d"
+          },
+          {
+            "path": "Telegram/cmake",
+            "tree": "13e6026d529e96178963336ca71d5bb1b1303f77"
+          },
+          {
+            "path": "Telegram/Resources/update",
+            "tree": "040af1dff8a7aa036fe12c79c189f158d60f13b7"
+          }
+        ],
+        "sources": [
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_checker.cpp",
+            "blob_sha": "73eee14f179d769854237640b246858959808736",
+            "read_ranges": [
+              [
+                1,
+                1992
+              ],
+              [
+                2046,
+                2217
+              ]
+            ],
+            "read_scope": "Selected extensive sections: shared Updater owner, discovery, HTTP/MTP/Flatpak loaders, authentication before decompression, retry/cancel/event flow, part of checkReadyUpdate and UpdateApplication. No claim that every line or platform updater consumer was completely audited; legacy alpha signing tail 2218-2268 and part of ready-install branch are outside asserted complete ranges.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_checker.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_checker.h",
+            "blob_sha": "458ffc75a972bcf39039413ec1e22e854cce2cc3",
+            "read_ranges": [
+              [
+                1,
+                61
+              ]
+            ],
+            "read_scope": "Complete interface read.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_checker.h"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_channel.h",
+            "blob_sha": "342e385f07b771303a112a15895e7cfb2bb612de",
+            "read_ranges": [
+              [
+                1,
+                89
+              ]
+            ],
+            "read_scope": "Complete build-channel and version contract read.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_channel.h"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_verify.cpp",
+            "blob_sha": "5d970cf882ec3870fa36d079ff94bd50eb703a37",
+            "read_ranges": [
+              [
+                1,
+                927
+              ]
+            ],
+            "read_scope": "Complete translation unit read statically; no cryptographic execution or external dependency certification.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_verify.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_verify.h",
+            "blob_sha": "8df2d4b3306805b63ee90e58e431ca5456e75872",
+            "read_ranges": [
+              [
+                1,
+                203
+              ]
+            ],
+            "read_scope": "Complete interface and trust contract read.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_verify.h"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_unpack.cpp",
+            "blob_sha": "9cd978ccdd437e8afb2ed6f8f7bba1f906806119",
+            "read_ranges": [
+              [
+                1,
+                293
+              ]
+            ],
+            "read_scope": "Complete translation unit read statically; no decompression/extraction test execution.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_unpack.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_keys.cpp",
+            "blob_sha": "68f0dc1ca464ae59864dd73c40672cb421b46f1c",
+            "read_ranges": [
+              [
+                1,
+                33
+              ]
+            ],
+            "read_scope": "Complete generated-input consumer read.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_keys.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/update_keys.h",
+            "blob_sha": "fe18cb9a8a9d50254c1c4cdb252eb340aa745ef4",
+            "read_ranges": [
+              [
+                1,
+                23
+              ]
+            ],
+            "read_scope": "Complete interface read.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/update_keys.h"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/storage/localstorage.cpp",
+            "blob_sha": "d71385083c0e940580398612fb65e522afc768b1",
+            "read_ranges": [
+              [
+                528,
+                637
+              ]
+            ],
+            "read_scope": "Only default/override prefix and persisted signed-manifest read/write sections.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/storage/localstorage.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/core/application.cpp",
+            "blob_sha": "7172206f5c1e540e19c90798e9a9e5721276cc53",
+            "read_ranges": [
+              [
+                196,
+                226
+              ]
+            ],
+            "read_scope": "Only active-session to shared UpdateChecker MTP handoff observed.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/core/application.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/settings/sections/settings_advanced.cpp",
+            "blob_sha": "e06c1cc267c9b6ad63475bf6cf3caf75f4179246",
+            "read_ranges": [
+              [
+                1035,
+                1245
+              ]
+            ],
+            "read_scope": "Only settings entry/check/toggle/progress/failure/ready subscription section; end of apply callback and other settings consumers not fully reviewed.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/settings/sections/settings_advanced.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/cmake/telegram_options.cmake",
+            "blob_sha": "049f39cc92d6c798ab9c6df6aa9829ee2ae2a02c",
+            "read_ranges": [
+              [
+                50,
+                115
+              ]
+            ],
+            "read_scope": "Only build update channel/canary configuration section.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/cmake/telegram_options.cmake"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+            "blob_sha": "d25fe3b72298fab371854f80186ee8e4777ea087",
+            "read_ranges": [
+              [
+                930,
+                961
+              ]
+            ],
+            "read_scope": "Only configLoadDone caller that writes server-provided autoupdate_url_prefix.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/mtproto/mtp_instance.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/SourceFiles/mtproto/dedicated_file_loader.cpp",
+            "blob_sha": "d5147291be6e9cf829c394b1b80e2728d0416f70",
+            "read_ranges": [
+              [
+                155,
+                309
+              ]
+            ],
+            "read_scope": "Only AbstractDedicatedLoader lifecycle, chunk-boundary resume, bounded writes and event dispatch; dedicated MTP request internals not fully reviewed.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/SourceFiles/mtproto/dedicated_file_loader.cpp"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/cmake/generate_update_keys.cmake",
+            "blob_sha": "c578c239bf1788fce5279437dec846696045f395",
+            "read_ranges": [
+              [
+                1,
+                33
+              ]
+            ],
+            "read_scope": "Complete generator registration/input dependency contract.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/cmake/generate_update_keys.cmake"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/cmake/update_keys_header.cmake",
+            "blob_sha": "ffcbda7a630989238d52a26b8d5a2d8d5bd5de52",
+            "read_ranges": [
+              [
+                1,
+                29
+              ]
+            ],
+            "read_scope": "Complete byte-preserving generated-header script; not run.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/cmake/update_keys_header.cmake"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "LEGAL",
+            "blob_sha": "09c9e383db122fe0694e73c48d6224676afe60f6",
+            "read_ranges": [
+              [
+                1,
+                22
+              ]
+            ],
+            "read_scope": "Complete short LEGAL notice read; no complete legal/source-closure approval.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/LEGAL"
+          }
+        ],
+        "generated_inputs": [
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/Resources/update/manifest.min.json",
+            "blob_sha": "c7e2beb0fa25864c6ac6835879abb94c18973bab",
+            "read_ranges": [
+              [
+                1,
+                1
+              ]
+            ],
+            "read_scope": "Manifest JSON fully read: manifest_version=2; stable/beta require rl-2026b AND rc-2026a signature groups; canary channels have separate key groups; rl-2026a revoked. Raw material is an upstream identity, not an approved Fabushi signing identity.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/Resources/update/manifest.min.json"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/Resources/update/root-public.pem",
+            "blob_sha": "a5028f6d605fcb57d6240708720dc839954fbd94",
+            "read_ranges": [
+              [
+                1,
+                3
+              ]
+            ],
+            "read_scope": "Public root material read as input; no signature verification executed.",
+            "url": "https://github.com/telegramdesktop/tdesktop/blob/f985723b552b30fe1c17d377d57f44e61a15a8c4/Telegram/Resources/update/root-public.pem"
+          },
+          {
+            "repository": "telegramdesktop/tdesktop",
+            "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+            "path": "Telegram/Resources/update/manifest.sig",
+            "blob_sha": "614df02dd3e2ec64fe36026221ca334905af0d37",
+            "tree_size_bytes": 64,
+            "read_scope": "Tree identity and connector base64 retrieval observed; binary byte-fidelity and cryptographic validity not independently verified."
+          }
+        ],
+        "legal": {
+          "notice_blob": "09c9e383db122fe0694e73c48d6224676afe60f6",
+          "license_blob_from_tree": "d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+          "notice": "LEGAL states GPL version 3 or later with OpenSSL linking exception.",
+          "license_text_fully_read": false,
+          "source_code_or_telegram_keys_copied_into_fabushi": false,
+          "legal_acceptance": false
+        }
+      },
+      "target_snapshot_sources": [
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/entry.ts",
+          "blob_sha": "3c877893f5f6478251587a1130e08328c9cf15f7",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/entry.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/production-binding-providers.ts",
+          "blob_sha": "e65c2b1e9160d30dad1b549558e3d01826069dce",
+          "read_scope": "Only lines 293-382: createProductionUpdaterInstallerBinding creates one service, forwards runtime/settings/experiments/Host-idle/status/telemetry and lifecycle.",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/production-binding-providers.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/update-feed.ts",
+          "blob_sha": "89093a2273ce3d1b1320098827e7527bfe36e16a",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/update-feed.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/update-wiring.ts",
+          "blob_sha": "9165ea7349bbaf6c55424ba8c61b99a37275e037",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/update-wiring.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/sand-update-service.ts",
+          "blob_sha": "7faf203c88d33f116abf7cef4ce8758007a730d2",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/sand-update-service.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/update-download.ts",
+          "blob_sha": "eec24320e87b9f9f2810e2beba34f88dfc84a1ac",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/update-download.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/update-gate.ts",
+          "blob_sha": "42231023c5da8d9b87ed23adc7d0613861bd9e78",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/update-gate.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/apply-marker.ts",
+          "blob_sha": "557d1b4fed2bfe4f2adc4fadb4091c35e55e0555",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/apply-marker.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/win32-installer.ts",
+          "blob_sha": "b337cd7ab8e9ca7d112dd9c18a309912b2de30d7",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/win32-installer.ts"
+        },
+        {
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+          "path": "source/electron-main/update/squirrel-feed-server.ts",
+          "blob_sha": "985ab7076a9f9dd788952a0f82957145ce20326d",
+          "read_scope": "Complete retrieved source read",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/8ce0a9a43b7fe94df2ec2085399fe65a57343577/source/electron-main/update/squirrel-feed-server.ts"
+        }
+      ],
+      "existing_ledger": {
+        "repository": "bhrumom/fabushi-desktop",
+        "commit": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+        "path": "projects/telegram-desktop-rust/parity-ledger.json",
+        "blob_sha": "d5de94ed9720f7fd407588868557bc46df943ebf",
+        "size_bytes": 3499964,
+        "rows": 183,
+        "updater_core_product_rows_found": [],
+        "nearest_existing_row": {
+          "responsibility_id": "TDRP-R9-REPOSITORY-WINDOWS-WORKFLOW-001",
+          "source_path": ".github/workflows/win.yml",
+          "source_blob_sha": "219c42ebf679ca5d93add5cdbd51b0bb6e516b57",
+          "implementation_status": "mapped",
+          "coverage_disposition": "pending",
+          "release_gate_status": "pending",
+          "role": "Build/release/workflow mapping already references existing Electron updater paths; it does not establish update_checker product responsibility completion."
+        },
+        "disposition": "Do not promote the workflow row into a complete Updater product mapping. Attach this partial audit to the existing Fabushi source-authority safety correction (parent-managed CSI-R1/3 and EUS-01..06). No row/source_reviews/inventory/acceptance changes were made by this auditor."
+      },
+      "call_relationships": [
+        {
+          "from": "MTP::Instance::Private::configLoadDone",
+          "to": "Local::writeAutoupdatePrefix",
+          "source": "mtp_instance.cpp:930-961",
+          "fact": "Reads optional autoupdate_url_prefix from server configuration and forwards it to the existing local prefix owner."
+        },
+        {
+          "from": "Local::readAutoupdatePrefixRaw",
+          "to": "tdata/prefix or https://td.telegram.org",
+          "source": "localstorage.cpp:528-586",
+          "fact": "Caches nonempty persisted override; otherwise uses Telegram-owned default. writeAutoupdatePrefix persists to the same file and starts existing checker when automatic updates are enabled."
+        },
+        {
+          "from": "UpdateChecker",
+          "to": "GetUpdaterInstance / shared Updater",
+          "source": "update_checker.cpp:298-325,1508-1992",
+          "fact": "One shared lifecycle owner exposes checking/latest/progress/failed/ready, start/stop and active-session handoff; wrapper instances do not create independent updater state."
+        },
+        {
+          "from": "Updater::start",
+          "to": "HttpChecker / MtpChecker / FlatpakChecker",
+          "source": "update_checker.cpp:1693-1762",
+          "fact": "Single main-instance policy, settings and delay schedule select discovery; canary disables old HTTP discovery and uses configured MTP channels; private canary requires membership."
+        },
+        {
+          "from": "HttpChecker",
+          "to": "Local prefix + /current(version), HttpLoader",
+          "source": "update_checker.cpp:734-878",
+          "fact": "HTTP discovery selects platform/channel/version from metadata; prefix override and returned URL are discovery inputs, not package signature authority."
+        },
+        {
+          "from": "Updater::finalize",
+          "to": "UnpackUpdate -> VerifyUpdate -> DecompressUpdatePayload -> ExtractUpdateFiles",
+          "source": "update_checker.cpp:461-601,1887-1910",
+          "fact": "Platform/OS/arch, release-channel authorization, signatures and newer version are checked before decompression or extraction."
+        },
+        {
+          "from": "HeldManifest / AdoptManifest",
+          "to": "Local::readUpdateManifest / writeUpdateManifest",
+          "source": "update_checker.cpp:363-394; localstorage.cpp:589-637",
+          "fact": "Root-verifies embedded and persisted manifests; keeps newest verified version. Local persisted bytes remain attacker-reachable input and are reverified. QSaveFile preserves atomic manifest replacement."
+        },
+        {
+          "from": "Settings advanced update controls",
+          "to": "UpdateChecker start/stop/events",
+          "source": "settings_advanced.cpp:1035-1245",
+          "fact": "Explicit check, auto-update preference, beta selection, progress/failure/ready states join the same owner."
+        },
+        {
+          "from": "Fabushi Electron entry adapters.updaterInstaller",
+          "to": "createProductionUpdaterInstallerBinding -> createUpdateServiceWiring -> SandUpdateService.start",
+          "source": "entry.ts; production-binding-providers.ts:293-382; update-wiring.ts",
+          "fact": "Existing Electron updater composition is present. Full service-factory and renderer command dispatch were not re-reviewed in this source-audit subtask."
+        }
+      ],
+      "responsibility_comparison": [
+        {
+          "responsibility": "Explicit product-authorized discovery source and build/platform/channel selection",
+          "upstream": "Telegram default prefix, persisted/server-fed override, HTTP/MTP discovery, compile-time canary coordinates.",
+          "target_at_H": "update-feed.ts DEFAULT_UPDATE_BASE_URL=https://api2.cursor.sh/updates; wiring forwards optional SAND_UPDATE_FEED_BASE_URL; fetchUpdate silently falls back to the third-party default and sends platform/version/machineId.",
+          "batch_relevance": "Removing the inherited third-party fallback and failing closed when Fabushi authority is unconfigured is a concrete existing-owner safety correction. Telegram endpoint values and trust identities are not Fabushi defaults.",
+          "coverage": "Partial relevant responsibility; this round is not complete updater source migration."
+        },
+        {
+          "responsibility": "Discovery source is separate from installer authenticity",
+          "upstream": "Pinned Ed25519 root authenticates manifest before JSON parse; authorized channel signature groups authenticate signed envelope plus payload SHA-256; package OS/arch and greater version must match.",
+          "target_at_H": "Manifest parser accepts any syntactically valid URL. Download sha256 is optional; download/feed requests follow redirects. Windows defaults accept Authenticode CN Anysphere/Anysphere, Inc.; macOS applies through existing Squirrel port.",
+          "batch_relevance": "Do not claim source admission alone establishes Fabushi signer identity, full artifact integrity or safe redirected assets. Parent was notified of adjacent signer/download risks; no guessed signer/root is authorized.",
+          "coverage": "Publisher trust, download redirect policy and real signed artifact evidence remain separate open work."
+        },
+        {
+          "responsibility": "Cancellation, failure, retry and data retention",
+          "upstream": "Checker reply disconnect/abort; loader thread shutdown; active checker/loader lifetimes; 10s timeout and rescheduling; chunk-boundary range resume with size cap; verification/extraction failure clears only tupdates; settings/manifest persist separately.",
+          "target_at_H": "AbortController/check guard, periodic jitter, parked ready state, staging timeout and temporary cleanup exist in SandUpdateService. apply-marker.ts records staged/requested/spawned/spawn_failed and settles on relaunch. Settings and userData path remain existing owners.",
+          "batch_relevance": "Feed admission changes should preserve existing apply-marker handling, lifecycle cancellation and application user data. No database or user-data deletion is needed for this correction.",
+          "coverage": "Static comparison only; new containing-H behavioral tests and real upgrade/recovery still required."
+        },
+        {
+          "responsibility": "Bounded parsing/extraction and rollback resistance",
+          "upstream": "Metadata response cap; envelope/key/group/payload bounds; signature authorization/revocation/key expiry; monotonic verified-manifest version; strictly newer package; full decompression length and path/collision validation.",
+          "target_at_H": "Not equivalently demonstrated by default-feed removal. Own Electron packaging/OS updater format can satisfy the responsibility without reusing Telegram wire/package format.",
+          "batch_relevance": "Record applicable security requirements for a later updater batch; do not transplant Telegram C++ updater or cryptographic identity.",
+          "coverage": "Open. Manifest-level issued/expires values are parsed in upstream source, but no blanket manifest freshness enforcement is claimed."
+        },
+        {
+          "responsibility": "Supported platforms, package apply and recovery",
+          "upstream": "Windows/macOS/Linux writable/protected installation, Flatpak/store/Snap routing, ready marker/version validation and release-channel migration.",
+          "target_at_H": "Existing Squirrel.Mac and NSIS ports; unsupported-platform gate exists; this audit did not establish Linux equivalent, final install/signature behavior, rollback or preserved-account recovery.",
+          "batch_relevance": "No complete supported-platform or shipping acceptance claim.",
+          "coverage": "Open; requires platform artifacts and actual installed upgrade/rollback tests."
+        }
+      ],
+      "explicit_nonclaims": [
+        "No complete updater source closure, dependency/legal closure or all-callers audit.",
+        "No import of Telegram update endpoints, pinned root keys, key manifest, C++ updater, MTP discovery or package format into Fabushi.",
+        "No production feed, release signer, deployment or publisher identity invented.",
+        "No local verification, cryptographic validation, runtime test, CI dispatch or production request performed.",
+        "Target comparison is the frozen H only; ongoing implementation and its final GitHub Actions results must be attached separately by the main integrator.",
+        "No product progress is inferred from reading generated inputs, workflow governance files or row counts."
+      ],
+      "acceptance": {
+        "status": "not-accepted",
+        "source_review": "partial-with-exact-identities",
+        "implementation_scope": "Existing Fabushi Electron source-authority correction only",
+        "remaining": [
+          "Final containing-H code review and GitHub Actions evidence for EUS-01..06.",
+          "Formal Fabushi update source/publisher authority and signed supported-platform artifacts.",
+          "Artifact integrity/redirect/trust/key rotation/revocation and downgrade policy equivalence.",
+          "Full update/install/cancel/restart/data preservation/rollback behavior on supported platforms.",
+          "All applicable updater source/dependencies/legal dispositions and independent ACCEPT."
+        ]
+      }
+    },
+    "original_frozen_independent_source_review": {
+      "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 21,
+      "reviewer": "/root/updater_independent_review",
+      "review_type": "fresh read-only general, security and lifecycle source review",
+      "effort": {
+        "requested": "xhigh",
+        "actual": "inherited parent session configuration; no model or effort override applied",
+        "reason": "Updater source authority, asynchronous cancellation, persistent recovery and production composition are security and lifetime sensitive."
+      },
+      "base_sha": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+      "snapshot": "/workspace/scratch/fa4c87642db4/round21-review-snapshot",
+      "manifest": "/workspace/scratch/fa4c87642db4/round21-review-manifest.json",
+      "manifest_sha256_recorded_in_manifest": "2e522a2393acc3155a4e2eeb84ee8c9073b008cc20c388425bd69c88d2517cbe",
+      "manifest_file_bytes_sha256": "1db72c735f9877c0f73ec2be1166e775a0f6f04c6a871038b90e7e2f93719fed",
+      "complete_diff_sha256": "40205b5727937139a63cb571ea28ee5149028d7d8319499129733021de292f17",
+      "snapshot_integrity": "Read-only byte hashing found all 11 file sizes and SHA-256 values identical to the manifest. No product, test, spec, workflow or remote file was changed by this reviewer.",
+      "verdict": "no_blocking_source_finding",
+      "findings": [],
+      "finding_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0
+      },
+      "executable_verification": {
+        "local_tests_build_typecheck_schema_validator": "not run, as required",
+        "htch_runtime": "not used",
+        "new_head_github_actions": "pending; this source review is not executable evidence",
+        "authored_test_count": 16,
+        "test_count_basis": "Manually reviewed all 16 top-level node:test registrations and their bodies; workflow requires tests=16, pass=16, fail/cancelled/skipped/todo=0. This is authored count, not a passing execution count."
+      },
+      "reviewed_files": [
+        ".github/workflows/native-service-contracts.yml",
+        "source/electron-main/production-binding-providers.ts",
+        "source/electron-main/update/release-metadata.ts",
+        "source/electron-main/update/update-feed.ts",
+        "source/electron-main/update/update-telemetry.ts",
+        "source/electron-main/update/update-wiring.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "frontend/src/recovered/features/settings/overlay/updates.ts",
+        "docs/specs/electron-update-source-authority.md",
+        "source/electron-main/update/update-source.contract.test.mjs"
+      ],
+      "adjacent_sources": [
+        "AGENTS.md independent-review and frozen-scope requirements",
+        "FBCP/TDRP SOURCE_OF_TRUTH and applicable main-spec/FMEP-SOURCE-01 requirements",
+        "docs/specs/fabushi-cursor-service-independence.md CSI-R1/R3/R5/R6",
+        "source/electron-main/entry.ts",
+        "source/electron-main/production-adapters.ts",
+        "source/electron-main/main-production-services.ts production creation, telemetry and quit joins",
+        "source/shared/node/fabushi-service-origin.ts",
+        "source/electron-main/update/update-gate.ts",
+        "source/electron-main/update/apply-marker.ts",
+        "source/electron-main/update/update-download.ts",
+        "source/electron-main/update/idle-relaunch-apply.ts",
+        "source/electron-main/update/squirrel-feed-server.ts",
+        "source/electron-main/update/win32-installer.ts",
+        "frontend/src/recovered/features/settings/overlay/updates-controller.ts",
+        "source/electron-main/foundations.test.ts release metadata assertions",
+        "desktop/package.json",
+        "Exact-base GitHub API reads: source/shared/update-track.ts blob 34733696bf85dcde26c8d2c2cfd1332b946d92fe; source/internal/scheduling.ts blob 68565201ee278fa935ccbdc74a0286db77f1ec18; source/electron-main/update/idle-relaunch-signals.ts blob d10888b1edef77045640f44627e0581488107920; safe-relaunch-gate.ts blob 088f9bb188458c474a31b43ca59cadd9b1262ac5; desktop/package-lock.json blob 1655189b893de0d2d09648bdd37a176cc90a5c8d"
+      ],
+      "requirements": [
+        {
+          "id": "EUS-01",
+          "source_review": "no blocking defect found",
+          "evidence": "update-feed.ts removes DEFAULT_UPDATE_BASE_URL and configuredUpdateFeedBaseUrl uses nullish precedence. Empty or whitespace primary remains primary; the source resolver disables it. Both production composition and live release metadata use the same helper and trimmed dev-override check. update-wiring forwards the raw selected value into the existing service and provides no renderer or Settings setter for it.",
+          "falsification_scenarios_examined": [
+            "No environment variables",
+            "Primary empty or whitespace with valid compatibility setting",
+            "Invalid or foreign primary with valid compatibility setting",
+            "Compatibility-only approved source",
+            "Primary approved source with foreign compatibility setting"
+          ],
+          "authored_tests": [
+            106,
+            160,
+            168,
+            197
+          ],
+          "execution": "pending exact submitted H Actions"
+        },
+        {
+          "id": "EUS-02",
+          "source_review": "no blocking defect found",
+          "evidence": "resolveUpdateFeedSource explicitly rejects credentials, nonempty query and fragment, then passes the parsed origin to the unchanged shared approved-origin authority. It never calls that authority with an absent input. Path prefixes are retained. Service fetchUpdate consumes the validated immutable base URL and requests redirect:error. Rejected configuration is reduced to fixed disabled reason literals without logging the raw value.",
+          "falsification_scenarios_examined": [
+            "Cursor/foreign/lookalike origin",
+            "Remote HTTP",
+            "Credential-bearing URL",
+            "Query/fragment secret",
+            "Nonstandard production port",
+            "file/data URL",
+            "Production default HTTPS port",
+            "Approved CI and loopback IPv4/IPv6",
+            "HTTP 302 manifest redirect"
+          ],
+          "authored_tests": [
+            128,
+            150,
+            250,
+            263
+          ],
+          "execution": "pending exact submitted H Actions"
+        },
+        {
+          "id": "EUS-03",
+          "source_review": "no blocking defect found",
+          "evidence": "SandUpdateService constructor independently resolves the source and gives an explicitly supplied existing gate reason precedence. applyDisabledReason(null) reintroduces the immutable source reason, so clearing runtime gates cannot enable a missing or invalid source. Disabled state and existing event guards prevent checks; start returns before scheduling. New disposal guards block new start/check calls. Cancellation keeps the existing controller identity comparison, so the aborted request cannot clear a later request's controller or overwrite the disabled state.",
+          "falsification_scenarios_examined": [
+            "Manual, startup, track, minimum-version and backend events while source-disabled",
+            "Clear an existing runtime gate with no source",
+            "Blank primary must not provide a dev-feed override",
+            "Disable during controlled pending fetch, then re-enable valid source",
+            "Dispose followed by start/manual check",
+            "Reconstruct with corrected config and retained preferences"
+          ],
+          "authored_tests": [
+            106,
+            197,
+            299,
+            320,
+            332
+          ],
+          "execution": "pending exact submitted H Actions"
+        },
+        {
+          "id": "EUS-04",
+          "source_review": "no blocking defect found",
+          "evidence": "The production service still starts synchronously in createUpdateServiceWiring, and start settles the existing apply marker before returning for a source-disabled state. Marker path/format/settlement owner and settings keys are unchanged. The retained downloader, signature port, staging, safe relaunch, installer and quit joins remain the existing owners. The new positive test reads actual downloaded fixture bytes through the signature port and observes staged/requested/spawned marker transitions; it does not claim real signature acceptance.",
+          "falsification_scenarios_examined": [
+            "Requested marker with target version on restart and missing source",
+            "Spawned marker with stale version and invalid source",
+            "Unrelated session data sentinel survives settlement",
+            "Approved 204 response",
+            "Approved HTTP failure without fallback",
+            "Retained startup/periodic timers",
+            "Verified fixture download through staging and installer marker joins"
+          ],
+          "authored_tests": [
+            235,
+            250,
+            282,
+            299,
+            332,
+            348,
+            375
+          ],
+          "execution": "pending exact submitted H Actions"
+        },
+        {
+          "id": "EUS-05",
+          "source_review": "no blocking defect found",
+          "evidence": "Both disabled literals are represented by DesktopUpdateState and Settings DisabledUpdateReason, fixed messages and nonretryable telemetry codes E0513/E0514. Existing update status/IPC and telemetry relay are reused. UpdateHttpStatusError no longer embeds the request URL or machine ID. Settings controller continues to read and retain the actual bridge status without another update owner.",
+          "falsification_scenarios_examined": [
+            "Different unconfigured/invalid source messages",
+            "Fixed telemetry cause/code and retryable=false",
+            "HTTP 503 observable state/logs do not contain private machine fixture or feed URL"
+          ],
+          "authored_tests": [
+            218,
+            250
+          ],
+          "execution": "pending exact submitted H Actions"
+        },
+        {
+          "id": "EUS-06",
+          "source_review": "authored evidence and workflow wiring are consistent; execution pending",
+          "evidence": "The .mjs harness bundles the real TypeScript service, wiring, marker store, resolver, release metadata, telemetry and Settings projection with desktop's locked esbuild 0.25.12. ../../../desktop/package.json and ../../../frontend paths resolve correctly from source/electron-main/update. Controlled fetch/clock/installer ports do not replace the production service logic. Actions uses Node 24, npm ci, the 16-test fail-closed TAP gate, existing Electron compilation and separate renderer compilation. All new code paths trigger the checkpoint push workflow.",
+          "falsification_scenarios_examined": [
+            "Runtime import resolution relative to test file",
+            "esbuild availability in locked root node_modules",
+            "Authored count versus workflow oracle",
+            "Pipefail preserving node test failure",
+            "No skip/todo/cancel allowance",
+            "Marker and download checks use actual owners rather than copied model logic"
+          ],
+          "execution": "pending exact submitted H Actions; no test or compilation result inferred from source inspection"
+        }
+      ],
+      "scope_limits_and_release_gates": [
+        "No operational approved update endpoint or service/deployment provenance was established by this batch.",
+        "Returned package URL authority and download redirects retain their existing behavior; they remain explicit release egress/provenance gates.",
+        "The existing Windows signer allowlist still names Anysphere and requires a separate authorized signing-policy qualification.",
+        "Controlled installer verification and loopback HTTP contracts are not real signed package, platform install, upgrade or rollback acceptance.",
+        "Complete migration, full source/legal closure, supported platform/network/visual/accessibility/temporal/security/performance/soak/Bot regression and independent ACCEPT remain outside this source verdict and are not complete."
+      ],
+      "disposition": "The frozen updater patch has no blocking source finding from this independent review. Proceed to exact-head Actions and inspect complete results before recording batch validation. An implementation/tests-authored status-table update is consistent with the inspected source but must retain execution pending until those results exist. This verdict is not release ACCEPT.",
+      "row_mapping_addenda": [
+        {
+          "scope": "Narrow source/responsibility/owner/authored-test mapping only; original frozen 11-file source verdict unchanged",
+          "reviewed_draft": "/workspace/scratch/fa4c87642db4/updater-discovery-row-integrated-round21.json",
+          "reviewed_draft_sha256": "83c5b7798afcdb57683e53a0f32622812a31dd89e2a44bac649855b8186118cf",
+          "corrected_draft_sha256": "add48568586a06681f1be7364391d927c2870e444c4bbe5d69d9039fddc41f26",
+          "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+          "target_commit": "52ba898107642db27c87a354687c2c6eb0456054",
+          "remote_readback": "GitHub API fetched source/electron-main/update/update-source.contract.test.mjs at target_commit; blob bf17bf7b3f6aa964aafff1d5eeba204d12d51315 matches frozen review manifest and all 16 contract_case_ids match actual top-level tests.",
+          "source_depth_assessment": "Exact fixed-U tuples and bounded symbols/ranges match the supporting partial source audit. The row explicitly retains unread remainder, incomplete legal/source closure and unchanged source-review counts. It does not represent the full source file, full updater or transport/signature/install responsibilities as completed.",
+          "owner_assessment": "Existing production updaterInstaller -> update wiring -> SandUpdateService, shared origin policy, marker store and Settings projection remain their current owners. No new product owner is proposed; the Windows workflow/tooling row is not elevated to product completion.",
+          "claim_assessment": "implementation_status=implemented is scoped to explicit discovery authority; coverage_disposition= pending, coverage_matrix_status=pending, empty execution evidence, null job/artifact identities and release_gate_status=blocked prevent a passing-execution or ACCEPT claim. The fixture verifier and data sentinel are identified as controlled contracts, with live UI/platform/signing/rollback gaps retained.",
+          "findings": [
+            {
+              "id": "R21-ROW-01",
+              "severity": "P2",
+              "path": "updater-discovery-row-integrated-round21.json::failure_cases[0]",
+              "failure": "The sentence 'Absent/blank primary configuration disables without falling back to a legacy or built-in feed' contradicts the implemented absent-primary compatibility contract.",
+              "falsifiable_scenario": "FABUSHI_UPDATE_FEED_BASE_URL absent and SAND_UPDATE_FEED_BASE_URL=https://api.ombhrum.com/updates: configuredUpdateFeedBaseUrl selects the approved compatibility feed, as the actual authored precedence and wiring cases require.",
+              "specific_fix": "State that absent both variables or a present blank primary disables, and a present blank/invalid primary never falls back; compatibility remains allowed only when primary is absent.",
+              "state": "resolved by integrator; focused readback complete",
+              "resolution": "The integrator changed failure_cases[0] to distinguish absent both variables from present blank/invalid primary and explicitly preserve compatibility only when primary is absent. Reviewer read the corrected draft and identical sentence in the canonical parity-ledger row. No implementation change was made. The revised wording agrees with configuredUpdateFeedBaseUrl and the real precedence/wiring test cases."
+            }
+          ],
+          "final_verdict": "no unresolved blocking finding; original frozen source verdict unchanged",
+          "unresolved_finding_counts": {
+            "P0": 0,
+            "P1": 0,
+            "P2": 0
+          },
+          "execution": "No local test/build/typecheck/schema/validator execution. New-head Actions still pending; no release acceptance."
+        }
+      ]
+    },
+    "updater_exact_source_reconciliation_at_59f5": {
+      "schema": "fabushi-updater-live-reconciliation-v1",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 21,
+      "scope": "Read-only reconciliation of original round-21 updater code with the current checkpoint after interruption; not a full updater security or release acceptance review.",
+      "repository": "bhrumom/fabushi-desktop",
+      "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "original_authored_commit": "52ba898107642db27c87a354687c2c6eb0456054",
+      "inspected_live_commit": "59f5fa24827812f78336c464995d161f403dedfb",
+      "inspected_live_tree": "45315f6fc86406907c025807a28e59dd91e47312",
+      "original_code_tree": "89a15e19eeae545693d54ad377eca18ec479bed6",
+      "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "relationship": {
+        "status": "ahead",
+        "ahead_by": 11,
+        "behind_by": 0,
+        "merge_base_commit": "52ba898107642db27c87a354687c2c6eb0456054",
+        "conclusion": "Current checkpoint descends directly from the original code commit, so the original source-authority fix is already integrated. Replaying old frozen files would revert later product and CI work."
+      },
+      "instruction_identity": {
+        "path": "AGENTS.md",
+        "base_blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+        "live_blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+        "assessment": "Exact same AGENTS blob as the original 8ce tree; no instruction delta inferred from the local snapshot's extra EOF newline."
+      },
+      "file_comparisons": [
+        {
+          "path": ".github/workflows/native-service-contracts.yml",
+          "code_blob": "3875ab60deb0b4d1085ed319e34af47f96f5049b",
+          "live_blob": "1a467ad8c641c844d5cd5e23d0abc4dfe530ba54",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/.github/workflows/native-service-contracts.yml",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/.github/workflows/native-service-contracts.yml"
+        },
+        {
+          "path": "source/electron-main/production-binding-providers.ts",
+          "code_blob": "6cb54a6178cca81b9324df18aeb123915c7af38c",
+          "live_blob": "6cb54a6178cca81b9324df18aeb123915c7af38c",
+          "identical": true,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/production-binding-providers.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/production-binding-providers.ts"
+        },
+        {
+          "path": "source/electron-main/update/release-metadata.ts",
+          "code_blob": "26c591a9f3dd18431df522fea84c3292d5b3554a",
+          "live_blob": "26c591a9f3dd18431df522fea84c3292d5b3554a",
+          "identical": true,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/update/release-metadata.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/update/release-metadata.ts"
+        },
+        {
+          "path": "source/electron-main/update/update-feed.ts",
+          "code_blob": "b27636414be28290ec9ee221ea8e06fb8e0a3db2",
+          "live_blob": "b27636414be28290ec9ee221ea8e06fb8e0a3db2",
+          "identical": true,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/update/update-feed.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/update/update-feed.ts"
+        },
+        {
+          "path": "source/electron-main/update/update-telemetry.ts",
+          "code_blob": "8b5ee02980119bd9499cea1fc0b14089c42191a4",
+          "live_blob": "79695b9457f9fd94823b07cc28ca6171839a3ecf",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/update/update-telemetry.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/update/update-telemetry.ts"
+        },
+        {
+          "path": "source/electron-main/update/update-wiring.ts",
+          "code_blob": "dde9a06f4c79c21e4257296c15c62e3e3ceacd7d",
+          "live_blob": "40632119b745a0bfea88b89405c2448e155fcd93",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/update/update-wiring.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/update/update-wiring.ts"
+        },
+        {
+          "path": "source/electron-main/update/sand-update-service.ts",
+          "code_blob": "1c31680d5b14dd4eae6b7fdb96245701536794fa",
+          "live_blob": "74f708492d282f386a759c6b5c6136ad1aca1846",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/update/sand-update-service.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/update/sand-update-service.ts"
+        },
+        {
+          "path": "frontend/src/recovered/contracts/desktop-bridge.ts",
+          "code_blob": "40af447f438537f07dd2f7e5360acc87b90930a4",
+          "live_blob": "04f32c20df8668b7fa62a613341a14999079bb6a",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/frontend/src/recovered/contracts/desktop-bridge.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/frontend/src/recovered/contracts/desktop-bridge.ts"
+        },
+        {
+          "path": "frontend/src/recovered/features/settings/overlay/updates.ts",
+          "code_blob": "208904310dd2b61c392f09fe982b17def452bc97",
+          "live_blob": "6ed2a5a43b8f08699f3570b159a60d97a41ccd27",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/frontend/src/recovered/features/settings/overlay/updates.ts",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/frontend/src/recovered/features/settings/overlay/updates.ts"
+        },
+        {
+          "path": "docs/specs/electron-update-source-authority.md",
+          "code_blob": "7b6acf1f9aea030ccd77babc4f7ba1656efac72d",
+          "live_blob": "d37f22155e22720a2cbb3512e756031327077c68",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/docs/specs/electron-update-source-authority.md",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/docs/specs/electron-update-source-authority.md"
+        },
+        {
+          "path": "source/electron-main/update/update-source.contract.test.mjs",
+          "code_blob": "bf17bf7b3f6aa964aafff1d5eeba204d12d51315",
+          "live_blob": "5913dcfa80e1d17abf6e840e4f2f5fd9cc442207",
+          "identical": false,
+          "base_url": "https://github.com/bhrumom/fabushi-desktop/blob/52ba898107642db27c87a354687c2c6eb0456054/source/electron-main/update/update-source.contract.test.mjs",
+          "live_url": "https://github.com/bhrumom/fabushi-desktop/blob/59f5fa24827812f78336c464995d161f403dedfb/source/electron-main/update/update-source.contract.test.mjs"
+        }
+      ],
+      "production_chain": {
+        "entry": {
+          "path": "source/electron-main/entry.ts",
+          "blob": "3c877893f5f6478251587a1130e08328c9cf15f7",
+          "observed": "updaterInstaller: createElectronProductionUpdaterInstallerBinding() is supplied to createElectronProductionServiceFactories and startElectronMainProduction."
+        },
+        "binding": {
+          "path": "source/electron-main/production-binding-providers.ts",
+          "blob": "6cb54a6178cca81b9324df18aeb123915c7af38c",
+          "observed": "The existing production updater binding invokes createUpdateServiceWiring; initial gate derives dev override from the same configuredUpdateFeedBaseUrl selector."
+        },
+        "wiring": {
+          "path": "source/electron-main/update/update-wiring.ts",
+          "blob": "40632119b745a0bfea88b89405c2448e155fcd93",
+          "observed": "Same explicit source selector feeds SandUpdateService. The existing Windows installer now receives FABUSHI_WINDOWS_UPDATE_PUBLISHERS_JSON as trusted startup configuration. Service starts in this wiring owner."
+        },
+        "origin_policy": {
+          "path": "source/shared/node/fabushi-service-origin.ts",
+          "blob": "030059c77175a2138cf747c681cea624f61fe9bb",
+          "observed": "Existing approved production/isolated-CI HTTPS and loopback authority is still reused; updater avoids the helper's account default by resolving absent source before passing an origin."
+        },
+        "runtime": {
+          "path": "source/electron-main/update/sand-update-service.ts",
+          "blob": "74f708492d282f386a759c6b5c6136ad1aca1846",
+          "observed": "Constructor reason precedence is existing explicit gate -> immutable source reason -> immutable Windows publisher reason. applyDisabledReason(null) preserves both. Startup settles the unchanged apply marker before disabled return, and fetchUpdate uses validated base plus redirect:error."
+        },
+        "projection": {
+          "paths": [
+            "frontend/src/recovered/contracts/desktop-bridge.ts",
+            "frontend/src/recovered/features/settings/overlay/updates.ts",
+            "source/electron-main/update/update-telemetry.ts"
+          ],
+          "observed": "The original two source reasons and messages/codes remain. Current code adds two Windows publisher reasons and non-retryable telemetry; old unions/messages must not replace these."
+        }
+      },
+      "preserved_live_additions": [
+        {
+          "scope": "Windows publisher policy and candidate authorization",
+          "paths": [
+            "source/electron-main/update/win32-installer.ts",
+            "source/electron-main/update/update-wiring.ts",
+            "source/electron-main/update/sand-update-service.ts"
+          ],
+          "details": "No built-in Anysphere/common-name allowlist remains in the inspected installer. Exact subject + SHA-256 of SignerCertificate.RawData must jointly match one explicit immutable policy entry after Windows reports Valid/Authenticode. Hash before/after the native probe plus a one-use receipt and launch-time hash bind candidate bytes. Formal production publisher approval and genuine install acceptance remain open."
+        },
+        {
+          "scope": "Source tests adapt to actual publisher contract",
+          "paths": [
+            "source/electron-main/update/update-source.contract.test.mjs"
+          ],
+          "details": "All original 16 named EUS tests remain; the controlled Windows test port explicitly returns getDisabledReason()=>null so this source suite supplies an authorized fixture. The actual publisher policy is qualified in separate current suites; removing this line would invalidate the fixture contract."
+        },
+        {
+          "scope": "Current specification",
+          "paths": [
+            "docs/specs/electron-update-source-authority.md"
+          ],
+          "details": "EUS-01..06 remains; preserve EUS-WIN-01..06 and round-25 CI-only native certificate fixture rules, including fail-closed publisher authorization, cleanup and no real release claim."
+        },
+        {
+          "scope": "Current workflow",
+          "paths": [
+            ".github/workflows/native-service-contracts.yml"
+          ],
+          "details": "Preserve Windows publisher contract28, native Windows11 and all current forwarding/recovery gates. Existing source16 and Electron/renderer compilation remain. The current AppHost copy gate includes an added well-formed but mismatched SHA256 negative beyond the original missing/invalid-input controls."
+        }
+      ],
+      "current_workflow_authored_gates": {
+        "source_authority_contracts": 16,
+        "windows_publisher_contracts": 28,
+        "windows_native_contracts": 11,
+        "human_reconciliation": 38,
+        "forward_sharebox_owner": 1,
+        "forward_journal_CAS": 3,
+        "authenticated_forward_gateway": 1,
+        "native_startup_retention": 7,
+        "retained_social_recovery": 9,
+        "social_http_owner": 6,
+        "forward_settlement": 5,
+        "actual_forward_dialog": 12,
+        "apphost_resource_copy_suite": 4,
+        "apphost_resource_copy_negative_controls": [
+          "missing actual input",
+          "malformed hash input",
+          "well-formed mismatched build hash"
+        ],
+        "note": "These are read from the current workflow. They are authored assertions, not execution counts. Live CI audit owns current-H execution evidence."
+      },
+      "source_gate_assessment": {
+        "no_default_feed": true,
+        "selector_and_origin_policy_unchanged_by_blob": true,
+        "marker_settlement_preserved": true,
+        "new_proven_blocking_defect_in_compared_source_gate_changes": null,
+        "claim": "Read-only diff and adjacent-source inspection found no demonstrated new source-gate defect. This does not grant code or release ACCEPT, nor replace current-H Actions."
+      },
+      "stale_local_claims_to_reconcile": [
+        "The original local preparation receipt says the checkpoint is still 8ce and source implementation is not integrated; that is stale.",
+        "The original local Windows blocker says the installer still defaults to Anysphere names. Live code has removed that fallback and added explicit policy; the remaining blocker is formal publisher authority and real release/installation evidence.",
+        "Do not publish the old local STATUS/RTM/ledger/owner inventory or workflow wholesale. Current branch includes 11 descendant commits and later forwarding/social recovery/Windows work.",
+        "Do not treat the same original source file count or old Human33/Native6 as the current required CI totals; current workflow has additional contracts."
+      ],
+      "safe_integration_scope": "Base any new work on a freshly read current ref/tree. The original updater code needs no replay. Reconcile only novel evidence/findings into current canonical owners and preserve every later change; new production edits require a specific current defect and its existing owner's review.",
+      "remaining_gates": [
+        "Current-H execution results for all selected current gates; no local executable validation was run.",
+        "Actual formal Fabushi update endpoint and publisher authorization records; syntactically valid feed/publisher configuration is not operational approval.",
+        "Download asset URL/redirect/provenance and required digest policy remain separate from discovery-source admission; the inspected service still passes an optional manifest sha256 to the existing downloader.",
+        "Real signed supported-platform install, upgrade, rollback, package hashes and preserved-account/data recovery.",
+        "Complete fixed-U source/legal/responsibility closure, full Bot regression and independent release ACCEPT."
+      ],
+      "related_adjacent_sources": [
+        {
+          "path": "source/electron-main/update/win32-installer.ts",
+          "ref": "59f5fa24827812f78336c464995d161f403dedfb",
+          "sha": "e975f9bafde36000ee9b47b25039c49f32089c5c",
+          "chars": 9619
+        },
+        {
+          "path": "source/shared/node/fabushi-service-origin.ts",
+          "ref": "59f5fa24827812f78336c464995d161f403dedfb",
+          "sha": "030059c77175a2138cf747c681cea624f61fe9bb",
+          "chars": 1210
+        },
+        {
+          "path": "source/electron-main/entry.ts",
+          "ref": "59f5fa24827812f78336c464995d161f403dedfb",
+          "sha": "3c877893f5f6478251587a1130e08328c9cf15f7",
+          "chars": 4191
+        },
+        {
+          "path": "source/electron-main/update/windows-publisher.contract.test.mjs",
+          "ref": "59f5fa24827812f78336c464995d161f403dedfb",
+          "sha": "ef45a2678c9252435b79946d9719caa979d7ecc8",
+          "chars": 40861
+        },
+        {
+          "path": "source/electron-main/update/windows-publisher.native.test.mjs",
+          "ref": "59f5fa24827812f78336c464995d161f403dedfb",
+          "sha": "c95b2a474405f52438b45e3b6abdc16c4e9e7de7",
+          "chars": 25517
+        }
+      ],
+      "diff_artifact": {
+        "path": "round21-resume/updater/compare.diff",
+        "sha256": "b067c79684c43a5ace431c4dbbe1641708c0ea1261faffe72e87414c59587be5"
+      },
+      "snapshot_artifacts": [
+        "round21-resume/updater/file-snapshots.json",
+        "round21-resume/updater/adjacent-snapshots.json",
+        "round21-resume/updater/comparison-identity.json"
+      ],
+      "permitted_actions": "Read-only GitHub APIs and local source/evidence inspection/writing in isolated scratch paths only.",
+      "local_executable_validation": "not-run",
+      "remote_mutations": "none",
+      "full_updater_or_migration_acceptance": false,
+      "subsequent_ref_readback": {
+        "observed_at_utc": "2026-11-02 19:33:17 UTC",
+        "sha": "59308cf3cee48213278c52e4ad60bfd9250fb545",
+        "updater_files_changed_from_inspected_live_commit": false,
+        "delta_scope": "FMEP/source-review scripts and source evidence only; all 11 updater paths remain byte-identical to inspected 59f5. Source-review changes are outside this updater audit."
+      }
+    },
+    "updater_and_ui_component_execution": {
+      "schema": "FABUSHI_EXACT_COMPONENT_PROOF_V1",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 21,
+      "repository": "bhrumom/fabushi-desktop",
+      "exact_head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+      "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "run_id": 41514576570,
+      "components": {
+        "electron": {
+          "job_id": 125514709195,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570/job/125514709195",
+          "conclusion": "success",
+          "actual_counts": {
+            "carrier": {
+              "tests": 10,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "native_auth": {
+              "tests": 8,
+              "pass": 8,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "resource_copy_fixture": {
+              "tests": 3,
+              "pass": 3,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "update_source": {
+              "tests": 16,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "windows_publisher_controlled": {
+              "tests": 28,
+              "pass": 28,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "macos_metadata": {
+              "tests": 18,
+              "pass": 18,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          "genuine_named_pass_lines": 83,
+          "artifact": {
+            "artifact_id": 13174044080,
+            "artifact_name": "native-message-electron-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+            "digest": "sha256:0fc533df4095c82ad648c21177ae0e110afe9e08e2f3f1a82c426f785aff1042",
+            "size_in_bytes": 13368,
+            "head_sha": "73cc6e1cc9fa871e5f80931979606ac9ee810551"
+          },
+          "full_log": {
+            "local_path": "/workspace/scratch/fa4c87642db4/round21-resume/ci-41514576570/electron.log",
+            "bytes": 82372,
+            "captured_full_text_sha256": "ed2b4f85f27d045b58f803e2e9104e4552c06967d21b9fae90c09202e3cb10e3",
+            "normalization": "Decoded tool log, CRLF normalized to LF, no lines omitted."
+          },
+          "actual_electron_build": "success",
+          "historical_macos_experiment": [
+            {
+              "harness_sha": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+              "artifact_id": 13093546572,
+              "archive_sha256": "f17fc29681164e69507d24201c57a58c84651d66a65cc3d0ebf1faeeee0be225",
+              "package_source_observed_in_job_log": "9d16483f70df9af06db97b17bb02a24dc507e459",
+              "source_job": 124910185631,
+              "assets": [
+                {
+                  "name": "fabushi-1.2.78-macos-arm64.zip",
+                  "size": 174991227,
+                  "sha256": "ab4631db376331e723411ebd3b0e4ccfdd7d904a396fff60946bf0a441958953"
+                },
+                {
+                  "name": "fabushi-1.2.78-macos-arm64.dmg",
+                  "size": 174156394,
+                  "sha256": "c59626591fefa2b7194961236cbbe00cb80fcc3fa78dded4f6c69cdf9053cd6b"
+                }
+              ],
+              "installed_or_released": false
+            }
+          ],
+          "historical_macos_scope": "Real old ZIP/DMG bytes retained, stale metadata rejected and repaired; this is not a73-produced signed package or an installed upgrade."
+        },
+        "ui": {
+          "job_id": 125514709141,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570/job/125514709141",
+          "conclusion": "success",
+          "actual_counts": {
+            "transcript": {
+              "tests": 16,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "forward_settlement": {
+              "tests": 5,
+              "pass": 5,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            "actual_chromium_forward_dialog": {
+              "tests": 16,
+              "pass": 16,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          "genuine_named_pass_lines": 37,
+          "artifact": {
+            "artifact_id": 13174992345,
+            "artifact_name": "native-message-ui-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+            "digest": "sha256:5e74e7f2364d4617535fb3679349e98e3903701e2f0eb89a402bbe40b7df4bc5",
+            "size_in_bytes": 185766,
+            "head_sha": "73cc6e1cc9fa871e5f80931979606ac9ee810551"
+          },
+          "full_log": {
+            "local_path": "/workspace/scratch/fa4c87642db4/round21-resume/ci-41514576570/ui.log",
+            "bytes": 70919,
+            "captured_full_text_sha256": "d00da8eb3e322aa7e3f95d1bc1cfbf3ea54ac9212012edcf99ec3e3d5518745c",
+            "normalization": "Decoded tool log, CRLF normalized to LF, no lines omitted."
+          },
+          "actual_renderer_build": "success",
+          "browser": "Chromium; actual production ForwardMessageDialog mounted with controlled bridge"
+        },
+        "windows": {
+          "job_id": 125514709410,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41514576570/job/125514709410",
+          "conclusion": "success",
+          "actual_counts": {
+            "native_authenticode_unicode": {
+              "tests": 11,
+              "pass": 11,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          },
+          "genuine_named_pass_lines": 11,
+          "artifact": {
+            "artifact_id": 13173833468,
+            "artifact_name": "windows-update-publisher-73cc6e1cc9fa871e5f80931979606ac9ee810551",
+            "digest": "sha256:d73ab6369a98dc748f955e8a1642af28a2dffbed3d9727e7e526b20eeb1147a5",
+            "size_in_bytes": 1829,
+            "head_sha": "73cc6e1cc9fa871e5f80931979606ac9ee810551"
+          },
+          "full_log": {
+            "local_path": "/workspace/scratch/fa4c87642db4/round21-resume/ci-41514576570/windows.log",
+            "bytes": 35134,
+            "captured_full_text_sha256": "6ff634f4cf81df07ac54cc1c08f2f5ac55d2f687c0abc1198075c0393a59b8be",
+            "normalization": "Decoded tool log, CRLF normalized to LF, no lines omitted."
+          },
+          "native_markers": {
+            "FABUSHI_WINDOWS_NATIVE_FIXTURE": {
+              "sourceSha": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+              "subject": "CN=Fabushi CI ONLY Inert Updater Fixture 测试签名 008c0cecec2342f4",
+              "certificateSha256": "8d7b93deb33ab5e30388a78a0ca6aa11bea74d322b5b3447909bc4edd06a512a",
+              "status": "Valid",
+              "signatureType": "Authenticode",
+              "scope": "CI-only inert fixture; no production publisher authorization or installation acceptance"
+            },
+            "FABUSHI_WINDOWS_NATIVE_UNICODE": {
+              "execution": "real-powershell-with-controlled-encoding-prelude",
+              "defaultNativeLauncherCases": 10,
+              "startingCodePages": [
+                437,
+                437
+              ],
+              "subject": "CN=Fabushi CI ONLY Inert Updater Fixture 测试签名 008c0cecec2342f4",
+              "certificateSha256": "8d7b93deb33ab5e30388a78a0ca6aa11bea74d322b5b3447909bc4edd06a512a",
+              "exactUnicodeIdentityAllowed": true,
+              "differentUnicodeSubjectDenied": true,
+              "capturedSpawns": 1,
+              "executedFixtureExecutables": 0
+            },
+            "FABUSHI_WINDOWS_NATIVE_CLEANUP": {
+              "fixtureCreated": true,
+              "remainingOwnedCertificates": 0,
+              "removedStores": [
+                "TrustedPublisher",
+                "Root",
+                "My"
+              ],
+              "privateKeyDeletionRequested": true
+            }
+          },
+          "scope": "Real PowerShell/AuthentiCode and controlled Unicode code page, CI-only inert fixture, captured spawn1, fixture executions0, remaining certificates0; no official publisher or install acceptance."
+        }
+      },
+      "scope": "Three actual successful jobs at73cc6e1 only. No promotion to a later commit; native reconciliation/shipping were not terminal at this capture. No release, source-complete or independent ACCEPT claim."
+    },
+    "full_selected_product_execution_at_94dc": {
+      "exact_head": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+      "run": {
+        "id": 41513767498,
+        "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498",
+        "event": "push"
+      },
+      "jobs": [
+        {
+          "id": 125511938976,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511938976"
+        },
+        {
+          "id": 125511939226,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939226"
+        },
+        {
+          "id": 125511939353,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939353"
+        },
+        {
+          "id": 125511939405,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939405"
+        },
+        {
+          "id": 125511939428,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939428"
+        },
+        {
+          "id": 125511942030,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511942030"
+        }
+      ],
+      "actual_counts": {
+        "electron": {
+          "carrier": {
+            "tests": 10,
+            "pass": 10,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "native_auth_retention": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "synthetic_resource_copy": {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "update_source": {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "windows_publisher_controlled": {
+            "tests": 28,
+            "pass": 28,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "macos_metadata": {
+            "tests": 18,
+            "pass": 18,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "actual_named_pass_lines": 83,
+          "actual_electron_build": "passed",
+          "historical_metadata_experiment": "passed without installing or changing original package bytes"
+        },
+        "ui": {
+          "transcript": {
+            "tests": 16,
+            "pass": 16,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "forward_settlement": {
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "actual_chromium_forward_dialog": {
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "actual_named_pass_lines": 33,
+          "renderer_build": "passed",
+          "emitted_text_asset_boundary": 45
+        },
+        "windows": {
+          "native_publisher": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "scope": "CI-only inert signed fixture; real PowerShell/AuthentiCode/Unicode, not formal publisher authorization or real installation",
+          "captured_spawns": 1,
+          "executed_fixture_executables": 0,
+          "remaining_owned_certificates": 0
+        },
+        "reconciliation": {
+          "human": {
+            "tests": 44,
+            "pass": 44,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "sharebox": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "journal_cas": {
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "agent_nonce": {
+            "tests": 4,
+            "pass": 4,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "private_settlement": {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "authenticated_forward_http": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "total": 65,
+          "named_log_lines_note": "65 executed tests; 68 apparent named pass lines include 3 grep echoes, not additional tests."
+        },
+        "shipping": {
+          "apphost_composition": {
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "native_startup_retention": {
+            "tests": 7,
+            "pass": 7,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "feature_host": {
+            "tests": 7,
+            "pass": 7,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "retained_social": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "social_http_owner": {
+            "tests": 6,
+            "pass": 6,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "host": {
+            "tests": 6,
+            "pass": 6,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "c_abi": {
+            "tests": 7,
+            "pass": 7,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "cli": {
+            "tests": 3,
+            "pass": 3,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "gateway_executable": {
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "gateway_library": {
+            "tests": 11,
+            "pass": 11,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "dns_normalization": {
+            "tests": 6,
+            "pass": 6,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "future_salts": {
+            "tests": 2,
+            "pass": 2,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "protocol": {
+            "tests": 122,
+            "pass": 122,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "tcp": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0,
+            "live_case": [
+              "test live_session_exchanges_encrypted_ping_and_service_rpc ... ok"
+            ]
+          },
+          "proxy_boundary": {
+            "tests": 4,
+            "pass": 4,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "native_credential": {
+            "tests": 1,
+            "pass": 1,
+            "fail": 0,
+            "ignored": 0,
+            "measured": 0
+          },
+          "actual_apphost_copy": {
+            "tests": 4,
+            "pass": 4,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "scope": "3 fixture cases plus1 actual compiled AppHost copy, not4 actual packages",
+            "manifest": {
+              "target_sha": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+              "source_sha256": "708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b",
+              "destination_sha256": "708a20213b1363a2ac72153273b917d28a9b03cf1e19c5c4619291cfc93c956b",
+              "size": 160158128,
+              "mode": 493,
+              "excluded_control_count": 11,
+              "manifest": "/Users/runner/work/fabushi-desktop/fabushi-desktop/artifacts/native-message-shipping/actual-package-resource/manifest.json"
+            }
+          },
+          "top_level_counts_note": "217 selected Rust tests plus4 Node resource-copy cases. Native7 additionally runs19 subprocess probe executions; these are not added as distinct top-level tests.",
+          "missing_input_negative": {
+            "result": "expected rejection",
+            "exit_nonzero": true,
+            "observed_assertion": "FABUSHI_PACKAGE_APP_HOST_BINARY is required",
+            "inner_tap_counts": null,
+            "scope": "Exact workflow requires nonzero process and greps the assertion; inner TAP log stored in shipping artifact but not echoed in full job log."
+          },
+          "invalid_hash_negative": {
+            "result": "expected rejection",
+            "exit_nonzero": true,
+            "observed_assertion": "bind the hash recorded by the actual AppHost build step",
+            "inner_tap_counts": null,
+            "scope": "Exact workflow requires nonzero process and greps the assertion; inner TAP log stored in shipping artifact but not echoed in full job log."
+          },
+          "mismatched_hash_negative": {
+            "result": "expected rejection",
+            "exit_nonzero": true,
+            "observed_assertion": "copy only the same binary whose hash was captured after build",
+            "inner_tap_counts": {
+              "tests": 1,
+              "pass": 0,
+              "fail": 1,
+              "cancelled": 0,
+              "skipped": 0
+            },
+            "output_directory_absent_before_positive_copy": true
+          }
+        }
+      },
+      "artifacts": [
+        {
+          "id": 13175452350,
+          "name": "native-message-shipping-compile-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:612ff0e24e7f3bb83ba5a7b68c9a5da9e09236ad787582edf0d00249ff177953",
+          "size_in_bytes": 81491108,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13175452350"
+        },
+        {
+          "id": 13174787047,
+          "name": "native-message-reconciliation-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:afe4bce96fa0acfaddea9f4c634186a16ed4b02dc64b85747d2d2cbf2b67f5df",
+          "size_in_bytes": 29308,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174787047"
+        },
+        {
+          "id": 13174018193,
+          "name": "windows-update-publisher-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:07d1bc9e00d13584c449a4c670301acf7606499b058fce2730a61c154aaa8a1c",
+          "size_in_bytes": 1825,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13174018193"
+        },
+        {
+          "id": 13173602759,
+          "name": "native-message-ui-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:0cf51ee47519896bd0854efd8fa466ea52cae853eff51463e62a5680415c53ef",
+          "size_in_bytes": 110471,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173602759"
+        },
+        {
+          "id": 13173338903,
+          "name": "native-message-electron-94dcf7a2213808a8ded6baddaf069562d365c6d7",
+          "digest": "sha256:74d55b79059c3c163a94ad30cd17b3569180bb889fd9aff7967c0e5dfdaf33f5",
+          "size_in_bytes": 13407,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13173338903"
+        }
+      ],
+      "full_decoded_logs": {
+        "electron": {
+          "job_id": 125511938976,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511938976",
+          "log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125511938976/logs",
+          "captured_full_text_sha256": "833f68fa428bc50a4a7ff320d22753b164b2d65a267756f13718847fe5b6c0d4",
+          "bytes": 82466,
+          "lines": 1068,
+          "capture_format": "Full decoded tool log; Windows CRLF normalized to LF; no lines omitted."
+        },
+        "windows": {
+          "job_id": 125511939226,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939226",
+          "log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125511939226/logs",
+          "captured_full_text_sha256": "7e5ae2786cbfea143d72135aeae13004c9f200726335b4c1dc6a8a0bab9a53f4",
+          "bytes": 35565,
+          "lines": 409,
+          "capture_format": "Full decoded tool log; Windows CRLF normalized to LF; no lines omitted."
+        },
+        "ui": {
+          "job_id": 125511939353,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939353",
+          "log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125511939353/logs",
+          "captured_full_text_sha256": "05c8d13df6cf0bdaa2834be58d7a11a217f8a177d02fbf13bb83530d93d7f93c",
+          "bytes": 69150,
+          "lines": 790,
+          "capture_format": "Full decoded tool log; Windows CRLF normalized to LF; no lines omitted."
+        },
+        "reconciliation": {
+          "job_id": 125511939428,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939428",
+          "log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125511939428/logs",
+          "captured_full_text_sha256": "27678cd44349f70b84ae138d373a0a68f1f9f1ecc6601e52774b9f55130e9f66",
+          "bytes": 274778,
+          "lines": 3038,
+          "capture_format": "Full decoded tool log; CRLF normalized to LF; no lines omitted."
+        },
+        "shipping": {
+          "job_id": 125511939405,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41513767498/job/125511939405",
+          "log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125511939405/logs",
+          "captured_full_text_sha256": "bfa58ad1a0e02db95ebf8339168fb9a6746854b475f1e147a7d768bdb8c57cbc",
+          "bytes": 928722,
+          "lines": 8381,
+          "capture_format": "Full decoded tool log; CRLF normalized to LF; no lines omitted."
+        }
+      },
+      "scope": "Five selected jobs passed at94dc only; source-copy4 is3 fixtures plus1 actual compiled AppHost. 19 child probes and repeated grep echoes are not additional top-level test cases. No claim that later production inputs were executed by this run."
+    },
+    "observed_source_candidate_execution": {
+      "exact_head": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+      "run": {
+        "id": 41517085015,
+        "head_sha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": null,
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41517085015",
+        "event": null
+      },
+      "jobs": [
+        {
+          "id": 125523271939,
+          "name": "contract",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+          "html_url": null
+        },
+        {
+          "id": 125523437310,
+          "name": "fixed-source-candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+          "html_url": null
+        }
+      ],
+      "counts": {
+        "source_contracts": {
+          "tests": 157,
+          "pass": 157,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "schema_tests": {
+          "tests": 37,
+          "passed": 37,
+          "failed": 0
+        },
+        "canonical_ledger_shape_errors": 0
+      },
+      "candidate": {
+        "status": "unaccepted-candidate-consistent",
+        "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "counts_by_scope": {
+          "pinned-cmake-component": 2,
+          "legacy-root-paths": 331
+        },
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "target_commit": "936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "reused_git_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "artifact_id": 13118749668,
+          "run_id": 41397005716,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+        },
+        "reused_build_input_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "artifact_id": 13121721589,
+          "run_id": 41401970993,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+        }
+      },
+      "artifacts": [
+        {
+          "id": 13176470369,
+          "name": "tdrp-source-review-contract-936115b0aa578c340c74dd6aa7c71c362572bd72",
+          "digest": "sha256:582f0007dce2a386089ffbedc892645eede01e6ed4264a913262534bbd0080a2",
+          "size_in_bytes": 6783,
+          "expired": null,
+          "url": null
+        },
+        {
+          "id": 13176270981,
+          "name": "tdrp-source-candidate-936115b0aa578c340c74dd6aa7c71c362572bd72",
+          "digest": "sha256:e5f4b99476b032c5db873bf5fe16f1f30130f9e004f0d8a3b84a87e54ee4997d",
+          "size_in_bytes": 79136,
+          "expired": null,
+          "url": null
+        }
+      ],
+      "full_decoded_logs": {
+        "contract": {
+          "job_id": 125523271939,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41517085015/job/125523271939",
+          "captured_full_text_sha256": "37bc87723c1826b49bd15dc79e8b32d286f13ec60fd129c1840600388edecc76",
+          "bytes": 89837,
+          "normalization": "Full decoded log, CRLF normalized to LF, no omitted lines."
+        },
+        "fixed-source-candidate": {
+          "job_id": 125523437310,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41517085015/job/125523437310",
+          "captured_full_text_sha256": "1bbc0119246aff07d0424b73022b6fd5ff51f0363b36aa838375c931d05eb3c5",
+          "bytes": 146052,
+          "normalization": "Full decoded log, CRLF normalized to LF, no omitted lines."
+        }
+      },
+      "scope": "157 source contracts/schema37 pass, zero shape errors. Candidate remains unaccepted. 16381 exact source identities/184 responsibilities; six authored reviews, two complete and four pending. Unknown/unread remain null; no full-source or product ACCEPT."
+    },
+    "backend_readonly_refresh": {
+      "schema": "fabushi-backend-readonly-refresh-v1",
+      "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+      "round": 21,
+      "observed_at_utc": "2026-11-02 19:35:08 UTC",
+      "scope": {
+        "repository": "bhrumom/fabushi-backend",
+        "pr": 137,
+        "mode": "read-only",
+        "allowed_writes": "isolated scratch audit only",
+        "backend_mutations": [],
+        "production_requests_executed": [],
+        "local_tests_or_builds_executed": false
+      },
+      "pull_request": {
+        "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+        "state": "open",
+        "draft": true,
+        "merged": false,
+        "merged_at": null,
+        "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+        "base_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+        "head_ref": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "base_ref": "main",
+        "live_main": "687718ce9e0083aa124d29005bcce4051d357919",
+        "reviews": [],
+        "issue_comments": [],
+        "review_comments": [],
+        "authorization": "No merge/deploy or production execution authorization is supplied; explicit backend read-only task restriction persists."
+      },
+      "head_progression": [
+        {
+          "base": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "head": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "ahead": 1,
+          "changed_paths": [
+            {
+              "filename": ".github/scripts/human-messaging-production-readiness.mjs",
+              "status": "added",
+              "additions": 386,
+              "deletions": 0,
+              "changes": 386,
+              "previous_filename": null
+            },
+            {
+              "filename": ".github/scripts/human-messaging-production-readiness.test.mjs",
+              "status": "added",
+              "additions": 463,
+              "deletions": 0,
+              "changes": 463,
+              "previous_filename": null
+            },
+            {
+              "filename": ".github/workflows/human-messaging-ci.yml",
+              "status": "modified",
+              "additions": 79,
+              "deletions": 3,
+              "changes": 82,
+              "previous_filename": null
+            },
+            {
+              "filename": "docs/specs/human-direct-messaging-extensions.md",
+              "status": "modified",
+              "additions": 138,
+              "deletions": 5,
+              "changes": 143,
+              "previous_filename": null
+            }
+          ],
+          "assessment": "Adds production read-only readiness consumer, 24 injected-fetch behavior contracts, existing Human Messaging CI wiring and R17/AC15 specification. Runtime handler/router/storage source bytes unchanged."
+        },
+        {
+          "base": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+          "ahead": 1,
+          "changed_paths": [
+            {
+              "filename": "docs/evidence/human-messaging-readiness-round12-20261102.json",
+              "status": "added",
+              "additions": 831,
+              "deletions": 0,
+              "changes": 831,
+              "previous_filename": null
+            },
+            {
+              "filename": "docs/specs/human-direct-messaging-extensions.md",
+              "status": "modified",
+              "additions": 5,
+              "deletions": 4,
+              "changes": 9,
+              "previous_filename": null
+            }
+          ],
+          "assessment": "Evidence/spec-only commit. Runtime, tests and workflow unchanged; fresh exact-head Actions below were nevertheless read directly."
+        }
+      ],
+      "current_exact_head_ci": [
+        {
+          "run_id": 41510861859,
+          "event": "pull_request",
+          "run_attempt": 1,
+          "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41510861859",
+          "jobs": [
+            {
+              "id": 125502035909,
+              "name": "human-messaging-contracts",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 125502139541,
+              "name": "production-readonly-readiness",
+              "status": "completed",
+              "conclusion": "skipped"
+            }
+          ],
+          "complete_contract_log": {
+            "job_id": 125502035909,
+            "complete_log_path": "/workspace/scratch/fa4c87642db4/round21-resume/backend/job-125502035909.log",
+            "log_bytes": 46992,
+            "lines": 650,
+            "sha256": "89b5ac4190089eeaff01b560272a35152032d063292175755180489a4257fd70",
+            "actual_tap_summaries": [
+              "# tests 29",
+              "# pass 29",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 10",
+              "# pass 10",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 24",
+              "# pass 24",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0"
+            ],
+            "all_pass_names": [
+              "ok 1 - friend and direct-message storage has durable identities and indexes",
+              "ok 2 - friend handlers require stable authenticated account identities",
+              "ok 3 - router exposes the endpoints consumed by canonical apps and the CLI",
+              "ok 4 - browser embeds the WASM runtime without a cloud Agent gateway",
+              "ok 5 - TURN credentials stay server-side and issue bounded authenticated ICE configuration",
+              "ok 6 - TURN endpoint fails closed when server credentials or upstream ICE data are invalid",
+              "ok 7 - call create is friend-scoped and stable across devices",
+              "ok 8 - media transport claims converge same-account devices onto one owner per participant",
+              "ok 9 - ordered events converge across participant devices with generation and idempotency fences",
+              "ok 10 - terminal transition fences later mutations",
+              "ok 11 - call channel CAS and event append commit atomically in one D1 batch",
+              "ok 12 - REG-MSG-MUTATION-STABLE-ID-001: mutation schema preserves canonical rows and monotonic revisions",
+              "ok 13 - REG-MSG-EDIT-CONFLICT-001: edit is sender-owned, revision-fenced and operation-idempotent",
+              "ok 14 - REG-MSG-DELETE-TOMBSTONE-001: delete keeps message identity while clearing user content and reactions",
+              "ok 15 - REG-MSG-MUTATION-ROUTE-001: canonical social message route owns PATCH and DELETE",
+              "ok 16 - REG-MSG-DELETED-REACTION-001: tombstones reject new reactions",
+              "ok 17 - account identity converges across devices by clientRequestId and afterId",
+              "ok 18 - reply resource reaction and search remain server-canonical and participant scoped",
+              "ok 19 - origin cursor covers equal-timestamp history without crossing participant pairs",
+              "ok 20 - origin and terminal cursors retain empty progress and bounded page sizes",
+              "ok 21 - malformed and conflicting history cursors fail before reading private messages",
+              "ok 22 - origin traversal preserves legacy before ordering while separating ID order from clocks",
+              "ok 23 - explicit ID history proves requested cursor and preserves legacy response",
+              "ok 24 - durable spec preserves one social message truth and device/account separation",
+              "ok 25 - migration adds reply resources and normalized reactions without replacing direct_messages",
+              "ok 26 - message send validates canonical resources and same-pair reply before persistence",
+              "ok 27 - message resource upload and read are account authorized and R2 backed",
+              "ok 28 - reconnect search and reactions stay scoped to the authenticated peer pair",
+              "ok 29 - community router exposes only explicit Human message extension endpoints",
+              "ok 1 - SQLite migration preserves existing message, resource and identity after reopen",
+              "ok 2 - SQLite reaction cleanup failure rolls back the complete delete and retries after reopen",
+              "ok 3 - SQLite lost delete acknowledgement recovers by operation ID after reopen",
+              "ok 4 - SQLite replay repairs an old partial tombstone and does not swallow cleanup failure",
+              "ok 5 - SQLite delayed reaction insert cannot resurrect a concurrently deleted message",
+              "ok 6 - SQLite delayed reaction removal cannot acknowledge a concurrently deleted message",
+              "ok 7 - SQLite live reaction retries remain idempotent and unauthorized actors remain denied",
+              "ok 8 - SQLite edit replay, revision conflict and owner checks execute actual handlers",
+              "ok 9 - SQLite concurrent edits at one revision have one durable winner",
+              "ok 10 - SQLite afterId zero paginates real rows, retains empty cursors and scopes authorized pairs",
+              "ok 1 - requires explicit canonical Actions dispatch and protected production authorization before network access",
+              "ok 2 - missing credentials, source and fixture fail closed with no account or token fallback",
+              "ok 3 - rejects malformed or insufficient existing fixtures before any request",
+              "ok 4 - reads the full source chain and proves multipage, origin-empty, denial and checkpoint-reread behavior",
+              "ok 5 - every operation is GET and each token stays at its own fixed origin while log download is anonymous",
+              "ok 6 - a source SHA input cannot substitute for a successful canonical production dispatch",
+              "ok 7 - requires the complete exact-attempt successful deployment job and its critical steps",
+              "ok 8 - rejects untrusted, insecure and credential-bearing job log Locations without following them",
+              "ok 9 - accepts the documented alternate Actions log host without forwarding any credential",
+              "ok 10 - rejects a second log redirect and incomplete or ambiguous deployed version logs",
+              "ok 11 - requires the live custom domain to target the enabled production canonical messaging Worker",
+              "ok 12 - rejects mismatched, split or absent active Worker versions rather than using historical deployment alone",
+              "ok 13 - a deployment or domain change during message traversal invalidates the provenance result",
+              "ok 14 - rejects the wrong ordinary account or a privileged identity even with a successful HTTP response",
+              "ok 15 - anonymous and authenticated noncontact denial require their exact status and no message payload",
+              "ok 16 - explicit origin and terminal requests require the exact cursor echo and contact identity",
+              "ok 17 - message IDs must be safe, strictly ascending and unique within and across pages",
+              "ok 18 - pair isolation and outgoing actor projection reject foreign messages before evidence is accepted",
+              "ok 19 - an approved exact fixture detects missing, extra and changed identities without relying on server totals",
+              "ok 20 - empty origin and terminal pages preserve their exact cursor and never imply skipped history",
+              "ok 21 - checkpoint reread compares the exact previously approved suffix and remains client-readonly scope",
+              "ok 22 - bounded streams reject oversized declared logs and oversized untrusted message bodies",
+              "ok 23 - timeouts, malformed JSON and provider failures stay nonzero and never emit raw diagnostic values",
+              "ok 24 - successful evidence stores only public source references and redacted cursor ordinals"
+            ]
+          },
+          "actual_counts": [
+            {
+              "suite": "existing handler/call/source-marker contracts",
+              "tests": 29,
+              "passed": 29,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "real SQLite mutation/recovery contracts",
+              "tests": 10,
+              "passed": 10,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "readiness checker with injected fetch; no production access",
+              "tests": 24,
+              "passed": 24,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          ],
+          "artifacts": [
+            {
+              "id": 13172293999,
+              "name": "human-messaging-contracts-52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+              "size_in_bytes": 5432,
+              "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13172293999",
+              "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13172293999/zip",
+              "expired": false,
+              "created_at": "2026-11-02T19:32:32Z",
+              "expires_at": "2027-01-31T19:32:24Z",
+              "updated_at": "2026-11-02T19:32:32Z",
+              "digest": "sha256:823587410fe31018a7cdea60f47ff608cf461828ea8726112d8aa1f1d8ba00bb",
+              "workflow_run": {
+                "id": 41510861859,
+                "repository_id": 1375313125,
+                "head_repository_id": 1375313125,
+                "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+                "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23"
+              }
+            }
+          ]
+        },
+        {
+          "run_id": 41510852280,
+          "event": "push",
+          "run_attempt": 1,
+          "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41510852280",
+          "jobs": [
+            {
+              "id": 125502003031,
+              "name": "human-messaging-contracts",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 125502117517,
+              "name": "production-readonly-readiness",
+              "status": "completed",
+              "conclusion": "skipped"
+            }
+          ],
+          "complete_contract_log": {
+            "job_id": 125502003031,
+            "complete_log_path": "/workspace/scratch/fa4c87642db4/round21-resume/backend/job-125502003031.log",
+            "log_bytes": 46999,
+            "lines": 650,
+            "sha256": "95f49070a756522978b0faa78ff4ced42ad1f28ccea8a87c5d8928e2803d2da9",
+            "actual_tap_summaries": [
+              "# tests 29",
+              "# pass 29",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 10",
+              "# pass 10",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 24",
+              "# pass 24",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0"
+            ],
+            "all_pass_names": [
+              "ok 1 - friend and direct-message storage has durable identities and indexes",
+              "ok 2 - friend handlers require stable authenticated account identities",
+              "ok 3 - router exposes the endpoints consumed by canonical apps and the CLI",
+              "ok 4 - browser embeds the WASM runtime without a cloud Agent gateway",
+              "ok 5 - TURN credentials stay server-side and issue bounded authenticated ICE configuration",
+              "ok 6 - TURN endpoint fails closed when server credentials or upstream ICE data are invalid",
+              "ok 7 - call create is friend-scoped and stable across devices",
+              "ok 8 - media transport claims converge same-account devices onto one owner per participant",
+              "ok 9 - ordered events converge across participant devices with generation and idempotency fences",
+              "ok 10 - terminal transition fences later mutations",
+              "ok 11 - call channel CAS and event append commit atomically in one D1 batch",
+              "ok 12 - REG-MSG-MUTATION-STABLE-ID-001: mutation schema preserves canonical rows and monotonic revisions",
+              "ok 13 - REG-MSG-EDIT-CONFLICT-001: edit is sender-owned, revision-fenced and operation-idempotent",
+              "ok 14 - REG-MSG-DELETE-TOMBSTONE-001: delete keeps message identity while clearing user content and reactions",
+              "ok 15 - REG-MSG-MUTATION-ROUTE-001: canonical social message route owns PATCH and DELETE",
+              "ok 16 - REG-MSG-DELETED-REACTION-001: tombstones reject new reactions",
+              "ok 17 - account identity converges across devices by clientRequestId and afterId",
+              "ok 18 - reply resource reaction and search remain server-canonical and participant scoped",
+              "ok 19 - origin cursor covers equal-timestamp history without crossing participant pairs",
+              "ok 20 - origin and terminal cursors retain empty progress and bounded page sizes",
+              "ok 21 - malformed and conflicting history cursors fail before reading private messages",
+              "ok 22 - origin traversal preserves legacy before ordering while separating ID order from clocks",
+              "ok 23 - explicit ID history proves requested cursor and preserves legacy response",
+              "ok 24 - durable spec preserves one social message truth and device/account separation",
+              "ok 25 - migration adds reply resources and normalized reactions without replacing direct_messages",
+              "ok 26 - message send validates canonical resources and same-pair reply before persistence",
+              "ok 27 - message resource upload and read are account authorized and R2 backed",
+              "ok 28 - reconnect search and reactions stay scoped to the authenticated peer pair",
+              "ok 29 - community router exposes only explicit Human message extension endpoints",
+              "ok 1 - SQLite migration preserves existing message, resource and identity after reopen",
+              "ok 2 - SQLite reaction cleanup failure rolls back the complete delete and retries after reopen",
+              "ok 3 - SQLite lost delete acknowledgement recovers by operation ID after reopen",
+              "ok 4 - SQLite replay repairs an old partial tombstone and does not swallow cleanup failure",
+              "ok 5 - SQLite delayed reaction insert cannot resurrect a concurrently deleted message",
+              "ok 6 - SQLite delayed reaction removal cannot acknowledge a concurrently deleted message",
+              "ok 7 - SQLite live reaction retries remain idempotent and unauthorized actors remain denied",
+              "ok 8 - SQLite edit replay, revision conflict and owner checks execute actual handlers",
+              "ok 9 - SQLite concurrent edits at one revision have one durable winner",
+              "ok 10 - SQLite afterId zero paginates real rows, retains empty cursors and scopes authorized pairs",
+              "ok 1 - requires explicit canonical Actions dispatch and protected production authorization before network access",
+              "ok 2 - missing credentials, source and fixture fail closed with no account or token fallback",
+              "ok 3 - rejects malformed or insufficient existing fixtures before any request",
+              "ok 4 - reads the full source chain and proves multipage, origin-empty, denial and checkpoint-reread behavior",
+              "ok 5 - every operation is GET and each token stays at its own fixed origin while log download is anonymous",
+              "ok 6 - a source SHA input cannot substitute for a successful canonical production dispatch",
+              "ok 7 - requires the complete exact-attempt successful deployment job and its critical steps",
+              "ok 8 - rejects untrusted, insecure and credential-bearing job log Locations without following them",
+              "ok 9 - accepts the documented alternate Actions log host without forwarding any credential",
+              "ok 10 - rejects a second log redirect and incomplete or ambiguous deployed version logs",
+              "ok 11 - requires the live custom domain to target the enabled production canonical messaging Worker",
+              "ok 12 - rejects mismatched, split or absent active Worker versions rather than using historical deployment alone",
+              "ok 13 - a deployment or domain change during message traversal invalidates the provenance result",
+              "ok 14 - rejects the wrong ordinary account or a privileged identity even with a successful HTTP response",
+              "ok 15 - anonymous and authenticated noncontact denial require their exact status and no message payload",
+              "ok 16 - explicit origin and terminal requests require the exact cursor echo and contact identity",
+              "ok 17 - message IDs must be safe, strictly ascending and unique within and across pages",
+              "ok 18 - pair isolation and outgoing actor projection reject foreign messages before evidence is accepted",
+              "ok 19 - an approved exact fixture detects missing, extra and changed identities without relying on server totals",
+              "ok 20 - empty origin and terminal pages preserve their exact cursor and never imply skipped history",
+              "ok 21 - checkpoint reread compares the exact previously approved suffix and remains client-readonly scope",
+              "ok 22 - bounded streams reject oversized declared logs and oversized untrusted message bodies",
+              "ok 23 - timeouts, malformed JSON and provider failures stay nonzero and never emit raw diagnostic values",
+              "ok 24 - successful evidence stores only public source references and redacted cursor ordinals"
+            ]
+          },
+          "actual_counts": [
+            {
+              "suite": "existing handler/call/source-marker contracts",
+              "tests": 29,
+              "passed": 29,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "real SQLite mutation/recovery contracts",
+              "tests": 10,
+              "passed": 10,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "readiness checker with injected fetch; no production access",
+              "tests": 24,
+              "passed": 24,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          ],
+          "artifacts": [
+            {
+              "id": 13171519672,
+              "name": "human-messaging-contracts-52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+              "size_in_bytes": 5433,
+              "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13171519672",
+              "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13171519672/zip",
+              "expired": false,
+              "created_at": "2026-11-02T19:32:29Z",
+              "expires_at": "2027-01-31T19:32:20Z",
+              "updated_at": "2026-11-02T19:32:29Z",
+              "digest": "sha256:4c67b8b8e4f7fce10dc263cc0d862f1f1e95dad7d511ae31804077b61a4c3463",
+              "workflow_run": {
+                "id": 41510852280,
+                "repository_id": 1375313125,
+                "head_repository_id": 1375313125,
+                "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+                "head_sha": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23"
+              }
+            }
+          ]
+        }
+      ],
+      "earlier_exact_head_ci": [
+        {
+          "run_id": 41509996583,
+          "event": "pull_request",
+          "run_attempt": 1,
+          "head_sha": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41509996583",
+          "jobs": [
+            {
+              "id": 125499061610,
+              "name": "human-messaging-contracts",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 125499303769,
+              "name": "production-readonly-readiness",
+              "status": "completed",
+              "conclusion": "skipped"
+            }
+          ],
+          "complete_contract_log": {
+            "job_id": 125499061610,
+            "complete_log_path": "/workspace/scratch/fa4c87642db4/round21-resume/backend/job-125499061610.log",
+            "log_bytes": 46998,
+            "lines": 650,
+            "sha256": "2e61c7897e716137b34f576d82720a1a4b2502ff59fab788f32a49da1661e904",
+            "actual_tap_summaries": [
+              "# tests 29",
+              "# pass 29",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 10",
+              "# pass 10",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 24",
+              "# pass 24",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0"
+            ],
+            "all_pass_names": [
+              "ok 1 - friend and direct-message storage has durable identities and indexes",
+              "ok 2 - friend handlers require stable authenticated account identities",
+              "ok 3 - router exposes the endpoints consumed by canonical apps and the CLI",
+              "ok 4 - browser embeds the WASM runtime without a cloud Agent gateway",
+              "ok 5 - TURN credentials stay server-side and issue bounded authenticated ICE configuration",
+              "ok 6 - TURN endpoint fails closed when server credentials or upstream ICE data are invalid",
+              "ok 7 - call create is friend-scoped and stable across devices",
+              "ok 8 - media transport claims converge same-account devices onto one owner per participant",
+              "ok 9 - ordered events converge across participant devices with generation and idempotency fences",
+              "ok 10 - terminal transition fences later mutations",
+              "ok 11 - call channel CAS and event append commit atomically in one D1 batch",
+              "ok 12 - REG-MSG-MUTATION-STABLE-ID-001: mutation schema preserves canonical rows and monotonic revisions",
+              "ok 13 - REG-MSG-EDIT-CONFLICT-001: edit is sender-owned, revision-fenced and operation-idempotent",
+              "ok 14 - REG-MSG-DELETE-TOMBSTONE-001: delete keeps message identity while clearing user content and reactions",
+              "ok 15 - REG-MSG-MUTATION-ROUTE-001: canonical social message route owns PATCH and DELETE",
+              "ok 16 - REG-MSG-DELETED-REACTION-001: tombstones reject new reactions",
+              "ok 17 - account identity converges across devices by clientRequestId and afterId",
+              "ok 18 - reply resource reaction and search remain server-canonical and participant scoped",
+              "ok 19 - origin cursor covers equal-timestamp history without crossing participant pairs",
+              "ok 20 - origin and terminal cursors retain empty progress and bounded page sizes",
+              "ok 21 - malformed and conflicting history cursors fail before reading private messages",
+              "ok 22 - origin traversal preserves legacy before ordering while separating ID order from clocks",
+              "ok 23 - explicit ID history proves requested cursor and preserves legacy response",
+              "ok 24 - durable spec preserves one social message truth and device/account separation",
+              "ok 25 - migration adds reply resources and normalized reactions without replacing direct_messages",
+              "ok 26 - message send validates canonical resources and same-pair reply before persistence",
+              "ok 27 - message resource upload and read are account authorized and R2 backed",
+              "ok 28 - reconnect search and reactions stay scoped to the authenticated peer pair",
+              "ok 29 - community router exposes only explicit Human message extension endpoints",
+              "ok 1 - SQLite migration preserves existing message, resource and identity after reopen",
+              "ok 2 - SQLite reaction cleanup failure rolls back the complete delete and retries after reopen",
+              "ok 3 - SQLite lost delete acknowledgement recovers by operation ID after reopen",
+              "ok 4 - SQLite replay repairs an old partial tombstone and does not swallow cleanup failure",
+              "ok 5 - SQLite delayed reaction insert cannot resurrect a concurrently deleted message",
+              "ok 6 - SQLite delayed reaction removal cannot acknowledge a concurrently deleted message",
+              "ok 7 - SQLite live reaction retries remain idempotent and unauthorized actors remain denied",
+              "ok 8 - SQLite edit replay, revision conflict and owner checks execute actual handlers",
+              "ok 9 - SQLite concurrent edits at one revision have one durable winner",
+              "ok 10 - SQLite afterId zero paginates real rows, retains empty cursors and scopes authorized pairs",
+              "ok 1 - requires explicit canonical Actions dispatch and protected production authorization before network access",
+              "ok 2 - missing credentials, source and fixture fail closed with no account or token fallback",
+              "ok 3 - rejects malformed or insufficient existing fixtures before any request",
+              "ok 4 - reads the full source chain and proves multipage, origin-empty, denial and checkpoint-reread behavior",
+              "ok 5 - every operation is GET and each token stays at its own fixed origin while log download is anonymous",
+              "ok 6 - a source SHA input cannot substitute for a successful canonical production dispatch",
+              "ok 7 - requires the complete exact-attempt successful deployment job and its critical steps",
+              "ok 8 - rejects untrusted, insecure and credential-bearing job log Locations without following them",
+              "ok 9 - accepts the documented alternate Actions log host without forwarding any credential",
+              "ok 10 - rejects a second log redirect and incomplete or ambiguous deployed version logs",
+              "ok 11 - requires the live custom domain to target the enabled production canonical messaging Worker",
+              "ok 12 - rejects mismatched, split or absent active Worker versions rather than using historical deployment alone",
+              "ok 13 - a deployment or domain change during message traversal invalidates the provenance result",
+              "ok 14 - rejects the wrong ordinary account or a privileged identity even with a successful HTTP response",
+              "ok 15 - anonymous and authenticated noncontact denial require their exact status and no message payload",
+              "ok 16 - explicit origin and terminal requests require the exact cursor echo and contact identity",
+              "ok 17 - message IDs must be safe, strictly ascending and unique within and across pages",
+              "ok 18 - pair isolation and outgoing actor projection reject foreign messages before evidence is accepted",
+              "ok 19 - an approved exact fixture detects missing, extra and changed identities without relying on server totals",
+              "ok 20 - empty origin and terminal pages preserve their exact cursor and never imply skipped history",
+              "ok 21 - checkpoint reread compares the exact previously approved suffix and remains client-readonly scope",
+              "ok 22 - bounded streams reject oversized declared logs and oversized untrusted message bodies",
+              "ok 23 - timeouts, malformed JSON and provider failures stay nonzero and never emit raw diagnostic values",
+              "ok 24 - successful evidence stores only public source references and redacted cursor ordinals"
+            ]
+          },
+          "actual_counts": [
+            {
+              "suite": "existing handler/call/source-marker contracts",
+              "tests": 29,
+              "passed": 29,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "real SQLite mutation/recovery contracts",
+              "tests": 10,
+              "passed": 10,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "readiness checker with injected fetch; no production access",
+              "tests": 24,
+              "passed": 24,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          ],
+          "artifacts": [
+            {
+              "id": 13172507832,
+              "name": "human-messaging-contracts-013c5460049f2f75843ebc0c8c736e287d32789c",
+              "size_in_bytes": 5429,
+              "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13172507832",
+              "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13172507832/zip",
+              "expired": false,
+              "created_at": "2026-11-02T19:26:55Z",
+              "expires_at": "2027-01-31T19:26:46Z",
+              "updated_at": "2026-11-02T19:26:55Z",
+              "digest": "sha256:d840c60d7aab2b554089b02a2d0c5e3e84387f524eac9614dd72c250bf615d66",
+              "workflow_run": {
+                "id": 41509996583,
+                "repository_id": 1375313125,
+                "head_repository_id": 1375313125,
+                "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+                "head_sha": "013c5460049f2f75843ebc0c8c736e287d32789c"
+              }
+            }
+          ]
+        },
+        {
+          "run_id": 41509986961,
+          "event": "push",
+          "run_attempt": 1,
+          "head_sha": "013c5460049f2f75843ebc0c8c736e287d32789c",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41509986961",
+          "jobs": [
+            {
+              "id": 125499030813,
+              "name": "human-messaging-contracts",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "id": 125499162925,
+              "name": "production-readonly-readiness",
+              "status": "completed",
+              "conclusion": "skipped"
+            }
+          ],
+          "complete_contract_log": {
+            "job_id": 125499030813,
+            "complete_log_path": "/workspace/scratch/fa4c87642db4/round21-resume/backend/job-125499030813.log",
+            "log_bytes": 46993,
+            "lines": 650,
+            "sha256": "65203b9891ea352aebd3fb6fbdffbadf2a97b31b3b01bacd01040a7bd290850e",
+            "actual_tap_summaries": [
+              "# tests 29",
+              "# pass 29",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 10",
+              "# pass 10",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0",
+              "# tests 24",
+              "# pass 24",
+              "# fail 0",
+              "# cancelled 0",
+              "# skipped 0",
+              "# todo 0"
+            ],
+            "all_pass_names": [
+              "ok 1 - friend and direct-message storage has durable identities and indexes",
+              "ok 2 - friend handlers require stable authenticated account identities",
+              "ok 3 - router exposes the endpoints consumed by canonical apps and the CLI",
+              "ok 4 - browser embeds the WASM runtime without a cloud Agent gateway",
+              "ok 5 - TURN credentials stay server-side and issue bounded authenticated ICE configuration",
+              "ok 6 - TURN endpoint fails closed when server credentials or upstream ICE data are invalid",
+              "ok 7 - call create is friend-scoped and stable across devices",
+              "ok 8 - media transport claims converge same-account devices onto one owner per participant",
+              "ok 9 - ordered events converge across participant devices with generation and idempotency fences",
+              "ok 10 - terminal transition fences later mutations",
+              "ok 11 - call channel CAS and event append commit atomically in one D1 batch",
+              "ok 12 - REG-MSG-MUTATION-STABLE-ID-001: mutation schema preserves canonical rows and monotonic revisions",
+              "ok 13 - REG-MSG-EDIT-CONFLICT-001: edit is sender-owned, revision-fenced and operation-idempotent",
+              "ok 14 - REG-MSG-DELETE-TOMBSTONE-001: delete keeps message identity while clearing user content and reactions",
+              "ok 15 - REG-MSG-MUTATION-ROUTE-001: canonical social message route owns PATCH and DELETE",
+              "ok 16 - REG-MSG-DELETED-REACTION-001: tombstones reject new reactions",
+              "ok 17 - account identity converges across devices by clientRequestId and afterId",
+              "ok 18 - reply resource reaction and search remain server-canonical and participant scoped",
+              "ok 19 - origin cursor covers equal-timestamp history without crossing participant pairs",
+              "ok 20 - origin and terminal cursors retain empty progress and bounded page sizes",
+              "ok 21 - malformed and conflicting history cursors fail before reading private messages",
+              "ok 22 - origin traversal preserves legacy before ordering while separating ID order from clocks",
+              "ok 23 - explicit ID history proves requested cursor and preserves legacy response",
+              "ok 24 - durable spec preserves one social message truth and device/account separation",
+              "ok 25 - migration adds reply resources and normalized reactions without replacing direct_messages",
+              "ok 26 - message send validates canonical resources and same-pair reply before persistence",
+              "ok 27 - message resource upload and read are account authorized and R2 backed",
+              "ok 28 - reconnect search and reactions stay scoped to the authenticated peer pair",
+              "ok 29 - community router exposes only explicit Human message extension endpoints",
+              "ok 1 - SQLite migration preserves existing message, resource and identity after reopen",
+              "ok 2 - SQLite reaction cleanup failure rolls back the complete delete and retries after reopen",
+              "ok 3 - SQLite lost delete acknowledgement recovers by operation ID after reopen",
+              "ok 4 - SQLite replay repairs an old partial tombstone and does not swallow cleanup failure",
+              "ok 5 - SQLite delayed reaction insert cannot resurrect a concurrently deleted message",
+              "ok 6 - SQLite delayed reaction removal cannot acknowledge a concurrently deleted message",
+              "ok 7 - SQLite live reaction retries remain idempotent and unauthorized actors remain denied",
+              "ok 8 - SQLite edit replay, revision conflict and owner checks execute actual handlers",
+              "ok 9 - SQLite concurrent edits at one revision have one durable winner",
+              "ok 10 - SQLite afterId zero paginates real rows, retains empty cursors and scopes authorized pairs",
+              "ok 1 - requires explicit canonical Actions dispatch and protected production authorization before network access",
+              "ok 2 - missing credentials, source and fixture fail closed with no account or token fallback",
+              "ok 3 - rejects malformed or insufficient existing fixtures before any request",
+              "ok 4 - reads the full source chain and proves multipage, origin-empty, denial and checkpoint-reread behavior",
+              "ok 5 - every operation is GET and each token stays at its own fixed origin while log download is anonymous",
+              "ok 6 - a source SHA input cannot substitute for a successful canonical production dispatch",
+              "ok 7 - requires the complete exact-attempt successful deployment job and its critical steps",
+              "ok 8 - rejects untrusted, insecure and credential-bearing job log Locations without following them",
+              "ok 9 - accepts the documented alternate Actions log host without forwarding any credential",
+              "ok 10 - rejects a second log redirect and incomplete or ambiguous deployed version logs",
+              "ok 11 - requires the live custom domain to target the enabled production canonical messaging Worker",
+              "ok 12 - rejects mismatched, split or absent active Worker versions rather than using historical deployment alone",
+              "ok 13 - a deployment or domain change during message traversal invalidates the provenance result",
+              "ok 14 - rejects the wrong ordinary account or a privileged identity even with a successful HTTP response",
+              "ok 15 - anonymous and authenticated noncontact denial require their exact status and no message payload",
+              "ok 16 - explicit origin and terminal requests require the exact cursor echo and contact identity",
+              "ok 17 - message IDs must be safe, strictly ascending and unique within and across pages",
+              "ok 18 - pair isolation and outgoing actor projection reject foreign messages before evidence is accepted",
+              "ok 19 - an approved exact fixture detects missing, extra and changed identities without relying on server totals",
+              "ok 20 - empty origin and terminal pages preserve their exact cursor and never imply skipped history",
+              "ok 21 - checkpoint reread compares the exact previously approved suffix and remains client-readonly scope",
+              "ok 22 - bounded streams reject oversized declared logs and oversized untrusted message bodies",
+              "ok 23 - timeouts, malformed JSON and provider failures stay nonzero and never emit raw diagnostic values",
+              "ok 24 - successful evidence stores only public source references and redacted cursor ordinals"
+            ]
+          },
+          "actual_counts": [
+            {
+              "suite": "existing handler/call/source-marker contracts",
+              "tests": 29,
+              "passed": 29,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "real SQLite mutation/recovery contracts",
+              "tests": 10,
+              "passed": 10,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            },
+            {
+              "suite": "readiness checker with injected fetch; no production access",
+              "tests": 24,
+              "passed": 24,
+              "failed": 0,
+              "cancelled": 0,
+              "skipped": 0,
+              "todo": 0
+            }
+          ],
+          "artifacts": [
+            {
+              "id": 13171892898,
+              "name": "human-messaging-contracts-013c5460049f2f75843ebc0c8c736e287d32789c",
+              "size_in_bytes": 5428,
+              "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13171892898",
+              "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/13171892898/zip",
+              "expired": false,
+              "created_at": "2026-11-02T19:26:51Z",
+              "expires_at": "2027-01-31T19:26:42Z",
+              "updated_at": "2026-11-02T19:26:51Z",
+              "digest": "sha256:64c905e371f256df43610cfeb4b0c0f8089565d8864a6c514754d7d255f7dbf1",
+              "workflow_run": {
+                "id": 41509986961,
+                "repository_id": 1375313125,
+                "head_repository_id": 1375313125,
+                "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+                "head_sha": "013c5460049f2f75843ebc0c8c736e287d32789c"
+              }
+            }
+          ]
+        }
+      ],
+      "execution_boundaries": [
+        "Complete logs for all four inspected contract jobs contain the corresponding exact checkout SHA and actual TAP totals 29+10+24; zero failed/cancelled/skipped/todo in those three suites.",
+        "All four production-readonly-readiness jobs are skipped. No successful real production readiness report was found in these runs.",
+        "The existing 29 includes source-marker checks as well as behavioral contracts. SQLite10 executes file-backed local-engine fixtures in Actions, not deployed Cloudflare D1.",
+        "Readiness24 executes the same checker through an injected fetch transport with controlled provider/account/message responses; it proves checker behavior only.",
+        "Workflow's production job is optional explicit main workflow_dispatch plus protected production environment/configuration. Its existence does not authorize this audit to invoke it."
+      ],
+      "production_wiring": {
+        "configured_worker": "fabushi-flutter-web-prod",
+        "configured_origin": "https://api.ombhrum.com",
+        "files": [
+          {
+            "path": "fabushi/web/wrangler.toml",
+            "ref": "013c5460049f2f75843ebc0c8c736e287d32789c",
+            "label": "head",
+            "sha": "87ff9f66b74dbdddae48f39ec98944be556898a8",
+            "chars": 5562,
+            "unchanged_from_06047": true,
+            "also_unchanged_at_current_52fb": true
+          },
+          {
+            "path": "fabushi/web/worker-modular.js",
+            "ref": "013c5460049f2f75843ebc0c8c736e287d32789c",
+            "label": "head",
+            "sha": "341e67035d70da7e186b70f1ebc68def2e1a3e48",
+            "chars": 2023,
+            "unchanged_from_06047": true,
+            "also_unchanged_at_current_52fb": true
+          },
+          {
+            "path": "fabushi/web/src/router.js",
+            "ref": "013c5460049f2f75843ebc0c8c736e287d32789c",
+            "label": "head",
+            "sha": "71ba5d375795a0251272a8a2f2e5c61069b62a97",
+            "chars": 2299,
+            "unchanged_from_06047": true,
+            "also_unchanged_at_current_52fb": true
+          },
+          {
+            "path": "fabushi/web/src/routes/community-routes.js",
+            "ref": "013c5460049f2f75843ebc0c8c736e287d32789c",
+            "label": "head",
+            "sha": "a9121244f37ec775e4e1aa027c9ac0dbb8351157",
+            "chars": 7714,
+            "unchanged_from_06047": true,
+            "also_unchanged_at_current_52fb": true
+          },
+          {
+            "path": "fabushi/web/src/handlers/friends.js",
+            "ref": "013c5460049f2f75843ebc0c8c736e287d32789c",
+            "label": "head",
+            "sha": "fca0ed323b34fe767cad262af57cedcf0e71a79f",
+            "chars": 34828,
+            "unchanged_from_06047": true,
+            "also_unchanged_at_current_52fb": true
+          }
+        ],
+        "chain": "wrangler.toml main=worker-modular.js -> DatabaseService(env.DB) and request security gate -> router.route -> routeCommunityRequest -> friends.js::handleListDirectMessages (GET) / handleSendDirectMessage (POST) / mutation and reaction owners",
+        "authority": {
+          "identity": "existing requireAuthIdentity through requireStableAuth",
+          "permission": "existing areFriends participant-pair permission before message query",
+          "messages": "direct_messages in D1",
+          "resources": "direct_message_resources and existing R2_BUCKET",
+          "reactions": "direct_message_reactions",
+          "desktop": "Session/Transcript is the downstream projection; backend canonical message authority is unchanged"
+        },
+        "head_origin_pagination": "PR handler fca0ed323b34fe767cad262af57cedcf0e71a79f still accepts explicit safe decimal afterId=0, scopes the authenticated pair, orders IDs ascending, caps limit at200 and echoes exact historyCursor plus empty-page progress.",
+        "main_origin_pagination": {
+          "head": "687718ce9e0083aa124d29005bcce4051d357919",
+          "handler_blob": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+          "fact": "Still rejects afterId<=0 and omits historyCursor; main source did not gain the PR behavior."
+        },
+        "read_scope": "Current exact file identities were fetched and relevant owner/auth/pagination paths reread. All five runtime files match the earlier immutable audited identities; no whole-repository/backend acceptance is asserted."
+      },
+      "new_readiness_consumer": {
+        "script": {
+          "path": ".github/scripts/human-messaging-production-readiness.mjs",
+          "blob": "55afecc1c1d9d8192b11a74b62c439513d673740"
+        },
+        "tests": {
+          "path": ".github/scripts/human-messaging-production-readiness.test.mjs",
+          "blob": "11bbfd22721622d791439fdd817597f575af8244"
+        },
+        "workflow": {
+          "path": ".github/workflows/human-messaging-ci.yml",
+          "blob": "9c129977c1b88c13972ceeb46e8565cc1de1caa6"
+        },
+        "current_spec": {
+          "path": "docs/specs/human-direct-messaging-extensions.md",
+          "blob": "0d2b0a0fec5c1852e1e8ea389054153a55aa2ce8"
+        },
+        "observed_behavior": "Explicit main Actions dispatch and protected authorization/source/configuration gates precede requests. Checker binds canonical production deployment run/attempt/job/full-log source/version, checks enabled custom-domain and active 100% Worker version before/after, validates ordinary account/noncontact identities, anonymous/noncontact denial, exact pre-existing multipage IDs, empty origin and checkpoint suffix reread. Requests are GET-only in the checker; tokens stay at fixed provider origins and log download is anonymous. Response/log streams are bounded and evidence is redacted.",
+        "formal_limit": "No network request from this consumer was executed by this audit. Protected read-only call-chain approval, current live deployment/source binding and real authorized fixtures remain prerequisites. Checkpoint reread is not durable Desktop/server restart or remote D1 restoration."
+      },
+      "historical_production": {
+        "refreshed_github_scope": {
+          "endpoint": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?event=workflow_dispatch&per_page=100",
+          "returned": 100,
+          "total_count": 171,
+          "oldest_returned": "2026-10-15T06:29:44Z"
+        },
+        "most_recent_observed_canonical_delivery": {
+          "id": 40047409890,
+          "source_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+          "event": "workflow_dispatch",
+          "branch": "main",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-24T00:56:05Z",
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890"
+        },
+        "historically_audited_worker_version": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+        "limitation": "The latest observed canonical delivery in the refreshed GitHub dispatch window remains 2026-10-24 run40047409890/source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b. This does not exclude external Cloudflare mutation or establish the currently active version. No authenticated Cloudflare control-plane read was performed.",
+        "endpoint_recovery": "Direct workflow-by-filename run listing was unsupported (400); used the supported repository Actions dispatch-run collection and filtered its immutable path metadata. No repeated failed endpoint call."
+      },
+      "current_gaps": [
+        {
+          "gate": "Backend merge/deploy authorization",
+          "state": "blocked",
+          "unlock": "Explicit user authorization plus applicable repository review/release rules; PR remains draft/unmerged and no review/comment grants it."
+        },
+        {
+          "gate": "Current Worker/source provenance",
+          "state": "unverified",
+          "unlock": "Approved read-only authenticated control-plane evidence binding current custom domain and active version to canonical source, or separately authorized canonical deployment with matching provenance."
+        },
+        {
+          "gate": "Real authenticated afterId=0 multipage/empty/unauthorized cases",
+          "state": "not-executed",
+          "unlock": "Compatible approved deployed source, protected R17 authorization/configuration, ordinary account/noncontact credentials and reviewed existing multipage/empty fixture; an exact-head main Actions production-readiness execution."
+        },
+        {
+          "gate": "Persisted client/server restart and remote D1 recovery",
+          "state": "unverified",
+          "unlock": "Separately scoped and authorized restart/restoration exercise with unchanged data/identity and rollback evidence; the new GET-only checkpoint reread cannot satisfy this."
+        },
+        {
+          "gate": "Full migration and independent ACCEPT",
+          "state": "not-accepted",
+          "unlock": "All source, owner, production, package, platform, UI, Bot and independent release gates."
+        }
+      ],
+      "evidence_location": "round21-resume/backend-refresh.json; full immutable GitHub log/API URLs and isolated source/log snapshots under round21-resume/backend/",
+      "prior_report": "backend-round21-readonly.json is retained unchanged as the earlier06047 snapshot; this refresh supersedes only the stated current facts.",
+      "acceptance": false
+    },
+    "canonical_row_correction": {
+      "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+      "before_primary": {
+        "repository": "telegramdesktop/tdesktop",
+        "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "path": ".github/workflows/mac_packaged.yml",
+        "object": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc"
+      },
+      "after_primary": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/core/update_checker.cpp",
+        "source_blob_sha": "73eee14f179d769854237640b246858959808736",
+        "source_kind": "source",
+        "module_id": "tdesktop.core.update-discovery-authority"
+      },
+      "source_symbols_and_read_ranges": [
+        "core/update_checker.cpp::GetUpdaterInstance (298-305): shared updater authority",
+        "core/update_checker.cpp::LookupCanaryPrivateSession (307-325): configured private source membership",
+        "core/update_checker.cpp::HttpChecker::{start,gotResponse,handleResponse,clearSentRequest,gotFailure,parseOldResponse,parseResponse,validateLatestUrl,~HttpChecker} (734-878)",
+        "core/update_checker.cpp::MtpChecker::{start,startCanary} (1010-1040,1128-1189): source-mode selection and canary admission",
+        "core/update_checker.cpp::Updater::{handleReady,handleFailed,handleChecking,scheduleNext,stop,start,startImplementation,checkerDone,checkerFail,handleTimeout,tryLoaders} (1624-1886)",
+        "storage/localstorage.cpp::{AutoupdatePrefix,autoupdatePrefixFile,readAutoupdatePrefixRaw,writeAutoupdatePrefix,readAutoupdatePrefix} (528-586)",
+        "mtproto/mtp_instance.cpp::configLoadDone autoupdate_url_prefix forwarding (930-961)",
+        "core/update_channel.h::{BuildUpdateChannel,BuildIsCanary,RunningUpdateVersion} and canary configuration (1-89)",
+        "Telegram/cmake/telegram_options.cmake update channel/canary option validation (50-115)",
+        "core/application.cpp::activeSessionChanges -> UpdateChecker::setMtproto (196-226)",
+        "settings/sections/settings_advanced.cpp updater controls and event consumers (1035-1245; incomplete enclosing apply callback)",
+        "core/update_checker.h::UpdateChecker (1-61)"
+      ],
+      "additional_exact_identities": [
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_checker.h",
+          "object": "458ffc75a972bcf39039413ec1e22e854cce2cc3"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/storage/localstorage.cpp",
+          "object": "d71385083c0e940580398612fb65e522afc768b1"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+          "object": "d25fe3b72298fab371854f80186ee8e4777ea087"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/update_channel.h",
+          "object": "342e385f07b771303a112a15895e7cfb2bb612de"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/cmake/telegram_options.cmake",
+          "object": "049f39cc92d6c798ab9c6df6aa9829ee2ae2a02c"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/core/application.cpp",
+          "object": "7172206f5c1e540e19c90798e9a9e5721276cc53"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/settings/sections/settings_advanced.cpp",
+          "object": "e06c1cc267c9b6ad63475bf6cf3caf75f4179246"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": ".github/workflows/mac_packaged.yml",
+          "object": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc"
+        }
+      ],
+      "previous_execution_fields": {
+        "target_commit": "5d271ff0c03d8f01368ca44026d14cd7519ad6bd",
+        "workflow_run": null,
+        "run_attempt": null,
+        "job": null,
+        "artifact_id": null,
+        "artifact_digest": null
+      },
+      "historical_blockers": [
+        "Real authorized update feed service/publisher deployment and metadata/artifact provenance not verified.",
+        "Signed Mac/Windows platform package, real install, restart and rollback not accepted.",
+        "Actions execution of 16 new contracts and actual Electron/renderer build pending at new containing H.",
+        "Full fixed-U source/legal review and independent FBCP/TDRP ACCEPT open."
+      ],
+      "changed_fields": [
+        "source_path",
+        "source_blob_sha",
+        "additional_source_identities",
+        "source_kind",
+        "module_id",
+        "source_symbols",
+        "source_analysis_path",
+        "behavior_contract",
+        "fabushi_target_paths",
+        "blockers",
+        "target_commit",
+        "workflow_run",
+        "run_attempt",
+        "job",
+        "artifact_id",
+        "artifact_digest",
+        "test_execution_evidence",
+        "license_and_provenance",
+        "notes"
+      ],
+      "row_count_unchanged": 184,
+      "existing_source_reviews_preserved": {
+        "authored": 6,
+        "complete": 2,
+        "pending": 4
+      },
+      "other_rows_candidate_counters_locks_acceptance_unchanged": true
+    },
+    "concurrent_work": {
+      "observed_checkpoint": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+      "newer_rust_inputs": [
+        "c438df8390f60c044afbd37f511d35bbc0fdb58e",
+        "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
+        "936115b0aa578c340c74dd6aa7c71c362572bd72",
+        "76a84e8a9ff8867a076edd0c89f913a58cdb2806"
+      ],
+      "meaning": "Preserve current Human cache/cold-load identity checks, corrupt-journal negatives and restored original SQLite fixture metadata, followed by pending-parent reply recovery and Native/forward25MiB upload admission with Human48/resource3/Transcript18 authored gates. Their current-H CI is a separate obligation;94dc/73cc execution is not reassigned to these commits."
+    },
+    "delivery_contract": {
+      "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "force": false,
+      "expected_sha": "Fresh checkpoint immediately before each CAS",
+      "additional_guard": "All three canonical input blobs must still equal input_file_identities before publishing output blobs into a fresh parent tree. If any differs, rebase the narrow changes; never overlay an old complete file.",
+      "source_validation": "Current source/ledger contracts and candidate check must execute at the actual final containing H in Actions; pending before publication.",
+      "transport": "Large connector writes did not complete; no size-limit or permission refusal was established. Temporary exact-content Actions producer creates only Git blobs in this repository with GITHUB_TOKEN. It never changes a ref/commit, deploys, touches Backend or grants acceptance. Integrator performs final CAS."
+    },
+    "requirement_reconciliation": [
+      {
+        "requirement": "Requested8ce run/jobs/full logs/counts",
+        "state": "audited",
+        "evidence": "Original baseline_workflow plus ci-round21-baseline: reconciliation/UI/Electron pass; shipping cancelled before runner/steps, log404 and no test counts. Later pass does not replace it."
+      },
+      {
+        "requirement": "Gateway library11/protocol122/TCP9/copy4 and negative controls",
+        "state": "passed-at-94dc",
+        "evidence": "run41513767498/job125511939405, complete log hash and artifact in full_selected_product_execution_at_94dc; missing/invalid hash inner TAP not printed and remains null; unequal-hash inner1 test fails as intended."
+      },
+      {
+        "requirement": "Remove implicit third-party feed through existing owner and preserve recovery",
+        "state": "implemented-and-component-tested",
+        "evidence": "This task authored52ba898107642db27c87a354687c2c6eb0456054. Existing shipping entry/wiring/service/Settings/marker owners; EUS16 and actual builds pass at73cc. Later Windows28/native11 hardening preserved."
+      },
+      {
+        "requirement": "Fixed U, complete identity/dependency/generated/resource/tool/legal accounting",
+        "state": "partial-not-accepted",
+        "evidence": "U remains pinned;16381 recursive inventory identities, candidate guards157/schema37. Complete acquisition, generated/LFS/legal closure and required deep product review remain open."
+      },
+      {
+        "requirement": "Unique identity/session/message/resource/permission/search authority and full user behavior batches",
+        "state": "in-progress",
+        "evidence": "Existing Native/Session/Transcript/message/forward owners retained. Scoped Human44/journal12 and UI16/5/16 evidence is not all applicable messaging/resources/search/permission functionality."
+      },
+      {
+        "requirement": "Existing owner/Agent/Coordinator/Host/Runner/Tools/approvals/tasks/artifacts/Plugins/MCP/Computer/Automations preservation",
+        "state": "scoped-regression-only",
+        "evidence": "Current AppHost12/native7/retainedSocial9/gateway and UI proofs; no second updater or user-data deletion. Complete Bot regression and full product parity remain open."
+      },
+      {
+        "requirement": "Public contracts/schema/source_reviews remain consistent",
+        "state": "source-map-edit-requires-final-H-check",
+        "evidence": "Preserve current schema/validators, all6 source_reviews, all other183 rows and acquisition guards. Final ledger Actions required; no invented complete review or accepted state."
+      },
+      {
+        "requirement": "Exact-H Actions only, causal recovery, reuse unaffected evidence",
+        "state": "observed",
+        "evidence": "No local executable validation. Each run/head/job and full log digest retained. Cancellation, oracle failure and missing environmental evidence remain distinct; no rerun-to-green."
+      },
+      {
+        "requirement": "Backend PR137 read-only, no unauthorized merge/deploy",
+        "state": "read-only-audited-not-accepted",
+        "evidence": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23 open/draft/unmerged;29 handler/10 SQLite/24 injected-fetch contracts pass. Real production readiness job skipped; online Worker version and authenticated afterId=0 pagination remain unproven. No Backend write/merge/deploy by this task."
+      },
+      {
+        "requirement": "Final shipping SHA/artifacts/all supported-platform real-service/UI/a11y/security/performance/soak/upgrade/rollback/Bot gates and independent ACCEPT",
+        "state": "not-complete",
+        "evidence": "No final candidate frozen. Formal update feed/publisher authority, signed packages/install/rollback, full source/product closure and independent ACCEPT remain open."
+      }
+    ],
+    "acceptance": {
+      "full_migration": false,
+      "source_complete": false,
+      "release": false,
+      "independent_ACCEPT": false
+    }
+  }
 }

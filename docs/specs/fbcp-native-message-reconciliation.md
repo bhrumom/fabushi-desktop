@@ -1401,3 +1401,15 @@ UI failure notice/draft restoration was traced, not visually accepted.
 Fixed-U source review is limited to `PrepareMediaList` and `Uploader::readDocPart`
 sections; no complete upstream-file review, source/legal closure, deployed
 service/package/platform/Bot or independent ACCEPT is claimed.
+
+### NMR-48 qualified evidence publication
+
+Append only the verified exact94/run41513767498 NMR-48 evidence to the existing
+FBCP-NMR-001 row, preserving concurrent NMR-49/51 fields, all source reviews,
+source counters and acceptance state. The existing temporary Actions transport
+pattern may create only a Git blob from explicit input/output identities; it
+must not create commits or move refs. Root integration reads back that blob,
+uses force=false expected-head CAS, and removes the temporary job and input.
+This publication does not rerun unchanged product suites or grant acceptance;
+current Backend25MiB compatibility remains governed by NMR-51.
+

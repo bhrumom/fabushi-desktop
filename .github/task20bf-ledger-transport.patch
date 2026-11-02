@@ -1,5 +1,5 @@
 diff --git a/projects/telegram-desktop-rust/parity-ledger.json b/projects/telegram-desktop-rust/parity-ledger.json
-index a95d76c4..097e28e2 100644
+index 59d18f5d..ccd53e8c 100644
 --- a/projects/telegram-desktop-rust/parity-ledger.json
 +++ b/projects/telegram-desktop-rust/parity-ledger.json
 @@ -1982,7 +1982,8 @@
