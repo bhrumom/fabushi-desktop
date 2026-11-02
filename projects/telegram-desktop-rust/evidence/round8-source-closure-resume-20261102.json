@@ -1,0 +1,193 @@
+{
+  "format_version": 1,
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 8,
+  "scope": "FMEP-SOURCE-01 acquisition closure guard; interrupted batch reconciled against current checkpoint",
+  "recorded_at": "2026-11-02T19:28:00Z",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "base": "59f5fa24827812f78336c464995d161f403dedfb",
+  "base_tree": "45315f6fc86406907c025807a28e59dd91e47312",
+  "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "resumption": {
+    "original_base": "5d534898b99e98ac6c24006c85a028626b8c94bc",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "policy": "Preserve later checkpoint work. Earlier local message/UI/ledger snapshots were not replayed over subsequent revisions. Only the four unchanged authority/checker paths and this scoped receipt are included in this publication."
+  },
+  "change": {
+    "defect": "Accepted authority validation unconditionally required acquisition closure=open and reachability=partial-audited-disposition-open. Those historical audit assertions contradicted actual accepted closure.",
+    "implementation": "Keep historical audit checks outside accepted mode; accepted mode calls the new necessary-condition guard, requiring explicit complete statuses, integer-zero pending counts, exact fixed source identity and root authority pointer; retained candidate keys and false generated/LFS/legal flags reject.",
+    "evidence_boundary": "The helper returns no acceptance verdict and mutates nothing. All existing source relation, network, recursive, evidence and final accepted/baseline_ready gates remain. Candidate validator and source_reviews data are unchanged.",
+    "blobs": {
+      "docs/specs/fabushi-deferred-ci-migration.md": "51b7fbd535fc3e72a9fb2f046214c689506b56c1",
+      "scripts/tdrp-source-review.mjs": "19ef470d2cf8592c98788420fbd14d9f1b869da7",
+      "scripts/tdrp-source-review.test.mjs": "58f3b4ed30add4c26a375909a40a31d634c1594e",
+      "scripts/validate-tdrp-revision9-authority.mjs": "0538f2a0c1e18c88743a11f1f1e11a1a8d56c815"
+    },
+    "expected_tests": {
+      "new_top_level_tests": 6,
+      "source_review_file_total": 43,
+      "combined_Node_suite": 142,
+      "Python_schema_suite": 37
+    },
+    "execution_at_freeze": "not-run; containing commit's TDRP source review contract workflow must qualify exact H",
+    "required_actions": [
+      "contract: all source/nested Node contracts, Python schema, current canonical ledger shape, authority parser",
+      "fixed-source-candidate: recover pinned Git/build artifacts, validate candidate, and prove accepted rejects the open candidate"
+    ],
+    "no_local_executable_validation": true
+  },
+  "independent_static_review": {
+    "effort": "xhigh",
+    "reason": "Accepted-source state, source identity and candidate boundaries are security/evidence-sensitive.",
+    "scope": "four exact-base files and adjacent accepted/candidate callers",
+    "result": "No concrete blocking defect found in static review; six authored top-level tests. Pure state tests are not actual source closure or independent ACCEPT.",
+    "decision": "Retain the narrow fix; do not promote source inventory/ledger/acceptance."
+  },
+  "original_prerequisite": {
+    "commit": "5d534898b99e98ac6c24006c85a028626b8c94bc",
+    "run": 41413368942,
+    "attempt": 1,
+    "conclusion": "success",
+    "human_job": 125171295853,
+    "Human": 20,
+    "AgentNonce": 4,
+    "shipping_job": 125171296298,
+    "shipping": "locked AppHost; normalization6/parser2/protocol122/TCP9 including compatibility live/proxy4/credential1; zero failed/ignored",
+    "complete_job_logs_read": true,
+    "artifact_ids": [
+      13126482750,
+      13127180266
+    ]
+  },
+  "observed_current_product_execution": {
+    "commit": "59f5fa24827812f78336c464995d161f403dedfb",
+    "run": 41508537631,
+    "human": {
+      "job": 125494011040,
+      "conclusion": "success",
+      "actual_counts": {
+        "Human_integration": 38,
+        "forward_sharebox": 1,
+        "forward_batch_journal": 3,
+        "AgentNonce": 4,
+        "settlement_credentials": 3,
+        "forward_HTTP": 1
+      },
+      "failed": 0,
+      "ignored": 0
+    },
+    "ui": {
+      "job": 125494010641,
+      "conclusion": "success",
+      "actual_counts": {
+        "transcript_projection": 16,
+        "forward_settlement": 5,
+        "forward_dialog_browser": 12
+      },
+      "failed": 0,
+      "skipped": 0,
+      "scope": "existing logged suites; not full visual/accessibility or all ProductionRenderer event-order acceptance"
+    },
+    "electron": {
+      "job": 125494011030,
+      "conclusion": "success",
+      "actual_counts": {
+        "carrier": 10,
+        "native_auth_retention": 8,
+        "package_resources": 3,
+        "update_source": 16,
+        "Windows_publisher": 28,
+        "macOS_metadata": 18
+      },
+      "failed": 0,
+      "skipped": 0
+    },
+    "Windows": {
+      "job": 125494011118,
+      "conclusion": "success",
+      "actual_tests": 11,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "fixture certificate tests, not real publisher approval"
+    },
+    "shipping": {
+      "job": 125494011097,
+      "status_at_observation": "in_progress",
+      "conclusion": null
+    },
+    "artifacts": [
+      {
+        "id": 13173116303,
+        "name": "native-message-reconciliation-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:355e5450874705830cf72a96c057fb3809fdf0ac24dd69f65d10dfc84ccd0e22"
+      },
+      {
+        "id": 13172586742,
+        "name": "native-message-electron-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:e0e79f55e371aea4c35b813fb6f828a1c2d4017e8664ed05d9b7baa4207881b1"
+      },
+      {
+        "id": 13172281518,
+        "name": "native-message-ui-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:0d4273fe211f1cac1b64cc55b4c991274d6b9f586bf228685ac7651113ae0998"
+      },
+      {
+        "id": 13171043513,
+        "name": "windows-update-publisher-59f5fa24827812f78336c464995d161f403dedfb",
+        "digest": "sha256:fff7082f8e3fdcc907bf379d978b4b2f17dbd0511079d57797b86e9203024f25"
+      }
+    ],
+    "qualification": "These logs qualify only their stated exact base and scope. They do not qualify new source guard code or establish full shipping completion."
+  },
+  "backend": {
+    "checkpoint": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+    "run": 41427235133,
+    "job": 125216681052,
+    "conclusion": "success",
+    "actual_contract_tests": 29,
+    "actual_SQLite_tests": 10,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "artifact": {
+      "id": 13132637021,
+      "digest": "sha256:494a06c311d6a7105d36b1870eb00ad66e00e998f42cbbcada7ee8682fb44809"
+    },
+    "contract": "Checkpoint supports explicit afterId=0 and matching historyCursor; mocked handler and real SQLite pagination/recovery are scoped CI evidence.",
+    "PR137_observed": {
+      "head": "013c5460049f2f75843ebc0c8c736e287d32789c",
+      "draft": true,
+      "merged": false,
+      "qualification": "New PR head differs from checkpoint; do not inherit 060 tests for it."
+    },
+    "observed_deployment": {
+      "source": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "run": 40047409890,
+      "version": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "scope": "Observed successful 2026-10-24 delivery rejects zero; not today's active-version proof"
+    },
+    "deployment_or_service_acceptance": false
+  },
+  "source_accounting": {
+    "inventory": "projects/telegram-desktop-rust/inventory/index.json",
+    "ledger": "projects/telegram-desktop-rust/parity-ledger.json",
+    "RTM": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+    "changes": "none",
+    "candidate_recursive_identities": 16381,
+    "candidate_root_identities": 6895,
+    "unknown": null,
+    "unread": null,
+    "accepted": false,
+    "qualification": "Historical acquisition root and fixed-U candidate remain unresolved; guard correctness cannot complete real semantic/generated/external/LFS/legal/product review."
+  },
+  "acceptance": false,
+  "remaining": [
+    "exact-H source workflow execution",
+    "current shipping terminal and actual required logs",
+    "complete production Transcript event-order/packaged UI evidence",
+    "compatible active backend and authenticated native service acceptance",
+    "full source/risk-tier review, feature closure, platform packages, visual/a11y, security/performance/soak, upgrade/rollback, full Bot regression and independent ACCEPT"
+  ]
+}

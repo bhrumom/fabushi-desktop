@@ -122,3 +122,5 @@ Telegram core/runtime/provider/network/storage 不作为本迁移的 shipping ow
 
 本次验收：在 Actions 以正例证明 contract/disposition 可闭合非产品来源，以负例拒绝缺项、重复、blob 漂移、低深度产品/高风险、无证据和未映射责任。执行结果只证明检查器合同，不证明现有 16k 来源已完成。
 
+accepted 模式不能沿用历史审计的“必须 open”断言。构建来源的必要状态门使用明确正值 `complete`：lock 的 acquisition closure/disposition/recursive-authority、实际 acquisition 的 discovery disposition/recursive-authority/evidence、current-source 与 recursive-build-reachability 均须为 `complete`；pending-classification 和 pending-external-scan 计数须为整数零。acquisition 的 repository/commit、reachability 的 upstream commit 必须对应固定 U；任何保留的 rebaseline_candidate（含 null/false）、候选 JSON pointer 或明确为 false 的 generated/LFS/legal 完整性声明都拒绝。未知/缺失状态不能按“非 open”推断闭合。这个状态 guard 仅提供 accepted 的必要条件，不替代精确来源审查、外部对象/生成关系/许可证证据、现有网络核验或独立接受；当前候选及其 null unknown/unread 合同保持不变。
+

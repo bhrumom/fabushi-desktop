@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {readRecoveredCandidateDocuments, main as sourceCandidateMain} from './validate-tdrp-source-candidate.mjs';
 import {
   assertNoOpenSourceCandidate,
+  assertSourceAcquisitionClosure,
   validateSourceCandidate,
   readFrozenUpstreamCommit,
   validateSourceReviews as validate,
@@ -43,6 +44,126 @@ const rowFor = (identity, id = 'message') => ({
 });
 const rows = [rowFor(source)];
 const secondReview = {...review, ...secondSource, evidence: ['dossier#message-header']};
+
+function closedAcquisitionFixture() {
+  const upstream = {repository: 'owner/repo', commit: 'a'.repeat(40), tree: 'b'.repeat(40)};
+  return {
+    lock: {
+      upstream,
+      acceptance: {accepted: false, baseline_ready: false},
+      build_time_acquisition_inventory: {
+        path: 'projects/telegram-desktop-rust/inventory/build-time-acquisitions.json',
+        upstream_repository: upstream.repository, upstream_commit: upstream.commit, upstream_tree: upstream.tree,
+        closure_status: 'complete', disposition_closure_status: 'complete', recursive_authority_closure_status: 'complete',
+        candidate_lines_pending_classification: 0, recursive_child_unique_external_nested_scans_pending: 0,
+      },
+    },
+    acquisition: {
+      upstream_repository: upstream.repository, upstream_commit: upstream.commit, upstream_tree: upstream.tree,
+      current_source_status: 'complete',
+      discovery: {
+        disposition_closure_status: 'complete', recursive_authority_closure_status: 'complete', evidence_status: 'complete',
+        candidate_lines_pending_classification: 0, recursive_child_unique_external_nested_scans_pending: 0,
+      },
+      recursive_build_reachability: {status: 'complete', accepted_upstream_commit: upstream.commit},
+    },
+  };
+}
+
+test('closed acquisition state is only a necessary guard and never grants source or product acceptance', () => {
+  const f = closedAcquisitionFixture();
+  const before = structuredClone(f);
+  assert.equal(assertSourceAcquisitionClosure(f.lock, f.acquisition), undefined);
+  assert.deepEqual(f, before);
+  assert.equal(f.lock.acceptance.accepted, false);
+  assert.equal(f.lock.acceptance.baseline_ready, false);
+});
+
+test('complete source reviews cannot bypass acquisition candidates or a candidate JSON pointer', () => {
+  assert.equal(validate([source], [review], rows).reviewed, 1);
+  for (const value of [null, false, {status: 'complete'}]) {
+    for (const owner of ['lock', 'acquisition']) {
+      const f = closedAcquisitionFixture();
+      f[owner].rebaseline_candidate = value;
+      assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /candidate marker remains/);
+    }
+  }
+  for (const value of ['/rebaseline_candidate', '/another-authority', null]) {
+    const f = closedAcquisitionFixture();
+    f.lock.build_time_acquisition_inventory.json_pointer = value;
+    assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /current root authority/);
+  }
+});
+
+test('accepted acquisition guard rejects open partial historical missing and invented completion states', () => {
+  const paths = [
+    ['lock', 'build_time_acquisition_inventory', 'closure_status'],
+    ['lock', 'build_time_acquisition_inventory', 'disposition_closure_status'],
+    ['lock', 'build_time_acquisition_inventory', 'recursive_authority_closure_status'],
+    ['acquisition', 'current_source_status'],
+    ['acquisition', 'discovery', 'disposition_closure_status'],
+    ['acquisition', 'discovery', 'recursive_authority_closure_status'],
+    ['acquisition', 'discovery', 'evidence_status'],
+    ['acquisition', 'recursive_build_reachability', 'status'],
+  ];
+  for (const fields of paths) {
+    for (const value of ['open', 'partial-audited-disposition-open', 'historical-pending-fixed-u-revalidation',
+      'pending-current-head-revalidation', 'unaccepted', 'unknown', 'done', '', null, undefined]) {
+      const f = closedAcquisitionFixture();
+      const owner = fields.slice(0, -1).reduce((item, field) => item[field], f);
+      if (value === undefined) delete owner[fields.at(-1)];
+      else owner[fields.at(-1)] = value;
+      assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /must be explicitly complete/);
+    }
+  }
+});
+
+test('accepted acquisition guard requires integer zero pending counts in both actual authority and lock', () => {
+  for (const scope of ['pointer', 'discovery']) {
+    for (const field of ['candidate_lines_pending_classification', 'recursive_child_unique_external_nested_scans_pending']) {
+      for (const value of [1, -1, 0.5, '0', null, undefined]) {
+        const f = closedAcquisitionFixture();
+        const owner = scope === 'pointer' ? f.lock.build_time_acquisition_inventory : f.acquisition.discovery;
+        if (value === undefined) delete owner[field];
+        else owner[field] = value;
+        assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /must be integer zero/);
+      }
+    }
+  }
+});
+
+test('accepted acquisition guard binds the actual source and reachability to fixed U', () => {
+  for (const [scope, field, value] of [
+    ['acquisition', 'upstream_repository', 'owner/other'],
+    ['acquisition', 'upstream_commit', 'c'.repeat(40)],
+    ['acquisition', 'upstream_tree', 'c'.repeat(40)],
+    ['pointer', 'upstream_commit', 'c'.repeat(40)],
+    ['pointer', 'upstream_tree', 'c'.repeat(40)],
+    ['reachability', 'accepted_upstream_commit', 'c'.repeat(40)],
+  ]) {
+    const f = closedAcquisitionFixture();
+    const owner = scope === 'pointer' ? f.lock.build_time_acquisition_inventory
+      : scope === 'reachability' ? f.acquisition.recursive_build_reachability : f.acquisition;
+    owner[field] = value;
+    assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /identity|drift/);
+  }
+});
+
+test('complete review records cannot override explicit unresolved generated LFS build or legal evidence', () => {
+  assert.equal(validate([source], [review], rows).reviewed, 1);
+  for (const field of ['build_time_acquisitions_complete', 'generated_inputs_complete',
+    'lfs_object_closure_complete', 'legal_review_performed']) {
+    for (const scope of ['pointer', 'acquisition', 'discovery', 'reachability', 'acceptance']) {
+      const f = closedAcquisitionFixture();
+      const owner = scope === 'pointer' ? f.lock.build_time_acquisition_inventory
+        : scope === 'discovery' ? f.acquisition.discovery
+        : scope === 'reachability' ? f.acquisition.recursive_build_reachability
+        : scope === 'acceptance' ? f.lock.acceptance : f.acquisition;
+      owner[field] = false;
+      assert.throws(() => assertSourceAcquisitionClosure(f.lock, f.acquisition), /remains unresolved/);
+    }
+  }
+});
 
 test('product deep review follows the primary source and returns source counts only', () => {
   assert.deepEqual(validate([source], [review], rows), {source_identities: 1, reviewed: 1});
@@ -722,5 +843,3 @@ test('focused candidate CLI rejects local execution before reading inputs', asyn
   process.env.GITHUB_ACTIONS = 'false';
   await assert.rejects(sourceCandidateMain([]), /only in GitHub Actions/);
 });
-
-

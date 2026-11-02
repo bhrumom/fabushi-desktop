@@ -32,6 +32,61 @@ export function assertNoOpenSourceCandidate(ledger) {
   }
 }
 
+// Necessary accepted-mode conditions only; this returns no acceptance verdict.
+// Detailed external/generated/LFS/legal evidence remains independently required.
+export function assertSourceAcquisitionClosure(lock, acquisition) {
+  const check = (ok, message) => {
+    if (!ok) throw Error('source acquisition closure: ' + message);
+  };
+  const object = value => value != null && typeof value === 'object' && !Array.isArray(value);
+  check(object(lock) && object(acquisition), 'lock and acquisition objects required');
+  const upstream = lock.upstream;
+  check(object(upstream) && githubRepository(upstream.repository) &&
+    oid(upstream.commit) && oid(upstream.tree), 'frozen upstream identity required');
+  const pointer = lock.build_time_acquisition_inventory;
+  const discovery = acquisition.discovery;
+  const reachability = acquisition.recursive_build_reachability;
+  check(object(pointer) && object(discovery) && object(reachability), 'current authority structures required');
+  for (const authority of [lock, acquisition, pointer, discovery, reachability]) {
+    check(!Object.hasOwn(authority, 'rebaseline_candidate'), 'candidate marker remains');
+  }
+  check(pointer.path === 'projects/telegram-desktop-rust/inventory/build-time-acquisitions.json' &&
+    (!Object.hasOwn(pointer, 'json_pointer') || pointer.json_pointer === ''),
+    'acquisition pointer must select the current root authority');
+  check(acquisition.upstream_repository === upstream.repository &&
+    acquisition.upstream_commit === upstream.commit &&
+    reachability.accepted_upstream_commit === upstream.commit,
+    'authority differs from frozen upstream identity');
+  for (const authority of [acquisition, pointer]) {
+    if (Object.hasOwn(authority, 'upstream_tree')) check(authority.upstream_tree === upstream.tree, 'upstream tree drift');
+    if (Object.hasOwn(authority, 'upstream_commit')) check(authority.upstream_commit === upstream.commit, 'upstream commit drift');
+    if (Object.hasOwn(authority, 'upstream_repository')) check(authority.upstream_repository === upstream.repository, 'upstream repository drift');
+  }
+  for (const [authority, fields] of [
+    [pointer, ['closure_status', 'disposition_closure_status', 'recursive_authority_closure_status']],
+    [discovery, ['disposition_closure_status', 'recursive_authority_closure_status', 'evidence_status']],
+    [acquisition, ['current_source_status']],
+    [reachability, ['status']],
+  ]) {
+    for (const field of fields) check(authority[field] === 'complete', field + ' must be explicitly complete');
+  }
+  for (const authority of [pointer, discovery]) {
+    for (const field of ['candidate_lines_pending_classification', 'recursive_child_unique_external_nested_scans_pending']) {
+      check(Number.isSafeInteger(authority[field]) && authority[field] === 0, field + ' must be integer zero');
+    }
+  }
+  for (const authority of [pointer, acquisition, discovery, reachability, lock.acceptance ?? {}]) {
+    for (const field of ['status', 'closure_status', 'disposition_closure_status',
+      'recursive_authority_closure_status', 'evidence_status', 'current_source_status']) {
+      if (Object.hasOwn(authority, field)) check(authority[field] === 'complete', field + ' remains unresolved');
+    }
+    for (const field of ['build_time_acquisitions_complete', 'generated_inputs_complete',
+      'lfs_object_closure_complete', 'legal_review_performed']) {
+      if (Object.hasOwn(authority, field)) check(authority[field] === true, field + ' remains unresolved');
+    }
+  }
+}
+
 function identityKey(source, context) {
   if (!source || typeof source !== 'object' || Array.isArray(source) ||
       !text(source.repository) || !oid(source.commit) ||
@@ -513,4 +568,3 @@ export function validateSourceCandidate({
     independent_acceptance: false,
   };
 }
-

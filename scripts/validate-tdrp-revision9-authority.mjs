@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate } from './tdrp-source-review.mjs';
+import { validateSourceReviews, readFrozenUpstreamCommit, assertNoOpenSourceCandidate, assertSourceAcquisitionClosure } from './tdrp-source-review.mjs';
 import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
@@ -68,6 +68,7 @@ const rtm=await read('projects/fabushi-communication-platform/quality/requiremen
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 if (requireAccepted) assertNoOpenSourceCandidate(ledger);
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+if (requireAccepted) assertSourceAcquisitionClosure(lock, acquisitionInventory);
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
@@ -110,7 +111,7 @@ for (const group of dispositionGroups) {
 fail(dispositionedCandidateLines+acquisitionInventory.discovery.immutable_commit_pin_occurrences_classified===acquisitionInventory.discovery.candidate_lines_classified,'explicit candidate dispositions do not match classified count');
 const immutableKeys=new Set((acquisitionInventory.immutable_commit_pin_occurrences || []).map(item=>item.source_path+':'+item.source_line));
 for (const key of dispositionKeys) fail(!immutableKeys.has(key),'candidate disposition overlaps immutable occurrence: '+key);
-fail(lock.build_time_acquisition_inventory.closure_status==='open','build-time acquisition closure must remain open while candidate lines are pending');
+if (!requireAccepted) fail(lock.build_time_acquisition_inventory.closure_status==='open','historical build-time acquisition audit must remain explicitly open');
 for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences || []) {
   fail(/^[0-9a-f]{40}$/.test(acquisition.commit),'immutable acquisition lacks full commit pin: '+acquisition.id);
   const raw=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/${acquisition.source_path}`,false);
@@ -149,7 +150,7 @@ for (const child of recursiveChildren) {
   fail(entry.sha===child.child_commit,'recursive child gitlink SHA drift: '+child.id);
 }
 const recursiveReachability=acquisitionInventory.recursive_build_reachability;
-fail(recursiveReachability?.status==='partial-audited-disposition-open','recursive build reachability status must remain explicitly partial/open');
+if (!requireAccepted) fail(recursiveReachability?.status==='partial-audited-disposition-open','historical recursive build reachability audit must remain explicitly partial/open');
 fail(recursiveReachability.accepted_upstream_commit===lock.upstream.commit,'recursive build reachability upstream commit drift');
 const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
@@ -730,4 +731,3 @@ if (requireAccepted) {
   fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));
-
