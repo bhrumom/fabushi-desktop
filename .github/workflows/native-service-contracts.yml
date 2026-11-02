@@ -345,7 +345,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/featurehost-messaging-boundary.log
-          grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log
+          grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log
       - name: Retained Social recovery and desktop HTTP ownership
         shell: bash
         run: |

@@ -1,4 +1,4 @@
-//! NMR-34/35 owner-boundary tests. Production-mode fixtures deliberately have
+//! NMR-34/35 and NMR-SOCIAL-OWNER-02 / NMR-SOCIAL-AC-01 tests. Production fixtures have
 //! no MahayanaHost runtime: they verify refusal before that runtime is touched.
 //! Real Production AppHost construction, account handoff and process restart are
 //! covered by the native_desktop_account_handoff integration target.
@@ -12,6 +12,8 @@ use std::fs;
 
 const DESKTOP_REFUSAL: &str =
     "standalone messaging is unavailable in the desktop host; use the Session/Transcript owner";
+const DESKTOP_SOCIAL_REFUSAL: &str =
+    "social conversations are unavailable in the desktop host; use the Session/Transcript owner";
 
 struct OwnedRoot(PathBuf);
 
@@ -174,6 +176,112 @@ fn tree_image(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
 fn write_fixture(path: &Path, bytes: &[u8]) {
     fs::create_dir_all(path.parent().expect("fixture parent")).expect("create fixture parent");
     fs::write(path, bytes).expect("write fixture bytes");
+}
+
+fn social_commands(conversation_id: &str) -> [FeatureCommand; 2] {
+    [
+        FeatureCommand::ConversationOpen {
+            request_id: "social-open".into(),
+            conversation_id: conversation_id.into(),
+        },
+        FeatureCommand::ChatSend {
+            request_id: "social-send".into(),
+            text: "Public retained Human text must never enter Agent memory or workflow context.".into(),
+            agent_id: Some("mahayana-assistant".into()),
+            conversation_id: Some(conversation_id.into()),
+            client_message_id: Some("public-social-client-id".into()),
+            retry_of_message_id: None,
+            mode: AgentMode::Agent,
+            mode_statement: Some("Do not reinterpret this Human intent as Agent input".into()),
+            model: None,
+            attachments: Vec::new(),
+        },
+    ]
+}
+
+fn assert_social_refused(result: Result<CommandAccepted, FeatureHostError>) {
+    match result {
+        Err(FeatureHostError::Contract(message)) => assert_eq!(message, DESKTOP_SOCIAL_REFUSAL),
+        Err(error) => panic!("expected Session/Transcript ownership before other work, got {error}"),
+        Ok(_) => panic!("desktop accepted a generic social conversation"),
+    }
+}
+
+#[test]
+fn desktop_social_intents_refuse_before_auth_runtime_context_io_and_events() {
+    let root = OwnedRoot::new();
+    let controller = owner(&root, HostMode::Production, SurfacePlatform::Electron);
+    let before = event_image(&controller);
+    for conversation_id in [
+        "mahayana:contact:42",
+        "mahayana:contact:",
+        " \tmahayana:contact:42\n",
+    ] {
+        for command in social_commands(conversation_id) {
+            assert_social_refused(controller.execute(command));
+            assert_eq!(event_image(&controller), before);
+            assert!(!root.0.exists(), "denial must precede any Agent workspace creation");
+        }
+    }
+}
+
+#[test]
+fn desktop_social_refusal_does_not_lock_state_or_touch_retained_context() {
+    let root = OwnedRoot::new();
+    write_fixture(&root.agents().join("mahayana-assistant/memory/retained.bin"), b"original public memory\0\xff");
+    write_fixture(&root.0.join("runtime/workflows/retained.bin"), b"original public workflow\0\xfe");
+    let before_files = tree_image(&root.0);
+    let controller = owner(&root, HostMode::Production, SurfacePlatform::Electron);
+    let before_events = event_image(&controller);
+    let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _state = controller.state.lock().expect("lock before deliberate poison");
+        panic!("intentional social-owner fixture state poison");
+    }));
+    assert!(poisoned.is_err());
+    assert!(controller.state.is_poisoned());
+    for command in social_commands("mahayana:contact:42") {
+        assert_social_refused(controller.execute(command));
+    }
+    let state = controller.state.lock().unwrap_or_else(|error| error.into_inner());
+    let after_events = state.events.iter()
+        .map(|event| serde_json::to_value(event).expect("serialize retained event"))
+        .collect::<Vec<_>>();
+    assert_eq!(after_events, before_events);
+    assert_eq!(tree_image(&root.0), before_files);
+}
+
+#[test]
+fn social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces() {
+    let root = OwnedRoot::new();
+    let controller = owner(&root, HostMode::Test, SurfacePlatform::Electron);
+    for command in social_commands("mahayana:contact:42") {
+        controller.execute(command).expect("explicit Test dispatch remains available");
+    }
+    for platform in [SurfacePlatform::Ios, SurfacePlatform::Android, SurfacePlatform::Wasm] {
+        let controller = owner(&root, HostMode::Production, platform);
+        for command in social_commands("mahayana:contact:42") {
+            assert!(matches!(
+                controller.execute(command),
+                Err(FeatureHostError::ProductionUnavailable)
+            ), "non-desktop request must reach its existing absent-runtime boundary");
+        }
+    }
+    let controller = owner(&root, HostMode::Production, SurfacePlatform::Electron);
+    for conversation_id in [
+        "mahayana-ai:default",
+        "codex:agent:research",
+        "miniapp:public-fixture",
+        "mahayana:contacts:42",
+        "unrecognized:42",
+    ] {
+        assert!(matches!(
+            controller.execute(FeatureCommand::ConversationOpen {
+                request_id: "non-social-control".into(),
+                conversation_id: conversation_id.into(),
+            }),
+            Err(FeatureHostError::ProductionUnavailable)
+        ), "unrelated namespace must retain the existing dispatch boundary");
+    }
 }
 
 fn seed_snapshot(root: &Path, account_id: &str) -> MessagingSnapshot {

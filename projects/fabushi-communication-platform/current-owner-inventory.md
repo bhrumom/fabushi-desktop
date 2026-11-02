@@ -221,3 +221,18 @@ PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected
 ### Resumed round 6: existing Human history owner extension
 
 NMR-PAGING-01 uses `SandAgentDb` and `agent_db_transcript_pages` for both canonical full reads and durable bounded traversal indices; `ProductionSessionWorkers` and the existing gateway admit the scoped cursor. The existing renderer pagination/root-cache/projection owners carry it and preserve committed updates across failed older-page retries. NMR-ACTIVITY-01 keeps activity and Agent handoff in the existing per-conversation mutation lane and repairs interrupted row/metadata persistence on replay. No additional message owner or user-data migration is introduced. Later credential, reply/forward, legacy-retention and source work remains intact. These authored changes require containing-H Actions; this inventory is not an acceptance claim.
+
+
+
+### Round23 resumed: desktop Social ownership boundary
+
+At inspected106bb95ba97ef7722e9523285783824393039bc0, Production Electron
+AppHost selects the existing Session host policy; ordinary/Codex registries
+omit generic Social. FeatureHost rejects contact ConversationOpen/ChatSend
+before auth/runtime/state/I/O/events; Runtime retains nonempty Social records
+before recovery writes, and the existing desktop platform client blocks generic
+message/resource HTTP before credentials. Human message writes remain in the
+existing Session/native_messaging path. No owner or user-data migration is added.
+The named NMR-SOCIAL-OWNER spec adds three missing real FeatureHost dispatch
+controls and keeps existing Agent, automation, non-desktop and Test boundaries.
+Exact-H execution remains required; no whole-owner acceptance is promoted.
