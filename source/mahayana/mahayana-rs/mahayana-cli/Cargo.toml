@@ -38,7 +38,8 @@ mahayana-feature-host = { workspace = true, features = ["production"] }
 mahayana-gateway.workspace = true
 mahayana-gateway-peer.workspace = true
 mahayana-gateway-protocol.workspace = true
-mahayana-host.workspace = true
+# Preserve native Agent construction previously selected by the FFI defaults.
+mahayana-host = { workspace = true, features = ["desktop-full", "local-only"] }
 mahayana-host-protocol.workspace = true
 mahayana-mcp-runtime.workspace = true
 mahayana-product = { package = "mahayana-platform-client", path = "../mahayana-product" }

@@ -10,7 +10,7 @@ use super::agent_db::SandAgentDb;
 const FORWARD_BATCHES_KEY: &str = "humanForwardBatches";
 const FORWARD_BATCH_VERSION: u32 = 1;
 const MAX_FORWARD_ATTACHMENTS: usize = 6;
-const MAX_FORWARD_ATTACHMENT_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_FORWARD_ATTACHMENT_BYTES: u64 = super::native_messaging::MAX_HUMAN_RESOURCE_UPLOAD_BYTES;
 const MAX_FORWARD_BATCH_ATTACHMENT_BYTES: u64 =
     MAX_FORWARD_ATTACHMENT_BYTES * MAX_FORWARD_ATTACHMENTS as u64;
 
@@ -123,7 +123,7 @@ fn read_forward_regular_file(path: &Path, expected_size: Option<u64>) -> Result<
     if size == 0 || size > MAX_FORWARD_ATTACHMENT_BYTES
         || expected_size.is_some_and(|expected| expected != size)
     {
-        return Err("Human forward attachment size is invalid, changed, or exceeds 32 MiB".into());
+        return Err("Human forward attachment size is invalid, changed, or exceeds 25 MiB".into());
     }
     let mut bytes = Vec::with_capacity(size as usize);
     (&mut file).take(MAX_FORWARD_ATTACHMENT_BYTES + 1).read_to_end(&mut bytes)
@@ -612,7 +612,7 @@ mod tests {
             serde_json::json!({"path":directory,"name":"directory"})
         ]).unwrap_err().contains("regular"));
         let oversized = fixture.root.join("oversized");
-        File::create(&oversized).unwrap().set_len(MAX_FORWARD_ATTACHMENT_BYTES + 1).unwrap();
+        File::create(&oversized).unwrap().set_len(25 * 1024 * 1024 + 1).unwrap();
         assert!(snapshot_forward_attachments(&fixture.owner, "a", "i", "r", &[
             serde_json::json!({"path":oversized,"name":"oversized"})
         ]).unwrap_err().contains("size"));
@@ -636,13 +636,15 @@ mod tests {
     fn forward_attachment_exact_resource_byte_limit_remains_supported() {
         let fixture = SnapshotFixture::new();
         let path = fixture.root.join("largest-source");
-        File::create(&path).unwrap().set_len(MAX_FORWARD_ATTACHMENT_BYTES).unwrap();
+        // Oracle comes from the service contract, independently of the reader constant.
+        const SERVICE_UPLOAD_LIMIT: u64 = 25 * 1024 * 1024;
+        File::create(&path).unwrap().set_len(SERVICE_UPLOAD_LIMIT).unwrap();
         let snapshots = snapshot_forward_attachments(&fixture.owner, "a", "i", "r", &[
-            serde_json::json!({"path":path,"name":"largest","size":MAX_FORWARD_ATTACHMENT_BYTES})
+            serde_json::json!({"path":path,"name":"largest","size":SERVICE_UPLOAD_LIMIT})
         ]).expect("largest supported regular file");
         let bytes = read_forward_attachment_bytes(&fixture.owner, "a", "i", "r", 0, &snapshots[0])
             .expect("largest pinned byte buffer");
-        assert_eq!(bytes.len() as u64, MAX_FORWARD_ATTACHMENT_BYTES);
+        assert_eq!(bytes.len() as u64, SERVICE_UPLOAD_LIMIT);
         assert!(bytes.iter().all(|byte| *byte == 0));
     }
 
