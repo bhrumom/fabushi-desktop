@@ -106,3 +106,7 @@ FMEP-001 优先解释旧任务/P0/ledger 对测试时机的表述：`implemented
 继续沿用 `unreviewed -> understood -> mapped -> implemented -> verified`：阶段 A 到 implemented/未验证，阶段 B/C 才可 verified/ACCEPT。遇到 service/account/signing blocker，记录解除条件并继续无依赖任务。
 
 完整提示词：`projects/fabushi-communication-platform/management/prompts/full-migration-deferred-ci.md`。
+
+## 2026-11-02 执行纠偏
+
+遵循 `docs/specs/fabushi-deferred-ci-migration.md` §12：以当前生产 owner 和依赖驱动批次，先明确消息权威与旧运行路径退出，再推进完整产品能力。上游开发工具单独核算，不机械导入治理规则，不混入产品进度。历史 STATUS/owner 清单必须按当前批次增量刷新；本次规范修订不代表产品实现或验收完成。
