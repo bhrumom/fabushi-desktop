@@ -27,7 +27,8 @@ export type DesktopUpdateTrack = "stable" | "nightly" | "dogfood";
 export type DesktopUpdateState =
   | {
       type: "disabled";
-      reason: "not-packaged" | "lab-build" | "unsupported-platform" | "disabled-by-env";
+      reason: "not-packaged" | "lab-build" | "unsupported-platform" | "disabled-by-env"
+        | "update-source-unconfigured" | "update-source-invalid";
     }
   | {
       type: "idle";
@@ -643,3 +644,4 @@ export function requireDesktopBridge(value: unknown): DesktopBridge {
   }
   return value;
 }
+

@@ -18,7 +18,9 @@ export type DisabledUpdateReason =
   | "not-packaged"
   | "lab-build"
   | "unsupported-platform"
-  | "disabled-by-env";
+  | "disabled-by-env"
+  | "update-source-unconfigured"
+  | "update-source-invalid";
 
 export type LastUpdateCheck =
   | { result: "up-to-date" }
@@ -62,6 +64,10 @@ export function disabledUpdateMessage(status: UpdateStatus): string {
       return "Updates aren't available on this platform";
     case "disabled-by-env":
       return "Updates are disabled by SAND_DISABLE_UPDATES";
+    case "update-source-unconfigured":
+      return "Updates are unavailable until an update source is configured";
+    case "update-source-invalid":
+      return "The configured update source is invalid";
   }
 }
 
@@ -110,3 +116,4 @@ export function egressTunnelStatusDescription(status: EgressTunnelStatus): strin
       return "Enabled, but not routing yet — waiting for Fabushi's computer to connect with egress enabled.";
   }
 }
+

@@ -15,6 +15,11 @@ on:
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
       - 'source/electron-main/coordinator/rust-coordinator-carrier*'
       - 'source/product/fabushi/fabushi-account-service*'
+      - 'source/electron-main/update/**'
+      - 'source/electron-main/production-binding-providers.ts'
+      - 'source/shared/node/fabushi-service-origin.ts'
+      - 'frontend/src/recovered/contracts/desktop-bridge.ts'
+      - 'frontend/src/recovered/features/settings/overlay/updates.ts'
       - 'desktop/package.json'
       - 'desktop/package-lock.json'
       - 'desktop/scripts/build-electron-runtime.mjs'
@@ -464,6 +469,18 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/package-resources.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/package-resources.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/package-resources.log
+      - name: Explicit approved update source and recovery behaviors
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap ../source/electron-main/update/update-source.contract.test.mjs 2>&1 | tee ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# tests 16' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# pass 16' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# fail 0' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# cancelled 0' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# skipped 0' ../artifacts/native-message-electron/update-source.log
+          grep -Fx '# todo 0' ../artifacts/native-message-electron/update-source.log
       - name: Final macOS update metadata and blockmap behaviors
         shell: bash
         run: |
@@ -567,6 +584,7 @@ jobs:
           name: native-message-electron-${{ github.sha }}
           path: artifacts/native-message-electron
           if-no-files-found: error
+
 
 
 
