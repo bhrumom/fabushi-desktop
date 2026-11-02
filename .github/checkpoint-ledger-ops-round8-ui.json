@@ -17,7 +17,8 @@
           "NMR-UI-01a",
           "NMR-UI-01b",
           "NMR-UI-01c",
-          "NMR-AC-UI-01"
+          "NMR-AC-UI-01",
+          "NMR-ELECTRON-01"
         ],
         "oracle_ids": [
           "NMR-AC-UI-01"
@@ -35,7 +36,9 @@
           "frontend/src/recovered/features/conversation/workspace/model.ts",
           "frontend/src/recovered/features/conversation/workspace/pagination.ts",
           "desktop/e2e/native-message-author-recovery.spec.ts",
-          "desktop/e2e/fixtures/native-message-author-recovery.tsx"
+          "desktop/e2e/fixtures/native-message-author-recovery.tsx",
+          "desktop/e2e/agent-network-responsive.spec.ts",
+          ".github/workflows/plugins-window-close.yml"
         ],
         "fabushi_target_symbols": [
           "projectTranscriptEntry",
@@ -57,7 +60,8 @@
           "NMR-UI-01 final containing-commit production/test blobs and reviewed current-owner integration are recorded in projects/telegram-desktop-rust/evidence/round8-renderer-author-receipt-20261102.json. The original unpublished candidate is not a replacement for later checkpoint code."
         ],
         "test_evidence": [
-          "NMR-AC-UI-01: existing frontend/src/production/transcript-projection.contract.test.ts and actual ProductionRenderer desktop/e2e/native-message-author-recovery.spec.ts; required executed counts are pinned in the containing native-service-contracts.yml. Authored cases/transport object creation do not prove execution."
+          "NMR-AC-UI-01: existing frontend/src/production/transcript-projection.contract.test.ts and actual ProductionRenderer desktop/e2e/native-message-author-recovery.spec.ts; required executed counts are pinned in the containing native-service-contracts.yml. Authored cases/transport object creation do not prove execution.",
+          "NMR-ELECTRON-01: two actual Electron Human IPC cases in desktop/e2e/agent-network-responsive.spec.ts; same-H assembled JS/Rust Coordinator/AppHost, real SQLite readonly diagnostics and controlled HTTP; exact execution remains pending in round8-electron-recovery-20261102.json."
         ],
         "ui_functional_case_ids": [
           "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)",
@@ -82,23 +86,28 @@
           "NMR-UI-01: actual Bob composer and Send remain available while Alice RPC waits; account ABA/clear/disposal cannot create draft or delivery effects; Agent tool expansion and actual attachment staging controls remain."
         ],
         "test_fixture_ids": [
-          "desktop/e2e/fixtures/native-message-author-recovery.tsx: real ProductionRenderer/coordinator client/feed/queue/cache with controlled external port/DesktopBridge. Replies freeze at request time; unknown RPC is a failure. Client draft observations do not qualify Host/SQLite restart or packaged Electron."
+          "desktop/e2e/fixtures/native-message-author-recovery.tsx: real ProductionRenderer/coordinator client/feed/queue/cache with controlled external port/DesktopBridge. Replies freeze at request time; unknown RPC is a failure. Client draft observations do not qualify Host/SQLite restart or packaged Electron.",
+          "NMR-ELECTRON-01 opt-in actual Electron loopback Human/auth service; existing test-owned user directory and real Production Session; no injected product rows or fake renderer port"
         ],
         "test_environment_ids": [
-          "NMR-UI-01 GitHub Actions Ubuntu24.04/Node24/locked desktop/actual Vite and Chromium; retries0/workers1; preserve current Human/journal/resource/Agent/credential/cursor/Forward/Electron/Windows/shipping gates, including all later additions."
+          "NMR-UI-01 GitHub Actions Ubuntu24.04/Node24/locked desktop/actual Vite and Chromium; retries0/workers1; preserve current Human/journal/resource/Agent/credential/cursor/Forward/Electron/Windows/shipping gates, including all later additions.",
+          "NMR-ELECTRON-01 GitHub Actions macos-14 Node>=22.16 same-H assembled desktop JS/Coordinator/AppHost; no packaged executable override, retries0"
         ],
         "fault_recovery_case_ids": [
           "NMR-UI-01 actual root disposal: after unmount plus same-task delayed refusal, complete client draft boundary is unchanged before mounting a replacement root.",
           "NMR-UI-01 unsettled send failure remains recoverable, while a late error after canonical send cannot restore that message as unsent.",
           "NMR-UI-01 canonical retry A followed by delayed approval cleanup cannot erase the complete later failed-send B draft/recovery snapshot; settlement cleanup runs once and is bound to original draft/recovery identity.",
-          "NMR-UI-01 failed A then edit-away/edit-back creates a new draft identity; retry acknowledgement for original A must preserve that later identical-text draft and its persisted ID."
+          "NMR-UI-01 failed A then edit-away/edit-back creates a new draft identity; retry acknowledgement for original A must preserve that later identical-text draft and its persisted ID.",
+          "desktop/e2e/agent-network-responsive.spec.ts::NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+          "desktop/e2e/agent-network-responsive.spec.ts::NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen"
         ],
         "security_case_ids": [
           "NMR-UI-01 retained legacy peer nonce, assistant nonce and missing Human author do not consume local optimistic state; account/clear/disposal lifetime fences apply to callbacks and deferred React updaters."
         ],
         "blockers": [
           "NMR-UI-01 actual renderer integration requires its own containing-H GitHub Actions logs/counts, compiled renderer and screenshot/DOM evidence; partial helper/old-H results do not qualify the new production wiring.",
-          "This renderer projection repair does not establish native revision/edit/delete/old-history mutation discovery, active compatible backend afterId=0 deployment, full source/legal or signed platform/UI/a11y/Bot/performance/soak/independent ACCEPT."
+          "This renderer projection repair does not establish native revision/edit/delete/old-history mutation discovery, active compatible backend afterId=0 deployment, full source/legal or signed platform/UI/a11y/Bot/performance/soak/independent ACCEPT.",
+          "NMR-ELECTRON-01 original A submitted-draft retirement across process reopen, kill-crash recovery, active backend afterId=0 deployment, OS-keychain/security/package qualification and independent ACCEPT remain open; editing new draft B is not A retirement evidence."
         ]
       },
       "note": "\nNMR-UI-01 / task20bf round8: reuse the current renderer and Session owners; reconcile the earlier unpublished candidate with current opaque walks, pending reply recovery and reaction settlement instead of restoring old whole files. Add only the still-missing author/nonce, send/queue/draft, Human empty-value and originating busy/lifetime behavior. Existing source/legal identities, all source review records, scalar execution pointers, historical evidence and acceptance flags remain unchanged. Exact current input and final frozen blobs, independent scoped static review and executed Actions belong to round8-renderer-author-receipt-20261102.json. Temporary object transport is not product verification or ACCEPT; root must match its input to the current canonical ledger before force=false expected-head CAS."
