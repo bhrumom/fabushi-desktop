@@ -1,7 +1,7 @@
 name: NMR50 temporary ledger object preparation
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-nmr50-recovery-20bf9475-r1]
     paths: ['.github/workflows/nmr50-ledger-object.yml']
 permissions:
   contents: write
@@ -21,7 +21,7 @@ jobs:
           python3 - <<'PY'
           import copy, hashlib, json, os, pathlib, subprocess, urllib.request
           path = "projects/telegram-desktop-rust/parity-ledger.json"
-          expected = "eddd11c7db0e8be8cfa26a58fb177901ce09b55e"
+          expected = "a95d76c46119474e36134456442aebe39f4e9760"
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["GITHUB_SHA"], "checkout must equal this run"
           actual = subprocess.check_output(["git", "rev-parse", "HEAD:" + path], text=True).strip()
