@@ -147,7 +147,7 @@ jobs:
           retention-days: 90
       - name: Check Grok-aligned shipping Mahayana Host
         shell: bash
-        run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
+        run: cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
       - name: Test independent Mahayana Coordinator contract
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -191,7 +191,7 @@ jobs:
         run: |
           set -euo pipefail
           admission_status=0
-          if cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host --no-run; then
+          if cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host --no-run; then
             for admission_test in \
               tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects \
               tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce \
@@ -214,7 +214,7 @@ jobs:
               tests::automation_deadline_preserves_queued_runner_success \
               tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate \
               tests::automation_terminal_event_maps_runner_settlement_without_guessing; do
-              cargo test --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
+              cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
                 "$admission_test" -- --exact || admission_status=1
             done
           else

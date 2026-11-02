@@ -58,6 +58,46 @@ private-state isolation while implementing group-scoped admission through the
 existing Session owner in a subsequent production batch. No synthetic record
 or main fallback may be used to declare the actual group chain verified.
 
+### Shipping dependency provenance recovery — SHIPPING-LOCK-01 (2026-11-02)
+
+Decision: **FIX / IMPL_BUG (build-input provenance)**. Runtime `41416993406`,
+job `125184480258`, on `f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`
+compiled the shipping app after resolving nine package records absent from its
+committed lock. This is not an environment failure or a frozen-graph approval.
+On integration base `ecb6f6bd6f618975feca1a7b7b992255fb38fdb3`, reconcile
+the existing standalone app lock with its current path manifests and the exact
+Host lock; do not change manifests, fixed U, source authority or product owners.
+
+The source inputs are app lock blob `7cd7f844f981ef4219ea37581a7c79445b1f68e8`,
+Host donor lock blob `ea4c9c0976f8cdbb7212e112aebd19119d290d2c`, and the
+current Host/Computer normal dependencies. Copy the donor identities/checksums
+for `core_detect 1.0.0`, `encoding_rs 0.8.42`, `multiversion_no_op 1.0.0`,
+`qrcode 0.14.1`, `simdutf8 0.1.5`, `uiautomation 0.25.1`,
+`uiautomation_derive 0.7.9`, `zstd 0.13.3` and `zstd-safe 7.3.0`.
+Restore the Host encoding/percent-decoding/QR/websocket/compression edges,
+Computer Windows edges, and websocket TLS edges. Preserve the app's existing
+archive `zstd 0.14.3` / `zstd-safe 8.2.0` branch with explicit version labels,
+its workspace feature union and all unrelated resolutions. Host-only dev
+dependencies and differing tar/wasm resolutions do not belong in this repair.
+
+The existing shipping binary remains the validation subject. Add `--locked`
+to its check, selected-test compilation and each selected-test invocation in
+`rust-desktop-runtime.yml`; retain every profile, binary, case and aggregation
+rule. A missing or inconsistent record must fail instead of resolving a newer
+package during validation. No separate resolver, dependency owner or workflow
+is introduced. Lock contents are a reviewed candidate until those exact-H
+Actions commands pass; source inspection alone does not prove Cargo acceptance.
+
+Acceptance requires independent review of the lock/workflow/task scope and
+exact-H shipping compile plus selected contracts with the committed graph.
+Keep prior passing evidence bound to its original H. Record any Cargo refusal
+as a failed candidate, diagnose its specific graph, and repair the existing lock
+without removing `--locked` or picking new versions merely to obtain green.
+Rollback restores this bounded lock/workflow delta as a unit; no stored user
+data changes. Windows runtime, all-platform packaging, license/SBOM closure,
+recursive upstream source closure and full OCRM acceptance remain separate,
+unmet obligations; no global completion flag changes with this repair.
+
 ### Active shared-gate recovery — RUNNER-WIRING-ORACLE-01 (2026-11-02)
 
 Decision: **FIX / TEST_FLAW**, recorded before the oracle repair. Exact H
