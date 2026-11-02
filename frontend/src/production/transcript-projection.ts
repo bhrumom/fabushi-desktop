@@ -58,17 +58,19 @@ export function mergeAuthoritativeTranscriptMessage(
     ? incoming.attachments ?? current.attachments
     : current.attachments === undefined && incoming.attachments === undefined
       ? undefined : mergeTranscriptAttachments(current.attachments, incoming.attachments);
-  const clientNonce = incoming.clientNonce ?? current.clientNonce;
+  const clientNonce = human && "clientNonce" in incoming ? incoming.clientNonce : incoming.clientNonce ?? current.clientNonce;
   const delivery = options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery;
-  return {
+  const merged: TranscriptMessage = {
     ...current,
     ...incoming,
     id: options.preserveCurrentId ? current.id : incoming.id,
     text: human || incoming.text.length > 0 ? incoming.text : current.text,
     ...(attachments === undefined ? {} : { attachments }),
-    ...(clientNonce === undefined ? {} : { clientNonce }),
+    ...(clientNonce === undefined && !(human && "clientNonce" in incoming) ? {} : { clientNonce }),
     ...(delivery === undefined && incoming.delivery === undefined ? {} : { delivery }),
   };
+  if (options.preserveCurrentId && !("delivery" in current)) delete merged.delivery;
+  return merged;
 }
 
 export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
@@ -77,8 +79,10 @@ export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, ri
     || left.role !== "user" || right.role !== "user"
     || left.clientNonce == null || right.clientNonce == null
     || left.clientNonce !== right.clientNonce) return false;
-  if (left.authorKind !== "human" && right.authorKind !== "human") return true;
   if (left.clientNonce.length === 0) return false;
+  if (left.authorKind !== "human" && right.authorKind !== "human") {
+    return left.authorId == null && right.authorId == null;
+  }
   if (left.authorKind === "human" && right.authorKind === "human") {
     return typeof left.authorId === "string" && left.authorId.trim().length > 0
       && left.authorId === right.authorId;
@@ -88,14 +92,14 @@ export function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, ri
   // arbitrary Agent or remote message with the same nonce cannot do so.
   const human = left.authorKind === "human" ? left : right;
   const optimistic = left.authorKind === "human" ? right : left;
-  return optimistic.authorKind === undefined && optimistic.role === "user"
+  return optimistic.authorKind === undefined && optimistic.authorId == null && optimistic.role === "user"
     && optimistic.id === `pending-${optimistic.clientNonce}`
     && typeof human.authorId === "string" && human.authorId.trim().length > 0
     && (isLocalSendPlaceholder(human) || isCanonicalHumanSend(human));
 }
 
 function isLocalSendPlaceholder(entry: ConversationTranscriptEntry): entry is TranscriptMessage {
-  if (entry.kind !== "message" || entry.clientNonce == null || entry.clientNonce.length === 0) return false;
+  if (entry.kind !== "message" || entry.role !== "user" || entry.clientNonce == null || entry.clientNonce.length === 0) return false;
   if (entry.authorKind !== "human") return entry.id === `pending-${entry.clientNonce}`;
   return typeof entry.authorId === "string" && entry.authorId.trim().length > 0
     && entry.remoteMessageId === undefined
@@ -104,11 +108,31 @@ function isLocalSendPlaceholder(entry: ConversationTranscriptEntry): entry is Tr
 }
 
 function isCanonicalHumanSend(entry: ConversationTranscriptEntry): entry is TranscriptMessage {
-  return entry.kind === "message" && entry.authorKind === "human"
+  return entry.kind === "message" && entry.role === "user" && entry.authorKind === "human"
     && typeof entry.authorId === "string" && entry.authorId.trim().length > 0
     && typeof entry.clientNonce === "string" && entry.clientNonce.length > 0
     && typeof entry.remoteMessageId === "string" && entry.remoteMessageId.length > 0
     && entry.id === `human-server-message:${entry.remoteMessageId}`;
+}
+
+/** Undefined author selects the existing Agent path; null is an unscoped Human. */
+export function localTranscriptClientNonce(
+  entry: ConversationTranscriptEntry,
+  humanAuthorId: string | null | undefined,
+): string | null {
+  if (entry.kind !== "message" || entry.role !== "user" || !entry.clientNonce) return null;
+  if (humanAuthorId !== undefined) {
+    return humanAuthorId != null && humanAuthorId.trim().length > 0
+      && entry.authorKind === "human" && entry.authorId === humanAuthorId ? entry.clientNonce : null;
+  }
+  return entry.authorKind == null && entry.authorId == null ? entry.clientNonce : null;
+}
+
+export function isSettledTranscriptMessage(entry: ConversationTranscriptEntry): entry is TranscriptMessage {
+  return entry.kind === "message" && entry.role === "user" && entry.delivery === "sent"
+    && !entry.id.startsWith("pending-")
+    && !("sourceKind" in entry && entry.sourceKind === "user-attachment")
+    && (entry.authorKind === "human" ? isCanonicalHumanSend(entry) : entry.authorId == null);
 }
 
 /** Older pages share the root's ID merge and Human settlement identity rules. */
@@ -165,8 +189,9 @@ function previousIdentityMatches(current: ConversationTranscriptEntry, incoming:
   if ((current.kind === "message" && current.authorKind === "human")
     || (incoming.kind === "message" && incoming.authorKind === "human")) {
     return current.kind === "message" && incoming.kind === "message"
+      && current.role === "user" && incoming.role === "user"
       && current.authorKind === "human" && incoming.authorKind === "human"
-      && incoming.authorId != null && incoming.authorId.length > 0 && current.authorId === incoming.authorId;
+      && incoming.authorId != null && incoming.authorId.trim().length > 0 && current.authorId === incoming.authorId;
   }
   return true;
 }
@@ -179,7 +204,8 @@ export function recordTranscriptReadUpdate(
 ): void {
   const matches = (entry: ConversationTranscriptEntry) => transcriptEntriesCorrelate(entry, incoming)
     || (entry.id === previousId && previousIdentityMatches(entry, incoming));
-  const current = updates.get(incoming.id) ?? (previousId == null ? undefined : updates.get(previousId));
+  const current = updates.get(incoming.id) ?? (previousId == null ? undefined : updates.get(previousId))
+    ?? [...updates.values()].find(matches);
   const merged = current != null && matches(current) && current.kind === "message" && incoming.kind === "message"
     ? mergeAuthoritativeTranscriptMessage(current, incoming)
     : incoming;
@@ -226,13 +252,15 @@ export function applyTranscriptReadUpdates(
   entries: readonly ConversationTranscriptEntry[],
   updates: ReadonlyMap<string, ConversationTranscriptEntry>,
 ): ConversationTranscriptEntry[] {
-  return entries.map((entry) => {
+  const projected = entries.map((entry) => {
     let current = entry;
     const visited = new Set<string>();
     while (!visited.has(current.id)) {
       visited.add(current.id);
-      const update = updates.get(current.id);
-      if (update == null || (current.id !== update.id && !previousIdentityMatches(current, update))) break;
+      const update = updates.get(current.id)
+        ?? [...updates.values()].find((candidate) => transcriptEntriesCorrelate(current, candidate));
+      if (update == null || (current.id !== update.id
+        && !transcriptEntriesCorrelate(current, update) && !previousIdentityMatches(current, update))) break;
       const previousId = current.id;
       current = current.kind === "message" && update.kind === "message"
         ? mergeAuthoritativeTranscriptMessage(current, update)
@@ -240,6 +268,12 @@ export function applyTranscriptReadUpdates(
       if (current.id === previousId) break;
     }
     return current;
+  });
+  const seen = new Set<string>();
+  return projected.filter((entry) => {
+    if (seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
   });
 }
 

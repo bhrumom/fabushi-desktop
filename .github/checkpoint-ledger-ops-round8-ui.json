@@ -34,8 +34,8 @@
           "frontend/src/production/transcript-projection.contract.test.ts",
           "frontend/src/recovered/features/conversation/workspace/model.ts",
           "frontend/src/recovered/features/conversation/workspace/pagination.ts",
-          "desktop/e2e/native-message-projection.spec.ts",
-          "desktop/e2e/fixtures/native-message-projection.tsx"
+          "desktop/e2e/native-message-author-recovery.spec.ts",
+          "desktop/e2e/fixtures/native-message-author-recovery.tsx"
         ],
         "fabushi_target_symbols": [
           "projectTranscriptEntry",
@@ -57,32 +57,32 @@
           "NMR-UI-01 final containing-commit production/test blobs and reviewed current-owner integration are recorded in projects/telegram-desktop-rust/evidence/round8-renderer-author-receipt-20261102.json. The original unpublished candidate is not a replacement for later checkpoint code."
         ],
         "test_evidence": [
-          "NMR-AC-UI-01: existing frontend/src/production/transcript-projection.contract.test.ts and actual ProductionRenderer desktop/e2e/native-message-projection.spec.ts; required executed counts are pinned in the containing native-service-contracts.yml. Authored cases/transport object creation do not prove execution."
+          "NMR-AC-UI-01: existing frontend/src/production/transcript-projection.contract.test.ts and actual ProductionRenderer desktop/e2e/native-message-author-recovery.spec.ts; required executed counts are pinned in the containing native-service-contracts.yml. Authored cases/transport object creation do not prove execution."
         ],
         "ui_functional_case_ids": [
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (dark)",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 an initial tail cannot overwrite mutations received before any row was cached",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 overlapping older and full reads preserve newer feed changes (page-first)",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 overlapping older and full reads preserve newer feed changes (refresh-first)",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 peer nonce and late successful receipt preserve the originating conversation canonical row",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 logout and account replacement fence old send and page replies",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 old-page reaction settlement cannot overwrite a later empty Human message",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 retained peer nonce, assistant and unscoped Human rows never consume a local send or its recoverable failure",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 late semantic refusal remains an error without demoting sent content or restoring an unsent draft",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 clear invalidates old pages, send failure and reaction receipt before the same row ID is reused",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 A to B to A cannot reuse the old callback lifetime even when conversation and row IDs match",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 root disposal releases its port and old work cannot enter a new renderer instance",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment staging controls",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 late retry approval completion cannot erase a newer failed send recovery",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 retry acknowledgement preserves a newer draft with identical text"
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (dark)",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 an initial tail cannot overwrite mutations received before any row was cached",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 overlapping older and full reads preserve newer feed changes (page-first)",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 overlapping older and full reads preserve newer feed changes (refresh-first)",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 peer nonce and late successful receipt preserve the originating conversation canonical row",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 logout and account replacement fence old send and page replies",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 old-page reaction settlement cannot overwrite a later empty Human message",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 retained peer nonce, assistant and unscoped Human rows never consume a local send or its recoverable failure",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 late semantic refusal remains an error without demoting sent content or restoring an unsent draft",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 clear invalidates old pages, send failure and reaction receipt before the same row ID is reused",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 A to B to A cannot reuse the old callback lifetime even when conversation and row IDs match",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 root disposal releases its port and old work cannot enter a new renderer instance",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment staging controls",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 late retry approval completion cannot erase a newer failed send recovery",
+          "desktop/e2e/native-message-author-recovery.spec.ts#NMR-UI-01 retry acknowledgement preserves a newer draft with identical text"
         ],
         "ui_acceptance_scenarios": [
           "NMR-UI-01: late successful receipt and semantic refusal preserve canonical send and unrelated drafts; Human empties clear; all original/current cursor and reaction behavior remains.",
           "NMR-UI-01: actual Bob composer and Send remain available while Alice RPC waits; account ABA/clear/disposal cannot create draft or delivery effects; Agent tool expansion and actual attachment staging controls remain."
         ],
         "test_fixture_ids": [
-          "desktop/e2e/fixtures/native-message-projection.tsx: real ProductionRenderer/coordinator client/feed/queue/cache with controlled external port/DesktopBridge. Replies freeze at request time; unknown RPC is a failure. Client draft observations do not qualify Host/SQLite restart or packaged Electron."
+          "desktop/e2e/fixtures/native-message-author-recovery.tsx: real ProductionRenderer/coordinator client/feed/queue/cache with controlled external port/DesktopBridge. Replies freeze at request time; unknown RPC is a failure. Client draft observations do not qualify Host/SQLite restart or packaged Electron."
         ],
         "test_environment_ids": [
           "NMR-UI-01 GitHub Actions Ubuntu24.04/Node24/locked desktop/actual Vite and Chromium; retries0/workers1; preserve current Human/journal/resource/Agent/credential/cursor/Forward/Electron/Windows/shipping gates, including all later additions."
