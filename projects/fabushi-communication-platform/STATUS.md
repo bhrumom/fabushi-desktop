@@ -288,3 +288,11 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
+
+## Human message retry — HRR-01–07 (task20bf round1)
+
+The existing Retry action now requests only conversationId + original clientNonce through the existing Coordinator/Host Session gateway. Session uniquely reloads the authorized durable intent, reuses stored reply/resources and returns canonical settlement; original forward targets re-enter the original source batch. Malformed identities/provenance reject without mutation. Pending dispatch errors remain visible after reopen. Account/selection lifetime checks fence the actual request frame and deferred UI changes; Agent retry remains in its existing branch.
+
+Authored gates: four new real HTTP/SQLite/restart cases (Human total67, including64 admission variants),28 UI/controller cases,4 actual Coordinator port cases,8 original queue/pre-Host cases and2 shared contract cases. Execution is not-run at this preparation; the containing-H Actions result must be recorded in `projects/telegram-desktop-rust/evidence/task20bf-round1-human-message-retry.json`. Resource staging retains its existing serialized boundary; only message POST releases the conversation lane. Existing automatic forward recovery may still wait on a batch HTTP lock; concurrent NMR-50 work must be integrated without overwrite. Full source/legal/service/signed packages/UI/a11y/performance/soak/upgrade/rollback/Bot/independent ACCEPT remains open.
+
+HRR-07 integration: failed pre-frame Human submissions resume the original existing Composer queue input with per-attachment commit progress; possibly posted frames switch to identity-only retry. No projected payload, fresh nonce or current-draft mutation is used. Actual authored gates at the current source freeze: Human67; Transcript34; retry helper28 + port4 + pre-Host queue8 =40; shared cursor/RPC19; retained actual Renderer Chromium11. These totals retain concurrent work and remain unexecuted at preparation. Full containing-H evidence is recorded in the same task receipt.

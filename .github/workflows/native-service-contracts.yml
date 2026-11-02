@@ -6,6 +6,11 @@ on:
       - 'source/host/src/extensions/session/**'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
       - 'source/host/tests/session_gateway_contract.rs'
+      - 'source/host/src/gateway_server.rs'
+      - 'source/host/tests/gateway_server_contract.rs'
+      - 'frontend/src/production/human-message-retry*'
+      - 'frontend/src/production/human-message-submission*'
+      - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
@@ -281,7 +286,14 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 63 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 67 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          for case_name in \
+            shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload \
+            shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation \
+            shipping_human_retry_preserves_forward_source_policy_and_refuses_generic_ownership_bypass \
+            shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure; do
+            grep -Fx "test $case_name ... ok" artifacts/native-message/session-gateway.log
+          done
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -326,7 +338,7 @@ jobs:
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
           grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
-      - name: Authenticated forward recipient gateway HTTP contract
+      - name: Authenticated forward and identity-only retry gateway HTTP contract
         shell: bash
         run: |
           set -euo pipefail
@@ -801,8 +813,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 33' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 33' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 34' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 34' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -816,12 +828,26 @@ jobs:
           ./desktop/node_modules/.bin/esbuild source/shared/rpc/coordinator.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-cursor-bundle.log
           ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/pagination-cursor-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/coordinator-cursor.test.mjs artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/human-cursors.log
-          grep -Fx '# tests 17' artifacts/native-message-ui/human-cursors.log
-          grep -Fx '# pass 17' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# tests 19' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# pass 19' artifacts/native-message-ui/human-cursors.log
           grep -Fx '# fail 0' artifacts/native-message-ui/human-cursors.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/human-cursors.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/human-cursors.log
           grep -Fx '# todo 0' artifacts/native-message-ui/human-cursors.log
+      - name: Human durable retry UI and actual Coordinator port boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-retry.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-retry.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-retry-port.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-retry-port.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry-port-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-submission.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-submission.test.mjs 2>&1 | tee artifacts/native-message-ui/human-submission-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/human-retry.test.mjs artifacts/native-message-ui/human-retry-port.test.mjs artifacts/native-message-ui/human-submission.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry.log
+          grep -Fx '# tests 40' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# pass 40' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/human-retry.log
       - name: Compile actual production renderer
         shell: bash
         working-directory: desktop

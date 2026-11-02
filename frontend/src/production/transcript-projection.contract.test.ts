@@ -454,7 +454,7 @@ test("Human transcript correlation isolates authors while retaining Host and opt
   assert.deepEqual(ids(baseline), [peer.id, accepted.id]);
   assert.equal(row(baseline, peer.id).text, peer.text);
   assert.equal(row(baseline, peer.id).attachments, undefined);
-  assert.deepEqual(row(baseline, accepted.id).attachments, pending.attachments);
+  assert.deepEqual(row(baseline, accepted.id).attachments, []);
   assert.deepEqual(ids(reconcileLateInitialTranscriptPage([optimistic], [accepted])), [accepted.id]);
   assert.deepEqual(ids(reconcileLateInitialTranscriptPage([pending], [accepted])), [accepted.id]);
   const stale = reconcileAuthoritativeTranscriptBaseline([accepted], [pending, accepted]);
@@ -464,6 +464,43 @@ test("Human transcript correlation isolates authors while retaining Host and opt
   const agentPending = { ...message("pending-agent"), clientNonce: "agent" };
   const agentAccepted = { ...message("agent-accepted"), clientNonce: "agent" };
   assert.equal(transcriptEntriesCorrelate(agentPending, agentAccepted), true);
+});
+
+test("HRR-05 canonical Human attachment collections replace local paths in either merge order", () => {
+  const pending: TranscriptMessage = {
+    ...message("human-message:attachment-retry"), authorKind: "human", authorId: "local",
+    clientNonce: "attachment-retry", delivery: "failed",
+    attachments: [{ path: "/committed/file.txt", name: "file.txt" }],
+  };
+  const optimistic: TranscriptMessage = {
+    ...pending, id: "pending-attachment-retry", authorKind: undefined, authorId: undefined,
+  };
+  const accepted: TranscriptMessage = {
+    ...message("human-server-message:51"), authorKind: "human", authorId: "local",
+    clientNonce: "attachment-retry", remoteMessageId: "51", delivery: "sent",
+    attachments: [{ path: "/resource-cache/resource-51/file.txt", name: "file.txt" }],
+  };
+  const acceptedWithoutAttachments = { ...accepted };
+  delete acceptedWithoutAttachments.attachments;
+  for (const local of [pending, optimistic]) {
+    const before = structuredClone(local);
+    const settled = mergeAuthoritativeTranscriptMessage(local, accepted);
+    assert.equal(settled.id, accepted.id);
+    assert.deepEqual(settled.attachments, accepted.attachments);
+    assert.deepEqual(mergeAuthoritativeTranscriptMessage(accepted, local).attachments, accepted.attachments);
+    assert.deepEqual(mergeAuthoritativeTranscriptMessage(local, acceptedWithoutAttachments).attachments, []);
+    assert.deepEqual(mergeAuthoritativeTranscriptMessage(acceptedWithoutAttachments, local).attachments, []);
+    assert.deepEqual(local, before);
+  }
+  const agentAccepted: TranscriptMessage = {
+    ...message("agent-accepted"), clientNonce: "attachment-retry", delivery: "sent",
+    attachments: [{ path: "/agent-resource/file.txt", name: "file.txt" }],
+  };
+  assert.deepEqual(mergeAuthoritativeTranscriptMessage(optimistic, agentAccepted).attachments,
+    [...(optimistic.attachments ?? []), ...(agentAccepted.attachments ?? [])]);
+  const agentWithoutAttachments = { ...agentAccepted };
+  delete agentWithoutAttachments.attachments;
+  assert.deepEqual(mergeAuthoritativeTranscriptMessage(optimistic, agentWithoutAttachments).attachments, optimistic.attachments);
 });
 
 test("Human older pages cannot resurrect a settled pending row in the root cache", async () => {

@@ -667,3 +667,17 @@ Beaf run41522952938/job125543328873 failed inherited reaction-fixture `E0382` be
 The canonical evidence append is `558b57bf9730446b08cf40c120d17c988c56ed16`; all other ledger rows, source reviews, execution scalar fields and acceptance remain unchanged. Exact source contract job125557439692 passed158 Node and37 Python schema cases with zero ledger shape errors; candidate125557839138 also passed consistency for16381 source identities/184 responsibilities/six reviews (two complete), retained unknown/unread=null and correctly rejected accepted mode. Full identities and bounded failure/recovery records are in `projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json`.
 
 Later shared SQLite initialization, Session permissions/history and actual renderer changes require their own exactf544/run41526852400 results (Human63, creation12+3, retained Transcript3, journal12, actual ProductionRenderer11+8 and Social). Historical59/106/d878 results do not qualify those changed inputs. Current shipping, real services, complete source/legal closure, signed platform install/upgrade/rollback, full Bot regression and independent ACCEPT remain open. Backend PR137 stays read-only.
+
+## Human message retry — NMR-HUMAN-RETRY-01
+
+| Requirement | Actual owner/call path | Authored evidence / remaining gate |
+| --- | --- | --- |
+| HRR-01 | Shared parser + explicit Session/gateway allowlist; exactly two identities | Shared2 new + actual port4 + existing authenticated HTTP gate; containing-H Actions required |
+| HRR-02/03 | Session unique existing row, direct-pair identity, original nonce/reply/resources, Native settlement | Real attachment/disconnect/reopen/concurrent-click test and64 admission variants; Human67 required |
+| HRR-04 | Existing source batch authorization → only original destination | Actual process-kill/protected-source/provenance-loss/repair test; no generic resend bypass |
+| HRR-05/06 | Existing Retry button/controller/projection/account/selection/acknowledgement owners | UI28 + port4 + pre-Host8; ABA, reconnect-ready frame, deferred updater and event-obsolete cases; actual renderer build |
+| HRR-AC-01–04 | Same source-bound batch; existing Agent/credential/journal/shipping gates retained | `projects/telegram-desktop-rust/evidence/task20bf-round1-human-message-retry.json`; authored only until exact containing-H run, packaged visual/a11y and independent ACCEPT remain open |
+
+The message POST releases the conversation mutation lane; existing resource staging and automatic source-batch recovery serialization are not claimed as new nonblocking behavior. No source inventory, source-review completion or release-acceptance counter changes.
+
+HRR-07 integration: failed pre-frame Human submissions resume the original existing Composer queue input with per-attachment commit progress; possibly posted frames switch to identity-only retry. No projected payload, fresh nonce or current-draft mutation is used. Actual authored gates at the current source freeze: Human67; Transcript34; retry helper28 + port4 + pre-Host queue8 =40; shared cursor/RPC19; retained actual Renderer Chromium11. These totals retain concurrent work and remain unexecuted at preparation. Full containing-H evidence is recorded in the same task receipt.

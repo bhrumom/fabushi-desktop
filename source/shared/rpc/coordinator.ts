@@ -29,6 +29,11 @@ export interface CoordinatorHumanTranscriptPageResponse {
   readonly nextBeforeCursor?: string;
 }
 
+export interface CoordinatorHumanRetryRequest {
+  readonly conversationId: string;
+  readonly clientNonce: string;
+}
+
 export interface CoordinatorAgentThreadRequest {
   readonly id: string;
   readonly rootId: string;
@@ -231,6 +236,27 @@ export function parseCoordinatorHumanTranscriptPageRequest(value: unknown): Coor
   };
 }
 
+export function parseCoordinatorHumanRetryRequest(value: unknown): CoordinatorHumanRetryRequest | null {
+  if (!isRecord(value) || Object.keys(value).length !== 2) return null;
+  const { conversationId, clientNonce } = value;
+  if (typeof conversationId !== "string" || conversationId.length === 0 || conversationId !== conversationId.trim()
+    || typeof clientNonce !== "string" || clientNonce.length === 0 || clientNonce !== clientNonce.trim()
+    || new TextEncoder().encode(clientNonce).byteLength > 200) return null;
+  return { conversationId, clientNonce };
+}
+
+export function parseCoordinatorHumanRetryResponse(value: unknown): CoordinatorTranscriptEntry | null {
+  if (!isTranscriptEntry(value) || value.kind !== "message" || value.role !== "user"
+    || value.authorKind !== "human" || typeof value.authorId !== "string" || value.authorId.length === 0
+    || typeof value.clientNonce !== "string" || value.clientNonce.length === 0 || value.delivery !== "sent"
+    || (typeof value.remoteMessageId !== "string" && typeof value.remoteMessageId !== "number")) return null;
+  const remoteId = Number(value.remoteMessageId);
+  if (!Number.isSafeInteger(remoteId) || remoteId <= 0
+    || (typeof value.remoteMessageId === "string" && String(remoteId) !== value.remoteMessageId)
+    || value.id !== `human-server-message:${remoteId}`) return null;
+  return value;
+}
+
 export function parseCoordinatorTranscriptWindowRequest(value: unknown): CoordinatorTranscriptWindowRequest | null {
   if (!isRecord(value)) return null;
   const id = value.id;
@@ -271,6 +297,9 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageResponse(value) == null) {
     throw new Error("getHumanConversationTranscriptTail returned a malformed Human transcript page");
   }
+  if (method === "retryHumanMessage" && parseCoordinatorHumanRetryResponse(value) == null) {
+    throw new Error("retryHumanMessage returned a malformed canonical Human message");
+  }
   return value;
 }
 
@@ -291,6 +320,7 @@ export const COORDINATOR_METHOD_TABLE = {
   getAgentThread: { args: "object", reply: "agent-thread" },
   getAgentTranscriptTail: { args: "object", reply: "transcript-page" },
   getHumanConversationTranscriptTail: { args: "object", reply: "human-transcript-page" },
+  retryHumanMessage: { args: "object", reply: "record" },
   openAgentTail: { args: "object", reply: "transcript-page" },
   sendPrompt: { args: "object", reply: "send-result" },
   interruptAgent: { args: "object", reply: "interrupt-result" },

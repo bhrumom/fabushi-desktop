@@ -4,9 +4,37 @@ import test from "node:test";
 import {
   parseCoordinatorHumanTranscriptPageRequest,
   parseCoordinatorHumanTranscriptPageResponse,
+  parseCoordinatorHumanRetryRequest,
+  parseCoordinatorHumanRetryResponse,
   parseCoordinatorTelegramAuthorizationProjection,
   validateCoordinatorReply,
 } from "./coordinator.js";
+
+test("Human retry admits only exact durable identities and bounds nonce UTF-8 bytes", () => {
+  const request = { conversationId: "human:1:2", clientNonce: "😀".repeat(50) };
+  assert.deepEqual(parseCoordinatorHumanRetryRequest(request), request);
+  for (const invalid of [null, [], {}, { ...request, conversationId: " " }, { ...request, conversationId: " human:1:2" },
+    { ...request, clientNonce: "" }, { ...request, clientNonce: "nonce " }, { ...request, clientNonce: "😀".repeat(51) },
+    { ...request, text: null }, { ...request, attachments: [] }, { ...request, replyToId: null }, { ...request, senderId: "1" }]) {
+    assert.equal(parseCoordinatorHumanRetryRequest(invalid), null);
+  }
+});
+
+test("Human retry reply must be a canonical settled Human message", () => {
+  const settled = { id: "human-server-message:41", kind: "message", role: "user", authorKind: "human", authorId: "1",
+    clientNonce: "original", delivery: "sent", remoteMessageId: "41", content: "same message" };
+  assert.equal(parseCoordinatorHumanRetryResponse(settled), settled);
+  assert.equal(validateCoordinatorReply("retryHumanMessage", settled), settled);
+  const numeric = { ...settled, remoteMessageId: 41 };
+  assert.equal(parseCoordinatorHumanRetryResponse(numeric), numeric);
+  assert.equal(validateCoordinatorReply("retryHumanMessage", numeric), numeric);
+  for (const invalid of [{}, { ...settled, delivery: "pending" }, { ...settled, authorKind: "agent" },
+    { ...settled, remoteMessageId: "041" }, { ...settled, remoteMessageId: "9007199254740992" },
+    { ...settled, remoteMessageId: "0" }, { ...settled, id: "human-message:original" }, { ...settled, clientNonce: "" }]) {
+    assert.equal(parseCoordinatorHumanRetryResponse(invalid), null);
+    assert.throws(() => validateCoordinatorReply("retryHumanMessage", invalid), /malformed canonical Human message/);
+  }
+});
 
 test("Human transcript cursors preserve the opaque traversal beside the physical anchor", () => {
   const cursor = "htp1:8e51c11de4324995a6c6878a94e3d32f:4:17";

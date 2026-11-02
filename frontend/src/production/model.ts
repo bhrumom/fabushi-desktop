@@ -326,6 +326,18 @@ function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["
   const candidate = entry.delivery ?? entry.status;
   // A Host dispatch has not settled its canonical remote identity yet.
   if (candidate === "dispatching") return "pending";
+  // The Session retains a failed durable send as pending so it can be retried
+  // with its original intent. Only that local Human shape exposes Retry after
+  // reload; stale error metadata must never regress a canonical or Agent row.
+  if (candidate === "pending" && entry.kind === "message" && entry.role === "user"
+    && entry.authorKind === "human" && typeof entry.authorId === "string"
+    && entry.authorId.length > 0 && entry.authorId.trim() === entry.authorId
+    && typeof entry.clientNonce === "string" && entry.clientNonce.length > 0
+    && entry.clientNonce.trim() === entry.clientNonce
+    && new TextEncoder().encode(entry.clientNonce).byteLength <= 200
+    && entry.id === `human-message:${entry.clientNonce}` && entry.remoteMessageId === undefined
+    && typeof entry.content === "string"
+    && typeof entry.lastDispatchError === "string" && entry.lastDispatchError.trim().length > 0) return "failed";
   if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;
   if (entry.pending === true || entry.isPending === true) return "pending";
   if (entry.failed === true || entry.isFailed === true) return "failed";
@@ -422,6 +434,10 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   const composedAtMs = typeof (value.composedAtMs ?? value.queuedAtMs) === "number" && Number.isFinite(value.composedAtMs ?? value.queuedAtMs)
     ? Number(value.composedAtMs ?? value.queuedAtMs)
     : undefined;
+  const humanRemoteMessageId = typeof value.remoteMessageId === "string" ? value.remoteMessageId
+    : typeof value.remoteMessageId === "number" && Number.isSafeInteger(value.remoteMessageId) && value.remoteMessageId > 0
+      ? String(value.remoteMessageId)
+      : undefined;
   if (value.kind === "event") {
     const event = projectTimelineEvent(value.event);
     return event == null ? null : { kind: "timeline-event", id, event, timestampMs };
@@ -537,7 +553,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(value.authorKind === "human"
       ? { authorKind: "human" as const,
         ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
-        ...(typeof value.remoteMessageId === "string" ? { remoteMessageId: value.remoteMessageId } : {}) }
+        ...(humanRemoteMessageId === undefined ? {} : { remoteMessageId: humanRemoteMessageId }) }
       : {}),
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),

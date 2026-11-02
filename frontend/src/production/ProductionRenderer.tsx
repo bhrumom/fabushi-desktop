@@ -5,7 +5,7 @@ import { ConversationComposer } from "../recovered/features/conversation/workspa
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
 import type { ComposerDraft, ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
-import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
+import { createComposerSubmissionQueue, composerSubmissionBusyState, type ComposerSubmission, type ComposerSubmissionQueue, type ComposerSubmissionAdmission } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
 import { createTranscriptAcknowledgementController } from "../recovered/features/conversation/workspace/acknowledgement";
 import { createReplyThreadController, type ReplySelection } from "../recovered/features/conversation/workspace/reply-thread-controller";
@@ -105,6 +105,8 @@ import { CommandPalette } from "./CommandPalette";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { settleForwardProjection } from "./forward-settlement";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
+import { createHumanMessageRetryController } from "./human-message-retry";
+import { sendHumanComposerSubmission } from "./human-message-submission";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
 import type { CommandPaletteCommand } from "./command-palette-model";
 import { createCommandPaletteMessageProvider, type CommandPaletteMessage } from "./command-palette-message-provider";
@@ -1150,25 +1152,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
   }, [client, isForwardAccountScopeCurrent, reconcileCompleteRosterSelection]);
 
-  const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
+  const sendComposerPrompt = async (submission: ComposerSubmission, admission?: ComposerSubmissionAdmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
     const scope = submissionScopesRef.current.get(submission.nonce);
     const isCurrent = () => scope != null && scope.generation === accountScopeGenerationRef.current
-      && accountRef.current?.kind === "logged-in";
+      && accountRef.current?.kind === "logged-in" && admission?.isCurrent?.() !== false;
     if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
     if (humanConversation != null) {
-      const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
-      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
-      if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
-      for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
-      const result = await client.call("sendHumanMessage", {
-        conversationId: submission.agentId,
-        text: submission.prompt,
-        clientNonce: submission.nonce,
-        composedAtMs: submission.createdAtMs,
-        attachments,
-        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
+      const result = await sendHumanComposerSubmission(submission, {
+        client, bridge, isCurrent,
+        onCommitted: (originalPath) => { if (isCurrent()) stagedPaths.current.delete(originalPath); },
       });
       if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
@@ -1263,25 +1257,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [composerSubmissionQueue] = useState(() => {
     const queue = createComposerSubmissionQueue({
       isTransportDown: () => transportRef.current !== "connected",
-      send: async (submission) => {
+      send: async (submission, admission) => {
         const scope = submissionScopesRef.current.get(submission.nonce);
         if (scope == null || scope.generation !== accountScopeGenerationRef.current
           || accountRef.current?.kind !== "logged-in") {
           throw new Error("Composer submission is outside its account scope");
         }
-        return resendSubmissionNoncesRef.current.has(submission.nonce)
-          ? sendComposerPrompt(submission)
+        return admission != null || resendSubmissionNoncesRef.current.has(submission.nonce)
+          ? sendComposerPrompt(submission, admission)
           : sendJournalApprovalLifecycle.sendPrompt(submission);
       },
     onPhase: (submission) => {
       const scope = submissionScopesRef.current.get(submission.nonce);
-      if (scope == null || scope.generation !== accountScopeGenerationRef.current) return;
+      if (scope == null || scope.generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false) return;
       if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
       if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
       if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
       if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
       setEntriesByAgent((current) => {
-        if (scope.generation !== accountScopeGenerationRef.current) return current;
+        if (scope.generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false) return current;
         if (submission.phase === "cancelled") {
           return {
             ...current,
@@ -1298,12 +1292,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             : entry)
         };
       });
-      if (submission.phase === "pending") setBusy(true);
-      if (submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent" || submission.phase === "cancelled") setBusy(false);
+      const composerBusy = composerSubmissionBusyState(submission);
+      if (composerBusy !== undefined) setBusy(composerBusy);
       if (submission.phase === "sent" || submission.phase === "cancelled") submissionScopesRef.current.delete(submission.nonce);
     },
     onFailure: (submission, error) => {
-      if (submissionScopesRef.current.get(submission.nonce)?.generation !== accountScopeGenerationRef.current) return;
+      if (submissionScopesRef.current.get(submission.nonce)?.generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false) return;
+      if (submission.isRetry) {
+        const generation = accountScopeGenerationRef.current;
+        setNotice((current) => {
+          if (generation !== accountScopeGenerationRef.current || submission.isCurrentAttempt?.() === false
+            || entriesByAgentRef.current[submission.agentId]?.some((entry) => entry.kind === "message"
+              && entry.authorKind === "human" && entry.clientNonce === submission.nonce
+              && entry.remoteMessageId != null && entry.delivery === "sent")) return current;
+          return error instanceof Error ? error.message : String(error);
+        });
+        return;
+      }
       composerDraftStore.recoverDraft(submission.agentId, {
         prompt: submission.prompt,
         attachments: [...submission.attachments]
@@ -1329,6 +1334,34 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const transcriptAccountSlot = account?.kind === "logged-in"
     ? account.authId ?? account.email ?? "account"
     : null;
+  const renderedRetrySelection = selectionStore.get();
+  const renderedRetrySelectionGeneration = openAgentRequestGenerationRef.current;
+  const [humanMessageRetryController] = useState(() => createHumanMessageRetryController({
+    client,
+    readScope: () => {
+      const status = accountRef.current;
+      if (status?.kind !== "logged-in") return null;
+      const accountSlot = status.authId ?? status.email ?? "account";
+      if (accountIdentityRef.current !== `logged-in:${accountSlot}`) return null;
+      return {
+        accountGeneration: accountScopeGenerationRef.current,
+        selectionGeneration: openAgentRequestGenerationRef.current,
+        accountSlot,
+        selection: selectionStore.get(),
+      };
+    },
+    acknowledgement: acknowledgementController,
+    setEntries: setEntriesByAgent,
+    setNotice,
+    onAuthoritativeEntry: (scope, conversationId, entry, isCurrent) => {
+      if (!isCurrent()) return;
+      for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, scope.accountSlot, conversationId)) {
+        read.updates.set(entry.id, entry);
+      }
+      if (isCurrent()) transcriptPaginationController.ingestEntryUpdate(scope.accountSlot, conversationId, entry);
+    },
+  }));
+  useStrictModeSafeDisposal(humanMessageRetryController);
   localToolPermissionScopeGate.enter(transcriptAccountSlot);
   const reactionRootCallbacks = useMemo(() => ({
     onReacted: (input: import("../recovered/features/conversation/cards/transcript-card/reaction-actions").ReactToMessageInput) => {
@@ -2940,6 +2973,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         }
         for (const entry of projectedEntries) {
           humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
+          humanMessageRetryController.observeEntry(ownerId, entry);
           const clientNonce = localTranscriptNonce(entry, accountRef.current);
           if (clientNonce == null) continue;
           acknowledgementController.ingestTranscriptEvent({
@@ -2966,6 +3000,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
         if (projected == null || !ownerId) return;
         humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
+        humanMessageRetryController.observeEntry(ownerId, projected);
         rememberPreBaselineFeedEntry(ownerId, projected.id);
         const previousId = before != null && typeof before === "object" && "id" in before && typeof before.id === "string" ? before.id : undefined;
         if (previousId != null) {
@@ -3020,6 +3055,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
       if (projected == null || !ownerId) return;
       humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
+      humanMessageRetryController.observeEntry(ownerId, projected);
       rememberPreBaselineFeedEntry(ownerId, projected.id);
       for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
         recordTranscriptReadUpdate(read.updates, projected);
@@ -3054,7 +3090,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanMessageRetryController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -3681,6 +3717,39 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [acknowledgementController]);
 
   const resendFailedSend = useCallback(async (entry: TranscriptMessage) => {
+    if (activeIsHuman) {
+      // A pre-frame failure still belongs to the original Composer record.
+      // Once any request may have posted, only the durable Host retry is safe.
+      const original = composerSubmissionQueue.snapshot().find((record) => record.agentId === activeAgentId
+        && record.nonce === entry.clientNonce && (record.phase === "pending" || record.phase === "queued"
+          || record.humanDispatch?.requestPosted !== true));
+      const originalScope = entry.clientNonce == null ? null : submissionScopesRef.current.get(entry.clientNonce);
+      const retryIsCurrent = () => originalScope != null
+        && originalScope.generation === renderedAccountScopeGeneration
+        && renderedAccountScopeGeneration === accountScopeGenerationRef.current
+        && accountRef.current?.kind === "logged-in"
+        && (accountRef.current.authId ?? accountRef.current.email ?? "account") === transcriptAccountSlot
+        && openAgentRequestGenerationRef.current === renderedRetrySelectionGeneration
+        && selectionStore.get() === renderedRetrySelection
+        && renderedRetrySelection.currentAgentId === activeAgentId;
+      if (original != null && entry.delivery === "failed" && retryIsCurrent()) {
+        setNotice((current) => retryIsCurrent() ? null : current);
+        const retry = composerSubmissionQueue.retryFailed(original.nonce, { isCurrent: retryIsCurrent });
+        if (retry != null) { await retry.completion; return; }
+      }
+      await humanMessageRetryController.retry({
+        scope: {
+          accountGeneration: renderedAccountScopeGeneration,
+          selectionGeneration: renderedRetrySelectionGeneration,
+          accountSlot: transcriptAccountSlot,
+          selection: renderedRetrySelection,
+        },
+        conversationId: activeAgentId,
+        conversationName: activeAgent?.name ?? UI_TEXT.title,
+        entry,
+      });
+      return;
+    }
     const agentId = activeAgentIdRef.current;
     if (client == null || !agentId) return;
     const clientNonce = makeClientNonce();
@@ -3724,7 +3793,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (accountScopeGenerationRef.current !== retryAccountGeneration || activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
       composerDraftStore.clearRecovery(retrySubmission.agentId);
     });
-  }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle]);
+  }, [activeAgent?.name, activeAgentId, activeIsHuman, client, composerDraftStore, composerSubmissionQueue, humanMessageRetryController, renderedAccountScopeGeneration, renderedRetrySelection, renderedRetrySelectionGeneration, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot]);
 
   const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
     if (entry.clientNonce != null && composerSubmissionQueue.cancelQueued(entry.clientNonce)) {

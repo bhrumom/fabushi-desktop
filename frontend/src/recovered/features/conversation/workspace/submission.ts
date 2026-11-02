@@ -6,6 +6,12 @@
 
 export type ComposerSubmissionPhase = "pending" | "queued" | "failed" | "sent" | "cancelled";
 
+/** Explicit retry belongs to its transcript row, not the current composer. */
+export function composerSubmissionBusyState(input: { phase: ComposerSubmissionPhase; isRetry?: boolean }): boolean | undefined {
+  if (input.isRetry) return undefined;
+  return input.phase === "pending";
+}
+
 export interface ComposerSubmission {
   nonce: string;
   agentId: string;
@@ -16,14 +22,23 @@ export interface ComposerSubmission {
   createdAtMs: number;
   replyToId?: string;
   isFork?: boolean;
+  /** Existing queue-owned Human input; never reconstructed from a projection. */
+  humanDispatch?: { requestPosted: boolean; committedAttachments: { path: string; name: string }[] };
+}
+
+export interface ComposerSubmissionAdmission {
+  readonly isCurrent?: () => boolean;
 }
 
 export interface ComposerSubmissionRecord extends ComposerSubmission {
   phase: Exclude<ComposerSubmissionPhase, "cancelled">;
+  readonly isRetry?: boolean;
+  readonly isCurrentAttempt?: () => boolean;
 }
 
 export interface ComposerSubmissionQueue {
   submit(input: ComposerSubmission): { nonce: string; completion: Promise<ComposerSubmissionPhase> };
+  retryFailed(nonce: string, admission?: ComposerSubmissionAdmission): { nonce: string; completion: Promise<ComposerSubmissionPhase> } | null;
   discard(nonce: string): void;
   cancelQueued(nonce: string): boolean;
   flush(): void;
@@ -35,9 +50,9 @@ export interface ComposerSubmissionQueue {
 
 interface QueueOptions {
   isTransportDown(): boolean;
-  send(input: ComposerSubmission): Promise<void>;
+  send(input: ComposerSubmission, admission?: ComposerSubmissionAdmission): Promise<void>;
   now?(): number;
-  onPhase?(input: ComposerSubmission & { phase: ComposerSubmissionPhase }): void;
+  onPhase?(input: ComposerSubmission & { phase: ComposerSubmissionPhase; isRetry?: boolean; isCurrentAttempt?: () => boolean }): void;
   onFailure?(input: ComposerSubmissionRecord, error: unknown): void;
 }
 
@@ -46,6 +61,8 @@ interface PendingRecord {
   phase: Exclude<ComposerSubmissionPhase, "cancelled">;
   resolve(value: ComposerSubmissionPhase): void;
   completion: Promise<ComposerSubmissionPhase>;
+  admission?: ComposerSubmissionAdmission;
+  isRetry?: boolean;
 }
 
 /**
@@ -62,7 +79,9 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
 
   const notify = (record: PendingRecord, phase: PendingRecord["phase"]) => {
     record.phase = phase;
-    options.onPhase?.({ ...record.input, phase });
+    if (record.admission?.isCurrent?.() !== false) options.onPhase?.({ ...record.input, phase,
+      ...(record.isRetry ? { isRetry: true } : {}),
+      ...(record.admission?.isCurrent == null ? {} : { isCurrentAttempt: record.admission.isCurrent }) });
   };
 
   const finish = (record: PendingRecord, phase: ComposerSubmissionPhase) => {
@@ -70,18 +89,25 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     if (phase === "sent" || phase === "cancelled") records.delete(record.input.nonce);
     if (activeByAgent.get(record.input.agentId) === record.input.nonce) activeByAgent.delete(record.input.agentId);
     record.resolve(phase);
-    if (phase !== "cancelled") options.onPhase?.({ ...record.input, phase });
+    if (phase !== "cancelled" && record.admission?.isCurrent?.() !== false) options.onPhase?.({ ...record.input, phase,
+      ...(record.isRetry ? { isRetry: true } : {}),
+      ...(record.admission?.isCurrent == null ? {} : { isCurrentAttempt: record.admission.isCurrent }) });
   };
 
   const run = (record: PendingRecord, runGeneration: number) => {
     if (disposed || generation !== runGeneration || records.get(record.input.nonce) !== record) return;
+    if (record.admission?.isCurrent?.() === false) {
+      record.phase = "failed";
+      record.resolve("cancelled");
+      return;
+    }
     if (options.isTransportDown()) {
       notify(record, "queued");
       return;
     }
     activeByAgent.set(record.input.agentId, record.input.nonce);
     notify(record, "pending");
-    void options.send(record.input).then(() => {
+    void options.send(record.input, record.admission).then(() => {
       if (disposed || generation !== runGeneration || records.get(record.input.nonce) !== record) return;
       finish(record, "sent");
       flushAgent(record.input.agentId, runGeneration);
@@ -90,7 +116,9 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
       notify(record, "failed");
       if (activeByAgent.get(record.input.agentId) === record.input.nonce) activeByAgent.delete(record.input.agentId);
       record.resolve("failed");
-      options.onFailure?.({ ...record.input, phase: "failed" }, error);
+      if (record.admission?.isCurrent?.() !== false) options.onFailure?.({ ...record.input, phase: "failed",
+        ...(record.isRetry ? { isRetry: true } : {}),
+        ...(record.admission?.isCurrent == null ? {} : { isCurrentAttempt: record.admission.isCurrent }) }, error);
     });
   };
 
@@ -115,17 +143,27 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
     records.clear();
   };
 
-  return {
-    submit(input) {
+  const submit = (input: ComposerSubmission, admission?: ComposerSubmissionAdmission, isRetry = false):
+    { nonce: string; completion: Promise<ComposerSubmissionPhase> } => {
       if (disposed) return { nonce: input.nonce, completion: Promise.resolve("cancelled") };
       let resolve!: (value: ComposerSubmissionPhase) => void;
       const completion = new Promise<ComposerSubmissionPhase>((done) => { resolve = done; });
-      const record: PendingRecord = { input, phase: "pending", resolve, completion };
+      const record: PendingRecord = { input, phase: "pending", resolve, completion, admission, isRetry };
       records.set(input.nonce, record);
       const queued = options.isTransportDown() || activeByAgent.has(input.agentId);
       if (queued) notify(record, "queued");
       else run(record, generation);
       return { nonce: input.nonce, completion };
+  };
+
+  return {
+    submit,
+    retryFailed(nonce, admission) {
+      if (disposed) return null;
+      const prior = records.get(nonce);
+      if (prior == null) return null;
+      if (prior.phase === "pending" || prior.phase === "queued") return { nonce, completion: prior.completion };
+      return prior.phase === "failed" ? submit(prior.input, admission, true) : null;
     },
     discard(nonce) {
       const record = records.get(nonce);
@@ -138,7 +176,9 @@ export function createComposerSubmissionQueue(options: QueueOptions): ComposerSu
       if (record == null || record.phase !== "queued") return false;
       records.delete(nonce);
       record.resolve("cancelled");
-      options.onPhase?.({ ...record.input, phase: "cancelled" });
+      if (record.admission?.isCurrent?.() !== false) options.onPhase?.({ ...record.input, phase: "cancelled",
+        ...(record.isRetry ? { isRetry: true } : {}),
+        ...(record.admission?.isCurrent == null ? {} : { isCurrentAttempt: record.admission.isCurrent }) });
       return true;
     },
     flush,

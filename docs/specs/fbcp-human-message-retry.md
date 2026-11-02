@@ -31,7 +31,10 @@ Plugins/MCP/Computer/Automations capabilities retain their existing behavior.
   the existing gateway and Coordinator contract. The renderer cannot provide
   replacement content or reconstruct durable resource/reply state.
 - HRR-02: Read the current authorized conversation and uniquely matching
-  local-Human message from SandAgentDb. A retryable unsent row must be a Human
+  local-Human message from SandAgentDb. The two distinct unpadded participants
+  must agree with its existing deterministic direct-conversation ID; persisted
+  dispatch resources must satisfy the existing resource identity/size boundary.
+  A retryable unsent row must be a Human
   message with `human-message:<nonce>` identity and pending/dispatching state.
   A valid already settled canonical row returns unchanged without another
   upload or POST. Reject absent, duplicate, foreign, malformed or conflicting
@@ -41,7 +44,9 @@ Plugins/MCP/Computer/Automations capabilities retain their existing behavior.
   existing append/settlement implementation. Recheck existence and source
   ownership under its staging lane. Keep the existing release-before-POST and
   credential-fenced settlement boundaries; no conversation lock spans the
-  explicit retry's HTTP wait. Rapid same-target retries share a short-lived
+  explicit retry's message POST wait. Resource preflight/upload keeps the
+  existing serialized staging boundary; this batch does not claim concurrent
+  resource upload and conversation mutation. Rapid same-target retries share a short-lived
   in-process retry lane, while persisted/server idempotency remains authority.
 - HRR-04: Source-owned forwarding must never become ordinary resend, including
   explicit send of a marked row whose forward context was lost. Use the existing
@@ -51,7 +56,7 @@ Plugins/MCP/Computer/Automations capabilities retain their existing behavior.
   pinned bytes. Missing, changed, unsupported or unresolved source ownership
   remains a visible retained failure; generic resend cannot repair it by dropping
   provenance. Existing source-batch ordinary-sync recovery remains authoritative.
-- HRR-05: The Human Retry UI sends only the two durable identities, never calls
+- HRR-05: The Host-admitted Human Retry UI sends only the two durable identities, never calls
   attachment staging or makes a new nonce, and never clears or replaces the
   current composer draft. It keeps one in-flight UI attempt per account lifetime,
   conversation and nonce. Restore a visible failed state on current failure;
@@ -66,6 +71,17 @@ Plugins/MCP/Computer/Automations capabilities retain their existing behavior.
   does not erase a Host-admitted durable send; normal transcript recovery later
   exposes its outcome. Reuse the NMR-50 optional current-scope admission contract
   at the existing client; do not create a second transport or account authority.
+- HRR-07: A failure before the initial Host request is a retained Composer
+  submission, not yet a durable Host intent. Preserve that existing queue's
+  original submission object/nonce/reply/time and each successfully committed
+  attachment. Retry resumes only uncommitted attachments and the original
+  initial send. The real Coordinator boundary marks an intent possibly admitted
+  immediately before posting its frame; once marked, every repeat uses the
+  identity-only Host retry. Never infer non-admission from a timeout, retry with
+  a fresh nonce, or rebuild payload from a transcript projection. Keep explicit
+  retry scope admission across staging, ready waits and queue callbacks, and do
+  not restore/clear/replace the user's current draft during the retry. Existing
+  Agent submission and retry behavior remains unchanged.
 
 ## Implementation and verification
 
@@ -90,6 +106,12 @@ concurrent changes by exact path identities and non-force expected-head CAS.
   behavior and all existing renderer/Transcript/Chromium checks. Build the actual
   renderer and Host through the existing workflow; packaged visual/a11y remains
   a separate final gate, not proven by controller tests.
+- HRR-AC-04: Actual Composer queue, attachment-commit adapter and Coordinator
+  port controls prove partial attachment commit failure and pre-frame disconnect
+  can retry the original submission, while any possibly posted send uses only
+  durable retry. Verify no duplicate commit of successful attachments, original
+  nonce/reply/time/content, current draft retention, queued/double-click behavior
+  and account/selection cancellation before and after awaits.
 
 All executable validation is GitHub Actions only on the frozen containing H.
 Retain the actual afb34 compile failure (E0382 at the reaction-reopen cleanup),

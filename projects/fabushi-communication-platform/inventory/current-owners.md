@@ -194,3 +194,11 @@ PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected
 
 
 
+
+## Human Retry consumer closure (NMR-HUMAN-RETRY-01)
+
+Existing owner path: `ProductionRenderer::resendFailedSend` → `createHumanMessageRetryController` → existing Coordinator frame → explicit authenticated `retryHumanMessage` → `ProductionSessionWorkers::retry_human_message` → existing SandAgentDb/Native sender → canonical transcript events/projection. The UI provides no replacement content, reply, attachment or sender; the existing Session row remains intent authority. Forward-owned retries use the original source journal and only the selected original destination. Existing account and roster selection owners fence UI lifetime; no new persistence, resource owner, queue or route is introduced. Existing Agent retries remain unchanged.
+
+Spec: `docs/specs/fbcp-human-message-retry.md`; authored/executed/accepted evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-human-message-retry.json`. Source-review and full product acceptance are not promoted by this consumer closure.
+
+HRR-07 integration: failed pre-frame Human submissions resume the original existing Composer queue input with per-attachment commit progress; possibly posted frames switch to identity-only retry. No projected payload, fresh nonce or current-draft mutation is used. Actual authored gates at the current source freeze: Human67; Transcript34; retry helper28 + port4 + pre-Host queue8 =40; shared cursor/RPC19; retained actual Renderer Chromium11. These totals retain concurrent work and remain unexecuted at preparation. Full containing-H evidence is recorded in the same task receipt.

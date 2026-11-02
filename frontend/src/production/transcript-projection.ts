@@ -44,20 +44,22 @@ export function mergeAuthoritativeTranscriptMessage(
 ): TranscriptMessage {
   if (isCanonicalHumanSend(current) && isLocalSendPlaceholder(incoming)
     && transcriptEntriesCorrelate(current, incoming)) {
-    const attachments = current.attachments ?? incoming.attachments;
     return {
       ...incoming,
       ...current,
-      ...(attachments === undefined ? {} : { attachments }),
+      // A late local snapshot cannot restore obsolete committed paths.
+      attachments: [...(current.attachments ?? [])],
     };
   }
-  // A Human snapshot can explicitly clear content/resources. Omitted optional
-  // fields retain their partial-update meaning; Agent attachment echoes extend.
+  const humanSettlement = isLocalSendPlaceholder(current) && isCanonicalHumanSend(incoming)
+    && transcriptEntriesCorrelate(current, incoming);
   const human = incoming.authorKind === "human";
-  const attachments = human
-    ? incoming.attachments ?? current.attachments
-    : current.attachments === undefined && incoming.attachments === undefined
-      ? undefined : mergeTranscriptAttachments(current.attachments, incoming.attachments);
+  // Local-to-canonical Human settlement supplies the complete resource set.
+  // Agent partial echoes retain the existing optional/incremental semantics.
+  const attachments = humanSettlement ? [...(incoming.attachments ?? [])]
+    : human ? incoming.attachments ?? current.attachments
+      : current.attachments === undefined && incoming.attachments === undefined
+        ? undefined : mergeTranscriptAttachments(current.attachments, incoming.attachments);
   const clientNonce = incoming.clientNonce ?? current.clientNonce;
   const delivery = options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery;
   return {

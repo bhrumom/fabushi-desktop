@@ -1,6 +1,7 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
   parseCoordinatorHumanTranscriptPageRequest,
+  parseCoordinatorHumanRetryRequest,
   validateCoordinatorReply,
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
@@ -33,7 +34,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateReply(method: string, value: unknown): unknown {
-  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread" || method === "getHumanConversationTranscriptTail") {
+  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread" || method === "getHumanConversationTranscriptTail" || method === "retryHumanMessage") {
     return validateCoordinatorReply(method, value);
   }
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
@@ -52,9 +53,15 @@ function validateReply(method: string, value: unknown): unknown {
   return value;
 }
 
+export interface CoordinatorCallAdmission {
+  readonly isCurrent?: () => boolean;
+  /** Marks possible Host admission before postMessage; a post failure is ambiguous. */
+  readonly onRequestWillPost?: () => void;
+}
+
 export interface ProductionCoordinatorClient {
   readonly ready: Promise<void>;
-  call(method: string, args?: unknown): Promise<unknown>;
+  call(method: string, args?: unknown, admission?: CoordinatorCallAdmission): Promise<unknown>;
   telegramAuthStatus(): Promise<TelegramAuthorizationProjection>;
   telegramSendCode(phoneNumber: string): Promise<TelegramAuthorizationProjection>;
   telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
@@ -170,15 +177,24 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   if (claim == null) return null;
   claim.request();
 
-  const call = async (method: string, args: unknown = {}) => {
+  const call = async (method: string, args: unknown = {}, admission?: CoordinatorCallAdmission) => {
     if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageRequest(args) == null) {
       throw new Error("getHumanConversationTranscriptTail requires a valid Human transcript cursor");
     }
+    if (method === "retryHumanMessage" && parseCoordinatorHumanRetryRequest(args) == null) {
+      throw new Error("retryHumanMessage requires only a valid conversationId and original clientNonce");
+    }
+    if (admission?.isCurrent?.() === false) throw new Error(`Coordinator request scope expired for ${method}`);
     await currentReady;
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
+    // Reconnect can replace readiness after the renderer's initial ready has
+    // resolved. Scope admission belongs immediately before the actual frame.
+    if (admission?.isCurrent?.() === false) throw new Error(`Coordinator request scope expired for ${method}`);
     const requestId = `r-${++nextRequestId}`;
+    admission?.onRequestWillPost?.();
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
-    port.postMessage({ kind: "request", requestId, method, args });
+    try { port.postMessage({ kind: "request", requestId, method, args }); }
+    catch (error) { pending.delete(requestId); throw error; }
     return await response;
   };
 
