@@ -380,4 +380,17 @@ impl<T> BackgroundWakes<T> {
     pub fn take_pending(map: &mut HashMap<String, Vec<T>>, agent_id: &str) -> Vec<T> {
         map.remove(agent_id).unwrap_or_default()
     }
+
+    /// Claim the next inbound batch or release this worker's revival ownership.
+    /// Call under the same lock as enqueue. After `None`, the worker must return
+    /// without clearing revival again: a successor may already own it.
+    pub fn take_pending_inbound_or_end_revival(&mut self, agent_id: &str) -> Option<Vec<T>> {
+        match self.pending_inbound.remove(agent_id) {
+            Some(pending) if !pending.is_empty() => Some(pending),
+            _ => {
+                self.reviving_inbound_agent_ids.remove(agent_id);
+                None
+            }
+        }
+    }
 }

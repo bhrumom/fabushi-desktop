@@ -6757,162 +6757,181 @@ fn publish_channel_activity(
     }
 }
 
+fn drain_channel_inbound_batches(
+    mut take_or_end: impl FnMut() -> Option<Vec<serde_json::Value>>,
+    mut process: impl FnMut(Vec<serde_json::Value>) -> bool,
+    stop_nonempty: impl FnOnce(),
+) {
+    loop {
+        // None has already released ownership under the queue mutex. A new
+        // ingress may own revival now, so the predecessor must not clean it up.
+        let Some(envelopes) = take_or_end() else {
+            return;
+        };
+        if !process(envelopes) {
+            stop_nonempty();
+            return;
+        }
+    }
+}
+
 fn run_channel_inbound_revival_worker(
     deps: LocalRoutedRunnerDeps,
     roster: Arc<ProductionRosterEmit>,
     wakes: Arc<Mutex<BackgroundWakes<serde_json::Value>>>,
     agent_id: String,
 ) {
-    loop {
-        let envelopes = {
+    drain_channel_inbound_batches(
+        || {
             let mut wakes = wakes
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            BackgroundWakes::take_pending(&mut wakes.pending_inbound, &agent_id)
-        };
-        if envelopes.is_empty() {
-            break;
-        }
-
-        let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
-            Ok(Some(summary)) => summary,
-            Ok(None) => break,
-            Err(error) => {
-                eprintln!(
-                    "mahayana-host channel_inbound_summary_failed agent={agent_id} error={error}"
-                );
-                requeue_channel_inbound_envelopes(&wakes, &agent_id, envelopes);
-                break;
+            wakes.take_pending_inbound_or_end_revival(&agent_id)
+        },
+        |envelopes| {
+            let summary = match deps.session_workers.summarize_agent_by_id(&agent_id, None) {
+                Ok(Some(summary)) => summary,
+                Ok(None) => return false,
+                Err(error) => {
+                    eprintln!(
+                        "mahayana-host channel_inbound_summary_failed agent={agent_id} error={error}"
+                    );
+                    requeue_channel_inbound_envelopes(&wakes, &agent_id, envelopes);
+                    return false;
+                }
+            };
+            if summary.is_group || summary.remote_room.is_some() {
+                return true;
             }
-        };
-        if summary.is_group || summary.remote_room.is_some() {
-            continue;
-        }
-        let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
-            let mut state = wakes
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
-            state.pending_inbound.insert(
-                agent_id.clone(),
-                envelopes.into_iter().chain(pending).collect(),
-            );
-            break;
-        };
-        if deps.transcript_runtime.is_quiescing_for_upgrade() {
-            let mut state = wakes
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
-            state.pending_inbound.insert(
-                agent_id.clone(),
-                envelopes.into_iter().chain(pending).collect(),
-            );
-            break;
-        }
+            let Some(provider) = configured_routed_provider(&deps.data_dir.join("settings.json")) else {
+                let mut state = wakes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
+                state.pending_inbound.insert(
+                    agent_id.clone(),
+                    envelopes.into_iter().chain(pending).collect(),
+                );
+                return false;
+            };
+            if deps.transcript_runtime.is_quiescing_for_upgrade() {
+                let mut state = wakes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
+                state.pending_inbound.insert(
+                    agent_id.clone(),
+                    envelopes.into_iter().chain(pending).collect(),
+                );
+                return false;
+            }
 
-        if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
-            eprintln!("mahayana-host channel_inbound_persist_failed agent={agent_id} error={error}");
-            continue;
-        }
+            if let Err(error) = append_channel_inbound_entries(&deps, roster.as_ref(), &agent_id, &envelopes) {
+                eprintln!("mahayana-host channel_inbound_persist_failed agent={agent_id} error={error}");
+                return true;
+            }
 
-        let addresses = distinct_inbound_channel_addresses(&envelopes);
-        publish_channel_activity(&deps.events, &agent_id, &addresses, true);
-        let prompt = build_channel_inbound_wake_prompt(&envelopes);
-        let widget_prompts = deps
-            .transcript_manager
-            .widget_responses()
-            .collect_unanswered_question_prompts(&agent_id)
-            .unwrap_or_default();
-        let selected_images = collect_inbound_images(&envelopes)
-            .into_iter()
-            .map(|image| {
-                serde_json::json!({
-                    "data": image.data,
-                    "mimeType": image.mime_type,
+            let addresses = distinct_inbound_channel_addresses(&envelopes);
+            publish_channel_activity(&deps.events, &agent_id, &addresses, true);
+            let prompt = build_channel_inbound_wake_prompt(&envelopes);
+            let widget_prompts = deps
+                .transcript_manager
+                .widget_responses()
+                .collect_unanswered_question_prompts(&agent_id)
+                .unwrap_or_default();
+            let selected_images = collect_inbound_images(&envelopes)
+                .into_iter()
+                .map(|image| {
+                    serde_json::json!({
+                        "data": image.data,
+                        "mimeType": image.mime_type,
+                    })
                 })
-            })
-            .collect();
-        let result = run_local_background_revival_turn_with_context(
-            deps.clone(),
-            provider,
-            &agent_id,
-            "connector",
-            &prompt,
-            false,
-            "continue",
-            BackgroundRevivalContext {
-                selected_images,
-                skipped_question_prompts: widget_prompts.skipped_question_prompts,
-                dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
-                ..BackgroundRevivalContext::default()
-            },
-        );
-        publish_channel_activity(&deps.events, &agent_id, &addresses, false);
+                .collect();
+            let result = run_local_background_revival_turn_with_context(
+                deps.clone(),
+                provider,
+                &agent_id,
+                "connector",
+                &prompt,
+                false,
+                "continue",
+                BackgroundRevivalContext {
+                    selected_images,
+                    skipped_question_prompts: widget_prompts.skipped_question_prompts,
+                    dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
+                    ..BackgroundRevivalContext::default()
+                },
+            );
+            publish_channel_activity(&deps.events, &agent_id, &addresses, false);
 
-        match result {
-            Ok(execution) if execution.aborted => {
-                let preempted = {
-                    let mut state = wakes
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    state.dm_preempted_wake_agent_ids.remove(&agent_id)
-                };
-                if preempted {
-                    let redrivable = redrivable_inbound_envelopes(&envelopes);
-                    if !redrivable.is_empty() {
+            match result {
+                Ok(execution) if execution.aborted => {
+                    let preempted = {
                         let mut state = wakes
                             .lock()
                             .unwrap_or_else(|poisoned| poisoned.into_inner());
-                        let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
-                        state.pending_inbound.insert(
-                            agent_id.clone(),
-                            redrivable.into_iter().chain(pending).collect(),
-                        );
+                        state.dm_preempted_wake_agent_ids.remove(&agent_id)
+                    };
+                    if preempted {
+                        let redrivable = redrivable_inbound_envelopes(&envelopes);
+                        if !redrivable.is_empty() {
+                            let mut state = wakes
+                                .lock()
+                                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                            let pending = state.pending_inbound.remove(&agent_id).unwrap_or_default();
+                            state.pending_inbound.insert(
+                                agent_id.clone(),
+                                redrivable.into_iter().chain(pending).collect(),
+                            );
+                        }
                     }
                 }
-            }
-            Ok(execution) => {
-                if execution.sent_message_count == 0 {
-                    let _ = run_local_background_revival_turn(
-                        deps.clone(),
-                        provider,
-                        &agent_id,
-                        "connector",
-                        REPLY_NUDGE_PROMPT,
-                        false,
-                        "continue",
-                    );
+                Ok(execution) => {
+                    if execution.sent_message_count == 0 {
+                        let _ = run_local_background_revival_turn(
+                            deps.clone(),
+                            provider,
+                            &agent_id,
+                            "connector",
+                            REPLY_NUDGE_PROMPT,
+                            false,
+                            "continue",
+                        );
+                    }
+                    let _ = roster.emit_agent_update(&agent_id);
                 }
-                let _ = roster.emit_agent_update(&agent_id);
-            }
-            Err(error) => {
-                let classified_error = ProviderSessionError::Tool(error.clone());
-                let report = AgentErrorReport {
-                    source: "connector".into(),
-                    conversation_id: agent_id.clone(),
-                    request_id: None,
-                    error: classify_agent_error(&classified_error),
-                    detail: Some(sand_error_detail(&error)),
-                };
-                if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
-                    eprintln!(
-                        "mahayana-host channel_inbound_telemetry_failed agent={} error={telemetry_error}",
-                        agent_id
-                    );
+                Err(error) => {
+                    let classified_error = ProviderSessionError::Tool(error.clone());
+                    let report = AgentErrorReport {
+                        source: "connector".into(),
+                        conversation_id: agent_id.clone(),
+                        request_id: None,
+                        error: classify_agent_error(&classified_error),
+                        detail: Some(sand_error_detail(&error)),
+                    };
+                    if let Err(telemetry_error) = deps.telemetry_logs.report_agent_error(&report) {
+                        eprintln!(
+                            "mahayana-host channel_inbound_telemetry_failed agent={} error={telemetry_error}",
+                            agent_id
+                        );
+                    }
+                    let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
+                    tray.title = "Channel message follow-up failed".into();
+                    deps.trays.push_error(tray);
                 }
-                let mut tray = provider_failure_tray(&agent_id, &error, started_at_ms() as i64);
-                tray.title = "Channel message follow-up failed".into();
-                deps.trays.push_error(tray);
             }
-        }
-    }
-    let mut state = wakes
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    BackgroundWakes::<serde_json::Value>::end_revival(
-        &mut state.reviving_inbound_agent_ids,
-        &agent_id,
+            true
+        },
+        || {
+            let mut state = wakes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            BackgroundWakes::<serde_json::Value>::end_revival(
+                &mut state.reviving_inbound_agent_ids,
+                &agent_id,
+            );
+        },
     );
 }
 
@@ -16950,6 +16969,7 @@ mod tests {
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
         AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
         background_revival_admission_args, listener_connect_resume_prompt,
+        BackgroundWakes, drain_channel_inbound_batches,
         starts_new_local_tool_direction,
         project_forever_box_status, reaction_gateway_args,
         ProductionSessionWorkers, TranscriptRunnerRegistry,
@@ -17197,6 +17217,115 @@ mod tests {
         );
         assert!(without_ack.get("ackToken").is_none());
         assert_eq!(without_ack["clientNonce"], args["clientNonce"]);
+    }
+
+    #[test]
+    fn channel_inbound_drain_idle_predecessor_preserves_successor_ownership() {
+        use std::sync::{Arc, Mutex, mpsc};
+        use std::time::Duration;
+
+        let wakes = Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+        assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut wakes.lock().unwrap().reviving_inbound_agent_ids,
+            "agent-a",
+        ));
+        let (idle_tx, idle_rx) = mpsc::channel();
+        let (resume_tx, resume_rx) = mpsc::channel();
+        let (returned_tx, returned_rx) = mpsc::channel();
+        let predecessor_wakes = Arc::clone(&wakes);
+        let predecessor = std::thread::spawn(move || {
+            drain_channel_inbound_batches(
+                || {
+                    let claimed = predecessor_wakes.lock().unwrap()
+                        .take_pending_inbound_or_end_revival("agent-a");
+                    assert!(claimed.is_none());
+                    // Pause after the real owner released the bit, before the
+                    // production drain control sees None and returns.
+                    idle_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(10)).expect("resume predecessor");
+                    claimed
+                },
+                |_| panic!("idle predecessor must not execute a batch"),
+                || BackgroundWakes::<serde_json::Value>::end_revival(
+                    &mut predecessor_wakes.lock().unwrap().reviving_inbound_agent_ids,
+                    "agent-a",
+                ),
+            );
+            returned_tx.send(()).unwrap();
+        });
+        idle_rx.recv_timeout(Duration::from_secs(10)).expect("atomic idle release");
+        {
+            let mut state = wakes.lock().unwrap();
+            BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", serde_json::json!({"id":"first"}));
+            assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+                &mut state.reviving_inbound_agent_ids, "agent-a",
+            ), "ingress must admit the successor after idle release");
+            BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", serde_json::json!({"id":"second"}));
+            assert!(!BackgroundWakes::<serde_json::Value>::begin_revival(
+                &mut state.reviving_inbound_agent_ids, "agent-a",
+            ), "the next ingress coalesces into that successor");
+        }
+        resume_tx.send(()).unwrap();
+        returned_rx.recv_timeout(Duration::from_secs(10)).expect("predecessor return");
+        predecessor.join().expect("predecessor");
+        assert!(wakes.lock().unwrap().reviving_inbound_agent_ids.contains("agent-a"),
+            "returning predecessor must not clear a successor's revival bit");
+
+        let mut batches = Vec::new();
+        drain_channel_inbound_batches(
+            || wakes.lock().unwrap().take_pending_inbound_or_end_revival("agent-a"),
+            |batch| { batches.push(batch); true },
+            || panic!("idle release is already complete; no stop cleanup is allowed"),
+        );
+        assert_eq!(batches, vec![vec![
+            serde_json::json!({"id":"first"}), serde_json::json!({"id":"second"}),
+        ]]);
+        let state = wakes.lock().unwrap();
+        assert!(!state.pending_inbound.contains_key("agent-a"));
+        assert!(!state.reviving_inbound_agent_ids.contains("agent-a"));
+    }
+
+    #[test]
+    fn channel_inbound_drain_nonempty_pause_keeps_existing_cleanup_and_queue_order() {
+        use std::sync::{Arc, Mutex};
+
+        let wakes = Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+        {
+            let mut state = wakes.lock().unwrap();
+            BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", serde_json::json!({"id":"first"}));
+            assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+                &mut state.reviving_inbound_agent_ids, "agent-a",
+            ));
+        }
+        let mut processed = 0;
+        let mut stopped = 0;
+        drain_channel_inbound_batches(
+            || wakes.lock().unwrap().take_pending_inbound_or_end_revival("agent-a"),
+            |batch| {
+                processed += 1;
+                let mut state = wakes.lock().unwrap();
+                assert!(state.reviving_inbound_agent_ids.contains("agent-a"));
+                BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", serde_json::json!({"id":"second"}));
+                drop(state);
+                super::requeue_channel_inbound_envelopes(&wakes, "agent-a", batch);
+                false
+            },
+            || {
+                stopped += 1;
+                BackgroundWakes::<serde_json::Value>::end_revival(
+                    &mut wakes.lock().unwrap().reviving_inbound_agent_ids, "agent-a",
+                );
+            },
+        );
+        assert_eq!((processed, stopped), (1, 1));
+        let mut state = wakes.lock().unwrap();
+        assert_eq!(state.pending_inbound.get("agent-a"), Some(&vec![
+            serde_json::json!({"id":"first"}), serde_json::json!({"id":"second"}),
+        ]));
+        assert!(!state.reviving_inbound_agent_ids.contains("agent-a"));
+        assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut state.reviving_inbound_agent_ids, "agent-a",
+        ));
     }
 
     #[test]

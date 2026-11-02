@@ -8,6 +8,30 @@ Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
 Last updated: 2026-10-31（Asia/Shanghai）
 
+### 2026-11-02 production batch: channel inbound idle handoff
+
+`OCRM-CHANNEL-IDLE-HANDOFF-v1` in `docs/specs/channel-inbound-worker-handoff.md`
+binds the existing gateway queue and shipping inbound worker to one atomic
+take-or-release operation. An ingress arriving as a worker becomes idle can
+claim a successor without the old worker later clearing its ownership. The
+actual drain control is exercised with deterministic successor handoff and
+nonempty-pause controls; four queue-owner cases cover both mutex orderings,
+empty vectors and isolation. The existing Session/Runner/delivery batch body
+and nonempty stop behavior are retained. Scope is one live manager lifetime;
+append ambiguity, deferred rearm, restart and actual channel acceptance remain
+open. Fixed U and all global completion flags are unchanged.
+
+Parent `d94aeb372c2fe4483bcf60ebbc5aaae4e6db52ef` was pushed and read back
+through GitHub, including its exact tree and all 12 changed file contents.
+Independent review converged on Automation tree
+`1a0359454e5a82c945732ce51a3eb6da3584e339`; its Runtime/Source Actions
+`41408033942`/`41408033959` have started and are not yet positive evidence.
+The incoming compaction/model parent `3aa679586d76e446f76a1c94700ff7abab623d42`
+also received a complete independent 14-path source review. Channel review
+must freeze its own complete seven-path candidate and obtain exact-H Actions;
+no parent result is relabeled. The current phase uses inherited xhigh effort
+for the concurrency and real-caller oracle scope, with no local validation.
+
 ### 2026-11-02 production batch: truthful automation history settlement
 
 Base `76095c27539c2be57e3c1ba0e6b33b8158d92766`; fixed U remains

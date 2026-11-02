@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread;
 
 use mahayana_host_runtime::connectors::channel_delivery::{
     ChannelDeliveryPort, ChannelOutboundMessage, HostChannelDelivery,
@@ -156,6 +157,172 @@ fn channel_failure_queue_is_agent_scoped_and_revival_fenced() {
         &mut wakes.reviving_channel_failure_agent_ids,
         "agent-a",
     );
+}
+
+#[test]
+fn inbound_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once() {
+    let wakes = Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+    let mut ingress = wakes.lock().expect("background wakes");
+    assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+        &mut ingress.reviving_inbound_agent_ids,
+        "agent-a",
+    ));
+
+    let (claiming_tx, claiming_rx) = mpsc::channel();
+    let worker_wakes = Arc::clone(&wakes);
+    let worker = thread::spawn(move || {
+        claiming_tx.send(()).expect("announce batch claim");
+        let mut state = worker_wakes.lock().expect("worker background wakes");
+        state.take_pending_inbound_or_end_revival("agent-a")
+    });
+
+    // Ingress owns the mutex before the current worker attempts its idle check.
+    claiming_rx.recv().expect("worker ready to claim");
+    let envelopes = vec![json!({"id":"first"}), json!({"id":"second"})];
+    for envelope in &envelopes {
+        BackgroundWakes::enqueue(&mut ingress.pending_inbound, "agent-a", envelope.clone());
+        assert!(!BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut ingress.reviving_inbound_agent_ids,
+            "agent-a",
+        ));
+    }
+    drop(ingress);
+
+    assert_eq!(worker.join().expect("current worker"), Some(envelopes));
+    let mut state = wakes.lock().expect("background wakes after claim");
+    assert!(state.reviving_inbound_agent_ids.contains("agent-a"));
+    assert!(!state.pending_inbound.contains_key("agent-a"));
+    assert_eq!(state.take_pending_inbound_or_end_revival("agent-a"), None);
+    assert!(!state.reviving_inbound_agent_ids.contains("agent-a"));
+}
+
+#[test]
+fn inbound_idle_handoff_idle_wins_admits_one_successor_and_claims_batch_once() {
+    let wakes = Arc::new(Mutex::new(BackgroundWakes::<serde_json::Value>::default()));
+    let mut retiring_worker = wakes.lock().expect("background wakes");
+    assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+        &mut retiring_worker.reviving_inbound_agent_ids,
+        "agent-a",
+    ));
+
+    let (enqueuing_tx, enqueuing_rx) = mpsc::channel();
+    let ingress_wakes = Arc::clone(&wakes);
+    let ingress = thread::spawn(move || {
+        enqueuing_tx.send(()).expect("announce inbound enqueue");
+        let mut state = ingress_wakes.lock().expect("ingress background wakes");
+        BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", json!({"id":"first"}));
+        let first_starts_worker = BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut state.reviving_inbound_agent_ids,
+            "agent-a",
+        );
+        BackgroundWakes::enqueue(&mut state.pending_inbound, "agent-a", json!({"id":"second"}));
+        let second_starts_worker = BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut state.reviving_inbound_agent_ids,
+            "agent-a",
+        );
+        (first_starts_worker, second_starts_worker)
+    });
+
+    // The current worker releases ownership before the waiting ingress can lock.
+    enqueuing_rx.recv().expect("ingress ready to enqueue");
+    assert_eq!(
+        retiring_worker.take_pending_inbound_or_end_revival("agent-a"),
+        None,
+    );
+    assert!(!retiring_worker.reviving_inbound_agent_ids.contains("agent-a"));
+    drop(retiring_worker);
+
+    assert_eq!(ingress.join().expect("inbound ingress"), (true, false));
+    let mut successor = wakes.lock().expect("successor background wakes");
+    assert!(successor.reviving_inbound_agent_ids.contains("agent-a"));
+    assert_eq!(
+        successor.take_pending_inbound_or_end_revival("agent-a"),
+        Some(vec![json!({"id":"first"}), json!({"id":"second"})]),
+    );
+    assert!(successor.reviving_inbound_agent_ids.contains("agent-a"));
+    assert_eq!(successor.take_pending_inbound_or_end_revival("agent-a"), None);
+    assert!(!successor.reviving_inbound_agent_ids.contains("agent-a"));
+}
+
+#[test]
+fn inbound_idle_handoff_treats_stored_empty_batch_as_idle() {
+    let mut wakes = BackgroundWakes::<serde_json::Value>::default();
+    wakes.pending_inbound.insert("agent-a".into(), Vec::new());
+    assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+        &mut wakes.reviving_inbound_agent_ids,
+        "agent-a",
+    ));
+
+    assert_eq!(wakes.take_pending_inbound_or_end_revival("agent-a"), None);
+    assert!(!wakes.pending_inbound.contains_key("agent-a"));
+    assert!(!wakes.reviving_inbound_agent_ids.contains("agent-a"));
+    BackgroundWakes::enqueue(&mut wakes.pending_inbound, "agent-a", json!({"id":"next"}));
+    assert!(BackgroundWakes::<serde_json::Value>::begin_revival(
+        &mut wakes.reviving_inbound_agent_ids,
+        "agent-a",
+    ));
+    assert_eq!(
+        wakes.take_pending_inbound_or_end_revival("agent-a"),
+        Some(vec![json!({"id":"next"})]),
+    );
+}
+
+#[test]
+fn inbound_idle_handoff_preserves_other_agents_and_wake_families() {
+    let mut wakes = BackgroundWakes::<serde_json::Value>::default();
+    for agent_id in ["agent-a", "agent-b"] {
+        BackgroundWakes::enqueue(
+            &mut wakes.pending_inbound,
+            agent_id,
+            json!({"inbound":agent_id}),
+        );
+        BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut wakes.reviving_inbound_agent_ids,
+            agent_id,
+        );
+        BackgroundWakes::enqueue(
+            &mut wakes.pending_channel_failures,
+            agent_id,
+            json!({"failure":agent_id}),
+        );
+        BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut wakes.reviving_channel_failure_agent_ids,
+            agent_id,
+        );
+        BackgroundWakes::enqueue(
+            &mut wakes.pending_event_wakes,
+            agent_id,
+            json!({"event":agent_id}),
+        );
+        BackgroundWakes::<serde_json::Value>::begin_revival(
+            &mut wakes.reviving_event_agent_ids,
+            agent_id,
+        );
+        wakes.dm_preempted_wake_agent_ids.insert(agent_id.into());
+    }
+    let unrelated_state = |state: &BackgroundWakes<serde_json::Value>| {
+        (
+            state.pending_inbound.get("agent-b").cloned(),
+            state.reviving_inbound_agent_ids.contains("agent-b"),
+            state.pending_channel_failures.clone(),
+            state.reviving_channel_failure_agent_ids.clone(),
+            state.pending_event_wakes.clone(),
+            state.reviving_event_agent_ids.clone(),
+            state.dm_preempted_wake_agent_ids.clone(),
+        )
+    };
+    let expected_unrelated = unrelated_state(&wakes);
+
+    assert_eq!(
+        wakes.take_pending_inbound_or_end_revival("agent-a"),
+        Some(vec![json!({"inbound":"agent-a"})]),
+    );
+    assert!(wakes.reviving_inbound_agent_ids.contains("agent-a"));
+    assert_eq!(unrelated_state(&wakes), expected_unrelated);
+
+    assert_eq!(wakes.take_pending_inbound_or_end_revival("agent-a"), None);
+    assert!(!wakes.reviving_inbound_agent_ids.contains("agent-a"));
+    assert_eq!(unrelated_state(&wakes), expected_unrelated);
 }
 
 #[test]

@@ -66,3 +66,47 @@ claim, that claim and every later unadopted claim receive the failure cleanup,
 while the original adoption error is preserved. The Rust fan-in owner now keeps
 that once-only fence in its state machine; this remains scoped lifecycle
 evidence and does not claim external channel production wiring.
+
+## Fixed-U production idle handoff — 2026-11-02
+
+Contract `OCRM-CHANNEL-IDLE-HANDOFF-v1` uses U
+`1440bb1771372334bea23d7642bb52deb7db1845`, tree
+`90c8aab39972da11cfad220361781d49e1bc6700`, and target base
+`81d48636b06d20f8bec551cdc334fe40f31e614b`. The historical 61-line SDK
+subject above is preserved as history; it is not this fixed-U implementation.
+The independent owner investigation read these exact files completely:
+
+| Fixed-U source | Blob | Lines |
+| --- | --- | --- |
+| `src/plugin-sdk/channel-ingress-runtime.ts` | `1b1817a655b06c0f5d2a3b7438ddf35dcfe82719` | 1–358 |
+| `src/channels/message/ingress-monitor.ts` | `9d37fc03b0807d9f3b9f06e69662a7ac2d631a41` | 1–743 |
+| `src/channels/message/ingress-monitor-admission.ts` | `0e83828d0d45af2d3e17d7abb7f8ea470c3f015c` | 1–235 |
+| `src/channels/message/ingress-monitor-tasks.ts` | `f8c4bdb6c6374a01c282a8cd4ffb24c5416c59ba` | 1–80 |
+| `src/channels/message/ingress-monitor-types.ts` | `d153c0803b67a2b2d3cc7128906c0aaef0e440d6` | 1–137 |
+| `src/channels/message/ingress-retry-policy.ts` | `92cb60517f91bd9fa134a44e1953aec6904c3409` | 1–179 |
+| `src/plugin-sdk/channel-ingress-runtime.test.ts` | `1621195d008ccda9aeb6d2bfc380fd2db31025ef` | 1–283 |
+| `src/channels/message/ingress-monitor.test-harness.ts` | `10d2ff59597795a3b1f37540df9d0f5a274055a7` | 1–84 |
+
+`ingress-monitor.test.ts`, blob `7f2d1dffce0db14013bc1991631cde4f2a210de3`,
+was read only at 1–58, 114–194, 290–332, 514–532, 624–687 and 903–980.
+It remains a partial read. The integrator separately re-read monitor 390–535
+and SDK 1–140 from the same fixed GitHub blobs. The monitor's coalesced idle
+wake, final repump and active ownership fences establish the relevant invariant:
+new ingress cannot be stranded by an old drain returning. Its durable queue,
+plugin-instance authority, admission/transport acknowledgment and stop custody
+are broader contracts, not supplied by this bounded Rust queue repair.
+
+The actual Host `wakeForInbound` enqueues and begins revival under one
+`BackgroundWakes` mutex. Its worker previously consumed an empty batch and
+cleared revival under two separate locks. The same queue owner now supplies an
+atomic take-or-end operation; production drain control returns on idle without
+clearing a successor's ownership. Nonempty pause exits keep their prior cleanup.
+Real owner mutex-ordering tests and a production-control test pause a predecessor
+after idle release, admit a successor, then verify the predecessor cannot erase
+that claim. They are authored tests until exact-H Actions executes them.
+
+Append failures still lack typed known/unknown commit outcomes; deferred batches
+lack autonomous inbound rearm; detached workers lack a dispose/recreate generation
+fence. Persistent ingress, transport receipt, actual provider delivery and restart
+acceptance remain open. No machine inventory, historical read state, scoped
+authority approval or global completion flag is promoted by this source review.
