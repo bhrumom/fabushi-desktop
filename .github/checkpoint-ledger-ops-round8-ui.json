@@ -74,7 +74,8 @@
           "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 A to B to A cannot reuse the old callback lifetime even when conversation and row IDs match",
           "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 root disposal releases its port and old work cannot enter a new renderer instance",
           "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment staging controls",
-          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 late retry approval completion cannot erase a newer failed send recovery"
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 late retry approval completion cannot erase a newer failed send recovery",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 retry acknowledgement preserves a newer draft with identical text"
         ],
         "ui_acceptance_scenarios": [
           "NMR-UI-01: late successful receipt and semantic refusal preserve canonical send and unrelated drafts; Human empties clear; all original/current cursor and reaction behavior remains.",
@@ -89,7 +90,8 @@
         "fault_recovery_case_ids": [
           "NMR-UI-01 actual root disposal: after unmount plus same-task delayed refusal, complete client draft boundary is unchanged before mounting a replacement root.",
           "NMR-UI-01 unsettled send failure remains recoverable, while a late error after canonical send cannot restore that message as unsent.",
-          "NMR-UI-01 canonical retry A followed by delayed approval cleanup cannot erase the complete later failed-send B draft/recovery snapshot; settlement cleanup runs once and is bound to original draft/recovery identity."
+          "NMR-UI-01 canonical retry A followed by delayed approval cleanup cannot erase the complete later failed-send B draft/recovery snapshot; settlement cleanup runs once and is bound to original draft/recovery identity.",
+          "NMR-UI-01 failed A then edit-away/edit-back creates a new draft identity; retry acknowledgement for original A must preserve that later identical-text draft and its persisted ID."
         ],
         "security_case_ids": [
           "NMR-UI-01 retained legacy peer nonce, assistant nonce and missing Human author do not consume local optimistic state; account/clear/disposal lifetime fences apply to callbacks and deferred React updaters."
