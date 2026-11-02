@@ -258,6 +258,10 @@
           "head": "beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a"
         }
       ]
+    },
+    "mainLastReadback": {
+      "observedAtUtc": "2026-11-02T21:42:30Z",
+      "sha": "5528062177e3865eef60a073a066cca144f9e3e8"
     }
   },
   "change": {
@@ -471,6 +475,20 @@
         ".github/round29-cas-ledger-append.json"
       ],
       "supersededObjects": "Earlier exact-input objects were never substituted over newer canonical ledgers. Every advance was read and rebased; no stale tree/ref was forced."
+    },
+    "snapshotHead": "558b57bf9730446b08cf40c120d17c988c56ed16",
+    "snapshotMeaning": "The6-review/2-complete figures above are the historical exact558 source-contract qualification, not current checkpoint counts.",
+    "currentObservedLedger": {
+      "blob": "115e9d342f24ac5c14679ad21f1ba745d555acb9",
+      "rows": 184,
+      "sourceReviewRecords": 16,
+      "recordedReviewStatusCounts": {
+        "complete": 2,
+        "pending": 14
+      },
+      "scope": "Counts of preserved current ledger entries; not a claim that this round independently performed or accepted those source reviews.",
+      "allSourceReviewsPreservedByAppend": true,
+      "accepted": false
     }
   },
   "backendPR137": {
@@ -793,7 +811,16 @@
     "writes": 0,
     "merges": 0,
     "deployments": 0,
-    "scope": "Read-only observations; independent concurrent backend work is preserved. New verifier mock tests are not production evidence."
+    "scope": "Read-only observations; independent concurrent backend work is preserved. New verifier mock tests are not production evidence.",
+    "lastReadback": {
+      "observedAtUtc": "2026-11-02T21:42:30Z",
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "baseAndMain": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mutations": false
+    }
   },
   "requirementsCheckpoint": [
     {
@@ -813,23 +840,23 @@
     },
     {
       "id": 4,
-      "state": "bounded-regression-implemented",
-      "evidence": "The strengthened concurrent forwarding oracle passed at106/d878. Later f544 exposed true Human creation sidecar loss, an automatic-history wiring defect and a Social log-oracle defect; preserve concurrent repairs and minimally strengthen full-header admission plus two real sidecar subcases. These new assertions remain pending until their containing-H execution."
+      "state": "bounded-production-and-concurrency-qualified",
+      "evidence": "Exact8b full-header/sidecar and CAS contracts passed. The containing7201 SQLite-VFS change independently passed Human67/creation14/storage3/journal12, originalfive forwards, real retained-WAL reopening and external-writer POSIX-lock preservation. Current UI failures and later repairs remain separately recorded."
     },
     {
       "id": 5,
       "state": "preserved",
-      "evidence": "Current concurrent product work and all production/other journal tests unchanged. No new module or user-data deletion."
+      "evidence": "Existing Session/SandAgentDb production owner retained; no alternate module or data deletion. The100-byte admission change leaves ordinary Agent recovery unchanged and preserves concurrent9b/f95 production/tests plus all other sessions' edits."
     },
     {
       "id": 6,
       "state": "satisfied-for-batch",
-      "evidence": "One isolated existing test path, fresh remote base and root-only CAS; no public contract or identifier reassignment."
+      "evidence": "Read-only owner/path log review was parallelized; production changes were narrowly rebased, with root-only canonical ledger/RTM and force=false expected_sha publication."
     },
     {
       "id": 7,
       "state": "bounded-executed-shipping-pending",
-      "evidence": "Exact106 and later d878 complete logs qualify the retained strengthened CAS test and Human62/resource3/sharebox1/journal12/Agent4/credential3/HTTP1. Later shared SQLite/Session/UI changes require f544/run41526852400 and current shipping; pending jobs are not counted as passes."
+      "evidence": "Exact7201 reconciliation passed3/67/3/14/3/1/12/4/3/1, all0failed/ignored, with full log and artifact bound to7201. Exact8b platform groups remain separately scoped. UI8b failed10/11 and18fa failedTS2741 before browser steps; later001 UI and shipping still require actual execution. No local executable validation or rerun-to-select-green."
     },
     {
       "id": 8,
@@ -838,8 +865,8 @@
     },
     {
       "id": 9,
-      "state": "canonical-evidence-and-source-contract-qualified",
-      "evidence": "Exact558b57bf9730446b08cf40c120d17c988c56ed16 appends bounded evidence to FBCP-NMR-001, with full remote ledger equality. Source run41527070116 completed both jobs successfully:158 Node contracts,37 Python schema cases,zero ledger schema errors; exact candidate retained16381 source identities/184 responsibilities/six reviews (two complete), unknown/unread null, and rejected accepted mode. RTM evidence is added at the existing NMR-47e/NMR-AC-38 anchor. Source/product/independent acceptance remain false."
+      "state": "prior-canonical-contract-qualified-new-registration-in-progress",
+      "evidence": "Exact558 source contract/candidate results remain scoped historical evidence. The current missing Human CREATE IDs, actual existing owner paths and four unit-case anchors (including7201 retained-WAL/POSIX cases as authored only) are prepared as an append to FBCP-NMR-001. Current16 source reviews and all unrelated/scalar/acceptance content are preserved; the new attachment and exact source gates are not yet claimed complete."
     },
     {
       "id": 10,
@@ -848,8 +875,10 @@
     }
   ],
   "remaining": [
-    "Read the containing fixed-H native run: creation12/storage3/Human63 plus journal and real ProductionRenderer11+8/Social gates; retain f544 failures and all skipped-stage distinctions",
-    "Read current shipping125556685929 AppHost/gateway/protocol/TCP/actual resource copy; exact106/d878 shipping remain separate pending observations",
+    "Retain exact7201/run41530848397/reconciliation125570311115 Human67/creation14/storage3/journal12 success; inspect any later changed creation/Session inputs before reusing this result",
+    "Read containing001a5ebd80128f062f35a0318c0388d9f9d9ba1e/run41532012490 UI full logs after current telemetry/pointer/shell repairs; retain8b10/11 and18fa TS2741 failures and their skipped-stage distinctions",
+    "Read exact8b/shipping125563635125 and later7201/shipping125570311369 AppHost/gateway/protocol/TCP/actual resource-copy results; neither pending gate is a pass",
+    "Attach the reviewed current canonical Human requirement/test mapping and obtain its exact-H source contract/candidate result; preserve concurrently added source reviews",
     "Complete source/build/generated/LFS/legal review and all applicable production behavior",
     "Authenticated live backend paging/recovery and real remote migration/restore evidence; Backend PR137 remains read-only",
     "Supported signed installation/UI/visual/a11y/upgrade/rollback and full Bot/security/performance/soak acceptance",
@@ -1411,6 +1440,184 @@
     }
   },
   "currentPendingValidation": {
+    "head": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+    "run": 41528875268,
+    "qualified": "Exact8b scoped reconciliation/platform evidence and the later exact7201 Human67/creation14/storage3/journal12 results are recorded above. Current UI and shipping remain unqualified.",
+    "failed": "UI8b10/11 pointer failure retained;18fa then failed a separate real renderer TS2741 before browser stages. Current7201 telemetry/7d57 hover continuity and later test/shell readiness repairs require a containing001 run result.",
+    "shipping": {
+      "job": 125563635125,
+      "status": "queued",
+      "runner_id": 0,
+      "steps": [],
+      "executionEvidence": false
+    },
+    "rule": "No all-green run or current shipping claim. Later concurrent Human retry/renderer/shared inputs require their own containing-H evidence; these bounded8b results are not proof for arbitrary latest HEAD.",
+    "laterInputDrift": {
+      "observedHead": "7201c8897dafb39bea92543d3ac447305348e17d",
+      "observedAtUtc": "2026-11-02T21:43:13Z",
+      "files": [
+        {
+          "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+          "qualifiedBlob": "8b6cafa332f10a1372a61b6727f003c914bf3eeb",
+          "laterBlob": "674335fcf15deae2c1bb4c0afbaca08bc07cd68b"
+        },
+        {
+          "path": "source/host/src/extensions/session/human_creation_tests.rs",
+          "qualifiedBlob": "2b76e68da5e913709e821c5858949cae89466fc2",
+          "laterBlob": "94f10930ae5cfd207bf05bc081ece4bdb74766b6"
+        }
+      ],
+      "qualifiedBy8b": false,
+      "details": {
+        "currentProductionBoundary": "The later7201 implementation preserves the100-byte minimum while using fs::metadata and a default-VFS/private-cache immutable read-only SQLite schema_version probe, avoiding closing a raw file descriptor that could release another same-process SQLite connection's POSIX locks.",
+        "preserved": "All six8b corruption subcases and complete-directory/retry/reopen/no-live-owner assertions remain.",
+        "added": "Refuse missing or empty main with nonempty WAL/SHM/journal; retain empty-main/no-sidecar creation. Twelve corruption variants now include lengths1/15/16/99 and missing/empty-main sidecars.",
+        "newTopLevelCases": [
+          "retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+          "human_format_probe_preserves_posix_locks_against_an_external_writer"
+        ],
+        "requiredCounts": {
+          "Human": 67,
+          "creation": 14,
+          "creationStorage": 3,
+          "journal": 12
+        },
+        "requiredRun": {
+          "head": "7201c8897dafb39bea92543d3ac447305348e17d",
+          "run": 41530848397,
+          "reconciliation": 125570311115,
+          "shipping": 125570311369,
+          "ui": 125570311430,
+          "status": "completed/success for reconciliation; other jobs remain independently required"
+        },
+        "reasonPriorEvidenceInvalid": "Both production probe and corruption/lock/WAL tests changed; exact8b's63/12 is historical bounded qualification, not current7201 proof.",
+        "spec": {
+          "path": "docs/specs/fbcp-native-message-reconciliation.md",
+          "blob": "32ce4823c3d5d64f1bde3b97652b439f2be0e32b"
+        }
+      },
+      "qualifiedByDirect7201Run": true
+    }
+  },
+  "followupHumanSidecarRepair": {
+    "classification": "IMPL_BUG with retained concurrent fix",
+    "failureHead": "f544e9b3161d758141e1b419bcdab22cc522952e",
+    "failureRun": 41526852400,
+    "failureJob": 125556686433,
+    "fullLogRead": true,
+    "executedBeforeFailure": {
+      "retainedTranscriptRecovery": 3,
+      "Human": 63,
+      "resourceBounds": 3
+    },
+    "creation": {
+      "passed": 11,
+      "failed": 1,
+      "ignored": 0,
+      "case": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "failureLine": 777
+    },
+    "skippedAfterFailure": [
+      "creation storage3",
+      "sharebox1",
+      "journal12",
+      "Agent4",
+      "credential3",
+      "forward HTTP1"
+    ],
+    "actualFailure": "The original main database and unrelated sibling survived refusal but SQLite removed the pre-existing -journal/-shm/-wal. Nonempty sidecars bypassed the immutable probe; recover_on_corruption=false did not prevent SQLite's own open-time effects.",
+    "observedConcurrentRepair": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+      "recoveryBlob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+      "behavior": "Adds a filesystem-only16-byte SQLite magic check before delegating sidecar-backed stores. Preserve this existing owner change and its error/missing-path handling."
+    },
+    "authoredDelta": "On that current implementation only, read the complete100-byte header and compare its first16 bytes, so valid magic with an incomplete header is refused before SQLite touches sidecars. Retain the concurrent active-history and all other owner changes.",
+    "tests": {
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "existingCase": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "addedSubcases": [
+        "truncated-header: correct magic but fewer than100 bytes plus original sidecars",
+        "notadb-full-header:100 bytes with invalid magic plus original sidecars"
+      ],
+      "preservedControls": [
+        "concurrent f95 six-byte short-header with all original sidecars",
+        "original NOTADB bytes and sidecars",
+        "corrupt schema with valid header",
+        "corrupt data page in DELETE mode",
+        "entire directory bytes unchanged",
+        "same-worker retry and reopened-worker refusal",
+        "no published owner and zero live handles"
+      ],
+      "topLevelCreationCount": 12,
+      "storageCount": 3
+    },
+    "productionPath": "createHumanConversation -> existing Session creation/mutation lane -> SandAgentDb::open_human_conversation_store -> probe_human_conversation_store -> existing WAL-aware opener; ordinary Agent recovery is unchanged.",
+    "requiredContainingHeadGates": [
+      "Human63",
+      "creation12 and storage3 including valid uncheckpointed WAL winner/reopen positive control",
+      "sharebox1/journal12/Agent4/credential3/HTTP1",
+      "Host/AppHost compilation and unchanged shipping gates"
+    ],
+    "status": "bounded Human creation and concurrency contracts actually passed at exact8b; shipping and full product acceptance remain unqualified",
+    "localExecutableValidation": false,
+    "limit": "This bounded header admission change does not establish every valid-header/hot-or-corrupt-WAL recovery case, multi-process race, full data migration or final acceptance.",
+    "observedConcurrentTest": {
+      "head": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+      "baseBlob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+      "scope": "Retain its added six-byte short-header case unchanged; extend the current same test with two distinct100-byte-boundary/magic controls."
+    },
+    "published": {
+      "head": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+      "parent": "ad762396cd4facbcb5658bfb16a9085d1e52a2a9",
+      "force": false,
+      "expected_sha": "ad762396cd4facbcb5658bfb16a9085d1e52a2a9",
+      "remoteCommitAndFullContentVerified": true,
+      "files": [
+        {
+          "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+          "blob": "8b6cafa332f10a1372a61b6727f003c914bf3eeb"
+        },
+        {
+          "path": "source/host/src/extensions/session/human_creation_tests.rs",
+          "blob": "2b76e68da5e913709e821c5858949cae89466fc2"
+        }
+      ]
+    },
+    "execution": {
+      "head": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+      "run": 41528875268,
+      "job": 125563635600,
+      "status": "completed",
+      "conclusion": "success",
+      "fullLogRead": true,
+      "fullLogCharacters": 457775,
+      "actualGroups": {
+        "retainedTranscriptRecovery": 3,
+        "Human": 63,
+        "resourceBounds": 3,
+        "creation": 12,
+        "creationStorage": 3,
+        "sharebox": 1,
+        "journal": 12,
+        "AgentNonce": 4,
+        "credentialSettlement": 3,
+        "forwardGatewayHTTP": 1
+      },
+      "failed": 0,
+      "ignored": 0,
+      "originalFiveCases": "All five process-kill/restart-sync/idempotent-replay/restart-permissions/SQLite-failure cases are actual named ok lines, not command echo matches.",
+      "negativeAndPositive": "The complete-directory corruption/header case (six source subcases), distinct-handles valid-WAL winner/reopen positive, concurrent CAS single durable winner, stale observed-write and stale same-batch monotonicity all actually executed successfully.",
+      "artifact": {
+        "id": 13180844165,
+        "digest": "sha256:cfeccf6ab799c00dd08f6fd4a73797cd5396914bb0f52d7a02fadf26eeb43a02"
+      },
+      "limit": "Concurrent API-call proof does not establish every private scheduler interleaving or multi-AppHost uniqueness. No general hot/corrupt-WAL or final migration acceptance claim.",
+      "logSha256": "8ca9de25776bc94a38b86b77faa09aaea05974e13fed3b121111933367dedb01",
+      "logUtf8Bytes": 457777
+    }
+  },
+  "retainedF544Validation": {
     "head": "f544e9b3161d758141e1b419bcdab22cc522952e",
     "run": 41526852400,
     "jobs": [
@@ -1499,73 +1706,276 @@
       }
     ]
   },
-  "followupHumanSidecarRepair": {
-    "classification": "IMPL_BUG with retained concurrent fix",
-    "failureHead": "f544e9b3161d758141e1b419bcdab22cc522952e",
-    "failureRun": 41526852400,
-    "failureJob": 125556686433,
-    "fullLogRead": true,
-    "executedBeforeFailure": {
-      "retainedTranscriptRecovery": 3,
-      "Human": 63,
-      "resourceBounds": 3
-    },
-    "creation": {
-      "passed": 11,
-      "failed": 1,
+  "followupPlatformQualification": {
+    "head": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+    "run": 41528875268,
+    "social": {
+      "job": 125563635587,
+      "conclusion": "success",
+      "groups": [
+        10,
+        9,
+        6
+      ],
+      "failed": 0,
       "ignored": 0,
-      "case": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
-      "failureLine": 777
+      "fullLogCharacters": 153878,
+      "lockUnchanged": true,
+      "artifact": 13180922890,
+      "digest": "sha256:ac6f166211a82e2a272c3b31701e88a44513084e7d7d3c8cc215912dafdd2c41"
     },
-    "skippedAfterFailure": [
-      "creation storage3",
-      "sharebox1",
-      "journal12",
-      "Agent4",
-      "credential3",
-      "forward HTTP1"
-    ],
-    "actualFailure": "The original main database and unrelated sibling survived refusal but SQLite removed the pre-existing -journal/-shm/-wal. Nonempty sidecars bypassed the immutable probe; recover_on_corruption=false did not prevent SQLite's own open-time effects.",
-    "observedConcurrentRepair": {
-      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
-      "path": "source/host/src/extensions/session/agent_db_recovery.rs",
-      "recoveryBlob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
-      "behavior": "Adds a filesystem-only16-byte SQLite magic check before delegating sidecar-backed stores. Preserve this existing owner change and its error/missing-path handling."
-    },
-    "authoredDelta": "On that current implementation only, read the complete100-byte header and compare its first16 bytes, so valid magic with an incomplete header is refused before SQLite touches sidecars. Retain the concurrent active-history and all other owner changes.",
-    "tests": {
-      "path": "source/host/src/extensions/session/human_creation_tests.rs",
-      "existingCase": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
-      "addedSubcases": [
-        "truncated-header: correct magic but fewer than100 bytes plus original sidecars",
-        "notadb-full-header:100 bytes with invalid magic plus original sidecars"
+    "electron": {
+      "job": 125563635688,
+      "conclusion": "success",
+      "groups": [
+        10,
+        8,
+        3,
+        16,
+        28,
+        18,
+        10,
+        7
       ],
-      "preservedControls": [
-        "concurrent f95 six-byte short-header with all original sidecars",
-        "original NOTADB bytes and sidecars",
-        "corrupt schema with valid header",
-        "corrupt data page in DELETE mode",
-        "entire directory bytes unchanged",
-        "same-worker retry and reopened-worker refusal",
-        "no published owner and zero live handles"
-      ],
-      "topLevelCreationCount": 12,
-      "storageCount": 3
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "fullLogCharacters": 92411,
+      "actualBuildSucceeded": true,
+      "artifact": 13181342107,
+      "digest": "sha256:a257ddecda1ca23984e49d3ca1e1438691b8c5542a6bcc9017c2d9aab05a6432"
     },
-    "productionPath": "createHumanConversation -> existing Session creation/mutation lane -> SandAgentDb::open_human_conversation_store -> probe_human_conversation_store -> existing WAL-aware opener; ordinary Agent recovery is unchanged.",
-    "requiredContainingHeadGates": [
-      "Human63",
-      "creation12 and storage3 including valid uncheckpointed WAL winner/reopen positive control",
-      "sharebox1/journal12/Agent4/credential3/HTTP1",
-      "Host/AppHost compilation and unchanged shipping gates"
-    ],
-    "status": "authored; containing-H Actions execution pending",
-    "localExecutableValidation": false,
-    "limit": "This bounded header admission change does not establish every valid-header/hot-or-corrupt-WAL recovery case, multi-process race, full data migration or final acceptance.",
-    "observedConcurrentTest": {
-      "head": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
-      "baseBlob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
-      "scope": "Retain its added six-byte short-header case unchanged; extend the current same test with two distinct100-byte-boundary/magic controls."
+    "windows": {
+      "job": 125563635652,
+      "conclusion": "success",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "fullLogCharacters": 34515,
+      "artifact": 13182010505,
+      "digest": "sha256:f4ffbde0f3eb77c1bd86bbf776f8dd50860fc378b43c713e41d4293bbf94d14b",
+      "scope": "CI-only inert Authenticode/Unicode subject fixture; remainingOwnedCertificates=0, no formal publisher/package acceptance"
+    },
+    "peerLinux": {
+      "job": 125563635664,
+      "conclusion": "success",
+      "passed": 23,
+      "failed": 0,
+      "ignored": 0,
+      "fullLogCharacters": 50733,
+      "artifact": 13181995957,
+      "digest": "sha256:4915fdbaed351ddd1e848df92f5b1ad76aab4498e5ae85b79051265828ab248e",
+      "logSha256": "d3c8a7d8f0a286450158169ce455fe842acb7d37bafdb8ef47faef6d057fc6a2"
+    },
+    "peerWindows": {
+      "job": 125563635591,
+      "conclusion": "success",
+      "passed": 23,
+      "failed": 0,
+      "ignored": 0,
+      "fullLogCharacters": 55927,
+      "artifact": 13180738207,
+      "digest": "sha256:70d462a9cb23bd1c676e53f6bff986a11561e865ad516ec49fa4ca9d241a032b"
+    },
+    "retainedFFI": {
+      "job": 125563635637,
+      "conclusion": "success",
+      "passed": 15,
+      "failed": 0,
+      "ignored": 1,
+      "ignoredCase": "live_runtime_bootstrap_keeps_an_encrypted_transport_session",
+      "ignoredReason": "requires a live Telegram production data center",
+      "fullLogCharacters": 55826,
+      "lockUnchanged": true,
+      "artifact": 13181212818,
+      "digest": "sha256:7b1957f29e4ad5d303fc21e6ba6abea5d8fa02f01a77503ce1679342f236698a"
     }
+  },
+  "followupRendererFailure": {
+    "head": "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1",
+    "run": 41528875268,
+    "job": 125563636376,
+    "conclusion": "failure",
+    "fullLogRead": true,
+    "fullLogCharacters": 96491,
+    "passedBeforeFailure": {
+      "Transcript": 33,
+      "cursors": 17,
+      "forwardSettlement": 5,
+      "Chromium": 16,
+      "rendererCompilation": true
+    },
+    "actualRenderer": {
+      "passed": 10,
+      "failed": 1,
+      "skipped": 0,
+      "case": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation",
+      "line": 303,
+      "error": "Add reaction click timed out because sand-virtual-transcript intercepted pointer events"
+    },
+    "viewportContinuation": {
+      "selected": 8,
+      "status": "skipped after prior step failure"
+    },
+    "artifact": {
+      "id": 13182076303,
+      "digest": "sha256:d6bee92e7c1ef41a04f96d372b64cd4c9c7857a41b2ad50891ab68d6bb0f8a81",
+      "bytes": 33692499,
+      "downloadedAndDigestVerified": true,
+      "targetShaVerified": true
+    },
+    "classification": "TEST_FLAW: source CSS enables the toolbar only over its fit-content action anchor, focus-within or open menu. The real trace row.hover landed at(780,97) in the blank full-width article; actual button attempts at(1061,131) remained pointer-events:none. Failure screenshot confirms the toolbar was hidden.",
+    "retainedConcurrentRepairs": [
+      {
+        "head": "221d7097f5603a6be06c8c51763047e03420090a",
+        "scope": "Hover the real .sand-message-action-anchor in both old-row reaction interactions"
+      },
+      {
+        "head": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+        "scope": "Before both real clicks explicitly require toolbar pointer-events=auto; preserve all11 cases and later-empty-row oracle"
+      }
+    ],
+    "forbiddenShortcutsAvoided": "No force click, arbitrary sleep, retry-until-green, deleted assertion or new production change.",
+    "requiredRepairRun": {
+      "head": "18fa9233d592e3fa536d4fd4ec6675e175d58d18",
+      "run": 41530401510,
+      "job": 125568803608,
+      "status": "completed",
+      "result": "failure before browser stages",
+      "expectedGroups": {
+        "Transcript": 34,
+        "cursors": 19,
+        "humanRetryUIAndCoordinatorAndSubmission": 40,
+        "forwardSettlement": 5,
+        "Chromium": 16,
+        "actualRenderer": 11,
+        "viewport": 8
+      },
+      "actual": {
+        "fullLogCharacters": 71226,
+        "passedGroups": {
+          "Transcript": 34,
+          "cursors": 19,
+          "humanRetry": 40
+        },
+        "rendererCompilation": "failed: TS2741 at frontend/src/recovered/runtime/coordinator-source.ts519; TELEMETRY_DOMAIN_BY_METHOD lacks retryHumanMessage",
+        "skipped": [
+          "settlement5",
+          "Chromium16",
+          "actualRenderer11",
+          "viewport8"
+        ],
+        "artifact": 13180924585,
+        "digest": "sha256:56a03d6cc78d9407dc403d29b9f55069ae8a4663af8ab27d646f91dcad697fc0"
+      }
+    },
+    "currentRepairs": {
+      "telemetry": {
+        "head": "7201c8897dafb39bea92543d3ac447305348e17d",
+        "path": "frontend/src/recovered/runtime/coordinator-source.ts",
+        "blob": "0526b43cd03ce33167f095bfdf15febe4dcca7a2",
+        "change": "Add retryHumanMessage:'send' to the existing exhaustive domain Record; no type weakening"
+      },
+      "pointer": {
+        "head": "7d57aa4393c4f6c13bc6129255e2bec8173ed5ed",
+        "cssBlob": "74835c7c9d8a29c4978527d177f4ce67fce4058f",
+        "change": "Keep a continuous real hover hit area using top:100% plus padding-top2px; retain real pointer movement and ordinary clicks"
+      },
+      "qualification": {
+        "head": "001a5ebd80128f062f35a0318c0388d9f9d9ba1e",
+        "run": 41532012490,
+        "status": "queued at observation; unqualified"
+      }
+    }
+  },
+  "followupHumanRegistration": {
+    "status": "reviewed append awaiting object attachment",
+    "requirementIds": [
+      "NMR-CREATE-01b",
+      "NMR-CREATE-01c",
+      "NMR-CREATE-01d",
+      "NMR-AC-CREATE-01",
+      "FBCP-HUMAN-CREATE-04"
+    ],
+    "row": "FBCP-NMR-001",
+    "ledgerPath": "projects/telegram-desktop-rust/parity-ledger.json",
+    "reviewedInput": "115e9d342f24ac5c14679ad21f1ba745d555acb9",
+    "reviewedOutput": "a6470f6acda600ba9f29b0e4b50a4d05ff21187f",
+    "objectOnlyTransport": {
+      "head": "6efdb19da02127ae7fa8263454124ef6b462118f",
+      "run": 41531858035,
+      "runner": "windows-2025",
+      "reads": "exact Git objects with16MiB bounded buffers; independent of checkout CRLF",
+      "productValidation": false,
+      "createsCommits": false,
+      "updatesRefs": false
+    },
+    "supersededTransport": {
+      "head": "d1daa0427a43f19480814f9669de118069e090c9",
+      "run": 41529898983,
+      "job": 125567067693,
+      "object": "6fc0252f48c5b4c290cdc4f7aab5613da9e01e3c",
+      "reasonNotAttached": "The canonical ledger advanced from714a817 to09ae589 and now contains14 source reviews. Its complete new content is preserved by rebuilding the same append."
+    },
+    "laterMappedCases": [
+      "source/host/src/extensions/session/human_creation_tests.rs#retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+      "source/host/src/extensions/session/human_creation_tests.rs#human_format_probe_preserves_posix_locks_against_an_external_writer"
+    ],
+    "supersededQueuedTransport": {
+      "head": "427396717f9a904af31532733aa2a5697dc43bae",
+      "run": 41530647724,
+      "job": 125569630332,
+      "output": "e4d0b477425ada42be6a27e7db004f237240faec",
+      "reason": "Ledger progressed again to16 source reviews and two new7201 test anchors were observed missing; this older output is not attachable to the current ledger. No product-validation claim."
+    },
+    "allOtherRowsAndSourceReviewsPreserved": true,
+    "executionStateUpdate": "The manifest retains its preparation-time authored/pending7201 observation. Subsequently, direct run41530848397/job125570311115 passed67/14/3/12 and both newly mapped cases; this receipt supplies the later execution instead of pretending it occurred at8b."
+  },
+  "subsequentHumanQualification": {
+    "head": "7201c8897dafb39bea92543d3ac447305348e17d",
+    "run": 41530848397,
+    "job": 125570311115,
+    "status": "completed",
+    "conclusion": "success",
+    "fullLogRead": true,
+    "fullLogCharacters": 460082,
+    "actualGroups": {
+      "retainedTranscriptRecovery": 3,
+      "Human": 67,
+      "resourceBounds": 3,
+      "creation": 14,
+      "creationStorage": 3,
+      "sharebox": 1,
+      "journal": 12,
+      "AgentNonce": 4,
+      "credentialSettlement": 3,
+      "forwardGatewayHTTP": 1
+    },
+    "failed": 0,
+    "ignored": 0,
+    "actualNamedCases": [
+      "retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen",
+      "human_format_probe_preserves_posix_locks_against_an_external_writer",
+      "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "concurrent_forward_metadata_writers_have_one_durable_winner_and_recover",
+      "stale_forward_metadata_observation_cannot_erase_other_batch",
+      "stale_same_batch_snapshot_cannot_regress_completed_destination"
+    ],
+    "originalFiveForwardCases": "All five original process-kill/restart-sync/idempotent-replay/permission-and-credential/SQLite-failure cases have actual named ok lines at7201.",
+    "inputs": {
+      "spec": "32ce4823c3d5d64f1bde3b97652b439f2be0e32b",
+      "probe": "674335fcf15deae2c1bb4c0afbaca08bc07cd68b",
+      "creationCases": "94f10930ae5cfd207bf05bc081ece4bdb74766b6",
+      "workflow": "f9c4804ce0613b9abd1cd8834c77e558fc99d4df",
+      "journal": "0a5d1923742a3c55b1bc5eacbfb21238a7ca4335",
+      "creationStorageCases": "7be79bc692a857775ef68c0494642ef58f305481",
+      "agentDb": "0b396511ce827f38377b252ec6e05466be1d8564"
+    },
+    "artifact": {
+      "id": 13182118217,
+      "bytes": 48359,
+      "digest": "sha256:9330b256b1ed0d275e570ad641357ad1f1e01873f1032e75f8222b0358571370"
+    },
+    "scope": "This independently qualifies the later SQLite-VFS probe, twelve corruption subcases, retained-WAL final-writer-close positive and Unix external-writer lock negative. It does not qualify current shipping, UI, all supported platforms or independent ACCEPT."
   }
 }
