@@ -142,3 +142,50 @@ full Rust migration contracts remain open. Late cleanup failures must remain
 observable without changing B's authority; a successful source review alone
 is not final-H verification. Reuse only the unchanged fixed-U closing/lifetime
 source identities and read bounds above; no new full-read or parity claim.
+
+## Retired Box bridge requests — `MCP-RUNTIME-BOX-ADMISSION-v1`
+
+Implementation base: `ecd978f7d2d1ae7511613147302f022155981c9f`; fixed U is
+unchanged. The construction owner currently passes its four Box request ports
+through unchanged. The real desktop factory retains them in discovery, whose
+configuration push and execution paths await configuration or prior work.
+Reset can retire that factory/manager during such an await, after which its
+captured port can still start a new Host request. Clearing account projections
+does not revoke the captured request callback. This is a source-established
+bridge-lifetime gap, not an executed remote authorization bypass.
+
+- MB-01: the existing runtime's `loadBoxMcpServers`, `listBoxMcpServers`,
+  `listBoxMcpToolsRaw` and `executeBoxMcpToolRaw` callbacks must check their
+  exact current construction attempt immediately before calling the underlying
+  port. A retired attempt rejects without any new port call. Apply this after
+  reset, permanent disposal and failed construction; a later manager does not
+  authorize an earlier callback. Use the existing attempt identity only.
+- MB-02: current callbacks forward the original arguments once and preserve
+  the underlying successful value or rejection. There is no asynchronous gap
+  between the lifetime check and invocation, no replacement-account retry and
+  no policy, registration, credential or execution-owner substitution.
+- MB-03: a request that already crossed the port remains owned by that call.
+  Its eventual value or error still reaches its original caller after reset;
+  do not discard a completed tool result or infer cancellation from local
+  retirement. This gate cannot retract an in-flight Host request or establish
+  cross-account ordering inside a remote consumer. Those contracts remain open.
+- MB-04: use controlled promises and actual runtime callbacks to cover every
+  port, current success/failure, old callbacks after all retirement paths,
+  fresh replacement success, and already-admitted late outcomes. Exercise the
+  real shipping adapter with a facade that pauses before its captured Box
+  execution port, then reset/dispose and require zero old request dispatches.
+  Preserve all MC/MR assertions. No sleeps or fixture retries decide order.
+- MB-05: extend the already-selected complete MCP runtime contract file and
+  run its existing bundle/build lane on the resulting exact H in Actions.
+  A source review or a passing older H does not verify these new controls.
+
+Scope is this spec, `source/electron-main/mcp/mcp-runtime.ts` and its existing
+`mcp-runtime.contract.test.ts`. Their canonical ledger/RTM references already
+point to these files; no acceptance state changes. Electron only guards the
+lifetime of its captured IPC bridge callbacks. Host/Rust retains permission,
+configuration and execution authority; this is not a complete Rust MCP
+permission-lifecycle migration. Returned facade methods, in-flight remote
+mutations, official OAuth callbacks and restart reconciliation retain their
+separate existing limits. No schema, dependency, wire or storage change is
+needed; rollback restores late bridge dispatch without rewriting user data.
+Reuse only the fixed-U closing/lifetime evidence and read bounds above.

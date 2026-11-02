@@ -733,6 +733,179 @@ test("MC-03 shipping adapter awaits and propagates manager teardown failure", as
   assert.equal(owned.calls.dispose, 1);
 });
 
+type BoxBridgePorts = Pick<ConstructionDeps,
+  "loadBoxMcpServers" | "listBoxMcpServers" | "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw">;
+type BoxBridgeName = keyof BoxBridgePorts;
+
+function controlledBoxPorts(
+  call: (name: BoxBridgeName, input: unknown) => Promise<unknown>,
+): BoxBridgePorts {
+  return {
+    loadBoxMcpServers: (input) => call("loadBoxMcpServers", input),
+    listBoxMcpServers: async (input) => await call("listBoxMcpServers", input) as readonly Record<string, unknown>[],
+    listBoxMcpToolsRaw: async (input) => await call("listBoxMcpToolsRaw", input) as string,
+    executeBoxMcpToolRaw: async (input) => await call("executeBoxMcpToolRaw", input) as string,
+  };
+}
+
+function boxBridgeCases() {
+  const config = '{"mcpServers":{"retirement":{"command":"fixture-command"}}}';
+  const identifiers = ["retirement"];
+  return [
+    { name: "loadBoxMcpServers" as const, input: config, value: { loaded: true },
+      invoke: (options: ConstructionOptions) => options.loadBoxMcpServers(config) },
+    { name: "listBoxMcpServers" as const, input: identifiers, value: [{ serverIdentifier: "retirement" }],
+      invoke: (options: ConstructionOptions) => options.listBoxMcpServers(identifiers) },
+    { name: "listBoxMcpToolsRaw" as const, input: "cafe", value: "0011",
+      invoke: (options: ConstructionOptions) => options.listBoxMcpToolsRaw("cafe") },
+    { name: "executeBoxMcpToolRaw" as const, input: "babe", value: "2233",
+      invoke: (options: ConstructionOptions) => options.executeBoxMcpToolRaw("babe") },
+  ];
+}
+
+test("MB-02 current Box bridge ports preserve arguments and actual success or failure", async () => {
+  const cases = boxBridgeCases();
+  const calls: Array<{ name: BoxBridgeName; input: unknown }> = [];
+  const failure = new Error("Box request failed");
+  let fail = false;
+  let options!: ConstructionOptions;
+  const owned = constructionManager();
+  const runtime = createMcpRuntime(constructionDeps(async (captured) => {
+    options = captured;
+    return owned.manager;
+  }, controlledBoxPorts(async (name, input) => {
+    calls.push({ name, input });
+    if (fail) throw failure;
+    return cases.find((item) => item.name === name)!.value;
+  })));
+  await runtime.ensureMcpManager();
+  for (const item of cases) assert.equal(await item.invoke(options), item.value);
+  fail = true;
+  for (const item of cases) await assert.rejects(item.invoke(options), (error) => error === failure);
+  assert.deepEqual(calls.map((call) => call.name), [...cases, ...cases].map((item) => item.name));
+  calls.forEach((call, index) => assert.equal(call.input, cases[index % cases.length]!.input));
+  await runtime.dispose();
+});
+
+for (const retirement of ["reset", "dispose", "construction failure"] as const) {
+  test("MB-01 all captured Box ports refuse after " + retirement, async () => {
+    const cases = boxBridgeCases();
+    const calls: BoxBridgeName[] = [];
+    const captured: ConstructionOptions[] = [];
+    const old = constructionManager();
+    const replacement = constructionManager();
+    const failure = new Error("Factory refused before publication");
+    const runtime = createMcpRuntime(constructionDeps(async (options) => {
+      captured.push(options);
+      if (captured.length === 1 && retirement === "construction failure") throw failure;
+      return captured.length === 1 ? old.manager : replacement.manager;
+    }, controlledBoxPorts(async (name) => {
+      calls.push(name);
+      return cases.find((item) => item.name === name)!.value;
+    })));
+    if (retirement === "construction failure") {
+      await assert.rejects(runtime.ensureMcpManager(), (error) => error === failure);
+    } else {
+      await runtime.ensureMcpManager();
+      await (retirement === "reset" ? runtime.resetMcpManager() : runtime.dispose());
+    }
+    for (const item of cases) await assert.rejects(item.invoke(captured[0]!), /construction is retired/);
+    assert.deepEqual(calls, []);
+    if (retirement !== "dispose") {
+      assert.equal(await runtime.ensureMcpManager(), replacement.manager);
+      for (const item of cases) assert.equal(await item.invoke(captured[1]!), item.value);
+      for (const item of cases) await assert.rejects(item.invoke(captured[0]!), /construction is retired/);
+      assert.deepEqual(calls, cases.map((item) => item.name));
+    } else {
+      await assert.rejects(runtime.ensureMcpManager(), /runtime is disposed/);
+      assert.equal(captured.length, 1);
+    }
+    await runtime.dispose();
+    assert.equal(old.calls.dispose, retirement === "construction failure" ? 0 : 1);
+    assert.equal(replacement.calls.dispose, retirement === "dispose" ? 0 : 1);
+  });
+}
+
+for (const outcome of ["success", "failure"] as const) {
+  test("MB-03 already admitted Box requests keep their actual late " + outcome, async () => {
+    const cases = boxBridgeCases();
+    const held = new Map(cases.map((item) => [item.name, deferred<unknown>()]));
+    const calls: BoxBridgeName[] = [];
+    const captured: ConstructionOptions[] = [];
+    const failure = new Error("Admitted Box request failed");
+    const runtime = createMcpRuntime(constructionDeps(async (options) => {
+      captured.push(options);
+      return constructionManager().manager;
+    }, controlledBoxPorts((name) => {
+      calls.push(name);
+      return held.get(name)!.promise;
+    })));
+    await runtime.ensureMcpManager();
+    const pending = cases.map((item) => {
+      const request = item.invoke(captured[0]!);
+      return outcome === "success" ? request : assert.rejects(request, (error) => error === failure);
+    });
+    assert.deepEqual(calls, cases.map((item) => item.name));
+    await runtime.resetMcpManager();
+    await runtime.ensureMcpManager();
+    for (const item of cases) await assert.rejects(item.invoke(captured[0]!), /construction is retired/);
+    assert.deepEqual(calls, cases.map((item) => item.name));
+    for (const item of cases) {
+      if (outcome === "success") held.get(item.name)!.resolve(item.value);
+      else held.get(item.name)!.reject(failure);
+    }
+    const results = await Promise.all(pending);
+    if (outcome === "success") results.forEach((value, index) => assert.equal(value, cases[index]!.value));
+    assert.equal(calls.length, cases.length, "retirement cannot replay admitted requests");
+    await runtime.dispose();
+  });
+}
+
+for (const action of ["reset", "dispose"] as const) {
+  test("MB-04 shipping adapter " + action + " refuses a facade paused before Box dispatch", async () => {
+    const started = deferred<void>();
+    const release = deferred<void>();
+    const old = constructionManager();
+    const replacement = constructionManager();
+    const rawCalls: string[] = [];
+    let factories = 0;
+    let oldFacadeCalls = 0;
+    const adapter = constructionAdapter(constructionDeps(async (options) => {
+      const first = ++factories === 1;
+      return {
+        ...(first ? old.manager : replacement.manager),
+        async executeRoutedTool() {
+          if (first) {
+            oldFacadeCalls += 1;
+            started.resolve();
+            await release.promise;
+          }
+          return options.executeBoxMcpToolRaw(first ? "aaaa" : "bbbb");
+        },
+      };
+    }, { executeBoxMcpToolRaw: async (payload) => { rawCalls.push(payload); return "result-" + payload; } }));
+    const request = { providerIdentifier: "connector", name: "tool", toolName: "tool", args: {}, toolCallId: "box-retirement-call" };
+    const refused = assert.rejects(adapter.executeRoutedTool(request), /construction is retired/);
+    await started.promise;
+    assert.equal(oldFacadeCalls, 1);
+    assert.deepEqual(rawCalls, []);
+    if (action === "reset") {
+      await adapter.resetMcpManager();
+      assert.equal(await adapter.executeRoutedTool(request), "result-bbbb");
+    } else {
+      await adapter.dispose();
+      await assert.rejects(adapter.executeRoutedTool(request), /adapter is disposed/);
+    }
+    release.resolve();
+    await refused;
+    assert.deepEqual(rawCalls, action === "reset" ? ["bbbb"] : []);
+    assert.equal(factories, action === "reset" ? 2 : 1);
+    assert.equal(old.calls.dispose, 1);
+    await adapter.dispose();
+    assert.equal(replacement.calls.dispose, action === "reset" ? 1 : 0);
+  });
+}
+
 const ACCOUNT_A = "mcp-retirement-account-a";
 const ACCOUNT_B = "mcp-retirement-account-b";
 const DISABLED_TOOL = "dangerous_tool";

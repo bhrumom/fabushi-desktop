@@ -105,10 +105,23 @@ export function createMcpRuntime<
         return token;
       },
       getMachineId: deps.getMachineId,
-      loadBoxMcpServers: deps.loadBoxMcpServers,
-      listBoxMcpServers: deps.listBoxMcpServers,
-      listBoxMcpToolsRaw: deps.listBoxMcpToolsRaw,
-      executeBoxMcpToolRaw: deps.executeBoxMcpToolRaw,
+      loadBoxMcpServers: async (configJson) => {
+        requireCurrent(attempt);
+        return deps.loadBoxMcpServers(configJson);
+      },
+      listBoxMcpServers: async (serverIdentifiers) => {
+        requireCurrent(attempt);
+        return deps.listBoxMcpServers(serverIdentifiers);
+      },
+      listBoxMcpToolsRaw: async (payloadHex) => {
+        requireCurrent(attempt);
+        return deps.listBoxMcpToolsRaw(payloadHex);
+      },
+      executeBoxMcpToolRaw: async (payloadHex) => {
+        requireCurrent(attempt);
+        // Once handed to Host, keep its actual result even after retirement.
+        return deps.executeBoxMcpToolRaw(payloadHex);
+      },
       onConnectorAuth: (report) => {
         if (isCurrent(attempt)) deps.reportConnectorAuth(report);
       },
