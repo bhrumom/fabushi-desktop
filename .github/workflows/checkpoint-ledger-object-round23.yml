@@ -1,4 +1,6 @@
 name: Round23 checkpoint ledger append object
+# Regenerate again after inputad5e0b28add4e6bd99b3ec6036f0984595de2568;
+# older output5893 was inspected but remained stale/nonintegrated.
 # Regenerate after concurrent ledger0a1b4387538129e45ecaca86dab55727f08cb772;
 # prior inputcc1a/output4457 were read but never integrated.
 

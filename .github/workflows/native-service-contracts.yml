@@ -360,7 +360,7 @@ jobs:
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/desktop-social-owner/featurehost-messaging-boundary.log
           grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored; 0 measured;' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
           grep -F 'desktop_social_intents_refuse_before_auth_runtime_context_io_and_events ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
-          grep -F 'desktop_social_refusal_does_not_lock_state_or_touch_retained_context ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
+          grep -F 'test implementation::desktop_messaging_boundary_tests::desktop_social_refusal_does_not_lock_state_or_touch_retained_context ...' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
           grep -F 'social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces ... ok' artifacts/desktop-social-owner/featurehost-messaging-boundary.log
       - name: Execute real SQLite retained Social recovery
         shell: bash

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "review": "83c to f75 Product Social HTTP delta",
+  "read_only": true,
+  "before_head": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+  "after_head": "f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+  "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+  "before_blob": "f0fdddef00af4e5750b0b498037f611c21856f3f",
+  "after_blob": "f5fa5ba672422f60111d92c90bc218e506e168e7",
+  "finding": "The whole production prefix before the single cfg(test) tests module is byte-identical. Only 4 of the 6 existing session_owned_platform_ test bodies change.",
+  "production_boundaries": {
+    "selection": "execute_session_owned_platform_request hardcodes owner=true; request JSON cannot turn it off.",
+    "credentials": "safe path plus normalized owner path and configured-origin checks still occur before authorization_token; bearer attachment remains inside the existing request builder.",
+    "url_origin": "safe_platform_path, session_owned_platform_path and session_owned_platform_target are unchanged, including normalized path inspection, canonical resource categories, HTTP(S) origin-only checks and target recheck.",
+    "redirects": "Both session_owned_http_client and native_http_client retain redirect Policy::none(). The existing fallback reuses the guarded send closure; no policy code changed."
+  },
+  "added_assertions": [
+    "UUID resource IDs and /download refusal across five HTTP methods and authenticated true/false; renderer sessionOwned:false cannot opt out; exact non-disclosing error.",
+    "Additional case, encoded slash/category and normalized dot-segment resource aliases.",
+    "307/308 redirects to resource UUID endpoints in addition to message routes.",
+    "Non-desktop compatibility entrypoint remains usable for resource UUID endpoints and returns the actual loopback control body."
+  ],
+  "callers": {
+    "app_host": {
+      "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+      "both_heads_blob": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+      "entrypoints": [
+        "PlatformRequestHost::dispatch_json -> execute_platform_request (lines 634-638)",
+        "AppHost::handle platform.request -> execute_platform_request (lines 841-850)"
+      ],
+      "selection": "helper lines681-689 selects session-owned client for Electron; surface_platform lines1998-2005 derives iOS/Android/desktop from compiled target, not renderer JSON."
+    },
+    "feature_host": {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "current_blob": "56cc9788ae104e1acce98841efab7274f5548f8b",
+      "unchanged": true,
+      "selection": "Electron selects MahayanaHost::create_with_session_transcript_owner; unchanged early Social command guard."
+    },
+    "host": {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+      "current_blob": "9b4bdaf53de31370a651e5a8d8e30eea14707026",
+      "unchanged": true,
+      "selection": "create_with_session_transcript_owner -> session_owned true -> retained Social policy and omission of generic Social provider."
+    }
+  },
+  "evidence_reuse": {
+    "production_source_understanding": "Retained: no production path, URL, origin, redirect, token or directly inspected caller change in this delta.",
+    "old_http6_execution": "Does not cover the expanded current assertions despite the unchanged suite count; new exact-H execution required.",
+    "f75_http6": "not-run: prior Feature step failed its log grep after actual Feature10 success."
+  },
+  "proof": "product-http-83-to-f75.diff and product-http-delta-source.json",
+  "no_local_execution": true,
+  "independent_accept": false
+}

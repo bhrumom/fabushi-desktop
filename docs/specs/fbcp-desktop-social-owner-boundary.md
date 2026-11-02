@@ -147,3 +147,18 @@ unification from another Cargo invocation. It uses two build jobs and its own
 cache key under the existing cache action. Runtime sources and workspace
 Cargo.toml join the existing push paths so isolated policy/feature edits cannot
 miss this gate. The full exact-H logs must name all three added Feature cases.
+
+
+### Observed nocapture oracle recovery
+
+Exactf75ba3b0/run41526236521/job125554566242 executed all ten FeatureHost
+cases successfully, but the separate name check failed: the expected caught
+poisoning panic writes its hook between the case prefix and its final `ok`.
+This is a TEST_FLAW in log interpretation. For that one case, require the exact
+Rust harness case-start prefix together with the unchanged suite result of
+10 passed, zero failed/ignored/measured. Keep the other two case-name/ok checks,
+Cargo pipefail, serial execution, the actual poisoned Mutex and all byte/event
+assertions. The complete successful suite supplies the outcome; the prefix
+proves the named case participated. Do not suppress the panic, delete the test,
+add retries or claim the skipped Runtime9/HTTP6 passed. Re-execute the affected
+Ubuntu job at the corrected containing H and preserve this failed attempt.
