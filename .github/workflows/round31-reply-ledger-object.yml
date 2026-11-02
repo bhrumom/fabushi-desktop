@@ -1,0 +1,69 @@
+name: Round31 scoped reply ledger object
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths: ['.github/workflows/round31-reply-ledger-object.yml']
+permissions:
+  contents: write
+jobs:
+  ledger-object:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Create reviewed ledger object only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          assert os.environ['GITHUB_REPOSITORY'] == 'bhrumom/fabushi-desktop'
+          assert os.environ['GITHUB_REF'] == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == os.environ['GITHUB_SHA']
+          path = pathlib.Path('projects/telegram-desktop-rust/parity-ledger.json')
+          source = path.read_bytes()
+          base_blob = hashlib.sha1(b'blob ' + str(len(source)).encode() + b'\0' + source).hexdigest()
+          assert base_blob == "f716580b22c6b6791b2e535e2b286df4f9257444", ('ledger input drift', base_blob)
+          original = json.loads(source)
+          updated = copy.deepcopy(original)
+          rows = [row for row in updated['rows'] if row['responsibility_id'] == 'FBCP-NMR-001']
+          assert len(rows) == 1
+          row = rows[0]
+          note = "\nTask20bf round31 / NMR-49c / AC-40: source review identified exact reply-ID matches bypassing historical-alias canonical identity checks. Concurrent commit63c59566aae7fa9b424a364df1429176c792d249 already delivers the same Human message-kind, author, settlement and canonical/remote identity guard; retain it without replaying stale implementation. This round extends the existing historical reply test from11 to28 scenarios (17 added, no new test function), preserving newer independent physical-storage and canonical chronological-order oracles. Positive own/peer controls and malformed direct targets require zero unsafe HTTP, unchanged durable intent, ordinary-sync preservation and reopen. The checkpoint already uses the repository-established Ubuntu24.04 reconciliation environment; retain current commands/assertions, macOS shipping and all final platform gates. Original06/job125508112546 was cancelled without a runner; exactff6d49/run41516172127 shipping completed successfully but reconciliation remains unexecuted at observation. Containing-H execution for this matrix remains pending at preparation. Receipt: projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json. No source identities/reviews/coverage/acceptance or historical execution fields are promoted."
+          evidence = 'projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json'
+          assert 'Task20bf round31 / NMR-49c' not in row['notes']
+          assert evidence not in row['test_evidence']
+          row['notes'] += note
+          row['test_evidence'].append(evidence)
+          control = copy.deepcopy(updated)
+          control_row = next(row for row in control['rows'] if row['responsibility_id'] == 'FBCP-NMR-001')
+          control_row['notes'] = control_row['notes'][:-len(note)]
+          assert control_row['test_evidence'].pop() == evidence
+          assert control == original, 'change escaped the two declared append-only fields'
+          content = (json.dumps(updated, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+          expected = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
+          payload = json.dumps({'content': content.decode('utf-8'), 'encoding': 'utf-8'}, ensure_ascii=False).encode('utf-8')
+          request = urllib.request.Request(
+              os.environ['GITHUB_API_URL'] + '/repos/bhrumom/fabushi-desktop/git/blobs',
+              data=payload, method='POST',
+              headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+          with urllib.request.urlopen(request, timeout=90) as response:
+              result = json.load(response)
+          assert result.get('sha') == expected, result.get('sha')
+          receipt = {'task_id': '20bf9475-a885-4314-b509-bea53ef8849f', 'round': 31, 'head_sha': head, 'input_blob': base_blob, 'output_blob': expected, 'output_sha256': hashlib.sha256(content).hexdigest(), 'bytes': len(content), 'path': str(path), 'scope': 'FBCP-NMR-001 notes and test_evidence append only', 'ref_updated': False, 'product_acceptance': False}
+          pathlib.Path('artifacts/round31').mkdir(parents=True)
+          pathlib.Path('artifacts/round31/ledger-object.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round31-reply-ledger-object-${{ github.sha }}
+          path: artifacts/round31/ledger-object.json
+          if-no-files-found: error
