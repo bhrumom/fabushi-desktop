@@ -51446,7 +51446,7 @@
         "Bind signaling sender to the dispatch credential device",
         "Recover already admitted remote effects through existing discovery and replay"
       ],
-      "platform_delta": "Existing Rust Host/SQLite/Native HTTP owners. The exact8bcfd call execution ran on Ubuntu24.04 (job125537147556); separate macOS shipping compile remains queued. No signed package/media acceptance is claimed.",
+      "platform_delta": "Existing Rust Host/SQLite/Native HTTP owners. Exact523 credential/scope execution ran Ubuntu24.04.5; separate macOS shipping job125550827119 remains queued. No signed package/media acceptance.",
       "existing_owner_candidates": [
         "ProductionSessionWorkers create_call_session",
         "canonical Human conversation metadata",
@@ -51498,8 +51498,8 @@
       "implementation_status": "implemented",
       "coverage_disposition": "pending",
       "blockers": [
-        "CALL-SCOPE5+3+1 passed at8bcfd; the credential extension's six authored cases require their own containing-H Actions and independent execution assessment.",
-        "macOS shipping compilation is queued at the recorded prior H; deployed call authorization, media/device/renderer lifetime, full platform and recovery gates remain open.",
+        "Bounded AC-CALL-CRED01–03 independently supported at exact523c8ca: credential6+scope5+shipping3+local1 passed. Full call/platform/service and release acceptance remain blocked.",
+        "macOS shipping compilation job125550827119 is queued at executionH523c8ca; deployed call authorization, media/device/renderer lifetime, complete platform and recovery gates remain open.",
         "Snapshot comparison is not epoch/ABA revocation; historical inconsistent-row remediation remains open.",
         "Full source identity dispositions, legal/generated/external closure and independent product ACCEPT remain false."
       ],
@@ -51516,28 +51516,28 @@
         "path:source/host/src/extensions/session/native_messaging.rs"
       ],
       "test_evidence": [
-        "passed-at-8bcfd464691534acaa04b13852cd523ab49a3dcc:source/host/tests/native_call_scope_contract.rs#native_call_scope_rejects_wrong_peer_and_invalid_requests_without_effects",
-        "passed-at-8bcfd464691534acaa04b13852cd523ab49a3dcc:source/host/tests/native_call_scope_contract.rs#native_call_scope_rejects_malformed_canonical_metadata_and_preserves_reopen_state",
-        "passed-at-8bcfd464691534acaa04b13852cd523ab49a3dcc:source/host/tests/native_call_scope_contract.rs#native_call_scope_valid_creation_lifecycle_and_discovery_survive_reopen",
-        "passed-at-8bcfd464691534acaa04b13852cd523ab49a3dcc:source/host/tests/native_call_scope_contract.rs#native_call_scope_backend_refusal_has_no_phantom_call_and_allows_retry",
-        "passed-at-8bcfd464691534acaa04b13852cd523ab49a3dcc:source/host/tests/native_call_scope_contract.rs#native_call_scope_leaves_non_native_participant_and_lifecycle_contract_unchanged",
-        "existing:source/host/tests/session_gateway_contract.rs#shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner",
-        "existing:source/host/tests/session_gateway_contract.rs#shipping_call_discovery_materializes_incoming_call_into_canonical_human_scope",
-        "existing:source/host/tests/session_gateway_contract.rs#call_session_owner_fences_lifecycle_signaling_reconnect_and_restart",
-        "authored-not-run:source/host/tests/native_call_credential_contract.rs#native_call_credentials_bind_all_http_families_before_transport",
-        "authored-not-run:source/host/tests/native_call_credential_contract.rs#native_call_signal_binds_sender_to_dispatch_credential",
-        "authored-not-run:source/host/tests/native_call_credential_contract.rs#native_call_credentials_fence_every_held_get_field_before_lifecycle_post",
-        "authored-not-run:source/host/tests/native_call_credential_contract.rs#native_call_credentials_reject_stale_ice_and_discovery_bodies",
-        "authored-not-run:source/host/tests/native_call_credential_contract.rs#native_call_credentials_recover_admitted_create_after_rejected_response",
-        "authored-not-run:source/host/tests/native_call_credential_contract.rs#native_call_credentials_recover_admitted_event_after_rejected_response",
-        "passed-at-8bcfd464691534acaa04b13852cd523ab49a3dcc:source/host/tests/session_gateway_contract.rs#shipping_call_ice_credentials_remain_host_owned_and_device_scoped"
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_scope_contract.rs#native_call_scope_rejects_wrong_peer_and_invalid_requests_without_effects",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_scope_contract.rs#native_call_scope_rejects_malformed_canonical_metadata_and_preserves_reopen_state",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_scope_contract.rs#native_call_scope_valid_creation_lifecycle_and_discovery_survive_reopen",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_scope_contract.rs#native_call_scope_backend_refusal_has_no_phantom_call_and_allows_retry",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_scope_contract.rs#native_call_scope_leaves_non_native_participant_and_lifecycle_contract_unchanged",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/session_gateway_contract.rs#shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/session_gateway_contract.rs#shipping_call_discovery_materializes_incoming_call_into_canonical_human_scope",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/session_gateway_contract.rs#call_session_owner_fences_lifecycle_signaling_reconnect_and_restart",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_credential_contract.rs#native_call_credentials_bind_all_http_families_before_transport",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_credential_contract.rs#native_call_signal_binds_sender_to_dispatch_credential",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_credential_contract.rs#native_call_credentials_fence_every_held_get_field_before_lifecycle_post",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_credential_contract.rs#native_call_credentials_reject_stale_ice_and_discovery_bodies",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_credential_contract.rs#native_call_credentials_recover_admitted_create_after_rejected_response",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/native_call_credential_contract.rs#native_call_credentials_recover_admitted_event_after_rejected_response",
+        "passed-at-523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6:source/host/tests/session_gateway_contract.rs#shipping_call_ice_credentials_remain_host_owned_and_device_scoped"
       ],
-      "target_commit": "8bcfd464691534acaa04b13852cd523ab49a3dcc",
-      "workflow_run": 41521134666,
+      "target_commit": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+      "workflow_run": 41525143801,
       "run_attempt": 1,
-      "job": 125537147556,
-      "artifact_id": 13177343396,
-      "artifact_digest": "sha256:3b65ad1fde0b105aee7120483dd5ea7fc7f252d31ae2df8c90bc40d5d34a9001",
+      "job": 125550827148,
+      "artifact_id": 13179882022,
+      "artifact_digest": "sha256:8defdbefda95277677c14067bc3c7f0e946439d07edb91634fbe02eb23b5d77d",
       "composition_root": "Existing ProductionRenderer Human conversation and Host Session composition",
       "composition_slot": "Existing HumanCallControls and Session call command surface",
       "capability_component": "Native call selected-peer and authenticated-account lifetime admission",
@@ -51733,19 +51733,20 @@
         "Bounded final-response-body-byte barriers, real Native HTTP and Session gateway, complete SQLite call-table snapshots"
       ],
       "test_environment_ids": [
-        "GitHub Actions native-service-contracts / native-message-reconciliation / Ubuntu24.04; exact8bcfd scope evidence and separately required credential containing-H execution"
+        "GitHub Actions native-service-contracts / native-message-reconciliation / Ubuntu24.04.5; exact523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6"
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
       "test_execution_evidence": [
+        "H=523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6; run41525143801 attempt1 job125550827148; credential6+scope5+shipping3+local1 passed0failed0ignored; artifact13179882022 sha256:8defdbefda95277677c14067bc3c7f0e946439d07edb91634fbe02eb23b5d77d; independent bounded AC-CALL-CRED01/02/03 assessment by /root/call_credential_source_review; not full product ACCEPT.",
         "H=8bcfd464691534acaa04b13852cd523ab49a3dcc; run41521134666 attempt1 job125537147556; CALL-SCOPE5 + shipping-call3 + local-lifecycle1 passed; artifact13177343396 sha256:3b65ad1fde0b105aee7120483dd5ea7fc7f252d31ae2df8c90bc40d5d34a9001; this is prior scope evidence only, not execution of CALL-CRED cases.",
         "path:projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Source-informed Rust adaptation of a bounded selected-peer/call ownership invariant. Exact U/path/blob and inspected source ranges are in the dossier. Upstream LEGAL/copyright provenance is retained; source snippets are not copied into the target. This does not complete any whole-file source_review or global legal/product acceptance.",
-      "reviewer": "CALL-SCOPE frozen source review/root FIX and independent bounded exact8bcfd execution assessment recorded in task20bf-round1-call-scope-review.md. CALL-CRED source/owner approved by /root/call_credential_source_review; frozen code/test review and exact-H execution are recorded separately, not inferred from the prior run.",
-      "notes": "Task20bf round1 extends this same selected-peer/authenticated-account responsibility. implemented records actual existing-owner code; coverage remains pending and release blocked. target_commit/run/job/artifact refer only to the already executed CALL-SCOPE subset at8bcfd; six CALL-CRED tests remain authored-not-run until their containing-H receipt. No whole-file source_reviews completion, unknown/unread decrement, new inventory, release acceptance or broad call parity is claimed."
+      "reviewer": "Frozen source/code/test/merge and CRED-MERGE-01 FIX reviews are recorded in task20bf-round1-call-scope-review.md. /root/call_credential_source_review independently reread exact523 completed logs/artifacts/source and supports bounded AC-CALL-CRED01/02/03; no concrete defect. Full shipping/product ACCEPT remains open.",
+      "notes": "Actual code and15 bounded call contracts are qualified at target_commit523c8ca with independent loopback assessment; prior8bc scope evidence is retained as history. implementation remains implemented, coverage pending, release blocked and global acceptance false. Snapshot comparison is not epoch/ABA or atomic revocation; no deployed-service/media/platform qualification or whole-file source_reviews completion is inferred."
     }
   ],
   "rebaseline_candidate": {

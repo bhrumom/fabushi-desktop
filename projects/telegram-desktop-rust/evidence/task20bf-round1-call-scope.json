@@ -341,7 +341,7 @@
     {
       "id": 9,
       "condition": "Unique inventory/ledger/RTM separates source, implementation, wiring, authored tests, execution and independent acceptance; schema/validator aligned",
-      "evidence": "Canonical185-row ledger preserves shared rows/reviews; schema and unaccepted candidate passed exact523. New exact523 execution and bounded independent AC assessment are recorded here; exact ledger execution patch is being prepared separately without acceptance promotion.",
+      "evidence": "Canonical185-row ledgerdcfd04a8 records exact523 credential/scope execution and bounded independent assessment. Actions41526975395 validates unchanged schemae52 and original-document reconstruction; all other184 rows, sixreviews/counters and acceptance statuses preserved. Complete source/product acceptance remains false; containing-ledger source gate still required.",
       "complete": false
     },
     {
@@ -562,6 +562,39 @@
         "status": "skipped",
         "scope": "not selected on push"
       }
+    },
+    "ledger_execution_update": {
+      "acceptance_changed": false,
+      "base_blob": "5b69d6e9103396f8de7d157e38fe7c1607afbf72",
+      "bytes": 3640107,
+      "changed_fields": [
+        "artifact_digest",
+        "artifact_id",
+        "blockers",
+        "job",
+        "notes",
+        "platform_delta",
+        "reviewer",
+        "target_commit",
+        "test_environment_ids",
+        "test_evidence",
+        "test_execution_evidence",
+        "workflow_run"
+      ],
+      "execution_head": "523c8ca4883e6eaa10d1d19a0e237f9d3964b3c6",
+      "other_rows_preserved": true,
+      "preparation_head": "c2b0c7c126dc1297c940baf97224e0e44a160417",
+      "prepared_blob": "dcfd04a8b4f02b0a089ace937c93c5880d1ac1f3",
+      "refs_written": false,
+      "responsibilities": 185,
+      "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "source_reviews_preserved": true,
+      "run": 41526975395,
+      "job": 125557106279,
+      "result": "success",
+      "artifact": 13179278895,
+      "digest": "sha256:42913b66d35beba25548450036100e8309fa67165eaba5dc2bdc2342b460e6ff",
+      "remote_blob_readback": true
     }
   },
   "integration_reconciliation": {
