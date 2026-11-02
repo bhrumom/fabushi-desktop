@@ -2,8 +2,42 @@
 
 Status: active / normative schema  
 Matrix ID: FQT-RTM-001  
-Parent: FBCP-001 Revision 7  
-Updated: 2026-10-07
+Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
+Updated: 2026-11-02
+
+## Round 21 explicit update source and exact-H evidence
+
+Authority: `docs/specs/electron-update-source-authority.md` EUS-01–06 and
+CSI-R1/3/5/6. Evidence: `projects/telegram-desktop-rust/evidence/round21-update-source-authority.json`.
+The reviewed base is `8ce0a9a43b7fe94df2ec2085399fe65a57343577`; current
+implementation execution is pending at preparation. Independent frozen-source
+review is separate from execution and whole-product ACCEPT. The source audit is
+partial; the canonical source inventory, source_reviews and acceptance counters
+are not promoted by this existing-owner safety correction. The same canonical
+ledger now maps the narrow product responsibility as
+`TDRP-UPDATER-DISCOVERY-AUTHORITY-001` under existing `UPDATE-INSTALL-ROLLBACK`;
+the Windows workflow row retains its tooling scope and pending release state.
+
+| Requirement | Actual production owner / behavior oracle | Authored Actions gate | Acceptance boundary |
+| --- | --- | --- | --- |
+| EUS-01 / CSI-R1/3 | Main-process config → production binding → wiring → SandUpdateService; no default; empty/invalid primary never falls back | Real wiring plus direct service source-precedence cases | Approved origin configuration is not proof of an operational feed |
+| EUS-02 / CSI-R5/6 | Existing shared Fabushi origin policy; reject before I/O; no rejected raw configuration in status; manifest redirect refused | Invalid/foreign matrix and real loopback HTTP302 target-hit counter | Asset download provenance, signer policy and real package authenticity remain open |
+| EUS-03 | Same updater state/timer/AbortController owner; runtime gates cannot bypass source; disposal stops new checks | Startup/manual/track/backend/minimum-version/live-gate/abort/dispose cases | Controlled ports; no OS installation claim |
+| EUS-04 | Existing settings and apply-marker persistence; settle prior apply outcome while source-disabled; retain user-data sentinel | Real marker files, controlled download/hash/signature/staging/apply chain, reconstructed service | Settings reconstruction is a controlled store; real signed install, disk settings recovery and rollback remain open |
+| EUS-05 | Existing typed update status IPC → Settings update message; non-retryable telemetry | Actual Settings helper and telemetry functions | Full visual/accessibility and packaged UI acceptance remain open |
+| EUS-06 | Existing native-service-contracts Electron job plus actual Electron and renderer builds | Focused updater suite16; carrier10/auth8/copy3/metadata18 and UI16 retained | Execute only GitHub Actions at the containing exact H; no local validation |
+
+Base run41471743677 has actual reconciliation33+4+3, UI16 and Electron
+carrier10/auth8/copy3/metadata18 passes. The immutable historical ZIP/DMG
+experiment passed without changing package bytes. At this preparation observation,
+shipping125366805190 was cancelled before runner assignment (steps empty): gateway library11, protocol122, TCP9,
+actual package-copy suite4 and its two negatives are not recorded as executed.
+The suite4 comprises three fixture cases and one actual compiled AppHost case.
+The run is completed/failure. Its missing shipping log (404 BlobNotFound) and
+unreadable check-run annotations leave the cancellation cause unverified; no
+implementation or assertion failure is inferred. The previous lib9 expectation
+was an oracle defect; all future gates require11.
+Historical signed package acceptance failed and is not repaired by metadata success.
 
 ## Round 20 bounded oracle/execution refresh
 
@@ -97,7 +131,8 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–36 | NMR-01–06,09,18–20,31–45 | Existing Session/Transcript Human admission, Native auth/refusal, Settings durability, package metadata and persistent approval fixtures | Human33/Agent4/private3; AppHost12/Native6/FeatureHost7/Host6/ABI7/CLI3; executable5/lib9; metadata18/actual-copy4 | Real HTTP/Host/SQLite and subprocess restart; signed full packages remain open | Existing Composer/Settings UI; UI16 passed; full visual/a11y pending | Permission/nonce/reaction/legacy refusal, bounded blockmap decode and persistence/restart negatives; performance/soak pending | REG-NMR-PROXY-REMOVE-ADJACENT-001 and all retained message/ABI controls | Round20 receipt; exact151/run41465224038 scoped passes, executable4/5 and historical metadata failure; subsequent shipping gates unexecuted | Bounded independent source reviews; containing-H Actions and final independent ACCEPT pending | IMPLEMENTED / TESTS-AUTHORED; scoped old-H execution only; full product acceptance PENDING |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–36 | NMR-01–06,09,18–20,31–45 | Existing Session/Transcript Human admission, Native auth/refusal, Settings durability, package metadata and persistent approval fixtures | Human33/Agent4/private3; AppHost12/Native6/FeatureHost7/Host6/ABI7/CLI3; executable5/lib11; metadata18/actual-copy4 | Real HTTP/Host/SQLite and subprocess restart; signed full packages remain open | Existing Composer/Settings UI; UI16 passed; full visual/a11y pending | Permission/nonce/reaction/legacy refusal, bounded blockmap decode and persistence/restart negatives; performance/soak pending | REG-NMR-PROXY-REMOVE-ADJACENT-001 and all retained message/ABI controls | Round21 receipt; exact8ce/run41471743677 reconciliation/UI/Electron success including historical metadata experiment; shipping cancelled before runner, not executed | Bounded independent source reviews; containing-H Actions and final independent ACCEPT pending | IMPLEMENTED; scoped exact8ce execution only; full product acceptance PENDING |
+| TDRP-UPDATER-DISCOVERY-AUTHORITY-001 | critical | EUS-01–06 | CSI-R1/3/5/6 and explicit approved source/no-default/marker-retention invariants | Actual source resolver and service state matrix |16 named contracts in update-source.contract.test.mjs; real wiring, Settings/telemetry, loopback redirect and persisted markers | Controlled download/staging ports; signed install/upgrade/rollback open | Actual Settings message helper; visual/a11y pending | Source rejection/redirect/abort/dispose/data-sentinel negatives; performance/soak pending | Existing valid source scheduling/staging and apply-marker contracts | Authored code52ba898107642db27c87a354687c2c6eb0456054; round21 receipt and exact source tuples/ranges; containing-H Actions pending | Frozen independent EUS source review; release ACCEPT pending | IMPLEMENTED / TESTS-AUTHORED; partial source responsibility only; coverage/release BLOCKED |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
 
@@ -265,6 +300,7 @@ Authorship/evidence boundary: the original strengthened ten-case blob `127700079
 The bounded Host gate passed at exact95/run41403643662. Every subsequent message change remains gated by NMR-AC-06/07/08/09/10/11/12: both named message jobs on one exact H, actual thirteen Human and four Agent nonce cases, locked AppHost compilation, response normalization, both bare future-salts library fixtures, full protocol/TCP including its live case, proxy rejection and credential-schema cases. A skipped step, diagnostic lock generation, test authorship or old-H result is not a pass. Use the existing round3 evidence receipt for execution records; no second result ledger.
 
 Fixed-U mapping uses only the explicitly read peer-scoped dispatch, existing-message application and identity-transition sections recorded in `research/native-message-known-overlap-fixed-u.md`. It does not close whole upstream files or change inventory/source_reviews/unknown/unread/source acceptance. Known-message refresh, durable history-range coverage, read-state/visible receipt behavior, distinct-emoji/whole-payload bounds and stale mutation/refresh ordering remain separate open work. Full native-service, UI/package/platform, performance/soak, complete Bot regression and independent ACCEPT remain open.
+
 
 
 

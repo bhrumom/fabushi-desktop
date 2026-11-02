@@ -9,7 +9,7 @@
     "unknown": null,
     "unread": null,
     "omitted": 0,
-    "responsibilities_total": 183,
+    "responsibilities_total": 184,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -50211,7 +50211,8 @@
         "Full source/legal closure, legacy caller/data-safe retirement, live native-service acceptance, packages, UI/a11y, performance/soak, complete Bot regression and independent ACCEPT remain open.",
         "NMR-34/35 bounded production boundary passed 98e51b31b5a296065190f665696b2ffe11a3efe1/run41443460672; NMR-36 Host/FFI explicit legacy-handoff refusal and tests are authored but require exact containing-H Actions with Host6/ABI7 and all retained gates.",
         "Round20 exact151 run41465224038 is terminal failure in persistent gateway approval fixture (TEST_FLAW) and cross-platform compressed blockmap comparison (IMPLEMENTATION_DEFECT). Gateway lib9, protocol122, TCP9, actual AppHost resource copy4 and Electron build were skipped; cannot count as verified.",
-        "NMR-43/45 repaired existing owner/test fixtures and authored metadata18/gateway executable5; containing-H GitHub Actions and historical DMG immutable-byte repair required before bounded acceptance. Signed installation, update/rollback, full source/legal and independent ACCEPT still open."
+        "NMR-43/45 repaired existing owner/test fixtures and authored metadata18/gateway executable5; containing-H GitHub Actions and historical DMG immutable-byte repair required before bounded acceptance. Signed installation, update/rollback, full source/legal and independent ACCEPT still open.",
+        "Round21 exact H8ce/run41471743677 shipping job125366805190 unassigned/cancelled; lib11/protocol122/TCP9/real AppHost copy4 and two negative controls not executed. See round21-update-source-authority.json."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
@@ -50607,13 +50608,308 @@
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344195265:completed/success:Human33 Agent4 private3; artifact13151116327 sha256:acf551f1e73d269cd4561e9a27f13f4b30b3b099d251b6f8d74bde3c2bfec883",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344195252:completed/failure:AppHost12 proxy48 repeat48 all6 perms Native6 FeatureHost7 Host6 C_ABI7 CLI3 passed; gateway executable4 passed 1 failed TEST_FLAW first issuance0 vs1; lib9/protocol122/TCP9/package-copy4 not run; artifact13151766200 sha256:aa200932036f9699d0988ae9e86564ff9ce3e5fafe37af3c21130d3eea3ad13d",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344195149:completed/success:UI16 and production renderer; artifact13149409736 sha256:181468aeee41d2b20e97d538cabead38bbdeefc9e7e04036cf48aedebb70cb03",
-        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344194642:completed/failure:carrier10/auth8/copy3/metadata15 passed; immutable historical installer experiment failed compressed-byte BLOCKMAP_MISMATCH instead of stale-DMG ASSET_MISMATCH; Electron build not run; artifact13149409727 sha256:af4ffffd5899e6e5bb02c626f23e4e8988a501e4725e12350c344736230b83b7"
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344194642:completed/failure:carrier10/auth8/copy3/metadata15 passed; immutable historical installer experiment failed compressed-byte BLOCKMAP_MISMATCH instead of stale-DMG ASSET_MISMATCH; Electron build not run; artifact13149409727 sha256:af4ffffd5899e6e5bb02c626f23e4e8988a501e4725e12350c344736230b83b7",
+        "round21 exact8ce0a9a43b7fe94df2ec2085399fe65a57343577 run41471743677: reconciliation job125366803997 terminal success Human33/Agent4/private credentials3; artifact13155912107 sha256:f1186206554bd34756cf3c63596cc569ececa4c845171cc3f234dc64f138d365; UI job125366804758 success transcript16; Electron job125366804368 success carrier10/auth8/fixture-copy3/metadata18/historical installer unchanged. shipping job125366805190 cancelled before runner assignment (zero steps), no gateway-library11/protocol122/TCP9/real-copy4/two negatives execution at this H; workflow run terminal failure, ACCEPT blocked."
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
       "reviewer": null,
-      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution.\nRound20: preserve prior historical target_commit/workflow fields. At exact151/run41465224038 Human33/Agent4/private3, AppHost12/proxy48 repeats48 all6 permutations, Native6, FeatureHost7, Host6, ABI7, CLI3, UI16 and Electron metadata15 actually passed. Gateway executable4/5 failed due shared persistent fixture file (TEST_FLAW), and historical installer metadata experiment failed due compressed map byte comparison (IMPLEMENTATION_DEFECT). Existing post-staple verifier now compares bounded decompressed blockmap content; receipts hash actual sidecars, metadata18 authored. Existing gateway approval fixtures use isolated real persistence, duplicate/reopen/independent-store oracles; production default unchanged. Required containing-H gates include gateway executable5/lib9, DNS6 future_salts2 protocol122 TCP9 proxy4 native credential1 actual package-copy4+2 negatives, Electron build and immutable historical DMG test. Prior failures/skips not passes. Evidence projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json. No source/legal or independent acceptance promotion."
+      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution.\nRound20: preserve prior historical target_commit/workflow fields. At exact151/run41465224038 Human33/Agent4/private3, AppHost12/proxy48 repeats48 all6 permutations, Native6, FeatureHost7, Host6, ABI7, CLI3, UI16 and Electron metadata15 actually passed. Gateway executable4/5 failed due shared persistent fixture file (TEST_FLAW), and historical installer metadata experiment failed due compressed map byte comparison (IMPLEMENTATION_DEFECT). Existing post-staple verifier now compares bounded decompressed blockmap content; receipts hash actual sidecars, metadata18 authored. Existing gateway approval fixtures use isolated real persistence, duplicate/reopen/independent-store oracles; production default unchanged. Required containing-H gates include gateway executable5/lib9, DNS6 future_salts2 protocol122 TCP9 proxy4 native credential1 actual package-copy4+2 negatives, Electron build and immutable historical DMG test. Prior failures/skips not passes. Evidence projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json. No source/legal or independent acceptance promotion. Round21 adds only an independently scoped Electron update source responsibility and new Actions checks; source/product completeness remains unaccepted."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": ".github/workflows/mac_packaged.yml",
+      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
+      "additional_source_identities": [],
+      "source_kind": "packaging",
+      "module_id": "tdesktop.packaging.update-source-trust",
+      "responsibility_id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+      "source_symbols": [
+        "on.push.branches-ignore: public-canary/private-canary",
+        "on.push.paths-ignore",
+        "on.pull_request.paths-ignore",
+        "jobs.macos.runs-on conditional depot-macos-latest/macos-latest",
+        "strategy.matrix.defines: empty",
+        "TDE2E/TLOTTIE/WALLET_ENGINE/RUST_PATCHES/RUST_TOOLCHAIN pin set"
+      ],
+      "capability_ids": [
+        "UPDATE-INSTALL-ROLLBACK"
+      ],
+      "dependency_ids": [
+        "Fabushi Electron update owner",
+        "Fabushi approved Native issuer origin policy",
+        "Existing update Settings and apply marker"
+      ],
+      "source_analysis_path": "docs/specs/electron-update-source-authority.md",
+      "behavior_contract": "Separate upstream Mac package/update provenance from the recovered Electron updater's unauthorized third-party default. Existing Electron owner requires explicit approved main-process source and fails closed before network I/O for absent/invalid sources. The source packaging workflow is contextual upstream provenance only, not asserted as the origin of Cursor URL logic.",
+      "state_machine": "Electron startup -> immutable explicit main-process feed config -> shared Fabushi origin validation -> disabled reason or existing track/timer/check state machine -> approved manifest GET with redirect refusal -> existing download/stage/install owner. Unconfigured start still settles previously persisted apply marker before returning.",
+      "side_effects": [
+        "Remove historical api2.cursor.sh implicit default; no outbound update check when unconfigured.",
+        "Preserve existing user settings, install marker JSON and rollback reader; no user-data mutation or new service.",
+        "Add explicit config and origin checks to existing update service, production composition, IPC and Settings projection.",
+        "Add 16 source/recovery contracts to existing Electron Actions job."
+      ],
+      "failure_cases": [
+        "Missing/blank source: no startup timers, periodic or manual network call.",
+        "Unapproved foreign/credential/query/fragment/HTTP source: disabled before fetch and redacted telemetry.",
+        "Primary env explicitly empty/invalid: compatibility env cannot bypass.",
+        "Manifest redirect: fail before requesting redirected target.",
+        "Cancelled in-flight fetch, disposed service and restart marker: no bypass or data loss.",
+        "Valid source HTTP failure must not choose historical fallback."
+      ],
+      "ui_disposition": "Reuse the existing Settings update panel and typed DesktopUpdateStatus; no new screen, route, second updater or unreviewed token.",
+      "non_ui_responsibilities": [
+        "Main-process explicit source precedence",
+        "Approved origin validation",
+        "Disabled startup/periodic/manual/track gate",
+        "Redirect and private URL protection",
+        "Preserved apply-marker settlement",
+        "Existing update service and installer composition"
+      ],
+      "platform_delta": "Electron update check is gated across platforms; actual signed Mac/Windows/Linux installers, publisher authority, runtime download and upgrades/rollbacks remain independently blocked.",
+      "existing_owner_candidates": [
+        "source/electron-main/update/sand-update-service.ts",
+        "source/electron-main/update/update-wiring.ts",
+        "source/electron-main/production-binding-providers.ts",
+        "source/shared/node/fabushi-service-origin.ts",
+        "frontend/src/recovered/features/settings/overlay/updates.ts"
+      ],
+      "existing_owner": "Existing Electron update service and Settings projection; shared Fabushi approved origin validator",
+      "rejected_existing_owners": [
+        "Parallel updater or Telegram runtime",
+        "A second network-origin allowlist",
+        "Renderer-defined privileged update feed",
+        "New settings source database"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/electron-main/update/update-feed.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "source/electron-main/update/update-wiring.ts",
+        "source/electron-main/update/release-metadata.ts",
+        "source/electron-main/production-binding-providers.ts",
+        "source/electron-main/update/update-telemetry.ts",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "frontend/src/recovered/features/settings/overlay/updates.ts",
+        "source/electron-main/update/update-source.contract.test.mjs"
+      ],
+      "fabushi_target_symbols": [
+        "configuredUpdateFeedBaseUrl",
+        "resolveUpdateFeedSource",
+        "SandUpdateService::start",
+        "SandUpdateService::fetchUpdate",
+        "SandUpdateService::applyDisabledReason",
+        "createUpdateServiceWiring",
+        "createProductionUpdaterInstallerBinding",
+        "updateStatusMessage",
+        "updateCheckToTelemetry"
+      ],
+      "target_language": "TypeScript in existing Electron main/renderer update owners; Node 24 behavior tests",
+      "language_rationale": "Existing Electron platform/update owner is TypeScript; no C++ runtime, new Rust product runtime or second updater is introduced.",
+      "command_event_contracts": [
+        "Existing Electron production binding creates one SandUpdateService via createUpdateServiceWiring.",
+        "Same DesktopUpdateStatus state IPC flows to existing Settings message; missing/invalid source emits fixed disabled cause.",
+        "Existing app quit/install marker records requested/spawned and settles at restart without a new event store."
+      ],
+      "state_owner": "SandUpdateService is the one in-process update lifecycle owner; explicit source immutable in main-process startup; SettingsStore owns track/idle preferences, apply-marker owns cross-restart outcome, existing installer owner retains signed application boundary.",
+      "lifecycle_owner": "Existing source/electron-main/entry.ts -> production-binding-providers -> update-wiring -> SandUpdateService startup/stop/dispose",
+      "persistence_and_restart": "Existing sand-update-apply-marker.json format and path remain; startup settles prior requested/spawned marker even when source unavailable. Existing settings/session files are untouched; fixture user-data sentinel preserved.",
+      "concurrency_and_cancellation": "Existing AbortController and scheduling timer owners; disabled source never arms check timers; disabling approved service aborts in-flight check; disposal inhibits later checks. No new state owner or background publisher.",
+      "security_boundary": "Use normalizeFabushiApiBaseUrl against explicit origin, reject remote HTTP/unapproved third-party/embedded credentials/query/fragment before fetch; manifest redirects refused. No renderer-supplied URL and no request URL/machine ID in HTTP errors.",
+      "network_service_dependencies": [
+        "Approved Fabushi update-feed endpoint explicitly configured; real endpoint/publisher not yet qualified",
+        "Existing approved issuer origin list for production, CI and local loopback",
+        "Existing download/signature Squirrel/Windows NSIS installer owners"
+      ],
+      "service_owner": "Existing Fabushi Electron update owner; external official update publishing/deployment authority remains unverified",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Real authorized update feed service/publisher deployment and metadata/artifact provenance not verified.",
+        "Signed Mac/Windows platform package, real install, restart and rollback not accepted.",
+        "Actions execution of 16 new contracts and actual Electron/renderer build pending at new containing H.",
+        "Full fixed-U source/legal review and independent FBCP/TDRP ACCEPT open."
+      ],
+      "production_entrypoints": [
+        "source/electron-main/entry.ts -> createElectronProductionUpdaterInstallerBinding -> createProductionUpdaterInstallerBinding -> createUpdateServiceWiring -> SandUpdateService",
+        "SandUpdateService status IPC -> existing Settings update panel",
+        "SandUpdateService startup -> existing apply-marker settlement and staged install owner"
+      ],
+      "production_evidence": [
+        "authored-code-commit:52ba898107642db27c87a354687c2c6eb0456054",
+        "doc:docs/specs/electron-update-source-authority.md@7b6acf1f9aea030ccd77babc4f7ba1656efac72d",
+        "source-policy:source/electron-main/update/update-feed.ts@b27636414be28290ec9ee221ea8e06fb8e0a3db2",
+        "service:source/electron-main/update/sand-update-service.ts@1c31680d5b14dd4eae6b7fdb96245701536794fa",
+        "composition:source/electron-main/production-binding-providers.ts@6cb54a6178cca81b9324df18aeb123915c7af38c",
+        "wiring:source/electron-main/update/update-wiring.ts@dde9a06f4c79c21e4257296c15c62e3e3ceacd7d",
+        "evidence:projects/telegram-desktop-rust/evidence/round21-update-source-authority.json"
+      ],
+      "test_evidence": [
+        "authored-not-run:source/electron-main/update/update-source.contract.test.mjs@bf17bf7b3f6aa964aafff1d5eeba204d12d51315:16 controlled-port cases; exact containing-H Actions pending"
+      ],
+      "target_commit": "52ba898107642db27c87a354687c2c6eb0456054",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing production Electron main update service (no second updater)",
+      "composition_slot": "Explicit source configuration and validated update-feed request under existing installer",
+      "capability_component": "Updater feed-source authorization, disabled-state projection and marker-safe recovery",
+      "variation_axes": [
+        "Absent vs empty vs invalid vs explicitly approved feed",
+        "Primary vs compatibility config precedence",
+        "Production HTTPS vs CI HTTPS vs loopback HTTP",
+        "Startup/manual/periodic/track-change/minimum-version/backend gate",
+        "Squirrel/NSIS valid service lifecycle vs missing source",
+        "HTTP redirect/error/abort/dispose",
+        "Persisted requested/spawned marker across restart"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Native issuer origin policy",
+        "Existing Electron service/update status IPC",
+        "Existing update apply-marker and Settings persistence",
+        "Existing installer and signature-verification owner"
+      ],
+      "duplicate_root_check": "Current shipping entry follows the sole existing Electron updater and Settings projection. No new updater, origin registry, storage schema or policy authority was created.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing Settings update panel",
+      "primary_navigation_target": "Existing Settings overlay",
+      "collection_surface": "Existing Settings update section",
+      "creation_flow": "Not applicable: updater has no user creation surface.",
+      "object_action_scope": "Existing update check, track selection, restart/apply and idle-opt-in controls",
+      "detail_section": "Existing Settings update panel",
+      "capability_surface": "Existing DesktopUpdateStatus and updateStatusMessage view",
+      "route_contract": "No route change; same desktop bridge update object and IPC.",
+      "search_scope": "Not applicable: updater configuration is not a searchable content object.",
+      "search_provider": "Not applicable: no Search writer or provider in this batch.",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No content search is introduced. Update fetch source validated in privileged main process; renderer cannot elevate origin.",
+      "search_local_remote_contract": "Not applicable to Search; update source does not change search APIs.",
+      "responsive_disposition": "Existing Settings layout retained; full visual acceptance pending.",
+      "accessibility_contract": "Existing typed disabled-status display; full accessible-platform validation pending.",
+      "keyboard_contract": "Existing settings keyboard/focus behavior unchanged.",
+      "state_continuity_contract": "Persisted marker settles at new startup even if update source is missing or rejected; existing settings keys retained.",
+      "ui_acceptance_scenarios": [
+        "Missing source displays deterministic disabled message",
+        "Invalid source displays deterministic disabled message",
+        "Approved source uses current Settings and updater state transitions"
+      ],
+      "design_system_version": "Existing Fabushi Settings canonical design; no new tokens.",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing Settings update panel",
+      "screen_slots": [
+        "Existing update status",
+        "Existing update action controls"
+      ],
+      "visual_state_matrix": [
+        "Disabled: unconfigured",
+        "Disabled: invalid",
+        "Checking/idle/ready from valid explicit source"
+      ],
+      "density_contract": "Unchanged Settings density.",
+      "icon_asset_contract": "No new icon or asset.",
+      "avatar_contract": "Not applicable; no avatar.",
+      "content_copy_keys": [
+        "update-source-unconfigured",
+        "update-source-invalid"
+      ],
+      "motion_contract": "No animation added.",
+      "reduced_motion_contract": "Existing reduced-motion behavior unchanged.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+        "EUS-01",
+        "EUS-02",
+        "EUS-03",
+        "EUS-04",
+        "EUS-05",
+        "EUS-06",
+        "AC-14",
+        "AC-19",
+        "AC-21"
+      ],
+      "oracle_ids": [
+        "EUS-01",
+        "EUS-02",
+        "EUS-03",
+        "EUS-04",
+        "EUS-05",
+        "EUS-06"
+      ],
+      "invariant_ids": [
+        "CSI-R1",
+        "CSI-R3",
+        "CSI-R5",
+        "CSI-R6"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#EUS-03 source gate",
+        "source/electron-main/update/update-source.contract.test.mjs#EUS-04 marker restart"
+      ],
+      "contract_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#EUS-01..06 all 16 focused behavioral cases"
+      ],
+      "integration_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#existing production wiring and Settings projection"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#startup/periodic abort restart"
+      ],
+      "fault_recovery_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#persisted marker restart; malformed source; cancel/dispose"
+      ],
+      "ui_functional_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#existing Settings projection helper"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#unapproved origins no-fetch; credential/query/fragment; redirect refusal"
+      ],
+      "regression_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#approved 204, staged signed-verify owner and marker recovery"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "EUS-06",
+        "AC-14",
+        "AC-21",
+        "AC-24"
+      ],
+      "test_fixture_ids": [
+        "source/electron-main/update/update-source.contract.test.mjs#controlled fetch/clock/loopback marker"
+      ],
+      "test_environment_ids": [
+        ".github/workflows/native-service-contracts.yml#native-message-electron:Node24:Ubuntu-24.04:exact-H",
+        ".github/workflows/native-service-contracts.yml#native-message-ui:Node24:Ubuntu-24.04:exact-H"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "blocked",
+      "license_and_provenance": "Source identity is the fixed-U macOS packaged workflow as updater/release provenance context, not evidence that upstream code supplied Cursor's default feed. Recovered updater origin is the live Fabushi implementation; no upstream code copy or new license closure is claimed. Full source-review evidence is pending.",
+      "reviewer": null,
+      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open."
     }
   ],
   "rebaseline_candidate": {

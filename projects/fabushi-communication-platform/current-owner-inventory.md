@@ -3,7 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
-Current bounded refresh: round 16, inspected base `adf15caadac5775fdd8582227cad3bbf9c93cf0f`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older capture below is historical.
+Current bounded refresh: round 21, inspected base `8ce0a9a43b7fe94df2ec2085399fe65a57343577`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older captures below are historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -13,6 +13,29 @@ PR state at capture: open, draft, base `main`, head `refactor/grok-018-architect
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
 
 ## Method
+
+### 2026-11-02 Explicit Electron update source (round 21)
+
+The shipping chain remains `entry.ts` →
+`createElectronProductionUpdaterInstallerBinding` →
+`createProductionUpdaterInstallerBinding` → `createUpdateServiceWiring` →
+`SandUpdateService`; the existing status IPC feeds the Settings update projection.
+EUS-01–06 removes the inherited Cursor default from this actual owner. Main-process
+`FABUSHI_UPDATE_FEED_BASE_URL` takes precedence over an explicitly set compatibility
+variable, including a present-empty primary value. The existing
+`normalizeFabushiApiBaseUrl` authority validates the origin; no new origin registry,
+feed deployment, updater, account store or renderer configuration writer is added.
+Missing/invalid sources stay disabled and metadata redirects are refused.
+
+The existing apply-marker owner still settles a prior installation attempt before
+the disabled-startup return; settings, marker schema and all user data retain their
+existing owners. Sixteen focused contracts cover these paths plus valid-feed,
+cancellation and staging behavior through controlled ports. They are authored,
+not locally executed; the containing-H Electron/UI Actions must qualify the change.
+Formal feed availability, publisher trust (including the historical Windows signer
+allowlist), download provenance and actual signed upgrades/rollback remain open.
+The partial upstream audit in `evidence/round21-update-source-authority.json`
+does not turn the Windows workflow mapping into full updater product acceptance.
 
 ### 2026-11-02 Native startup and message authority refresh
 
@@ -135,6 +158,7 @@ The existing channel connector path models outside platforms and delivery addres
 Before using this inventory for implementation, compare the live PR #20 head to `a538679392bc09531041030a98fa0880107e7d40`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
 
 PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected file-by-file at the ownership boundary. It advances send-pipeline/send-turn dispatch, workflow commands, runner registry/turn shell, Coordinator inference routing, and Session runtime behavior inside the same canonical Host Transcript/Runner/Coordinator architecture. `session-runtime.ts` now has a production Rust owner with focus/contact freshness, live-session ownership, deferred bounded-open activation/catch-up, snapshot/roster activation wiring, boot fallback ordering evidence, and focused contracts; `a5386793` is the first head that marks that row implemented, and only its own Actions may accept it. No FBCP product owner root moved in this delta.
+
 
 
 

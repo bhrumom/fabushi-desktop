@@ -1,0 +1,156 @@
+{
+  "format": "FBCP_TDRP_ROUND21_UPDATE_SOURCE_EVIDENCE_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 21,
+  "source": {
+    "upstream_repository": "telegramdesktop/tdesktop",
+    "fixed_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "desktop_repository": "bhrumom/fabushi-desktop",
+    "reviewed_exact_H": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+    "old_default": "https://api2.cursor.sh/updates",
+    "current_main_seen": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "working_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "candidate_code_commit": "52ba898107642db27c87a354687c2c6eb0456054"
+  },
+  "baseline_workflow": {
+    "run": 41471743677,
+    "head_sha": "8ce0a9a43b7fe94df2ec2085399fe65a57343577",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41471743677",
+    "jobs": [
+      {
+        "id": 125366803997,
+        "name": "native-message-reconciliation",
+        "conclusion": "success",
+        "actual": {
+          "human": 33,
+          "agent_nonce": 4,
+          "settlement_credentials": 3
+        },
+        "artifact": {
+          "id": 13155912107,
+          "digest": "sha256:f1186206554bd34756cf3c63596cc569ececa4c845171cc3f234dc64f138d365"
+        },
+        "logs_read": true
+      },
+      {
+        "id": 125366805190,
+        "name": "native-message-shipping-compile",
+        "conclusion": "cancelled",
+        "runner_assigned": false,
+        "steps": 0,
+        "log": "404 BlobNotFound; no log data",
+        "actual": {
+          "gateway_library": null,
+          "protocol": null,
+          "tcp": null,
+          "real_package_copy": null,
+          "missing_binary_negative": null,
+          "invalid_build_hash_negative": null
+        },
+        "note": "Unassigned for 15 minutes then cancelled. Cancellation cause unverified; no implementation, assertion or environment failure identified."
+      },
+      {
+        "id": 125366804758,
+        "name": "native-message-ui",
+        "conclusion": "success",
+        "actual": {
+          "transcript_pagination_and_refresh": 16,
+          "renderer_build": "success"
+        },
+        "artifact": {
+          "id": 13155052481,
+          "digest": "sha256:115b14acdd26f40273881a1e238fb9f6dc85d111f513668608f6b08acc6aa383"
+        },
+        "logs_read": true
+      },
+      {
+        "id": 125366804368,
+        "name": "native-message-electron",
+        "conclusion": "success",
+        "actual": {
+          "carrier": 10,
+          "native_auth": 8,
+          "controlled_resource_copy": 3,
+          "mac_metadata": 18,
+          "historical_zip_dmg_metadata_repair": "success",
+          "electron_build": "success"
+        },
+        "artifact": {
+          "id": 13155302398,
+          "digest": "sha256:bce74290348e1e31b399fa87c48f147fc29a21ec843758387cd548436f9bae00"
+        },
+        "logs_read": true
+      }
+    ],
+    "unexecuted_preserved_gates": [
+      "gateway library 11",
+      "protocol 122",
+      "TCP 9 including live case",
+      "actual compiled AppHost resource-copy 4 total (3 fixtures+1 real)",
+      "negative: missing AppHost binary",
+      "negative: invalid AppHost build hash"
+    ],
+    "previous_oracle_defect": "Prior full gateway library gate erroneously expected 9 while the executable suite contains 11; workflow at exact H expects 11.",
+    "historical_immutable_package": "In Electron job stale metadata rejected, corrected blockmaps verified, ZIP/DMG size and SHA preserved; no installation/release."
+  },
+  "implementation": {
+    "scope": "EUS-01..06; existing Electron updater only; no new owner, no Telegram runtime, no database schema migration",
+    "entry": "source/electron-main/entry.ts -> createElectronProductionUpdaterInstallerBinding -> createProductionUpdaterInstallerBinding -> createUpdateServiceWiring -> SandUpdateService",
+    "source_policy": "Explicit FABUSHI_UPDATE_FEED_BASE_URL takes precedence over SAND_UPDATE_FEED_BASE_URL; present-empty primary never falls back. Reuse normalizeFabushiApiBaseUrl first-party+CI+loopback origin validation; manifest redirects refused; missing/invalid disables checks before fetch.",
+    "recovery": "Existing persisted apply-marker startup settlement executes even while source disabled. Settings keys, source marker format, secret stores, session data, old-reader and rollback paths retained.",
+    "tests": "16 focused controlled-port integration/behavior contracts authored in source/electron-main/update/update-source.contract.test.mjs; no local execution; exact-H Actions required.",
+    "blobs": {
+      ".github/workflows/native-service-contracts.yml": "3875ab60deb0b4d1085ed319e34af47f96f5049b",
+      "source/electron-main/update/release-metadata.ts": "26c591a9f3dd18431df522fea84c3292d5b3554a",
+      "source/electron-main/production-binding-providers.ts": "6cb54a6178cca81b9324df18aeb123915c7af38c",
+      "source/electron-main/update/update-feed.ts": "b27636414be28290ec9ee221ea8e06fb8e0a3db2",
+      "source/electron-main/update/update-telemetry.ts": "8b5ee02980119bd9499cea1fc0b14089c42191a4",
+      "source/electron-main/update/update-wiring.ts": "dde9a06f4c79c21e4257296c15c62e3e3ceacd7d",
+      "source/electron-main/update/sand-update-service.ts": "1c31680d5b14dd4eae6b7fdb96245701536794fa",
+      "frontend/src/recovered/contracts/desktop-bridge.ts": "40af447f438537f07dd2f7e5360acc87b90930a4",
+      "frontend/src/recovered/features/settings/overlay/updates.ts": "208904310dd2b61c392f09fe982b17def452bc97",
+      "docs/specs/electron-update-source-authority.md": "7b6acf1f9aea030ccd77babc4f7ba1656efac72d",
+      "source/electron-main/update/update-source.contract.test.mjs": "bf17bf7b3f6aa964aafff1d5eeba204d12d51315"
+    },
+    "review": "Frozen independent source review: no blocking finding; actual Actions evidence still required."
+  },
+  "backend_read_only": {
+    "repo": "bhrumom/fabushi-backend",
+    "pr": 137,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+    "deployment_performed": false,
+    "merge_performed": false,
+    "missing": [
+      "current active Worker deployment commit/version binding",
+      "production authenticated afterId=0 multiple pages/empty page/unauthorized rejection/recovery proof"
+    ],
+    "history": "Previous audited historical Worker version does not prove current active deployment."
+  },
+  "acceptance": {
+    "source_review_complete": false,
+    "full_product_implemented": false,
+    "full_bot_regression": false,
+    "real_signing_and_package_install": false,
+    "real_authorized_update_feed": false,
+    "independent_ACCEPT": false,
+    "release_status": "not-accepted"
+  },
+  "provenance": {
+    "AGENTS": "AGENTS.md",
+    "FBCP_SOT": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+    "TDRP_SOT": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+    "main_specs": [
+      "docs/specs/fabushi-bot-communication-platform.md",
+      "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+    ],
+    "addendum": "docs/specs/fabushi-deferred-ci-migration.md §12-13",
+    "new_spec": "docs/specs/electron-update-source-authority.md"
+  },
+  "next": "Freeze/push containing exact H with nonforced expected_sha CAS, verify remote tree/blob/full SHA and execute focused Electron updater contracts, builds and still-missing shipping gates in GitHub Actions."
+}

@@ -5,49 +5,52 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch (round 20): blockmap verification and persistent approval fixtures
+## Current bounded batch (round 21): explicit approved Electron update source
 
-Fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; inspected checkpoint
-H=151d3ffe6382219dab98fb317e59fe5faa8cea01 and live main
+Fixed U=f985723b552b30fe1c17d377d57f44e61a15a8c4; reviewed checkpoint
+H=8ce0a9a43b7fe94df2ec2085399fe65a57343577 and live main
 5528062177e3865eef60a073a066cca144f9e3e8. Main and backend are unchanged.
-Run41465224038 completed failure. Complete logs establish Human33/Agent4/
-private3, UI16, AppHost12, Native6, FeatureHost7, Host6, ABI7 and CLI3 passed.
-The proxy matrix actually exercised16 ordered subsets,48 deletions and48
-repeated no-ops, including all6 full permutations. Gateway executable ran5:
-4 passed and the first-issuance assertion in the repeated-approval case failed.
-Its two tests shared the production default persistent file (TEST_FLAW).
-Gateway lib9, protocol122, TCP9 and actual package-copy gates did not execute.
+Exact-base run41471743677 has completed reconciliation Human33/Agent4/private3,
+UI16 and Electron carrier10/auth8/synthetic-copy3/metadata18 with actual renderer
+and Electron builds passed. The digest-pinned historical ZIP/DMG experiment now
+rejects stale metadata, reconciles and verifies it without changing package bytes.
+Historical signed packaged acceptance failed and remains unqualified. At this
+final baseline observation run41471743677 is completed/failure and shipping125366805190
+was cancelled before runner assignment with no steps/log blob; cause unverified. Library11,
+protocol122, TCP9, actual AppHost-copy suite4 and two negatives are not passes.
+The copy suite is three controlled fixture cases plus one actual compiled binary.
 
-Electron carrier10/auth8/copy3/metadata15 passed. The digest-pinned historical
-installer experiment failed because comparing compressed blockmap bytes rejected
-a valid ZIP sidecar before reaching the real stale-DMG metadata mismatch.
-NMR-43 now compares complete bounded decoded map bytes and receipts hash the
-actual retained sidecar. Three added cases cover equivalent gzip envelopes,
-content tampering and corrupt/oversized input; the required total is18.
-NMR-45 gives each approval test an explicit UUID-owned persistent store and
-checks duplicate stability, restart restoration and independent-store isolation.
-Production registry defaults and approval deduplication are unchanged.
+EUS-01–06 removes the inherited default Cursor feed from the actual existing
+production updater. Explicit FABUSHI_UPDATE_FEED_BASE_URL is authoritative;
+the SAND compatibility value is used only when the primary is absent. The existing
+Fabushi origin policy admits the source; missing/invalid values disable all update
+entry paths, requests refuse metadata redirects, and status errors omit request
+URLs. Production binding, live gate helper, service state, typed IPC projection,
+Settings messages and telemetry use the same policy. Startup still settles the
+existing persisted apply marker while source-disabled; no marker schema, settings
+schema or user-data migration/deletion is introduced. Sixteen focused contracts
+are authored, not locally run. Frozen independent source review found no blocking
+finding; containing-H Actions execution is pending at this preparation snapshot.
 
-Historical artifact13093546572 was downloaded and its full digest verified;
-its original DMG is174156394 bytes versus metadata174154251 (delta2143).
-Package bytes remain immutable inputs to the repair experiment. Containing-H
-Actions results must qualify both fixes; this preparation snapshot claims no
-new-H pass. The receipt records exact prior logs, artifacts, frozen source review
-and required gates at projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json.
-No local executable validation ran. Fixed-U inventory remains16381 identities/
-183 responsibilities, unknown/unread unestablished, source_reviews absent and
-acceptance false. The existing FMEP-SOURCE-01 schema/validator was inspected;
-the narrow ledger refresh also requires its Actions contract/candidate gates.
+Evidence: projects/telegram-desktop-rust/evidence/round21-update-source-authority.json.
+It preserves full-log hashes/URLs, exact source review ranges, backend read-only
+facts, implementation/test manifest, independent source review and open gates.
+The canonical ledger/RTM distinguish source reading, authored implementation,
+execution and release acceptance. Fixed-U inventory remains16381 identities /
+184 responsibilities (one new narrow updater discovery mapping); unknown/unread unestablished, source_reviews absent and
+acceptance false. Current FMEP-SOURCE-01 schema/validator is present and unchanged.
 
 Backend PR137 remains open/draft/unmerged at06047d3ea69313ec4cfec58bbee36a7afc9cf007;
-both exact-head runs passed handler29/SQLite10. Downloaded production provenance
-artifact12542026010 binds historical source33a26692ce2f74e3fdca3940dfc4cbfb3ede151b
-to Worker version3ad1a889-4c28-4344-8472-8c8adc225a3c. Its health/FDN401 checks do
-not prove a current active version or authenticated social-message pagination.
-No backend merge, deploy or mutation occurred. Current-H signed installer,
-Native update service, external ABI callers, full source/legal and functional
-closure, supported platforms, UI/a11y, Bot regression, upgrade/rollback, soak
-and independent ACCEPT remain open.
+exact-head handler29/SQLite10 passed. The historical deployed Worker source remains
+33a26692ce2f74e3fdca3940dfc4cbfb3ede151b/version3ad1a889-4c28-4344-8472-8c8adc225a3c;
+that is not proof of the current active version. Main still rejects afterId=0.
+Real authenticated pagination and independent production recovery remain open;
+no backend merge, deployment or mutation occurred.
+
+Formal Fabushi update feed service/publisher authority, asset download provenance,
+historical Windows signer policy, real signed supported-platform upgrades/rollback,
+complete source/legal and all applicable product paths, full Bot regression,
+UI/visual/accessibility, performance/soak and independent ACCEPT remain open.
 
 ## Historical planning snapshot (2026-10-19)
 
@@ -92,6 +95,7 @@ Report separately:
 - independent release acceptance.
 
 Do not report Telegram-provider, Telegram-network, survey, document count, or vertical-slice progress as migration completion.
+
 
 
 
