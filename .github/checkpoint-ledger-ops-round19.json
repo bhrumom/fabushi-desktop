@@ -2,8 +2,8 @@
   "schema": "fabushi.round19.ledger-evidence-append.v1",
   "repository": "bhrumom/fabushi-desktop",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "expected_input_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
-  "expected_output_blob": "aadb1c99f17fe420406e463b3548c267000f37bd",
+  "expected_input_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+  "expected_output_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
   "operations": [
     {
       "id": "FBCP-NMR-001",
