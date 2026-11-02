@@ -283,3 +283,144 @@ jobs:
                   assert response.status == 204
               print(f"Requested {workflow}; its first guard must match subject {os.environ['RESULT_HEAD']}")
           PY
+
+  recover-original-host-log:
+    # Read the completed failed subject; do not rerun it or treat this carrier as validation.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-18ef-log]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Recover the identity-bound original Host job log
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, sys, urllib.error, urllib.parse, urllib.request
+          from pathlib import Path
+
+          repository = "bhrumom/fabushi-desktop"
+          subject = "18ef48cf1b72c045141f56b227be79226056113b"
+          source_run, source_attempt, source_job = 41477395549, 1, 125387737100
+          api = f"https://api.github.com/repos/{repository}/actions"
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "ocrm-original-host-log"
+          evidence.mkdir(parents=True, exist_ok=False)
+          stage = "source_metadata"
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, request, fp, code, msg, headers, newurl):
+                  return None
+
+          opener = urllib.request.build_opener(NoRedirect())
+          redirects = {301, 302, 303, 307, 308}
+
+          def read_response(url, authenticated=False, limit=100 * 1024 * 1024):
+              parsed = urllib.parse.urlsplit(url)
+              if parsed.scheme != "https" or parsed.username is not None or parsed.password is not None or parsed.port not in (None, 443):
+                  raise ValueError("invalid_transport")
+              if authenticated and parsed.hostname != "api.github.com":
+                  raise ValueError("invalid_credential_destination")
+              headers = {"Accept-Encoding": "identity", "User-Agent": "ocrm-exact-job-log-recovery"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                                  "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              request = urllib.request.Request(url, headers=headers)
+              try:
+                  response = opener.open(request, timeout=60)
+              except urllib.error.HTTPError as error:
+                  if error.code not in redirects:
+                      raise
+                  location = error.headers.get("Location")
+                  error.close()
+                  return error.code, location, b""
+              with response:
+                  if response.status != 200 or response.headers.get("Content-Range"):
+                      raise ValueError("incomplete_response")
+                  if response.headers.get("Content-Encoding", "identity") != "identity":
+                      raise ValueError("unexpected_encoding")
+                  declared = response.headers.get("Content-Length")
+                  if declared is not None and not 0 <= int(declared) <= limit:
+                      raise ValueError("body_size_limit")
+                  body = response.read(limit + 1)
+                  if len(body) > limit or (declared is not None and len(body) != int(declared)):
+                      raise ValueError("body_size_mismatch")
+                  return response.status, None, body
+
+          def api_json(suffix):
+              status, location, body = read_response(api + suffix, authenticated=True, limit=2 * 1024 * 1024)
+              if status != 200 or location is not None:
+                  raise ValueError("metadata_redirect")
+              return json.loads(body)
+
+          try:
+              run = api_json(f"/runs/{source_run}/attempts/{source_attempt}")
+              job = api_json(f"/jobs/{source_job}")
+              for name, metadata in (("source-run.json", run), ("source-job.json", job)):
+                  (evidence / name).write_text(json.dumps(metadata, sort_keys=True, indent=2) + "\n")
+              stage = "source_identity"
+              valid_run = (run["repository"]["full_name"] == repository
+                           and run["id"] == source_run and run["run_attempt"] == source_attempt
+                           and run["head_sha"] == subject and run["status"] == "completed"
+                           and run["conclusion"] == "failure")
+              valid_job = (job["id"] == source_job and job["run_id"] == source_run
+                           and job["run_attempt"] == source_attempt and job["head_sha"] == subject
+                           and job["name"] == "rust-host" and job["status"] == "completed"
+                           and job["conclusion"] == "failure"
+                           and job["run_url"] == f"{api}/runs/{source_run}")
+              if not valid_run or not valid_job or os.environ["GITHUB_REPOSITORY"] != repository:
+                  raise ValueError("source_identity_mismatch")
+              stage = "original_log_download"
+              url = f"{api}/jobs/{source_job}/logs"
+              for hop in range(6):
+                  # Only the first, fixed API URL receives credentials. No automatic redirect forwards them.
+                  status, location, body = read_response(url, authenticated=(hop == 0))
+                  if status == 200:
+                      break
+                  if not location or hop == 5:
+                      raise ValueError("redirect_limit")
+                  url = urllib.parse.urljoin(url, location)
+                  destination = urllib.parse.urlsplit(url)
+                  host = destination.hostname or ""
+                  if not (host.endswith(".blob.core.windows.net") or host.endswith(".actions.githubusercontent.com")):
+                      raise ValueError("unapproved_log_host")
+              if not body:
+                  raise ValueError("empty_log")
+              stage = "evidence_write"
+              (evidence / f"host-{source_job}.log").write_bytes(body)
+              receipt = {
+                  "repository": repository, "source_subject": subject,
+                  "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
+                  "source_conclusion": "failure", "source_job_name": "rust-host",
+                  "carrier_commit": os.environ["GITHUB_SHA"], "carrier_run": int(os.environ["GITHUB_RUN_ID"]),
+                  "carrier_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+                  "product_validation_executed_by_carrier": False,
+                  "log_sha256": hashlib.sha256(body).hexdigest(), "log_bytes": len(body),
+                  "log_lines": body.count(b"\n") + int(not body.endswith(b"\n"))
+              }
+              (evidence / "recovered-log-receipt.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
+              print(f"Recovered original failed job {source_job}: {len(body)} bytes; product validation was not rerun")
+          except Exception as error:
+              # Exception strings can contain signed URLs; record only safe types/status and our fixed stage.
+              failure = {"source_subject": subject, "source_run": source_run, "source_attempt": source_attempt,
+                         "source_job": source_job, "carrier_commit": os.environ["GITHUB_SHA"],
+                         "carrier_run": int(os.environ["GITHUB_RUN_ID"]), "stage": stage,
+                         "error_type": type(error).__name__, "http_status": getattr(error, "code", None),
+                         "product_validation_executed_by_carrier": False}
+              (evidence / "collection-failure.json").write_text(json.dumps(failure, sort_keys=True, indent=2) + "\n")
+              print(f"Original log collection failed at {stage}: {type(error).__name__}", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Upload original-job evidence without changing its failed verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-original-host-log-18ef48cf1b72c045141f56b227be79226056113b-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ocrm-original-host-log/
+          if-no-files-found: error
+          retention-days: 30
