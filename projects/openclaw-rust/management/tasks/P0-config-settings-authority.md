@@ -157,3 +157,49 @@ by cloning the handle at the sink boundary. This is a concrete ownership
 repair, not a retry of H5 or a budget reset; independent focused assessment
 checks both consumers before another exact-H shipping check. No gate or
 assertion is removed, and no earlier runtime result is relabeled as passing.
+
+### H6 contract-oracle recovery (task d56b3d1d, round 1)
+
+Recovery starts from the existing branch at
+`c43b7b2cb1a9cf1b3cb5b511974b3f0bccdadcd9`, tree
+`9a3e875539a0f0550c3f14e82d7d0cf91a369646`; live main remains
+`5528062177e3865eef60a073a066cca144f9e3e8` and fixed U is unchanged.
+Runtime run `41384534729`, job `125082349656`, passed the shipping Host
+check. The first contract command compiled successfully: Gateway 2/2,
+Inference composition 6/6 and roster 10/10 passed; sessions/config passed
+36/38 and exited 101. The remaining selected targets did not run.
+
+Independent read-only directness/exhaustion assessment classifies both failures
+as `TEST_FLAW`, not implementation or environment failures. Decisions before
+repair: `FIX` the obsolete global guard count (eight versus ten actual guards
+in seven existing transaction methods), retain the exact count and add named
+method coverage so a duplicate guard cannot hide a missing edge. `FIX` the
+first correlation fixture: it registered a nested thread but supplied no parent,
+contrary to SCP-09. Use a root-scoped first case and preserve readiness,
+claim/release/retry/completion assertions; add explicit missing/wrong-parent
+negatives to the separate nested-thread case. Do not relax production
+correlation or identity checks, change timeouts, or delete valid assertions.
+
+Selected effort is xhigh for source diagnosis and independent assessment;
+the native worker applied that effort and retained the configured model.
+The causal next instrument is the same existing Actions scope on repaired H,
+with `--no-fail-fast` for each contract target group to expose all selected
+binary results in that group. Earlier positives remain evidence for H6 only.
+This repair does not add production model behavior or confer scoped source
+authority, verified/accepted state, or any project completion flag.
+
+The same independent assessment inspected the selected but unexecuted
+`agent_db_owner_contract` target. `FIX` its positive fixtures to bind
+`session_id` to the existing metadata `agentId`, keep synthetic media entries'
+session provenance, and supply the current lifecycle when testing the pending
+media fence. Preserve the separate rebound/stale/deletion/content-conflict
+negative controls and assert the typed admission failure and unchanged state.
+`FIX` the test-only moved `CompactionCommit` by cloning for the missing-cut
+case, retaining the subsequent empty/oversized-summary negatives. These are
+source-identified fixture defects, not additional observed CI failures.
+
+Independent review of the frozen recovery diff found one further fixture
+precondition: the missing-cut compaction case inherited the pre-compaction
+tail, so the existing stale-tail fence would run before the missing-cut check.
+`FIX` its expected tail to the preceding successful `compaction-1` entry while
+retaining the typed `CompactionInvalid` assertion. No production fence changes.

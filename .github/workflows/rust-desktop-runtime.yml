@@ -172,7 +172,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --manifest-path source/host/Cargo.toml \
+          cargo test --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test settings_service_contract \
             --test openclaw_sessions_and_config_contract \
             --test inference_extension_composition_contract \
@@ -185,7 +185,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --manifest-path source/host/Cargo.toml \
+          cargo test --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \
             --test production_turn_agent_owner_contract \
             --test host_runner_composition_production_wiring_contract \

@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
-    CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    AgentDbProjectionError, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
     PendingProfileMutation, ProfileFileSnapshot,
     ProviderReviewContinuationOutcome, SandAgentDb,
     SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
@@ -166,6 +166,52 @@ fn owner_drops_busy_writes_and_reports_the_operation() {
 }
 
 #[test]
+fn malformed_or_rebound_admission_cannot_mutate_the_existing_owner() {
+    for (label, session_key, session_id, revision) in [
+        ("foreign-id", "agent:agent-admission-negative:main", "foreign-agent", "revision-1"),
+        ("foreign-key", "agent:foreign-agent:main", "agent-admission-negative", "revision-1"),
+        ("empty-revision", "agent:agent-admission-negative:main", "agent-admission-negative", ""),
+    ] {
+        let root = temp_root(label);
+        let agent_dir = root.join("agent-admission-negative");
+        fs::create_dir_all(&agent_dir).unwrap();
+        let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).unwrap();
+        assert!(owner.set_metadata("probe", serde_json::json!("before")).unwrap());
+        let before = owner.read_metadata().unwrap();
+        assert!(owner.write_kv("sessionWorkAdmission", &serde_json::json!({
+            "session_key": session_key,
+            "session_id": session_id,
+            "lifecycle_revision": revision
+        }).to_string()).unwrap());
+        let notifications = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&notifications);
+        let _subscription = owner.subscribe_metadata("metadata", Arc::new(move || {
+            observed.fetch_add(1, Ordering::SeqCst);
+        }));
+
+        assert!(!owner.set_metadata("probe", serde_json::json!("after")).unwrap());
+        assert!(!owner.write_kv("probe-kv", "must not persist").unwrap());
+        assert!(matches!(
+            owner.append_transcript_entries_if_session_admitted(
+                session_key,
+                &[serde_json::json!({
+                    "id": "forbidden-entry", "kind": "message",
+                    "sessionKey": session_key, "content": "must not persist"
+                })],
+            ),
+            Err(AgentDbProjectionError::WorkAdmissionInvalid(message))
+                if message == "session owner identity is not admitted for transcript append"
+        ));
+        assert_eq!(owner.read_metadata().unwrap(), before);
+        assert!(owner.read_kv("probe-kv").unwrap().is_none());
+        assert!(owner.get_transcript_entries().unwrap().is_empty());
+        assert_eq!(notifications.load(Ordering::SeqCst), 0);
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
 fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
     let root = temp_root("work-admission-record");
     let agent_dir = root.join("agent-work");
@@ -174,7 +220,7 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let first = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -306,7 +352,7 @@ fn session_work_admission_record_migrates_and_compare_and_sets_generation() {
         .expect_err("archived session update must reject");
     assert!(archived_update
         .to_string()
-        .contains("session is not admitted for transcript update"));
+        .contains("session owner identity is not admitted for transcript update"));
     assert_eq!(
         owner
             .read_session_work_admission()
@@ -328,7 +374,7 @@ fn session_scoped_kv_write_rejects_stale_generation_atomically() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let active = SessionWorkAdmissionRecord {
         session_key: "agent:agent-session-kv:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-session-kv".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -350,7 +396,7 @@ fn session_scoped_kv_write_rejects_stale_generation_atomically() {
         .write_session_kv_if_generation(
             "sessionCommunicationPolicy",
             "{\"send\":\"always\"}",
-            "session-1",
+            "agent-session-kv",
             "revision-1",
         )
         .expect("write current policy"));
@@ -371,7 +417,7 @@ fn session_scoped_kv_write_rejects_stale_generation_atomically() {
         .write_session_kv_if_generation(
             "sessionCommunicationPolicy",
             "{\"send\":\"never\"}",
-            "session-1",
+            "agent-session-kv",
             "revision-1",
         )
         .expect("stale policy write"));
@@ -400,7 +446,7 @@ fn session_work_admission_deletion_fence_migrates_and_persists() {
             "sessionWorkAdmission",
             &serde_json::json!({
                 "session_key": "agent:agent-delete-fence:main",
-                "session_id": "session-1",
+                "session_id": "agent-delete-fence",
                 "lifecycle_revision": "revision-1"
             })
             .to_string(),
@@ -441,7 +487,7 @@ fn owner_metadata_memory_writes_reject_deletion_fence_at_transaction_edge() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-metadata-deletion-fence:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-metadata-deletion-fence".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -586,7 +632,7 @@ fn owner_rejects_checkpoint_confirmation_when_deletion_fence_is_present() {
         .expect("revision value");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-checkpoint-deletion-fence:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-checkpoint-deletion-fence".into(),
         lifecycle_revision: revision.clone(),
         deletion_pending: true,
         archived_at_ms: None,
@@ -645,7 +691,7 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-review:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-review".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -665,7 +711,7 @@ fn provider_review_owner_is_generation_bound_idempotent_and_conflict_safe() {
         .expect("create admission"));
     let review = SessionProviderReview {
         id: "review-1".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-review".into(),
         run_id: "run-1".into(),
         provider: "openai".into(),
         model: "model-1".into(),
@@ -746,7 +792,7 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
     let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
     let review = SessionProviderReview {
         id: "review-settle".into(),
-        session_id: "session-settle".into(),
+        session_id: "agent-review-settlement".into(),
         run_id: "refusal-run".into(),
         provider: "openai".into(),
         model: "model-1".into(),
@@ -760,7 +806,7 @@ fn provider_review_continuation_settlement_is_run_and_generation_bound() {
     };
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-review-settlement:main".into(),
-        session_id: "session-settle".into(),
+        session_id: "agent-review-settlement".into(),
         lifecycle_revision: "revision-settle".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -859,7 +905,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let record = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -881,7 +927,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let archived = owner
         .transition_session_work_archive(
             "agent:agent-work:main",
-            "session-1",
+            "agent-work",
             Some("revision-1"),
             true,
             Some("gateway-operator"),
@@ -896,7 +942,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let identity_error = owner
         .transition_session_work_archive(
             "agent:other-agent:main",
-            "session-1",
+            "agent-work",
             Some("revision-1"),
             true,
             Some("other-operator"),
@@ -909,7 +955,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         owner
             .transition_session_work_archive(
                 "agent:agent-work:main",
-                "session-1",
+                "agent-work",
                 Some(&archived_revision),
                 true,
                 Some("other-operator"),
@@ -923,7 +969,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let restored = owner
         .transition_session_work_archive(
             "agent:agent-work:main",
-            "session-1",
+            "agent-work",
             Some(&archived_revision),
             false,
             None,
@@ -937,7 +983,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let stale_after_restore = owner
         .transition_session_work_archive(
             "agent:agent-work:main",
-            "session-1",
+            "agent-work",
             Some("revision-1"),
             true,
             Some("stale-worker"),
@@ -955,7 +1001,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let error = owner
         .transition_session_work_archive(
             "agent:agent-work:main",
-            "session-1",
+            "agent-work",
             Some(&restored_revision),
             true,
             Some("gateway-operator"),
@@ -973,8 +1019,8 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
     let media_error = owner
         .transition_session_work_archive(
             "agent:agent-work:main",
-            "session-1",
-            Some("revision-1"),
+            "agent-work",
+            Some(&restored_revision),
             true,
             Some("gateway-operator"),
             None,
@@ -994,7 +1040,7 @@ fn pending_memory_journal_blocks_archive_revision_transition() {
     let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
     let record = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1057,7 +1103,7 @@ fn memory_journal_commit_clears_snapshot_and_journal_together() {
     let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1113,7 +1159,7 @@ fn profile_mutation_commit_updates_legacy_pointer_and_clears_journal() {
     let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1203,7 +1249,7 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
     let session_key = "agent:agent-work:main";
     let record = SessionWorkAdmissionRecord {
         session_key: session_key.into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1252,7 +1298,7 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
     owner
         .transition_session_work_archive(
             "agent:agent-work:main",
-            "session-1",
+            "agent-work",
             Some("revision-1"),
             true,
             Some("test"),
@@ -1273,7 +1319,7 @@ fn admitted_transcript_append_is_rejected_after_archive_without_partial_write() 
         .expect_err("archived session must reject transcript append");
     assert!(error
         .to_string()
-        .contains("session is not admitted for transcript append"));
+        .contains("session owner identity is not admitted for transcript append"));
     let ids = owner
         .get_transcript_entries()
         .expect("read transcript")
@@ -1295,7 +1341,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-media-settlement:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-media-settlement".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1313,14 +1359,16 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     assert!(owner
         .compare_and_set_session_work_admission(None, &admission)
         .expect("create admission"));
+    let sent_entry = serde_json::json!({
+        "id": "send-1",
+        "kind": "send-message",
+        "sessionKey": admission.session_key.clone(),
+        "content": "owned media"
+    });
 
     let stale_identity = owner
         .append_transcript_entries_and_release_media(
-            &[serde_json::json!({
-                "id": "send-stale-identity",
-                "kind": "send-message",
-                "content": "must not settle",
-            })],
+            &[sent_entry.clone()],
             "agent:agent-media-settlement:rebound",
             "revision-1",
             "send-media:tool-1",
@@ -1343,6 +1391,18 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     assert!(malformed_entry
         .to_string()
         .contains("requires transcript entry identities"));
+    let mut unbound_entry = sent_entry.clone();
+    unbound_entry.as_object_mut().unwrap().remove("sessionKey");
+    assert!(matches!(
+        owner.append_transcript_entries_and_release_media(
+            &[unbound_entry],
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "send-media:tool-1",
+        ),
+        Err(AgentDbProjectionError::WorkAdmissionInvalid(message))
+            if message == "media settlement requires matching entry provenance"
+    ));
     assert_eq!(
         owner
             .read_session_work_admission()
@@ -1360,11 +1420,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     assert_eq!(
         owner
             .append_transcript_entries_and_release_media(
-                &[serde_json::json!({
-                    "id": "send-1",
-                    "kind": "send-message",
-                    "content": "owned media"
-                })],
+                &[sent_entry.clone()],
                 "agent:agent-media-settlement:main",
                 "revision-1",
                 "send-media:tool-1",
@@ -1405,11 +1461,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     assert_eq!(
         owner
             .append_transcript_entries_and_release_media(
-                &[serde_json::json!({
-                    "id": "send-1",
-                    "kind": "send-message",
-                    "content": "owned media"
-                })],
+                &[sent_entry.clone()],
                 "agent:agent-media-settlement:main",
                 "revision-1",
                 "send-media:tool-1",
@@ -1419,32 +1471,32 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     );
     let rebound_replay = owner
         .append_transcript_entries_and_release_media(
-            &[serde_json::json!({
-                "id": "send-1",
-                "kind": "send-message",
-                "content": "owned media"
-            })],
+            &[sent_entry.clone()],
             "agent:other-agent:main",
             "revision-1",
             "send-media:tool-1",
         )
         .expect_err("media settlement replay must retain session identity");
-    assert!(rebound_replay.to_string().contains("receipt is rebound"));
+    assert!(matches!(
+        rebound_replay,
+        AgentDbProjectionError::WorkAdmissionInvalid(message)
+            if message == "media settlement replay is stale or session is not admitted"
+    ));
+    let mut conflicting_entry = sent_entry.clone();
+    conflicting_entry["content"] = serde_json::json!("different content");
     let conflicting_replay = owner
         .append_transcript_entries_and_release_media(
-            &[serde_json::json!({
-                "id": "send-1",
-                "kind": "send-message",
-                "content": "different content"
-            })],
+            &[conflicting_entry],
             "agent:agent-media-settlement:main",
             "revision-1",
             "send-media:tool-1",
         )
         .expect_err("media settlement replay must retain transcript identity");
-    assert!(conflicting_replay
-        .to_string()
-        .contains("conflicts with the committed transcript"));
+    assert!(matches!(
+        conflicting_replay,
+        AgentDbProjectionError::WorkAdmissionInvalid(message)
+            if message == "outgoing media settlement replay conflicts with transcript content"
+    ));
 
     let mut fenced = owner
         .read_session_work_admission()
@@ -1456,19 +1508,22 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         .expect("publish deletion fence"));
     let fenced_replay = owner
         .append_transcript_entries_and_release_media(
-            &[serde_json::json!({
-                "id": "send-1",
-                "kind": "send-message",
-                "content": "owned media"
-            })],
+            &[sent_entry.clone()],
             "agent:agent-media-settlement:main",
             "revision-1",
             "send-media:tool-1",
         )
         .expect_err("media settlement replay must recheck the live admission fence");
-    assert!(fenced_replay
-        .to_string()
-        .contains("media settlement replay is stale or session is not admitted"));
+    assert!(matches!(
+        fenced_replay,
+        AgentDbProjectionError::WorkAdmissionInvalid(message)
+            if message == "session owner identity is not admitted for media settlement"
+    ));
+    assert_eq!(owner.get_transcript_entry_by_id("send-1").unwrap(), Some(sent_entry));
+    assert_eq!(
+        owner.get_transcript_entry_by_id("outgoing-media-settlement:send-media:tool-1").unwrap(),
+        Some(receipt)
+    );
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);
@@ -1483,7 +1538,7 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1574,7 +1629,7 @@ fn stale_background_result_cas_rolls_back_receipt_insert() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1651,7 +1706,7 @@ fn spend_guard_card_owner_transaction_rejects_durable_deletion_fence() {
     let owner = SandAgentDb::open(&db_path, 50).expect("owner");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-work:main".into(),
-        session_id: "session-1".into(),
+        session_id: "agent-work".into(),
         lifecycle_revision: "revision-1".into(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -1713,7 +1768,7 @@ fn spend_guard_card_owner_transaction_rejects_durable_deletion_fence() {
             43.0,
         )
         .expect_err("durable deletion fence must reject spend card transaction");
-    assert!(error.to_string().contains("session is not admitted"));
+    assert!(error.to_string().contains("session owner identity is not admitted"));
     assert!(owner
         .get_transcript_entries()
         .expect("entries remain readable")
@@ -2104,7 +2159,7 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         .expect("current compaction revision value");
     let admission = SessionWorkAdmissionRecord {
         session_key: "agent:agent-compaction:main".into(),
-        session_id: "session-compaction".into(),
+        session_id: "agent-compaction".into(),
         lifecycle_revision: current_revision.clone(),
         deletion_pending: false,
         archived_at_ms: None,
@@ -2137,9 +2192,10 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         .clear_session_deletion_pending(&current_revision, &cleared)
         .expect("clear compaction deletion fence"));
 
-    let mut missing_cut = commit;
+    let mut missing_cut = commit.clone();
     missing_cut.entry_id = "compaction-missing".into();
     missing_cut.first_kept_entry_id = Some("missing".into());
+    missing_cut.expected_transcript_tail_id = commit.entry_id.clone();
     missing_cut.expected_lifecycle_revision = owner
         .get_metadata("lifecycleRevision")
         .expect("current revision")

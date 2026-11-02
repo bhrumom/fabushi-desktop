@@ -547,9 +547,35 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         owner_source
             .matches("session_admission_identity_is_well_formed(&admission)")
             .count(),
-        8,
+        10,
         "all session-owned transaction edges must validate admission identity"
     );
+    for (method, expected_guards) in [
+        ("commit_session_work_result", 2),
+        ("append_transcript_entries_if_session_admitted", 1),
+        ("append_spend_guard_card_if_session_admitted", 1),
+        ("append_transcript_entries_and_release_media", 3),
+        ("update_transcript_entry_if_session_admitted", 1),
+        ("settle_transcript_entry_identity_if_session_admitted", 1),
+        ("update_persisted_transcript_entry_if_session_admitted", 1),
+    ] {
+        let signature = format!("pub fn {method}(");
+        let body = owner_source
+            .split_once(signature.as_str())
+            .unwrap_or_else(|| panic!("session transaction owner {method} exists"))
+            .1
+            .split("\n    pub fn ")
+            .next()
+            .unwrap()
+            .split("\npub fn ")
+            .next()
+            .unwrap();
+        assert_eq!(
+            body.matches("session_admission_identity_is_well_formed(&admission)").count(),
+            expected_guards,
+            "{method} must retain its own admission and replay guards"
+        );
+    }
     assert!(owner_source.contains("if !session_work_write_is_admitted(db)?"));
     let initializer = owner_source
         .split("pub fn initialize_metadata_if_missing(")
@@ -1132,7 +1158,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
             Some("turn-uuid-12345"),
             "conversation-1",
             "session-1",
-            Some("thread-1"),
+            None,
             Duration::from_secs(30),
         )
         .expect("register pending turn");
@@ -1149,7 +1175,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
             "session-1",
             "inbound-1",
             Some("outbound-1"),
-            Some("thread-1"),
+            None,
             "reply",
             1729900000000,
         ),
@@ -1164,7 +1190,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
             "session-1",
             "inbound-1",
             Some("outbound-1"),
-            Some("thread-1"),
+            None,
             "reply",
             1729900000000,
         ),
@@ -1174,7 +1200,7 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
     assert!(matches!(
         registry.claim_reply(
             "agent-1", "conversation-1", None, "session-1", "inbound-1b",
-            Some("outbound-1"), Some("thread-1"), "retry", 1729900000001,
+            Some("outbound-1"), None, "retry", 1729900000001,
         ),
         PendingConversationTurnClaimResult::Claimed(_)
     ));
@@ -1192,6 +1218,23 @@ fn test_ocrm_session_o03_conversation_turn_correlation() {
         .expect("register threaded pending turn");
     assert!(registry.set_outbound_message_id("agent-1", &threaded, "outbound-threaded"));
     assert!(registry.mark_ready("agent-1", &threaded));
+    for parent in [None, Some("wrong-parent")] {
+        assert!(matches!(
+            registry.claim_reply(
+                "agent-1",
+                "thread-conversation",
+                parent,
+                "session-1",
+                "inbound-wrong-parent",
+                Some("outbound-threaded"),
+                Some("thread-2"),
+                "reply without matching parent",
+                1729900000001,
+            ),
+            PendingConversationTurnClaimResult::NotFound
+        ));
+        assert!(!registry.snapshot("agent-1", &threaded).unwrap().claimed);
+    }
     assert!(matches!(
         registry.claim_reply(
             "agent-1",
