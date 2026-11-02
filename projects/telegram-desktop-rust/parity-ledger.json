@@ -50257,7 +50257,8 @@
         "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap; published/read-back and actually passed at95/run41403643662",
         "authored-frozen-target-blob:0728038de6b3fa6df656604a352283715d2cdfff:source/host/tests/session_gateway_contract.rs#shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart; published/read-back and actually passed at95/run41403643662",
         "authored-not-run:source/mahayana/mahayana-rs/mahayana-host/src/legacy_handoff_tests.rs@f222df5d3b7b9be0f65324b15998541a11140076:6 selected cases pending same-H Actions",
-        "authored-not-run:source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs@9c9fd7da789bc84450653bc9e207e721d1f4246b:4 new cases plus 3 existing = 7 pending same-H Actions"
+        "authored-not-run:source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs@9c9fd7da789bc84450653bc9e207e721d1f4246b:4 new cases plus 3 existing = 7 pending same-H Actions",
+        "authored-not-run:5d271ff0c03d8f01368ca44026d14cd7519ad6bd:.github/workflows/native-service-contracts.yml well-formed unequal 64-hex digest negative"
       ],
       "target_commit": "95b29df688f718a35574fa36ef4ca75df437ed30",
       "workflow_run": 41403643662,
@@ -50609,13 +50610,15 @@
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344195252:completed/failure:AppHost12 proxy48 repeat48 all6 perms Native6 FeatureHost7 Host6 C_ABI7 CLI3 passed; gateway executable4 passed 1 failed TEST_FLAW first issuance0 vs1; lib9/protocol122/TCP9/package-copy4 not run; artifact13151766200 sha256:aa200932036f9699d0988ae9e86564ff9ce3e5fafe37af3c21130d3eea3ad13d",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344195149:completed/success:UI16 and production renderer; artifact13149409736 sha256:181468aeee41d2b20e97d538cabead38bbdeefc9e7e04036cf48aedebb70cb03",
         "https://github.com/bhrumom/fabushi-desktop/actions/runs/41465224038@151d3ffe6382219dab98fb317e59fe5faa8cea01:attempt1:job125344194642:completed/failure:carrier10/auth8/copy3/metadata15 passed; immutable historical installer experiment failed compressed-byte BLOCKMAP_MISMATCH instead of stale-DMG ASSET_MISMATCH; Electron build not run; artifact13149409727 sha256:af4ffffd5899e6e5bb02c626f23e4e8988a501e4725e12350c344736230b83b7",
-        "round21 exact8ce0a9a43b7fe94df2ec2085399fe65a57343577 run41471743677: reconciliation job125366803997 terminal success Human33/Agent4/private credentials3; artifact13155912107 sha256:f1186206554bd34756cf3c63596cc569ececa4c845171cc3f234dc64f138d365; UI job125366804758 success transcript16; Electron job125366804368 success carrier10/auth8/fixture-copy3/metadata18/historical installer unchanged. shipping job125366805190 cancelled before runner assignment (zero steps), no gateway-library11/protocol122/TCP9/real-copy4/two negatives execution at this H; workflow run terminal failure, ACCEPT blocked."
+        "round21 exact8ce0a9a43b7fe94df2ec2085399fe65a57343577 run41471743677: reconciliation job125366803997 terminal success Human33/Agent4/private credentials3; artifact13155912107 sha256:f1186206554bd34756cf3c63596cc569ececa4c845171cc3f234dc64f138d365; UI job125366804758 success transcript16; Electron job125366804368 success carrier10/auth8/fixture-copy3/metadata18/historical installer unchanged. shipping job125366805190 cancelled before runner assignment (zero steps), no gateway-library11/protocol122/TCP9/real-copy4/two negatives execution at this H; workflow run terminal failure, ACCEPT blocked.",
+        "exact:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:attempt1:shipping125384977191 success gateway-library11 protocol122 TCP9 real-package-copy4+missing-binary/invalid-hash-format negatives artifact13159025871 sha256:515210d9cd858f0348b3b1cab22b99eade3db56e34c0ea70b8db98624e64d855",
+        "exact:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:attempt2:reconciliation125394283462 success Human33 Agent4 private3 artifact13160251081 sha256:f1de0dfb3186bcf069489687bc0bfa302165e5d92b7595f5ba3ca38488d13fca"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Behavioral references are selected source sections at frozen U recorded in the existing known-overlap research dossier. Primary api_updates.cpp and additional data_session.cpp/history_item.cpp are only partially read as explicitly documented. Upstream LEGAL references are retained; no code-copy or full legal approval is asserted. Exact Fabushi target blobs and authored cases are independent implementation evidence. This responsibility mapping does not modify source_reviews, unknown/unread, source acceptance or inventory closure.",
       "reviewer": null,
-      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution.\nRound20: preserve prior historical target_commit/workflow fields. At exact151/run41465224038 Human33/Agent4/private3, AppHost12/proxy48 repeats48 all6 permutations, Native6, FeatureHost7, Host6, ABI7, CLI3, UI16 and Electron metadata15 actually passed. Gateway executable4/5 failed due shared persistent fixture file (TEST_FLAW), and historical installer metadata experiment failed due compressed map byte comparison (IMPLEMENTATION_DEFECT). Existing post-staple verifier now compares bounded decompressed blockmap content; receipts hash actual sidecars, metadata18 authored. Existing gateway approval fixtures use isolated real persistence, duplicate/reopen/independent-store oracles; production default unchanged. Required containing-H gates include gateway executable5/lib9, DNS6 future_salts2 protocol122 TCP9 proxy4 native credential1 actual package-copy4+2 negatives, Electron build and immutable historical DMG test. Prior failures/skips not passes. Evidence projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json. No source/legal or independent acceptance promotion. Round21 adds only an independently scoped Electron update source responsibility and new Actions checks; source/product completeness remains unaccepted."
+      "notes": "Existing native Human production route remains Session/Transcript plus FabushiNativeMessagingClient and existing renderer projection. Original ten Human cases and all prerequisite message gates actually passed on exact68, as separately scoped execution strings and the round3 receipt record; source review and independent/product acceptance were not promoted. The new NMR-18/19/20 extension is implemented/tests-authored at production blob c9a486af86b252ca4c7a025452928caf66439563 and test blob 0728038de6b3fa6df656604a352283715d2cdfff. Three new cases use real loopback HTTP, SQLite, shutdown/reopen, whole-row and event oracles: allowed direct-pair tuples retain exact Unicode including canonical-equivalent distinct strings; five malformed summaries cannot access resources or terminate at a malformed known ID; failed reaction POST leaves all fields/events unchanged and later valid POST recovers. New required Human count is13. All required scoped message jobs actually passed at exact95/run41403643662, including Human13 and the three new reaction cases. Row target_commit and execution fields denote that qualified production/test H. implementation_status remains implemented and release_gate_status remains blocked because full applicable product/independent acceptance and unresolved behaviors remain open. Original strengthened ten-case blob127700079e9ae9d5c2155cd1d8a218a47f2f8075 remains unchanged as the test prefix; bounded Human fixture deadlines remain. Upstream primary/additional files are only selected-section reads exactly as the source dossier states. Source inventory/source_reviews/unknown/unread/source acceptance are unchanged by this production extension. Backend route/PK inspection establishes the normal direct-pair contract, not a database participant CHECK or live deployment. Known-row refresh/history coverage, freshness ordering, receipts/UI, whole-payload limits and complete source/legal/native-service/package/platform/Bot/independent ACCEPT remain open. Empty UI/visual/a11y/performance/soak/E2E/deployment arrays and canonical_component_ids do not claim evidence or registry identities. No new route, store, composition root, assets or design system is introduced.\nRound15: Actual AppHost explicit and generic typed feature.messaging paths were callable separate from Session/Transcript Human owner at c15. Selected Production+Electron FeatureHost now refuses messaging.execute/blob.read/access.issue before auth, parse, locks, disk access, and publication, preserves previous stores. Account-scoped Automation load/legacy import/writer/cleanup excludes reserved _messaging owner, rejects same-destination retained metadata before mutation, and Upsert persists before updating active state. Authored direct-owner seven tests plus three new Production AppHost cases (six total) with Native A/B/issuer/logout/restart and rollback readers. Old public FFI/default dependencies and non-desktop authority remain open. Test authorship and previous run 41438907013 failure do not grant execution/acceptance; verify containing H independently. Backend PR137 draft/read-only; no production afterId=0 acceptance.\nNMR-36: Host first-statement admission rejects either explicit legacy client/self-id (including zero) before file/network/runtime effects, removes old provider registration; original camelCase fields and C ABI symbols/errors remain. Four new FFI tests plus six Host tests are authored, not yet executed at containing H. No user data migration/deletion and no claim about unconditional Telegram dependencies, direct old-client FFI exports or packaged external callers. Round15 NMR-34/35 have successful exact98/run41443460672 evidence; any future-H code requires its own test execution.\nRound20: preserve prior historical target_commit/workflow fields. At exact151/run41465224038 Human33/Agent4/private3, AppHost12/proxy48 repeats48 all6 permutations, Native6, FeatureHost7, Host6, ABI7, CLI3, UI16 and Electron metadata15 actually passed. Gateway executable4/5 failed due shared persistent fixture file (TEST_FLAW), and historical installer metadata experiment failed due compressed map byte comparison (IMPLEMENTATION_DEFECT). Existing post-staple verifier now compares bounded decompressed blockmap content; receipts hash actual sidecars, metadata18 authored. Existing gateway approval fixtures use isolated real persistence, duplicate/reopen/independent-store oracles; production default unchanged. Required containing-H gates include gateway executable5/lib9, DNS6 future_salts2 protocol122 TCP9 proxy4 native credential1 actual package-copy4+2 negatives, Electron build and immutable historical DMG test. Prior failures/skips not passes. Evidence projects/telegram-desktop-rust/evidence/round20-blockmap-gateway-recovery.json. No source/legal or independent acceptance promotion. Round21 adds only an independently scoped Electron update source responsibility and new Actions checks; source/product completeness remains unaccepted. Round22 original exact8f shipping11/122/9/copy4 and reconciliation33/4/3 successful after target runner cancellation was recovered. New positive-format mismatching AppHost hash negative authored at 5d271ff0c03d8f01368ca44026d14cd7519ad6bd requires containing-H execution. Full signed package and independent ACCEPT still blocked."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -50746,12 +50749,19 @@
         "service:source/electron-main/update/sand-update-service.ts@1c31680d5b14dd4eae6b7fdb96245701536794fa",
         "composition:source/electron-main/production-binding-providers.ts@6cb54a6178cca81b9324df18aeb123915c7af38c",
         "wiring:source/electron-main/update/update-wiring.ts@dde9a06f4c79c21e4257296c15c62e3e3ceacd7d",
-        "evidence:projects/telegram-desktop-rust/evidence/round21-update-source-authority.json"
+        "evidence:projects/telegram-desktop-rust/evidence/round21-update-source-authority.json",
+        "authored-code-commit:5d271ff0c03d8f01368ca44026d14cd7519ad6bd",
+        "source:source/electron-main/update/win32-installer.ts@e975f9bafde36000ee9b47b25039c49f32089c5c",
+        "test:source/electron-main/update/windows-publisher.contract.test.mjs@ef45a2678c9252435b79946d9719caa979d7ecc8",
+        "test:source/electron-main/update/windows-publisher.native.test.mjs@9b867f9ccd5da94a93a24f04f964be289062ce0c",
+        "evidence:projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json"
       ],
       "test_evidence": [
-        "authored-not-run:source/electron-main/update/update-source.contract.test.mjs@bf17bf7b3f6aa964aafff1d5eeba204d12d51315:16 controlled-port cases; exact containing-H Actions pending"
+        "authored-not-run:source/electron-main/update/update-source.contract.test.mjs@bf17bf7b3f6aa964aafff1d5eeba204d12d51315:16 controlled-port cases; exact containing-H Actions pending",
+        "exact-base:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:attempt1:electron125384978181:16 update-source pass; no Windows publisher test in base",
+        "authored-not-run:5d271ff0c03d8f01368ca44026d14cd7519ad6bd:windows-publisher.contract.test.mjs 28; windows-publisher.native.test.mjs 11; real-AppHost well-formed unequal hash negative"
       ],
-      "target_commit": "52ba898107642db27c87a354687c2c6eb0456054",
+      "target_commit": "5d271ff0c03d8f01368ca44026d14cd7519ad6bd",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -50800,7 +50810,8 @@
       "ui_acceptance_scenarios": [
         "Missing source displays deterministic disabled message",
         "Invalid source displays deterministic disabled message",
-        "Approved source uses current Settings and updater state transitions"
+        "Approved source uses current Settings and updater state transitions",
+        "Windows publisher unconfigured and invalid status in existing Settings panel"
       ],
       "design_system_version": "Existing Fabushi Settings canonical design; no new tokens.",
       "semantic_token_usage": [],
@@ -50841,7 +50852,13 @@
         "EUS-06",
         "AC-14",
         "AC-19",
-        "AC-21"
+        "AC-21",
+        "EUS-WIN-01",
+        "EUS-WIN-02",
+        "EUS-WIN-03",
+        "EUS-WIN-04",
+        "EUS-WIN-05",
+        "EUS-WIN-06"
       ],
       "oracle_ids": [
         "EUS-01",
@@ -50849,31 +50866,47 @@
         "EUS-03",
         "EUS-04",
         "EUS-05",
-        "EUS-06"
+        "EUS-06",
+        "EUS-WIN-01",
+        "EUS-WIN-02",
+        "EUS-WIN-03",
+        "EUS-WIN-04",
+        "EUS-WIN-05",
+        "EUS-WIN-06"
       ],
       "invariant_ids": [
         "CSI-R1",
         "CSI-R3",
         "CSI-R5",
-        "CSI-R6"
+        "CSI-R6",
+        "EUS-WIN-NO-IMPLICIT-PUBLISHER",
+        "EUS-WIN-CERT-SUBJECT-AND-DER-SHA256",
+        "EUS-WIN-VERIFY-EXACT-BYTES",
+        "EUS-WIN-MARKER-RECOVERY"
       ],
       "unit_case_ids": [],
       "property_state_case_ids": [
         "source/electron-main/update/update-source.contract.test.mjs#EUS-03 source gate",
-        "source/electron-main/update/update-source.contract.test.mjs#EUS-04 marker restart"
+        "source/electron-main/update/update-source.contract.test.mjs#EUS-04 marker restart",
+        "source/electron-main/update/windows-publisher.contract.test.mjs#EUS-WIN-01..05 immutable policy, byte receipt, marker recovery"
       ],
       "contract_case_ids": [
-        "source/electron-main/update/update-source.contract.test.mjs#EUS-01..06 all 16 focused behavioral cases"
+        "source/electron-main/update/update-source.contract.test.mjs#EUS-01..06 all 16 focused behavioral cases",
+        "source/electron-main/update/windows-publisher.contract.test.mjs#28 controlled behavioral tests, not-run at authoring H",
+        "source/electron-main/update/windows-publisher.native.test.mjs#11 native Windows API cases, not-run at authoring H"
       ],
       "integration_case_ids": [
-        "source/electron-main/update/update-source.contract.test.mjs#existing production wiring and Settings projection"
+        "source/electron-main/update/update-source.contract.test.mjs#existing production wiring and Settings projection",
+        "EUS-WIN existing Windows main-process wiring -> service -> installer -> Settings/marker state"
       ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [
-        "source/electron-main/update/update-source.contract.test.mjs#startup/periodic abort restart"
+        "source/electron-main/update/update-source.contract.test.mjs#startup/periodic abort restart",
+        "EUS-WIN byte mutation after signature probe; one-use receipt; restart apply marker"
       ],
       "fault_recovery_case_ids": [
-        "source/electron-main/update/update-source.contract.test.mjs#persisted marker restart; malformed source; cancel/dispose"
+        "source/electron-main/update/update-source.contract.test.mjs#persisted marker restart; malformed source; cancel/dispose",
+        "EUS-WIN unsigned/unapproved/publisher-rotation failures and staged-candidate recovery"
       ],
       "ui_functional_case_ids": [
         "source/electron-main/update/update-source.contract.test.mjs#existing Settings projection helper"
@@ -50883,7 +50916,8 @@
       "performance_case_ids": [],
       "soak_case_ids": [],
       "security_case_ids": [
-        "source/electron-main/update/update-source.contract.test.mjs#unapproved origins no-fetch; credential/query/fragment; redirect refusal"
+        "source/electron-main/update/update-source.contract.test.mjs#unapproved origins no-fetch; credential/query/fragment; redirect refusal",
+        "EUS-WIN no Anysphere/default, exact subject+DER SHA256, signature validity, Windows API Unicode CP437"
       ],
       "regression_ids": [
         "source/electron-main/update/update-source.contract.test.mjs#approved 204, staged signed-verify owner and marker recovery"
@@ -50900,16 +50934,19 @@
       ],
       "test_environment_ids": [
         ".github/workflows/native-service-contracts.yml#native-message-electron:Node24:Ubuntu-24.04:exact-H",
-        ".github/workflows/native-service-contracts.yml#native-message-ui:Node24:Ubuntu-24.04:exact-H"
+        ".github/workflows/native-service-contracts.yml#native-message-ui:Node24:Ubuntu-24.04:exact-H",
+        ".github/workflows/native-service-contracts.yml#windows-update-publisher:windows-2025:CI-only certificate:exact-H"
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "unknown",
-      "test_execution_evidence": [],
+      "test_execution_evidence": [
+        "historical-only:8f089dd8640dacb4ec39105aa6d43e4c547ac5a2:run41476964752:electron125384978181 success:source16 carrier10 auth8 fixture-copy3 metadata18"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
       "license_and_provenance": "Source identity is the fixed-U macOS packaged workflow as updater/release provenance context, not evidence that upstream code supplied Cursor's default feed. Recovered updater origin is the live Fabushi implementation; no upstream code copy or new license closure is claimed. Full source-review evidence is pending.",
       "reviewer": null,
-      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open."
+      "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json."
     }
   ],
   "rebaseline_candidate": {

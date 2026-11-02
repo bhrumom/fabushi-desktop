@@ -3,7 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
-Current bounded refresh: round 21, inspected base `8ce0a9a43b7fe94df2ec2085399fe65a57343577`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older captures below are historical.
+Current bounded refresh: round 22, inspected base `8ce0a9a43b7fe94df2ec2085399fe65a57343577`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older captures below are historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -13,6 +13,14 @@ PR state at capture: open, draft, base `main`, head `refactor/grok-018-architect
 This file records the current production owners that FBCP must absorb into. It is not an implementation-complete claim. Any later PR #20 HEAD invalidates the source conclusions below until this inventory is refreshed.
 
 ## Method
+
+### 2026-11-03 Windows updater publisher authority (round 22; narrow owner)
+
+At base `8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`, production main-process update wiring constructed the existing `SandWindowsInstaller` without a publisher override, accepting inherited Anysphere common names by default. Neither product metadata nor historical signer names establishes formal Fabushi publisher authority. The round-22 implementation at `5d271ff0c03d8f01368ca44026d14cd7519ad6bd` retains the existing `entry.ts` → production binding → `update-wiring.ts` → `SandUpdateService` → `win32-installer.ts` → apply-marker/Settings path; it removes the default, requires trusted `FABUSHI_WINDOWS_UPDATE_PUBLISHERS_JSON` exact certificate subject plus DER SHA-256, checks valid embedded Authenticode and candidate bytes, and consumes the launch receipt once. Missing/invalid policy disables updates; persistent data and staged failure recovery remain untouched. No new updater, identity owner, or renderer authorization surface is created.
+
+The `windows-publisher.contract.test.mjs` 28-case and `windows-publisher.native.test.mjs` 11-case suites plus valid-format wrong AppHost hash negative are **authored but not yet executed at the containing H**. The native suite uses an ephemeral CI-only signer and inert fixture; it is never proof of authorized Fabushi publication. Scope and exact base runs: `projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json`. Formal publisher approval, actual signed release, installation/rollback, asset provenance and independent ACCEPT remain unqualified.
+
+The generic social provider may still read/write outside Session/Transcript while recovered records participate in Host startup. Its specific producer/consumer and retained-data contracts must be fully traced before any change: no deletion of provider registration or data under this updater batch.
 
 ### 2026-11-02 Explicit Electron update source (round 21)
 

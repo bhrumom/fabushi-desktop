@@ -5,6 +5,19 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Updated: 2026-11-02
 
+## Round 22 — Windows publisher authorization (bounded; NOT release ACCEPT)
+
+Authority: `docs/specs/electron-update-source-authority.md` EUS-WIN-01–06. Implementation source commit `5d271ff0c03d8f01368ca44026d14cd7519ad6bd` (parent `8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`); evidence: `projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json`. No formal publisher identity is assumed. The existing Windows installer now requires exact main-process-configured subject **and** certificate DER SHA-256 with a valid embedded Authenticode signature, checks candidate bytes before launch, and retains the existing Settings/apply-marker recovery owners.
+
+| Requirement / oracle | Production owner and authored behavior | Exact-H evidence and non-acceptance |
+| --- | --- | --- |
+| EUS-WIN-01/02 | `win32-installer.ts` fail-closed immutable policy and Windows native Authenticode subject+DER hash | Historical Anysphere defaults removed; 28 focused behavior tests authored, new H execution pending |
+| EUS-WIN-03/04 | `update-wiring.ts` → `sand-update-service.ts` admission plus verify/one-use install and byte digest comparison | 11 real Windows API/CI-only ephemeral certificate contracts authored, new H execution pending; real publisher approval and signed product pending |
+| EUS-WIN-05/06 | Existing IPC/Settings messages, telemetry, marker settlement, error and restart paths | No marker schema/user-data removal; real install/upgrade/rollback, release certificate provenance and independent ACCEPT blocked |
+| NMR-40 negative expansion | Existing AppHost resource-copy Actions gate rejects missing source, invalid syntax, and a *valid 64-hex but unequal* hash | On exact `8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`, only missing binary / invalid-format negative executed. New well-formed mismatch authored in `5d271ff0c03d8f01368ca44026d14cd7519ad6bd` and must pass at its containing H. |
+
+Historical base `8f089dd8640dacb4ec39105aa6d43e4c547ac5a2` run [41476964752](https://github.com/bhrumom/fabushi-desktop/actions/runs/41476964752) is completed/success on attempt 2: shipping job125384977191 gateway library11 / protocol122 / TCP9 / copy4 (3 fixtures + actual built Darwin AppHost) passed; initial reconciliation job125384977860 had zero steps, no runner and was cancelled, while recovery job125394283462 passed Human33/Agent4/private3. UI16 and Electron update-source16/carrier10/auth8/copy3/metadata18 passed. This is **historical exact-base evidence**, not proof of new Windows code. Full signed package/source/legal/Backend PR137/independent ACCEPT remain blocked. The canonical ledger is updated without inventing a second responsibility or accepting unread sources.
+
 ## Round 21 explicit update source and exact-H evidence
 
 Authority: `docs/specs/electron-update-source-authority.md` EUS-01–06 and

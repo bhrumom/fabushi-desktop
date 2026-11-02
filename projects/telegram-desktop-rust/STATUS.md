@@ -1,9 +1,17 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-Date: 2026-11-02  
+Date: 2026-11-03  
 Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Parent: FBCP-001 Revision 8  
 Complete: false
+
+## Current bounded batch (round 22): Windows publisher trust and exact-base recovery
+
+Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; base H=`8f089dd8640dacb4ec39105aa6d43e4c547ac5a2`; staged round-22 code commit `5d271ff0c03d8f01368ca44026d14cd7519ad6bd`, parent exactly base. Production Windows updater no longer trusts historical Anysphere signers implicitly. Only explicit approved main-process policy with exact signer subject and certificate SHA-256 can authorize an embedded Authenticode candidate; installer bytes are rechecked, permission is single-use, and the existing marker, settings, staged recovery and user data are preserved. 28 controlled behavior tests, 11 native Windows/ephemeral CI fixture cases and a well-formed unequal AppHost digest negative are **authored, not yet executed at new H**. Formal Fabushi certificate identity has not been provided or guessed.
+
+At original exact H run41476964752 completed/success after one cancelled unassigned reconciliation and targeted recovery: shipping job125384977191 passed gateway library11, protocol122, TCP9 and actual AppHost resource copy4 (three fixtures plus real Darwin binary); missing-binary and invalid-format hash negatives rejected. New valid-format unequal-hash negative is not covered by this old H. Reconciliation attempt2 job125394283462 passed Human33/Agent4/private3; UI16 and Electron update-source16/carrier10/auth8/copy3/metadata18 passed. Failed unassigned job125384977860 had no steps/runner, not an implementation/oracle failure. Exact run and artifact digests: `projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json`.
+
+Backend PR #137 is open/draft at `06047d3ea69313ec4cfec58bbee36a7afc9cf007`, unmerged with zero reviews; no merge/deploy performed and production Worker provenance/afterId=0 authenticated paging remain open. Generic social provider/Host durable recovery authority remains to be audited before removal. Fixed-source 16381 identities / 184 canonical responsibilities have not been falsely promoted: unknown/unread undetermined and full source/legal/packaged acceptance, Bot regressions, performance/soak, signed platform upgrades/rollback and independent ACCEPT are **NOT ACCEPTED**.
 
 ## Current bounded batch (round 21): explicit approved Electron update source
 

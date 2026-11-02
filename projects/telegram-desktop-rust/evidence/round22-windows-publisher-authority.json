@@ -1,0 +1,175 @@
+{
+  "schema": "FBCP/TDRP round evidence - actual vs authored vs acceptance",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 22,
+  "status": "implemented-pending-exact-H-validation; whole-product NOT_ACCEPTED",
+  "fixed_upstream_U": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "checkpoint_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "reviewed_base_H": "8f089dd8640dacb4ec39105aa6d43e4c547ac5a2",
+  "code_commit": "5d271ff0c03d8f01368ca44026d14cd7519ad6bd",
+  "code_tree": "970c127c1e3ddb3888c15c4fe1ade4569062e946",
+  "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "dates": {
+    "observation_utc": "2026-11-02",
+    "spec_asia_shanghai": "2026-11-03"
+  },
+  "original_actions": {
+    "run": 41476964752,
+    "head_sha": "8f089dd8640dacb4ec39105aa6d43e4c547ac5a2",
+    "final_status": "completed",
+    "final_conclusion": "success",
+    "run_attempt": 2,
+    "attempt1": {
+      "shipping": {
+        "job_id": 125384977191,
+        "conclusion": "success",
+        "runner": "macos-15",
+        "actual_counts": {
+          "gateway_library": 11,
+          "telegram_protocol": 122,
+          "tcp_including_live": 9,
+          "actual_AppHost_copy_suite": 4,
+          "copy_suite_scope": "3 fixtures plus actual-built Darwin AppHost",
+          "negative_missing_binary": "rejected",
+          "negative_invalid_hash_format": "rejected"
+        },
+        "artifact": {
+          "id": 13159025871,
+          "digest": "sha256:515210d9cd858f0348b3b1cab22b99eade3db56e34c0ea70b8db98624e64d855"
+        }
+      },
+      "reconciliation": {
+        "job_id": 125384977860,
+        "conclusion": "cancelled",
+        "runner_assigned": false,
+        "steps": 0,
+        "log": "404 BlobNotFound, root cause unproven"
+      },
+      "ui": {
+        "job_id": 125384977592,
+        "conclusion": "success",
+        "actual_tests": 16,
+        "artifact": {
+          "id": 13158590334,
+          "digest": "sha256:6a4374a32b0d421a072c5845efaf45e5405fa59c30efe44f00edd401ae2235f2"
+        }
+      },
+      "electron": {
+        "job_id": 125384978181,
+        "conclusion": "success",
+        "actual_counts": {
+          "update_source": 16,
+          "carrier": 10,
+          "auth": 8,
+          "fixture_resource_copy": 3,
+          "metadata": 18
+        },
+        "artifact": {
+          "id": 13158380885,
+          "digest": "sha256:1c5f53ccf178625283751afda80fb671de3442a7ed39ac720e0500955a65a763"
+        }
+      }
+    },
+    "attempt2": {
+      "reconciliation": {
+        "job_id": 125394283462,
+        "conclusion": "success",
+        "actual_counts": {
+          "human": 33,
+          "agent_nonce": 4,
+          "private_credential_settlement": 3
+        },
+        "artifact": {
+          "id": 13160251081,
+          "digest": "sha256:f1de0dfb3186bcf069489687bc0bfa302165e5d92b7595f5ba3ca38488d13fca"
+        }
+      }
+    },
+    "sources": {
+      "run": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41476964752",
+      "shipping_log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125384977191/logs",
+      "reconciliation_log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125394283462/logs"
+    }
+  },
+  "production_batch": {
+    "spec": "docs/specs/electron-update-source-authority.md#round-22--windows-publisher-authority-2026-11-03-asiashanghai",
+    "existing_owner_chain": "Electron entry -> production binding -> update-wiring -> SandUpdateService -> existing SandWindowsInstaller -> Settings status / persisted apply marker",
+    "required_config": "FABUSHI_WINDOWS_UPDATE_PUBLISHERS_JSON: approved exact X.509 subject AND certificate DER SHA-256, main-process startup only",
+    "default_historical_trust_removed": [
+      "Anysphere, Inc.",
+      "Anysphere"
+    ],
+    "formal_fabushi_publisher_authorized": false,
+    "changed_source": [
+      "source/electron-main/update/win32-installer.ts",
+      "source/electron-main/update/update-wiring.ts",
+      "source/electron-main/update/sand-update-service.ts",
+      "source/electron-main/update/update-telemetry.ts",
+      "source/electron-main/update/update-source.contract.test.mjs",
+      "frontend/src/recovered/contracts/desktop-bridge.ts",
+      "frontend/src/recovered/features/settings/overlay/updates.ts",
+      ".github/workflows/native-service-contracts.yml"
+    ],
+    "new_tests": {
+      "controlled_behavior": {
+        "path": "source/electron-main/update/windows-publisher.contract.test.mjs",
+        "authored_count": 28,
+        "executed_at_new_H": false
+      },
+      "native_windows_API": {
+        "path": "source/electron-main/update/windows-publisher.native.test.mjs",
+        "authored_count": 11,
+        "executed_at_new_H": false,
+        "fixture_scope": "ephemeral CI-only Authenticode certificate, inert signed executable, Unicode/CP437 real API; no publisher authorization"
+      },
+      "well_formed_mismatched_AppHost_hash": {
+        "path": ".github/workflows/native-service-contracts.yml#Copy the actual AppHost into its package resource slot",
+        "authored": true,
+        "executed_at_new_H": false
+      }
+    },
+    "preserved": "Existing settings, apply-marker, rollback readers, staged-candidate recovery and user data untouched; no parallel updater or new publisher identity",
+    "source_audit": {
+      "risk": "critical",
+      "depth": "selected live updater and Windows source boundaries only; full upstream/source/legal review not closed",
+      "fixed_source_record": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+    }
+  },
+  "related_authority": {
+    "backend_PR_137": {
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "base": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open/draft",
+      "merged": false,
+      "reviews": 0,
+      "authorization_to_merge_or_deploy": false,
+      "production_afterId0_evidence": "missing",
+      "changed": false
+    },
+    "human_social_provider": {
+      "observation": "generic social provider may bypass Session/Transcript; pending durable records participate in Host startup recovery",
+      "disposition": "investigate actual callers/authority before any removal; preserve registration, data and rollback",
+      "verified_as_closed": false
+    }
+  },
+  "required_release_blockers": [
+    "authorized Fabushi Windows publisher subject+certificate pin and rotation approval",
+    "authentic Fabushi signed Windows installer/upgrade/rollback and native platform acceptance",
+    "actual supported-platform signed package and artifact provenance",
+    "explicit authorized update service/deployment and asset provenance",
+    "complete fixed-U recursive source/dependency/generated/resources/legal disposition",
+    "full applicable production functionality and legacy social-provider ownership closure",
+    "real production Backend afterId=0 authenticated paging and recovery",
+    "full Bot regression, accessibility/UI, security/soak, independent ACCEPT"
+  ],
+  "canonical_accounting": {
+    "source_entries_total": 16381,
+    "responsibilities_total": 184,
+    "unknown": null,
+    "unread": null,
+    "omitted": 0,
+    "source_acceptance": false,
+    "independent_ACCEPT": false
+  }
+}
