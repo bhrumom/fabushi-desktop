@@ -1838,7 +1838,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
           PY
-      - name: Test portable recovery, Memory safety and roster search on the existing Linux Host cache
+      - name: Test portable recovery, Memory, roster and Session claim controls on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         timeout-minutes: 15
@@ -1889,6 +1889,13 @@ jobs:
               "source/host/tests/memory_service_contract.rs",
               "source/host/tests/memory_synthesis_store_contract.rs",
               "source/host/tests/memory_synthesis_service_contract.rs",
+              "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md",
+              "source/host/src/extensions/session/session_conversation_state.rs",
+              "source/host/src/extensions/session/agent_db.rs",
+              "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
+              "source/host/src/transcript_mutation_events.rs",
+              "source/host/tests/openclaw_sessions_and_config_contract.rs",
+              "source/host/tests/agent_to_agent_messaging_contract.rs",
           ]
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
@@ -1956,6 +1963,25 @@ jobs:
               "matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes",
           )]
           sse_filter = "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+          claim_integration = base + ["--no-fail-fast", "--test", "openclaw_sessions_and_config_contract", "--test", "agent_to_agent_messaging_contract"]
+          required_claim_integration = [
+              "test_ocrm_session_o03_conversation_turn_correlation",
+              "session_turn_claim_settlement::released_claim_cannot_settle_successor",
+              "session_turn_claim_settlement::cancelled_claim_cannot_settle_reused_turn",
+              "session_turn_claim_settlement::private_claim_identity_survives_payload_mutation_and_rejects_wrong_agent",
+              "session_turn_claim_settlement::clones_share_single_use_authority_and_drop_retains_custody",
+              "inbound_reply_commit_preserves_reentrant_replacement_claim",
+              "inbound_turn_claim_is_released_on_refusal_or_duplicate_and_completed_only_after_commit",
+              "inbound_turn_completion_precedes_partner_bookkeeping",
+              "legacy_inbound_uses_occupied_physical_ids_and_preserves_no_admission_compatibility",
+          ]
+          fresh_filter = "extensions::session::agent_db::fresh_append_tests"
+          required_fresh = [fresh_filter + "::" + name for name in (
+              "fresh_commit_failure_is_typed_unknown_and_does_not_replay_or_publish",
+              "fresh_insert_and_commit_failures_retire_an_unclean_connection",
+              "actual_agent_inbound_commit_unknown_retains_reply_claim_without_side_effects",
+              "actual_agent_inbound_rollback_unknown_retires_owner_and_retains_reply_claim",
+          )]
           cases = [
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
               ("checked-store", base + ["--lib", store_filter, "--", "--test-threads=1"], required_store),
@@ -1964,9 +1990,12 @@ jobs:
                   "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
                   "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
               ]),
+              ("session-claim-integration", claim_integration + ["--", "--test-threads=1"], required_claim_integration),
+              ("session-claim-commit-custody", base + ["--lib", fresh_filter, "--", "--test-threads=1"], required_fresh),
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/RSU-v1/MWR-v1", "subject_commit": head,
+              "additional_contracts": ["SCP-CLAIM-v1"],
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -1975,7 +2004,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. Cloud-agent checks remain source-wiring only. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks remain source-wiring only. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
