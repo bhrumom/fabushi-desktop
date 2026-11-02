@@ -190,3 +190,19 @@ older MURL base. Merge source/tests and the shared workflow/ledger/RTM with
 both sets of invariants and named positives. Freeze the integrated tree for
 fresh source review; neither previous source approval nor parent Actions is
 an executable verdict for that new tree.
+
+MURL-CI-01 — **FIX / TEST_FLAW (workflow admission)**.
+H `181cf49d4e14f08c1fc5daa9587928164ad09a12` was pushed and all ten changed
+file bodies/commit/tree were read back. Runtime run `41526525909` failed at
+workflow admission with zero jobs; no MURL test executed there. Both new media
+step environment maps contain `NO_PROXY` and `no_proxy`. The Actions template
+reader uses case-insensitive mapping-key uniqueness (official `actions/runner`
+`TemplateReader.cs` blob `b4af6d2fb1bd110b6ee31201a7c272329ab7704b`), so this
+pair is invalid. The run API exposes no parser annotation; the source diagnosis
+must be confirmed by successful admission of the corrected workflow.
+Keep `NO_PROXY` in each step's YAML environment, and export lowercase
+`no_proxy="$NO_PROXY"` inside its Bash process. This retains both process
+variables and the loopback-only proxy exclusion while removing the duplicate
+template key. Preserve every command, assertion, required positive and evidence
+gate. Retain the failed run; freeze/review/push the two-path repair and require
+new exact-H Actions. No local parser or executable validation is permitted.

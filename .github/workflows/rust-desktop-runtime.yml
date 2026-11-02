@@ -378,9 +378,9 @@ jobs:
         shell: bash
         env:
           NO_PROXY: 127.0.0.1,localhost,::1
-          no_proxy: 127.0.0.1,localhost,::1
         run: |
           set -euo pipefail
+          export no_proxy="$NO_PROXY"
           source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
           run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract
           run_recovery_check media-input-url-projection cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact
@@ -1394,9 +1394,9 @@ jobs:
         shell: bash
         env:
           NO_PROXY: 127.0.0.1,localhost,::1
-          no_proxy: 127.0.0.1,localhost,::1
         run: |
           set -euo pipefail
+          export no_proxy="$NO_PROXY"
           mkdir -p .evidence/sqlite-native-path/media-input-policy
           command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract)
           projection_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact)
