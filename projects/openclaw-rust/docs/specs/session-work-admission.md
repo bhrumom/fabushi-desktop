@@ -818,8 +818,9 @@ The existing Session/AgentDb/AgentStore owners retain their boundaries:
 - Existing production agent databases open without seeding absent metadata.
   New-session materialization already writes initialized metadata. A checked
   recovery read must consume one durable metadata image, require its object
-  and canonical agent identity, and distinguish its explicit empty root string
-  from absent, null, wrong-typed or malformed metadata/root state. Invalid
+  and canonical agent identity, and distinguish its explicit empty root string (including the retained
+  whitespace normalization) from absent, null, wrong-typed or malformed
+  metadata/root state. Invalid
   metadata is rejected before profile/settings repair, maintenance or caching.
   The referenced checkpoint is also validated before pending media, profile
   or memory recovery can mutate files, journals or admission state.
@@ -880,6 +881,91 @@ This bounded contract does not add a Runner checkpoint load/claim/settle API,
 bind upgrade markers to the original stream/model/generation, or authorize
 replaying effects with unknown results. Those process-restart responsibilities
 and the full OCRM G01–G12/AC01–AC24 matrix remain open.
+
+## Canonical checkpoint readiness — CKR-v1, 2026-11-02
+
+This necessary Runner recovery prerequisite uses the existing
+`ProductionSessionWorkers` / `SandAgentDb` / `ProductionAgentStore` and blob
+worker. At base `3aa679586d76e446f76a1c94700ff7abab623d42`, Session open ignores
+the legacy reset boolean and canonical consumers turn an unavailable checkpoint
+into empty bytes. A damaged persisted root can therefore look like a new
+conversation. Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+This slice adds no provider disk-resume ingress, PARK state, store, schema or
+Agent loop, and does not establish full restart acceptance.
+
+- `CKR-01`: Existing-agent DB open must not seed absent metadata. A checked
+  root read rejects absent/malformed metadata, missing or non-string root,
+  unavailable owner or invalid hex, and checks canonical agent identity in the
+  same metadata image. Preserve hex case and whitespace around a nonempty
+  ID without UTF-8 slicing panics. An empty root after the existing whitespace normalization is `None`;
+  whitespace-only strings still cannot authorize an empty-base CAS. Nonempty
+  accepted hex spellings compare decoded identity while preserving the raw
+  metadata race fence. Any nonempty fixed legacy ID that names
+  a readable zero-length protobuf is a distinct `Some` checkpoint.
+  Generic compatibility reads remain available. Both root CAS operations must
+  refuse a missing/non-string current field rather than coercing it to empty.
+- `CKR-02`: AgentStore returns a fallible root-and-bytes snapshot. Constructor
+  and legacy reset do not establish canonical authority. Checked reset alone
+  initializes from the strict DB root; failure retains a failed authority,
+  never a valid empty replacement. Publish a new Session AgentStore only after
+  checked initialization succeeds. Failed opens must remain repeatable failures.
+- `CKR-03`: A canonical checked snapshot confirms its captured root still
+  matches persisted metadata and a fresh read of its durable root bytes, checks
+  the existing protobuf projection, and checks nonempty identity, presence and
+  readability of the five required direct-reference groups: root prompts (1), todos (3), summary (6),
+  turns (8) and summary archives (13). Deduplicate reads without losing any
+  kind-specific maintenance bound. Preserve exact bytes and unknown fields.
+  Legacy fixed roots and references remain readable; neither length nor hash
+  can identify their addressing mode. New checkpoint writers still generate
+  SHA-256 IDs. This is bounded direct-reference availability, not full
+  child/schema/graph validation; plan, legacy archive, file-state and subagent graphs remain with
+  their current owners. Inline-subagent fallback stays compatible.
+- `CKR-04`: Keep expected-root initialization separate from child completeness.
+  Both existing checkpoint handlers require initialized expected-root authority
+  before blob I/O, preserve their protobuf-only payload acceptance and existing
+  DB CAS, and publish the exact successful root. A compatibility write may
+  contain missing children; canonical checked reads must then refuse it while
+  legacy hydration keeps its contract. Known non-commit preserves prior cache;
+  preflight refusal before any write preserves prior authority and is retryable
+  after explicit durable repair; uncertain persistence/commit leaves failed
+  authority until checked reset.
+- `CKR-05`: Use a nonblocking mutation-in-progress state under the existing
+  cache mutex for reset/write publication. Never hold that mutex or a new
+  blocking operation lock across blob/DB I/O or synchronous callbacks.
+  Reentrant checked mutation/read refuses promptly; legacy getters remain
+  readable and an overlapping legacy reset returns false without disturbing
+  the active operation. An unwind invalidates unfinished authority. A checked
+  snapshot must reject if cache identity changes or mutation starts while its
+  out-of-lock validation runs. Typed root-metadata mutation must invalidate
+  canonical cached authority when its binding changes.
+- `CKR-06`: Every DB-owner open/re-entry validates durable metadata and root
+  bytes before pending media/profile/memory recovery or file repair. Cached
+  AgentStore re-entry checks its durable snapshot before those effects.
+  Production preparation validates metadata before legacy root repair,
+  permits repair only for explicit empty root, and checks the resulting
+  canonical snapshot before readiness or root cleanup. The existing scanner
+  selects the candidate; the AgentStore-owned validator checks selected root
+  bytes and direct references before repair CAS. Preserve generation fencing
+  and existing turn/todo/summary size limits. No candidate or lost CAS is
+  `Ok(false)`; a selected missing/corrupt/unreadable candidate is `Err` without
+  root publication. Do not skip it to choose another candidate. Scanner-ignored
+  malformed orphans are not classified by this contract.
+- `CKR-07`: Host checkpoint-sink composition, watermark and prompt epoch, plus
+  both checkpoint sink prior-state comparisons, consume checked snapshots.
+  Only `Ok(None)` becomes empty initial bytes. The mirror commit uses the root
+  returned by the successful durable commit. Propagate errors before provider
+  execution; earlier attachment preparation is not claimed side-effect-free.
+
+Acceptance uses real materialization, owner/worker close and fresh Session
+owners, including valid empty/nonempty/unknown-field checkpoints; corrupt or
+missing metadata/root/blob/reference and read failures; repeated failed open;
+repair then retry; no canonical/transcript-mirror publication on refusal; and
+bounded reentrant callbacks. Keep lenient hydration/short-root compatibility
+tests, including three-byte and 32-byte fixed non-hash roots and references.
+Retain existing fixed-ID maintenance fixtures and their lifecycle/CAS assertions. Run affected compilation, owner/maintenance/composition contracts
+and existing recovery controls only in Actions at frozen H. No disk format
+changes or automatic corruption repair is introduced; rollback retains all
+bytes, failed-custody evidence and the existing source/acceptance gates.
 
 ## Failed Host takeover refusal — OCRM-HOST-TAKEOVER-REFUSAL-v1
 

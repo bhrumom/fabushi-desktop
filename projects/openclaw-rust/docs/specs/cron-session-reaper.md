@@ -184,6 +184,12 @@ ACK-05. The same batch therefore also repairs these existing owner boundaries:
   the Session callback once. Private guard helpers use that DB owner instead
   of re-locking public facades. Legacy transcript append uses the existing
   locked append seam; a card is acknowledged only after actual insertion.
+  A bound card whose ID already exists rolls back without changing guard
+  state, unread/activity state, write generation or notifications. Successful
+  atomic card publication releases the SQLite owner mutex before synchronous
+  listeners, so a listener can read that same committed owner. A bounded real
+  Runtime oracle covers both legacy/bound collision refusal and bound callback
+  reads; no cross-store rollback of earlier routine disablement is implied.
 - ACK-07: cron registration, plain and fenced terminal settlement, fence
   publication and projection must reach valid SQL in the existing `SandAgentDb`
   owner. Preserve all identity/lifecycle/running-state predicates, admission

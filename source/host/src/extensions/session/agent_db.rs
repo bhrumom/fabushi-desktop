@@ -61,6 +61,8 @@ pub enum AgentDbProjectionError {
     WorkAdmissionInvalid(String),
     #[error("latestRootBlobId hex is invalid: {0}")]
     LatestRootHex(String),
+    #[error("canonical Agent checkpoint root is invalid: {0}")]
+    CheckpointRootInvalid(String),
     #[error("agent db owner mutex poisoned")]
     OwnerPoisoned,
 }
@@ -412,6 +414,17 @@ impl SandAgentDb {
     }
 
     pub fn open_conversation_store(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        Self::open_with_options_and_seed(db_path, options, false)
+    }
+
+    /// Open an already materialized Agent without inventing missing metadata.
+    /// Canonical checkpoint consumers validate the persisted root explicitly.
+    pub fn open_existing_agent(
         db_path: impl AsRef<Path>,
         busy_timeout_ms: u64,
     ) -> Result<Self, AgentDbProjectionError> {
@@ -2073,6 +2086,66 @@ impl SandAgentDb {
         decode_hex(&root).map_err(AgentDbProjectionError::LatestRootHex)
     }
 
+    /// Canonical readiness distinguishes a persisted empty root from absent,
+    /// malformed or unavailable state. This read never seeds or repairs it.
+    pub fn read_checkpoint_root_checked(
+        &self,
+    ) -> Result<Option<Vec<u8>>, AgentDbProjectionError> {
+        self.read_checkpoint_root_with_identity_checked(None)
+    }
+
+    pub(crate) fn read_checkpoint_root_for_agent_checked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<Vec<u8>>, AgentDbProjectionError> {
+        self.read_checkpoint_root_with_identity_checked(Some(agent_id))
+    }
+
+    fn read_checkpoint_root_with_identity_checked(
+        &self,
+        expected_agent_id: Option<&str>,
+    ) -> Result<Option<Vec<u8>>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::CheckpointRootInvalid(
+                "database owner is closed".into(),
+            ));
+        }
+        let guard = self.connection.lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let db = guard.as_ref().ok_or_else(|| {
+            AgentDbProjectionError::CheckpointRootInvalid(
+                "database connection is unavailable".into(),
+            )
+        })?;
+        let raw = read_kv(db, "metadata")?.ok_or_else(|| {
+            AgentDbProjectionError::CheckpointRootInvalid(
+                "persisted metadata is missing".into(),
+            )
+        })?;
+        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        let metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+        if let Some(expected_agent_id) = expected_agent_id {
+            if metadata.get("agentId").and_then(serde_json::Value::as_str).map(str::trim)
+                != Some(expected_agent_id)
+            {
+                return Err(AgentDbProjectionError::CheckpointRootInvalid(
+                    "persisted metadata agent identity is missing or rebound".into(),
+                ));
+            }
+        }
+        let root = metadata.as_object()
+            .and_then(|object| object.get("latestRootBlobId"))
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| AgentDbProjectionError::CheckpointRootInvalid(
+                "persisted metadata requires a string latestRootBlobId".into(),
+            ))?;
+        let root = decode_hex(root).map_err(AgentDbProjectionError::LatestRootHex)?;
+        if root.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(root))
+    }
+
     pub fn serde_snapshot(&self) -> Result<AgentDbSerdeSnapshot, AgentDbProjectionError> {
         Ok(AgentDbSerdeSnapshot {
             profile: self.get_sand_profile()?,
@@ -3521,6 +3594,9 @@ impl SandAgentDb {
                 INSERT_TRANSCRIPT_ENTRY_SQL,
                 params![entry_id, entry.to_string()],
             )? > 0;
+            if !inserted {
+                return Ok((false, false));
+            }
             let spend_changed = if let Some(raw) = spend_guard_raw.as_deref() {
                 db.execute(SET_KV_SQL, params![KV_SPEND_GUARD, raw])? > 0
             } else {
@@ -3545,11 +3621,16 @@ impl SandAgentDb {
             Ok((inserted, spend_changed || legacy_changed || activity_changed))
         })();
         match result {
+            Ok((false, _)) => {
+                db.execute_batch("ROLLBACK")?;
+                Ok(false)
+            }
             Ok((inserted, metadata_changed)) => {
                 if let Err(error) = db.execute_batch("COMMIT") {
                     let _ = db.execute_batch("ROLLBACK");
                     return Err(error.into());
                 }
+                drop(guard);
                 if inserted || metadata_changed {
                     bump_db_write_generation(&self.db_path);
                 }

@@ -68,10 +68,133 @@ pub struct ProductionResolvedSubagentState {
     pub subagent_type: Option<Vec<u8>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionAgentCheckpointSnapshot {
+    pub root_blob_id: Vec<u8>,
+    pub checkpoint_bytes: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+enum CheckpointAuthority {
+    #[default]
+    Uninitialized,
+    Ready,
+    Failed(String),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 struct ProductionAgentCheckpointState {
     latest_root_blob_id: Vec<u8>,
     checkpoint_bytes: Option<Vec<u8>>,
+    authority: CheckpointAuthority,
+    mutation_in_progress: bool,
+    revision: u64,
+}
+
+impl ProductionAgentCheckpointState {
+    fn require_ready(&self) -> Result<(), String> {
+        if self.mutation_in_progress {
+            return Err("production AgentStore checkpoint mutation is in progress".into());
+        }
+        match &self.authority {
+            CheckpointAuthority::Ready => Ok(()),
+            CheckpointAuthority::Uninitialized => {
+                Err("production AgentStore checkpoint authority is uninitialized".into())
+            }
+            CheckpointAuthority::Failed(error) => Err(format!(
+                "production AgentStore checkpoint authority failed: {error}"
+            )),
+        }
+    }
+
+    fn snapshot(&self) -> Result<Option<ProductionAgentCheckpointSnapshot>, String> {
+        match (&self.latest_root_blob_id[..], &self.checkpoint_bytes) {
+            ([], None) => Ok(None),
+            (root, Some(bytes)) if !root.is_empty() => {
+                Ok(Some(ProductionAgentCheckpointSnapshot {
+                    root_blob_id: root.to_vec(),
+                    checkpoint_bytes: bytes.clone(),
+                }))
+            }
+            _ => Err("production AgentStore checkpoint cache identity is inconsistent".into()),
+        }
+    }
+}
+
+enum CheckpointPublication {
+    Ready(Option<ProductionAgentCheckpointSnapshot>),
+    Legacy(Option<ProductionAgentCheckpointSnapshot>),
+    Preserve,
+    Failed(String),
+}
+
+/// An owner-local, nonblocking mutation claim. The cache mutex is released
+/// before worker/SQLite I/O, including synchronous metadata notifications.
+struct CheckpointMutation<'a> {
+    store: &'a ProductionAgentStore,
+    expected_root: Vec<u8>,
+    expected_snapshot: Option<ProductionAgentCheckpointSnapshot>,
+    revision: u64,
+    finished: bool,
+}
+
+impl CheckpointMutation<'_> {
+    fn finish(mut self, publication: CheckpointPublication) -> Result<(), String> {
+        let mut state = self.store.state.lock()
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
+        if !state.mutation_in_progress || state.revision != self.revision {
+            return Err("production AgentStore checkpoint mutation ownership changed".into());
+        }
+        match publication {
+            CheckpointPublication::Ready(snapshot) => {
+                install_checkpoint_snapshot(&mut state, snapshot);
+                state.authority = CheckpointAuthority::Ready;
+            }
+            CheckpointPublication::Legacy(snapshot) => {
+                install_checkpoint_snapshot(&mut state, snapshot);
+                state.authority = CheckpointAuthority::Uninitialized;
+            }
+            CheckpointPublication::Preserve => {}
+            CheckpointPublication::Failed(error) => {
+                state.authority = CheckpointAuthority::Failed(error);
+            }
+        }
+        state.mutation_in_progress = false;
+        self.finished = true;
+        Ok(())
+    }
+}
+
+impl Drop for CheckpointMutation<'_> {
+    fn drop(&mut self) {
+        if self.finished {
+            return;
+        }
+        if let Ok(mut state) = self.store.state.lock() {
+            if state.mutation_in_progress && state.revision == self.revision {
+                state.authority = CheckpointAuthority::Failed(
+                    "checkpoint mutation did not complete; checked reset is required".into(),
+                );
+                state.mutation_in_progress = false;
+            }
+        }
+    }
+}
+
+fn install_checkpoint_snapshot(
+    state: &mut ProductionAgentCheckpointState,
+    snapshot: Option<ProductionAgentCheckpointSnapshot>,
+) {
+    match snapshot {
+        Some(snapshot) => {
+            state.latest_root_blob_id = snapshot.root_blob_id;
+            state.checkpoint_bytes = Some(snapshot.checkpoint_bytes);
+        }
+        None => {
+            state.latest_root_blob_id.clear();
+            state.checkpoint_bytes = None;
+        }
+    }
 }
 
 /// Shipping Rust owner for the frozen AgentStore2 checkpoint boundary.
@@ -125,9 +248,33 @@ impl ProductionAgentStore {
         key: ProductionAgentMetadataKey,
         value: Value,
     ) -> Result<bool, String> {
-        self.db
-            .set_metadata(key.as_str(), value)
-            .map_err(|error| error.to_string())
+        if key != ProductionAgentMetadataKey::LatestRootBlobId {
+            return self.db
+                .set_metadata(key.as_str(), value)
+                .map_err(|error| error.to_string());
+        }
+
+        let mutation = self.begin_checkpoint_mutation(false)?;
+        let before = self.db.read_checkpoint_root_checked();
+        let result = self.db.set_metadata(key.as_str(), value)
+            .map_err(|error| error.to_string());
+        let after = self.db.read_checkpoint_root_checked();
+        let binding_unchanged = match (&before, &after) {
+            (Ok(before), Ok(after)) => {
+                before == after
+                    && after.as_deref().unwrap_or(&[]) == mutation.expected_root.as_slice()
+            }
+            _ => false,
+        };
+        let publication = if result.is_ok() && binding_unchanged {
+            CheckpointPublication::Preserve
+        } else {
+            CheckpointPublication::Failed(
+                "root metadata binding changed or is unavailable; checked reset is required".into(),
+            )
+        };
+        mutation.finish(publication)?;
+        result
     }
 
     pub fn get_metadata(
@@ -264,99 +411,46 @@ impl ProductionAgentStore {
         Ok((conversation_state, subagent_states))
     }
 
-    /// Frozen AgentStore2.tryResetFromDb semantics: bad metadata, missing blob,
-    /// or malformed protobuf resets the in-memory checkpoint and returns false.
-    pub fn try_reset_from_db(&self) -> bool {
-        let root = match self.db.get_latest_root_blob_id() {
-            Ok(root) => root,
-            Err(_) => {
-                self.clear_checkpoint();
-                return false;
-            }
-        };
-        if root.is_empty() {
-            self.clear_checkpoint();
-            return false;
-        }
-        let blob = match self.blob_store.get_blob_blocking(&root) {
-            Ok(Some(blob)) => blob,
-            _ => {
-                self.clear_checkpoint();
-                return false;
-            }
-        };
-        if decode_conversation_state_recovery_fields(&blob).is_err() {
-            self.clear_checkpoint();
-            return false;
-        }
-        if let Ok(mut state) = self.state.lock() {
-            state.latest_root_blob_id = root;
-            state.checkpoint_bytes = Some(blob);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Recover production state without treating unreadable durable history as
-    /// a new conversation. The legacy boolean reset above remains available
-    /// for callers whose contract deliberately clears state on failure.
-    pub fn reset_from_db_checked(&self) -> Result<bool, String> {
-        let previous = self
-            .state
-            .lock()
-            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?
-            .clone();
-        let checkpoint = Self::read_persisted_checkpoint_checked(
-            &self.db,
-            &self.blob_store,
-        )?;
-        let present = checkpoint.checkpoint_bytes.is_some();
-        let mut state = self
-            .state
-            .lock()
+    fn begin_checkpoint_mutation(
+        &self,
+        require_initialized: bool,
+    ) -> Result<CheckpointMutation<'_>, String> {
+        let mut state = self.state.lock()
             .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
-        if *state != previous {
-            return Err("production AgentStore checkpoint changed during checked reload".into());
+        if state.mutation_in_progress {
+            return Err("production AgentStore checkpoint mutation is in progress".into());
         }
-        *state = checkpoint;
-        Ok(present)
+        if require_initialized {
+            state.require_ready()?;
+            let _ = state.snapshot()?;
+        }
+        let revision = state.revision.checked_add(1)
+            .ok_or_else(|| "production AgentStore checkpoint revision exhausted".to_string())?;
+        let expected_snapshot = state.snapshot()?;
+        state.revision = revision;
+        state.mutation_in_progress = true;
+        Ok(CheckpointMutation {
+            store: self,
+            expected_root: state.latest_root_blob_id.clone(),
+            expected_snapshot,
+            revision,
+            finished: false,
+        })
     }
 
-    /// Read one raw metadata image. SandAgentDb's legacy metadata projection
-    /// supplies defaults for absent rows, so it cannot establish recovery
-    /// authority for the shipping owner.
-    fn persisted_root_blob_id_checked(
-        db: &SandAgentDb,
-        agent_id: &str,
-    ) -> Result<Vec<u8>, String> {
-        let raw = db
-            .read_kv("metadata")
-            .map_err(|error| format!("could not read production AgentStore metadata: {error}"))?
-            .ok_or_else(|| "production AgentStore metadata is missing".to_string())?;
-        let bytes = decode_checkpoint_hex(&raw)
-            .ok_or_else(|| "production AgentStore metadata is not valid hexadecimal".to_string())?;
-        let metadata: Value = serde_json::from_slice(&bytes)
-            .map_err(|error| format!("production AgentStore metadata is not valid JSON: {error}"))?;
-        let metadata = metadata
-            .as_object()
-            .ok_or_else(|| "production AgentStore metadata is not an object".to_string())?;
-        if metadata.get("agentId").and_then(Value::as_str).map(str::trim) != Some(agent_id) {
-            return Err("production AgentStore metadata agent identity is missing or rebound".into());
+    fn require_persisted_root(&self, expected_root: &[u8]) -> Result<(), String> {
+        let persisted = self.db.read_checkpoint_root_for_agent_checked(&self.agent_id)
+            .map_err(|error| format!("production AgentStore canonical root read failed: {error}"))?;
+        if persisted.as_deref().unwrap_or(&[]) != expected_root {
+            return Err(
+                "production AgentStore checkpoint root changed from its captured binding".into(),
+            );
         }
-        let root = metadata
-            .get("latestRootBlobId")
-            .and_then(Value::as_str)
-            .ok_or_else(|| "production AgentStore latestRootBlobId is missing or not a string".to_string())?;
-        if root.is_empty() {
-            return Ok(Vec::new());
-        }
-        let root = decode_checkpoint_hex(root)
-            .filter(|root| !root.is_empty())
-            .ok_or_else(|| "production AgentStore latestRootBlobId is not valid nonempty hexadecimal".to_string())?;
-        Ok(root)
+        Ok(())
     }
 
+    /// Validate durable state before any Session recovery side effects. Fixed
+    /// root/reference IDs are retained; new writers still content-address bytes.
     pub(super) fn validate_persisted_checkpoint_checked(
         db: &SandAgentDb,
         blob_store: &ProductionWorkerBlobStore,
@@ -364,42 +458,110 @@ impl ProductionAgentStore {
         Self::read_persisted_checkpoint_checked(db, blob_store).map(|_| ())
     }
 
-    /// Production re-entry may reuse a cache only while its durable root and
-    /// bytes still agree. Do not reload here: a competing commit may be
-    /// publishing its snapshot, and recovery must not overwrite that state.
-    pub(crate) fn validate_cached_checkpoint_checked(&self) -> Result<(), String> {
-        let persisted = Self::read_persisted_checkpoint_checked(&self.db, &self.blob_store)?;
-        let cached = self
-            .state
-            .lock()
-            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
-        if *cached != persisted {
-            return Err(
-                "production AgentStore durable checkpoint changed; checked reload is required"
-                    .into(),
-            );
-        }
-        Ok(())
-    }
-
     fn read_persisted_checkpoint_checked(
         db: &SandAgentDb,
         blob_store: &ProductionWorkerBlobStore,
-    ) -> Result<ProductionAgentCheckpointState, String> {
-        let root = Self::persisted_root_blob_id_checked(db, &blob_store.agent_id)?;
-        if root.is_empty() {
-            return Ok(ProductionAgentCheckpointState::default());
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, String> {
+        let read_root = || db.read_checkpoint_root_for_agent_checked(&blob_store.agent_id)
+            .map_err(|error| format!("production AgentStore canonical root read failed: {error}"));
+        let root = read_root()?;
+        let snapshot = match root.as_ref() {
+            Some(root_blob_id) => {
+                let checkpoint_bytes = blob_store.get_blob_blocking(root_blob_id)
+                    .map_err(|error| format!("could not read production AgentStore checkpoint: {error}"))?
+                    .ok_or_else(|| "production AgentStore checkpoint root blob is missing".to_string())?;
+                let snapshot = ProductionAgentCheckpointSnapshot {
+                    root_blob_id: root_blob_id.clone(), checkpoint_bytes,
+                };
+                decode_conversation_state_recovery_fields(&snapshot.checkpoint_bytes)
+                    .map_err(|error| format!("invalid production AgentStore checkpoint: {error}"))?;
+                Some(snapshot)
+            }
+            None => None,
+        };
+        if read_root()? != root {
+            return Err("production AgentStore root changed during durable validation".into());
         }
-        let bytes = blob_store
-            .get_blob_blocking(&root)
-            .map_err(|error| format!("could not read production AgentStore checkpoint: {error}"))?
-            .ok_or_else(|| "production AgentStore checkpoint root blob is missing".to_string())?;
-        decode_conversation_state_recovery_fields(&bytes)
-            .map_err(|error| format!("invalid production AgentStore checkpoint: {error}"))?;
-        Ok(ProductionAgentCheckpointState {
-            latest_root_blob_id: root,
-            checkpoint_bytes: Some(bytes),
-        })
+        Ok(snapshot)
+    }
+
+    /// Initialize canonical authority without replacing failed durable history
+    /// with an empty snapshot. Preserve the published boolean presence API.
+    pub fn reset_from_db_checked(&self) -> Result<bool, String> {
+        let mutation = self.begin_checkpoint_mutation(false)?;
+        let loaded = (|| {
+            let snapshot = Self::read_persisted_checkpoint_checked(&self.db, &self.blob_store)?;
+            if let Some(snapshot) = snapshot.as_ref() {
+                validate_canonical_checkpoint_snapshot(snapshot, |_, id| self.get_blob(id))?;
+            }
+            self.require_persisted_root(snapshot.as_ref().map(|value| value.root_blob_id.as_slice()).unwrap_or(&[]))?;
+            Ok::<_, String>(snapshot)
+        })();
+        match loaded {
+            Ok(snapshot) => {
+                let present = snapshot.is_some();
+                mutation.finish(CheckpointPublication::Ready(snapshot))?;
+                Ok(present)
+            }
+            Err(error) => {
+                mutation.finish(CheckpointPublication::Failed(error.clone()))?;
+                Err(error)
+            }
+        }
+    }
+
+    pub(crate) fn validate_cached_checkpoint_checked(&self) -> Result<(), String> {
+        self.checkpoint_snapshot_checked().map(|_| ())
+    }
+
+    /// Read one initialized cache image, then compare fresh durable root bytes
+    /// and direct references without holding its mutex across worker/DB I/O.
+    pub fn checkpoint_snapshot_checked(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, String> {
+        let (revision, snapshot) = {
+            let state = self.state.lock()
+                .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
+            state.require_ready()?;
+            (state.revision, state.snapshot()?)
+        };
+        let persisted = Self::read_persisted_checkpoint_checked(&self.db, &self.blob_store)?;
+        if persisted != snapshot {
+            return Err("production AgentStore durable checkpoint changed; checked reload is required".into());
+        }
+        if let Some(snapshot) = snapshot.as_ref() {
+            validate_canonical_checkpoint_snapshot(snapshot, |_, id| self.get_blob(id))?;
+        }
+        self.require_persisted_root(snapshot.as_ref().map(|value| value.root_blob_id.as_slice()).unwrap_or(&[]))?;
+        {
+            let state = self.state.lock()
+                .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
+            state.require_ready()?;
+            if state.revision != revision || state.snapshot()? != snapshot {
+                return Err("production AgentStore checkpoint cache changed during validation".into());
+            }
+        }
+        Ok(snapshot)
+    }
+
+    /// Frozen AgentStore2.tryResetFromDb semantics: bad metadata, missing blob,
+    /// or malformed protobuf resets the visible cache and returns false. This
+    /// lenient operation does not establish canonical expected-root authority.
+    pub fn try_reset_from_db(&self) -> bool {
+        let Ok(mutation) = self.begin_checkpoint_mutation(false) else {
+            return false;
+        };
+        let loaded = (|| {
+            let root_blob_id = self.db.get_latest_root_blob_id().ok()?;
+            if root_blob_id.is_empty() {
+                return None;
+            }
+            let checkpoint_bytes = self.blob_store.get_blob_blocking(&root_blob_id).ok()??;
+            decode_conversation_state_recovery_fields(&checkpoint_bytes).ok()?;
+            Some(ProductionAgentCheckpointSnapshot { root_blob_id, checkpoint_bytes })
+        })();
+        let restored = loaded.is_some();
+        mutation.finish(CheckpointPublication::Legacy(loaded)).is_ok() && restored
     }
 
     /// Frozen AgentStore2.handleCheckpoint semantics:
@@ -417,38 +579,7 @@ impl ProductionAgentStore {
         checkpoint: &[u8],
         message_id: &str,
     ) -> Result<Vec<u8>, String> {
-        decode_conversation_state_recovery_fields(checkpoint)
-            .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
-
-        let expected_root = self.latest_root_blob_id_checked()?;
-        self.validate_cached_checkpoint_checked()?;
-        let root_blob_id = Sha256::digest(checkpoint).to_vec();
-        self.blob_store
-            .set_blob_blocking(&root_blob_id, checkpoint)
-            .map_err(|error| error.to_string())?;
-
-        let confirmed = self
-            .db
-            .commit_checkpoint_root_and_confirm_user_message(
-                &expected_root,
-                &root_blob_id,
-                message_id,
-            )
-            .map_err(|error| error.to_string())?;
-        if confirmed.is_none() {
-            return Err(
-                "latestRootBlobId and confirmed user transcript entry were not committed atomically"
-                    .into(),
-            );
-        }
-
-        let mut state = self
-            .state
-            .lock()
-            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
-        state.latest_root_blob_id = root_blob_id.clone();
-        state.checkpoint_bytes = Some(checkpoint.to_vec());
-        Ok(root_blob_id)
+        self.commit_checkpoint_bytes(checkpoint, Some(message_id))
     }
 
     pub async fn handle_checkpoint_bytes_and_confirm_user_message_async(
@@ -466,33 +597,97 @@ impl ProductionAgentStore {
         &self,
         checkpoint: &[u8],
     ) -> Result<Vec<u8>, String> {
+        self.commit_checkpoint_bytes(checkpoint, None)
+    }
+
+    fn commit_checkpoint_bytes(
+        &self,
+        checkpoint: &[u8],
+        confirmed_message_id: Option<&str>,
+    ) -> Result<Vec<u8>, String> {
+        self.commit_checkpoint_bytes_before_write(checkpoint, confirmed_message_id, || {})
+    }
+
+    // The ordinary writer and deterministic fault controls share this exact
+    // prewrite boundary. No callback runs while the checkpoint mutex is held.
+    fn commit_checkpoint_bytes_before_write(
+        &self,
+        checkpoint: &[u8],
+        confirmed_message_id: Option<&str>,
+        before_write: impl FnOnce(),
+    ) -> Result<Vec<u8>, String> {
         decode_conversation_state_recovery_fields(checkpoint)
             .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
 
-        let expected_root = self.latest_root_blob_id_checked()?;
-        self.validate_cached_checkpoint_checked()?;
-        let root_blob_id = Sha256::digest(checkpoint).to_vec();
-        self.blob_store
-            .set_blob_blocking(&root_blob_id, checkpoint)
-            .map_err(|error| error.to_string())?;
-
-        let advanced = self
-            .db
-            .compare_and_set_latest_root_blob_id(&expected_root, &root_blob_id)
-            .map_err(|error| error.to_string())?;
-        if !advanced {
-            return Err(
-                "latestRootBlobId changed before checkpoint commit; stale owner rejected".into(),
-            );
+        // Initialization proves the expected CAS root, independently of child
+        // completeness. Compatibility payloads retain protobuf-only acceptance.
+        let mutation = self.begin_checkpoint_mutation(true)?;
+        // Refusal here precedes any blob/DB mutation. Explicit durable repair
+        // may retry against the retained cache without creating empty authority.
+        let preflight = Self::read_persisted_checkpoint_checked(&self.db, &self.blob_store);
+        let preflight_error = match preflight {
+            Ok(persisted) if persisted == mutation.expected_snapshot => None,
+            Ok(_) => Some("production AgentStore durable checkpoint changed; checked reload is required".to_string()),
+            Err(error) => Some(error),
+        };
+        if let Some(error) = preflight_error {
+            mutation.finish(CheckpointPublication::Preserve)?;
+            return Err(error);
         }
-
-        let mut state = self
-            .state
-            .lock()
-            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
-        state.latest_root_blob_id = root_blob_id.clone();
-        state.checkpoint_bytes = Some(checkpoint.to_vec());
-        Ok(root_blob_id)
+        before_write();
+        if let Err(error) = self.require_persisted_root(&mutation.expected_root) {
+            mutation.finish(CheckpointPublication::Preserve)?;
+            return Err(error);
+        }
+        let root_blob_id = Sha256::digest(checkpoint).to_vec();
+        let committed = (|| {
+            self.blob_store.set_blob_blocking(&root_blob_id, checkpoint)
+                .map_err(|error| error.to_string())?;
+            let committed = match confirmed_message_id {
+                Some(message_id) => self.db
+                    .commit_checkpoint_root_and_confirm_user_message(
+                        &mutation.expected_root,
+                        &root_blob_id,
+                        message_id,
+                    )
+                    .map(|confirmed| confirmed.is_some()),
+                None => self.db.compare_and_set_latest_root_blob_id(
+                    &mutation.expected_root,
+                    &root_blob_id,
+                ),
+            }
+            .map_err(|error| error.to_string())?;
+            if committed {
+                // SQLite listeners run synchronously before the commit API
+                // returns. Never publish a cache rebound by one of those calls.
+                self.require_persisted_root(&root_blob_id)?;
+            }
+            Ok::<_, String>(committed)
+        })();
+        match committed {
+            Ok(true) => {
+                mutation.finish(CheckpointPublication::Ready(Some(
+                    ProductionAgentCheckpointSnapshot {
+                        root_blob_id: root_blob_id.clone(),
+                        checkpoint_bytes: checkpoint.to_vec(),
+                    },
+                )))?;
+                Ok(root_blob_id)
+            }
+            Ok(false) => {
+                mutation.finish(CheckpointPublication::Preserve)?;
+                Err(if confirmed_message_id.is_some() {
+                    "latestRootBlobId and confirmed user transcript entry were not committed atomically"
+                        .into()
+                } else {
+                    "latestRootBlobId changed before checkpoint commit; stale owner rejected".into()
+                })
+            }
+            Err(error) => {
+                mutation.finish(CheckpointPublication::Failed(error.clone()))?;
+                Err(error)
+            }
+        }
     }
 
     pub async fn handle_checkpoint_bytes_async(
@@ -516,13 +711,6 @@ impl ProductionAgentStore {
             .unwrap_or_default()
     }
 
-    pub fn latest_root_blob_id_checked(&self) -> Result<Vec<u8>, String> {
-        self.state
-            .lock()
-            .map(|state| state.latest_root_blob_id.clone())
-            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())
-    }
-
     pub fn latest_checkpoint_bytes(&self) -> Option<Vec<u8>> {
         self.state
             .lock()
@@ -530,9 +718,16 @@ impl ProductionAgentStore {
             .and_then(|state| state.checkpoint_bytes.clone())
     }
 
+    /// Poison-aware legacy cache projections. They do not prove durable
+    /// readiness; production consumers use checkpoint_snapshot_checked.
+    pub fn latest_root_blob_id_checked(&self) -> Result<Vec<u8>, String> {
+        self.state.lock()
+            .map(|state| state.latest_root_blob_id.clone())
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())
+    }
+
     pub fn latest_checkpoint_bytes_checked(&self) -> Result<Option<Vec<u8>>, String> {
-        self.state
-            .lock()
+        self.state.lock()
             .map(|state| state.checkpoint_bytes.clone())
             .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())
     }
@@ -550,36 +745,129 @@ impl ProductionAgentStore {
         self.blob_store.flush_blocking();
     }
 
-    fn clear_checkpoint(&self) {
-        if let Ok(mut state) = self.state.lock() {
-            *state = ProductionAgentCheckpointState::default();
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CanonicalCheckpointReferenceKind {
+    RootPrompt,
+    Todo,
+    Summary,
+    Turn,
+    SummaryArchive,
+}
+
+impl CanonicalCheckpointReferenceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RootPrompt => "root prompt message",
+            Self::Todo => "todo",
+            Self::Summary => "summary",
+            Self::Turn => "conversation turn",
+            Self::SummaryArchive => "summary archive",
         }
     }
+
+    pub(crate) fn has_legacy_recovery_size_limit(self) -> bool {
+        matches!(self, Self::Todo | Self::Summary | Self::Turn)
+    }
+}
+
+/// CKR-v1's bounded root/direct-reference policy, shared by canonical owner
+/// reads and the existing explicit-empty-root repair before its metadata CAS.
+/// Unknown fields and other reference graphs retain their existing owners.
+pub(crate) fn validate_canonical_checkpoint_snapshot(
+    snapshot: &ProductionAgentCheckpointSnapshot,
+    mut read_reference: impl FnMut(
+        &[CanonicalCheckpointReferenceKind],
+        &[u8],
+    ) -> Result<Option<Vec<u8>>, String>,
+) -> Result<(), String> {
+    if snapshot.root_blob_id.is_empty() {
+        return Err("production AgentStore checkpoint root blob id must be nonempty".into());
+    }
+    let fields = decode_conversation_state_recovery_fields(&snapshot.checkpoint_bytes)
+        .map_err(|error| format!("invalid production AgentStore checkpoint: {error}"))?;
+    let mut references = BTreeMap::<Vec<u8>, Vec<CanonicalCheckpointReferenceKind>>::new();
+    for (kind, ids) in [
+        (CanonicalCheckpointReferenceKind::RootPrompt, fields.root_prompt_messages_json),
+        (CanonicalCheckpointReferenceKind::Todo, fields.todos),
+        (CanonicalCheckpointReferenceKind::Summary, fields.summary.into_iter().collect()),
+        (CanonicalCheckpointReferenceKind::Turn, fields.turns),
+        (CanonicalCheckpointReferenceKind::SummaryArchive, fields.summary_archives),
+    ] {
+        for id in ids {
+            if id.is_empty() {
+                return Err(format!(
+                    "canonical checkpoint {} blob reference must be nonempty",
+                    kind.label(),
+                ));
+            }
+            let kinds = references.entry(id).or_default();
+            if !kinds.contains(&kind) {
+                kinds.push(kind);
+            }
+        }
+    }
+    for (id, kinds) in references {
+        // Pass every kind to the reader: deduplication must not discard a
+        // stricter maintenance size bound when the same ID has several roles.
+        let _bytes = read_reference(&kinds, &id)?
+            .ok_or_else(|| format!(
+                "canonical checkpoint {} blob is missing",
+                kinds[0].label(),
+            ))?;
+    }
+    Ok(())
 }
 
 fn encode_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn decode_checkpoint_hex(value: &str) -> Option<Vec<u8>> {
-    let bytes = value.trim().as_bytes();
-    if bytes.len() % 2 != 0 {
-        return None;
-    }
-    bytes
-        .chunks_exact(2)
-        .map(|pair| {
-            let high = (pair[0] as char).to_digit(16)?;
-            let low = (pair[1] as char).to_digit(16)?;
-            Some(((high << 4) | low) as u8)
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod checked_state_tests {
     use super::*;
     use crate::extensions::session::production::ProductionSessionWorkers;
+
+    #[test]
+    fn final_prewrite_refusal_preserves_authority_for_retry_after_explicit_binding_repair() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-agent-store-prewrite-{}", uuid::Uuid::new_v4(),
+        ));
+        let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+        let session = workers.materialize_session_with_active(None, "user", None, None)
+            .expect("session");
+        session.db.append_transcript_entry(&serde_json::json!({
+            "id": "prewrite-user", "kind": "message", "role": "user",
+            "content": "pending", "confirmed": false,
+        })).expect("pending user");
+        let foreign = SandAgentDb::open_existing_agent(&session.record.db_path, 500)
+            .expect("independent persisted metadata owner");
+        let next = vec![0x9a, 0x06, 0x03, b'n', b'e', b'w'];
+        let next_root = Sha256::digest(&next).to_vec();
+        let error = session.agent_store.commit_checkpoint_bytes_before_write(
+            &next, Some("prewrite-user"), || {
+                assert!(foreign.set_metadata("latestRootBlobId", serde_json::json!("dead"))
+                    .expect("binding changed after durable preflight"));
+            },
+        ).expect_err("last root check refuses before the first persistence attempt");
+        assert!(error.contains("captured binding"), "{error}");
+        assert_eq!(session.agent_store.get_blob(&next_root).expect("no new blob"), None);
+        assert_eq!(session.agent_store.latest_checkpoint_bytes(), None);
+        assert_eq!(session.db.get_metadata("latestRootBlobId").expect("foreign binding retained"), Some(serde_json::json!("dead")));
+        assert_eq!(session.db.get_transcript_entry_by_id("prewrite-user").expect("pending row")
+            .and_then(|row| row.get("confirmed").and_then(Value::as_bool)), Some(false));
+        assert!(foreign.set_metadata("latestRootBlobId", serde_json::json!(""))
+            .expect("explicit binding repair"));
+        assert_eq!(session.agent_store.handle_checkpoint_bytes_and_confirm_user_message_blocking(
+            &next, "prewrite-user",
+        ).expect("known prewrite refusal needs no checked reset"), next_root);
+        assert_eq!(session.db.get_transcript_entry_by_id("prewrite-user").expect("confirmed row")
+            .and_then(|row| row.get("confirmed").and_then(Value::as_bool)), Some(true));
+        foreign.close(false);
+        workers.shutdown();
+        let _ = std::fs::remove_dir_all(root);
+    }
 
     #[test]
     fn poisoned_state_cannot_be_read_or_written_as_an_empty_checkpoint() {

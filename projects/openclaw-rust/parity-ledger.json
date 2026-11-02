@@ -3995,7 +3995,11 @@
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
         "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
-        "projects/openclaw-rust/dossiers/agent-turn-execution-scoped.md"
+        "projects/openclaw-rust/dossiers/agent-turn-execution-scoped.md",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "source/host/tests/canonical_checkpoint_recovery_contract.rs",
+        "source/host/tests/production_agent_store_contract.rs"
       ],
       "existing_owner_candidates": [
         {

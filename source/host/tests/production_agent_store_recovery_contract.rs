@@ -223,7 +223,7 @@ fn malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_b
     for case in [
         "absent", "raw-hex", "raw-unicode", "json", "nonobject", "missing-agent",
         "wrong-agent", "missing-root", "null-root", "number-root", "odd-root",
-        "nonhex-root", "unicode-root", "whitespace-root",
+        "nonhex-root", "unicode-root",
     ] {
         let root = temp_root(case);
         let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
@@ -254,7 +254,6 @@ fn malformed_metadata_is_rejected_before_seeding_repair_or_owner_cache_and_can_b
                     "odd-root" => { metadata["latestRootBlobId"] = json!("f"); }
                     "nonhex-root" => { metadata["latestRootBlobId"] = json!("zz"); }
                     "unicode-root" => { metadata["latestRootBlobId"] = json!("ø"); }
-                    "whitespace-root" => { metadata["latestRootBlobId"] = json!(" "); }
                     _ => unreachable!(),
                 }
                 Some(encoded_metadata(metadata))
@@ -548,4 +547,83 @@ fn legacy_empty_root_maintenance_refreshes_the_existing_cached_agent_store() {
     assert_eq!(watermark.last_user_message_id.as_deref(), Some("message-legacy"));
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn normalized_empty_root_remains_readable_without_widening_raw_string_cas() {
+    let root = temp_root("normalized-empty");
+    let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    let record = workers.materialize_new_session_with_active(None, "user", None, None).expect("session");
+    let db = workers.open_agent_db_owner(&record.id).expect("DB owner");
+    let mut metadata = db.read_metadata().expect("metadata");
+    metadata["latestRootBlobId"] = json!(" ");
+    rewrite_raw_metadata(&record.db_path, Some(&encoded_metadata(metadata)));
+    let before = durable_rows(&record.db_path);
+    let owner = workers.open_agent_store_owner(&record.id).expect("legacy normalized empty read");
+    assert_eq!(owner.checkpoint_snapshot_checked().expect("checked normalized root"), None);
+    assert!(!db.compare_and_set_latest_root_blob_id(&[], &[0x55; 32]).expect("known raw-string CAS refusal"));
+    assert_eq!(durable_rows(&record.db_path), before, "read normalization must not rewrite or widen the CAS");
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn cached_same_id_drift_refuses_before_pending_recovery_and_materialization_repairs() {
+    for case in ["pending-profile", "missing-files"] {
+        let root = temp_root(&format!("cached-drift-before-recovery-{case}"));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        let session = workers.materialize_session_with_active(None, "user", None, None).expect("session");
+        let original = vec![0x9a, 0x06, 0x03, b'o', b'l', b'd'];
+        let root_id = session.agent_store.handle_checkpoint_bytes(&original).expect("cached original root");
+        let agent_dir = session.record.db_path.parent().expect("agent directory");
+        let profile_path = agent_dir.join("profile.json");
+        let settings_path = agent_dir.join("settings.json");
+        let before_file = fs::read(&profile_path).expect("profile bytes");
+        let mut after_file = before_file.clone();
+        after_file.push(b'\n');
+        if case == "pending-profile" {
+            let admission = session.db.read_session_work_admission().expect("admission").expect("initialized admission");
+            let mut mutation = PendingProfileMutation {
+                mutation_id: "cached-drift-profile".into(), operation: "profile-update".into(),
+                session_key: admission.session_key, session_id: admission.session_id,
+                lifecycle_revision: admission.lifecycle_revision,
+                before_files: vec![ProfileFileSnapshot { filename: "profile.json".into(), contents: Some(before_file.clone()) }],
+                after_files: Vec::new(), previous_profile: session.db.get_sand_profile().expect("previous profile"),
+                next_profile: None,
+            };
+            assert!(session.db.prepare_pending_profile_mutation(&mutation).expect("prepare actual journal"));
+            fs::write(&profile_path, &after_file).expect("interrupted profile write");
+            mutation.after_files = vec![ProfileFileSnapshot { filename: "profile.json".into(), contents: Some(after_file.clone()) }];
+            assert!(session.db.seal_pending_profile_mutation(&mutation).expect("seal actual journal"));
+        } else {
+            fs::remove_file(&profile_path).expect("remove repairable profile");
+            fs::remove_file(&settings_path).expect("remove repairable settings");
+        }
+        let blobs = workers.create_agent_blob_store(&session.record.id).expect("actual blob owner");
+        blobs.set_blob_blocking(&root_id, &[0x9a, 0x06, 0x03, b'n', b'e', b'w'])
+            .expect("same-ID replacement remains valid protobuf");
+        let before = durable_rows(&session.record.db_path);
+        assert!(workers.prepare_existing_agent(&session.record.id).is_err());
+        assert!(workers.open_agent_db_owner(&session.record.id).is_err());
+        assert!(workers.open_agent_store_owner(&session.record.id).is_err());
+        assert_eq!(durable_rows(&session.record.db_path), before, "{case}: refusal must not settle any journal");
+        assert_eq!(session.agent_store.latest_checkpoint_bytes(), Some(original.clone()));
+        if case == "pending-profile" {
+            assert_eq!(fs::read(&profile_path).expect("unrecovered file"), after_file);
+            assert!(session.db.read_pending_profile_mutation().expect("pending journal").is_some());
+        } else {
+            assert!(!profile_path.exists(), "profile repair must wait for a valid cached binding");
+            assert!(!settings_path.exists(), "settings repair must wait for a valid cached binding");
+        }
+        blobs.set_blob_blocking(&root_id, &original).expect("explicit original-byte repair");
+        assert!(workers.prepare_existing_agent(&session.record.id).expect("retry after durable repair").is_some());
+        assert!(profile_path.is_file());
+        assert!(settings_path.is_file());
+        if case == "pending-profile" {
+            assert_eq!(fs::read(&profile_path).expect("recovered file"), before_file);
+            assert_eq!(session.db.read_pending_profile_mutation().expect("settled journal"), None);
+        }
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
 }

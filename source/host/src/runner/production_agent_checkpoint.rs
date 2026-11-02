@@ -337,13 +337,11 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })?;
-        self.agent_store
-            .validate_cached_checkpoint_checked()
-            .map_err(ProviderSessionError::Protocol)?;
-        let live_prior = self
-            .agent_store
-            .latest_checkpoint_bytes_checked()
-            .map_err(ProviderSessionError::Protocol)?
+        let live_prior = self.agent_store.checkpoint_snapshot_checked()
+            .map_err(|error| ProviderSessionError::Protocol(format!(
+                "Runner Agent checkpoint prior state is unavailable: {error}"
+            )))?
+            .map(|snapshot| snapshot.checkpoint_bytes)
             .unwrap_or_default();
         if live_prior != *prior {
             return Err(ProviderSessionError::Protocol(
@@ -392,13 +390,11 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })?;
-        self.agent_store
-            .validate_cached_checkpoint_checked()
-            .map_err(ProviderSessionError::Protocol)?;
-        let live_prior = self
-            .agent_store
-            .latest_checkpoint_bytes_checked()
-            .map_err(ProviderSessionError::Protocol)?
+        let live_prior = self.agent_store.checkpoint_snapshot_checked()
+            .map_err(|error| ProviderSessionError::Protocol(format!(
+                "Runner Agent checkpoint prior state is unavailable: {error}"
+            )))?
+            .map(|snapshot| snapshot.checkpoint_bytes)
             .unwrap_or_default();
         if live_prior != *prior || artifacts.prior_state_bytes != *prior {
             return Err(ProviderSessionError::Protocol(
@@ -455,7 +451,7 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                 .handle_checkpoint_bytes_blocking(&checkpoint.state_bytes)
         };
 
-        let committed_root = match durable {
+        let root = match durable {
             Ok(root) => root,
             Err(error) => {
                 if mirror_prepared {
@@ -469,7 +465,7 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
 
         if mirror_prepared {
             self.transcript_mirror
-                .commit_checkpoint(&self.agent_id, &committed_root)
+                .commit_checkpoint(&self.agent_id, &root)
                 .map_err(|error| {
                     ProviderSessionError::Protocol(format!(
                         "Runner Agent checkpoint transaction failed: transcript mirror commit failed after durable checkpoint: {error}"

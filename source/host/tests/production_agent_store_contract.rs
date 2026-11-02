@@ -1,6 +1,6 @@
 use std::fs;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::production_agent_store::{
@@ -358,6 +358,163 @@ fn production_agent_store_missing_subagent_ref_without_inline_fails_closed() {
         .expect_err("missing ref without inline fallback must fail");
     assert!(error.contains("subagent state ref blob not found"));
 
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn constructor_and_legacy_reset_do_not_grant_canonical_write_authority() {
+    let root = temp_root("canonical-authority");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers.materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    session.db.append_transcript_entry(&serde_json::json!({
+        "id":"authority-user", "kind":"message", "role":"user", "content":"pending", "confirmed":false
+    })).expect("pending user");
+    let owner = ProductionAgentStore::new(Arc::clone(&session.db),
+        workers.create_agent_blob_store(&session.record.id).expect("actual blob worker"));
+    let mut checkpoint = Vec::new();
+    push_string(99, "requires checked initialization", &mut checkpoint);
+    let root_id = Sha256::digest(&checkpoint).to_vec();
+    let before = session.db.read_kv("metadata").expect("metadata");
+    assert!(owner.checkpoint_snapshot_checked().is_err());
+    assert!(owner.handle_checkpoint_bytes(&checkpoint).is_err());
+    assert!(owner.handle_checkpoint_bytes_and_confirm_user_message_blocking(&checkpoint, "authority-user").is_err());
+    assert_eq!(owner.get_blob(&root_id).expect("no preauthorization blob write"), None);
+    assert_eq!(session.db.read_kv("metadata").expect("metadata unchanged"), before);
+    assert_eq!(session.db.get_transcript_entry_by_id("authority-user").expect("pending echo")
+        .and_then(|entry| entry.get("confirmed").and_then(serde_json::Value::as_bool)), Some(false));
+
+    assert!(!owner.reset_from_db_checked().expect("checked explicit no-root"));
+    let empty_root = owner.handle_checkpoint_bytes(&[]).expect("initialized writer");
+    assert!(owner.try_reset_from_db(), "legacy reset retains its successful boolean");
+    assert_eq!(owner.latest_root_blob_id(), empty_root);
+    assert_eq!(owner.latest_checkpoint_bytes(), Some(Vec::new()));
+    assert!(owner.checkpoint_snapshot_checked().is_err(), "legacy reset cannot grant checked authority");
+    assert!(owner.handle_checkpoint_bytes(&checkpoint).is_err());
+    assert_eq!(owner.get_blob(&root_id).expect("still no unauthorized blob write"), None);
+    assert!(owner.reset_from_db_checked().expect("checked reset restores authority"));
+    assert_eq!(owner.handle_checkpoint_bytes(&checkpoint).expect("checked writer"), root_id);
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn compatibility_missing_child_write_succeeds_but_failed_checked_reset_fences_future_writes() {
+    let root = temp_root("missing-child-authority");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers.materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    let child = b"bounded direct child bytes";
+    let child_id = Sha256::digest(child).to_vec();
+    let mut checkpoint = Vec::new();
+    push_bytes(8, &child_id, &mut checkpoint);
+    let committed_root = session.agent_store.handle_checkpoint_bytes(&checkpoint)
+        .expect("compatibility handler retains protobuf-only payload acceptance");
+    assert_eq!(session.db.get_latest_root_blob_id().expect("committed root"), committed_root);
+    assert_eq!(session.agent_store.latest_checkpoint_bytes(), Some(checkpoint.clone()));
+    assert!(session.agent_store.checkpoint_snapshot_checked().is_err(), "canonical readers require the child");
+    let compatible_replacement = vec![0x9a, 0x06, 0x03, b'n', b'e', b'w'];
+    assert_eq!(session.agent_store.handle_checkpoint_bytes(&compatible_replacement)
+        .expect("known durable base permits compatibility replacement despite missing children"),
+        Sha256::digest(&compatible_replacement).to_vec());
+    assert_eq!(session.agent_store.handle_checkpoint_bytes(&checkpoint)
+        .expect("restore protobuf-only compatibility checkpoint"), committed_root);
+    assert!(session.agent_store.reset_from_db_checked().is_err(), "failed strict reset is not empty readiness");
+    let mut next = Vec::new();
+    push_string(99, "must not be written after failed reset", &mut next);
+    let next_id = Sha256::digest(&next).to_vec();
+    assert!(session.agent_store.handle_checkpoint_bytes(&next).is_err());
+    assert!(session.agent_store.handle_checkpoint_bytes_and_confirm_user_message_blocking(&next, "unused-user").is_err());
+    assert_eq!(session.agent_store.get_blob(&next_id).expect("no failed-authority blob write"), None);
+    assert_eq!(session.db.get_latest_root_blob_id().expect("root retained"), committed_root);
+
+    workers.create_agent_blob_store(&session.record.id).expect("repair worker")
+        .set_blob_blocking(&child_id, child).expect("repair required child");
+    assert!(session.agent_store.reset_from_db_checked().expect("checked repair"));
+    assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("checked snapshot").expect("root").checkpoint_bytes, checkpoint);
+    assert_eq!(session.agent_store.handle_checkpoint_bytes(&next).expect("write after checked repair"), next_id);
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn typed_root_metadata_rebinding_requires_checked_reset_before_new_checkpoint() {
+    let root = temp_root("typed-root-rebind");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers.materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    let mut replacement = Vec::new();
+    push_string(99, "typed replacement", &mut replacement);
+    let replacement_id = Sha256::digest(&replacement).to_vec();
+    workers.create_agent_blob_store(&session.record.id).expect("blob owner")
+        .set_blob_blocking(&replacement_id, &replacement).expect("replacement bytes");
+    let replacement_hex = replacement_id.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    assert!(session.agent_store.set_metadata(ProductionAgentMetadataKey::LatestRootBlobId,
+        serde_json::json!(replacement_hex)).expect("typed root binding"));
+    assert!(session.agent_store.checkpoint_snapshot_checked().is_err());
+    assert!(session.agent_store.handle_checkpoint_bytes(&[]).is_err());
+    assert_eq!(session.db.get_latest_root_blob_id().expect("typed persisted root"), replacement_id);
+    assert!(session.agent_store.reset_from_db_checked().expect("checked rebind"));
+    assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("checked snapshot").expect("root").checkpoint_bytes, replacement);
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn synchronous_metadata_reentry_refuses_mutation_without_blocking_or_clearing_active_cache() {
+    let root = temp_root("metadata-reentry");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let session = workers.materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    let initial_root = session.agent_store.handle_checkpoint_bytes(&[]).expect("initial checkpoint");
+    let weak = Arc::downgrade(&session.agent_store);
+    let (callback_tx, callback_rx) = mpsc::channel();
+    let subscription = session.agent_store.subscribe_to_metadata(
+        ProductionAgentMetadataKey::LatestRootBlobId,
+        Arc::new(move |_| {
+            let owner = weak.upgrade().expect("outer owner remains alive");
+            let observed = (
+                owner.checkpoint_snapshot_checked().is_err(),
+                owner.reset_from_db_checked().is_err(),
+                owner.handle_checkpoint_bytes(&[]).is_err(),
+                owner.handle_checkpoint_bytes_and_confirm_user_message_blocking(&[], "reentrant-user").is_err(),
+                owner.try_reset_from_db(),
+                owner.latest_root_blob_id(),
+                owner.latest_checkpoint_bytes(),
+            );
+            let _ = callback_tx.send(observed);
+        }),
+    );
+    let mut checkpoint = Vec::new();
+    push_string(99, "outer checkpoint must finish", &mut checkpoint);
+    let expected = Sha256::digest(&checkpoint).to_vec();
+    let outer = Arc::clone(&session.agent_store);
+    let (done_tx, done_rx) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let result = outer.handle_checkpoint_bytes(&checkpoint);
+        let _ = done_tx.send(result);
+    });
+    let completion = done_rx.recv_timeout(Duration::from_secs(5));
+    if completion.is_err() {
+        // Never join a wedged callback or drop/close its live DB on timeout.
+        // The contract fails promptly while the test process retains custody.
+        std::mem::forget(subscription);
+        std::mem::forget(session);
+        std::mem::forget(workers);
+        panic!("real metadata callback reentry blocked the checkpoint owner");
+    }
+    assert_eq!(completion.expect("bounded completion").expect("outer write succeeds"), expected);
+    worker.join().expect("finished checkpoint thread");
+    let (read_refused, reset_refused, write_refused, atomic_refused, legacy_reset, visible_root, visible_bytes) =
+        callback_rx.recv_timeout(Duration::from_secs(1)).expect("real root metadata listener ran");
+    assert!(read_refused && reset_refused && write_refused && atomic_refused);
+    assert!(!legacy_reset);
+    assert_eq!(visible_root, initial_root);
+    assert_eq!(visible_bytes, Some(Vec::new()));
+    assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("published cache remains ready").expect("root").root_blob_id, expected);
+    assert_eq!(session.db.get_latest_root_blob_id().expect("durable outer root"), expected);
+    drop(subscription);
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }

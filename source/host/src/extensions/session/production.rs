@@ -1506,6 +1506,15 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
+        // Re-entry must reject a stale cached root before pending recovery can
+        // settle journals or restore files. Release the owner-map lock before
+        // this validation performs blob/DB I/O.
+        let cached_store = self.agent_store_owners.lock()
+            .map_err(|_| "agent store owner map poisoned".to_string())?
+            .get(agent_id).cloned();
+        if let Some(cached_store) = cached_store {
+            cached_store.validate_cached_checkpoint_checked()?;
+        }
         let blob_store = self.create_agent_blob_store(agent_id)?;
         let mut owners = self
             .db_owners
@@ -1519,7 +1528,7 @@ impl ProductionSessionWorkers {
             return Ok(Arc::clone(owner));
         }
         let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
+            SandAgentDb::open_existing_agent(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
         ProductionAgentStore::validate_persisted_checkpoint_checked(&owner, &blob_store)?;
@@ -1878,12 +1887,9 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
-        let cached_owner = self
-            .agent_store_owners
-            .lock()
+        let cached_owner = self.agent_store_owners.lock()
             .map_err(|_| "agent store owner map poisoned".to_string())?
-            .get(agent_id)
-            .cloned();
+            .get(agent_id).cloned();
         if let Some(owner) = cached_owner {
             owner.validate_cached_checkpoint_checked()?;
             let _ = self.open_agent_db_owner_locked(agent_id)?;
@@ -5757,10 +5763,10 @@ impl ProductionSessionWorkers {
         if !self.session_db_path(agent_id)?.is_file() {
             return Ok(None);
         }
+        // Check durable metadata/root before materialization repair or pending
+        // recovery can write files, journals or admission state.
         let db_owner = self.open_agent_db_owner_locked(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
-        // Owner open validates durable metadata and checkpoint bytes before
-        // materialization repairs or maintenance may act on this session.
         let Some(materialized) = open_existing_session(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -5772,24 +5778,37 @@ impl ProductionSessionWorkers {
         };
         let session_db_path = materialized.db_path.clone();
 
-        let recovered_root = recover_conversation_root_if_missing(
-            Arc::clone(&self.pool),
-            agent_id,
-            &session_db_path,
-            &store.blob_db_path,
-            self.busy_timeout_ms,
-            db_owner.as_ref(),
-        )?;
+        // Only a persisted, explicitly empty root may enter legacy repair.
+        // Missing or malformed metadata is not a new empty conversation.
+        let persisted_root = db_owner.read_checkpoint_root_checked()
+            .map_err(|error| error.to_string())?;
+        let recovered_root = if persisted_root.is_none() {
+            recover_conversation_root_if_missing(
+                Arc::clone(&self.pool),
+                agent_id,
+                &session_db_path,
+                &store.blob_db_path,
+                self.busy_timeout_ms,
+                db_owner.as_ref(),
+            )?
+        } else {
+            false
+        };
         if recovered_root {
-            let cached_store = self
-                .agent_store_owners
-                .lock()
+            let cached_store = self.agent_store_owners.lock()
                 .map_err(|_| "agent store owner map poisoned".to_string())?
-                .get(agent_id)
-                .cloned();
+                .get(agent_id).cloned();
             if let Some(cached_store) = cached_store {
+                // Repair advanced durable None to a root: refresh before the
+                // normal re-entry guard compares its prior empty snapshot.
                 cached_store.reset_from_db_checked()?;
             }
+        }
+        let agent_store = self.open_agent_store_owner_locked(agent_id)?;
+        let persisted_root_blob_id = agent_store.checkpoint_snapshot_checked()?
+            .map(|snapshot| snapshot.root_blob_id)
+            .unwrap_or_default();
+        if recovered_root {
             let _ = sync_recovered_profile_name(
                 &session_db_path,
                 self.busy_timeout_ms,
@@ -5834,9 +5853,6 @@ impl ProductionSessionWorkers {
             &recovery_outline,
             db_owner.as_ref(),
         )?;
-        let persisted_root_blob_id = db_owner
-            .get_latest_root_blob_id()
-            .map_err(|error| error.to_string())?;
         let session_state = db_owner
             .serde_snapshot()
             .map_err(|error| error.to_string())?;

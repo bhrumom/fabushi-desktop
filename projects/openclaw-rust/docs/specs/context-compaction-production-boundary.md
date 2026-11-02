@@ -188,6 +188,46 @@ callers retain behavior; only the production compaction caller opts into its
 existing token. Rollback needs no user-data migration. Process-restart custody,
 arbitrary tool unknown outcomes and full compaction acceptance remain open.
 
+### Cancellation at the production submission boundary (`CC-05`, 2026-11-02)
+
+At integration parent `74073f19037a6eaec5f34331b27dfe9fd8c0b334`, the real
+post-turn caller treats split-prefix `Err(Cancelled)` as an ordinary fallback
+and has no final cancellation read before its Session commit call. The primary
+summary error path also depends only on the shared token. Repair this in the
+same Host/Runner composition, using a private production function in `main.rs`
+shared by the shipping caller and app tests; no new module or owner is needed.
+
+- `CC-SUMMARY-CANCEL-01`: A typed `ProviderSessionError::Cancelled` from either summary
+  phase stops the attempt even when the shared cancellation token is false.
+- `CC-SUMMARY-CANCEL-02`: A cancelled token stops every summary outcome, including a
+  transport error or successful late response. Cancellation cannot select the
+  no-summary fallback or dispatch the next prefix phase.
+- `CC-SUMMARY-CANCEL-03`: Successful summaries and ordinary provider-error fallbacks
+  retain existing fitting and required-details rules. Read cancellation again
+  after fitting and immediately before `commit_agent_compaction_with_cancellation`.
+  Pass the same nonblocking token reader through the existing Session/DB
+  cancellation guards above; cancellation after the DB final read does not
+  undo the transaction that passed that boundary.
+- `CC-SUMMARY-CANCEL-04`: The unchanged noncancelled failure path may commit a fitted
+  `qualityDegraded` fallback. Successful split summaries retain their prefix
+  text, advance the existing generation once and survive fresh Session replay.
+- `CC-SUMMARY-CANCEL-05`: Exercise the actual private shipping producer with a real
+  `SandAgentRunner` summarization binding and actual Session/DB. Inject typed
+  cancellation with/without the token, token cancellation with ordinary error
+  or success, and cancellation sampled after prefix return. Keep a nonbusy
+  admission and positive commit controls so a DB refusal cannot mask a caller
+  bug. Refusal preserves transcript, raw metadata/admission, write generation
+  and publications. Use deterministic callback scheduling without sleeps.
+
+Necessary fixed-U source checks retain exact identities: agent-core
+`compaction.ts` blob `9ee5706cfd94a75f36e43752e16d1f75d9975147`, lines
+612–623 propagate history/prefix errors; `summarization-completion.ts` blob
+`7e4b86c73a22a0cd942f36dd73d857f4cb3c5669`, lines 167–170 classify a provider
+aborted stop independently of its signal. These bounded reads do not relabel
+historical full-file facts or close transitive source dependencies. Callback
+fault injection proves this producer/Session contract, not real provider
+compatibility or complete process-restart recovery. Validate only in Actions.
+
 ## 5. Current state
 
 ### Planning recovery at H `49200bf2577c9d83aee1f02eef2c65150ca2c2d8`

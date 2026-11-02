@@ -16,8 +16,11 @@ use super::agent_db::{
 };
 use super::agent_db_serde::is_valid_transcript_entry;
 use super::conversation_recovery::{
-    OutlineItem, conversation_structure_fully_resolves, parse_conversation_state_structure,
+    MAX_ROOT_BLOB_BYTES, OutlineItem, parse_conversation_state_structure,
     rebuild_transcript_entries_from_state, select_hidden_artifact_entry_ids,
+};
+use super::production_agent_store::{
+    ProductionAgentCheckpointSnapshot, validate_canonical_checkpoint_snapshot,
 };
 use super::session_diagnostics::{SessionDiagnostic, report_session_diagnostic};
 use super::session_recovery::{
@@ -242,9 +245,9 @@ pub fn recover_conversation_root_if_missing(
     busy_timeout_ms: u64,
     owner: &SandAgentDb,
 ) -> Result<bool, String> {
-    let existing = read_persisted_latest_root_blob_id(db_path, busy_timeout_ms)
+    let existing = owner.read_checkpoint_root_checked()
         .map_err(|error| error.to_string())?;
-    if !existing.is_empty() {
+    if existing.is_some() {
         return Ok(false);
     }
 
@@ -274,53 +277,57 @@ pub fn recover_conversation_root_if_missing(
                 return Err(error.to_string());
             }
         };
-        let Some(root_blob) = futures::executor::block_on(pool.get_blob(
+        let root_blob = pool.get_blob_blocking(
             agent_id,
             blob_db_path,
             &root,
             Some(db_path),
-        ))
+        )
         .map_err(|error| error.to_string())?
-        else {
-            return Ok(false);
+        .ok_or_else(|| "selected recovery checkpoint root blob is missing".to_string())?;
+        if root_blob.len() > MAX_ROOT_BLOB_BYTES {
+            return Err("selected recovery checkpoint root exceeds the recovery size limit".into());
+        }
+        let snapshot = ProductionAgentCheckpointSnapshot {
+            root_blob_id: root,
+            checkpoint_bytes: root_blob,
         };
-        let Some(structure) = parse_conversation_state_structure(&root_blob) else {
-            return Ok(false);
-        };
-        let refs = structure.refs();
-        let resolves = futures::executor::block_on(conversation_structure_fully_resolves(
-            &refs,
-            |blob_id| {
-                let pool = Arc::clone(&pool);
-                let agent_id = agent_id.to_string();
-                let blob_db_path = blob_db_path.to_path_buf();
-                let db_path = db_path.to_path_buf();
-                async move {
-                    pool.get_blob(
-                        &agent_id,
-                        &blob_db_path,
-                        &blob_id,
-                        Some(&db_path),
-                    )
-                    .await
-                    .map_err(|error| error.to_string())
+        validate_canonical_checkpoint_snapshot(&snapshot, |kinds, blob_id| {
+            let bytes = pool.get_blob_blocking(
+                agent_id,
+                blob_db_path,
+                blob_id,
+                Some(db_path),
+            )
+            .map_err(|error| error.to_string())?;
+            if kinds.iter().any(|kind| kind.has_legacy_recovery_size_limit()) {
+                if bytes.as_ref().is_some_and(|bytes| bytes.len() > MAX_ROOT_BLOB_BYTES) {
+                    return Err(
+                        "selected recovery checkpoint reference exceeds the recovery size limit"
+                            .into(),
+                    );
                 }
-            },
-        ));
-        if !resolves || get_sand_agent_db_write_generation(db_path) != recovery_generation {
+            }
+            Ok(bytes)
+        })?;
+        if owner.read_checkpoint_root_checked()
+            .map_err(|error| error.to_string())?
+            .is_some()
+            || get_sand_agent_db_write_generation(db_path) != recovery_generation
+        {
             return Ok(false);
         }
         owner
-            .compare_and_set_latest_root_blob_id(&existing, &root)
+            .compare_and_set_latest_root_blob_id(&[], &snapshot.root_blob_id)
             .map_err(|error| error.to_string())
     })();
 
     match outcome {
         Ok(value) => Ok(value),
         Err(error) if error.starts_with("conversation recovery scan failed:") => Err(error),
-        Err(_error) => {
+        Err(error) => {
             report_maintenance_diagnostic("recovery_failed", db_path, Some("Error"));
-            Ok(false)
+            Err(error)
         }
     }
 }

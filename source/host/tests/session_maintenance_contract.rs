@@ -106,6 +106,7 @@ fn production_missing_root_recovery_requires_all_structural_refs_and_cas_persist
     futures::executor::block_on(store.set_blob(&(), &turn, b"turn")).expect("turn");
     futures::executor::block_on(store.set_blob(&(), &todo, b"todo")).expect("todo");
     futures::executor::block_on(store.set_blob(&(), &summary, b"summary")).expect("summary");
+    futures::executor::block_on(store.set_blob(&(), b"prompt", b"prompt bytes")).expect("referenced prompt");
     let root_blob = root_bytes(&turn, &todo, &summary, b"prompt");
     let root_id = Sha256::digest(&root_blob).to_vec();
     futures::executor::block_on(store.set_blob(&(), &root_id, &root_blob)).expect("root");

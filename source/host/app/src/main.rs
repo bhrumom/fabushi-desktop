@@ -7869,19 +7869,28 @@ fn resolve_split_compaction_summary(
     if !plan.is_split_turn || plan.turn_prefix_entries.is_empty() {
         return Some((summary, false));
     }
-    let prefix = build_turn_prefix_summary_prompt(plan)
-        .ok()
-        .and_then(|prompt| summarize_prefix(&prompt).ok());
-    // A cancelled provider may report Err. That error must not select the
-    // ordinary degraded fallback and rotate the authoritative transcript.
+    let prefix_prompt = build_turn_prefix_summary_prompt(plan);
+    // Recheck after prompt preparation: a false sample may race cancellation
+    // before the next provider phase starts.
     if should_cancel() {
         return None;
     }
+    let prefix = match prefix_prompt {
+        Ok(prompt) => Some(summarize_prefix(&prompt)),
+        Err(_) => None,
+    };
+    // Typed provider cancellation is authoritative even without a shared-token
+    // change. Only ordinary errors may select the fitted degraded fallback.
+    if matches!(prefix, Some(Err(ProviderSessionError::Cancelled(_))))
+        || should_cancel()
+    {
+        return None;
+    }
     Some(match prefix {
-        Some(prefix) => (format!(
+        Some(Ok(prefix)) => (format!(
             "{summary}\n\n---\n\n**Turn Context (split turn):**\n\n{prefix}"
         ), false),
-        None => (compaction_without_summary(plan), true),
+        _ => (compaction_without_summary(plan), true),
     })
 }
 
@@ -7899,6 +7908,183 @@ fn starts_new_local_tool_direction(
         && !turn_hidden
         && !is_group_member_turn
         && !has_generated_parent
+}
+
+/// Runs the shipping post-turn compaction producer through the existing Runner
+/// summarizer and Session writer. Cancellation is checked at each inference
+/// boundary and immediately before submitting the fitted result for commit.
+fn run_post_turn_compaction(
+    runner: &SandAgentRunner,
+    sessions: &ProductionSessionWorkers,
+    agent_id: &str,
+    source_turn_id: &str,
+    context_tokens: u64,
+    should_cancel: &dyn Fn() -> bool,
+) {
+    if context_tokens == 0 || should_cancel() {
+        return;
+    }
+    let entries = match sessions.read_agent_transcript_entries(agent_id) {
+        Ok(entries) => entries,
+        Err(error) => {
+            eprintln!(
+                "mahayana-host compaction_transcript_read_failed agent={agent_id} run={source_turn_id} error={error}"
+            );
+            return;
+        }
+    };
+    let settings = CompactionSettings {
+        enabled: true,
+        reserve_tokens: 16_000,
+        keep_recent_tokens: 8_000,
+    };
+    let Some(plan) = prepare_compaction_plan(
+        &entries,
+        context_tokens,
+        SAND_AGENT_TOKEN_LIMIT as u64,
+        settings,
+        None,
+    ) else {
+        return;
+    };
+    let admission = match sessions.read_session_work_admission(agent_id) {
+        Ok(Some(admission)) => admission,
+        Ok(None) => {
+            eprintln!(
+                "mahayana-host compaction_missing_admission agent={agent_id} run={source_turn_id}"
+            );
+            return;
+        }
+        Err(error) => {
+            eprintln!(
+                "mahayana-host compaction_admission_read_failed agent={agent_id} run={source_turn_id} error={error}"
+            );
+            return;
+        }
+    };
+    let summary_prompt = match build_compaction_summary_prompt(&plan) {
+        Ok(prompt) => prompt,
+        Err(error) => {
+            eprintln!(
+                "mahayana-host compaction_prompt_build_failed agent={agent_id} run={source_turn_id} error={error}"
+            );
+            return;
+        }
+    };
+    if should_cancel() {
+        eprintln!(
+            "mahayana-host compaction_cancelled_before_summary agent={agent_id} run={source_turn_id}"
+        );
+        return;
+    }
+    let summary_result = runner.run_summarization_prompt(
+        "You are the Fabushi conversation-compaction summarizer. Return only the durable summary text.",
+        &summary_prompt,
+        should_cancel,
+    );
+    let primary_summary_failed = summary_result.is_err();
+    let (summary, quality_degraded) = match summary_result {
+        Ok(summary) => {
+            let Some(candidate) = resolve_split_compaction_summary(
+                &plan,
+                summary,
+                |prefix_prompt| runner.run_summarization_prompt(
+                    "You are the Fabushi split-turn prefix summarizer. Return only the concise prefix context.",
+                    prefix_prompt,
+                    should_cancel,
+                ),
+                should_cancel,
+            ) else {
+                eprintln!(
+                    "mahayana-host compaction_cancelled_after_summary agent={agent_id} run={source_turn_id}"
+                );
+                return;
+            };
+            candidate
+        }
+        Err(error) => {
+            eprintln!(
+                "mahayana-host compaction_summary_failed agent={agent_id} run={source_turn_id} error={error}"
+            );
+            if matches!(error, ProviderSessionError::Cancelled(_)) || should_cancel() {
+                eprintln!(
+                    "mahayana-host compaction_cancelled_after_summary agent={agent_id} run={source_turn_id}"
+                );
+                return;
+            }
+            (compaction_without_summary(&plan), true)
+        }
+    };
+    let mut details = build_compaction_details_with_quality(&plan, quality_degraded);
+    let suffix = format_compaction_details_suffix(details.as_ref());
+    let summary = match fit_compaction_summary_with_suffix(
+        &summary,
+        plan.summary_token_budget,
+        &suffix,
+    ) {
+        Ok(summary) => summary,
+        Err(error) if primary_summary_failed => {
+            eprintln!(
+                "mahayana-host compaction_fallback_refused agent={agent_id} run={source_turn_id} error={error}"
+            );
+            return;
+        }
+        Err(error) => {
+            eprintln!(
+                "mahayana-host compaction_summary_invalid agent={agent_id} run={source_turn_id} error={error}"
+            );
+            details = build_compaction_details_with_quality(&plan, true);
+            let fallback_suffix = format_compaction_details_suffix(details.as_ref());
+            match fit_compaction_summary_with_suffix(
+                &compaction_without_summary(&plan),
+                plan.summary_token_budget,
+                &fallback_suffix,
+            ) {
+                Ok(summary) => summary,
+                Err(error) => {
+                    eprintln!(
+                        "mahayana-host compaction_fallback_refused agent={agent_id} run={source_turn_id} error={error}"
+                    );
+                    return;
+                }
+            }
+        }
+    };
+    let commit = CompactionCommit {
+        entry_id: format!("compaction:{agent_id}:{source_turn_id}"),
+        expected_transcript_tail_id: plan.observed_transcript_tail_id,
+        first_kept_entry_id: Some(plan.first_kept_entry_id),
+        summary,
+        tokens_before: plan.tokens_before,
+        details,
+        source_turn_id: source_turn_id.to_string(),
+        expected_lifecycle_revision: admission.lifecycle_revision,
+    };
+    // Preserve the producer submission guard and pass the same token reader
+    // through Session/DB ownership to the final cancellation read before COMMIT.
+    if should_cancel() {
+        eprintln!(
+            "mahayana-host compaction_cancelled_before_commit agent={agent_id} run={source_turn_id}"
+        );
+        return;
+    }
+    match sessions.commit_agent_compaction_with_cancellation(agent_id, &commit, should_cancel) {
+        Ok(CompactionCommitOutcome::Committed(_))
+        | Ok(CompactionCommitOutcome::AlreadyCommitted(_)) => {}
+        Ok(CompactionCommitOutcome::RejectedStale) => {
+            eprintln!(
+                "mahayana-host compaction_rejected_stale agent={agent_id} run={source_turn_id}"
+            );
+        }
+        Ok(CompactionCommitOutcome::RejectedCancelled) => {
+            eprintln!(
+                "mahayana-host compaction_rejected_cancelled agent={agent_id} run={source_turn_id}"
+            );
+        }
+        Err(error) => eprintln!(
+            "mahayana-host compaction_commit_failed agent={agent_id} run={source_turn_id} error={error}"
+        ),
+    }
 }
 
 /// A cancellation command acknowledges the token request. The worker retains
@@ -11561,223 +11747,27 @@ fn start_routed_provider_task(
                 }
             }
 
-            // Context compaction is admitted only after the real provider turn
-            // has settled its final response. Planning is pure; summarization
-            // uses the existing Runner inference binding; the session owner is
-            // the only writer. Any missing usage, admission, unsupported
-            // metadata, cancellation, or summarizer failure leaves the prior
-            // transcript authoritative.
+            // Compact only after the real provider turn settles. The shared
+            // producer preserves cancellation, fitting and Session commit guards.
             if is_user_turn
                 && result.is_ok()
                 && !waiting_user
                 && !worker_cancellation.is_cancelled()
             {
-                let observed_usage = worker_provider_usage
+                let context_tokens = worker_provider_usage
                     .lock()
                     .ok()
-                    .and_then(|usage| *usage);
-                let context_tokens = observed_usage
+                    .and_then(|usage| *usage)
                     .map(|usage| usage.input_tokens)
                     .unwrap_or_default();
-                if context_tokens > 0 {
-                    let compaction_entries = match worker_sessions
-                        .read_agent_transcript_entries(&agent_id)
-                    {
-                        Ok(entries) => entries,
-                        Err(error) => {
-                            eprintln!(
-                                "mahayana-host compaction_transcript_read_failed agent={} run={} error={error}",
-                                agent_id, worker_stream_id
-                            );
-                            Vec::new()
-                        }
-                    };
-                    let settings = CompactionSettings {
-                        enabled: true,
-                        reserve_tokens: 16_000,
-                        keep_recent_tokens: 8_000,
-                    };
-                    if let Some(plan) = prepare_compaction_plan(
-                        &compaction_entries,
-                        context_tokens,
-                        SAND_AGENT_TOKEN_LIMIT as u64,
-                        settings,
-                        None,
-                    ) {
-                        match worker_sessions.read_session_work_admission(&agent_id) {
-                                Ok(Some(admission)) => {
-                                    match build_compaction_summary_prompt(&plan) {
-                                        Ok(summary_prompt) => {
-                                            let should_cancel = || worker_cancellation.is_cancelled();
-                                            let commit_compaction = |summary: String,
-                                                                      quality_degraded: bool| {
-                                                let commit = CompactionCommit {
-                                                    entry_id: format!(
-                                                        "compaction:{}:{}",
-                                                        agent_id, worker_stream_id
-                                                    ),
-                                                    expected_transcript_tail_id: plan
-                                                        .observed_transcript_tail_id
-                                                        .clone(),
-                                                    first_kept_entry_id: Some(
-                                                        plan.first_kept_entry_id.clone(),
-                                                    ),
-                                                    summary,
-                                                    tokens_before: plan.tokens_before,
-                                                    details: build_compaction_details_with_quality(
-                                                        &plan,
-                                                        quality_degraded,
-                                                    ),
-                                                    source_turn_id: worker_stream_id.clone(),
-                                                    expected_lifecycle_revision: admission
-                                                        .lifecycle_revision
-                                                        .clone(),
-                                                };
-                                                match worker_sessions
-                                                    .commit_agent_compaction_with_cancellation(
-                                                        &agent_id, &commit, &should_cancel,
-                                                    )
-                                                {
-                                                    Ok(CompactionCommitOutcome::Committed(_))
-                                                    | Ok(CompactionCommitOutcome::AlreadyCommitted(_)) => {}
-                                                    Ok(CompactionCommitOutcome::RejectedStale) => {
-                                                        eprintln!(
-                                                            "mahayana-host compaction_rejected_stale agent={} run={}",
-                                                            agent_id, worker_stream_id
-                                                        );
-                                                    }
-                                                    Ok(CompactionCommitOutcome::RejectedCancelled) => {
-                                                        eprintln!(
-                                                            "mahayana-host compaction_rejected_cancelled agent={} run={}",
-                                                            agent_id, worker_stream_id
-                                                        );
-                                                    }
-                                                    Err(error) => eprintln!(
-                                                        "mahayana-host compaction_commit_failed agent={} run={} error={error}",
-                                                        agent_id, worker_stream_id
-                                                    ),
-                                                }
-                                            };
-                                            match runner.run_summarization_prompt(
-                                                "You are the Fabushi conversation-compaction summarizer. Return only the durable summary text.",
-                                                &summary_prompt,
-                                                &should_cancel,
-                                            ) {
-                                                Ok(summary) if !should_cancel() => {
-                                                    let summary = resolve_split_compaction_summary(
-                                                        &plan,
-                                                        summary,
-                                                        |prefix_prompt| runner.run_summarization_prompt(
-                                                            "You are the Fabushi split-turn prefix summarizer. Return only the concise prefix context.",
-                                                            prefix_prompt,
-                                                            &should_cancel,
-                                                        ),
-                                                        &should_cancel,
-                                                    );
-                                                    if let Some((summary, mut quality_degraded)) = summary {
-                                                        let details =
-                                                            build_compaction_details_with_quality(
-                                                                &plan,
-                                                                quality_degraded,
-                                                            );
-                                                        let suffix =
-                                                            format_compaction_details_suffix(details.as_ref());
-                                                        let summary = match fit_compaction_summary_with_suffix(
-                                                            &summary,
-                                                            plan.summary_token_budget,
-                                                            &suffix,
-                                                        ) {
-                                                            Ok(summary) => Ok(summary),
-                                                            Err(error) => {
-                                                                quality_degraded = true;
-                                                                eprintln!(
-                                                                    "mahayana-host compaction_summary_invalid agent={} run={} error={error}",
-                                                                    agent_id, worker_stream_id
-                                                                );
-                                                                let fallback =
-                                                                    compaction_without_summary(&plan);
-                                                                let fallback_details =
-                                                                    build_compaction_details_with_quality(
-                                                                        &plan,
-                                                                        true,
-                                                                    );
-                                                                let fallback_suffix =
-                                                                    format_compaction_details_suffix(
-                                                                        fallback_details.as_ref(),
-                                                                    );
-                                                                fit_compaction_summary_with_suffix(
-                                                                    &fallback,
-                                                                    plan.summary_token_budget,
-                                                                    &fallback_suffix,
-                                                                )
-                                                            }
-                                                        };
-                                                        match summary {
-                                                            Ok(summary) => commit_compaction(summary, quality_degraded),
-                                                            Err(error) => eprintln!(
-                                                                "mahayana-host compaction_fallback_refused agent={} run={} error={error}",
-                                                                agent_id, worker_stream_id
-                                                            ),
-                                                        }
-                                                    } else {
-                                                        eprintln!(
-                                                            "mahayana-host compaction_cancelled_during_split_prefix agent={} run={}",
-                                                            agent_id, worker_stream_id
-                                                        );
-                                                    }
-                                                }
-                                                Ok(_) => eprintln!(
-                                                    "mahayana-host compaction_cancelled_after_summary agent={} run={}",
-                                                    agent_id, worker_stream_id
-                                                ),
-                                                Err(error) => {
-                                                    eprintln!(
-                                                        "mahayana-host compaction_summary_failed agent={} run={} error={error}",
-                                                        agent_id, worker_stream_id
-                                                    );
-                                                    if !should_cancel() {
-                                                        let fallback = compaction_without_summary(&plan);
-                                                        let fallback_details =
-                                                            build_compaction_details_with_quality(
-                                                                &plan,
-                                                                true,
-                                                            );
-                                                        let fallback_suffix =
-                                                            format_compaction_details_suffix(
-                                                                fallback_details.as_ref(),
-                                                            );
-                                                        match fit_compaction_summary_with_suffix(
-                                                            &fallback,
-                                                            plan.summary_token_budget,
-                                                            &fallback_suffix,
-                                                        ) {
-                                                            Ok(summary) => commit_compaction(summary, true),
-                                                            Err(error) => eprintln!(
-                                                                "mahayana-host compaction_fallback_refused agent={} run={} error={error}",
-                                                                agent_id, worker_stream_id
-                                                            ),
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Err(error) => eprintln!(
-                                            "mahayana-host compaction_prompt_build_failed agent={} run={} error={error}",
-                                            agent_id, worker_stream_id
-                                        ),
-                                    }
-                                }
-                                Ok(None) => eprintln!(
-                                    "mahayana-host compaction_missing_admission agent={} run={}",
-                                    agent_id, worker_stream_id
-                                ),
-                                Err(error) => eprintln!(
-                                    "mahayana-host compaction_admission_read_failed agent={} run={} error={error}",
-                                    agent_id, worker_stream_id
-                                ),
-                        }
-                    }
-                }
+                run_post_turn_compaction(
+                    &runner,
+                    &worker_sessions,
+                    &agent_id,
+                    &worker_stream_id,
+                    context_tokens,
+                    &|| worker_cancellation.is_cancelled(),
+                );
             }
 
             if should_run_completed_turn_side_effects(
@@ -17024,9 +17014,421 @@ mod tests {
         listener_connection_state_or_disconnected, RUNNER_INFERENCE_EVENT_CHANNEL,
     };
     use mahayana_host_runtime::extensions::forever_box::BoxStatus;
+    use mahayana_host_runtime::extensions::inference::provider_session::{
+        RoutedProviderCheckpoint, RoutedToolDefinition,
+    };
+    use mahayana_host_runtime::extensions::session::agent_db::{AgentDbSubscription, SandAgentDb};
     use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
+    use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
+    use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
+    use mahayana_host_runtime::transcript_mutation_events::{
+        TranscriptMutationSubscription, subscribe_transcript_mutations,
+    };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    const COMPACTION_TEST_TURN: &str = "post-turn-compaction";
+    const COMPACTION_TEST_REQUEST: &str = "Continue the requested change and preserve the retained result.";
+    const COMPACTION_HISTORY_SUMMARY: &str = "The earlier request established the history fact.";
+    const COMPACTION_PREFIX_SUMMARY: &str = "The current request is continued by the retained assistant result.";
+
+    #[derive(Debug, PartialEq)]
+    struct PostTurnCompactionSnapshot {
+        entries: Vec<serde_json::Value>,
+        metadata: Option<String>,
+        admission: Option<String>,
+        write_generation: u64,
+    }
+
+    struct PostTurnCompactionFixture {
+        root: std::path::PathBuf,
+        sessions: ProductionSessionWorkers,
+        owner: std::sync::Arc<SandAgentDb>,
+        agent_id: String,
+        cancellation: super::RoutedProviderCancellation,
+    }
+
+    impl PostTurnCompactionFixture {
+        fn new(label: &str) -> Self {
+            use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
+                UserMessageOptions, create_user_message,
+            };
+
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-post-turn-compaction-{label}-{}", uuid::Uuid::new_v4(),
+            ));
+            fs::create_dir_all(&root).unwrap();
+            let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+            let record = sessions.materialize_new_session(None, "user", None).unwrap();
+            let entries = [
+                create_user_message("history-user", "Establish the history fact.", UserMessageOptions::default(), 1.0),
+                serde_json::json!({
+                    "id": "history-assistant", "kind": "message", "role": "assistant",
+                    "content": "The history fact is established."
+                }),
+                create_user_message("prefix-user", COMPACTION_TEST_REQUEST, UserMessageOptions::default(), 2.0),
+                // An explicit assistant message is a planner cut point. Its
+                // size crosses the shipping 8,000-token retained-tail budget.
+                serde_json::json!({
+                    "id": "retained-assistant", "kind": "message", "role": "assistant",
+                    "content": "r".repeat(32_004)
+                }),
+            ];
+            assert_eq!(sessions.append_agent_transcript_entries(&record.id, &entries).unwrap(), entries.len());
+            let admission = sessions.read_session_work_admission(&record.id).unwrap().unwrap();
+            assert!(!admission.deletion_pending && admission.archived_at_ms.is_none());
+            assert!(admission.admitted_work_id.is_none());
+            assert!(admission.admitted_media_work_id.is_none() && admission.admitted_media_paths.is_empty());
+            assert!(admission.provider_review_id.is_none() && admission.provider_review.is_none());
+            assert!(admission.provider_review_continuation_run_id.is_none());
+            assert!(matches!(admission.provider_review_phase.as_deref(), None | Some("completed")));
+            let owner = sessions.open_agent_db_owner(&record.id).unwrap();
+            Self {
+                root,
+                sessions,
+                owner,
+                agent_id: record.id,
+                cancellation: super::RoutedProviderCancellation::default(),
+            }
+        }
+
+        fn snapshot(&self) -> PostTurnCompactionSnapshot {
+            PostTurnCompactionSnapshot {
+                entries: self.owner.get_transcript_entries().unwrap(),
+                metadata: self.owner.read_kv("metadata").unwrap(),
+                admission: self.owner.read_kv("sessionWorkAdmission").unwrap(),
+                write_generation: get_sand_agent_db_write_generation(self.owner.db_path()),
+            }
+        }
+
+        fn run(&self, runner: &super::SandAgentRunner, should_cancel: &dyn Fn() -> bool) {
+            super::run_post_turn_compaction(
+                runner, &self.sessions, &self.agent_id, COMPACTION_TEST_TURN,
+                super::SAND_AGENT_TOKEN_LIMIT as u64, should_cancel,
+            );
+        }
+
+        fn assert_committed_once(
+            &self,
+            before: &PostTurnCompactionSnapshot,
+            publications: &PostTurnCompactionPublications,
+        ) -> serde_json::Value {
+            let after = self.snapshot();
+            assert_eq!(after.entries.len(), before.entries.len() + 1);
+            assert_eq!(&after.entries[..before.entries.len()], before.entries.as_slice());
+            assert_eq!(after.write_generation, before.write_generation + 1);
+            assert_eq!(publications.counts(), [1, 1, 1]);
+            let entry = after.entries.last().unwrap();
+            assert_eq!(entry["id"], format!("compaction:{}:{COMPACTION_TEST_TURN}", self.agent_id));
+            assert_eq!(entry["kind"], "compaction");
+            assert_eq!(entry["firstKeptEntryId"], "retained-assistant");
+            assert_eq!(entry["sourceTurnId"], COMPACTION_TEST_TURN);
+            assert!(entry["tokensBefore"].as_u64().unwrap() > 0);
+            assert!(entry["summary"].as_str().unwrap().chars().count() <= 16_000);
+            assert_eq!(entry["details"]["latestUnresolvedUserRequest"], COMPACTION_TEST_REQUEST);
+            let prior_admission: serde_json::Value = serde_json::from_str(before.admission.as_deref().unwrap()).unwrap();
+            let admission = self.sessions.read_session_work_admission(&self.agent_id).unwrap().unwrap();
+            assert_eq!(entry["sourceLifecycleRevision"], prior_admission["lifecycle_revision"]);
+            assert_ne!(entry["lifecycleRevision"], prior_admission["lifecycle_revision"]);
+            assert_eq!(entry["lifecycleRevision"], admission.lifecycle_revision);
+            assert_eq!(self.owner.read_metadata().unwrap()["lifecycleRevision"], entry["lifecycleRevision"]);
+            entry.clone()
+        }
+    }
+
+    impl Drop for PostTurnCompactionFixture {
+        fn drop(&mut self) {
+            self.sessions.shutdown();
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    struct PostTurnCompactionPublications {
+        counts: std::sync::Arc<[std::sync::atomic::AtomicUsize; 3]>,
+        _metadata: [AgentDbSubscription; 2],
+        transcript: Option<TranscriptMutationSubscription>,
+    }
+
+    impl PostTurnCompactionPublications {
+        fn new(fixture: &PostTurnCompactionFixture) -> Self {
+            use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+            let counts: Arc<[AtomicUsize; 3]> = Arc::new(std::array::from_fn(|_| AtomicUsize::new(0)));
+            let metadata = std::array::from_fn(|index| {
+                let counts = Arc::clone(&counts);
+                fixture.owner.subscribe_metadata(["lifecycleRevision", "sessionWorkAdmission"][index], Arc::new(move || {
+                    counts[index].fetch_add(1, Ordering::SeqCst);
+                }))
+            });
+            let transcript = subscribe_transcript_mutations({
+                let counts = Arc::clone(&counts);
+                let agent_id = fixture.agent_id.clone();
+                move |mutation| {
+                    if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                        counts[2].fetch_add(1, Ordering::SeqCst);
+                    }
+                }
+            });
+            Self { counts, _metadata: metadata, transcript: Some(transcript) }
+        }
+
+        fn counts(&self) -> [usize; 3] {
+            std::array::from_fn(|index| self.counts[index].load(std::sync::atomic::Ordering::SeqCst))
+        }
+    }
+
+    impl Drop for PostTurnCompactionPublications {
+        fn drop(&mut self) {
+            if let Some(subscription) = self.transcript.take() {
+                subscription.unsubscribe();
+            }
+        }
+    }
+
+    struct UnusedCompactionProviderPorts;
+
+    impl super::RoutedToolBridge for UnusedCompactionProviderPorts {
+        fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, super::ProviderSessionError> {
+            Ok(Vec::new())
+        }
+
+        fn call_tool(
+            &self,
+            _tool: &RoutedToolDefinition,
+            _args: serde_json::Value,
+            _tool_call_id: &str,
+        ) -> Result<serde_json::Value, super::ProviderSessionError> {
+            panic!("post-turn compaction must not dispatch a tool");
+        }
+    }
+
+    impl RoutedProviderCheckpointStore for UnusedCompactionProviderPorts {
+        fn persist(
+            &self,
+            _checkpoint: &RoutedProviderCheckpoint,
+        ) -> Result<String, super::ProviderSessionError> {
+            panic!("post-turn compaction must persist through the Session owner");
+        }
+    }
+
+    // Summary responses are injected at the existing binding. Unused tool and
+    // checkpoint ports fail if reached; the Runner facade, shipping producer,
+    // planning, fitting and Session/SQLite writes stay real.
+    fn post_turn_compaction_runner(
+        fixture: &PostTurnCompactionFixture,
+        response: impl Fn(usize) -> Result<String, super::ProviderSessionError> + Send + Sync + 'static,
+    ) -> (super::SandAgentRunner, std::sync::Arc<std::sync::atomic::AtomicUsize>) {
+        use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+        use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+        use mahayana_host_runtime::runner::routed_provider_runtime::RunnerRequestContextSnapshot;
+        use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
+
+        let composition = TurnAgentComposition::new(
+            super::RoutedProvider::OpenRouter,
+            Arc::new(UnusedCompactionProviderPorts),
+            RunnerRequestContextSnapshot {
+                context: mahayana_host_runtime::host_request_context::HostRequestContext {
+                    os_version: "compaction-contract".into(), shell: None,
+                    time_zone: Some("UTC".into()),
+                    transcripts_folder: fixture.root.join("transcripts").to_string_lossy().into_owned(),
+                    user_full_name: None,
+                },
+                rules: None,
+            },
+            fixture.cancellation.clone(),
+            Arc::new(UnusedCompactionProviderPorts),
+        );
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed_calls = Arc::clone(&calls);
+        let summarization: super::ProductionTurnSummarizationPrompt = Arc::new(move |system, user, should_cancel| {
+            assert!(!should_cancel(), "cancelled compaction dispatched another summary phase");
+            let index = observed_calls.fetch_add(1, Ordering::SeqCst);
+            match index {
+                0 => {
+                    assert!(system.contains("conversation-compaction summarizer"));
+                    assert!(user.contains("Establish the history fact."));
+                }
+                1 => {
+                    assert!(system.contains("split-turn prefix summarizer"));
+                    assert!(user.contains(COMPACTION_TEST_REQUEST));
+                }
+                _ => panic!("unexpected extra summarization request"),
+            }
+            response(index)
+        });
+        let bindings = super::ProductionTurnAgentBuildBindings::new(
+            super::ProductionTurnAgentStaticConfig {
+                model_id: "compaction-contract".into(),
+                agent_token_limit: super::SAND_AGENT_TOKEN_LIMIT,
+                conversation_id: fixture.agent_id.clone(),
+                is_box_scoped_subagent: false, is_subagent_runner: false,
+                is_shared_room_runner: false, sand_send_message_delivery_owed: false,
+                transcripts_folder_available: true,
+            },
+            Arc::new(|| None),
+            summarization,
+        );
+        (super::SandAgentRunner::new(ProductionTurnAgentOwner::new(composition).with_build_bindings(bindings)), calls)
+    }
+
+    #[test]
+    fn post_turn_compaction_cancelled_summaries_preserve_session() {
+        use std::sync::atomic::Ordering;
+
+        for phase in [0, 1] {
+            for (outcome, cancel_token) in [("cancelled", false), ("cancelled", true), ("transport", true), ("success", true)] {
+                let fixture = PostTurnCompactionFixture::new(&format!("phase-{phase}-{outcome}-{cancel_token}"));
+                let before = fixture.snapshot();
+                let publications = PostTurnCompactionPublications::new(&fixture);
+                let cancellation = fixture.cancellation.clone();
+                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
+                    if index < phase {
+                        return Ok(COMPACTION_HISTORY_SUMMARY.into());
+                    }
+                    assert_eq!(index, phase);
+                    if cancel_token {
+                        cancellation.cancel("cancelled during summarization");
+                    }
+                    match outcome {
+                        "cancelled" => Err(super::ProviderSessionError::Cancelled("provider aborted summary".into())),
+                        "transport" => Err(super::ProviderSessionError::Transport("provider connection closed".into())),
+                        "success" => Ok("late summary after cancellation".into()),
+                        _ => unreachable!(),
+                    }
+                });
+                fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
+                assert_eq!(calls.load(Ordering::SeqCst), phase + 1);
+                assert_eq!(fixture.cancellation.is_cancelled(), cancel_token);
+                assert_eq!(fixture.snapshot(), before);
+                assert_eq!(publications.counts(), [0, 0, 0]);
+            }
+        }
+        let fixture = PostTurnCompactionFixture::new("cancelled-before-start");
+        let before = fixture.snapshot();
+        let publications = PostTurnCompactionPublications::new(&fixture);
+        let (runner, calls) = post_turn_compaction_runner(&fixture, |_| panic!("cancelled attempt must not summarize"));
+        fixture.cancellation.cancel("cancelled before compaction");
+        fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert_eq!(fixture.snapshot(), before);
+        assert_eq!(publications.counts(), [0, 0, 0]);
+    }
+
+    #[test]
+    fn post_turn_compaction_cancellation_between_phases_and_before_commit_preserves_session() {
+        use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+
+        for phase in [0, 1] {
+            for provider_failed in [false, true] {
+                let fixture = PostTurnCompactionFixture::new(&format!("after-phase-{phase}-failed-{provider_failed}"));
+                let before = fixture.snapshot();
+                let publications = PostTurnCompactionPublications::new(&fixture);
+                let cancel_after_sample = Arc::new(AtomicBool::new(false));
+                let arm_after_return = Arc::clone(&cancel_after_sample);
+                let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
+                    if index == phase {
+                        arm_after_return.store(true, Ordering::SeqCst);
+                        if provider_failed {
+                            return Err(super::ProviderSessionError::Transport("summary provider failed".into()));
+                        }
+                    }
+                    Ok((if index == 0 { COMPACTION_HISTORY_SUMMARY } else { COMPACTION_PREFIX_SUMMARY }).into())
+                });
+                fixture.run(&runner, &|| {
+                    let observed = fixture.cancellation.is_cancelled();
+                    if cancel_after_sample.swap(false, Ordering::SeqCst) {
+                        // Deterministically change the real token just after
+                        // the caller's false sample. The next phase/commit
+                        // boundary must see it; no provider timing is claimed.
+                        assert!(!observed);
+                        fixture.cancellation.cancel("cancelled after summary return was sampled");
+                    }
+                    observed
+                });
+                assert!(fixture.cancellation.is_cancelled());
+                assert_eq!(calls.load(Ordering::SeqCst), phase + 1);
+                assert_eq!(fixture.snapshot(), before);
+                assert_eq!(publications.counts(), [0, 0, 0]);
+            }
+        }
+    }
+
+    #[test]
+    fn post_turn_compaction_provider_failures_commit_fitted_degraded_fallback() {
+        use std::sync::atomic::Ordering;
+
+        for phase in [0, 1] {
+            let fixture = PostTurnCompactionFixture::new(&format!("provider-failed-{phase}"));
+            let before = fixture.snapshot();
+            let publications = PostTurnCompactionPublications::new(&fixture);
+            let (runner, calls) = post_turn_compaction_runner(&fixture, move |index| {
+                if index == phase {
+                    Err(super::ProviderSessionError::Transport("ordinary provider failure".into()))
+                } else {
+                    Ok(COMPACTION_HISTORY_SUMMARY.into())
+                }
+            });
+            fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
+            assert_eq!(calls.load(Ordering::SeqCst), phase + 1);
+            assert!(!fixture.cancellation.is_cancelled());
+            let entry = fixture.assert_committed_once(&before, &publications);
+            assert_eq!(entry["details"]["qualityDegraded"], true);
+            let summary = entry["summary"].as_str().unwrap();
+            assert!(summary.contains("were removed without a summary because summarization failed"));
+            assert!(summary.contains(COMPACTION_TEST_REQUEST));
+            assert!(summary.ends_with("[Summary quality degraded: older context was retained without a successful model summary.]"));
+        }
+    }
+
+    #[test]
+    fn post_turn_compaction_success_commits_once_and_replays_after_reopen() {
+        use std::sync::atomic::Ordering;
+        use mahayana_host_runtime::extensions::inference::typed_replay_serialization::serialize_responses_replay;
+        use mahayana_host_runtime::extensions::session::typed_replay::{ReplayContentPart, ReplayRole, TypedReplayEntry};
+
+        let fixture = PostTurnCompactionFixture::new("successful-split-turn");
+        let before = fixture.snapshot();
+        let publications = PostTurnCompactionPublications::new(&fixture);
+        let (runner, calls) = post_turn_compaction_runner(&fixture, |index| {
+            Ok((if index == 0 { COMPACTION_HISTORY_SUMMARY } else { COMPACTION_PREFIX_SUMMARY }).into())
+        });
+        fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        let entry = fixture.assert_committed_once(&before, &publications);
+        let summary = entry["summary"].as_str().unwrap();
+        assert!(summary.contains(COMPACTION_HISTORY_SUMMARY));
+        assert!(summary.contains("**Turn Context (split turn):**"));
+        assert!(summary.contains(COMPACTION_PREFIX_SUMMARY));
+        assert!(summary.contains(COMPACTION_TEST_REQUEST));
+        assert_ne!(entry["details"]["qualityDegraded"], true);
+        let replay = fixture.sessions.read_agent_typed_compacted_transcript_entries(&fixture.agent_id).unwrap();
+        assert_eq!(replay.len(), 2);
+        assert!(matches!(&replay[0], TypedReplayEntry::CompactionSummary(value)
+            if value.summary == summary && value.details.as_ref() == entry.get("details")));
+        let TypedReplayEntry::Message(retained) = &replay[1] else {
+            panic!("retained assistant must remain a typed message");
+        };
+        assert_eq!(retained.id.as_deref(), Some("retained-assistant"));
+        assert_eq!(retained.role, ReplayRole::Assistant);
+        assert_eq!(retained.content, vec![ReplayContentPart::Text("r".repeat(32_004))]);
+        let wire = serialize_responses_replay(&replay).unwrap();
+        assert_eq!(wire.len(), 2);
+
+        let committed = fixture.snapshot();
+        fixture.run(&runner, &|| fixture.cancellation.is_cancelled());
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(fixture.snapshot(), committed);
+        assert_eq!(publications.counts(), [1, 1, 1]);
+
+        fixture.sessions.shutdown();
+        let reopened = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 500);
+        let reopened_replay = reopened.read_agent_typed_compacted_transcript_entries(&fixture.agent_id).unwrap();
+        assert_eq!(reopened_replay, replay);
+        assert_eq!(serialize_responses_replay(&reopened_replay).unwrap(), wire);
+        assert_eq!(reopened.read_session_work_admission(&fixture.agent_id).unwrap().unwrap().lifecycle_revision,
+            entry["lifecycleRevision"].as_str().unwrap());
+        assert_eq!(reopened.read_agent_transcript_entries(&fixture.agent_id).unwrap(), committed.entries);
+        reopened.shutdown();
+    }
 
     fn shipping_split_compaction_fixture() -> (
         std::path::PathBuf,

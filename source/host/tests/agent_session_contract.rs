@@ -1123,7 +1123,10 @@ fn reopened_session_owner_rolls_back_unsettled_materialized_media() {
         )
         .expect("capture media generation");
     assert!(!revision.is_empty());
-    assert!(production.close_agent_db_owner(&record.id, false));
+    assert!(production.retire_agent_owners(&record.id, false)
+        .expect("retire paired session owners before recovery"));
+    assert_eq!(production.active_agent_store_owner_count(), 0);
+    assert_eq!(production.active_agent_db_owner_count(), 0);
 
     production
         .open_agent_db_owner(&record.id)

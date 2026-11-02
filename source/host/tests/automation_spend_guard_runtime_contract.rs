@@ -18,6 +18,7 @@ use mahayana_host_runtime::extensions::transcript::sand_automation_spend_guard::
 use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
+use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
 use serde_json::json;
 
 const CHILD_CASE_ENV: &str = "FABUSHI_SPEND_GUARD_CONTRACT_CASE";
@@ -358,36 +359,60 @@ fn spend_guard_card_acknowledgment_requires_insertion_for_bound_and_legacy_sessi
                 let before = owner.get_transcript_entries().expect("rows before refusal");
                 let guard_before = owner.get_automation_spend_guard_state().expect("guard before");
                 let unread_before = owner.get_unread_state().expect("unread before");
+                let generation_before = get_sand_agent_db_write_generation(owner.db_path());
+                let observed = Arc::new(Mutex::new(Vec::new()));
+                let subscription = if legacy {
+                    None
+                } else {
+                    let weak = Arc::downgrade(&owner);
+                    let observed = Arc::clone(&observed);
+                    Some(owner.subscribe_metadata("automationSpendGuardState", Arc::new(move || {
+                        let owner = weak.upgrade().expect("Runtime retains the DB owner");
+                        observed.lock().expect("callback observations").push((
+                            owner.get_automation_spend_guard_state().expect("same-owner committed guard"),
+                            owner.get_unread_state().expect("same-owner committed unread"),
+                            owner.get_transcript_entries().expect("same-owner committed card"),
+                        ));
+                    })))
+                };
                 let applied = runtime
                     .spend_guard()
                     .apply_with_store(&agent.id, &store, &created[0].id, now_ms);
-                if collision {
+                let applied = if collision {
                     let error = applied.expect_err("INSERT OR IGNORE is not a newly issued card");
                     assert!(error.contains("spend-guard card was not inserted"));
                     assert_eq!(owner.get_transcript_entries().expect("retained rows"), before);
-                    if legacy {
-                        // The compatibility branch must stop before its separate
-                        // activity/state writes when the append inserted no row.
-                        assert_eq!(owner.get_automation_spend_guard_state().expect("legacy guard"), guard_before);
-                        assert_eq!(owner.get_unread_state().expect("legacy unread"), unread_before);
-                    }
+                    assert_eq!(owner.get_automation_spend_guard_state().expect("retained guard"), guard_before);
+                    assert_eq!(owner.get_unread_state().expect("retained unread"), unread_before);
+                    assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation_before);
+                    assert!(observed.lock().expect("no refused publication").is_empty());
+                    assert!(owner.delete_transcript_entry(&card_id).expect("repair the conflicting fixture row"));
+                    runtime.spend_guard()
+                        .apply_with_store(&agent.id, &store, &created[0].id, now_ms)
+                        .expect("a rejected card must not suppress a subsequent actual nudge")
                 } else {
-                    let applied = applied.expect("healthy card insertion");
-                    assert_eq!(applied.issued_card_entry_id.as_deref(), Some(card_id.as_str()));
-                    assert!(!applied.paused);
-                    let entries = owner.get_transcript_entries().expect("inserted card");
-                    assert_eq!(entries.len(), before.len() + 1);
-                    let entry = entries.iter().find(|entry| entry["id"] == card_id).expect("issued card row");
-                    assert_eq!(entry["kind"], "send-message");
-                    assert_eq!(entry["message"]["type"], "widget");
-                    assert_eq!(entry.get("sessionKey").is_none(), legacy);
-                    let state = owner.get_automation_spend_guard_state().expect("committed guard");
-                    assert_eq!(state.nudged_at_ms, Some(now_ms));
-                    assert_eq!(state.card_entry_ids, vec![card_id]);
-                    let unread = owner.get_unread_state().expect("card activity");
-                    assert_eq!(unread.last_activity_at, now_ms);
-                    assert_eq!(unread.unread_count, unread_before.unread_count + 1.0);
+                    applied.expect("healthy card insertion")
+                };
+                assert_eq!(applied.issued_card_entry_id.as_deref(), Some(card_id.as_str()));
+                assert!(!applied.paused);
+                let entries = owner.get_transcript_entries().expect("inserted card");
+                assert_eq!(entries.len(), before.len() + usize::from(!collision));
+                let entry = entries.iter().find(|entry| entry["id"] == card_id).expect("issued card row");
+                assert_eq!(entry["kind"], "send-message");
+                assert_eq!(entry["message"]["type"], "widget");
+                assert_eq!(entry.get("sessionKey").is_none(), legacy);
+                let state = owner.get_automation_spend_guard_state().expect("committed guard");
+                assert_eq!(state.nudged_at_ms, Some(now_ms));
+                assert_eq!(state.card_entry_ids, vec![card_id]);
+                let unread = owner.get_unread_state().expect("card activity");
+                assert_eq!(unread.last_activity_at, now_ms);
+                assert_eq!(unread.unread_count, unread_before.unread_count + 1.0);
+                if !legacy {
+                    let callbacks = observed.lock().expect("committed callback observations");
+                    assert_eq!(callbacks.len(), 1, "one successful bound publication after any refusal");
+                    assert_eq!(callbacks[0], (state, unread, entries));
                 }
+                drop(subscription);
                 workers.shutdown();
                 let _ = fs::remove_dir_all(root);
             }

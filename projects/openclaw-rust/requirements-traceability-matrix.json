@@ -198,7 +198,9 @@
         "source/host/tests/openclaw_agent_turn_contract.rs",
         "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
         "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
-        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md"
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/tests/canonical_checkpoint_recovery_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
@@ -1200,7 +1202,9 @@
         "source/host/tests/openclaw_agent_turn_contract.rs",
         "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
         "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
-        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md"
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
+        "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "source/host/tests/canonical_checkpoint_recovery_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC05",
