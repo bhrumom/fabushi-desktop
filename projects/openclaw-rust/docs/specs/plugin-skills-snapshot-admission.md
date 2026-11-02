@@ -587,3 +587,31 @@ actual shared-library consumer falsify that inference for this test. This
 oracle repair does not decide a new archive-management policy or close stale
 Runner-generation and full permission/restart responsibilities. Independent
 frozen review and the corrected exact-H Actions gate remain required.
+
+### Live refusal restoration reporting — PS-LIVE-REPORT-01
+
+Decision `PS-LIVE-REPORT-01 — FIX / IMPL_BUG`, revalidated against the adopted
+existing owner at `e70a72574c108f8b7704eb45e5109875a24eddb9` before this fix.
+After an allowed snapshot is retained across a failed denial publication, a
+fresh successful materialization can release the live refusal without changing
+skill IDs, versions, publisher identity or the old disk denial list. The current
+report compares only those disk facts and incorrectly sends `changed: false`
+to the actual Host telemetry consumer, even though admitted skills return.
+
+Preserve PS-08 by carrying the effective admission transition out of the existing
+owner's successful publication interval. Releasing an existing live refusal
+must make that pass's successful report changed, including same-version/current-
+user restoration and valid zero-skill restoration. The next identical successful
+refresh is unchanged. Do not infer a release before rename and strict readback,
+create another permission set, mutate failed-pass reporting, or run callbacks
+under publication/state/admission locks. All prior identity, denial, fallback,
+cleanup, replacement and coalescing assertions remain mandatory.
+
+Use the actual service, retained cache, stable reader and reporter with a real
+failed staging/rename boundary; assert refusal remains live and no success is
+reported on failure, the fresh equal-identity release reports one change, and a
+following equal refresh reports no change. Include the zero-skill positive and
+keep the prior unchanged-refresh and new-denial controls. Existing
+`extensions::mcp::plugin_skills::sync_tests` is the Actions entrypoint. This is
+truthful reporting of the existing permission transition; no UI refresh, durable
+revocation, external effect or full lifecycle acceptance is claimed.

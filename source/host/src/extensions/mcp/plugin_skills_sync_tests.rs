@@ -1245,6 +1245,98 @@ fn record_ids(records: &[PluginSkillRecord]) -> Vec<&str> {
 }
 
 #[test]
+fn live_refusal_restoration_reports_changed_once_after_stage_or_rename_failure() {
+    for failed_rename in [false, true] {
+        for zero_skills in [false, true] {
+            let gate = failed_rename.then(PublicationGate::after_seed);
+            let h = match &gate {
+                Some(gate) => Harness::with_now(Arc::clone(&gate.now)),
+                None => Harness::new(),
+            };
+            let mut loaded = two_plugins(&h.root, "v1");
+            let original_files = skill_file_bytes(&plugin_contents_to_skill_records(
+                &loaded.plugins,
+                &loaded.publisher_facts,
+            ));
+            if zero_skills {
+                loaded.plugins[0].skills.clear();
+            }
+            let seed = h.step("seed", LoadStep::Loaded(loaded.clone())).unwrap();
+            assert_eq!(
+                record_ids(&seed),
+                if zero_skills { vec!["10"] } else { vec!["10", "9"] },
+            );
+            let index = h.service.current_index().unwrap();
+            assert_eq!(index.current_user_id, Some(12));
+            assert!(index.auth_blocked.is_empty());
+            let bytes = fs::read(h.root.cache_path()).unwrap();
+            let sentinel = h.root.sentinel();
+            let reader = h.service.admission_reader();
+            assert!(!reader.is_denied("9"));
+
+            if let Some(gate) = &gate {
+                let mut denied = loaded.clone();
+                denied.auth_blocked.push(auth_block("9"));
+                let active = h.call("denied-rename-failure");
+                h.enter(2);
+                h.release.send(LoadStep::Loaded(denied)).unwrap();
+                gate.wait();
+                assert!(reader.is_denied("9"));
+                let staged = h.root.staged_files();
+                assert_eq!(staged.len(), 1);
+                fs::remove_file(&staged[0]).unwrap();
+                gate.release.send(()).unwrap();
+                assert!(active.finish().is_err());
+            } else {
+                assert_eq!(
+                    h.step(
+                        "denied-stage-failure",
+                        LoadStep::Loaded(refuse_nine_with_invalid_stage(&h.root)),
+                    ).unwrap_err(),
+                    "invalid plugin skills cache snapshot",
+                );
+            }
+            assert!(reader.is_denied("9"));
+            assert!(!reader.is_denied("10"));
+            assert_eq!(record_ids(&h.service.current()), vec!["10"]);
+            assert_eq!(h.service.current_index().unwrap(), index);
+            assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+            assert_skill_file_bytes(&original_files);
+            assert!(h.root.staged_files().is_empty());
+            assert!(sentinel.exists());
+            assert_eq!(h.events.lock().unwrap().len(), 1);
+
+            for (trigger, changed) in [("restored", true), ("unchanged", false)] {
+                assert_eq!(h.step(trigger, LoadStep::Loaded(loaded.clone())).unwrap(), seed);
+                assert!(Arc::ptr_eq(&reader, &h.service.admission_reader()));
+                assert!(!reader.is_denied("9"));
+                assert!(!reader.is_denied("10"));
+                assert_eq!(h.service.current(), seed);
+                // Constant time and the exact same materialization keep every
+                // disk fact equal. Only the first pass releases the live refusal,
+                // including when plugin 9 successfully materializes no skills.
+                assert_eq!(h.service.current_index().unwrap(), index);
+                assert_eq!(fs::read(h.root.cache_path()).unwrap(), bytes);
+                assert_skill_file_bytes(&original_files);
+                let events = h.events.lock().unwrap();
+                let event = events.last().unwrap();
+                assert_eq!(event.trigger, trigger);
+                assert_eq!(event.outcome, "ok");
+                assert_eq!(
+                    event.changed, changed,
+                    "failed_rename={failed_rename}, zero_skills={zero_skills}, trigger={trigger}",
+                );
+                assert_eq!(event.skill_count, seed.len());
+                assert_eq!(event.error_class, None);
+            }
+            assert!(!sentinel.exists());
+            assert_eq!(h.events.lock().unwrap().len(), 3);
+            h.assert_calls(4);
+        }
+    }
+}
+
+#[test]
 fn live_refusal_survives_invalid_stage_failed_release_and_partial_until_valid_fresh_success() {
     // Seed takes three clock reads, invalid-stage denial takes two, and the
     // next fresh-success duration is call eight. Keep that real failed rename

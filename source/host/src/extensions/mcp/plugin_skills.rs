@@ -590,7 +590,7 @@ impl SandPluginSkillsService {
         staged: super::plugin_skills_cache::StagedPluginSkillsCache,
         successful_ids: &HashSet<String>,
         denied_ids: &HashSet<String>,
-    ) -> Result<Option<PluginSkillsSnapshot>, String> {
+    ) -> Result<Option<(PluginSkillsSnapshot, bool)>, String> {
         // This service has one pass writer. Keep rename, strict readback and
         // positive release in one publication interval; a successor cannot be
         // constructed until it has claimed this predecessor's same lock.
@@ -616,12 +616,15 @@ impl SandPluginSkillsService {
             .denied
             .lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        // A failed denial publication can leave the old allowed cache intact;
+        // releasing its live refusal is still an observable admission change.
+        let mut released_live_refusal = false;
         for id in successful_ids {
             if !denied_ids.contains(id) {
-                live.remove(id);
+                released_live_refusal |= live.remove(id).is_some();
             }
         }
-        Ok(Some(committed))
+        Ok(Some((committed, released_live_refusal)))
     }
 
     fn prune_committed_if_current(
@@ -843,7 +846,9 @@ impl SandPluginSkillsService {
         // Sample the callback before the publication fence. It may reenter or
         // dispose the service; no callback runs while publication is locked.
         let duration_ms = (self.now)().saturating_sub(started);
-        let Some(committed) = self.publish_snapshot_if_active(staged, &loaded_ids, &denied)? else {
+        let Some((committed, released_live_refusal)) =
+            self.publish_snapshot_if_active(staged, &loaded_ids, &denied)?
+        else {
             return Ok(self.current());
         };
         let records = committed.eligible_skills().cloned().collect::<Vec<_>>();
@@ -873,6 +878,7 @@ impl SandPluginSkillsService {
         }
         if let Some(report) = &self.report_sync {
             let changed = previous.is_none()
+                || released_live_refusal
                 || skill_records_identity(&previous_records) != skill_records_identity(&records)
                 || previous.as_ref().and_then(|value| value.index.current_user_id)
                     != committed.index.current_user_id
