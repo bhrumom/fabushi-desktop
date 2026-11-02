@@ -58,9 +58,9 @@ fn spawn_remote_history_server() -> (String, thread::JoinHandle<Vec<String>>) {
             requests.push(String::from_utf8_lossy(&request).into_owned());
 
             let (low, high) = match page_index {
-                0 => (202_u64, 401_u64),
-                1 => (2_u64, 201_u64),
-                2 => (1_u64, 1_u64),
+                0 => (1_u64, 200_u64),
+                1 => (201_u64, 400_u64),
+                2 => (401_u64, 401_u64),
                 _ => unreachable!(),
             };
             let messages = (low..=high)
@@ -1622,8 +1622,9 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
     let requests = server.join().expect("messaging fixture");
     assert_eq!(requests.len(), 3);
     assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
-    assert!(requests[1].contains("&before="));
-    assert!(requests[2].contains("&before="));
+    assert!(requests[0].contains("&afterId=0"));
+    assert!(requests[1].contains("&afterId=200"));
+    assert!(requests[2].contains("&afterId=400"));
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
@@ -2364,8 +2365,8 @@ fn shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_over
         let requests = server.join().expect("bounded two-page fixture");
         assert_eq!(requests.len(), 2, "only the two history GETs, no resource GET: {label}");
         assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?")), "{label}");
-        assert!(!requests[0].contains("&before="), "{label}");
-        assert!(requests[1].contains("&before="), "malformed known ID must not terminate traversal: {label}");
+        assert!(requests[0].contains("&afterId=0"), "{label}");
+        assert!(requests[1].contains("&afterId="), "malformed known ID must not terminate traversal: {label}");
         let _ = fs::remove_dir_all(root);
     }
 }
@@ -3275,3 +3276,57 @@ fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+
+#[test]
+fn shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page() {
+    let root = temp_root("human-coverage-restart");
+    let first_page = (1..=200).map(|n| fixture_remote_human_message(n, 2, 1, &format!("row-{n}"), None, json!([]))).collect::<Vec<_>>();
+    let (base_url, first_server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":first_page}})),
+        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"retryable disconnect"})),
+    ]);
+    let first = human_message_fixture_runtime(&root, &base_url);
+    let id = first.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    assert!(first.sync_human_conversation(&id).is_err());
+    let owner = first.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_transcript_entries().expect("page persisted").len(), 200);
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("watermark"),
+        Some(json!({"afterId":200,"complete":false})));
+    first.shutdown();
+    drop(owner);
+    drop(first);
+    let requests = first_server.join().expect("fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].contains("&afterId=0"));
+    assert!(requests[1].contains("&afterId=200"));
+
+    // Same address and private credential, but new Host instance.
+    // The second server gets its own address; replacing the issuer-bound
+    // credential is intentional because only the active service origin changed.
+    let (resume_url, second_server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[
+            fixture_remote_human_message(201, 2, 1, "row-201", None, json!([]))
+        ]}})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[
+            fixture_remote_human_message(201, 2, 1, "row-201", None, json!([]))
+        ]}})),
+    ]);
+    let resumed = human_message_fixture_runtime(&root, &resume_url);
+    let rows = resumed.sync_human_conversation(&id).expect("resume after durable page");
+    assert_eq!(rows.len(), 201);
+    assert_eq!(rows[0]["id"], "human-server-message:1");
+    assert_eq!(rows[200]["id"], "human-server-message:201");
+    let owner = resumed.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("finished"),
+        Some(json!({"afterId":201,"complete":true})));
+    let requests = second_server.join().expect("resume HTTP");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].contains("&afterId=200"));
+    assert!(!requests[1].contains("&afterId="), "latest snapshot refresh");
+    resumed.shutdown();
+    drop(owner);
+    drop(resumed);
+    let _ = fs::remove_dir_all(root);
+}
