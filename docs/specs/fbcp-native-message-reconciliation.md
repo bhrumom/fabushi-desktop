@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–3
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–6
 
 ## Context and goal
 
@@ -138,3 +138,24 @@ tests, 4 Agent nonce cases and shipping compile/protocol/TCP gates.
 This first increment does not close durable history-range coverage,
 same-conversation reaction concurrency, POST restart recovery, saturated
 time-cursor handling, full product acceptance or independent ACCEPT.
+
+### Round 6 prerequisite recovery — canonical acknowledgement oracle
+
+Run `41405385707` at `849f91588047e7ee856334994f485ccb2744bb7c`
+ended with Human 13 passed / 1 failed / 0 ignored; Agent nonce did not run.
+Shipping compilation, normalization 6, bare parser 2, protocol 122, TCP 9
+including the live service, proxy 4 and Native credential 1 all passed.
+The failure is `TEST_FLAW`: after correctly rejecting a missing/changed
+nonce and proving unchanged durable state across restart, the recovery
+assertion still expected the pre-refresh row byte-for-byte. NMR-21a
+requires a valid matching acknowledgement to refresh the service fields.
+
+NMR-AC-13b: retain all complete-row rejection/restart assertions for both
+nonce negatives; explicitly expect the valid service timestamp, author
+name and empty reaction projections on recovery, and reopen once more to
+prove that complete refreshed row is durable. Do not change admission or
+production refresh semantics to satisfy the stale oracle. Before dependent
+history/reaction implementation, both required jobs must pass on the new
+exact H with Human 14 and Agent nonce 4 actually executed, plus the existing
+shipping/protocol/TCP gates. Preserve the failed run as evidence.
+

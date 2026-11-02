@@ -2101,11 +2101,24 @@ fn shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_
             restarted.read_human_conversation_transcript(&id).expect("restart canonical row"),
             vec![settled.clone()],
         );
+        let mut refreshed = settled;
+        refreshed["authorName"] = json!("local");
+        refreshed["timestampMs"] = json!(1791162021000.0);
+        refreshed["reactions"] = json!([]);
+        refreshed["remoteReactions"] = json!([]);
         assert_eq!(
-            restarted.sync_human_conversation(&id).expect("unchanged nonce is an admissible overlap"),
-            vec![settled],
+            restarted.sync_human_conversation(&id).expect("unchanged nonce admits an authoritative refresh"),
+            vec![refreshed.clone()],
         );
         restarted.shutdown();
+        drop(restarted);
+
+        let reopened = human_message_fixture_runtime(&root, &base_url);
+        assert_eq!(
+            reopened.read_human_conversation_transcript(&id).expect("restart refreshed canonical row"),
+            vec![refreshed],
+        );
+        reopened.shutdown();
         let requests = server.join().expect("Human fixture");
         assert_eq!(requests.len(), 2, "nonce admission must not dispatch or fetch resources");
         assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?")));
@@ -3261,3 +3274,4 @@ fn call_session_owner_fences_lifecycle_signaling_reconnect_and_restart() {
 
     let _ = fs::remove_dir_all(root);
 }
+
