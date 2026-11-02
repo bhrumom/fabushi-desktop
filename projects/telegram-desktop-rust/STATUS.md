@@ -5,7 +5,29 @@ Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
+## Current batch — task20bf round1, NMR-50 recovery and dispatch scope
+
+The existing Session now skips active forward batches during automatic recovery,
+so destination and unrelated history can advance while a send response is held.
+Roster sync recovers once per invocation and consumes a friends response only
+after expected-user and complete-credential checks. The actual Coordinator
+request-frame boundary now checks the original picker/account lifetime after
+readiness; retired unposted intent cannot become a new account's request.
+Already posted durable intent remains with the Host.
+
+Four Host regressions (Human52 total, including concurrent NMR-49 and upload bounds) and six actual-client Chromium cases
+(22 total) are authored; independent source review found no remaining blocker.
+Containing-H Actions execution is pending at authoring. Concurrent NMR-49,
+cached-source/journal and version-preserving diagnostic changes are retained.
+Fixed U, 16381 Git-only identities, two complete/four pending source reviews,
+null unknown/unread and false source/product/independent acceptance remain.
+Full source/legal, remaining product behaviors, real services, signed platforms,
+complete UI/a11y/temporal/Bot/security/performance/soak and upgrade/rollback stay
+open. Evidence and exact execution state:
+`projects/telegram-desktop-rust/evidence/task20bf-round1-nmr50-recovery.json`.
+
+
+## Concurrent bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
 Observed 2026-11-02. Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
 Integration base is `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`;

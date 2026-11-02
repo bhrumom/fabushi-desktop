@@ -53,7 +53,7 @@ function validateReply(method: string, value: unknown): unknown {
 
 export interface ProductionCoordinatorClient {
   readonly ready: Promise<void>;
-  call(method: string, args?: unknown): Promise<unknown>;
+  call(method: string, args?: unknown, options?: CoordinatorCallOptions): Promise<unknown>;
   telegramAuthStatus(): Promise<TelegramAuthorizationProjection>;
   telegramSendCode(phoneNumber: string): Promise<TelegramAuthorizationProjection>;
   telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
@@ -72,6 +72,11 @@ export interface ProductionCoordinatorClient {
   subscribe(family: string, listener: EventListener): () => void;
   subscribeTransport(listener: TransportListener): () => void;
   dispose(): void;
+}
+
+/** Local admission only; callbacks never enter the Coordinator wire payload. */
+export interface CoordinatorCallOptions {
+  readonly isDispatchCurrent?: () => boolean;
 }
 
 export function createCoordinatorClient(portBridge: CoordinatorPortBridge): ProductionCoordinatorClient | null {
@@ -169,9 +174,15 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   if (claim == null) return null;
   claim.request();
 
-  const call = async (method: string, args: unknown = {}) => {
+  const call = async (method: string, args: unknown = {}, options?: CoordinatorCallOptions) => {
+    const isDispatchCurrent = options?.isDispatchCurrent;
     await currentReady;
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
+    // Readiness can outlive the account or UI that originated this intent.
+    // Fence the actual frame; an already posted durable request is unaffected.
+    if (isDispatchCurrent != null && !isDispatchCurrent()) {
+      throw new CoordinatorCallError("request-retired", `${method} request is no longer current`);
+    }
     const requestId = `r-${++nextRequestId}`;
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
     port.postMessage({ kind: "request", requestId, method, args });

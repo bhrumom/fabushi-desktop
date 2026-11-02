@@ -1,0 +1,272 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 1,
+  "batch": "NMR-50: forward recovery progress and original dispatch scope",
+  "state": "implemented-tests-authored-independent-source-review-complete-execution-pending",
+  "source": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "changed": false
+  },
+  "base": {
+    "main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "discovery": "b25c2003a8e76779f2535fc3dfa90e4fe5bde149",
+    "branch": "checkpoint/tdrp-nmr50-recovery-20bf9475-r1",
+    "spec_checkpoint": "3c9995a97c59d89824b2f6e0e49e72cef4825439",
+    "ledger_preparation": "f1c0b36c8d91b3699fa1319e83ab048d0eae4bb1",
+    "concurrent_preserved": [
+      "d3d28ac4dba2d288d8c7146265e498f042f82ab3 NMR-49 reply requirements",
+      "c438df8390f60c044afbd37f511d35bbc0fdb58e cached Human source identity / journal corruption matrix",
+      "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2 restore fixture metadata before malformed journal matrix",
+      "d78ba3c1f026130d2494ddce3c11adf610069aa1 lock-only diagnostics preserve pinned versions",
+      "936115b0aa578c340c74dd6aa7c71c362572bd72 NMR-49 production/reply transaction, three Host and two projection cases",
+      "1b0e674b3e39292ae715a3eb50435d83e2cb8577 native CLI production feature/build and installer gates; inherited from live branch without replacement",
+      "76a84e8a9ff8867a076edd0c89f913a58cdb2806 25MiB Native upload bound, bounded file reads, shared forward snapshot limit, one Host and three owner tests"
+    ],
+    "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "isolated_production_base": "76a84e8a9ff8867a076edd0c89f913a58cdb2806",
+    "isolation_reason": "Expected-head CAS detected concurrent reply, CLI and upload changes before publication; all are integrated/preserved. A dedicated branch from the current migration commit freezes one testable product batch and will return by PR to the same migration line. Later shared-branch changes are not overwritten."
+  },
+  "production": {
+    "entry": "ForwardMessageDialog -> ProductionRenderer -> actual Coordinator call frame -> Session gateway -> ProductionSessionWorkers -> existing HumanForwardBatch source journal / destination SandAgentDb -> authenticated Fabushi native service -> canonical transcript projection",
+    "authority": "Native credentials and service account/remote IDs are authoritative. Session owns durable local intents/transcript, renderer and roster are projections. The optional frame admission callback is local only and does not change the wire payload or create an account authority.",
+    "changes": [
+      "Automatic recovery skips a batch whose mutex is held by an active executor; target and unrelated history can settle while its POST response is delayed.",
+      "Top-level roster scans recovery once; direct conversation sync retains one recovery scan.",
+      "Roster request binds expected Host user before HTTP and rechecks complete consumed-body credential snapshot.",
+      "Unposted forwards carry the original dialog/account predicate through readiness to the actual frame boundary; retirement rejects without a mutation frame. Already-posted durable requests remain owned by Host."
+    ],
+    "new_owner": false,
+    "schema_migration": false,
+    "data_deleted": false
+  },
+  "findings": [
+    {
+      "id": "NMR50-R1",
+      "decision": "FIX",
+      "severity": "P2",
+      "path": "source/host/src/extensions/session/production.rs#resume_human_forward_batches",
+      "failure": "Global recovery waits for active batch HTTP and blocks ordinary/destination history settlement.",
+      "fix": "Automatic try_lock skips only WouldBlock; one acquired guard retained through existing delivery; explicit callers serialize."
+    },
+    {
+      "id": "NMR50-R2",
+      "decision": "FIX",
+      "severity": "P2",
+      "path": "source/host/src/extensions/session/production.rs#sync_human_conversations",
+      "failure": "One failed target retries once globally and again per friend in the same roster invocation.",
+      "fix": "Private history helper after one top-level recovery scan; direct sync still scans once."
+    },
+    {
+      "id": "NMR50-R3",
+      "decision": "FIX",
+      "severity": "P1",
+      "path": "source/host/src/extensions/session/native_messaging.rs#list_friends",
+      "failure": "Unbound friends response can persist a rotated account's roster under the original Host.",
+      "fix": "Expected-user bound API plus existing complete credential fence after consuming body."
+    },
+    {
+      "id": "NMR50-R4",
+      "decision": "FIX",
+      "severity": "P1",
+      "path": "frontend/src/production/coordinator-client.ts#createCoordinatorClient.call",
+      "failure": "A request awaiting new readiness is not in pending and can be posted after its originating account/dialog is retired; same participant-pair identities can be valid for a new Host account.",
+      "fix": "Optional local original-scope callback checked synchronously after readiness before pending/post, without canceling an already-posted intent."
+    },
+    {
+      "id": "NMR50-R5",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "path": "source/host/tests/session_gateway_contract.rs#ForwardHttpFixture",
+      "failure": "New response writer captures a mutable TcpStream and direct invocation requires a mutable FnMut binding.",
+      "fix": "let mut respond; focused independent source rereview completed; no compile result inferred."
+    },
+    {
+      "id": "NMR50-R6",
+      "decision": "FIX",
+      "classification": "implementation-interface-type",
+      "path": "frontend/src/production/ProductionRenderer.tsx#forwardHumanMessage",
+      "failure": "A required scope argument did not match the compatible optional dialog callback contract.",
+      "fix": "Optional scope propagated unchanged; independently rereviewed."
+    }
+  ],
+  "frozen_code_blobs": {
+    "source/host/src/extensions/session/production.rs": "c2d39cd5e47b5cc9678fc8ae135efb625944288e",
+    "source/host/src/extensions/session/native_messaging.rs": "37a216c3a92ffc696a604d0d94260cffb6a92908",
+    "source/host/tests/session_gateway_contract.rs": "708d07322029115c8d4da97ec0441f36dde0c449",
+    "frontend/src/production/coordinator-client.ts": "3fdd53e62afebcbdda9b9c37514aecdfb8c13fa9",
+    "frontend/src/production/ProductionRenderer.tsx": "1a033034d0acd4c6261d27792e32ac2d372768ea",
+    "frontend/src/production/ForwardMessageDialog.tsx": "869510a4fda80b6feaa249877918f552d51818e2",
+    "frontend/src/production/ForwardMessageDialog.fixture.tsx": "84b7839837550865ac150d455249d137086aac77",
+    "frontend/src/production/ForwardMessageDialog.behavior.test.mjs": "d7b61e5c4b0908be2c53640b6637e48c0c36538c"
+  },
+  "tests_authored": {
+    "host_path": "source/host/tests/session_gateway_contract.rs",
+    "host_new": [
+      "shipping_human_forward_active_batch_allows_destination_and_unrelated_history",
+      "shipping_human_roster_forward_recovery_runs_once_per_invocation",
+      "shipping_human_roster_rejects_wrong_user_before_http",
+      "shipping_human_roster_rejects_six_credential_rotations_during_response_body"
+    ],
+    "host_expected_total": 52,
+    "ui_path": "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
+    "ui_added": 6,
+    "ui_expected_total": 22,
+    "oracles": [
+      "Held response does not prevent two real history completions; journal unchanged, one canonical destination and no duplicate POST; release before joins.",
+      "Two friends and a persistent failing target produce one retry per top-level invocation; later direct sync and reopen recover.",
+      "Wrong expected user produces no HTTP; all six partial-body credential changes leave prior roster/metadata/transcript/events unchanged, then valid retry persists and reopens.",
+      "Actual Coordinator ready/disconnect/queue/retire/ready produces zero mutation frames for account/ABA/logout, close, source replacement, unmount; same-scope reconnect sends once; posted close retains reply and does not cancel."
+    ],
+    "retained": "All original Human44 plus concurrent NMR49 three Host cases and upload-limit one Host case/three owner tests, forwarding journal12/sharebox1, Agent4/private3, Transcript18/settlement5/Chromium16 and actual shipping/Electron/Windows/CLI gates are retained; NMR50 adds four Host and six Chromium cases.",
+    "projection_expected_total": 18,
+    "native_upload_owner_expected_total": 3
+  },
+  "independent_review": {
+    "reviewer": "current_recovery_independent",
+    "effort": "xhigh",
+    "scope": "complete eight changed product/test files and adjacent callers/consumers; source/spec review with focused rereview of two corrections",
+    "result": "no unresolved blocking finding in frozen code snapshot",
+    "execution_performed": false,
+    "product_acceptance": false,
+    "integration_rereview": "Completed on production c2d39cd5e47b5cc9678fc8ae135efb625944288e / tests5411dcf49e3623b09e7c347b8717801b20813682 and concurrent agent_db c524059244573e4be87d61e0e303613c3916ec23; no additional unresolved blocker. Fresh durable reply identity, local outbox admission and transactional parent/child settlement are retained inside the private history helper; active forward recovery remains independent.",
+    "upload_integration_rereview": "Complete on native37a216c3a92ffc696a604d0d94260cffb6a92908/tests708d07322029115c8d4da97ec0441f36dde0c449; inherited forward_batch_journal bbc1b4209a444caf5995d5a3afa6af1535286a42 read from GitHub. No additional blocker. Full roster credential fence, bounded upload, journal load behavior and all reply/recovery tests preserved."
+  },
+  "ledger": {
+    "canonical": "projects/telegram-desktop-rust/parity-ledger.json",
+    "rows": [
+      "FBCP-NMR-001",
+      "TDRP-R9-SHARE-FORWARD-PRIVACY-001"
+    ],
+    "preparation_run": 41518150463,
+    "preparation_job": 125526916256,
+    "base_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+    "prepared_blob": "cd4de14d4cfb800185a56cf489a16afc9a433b16",
+    "connector_readback": true,
+    "unaffected_fields_preserved": true,
+    "source_reviews_preserved": true,
+    "acceptance_promoted": false,
+    "preparation_is_validation": false,
+    "superseded_preparations": [
+      {
+        "head": "e2d64c2c53d9a91f3188b99203bce65e5d68f894",
+        "run": 41516807174,
+        "job": 125522332075,
+        "base_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
+        "prepared_blob": "24e94b059e883ee525f7b8c159327c97d89cd6da",
+        "result": "successful-object-only; not integrated because concurrent936115 changed the canonical ledger input"
+      },
+      {
+        "head": "c82b83615f2230e4308ed6248e7d8a71e336838c",
+        "run": 41517478134,
+        "job": 125524605663,
+        "base_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+        "prepared_blob": "70947ab079f93e0ae1e36aab4cc8ff0eebac6489",
+        "result": "successful-object-only; not integrated because concurrent76a84 changed the canonical ledger input"
+      }
+    ]
+  },
+  "source_review_contract": {
+    "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+    "validator_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+    "observed_success_run": 41514576605,
+    "observed_success_head": "73cc6e1cc9fa871e5f80931979606ac9ee810551",
+    "claim": "Existing candidate/complete review states, exact recursive membership and acquisition closure guards are present; current source contract execution does not imply whole-source review.",
+    "git_only_identities": 16381,
+    "source_review_complete": 2,
+    "source_review_pending": 4,
+    "global_unknown": null,
+    "global_unread": null
+  },
+  "execution": {
+    "status": "pending-containing-H-Actions",
+    "workflow": ".github/workflows/native-service-contracts.yml",
+    "local_execution": false,
+    "htch_runtime_execution": false,
+    "head": null,
+    "runs": [],
+    "reuse": "94dcf7a2213808a8ded6baddaf069562d365c6d7 run41513767498 completed success for its predecessor code only; not NMR50 execution."
+  },
+  "requirement_checklist": [
+    {
+      "requirement": 1,
+      "criterion": "Freeze one exact upstream and enumerate all source classes, recursive inputs/resources/tooling/legal",
+      "state": "partial",
+      "evidence": "U=f985723b552b30fe1c17d377d57f44e61a15a8c4; current lock/index exact Git-only candidate 16381 identities; external/build/generated/LFS/legal closure remains open"
+    },
+    {
+      "requirement": 2,
+      "criterion": "Evidence-backed dispositions and risk-appropriate understanding; never infer reading from counts",
+      "state": "partial",
+      "evidence": "current ledger six explicit reviews, two complete and four pending; unknown/unread null preserved; existing FMEP schema/validator tests pass at73cc6e1 but full review not closed"
+    },
+    {
+      "requirement": 3,
+      "criterion": "Identify unique logical authorities and use actual production chain",
+      "state": "implemented-scope",
+      "evidence": "Forward picker/Coordinator gateway -> ProductionSessionWorkers -> existing source journal and destination SandAgentDb -> authenticated native /api/social/messages; service identity/remote ID authority, local durable intent and projections remain distinct"
+    },
+    {
+      "requirement": 4,
+      "criterion": "Behavior-based batches include authorization, persistence, service, events, UI and failure/restart",
+      "state": "in-progress",
+      "evidence": "NMR50 active-forward history progress, once-per-roster recovery, credential-body fence, delayed request-frame lifetime"
+    },
+    {
+      "requirement": 5,
+      "criterion": "Existing owners and unified UI; preserve all Bot capabilities/data/rollback",
+      "state": "in-progress",
+      "evidence": "same Session/native messaging/Coordinator/ForwardMessageDialog owners; no data deletion/new store/schema; retained Agent/AppHost/package gates required; complete Bot acceptance still open"
+    },
+    {
+      "requirement": 6,
+      "criterion": "Stable shared contracts, disjoint parallel paths, root public interface and integration",
+      "state": "in-progress",
+      "evidence": "root owns optional local CoordinatorCallOptions and ProductionRenderer; worker path boundaries; actual wire payload unchanged"
+    },
+    {
+      "requirement": 7,
+      "criterion": "Freeze H; minimal required exact-H Actions only and tests alongside implementation",
+      "state": "pending",
+      "evidence": "No local executable verification. Existing workflows admit only the isolated batch branch in addition to their existing branches; source candidate and all product assertions remain. Required Human52, native-upload3, journal12/sharebox1, Agent4/private3, Transcript18/settlement5, Chromium22 and inherited actual shipping/Electron/Windows/CLI gates."
+    },
+    {
+      "requirement": 8,
+      "criterion": "Continue independent work while waiting; fix actual failures without rerun-picking",
+      "state": "in-progress",
+      "evidence": "source contract readback and independent review proceed during authored code; prior94dcf7a Actions success reused only as historical evidence"
+    },
+    {
+      "requirement": 9,
+      "criterion": "Use unique inventory/ledger/RTM and distinguish implementation/wiring/test/execution/acceptance",
+      "state": "in-progress",
+      "evidence": "Canonical two-row append prepared at exactf1c0b36/run41518150463; connector readback proves only declared fields changed, preserves concurrent reply/upload fields and all source reviews/acceptance. Current source gate remains required after integration."
+    },
+    {
+      "requirement": 10,
+      "criterion": "All applicable capabilities, exact final shipping SHA/artifacts, real service/platform/UI/security/soak/upgrade/Bot plus independent ACCEPT",
+      "state": "open",
+      "evidence": "final candidate not frozen; real service and supported signed packages, full source review/legal, feature completeness and independent ACCEPT remain unmet"
+    },
+    {
+      "requirement": "delivery",
+      "criterion": "Push task-owned commits and read back SHA/content via GitHub; status next while any criterion open",
+      "state": "partial",
+      "evidence": "spec checkpoint3c9995a97c59d89824b2f6e0e49e72cef4825439 pushed with expected-head CAS and exact content readback; production batch not yet published"
+    }
+  ],
+  "remaining": [
+    "FMEP source dispositions, applicable deep review and full product responsibility closure",
+    "Remote forward provenance/policy and remaining source behaviors",
+    "Real service authorization/recovery and supported signed packages",
+    "Complete visual/accessibility/temporal/security/performance/soak, upgrade/rollback and Bot regression",
+    "Exact final shipping candidate/artifacts and independent ACCEPT"
+  ],
+  "acceptance": {
+    "batch_execution": false,
+    "final_candidate_frozen": false,
+    "independent_ACCEPT": false,
+    "complete": false
+  }
+}

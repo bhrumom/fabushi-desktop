@@ -45,10 +45,10 @@ after(async () => {
   }
   await new Promise((resolveClose) => serverLog == null ? resolveClose() : serverLog.end(resolveClose));
 });
-async function fixture(t) {
+async function fixture(t, { coordinator = false, suffix = "" } = {}) {
   const page = await browser.newPage();
   const diagnostics = [];
-  const name = t.name.replace(/[^a-z0-9]+/gi, "-");
+  const name = (suffix.length === 0 ? t.name : `${t.name}-${suffix}`).replace(/[^a-z0-9]+/gi, "-");
   page.on("pageerror", (error) => diagnostics.push({ kind: "pageerror", message: error.message }));
   page.on("console", (message) => { if (message.type() === "error") diagnostics.push({ kind: "console", message: message.text() }); });
   page.on("requestfailed", (request) => diagnostics.push({ kind: "requestfailed", url: request.url(), error: request.failure()?.errorText }));
@@ -57,7 +57,7 @@ async function fixture(t) {
     await writeFile(resolve(artifacts, `${name}.browser.json`), JSON.stringify(diagnostics, null, 2));
     await page.close();
   });
-  await page.goto("http://127.0.0.1:14319/forward-dialog-test.html");
+  await page.goto(`http://127.0.0.1:14319/forward-dialog-test.html${coordinator ? "?transport=coordinator" : ""}`);
   try {
     await page.waitForFunction(() => !!window.__forwardHarness && document.querySelector('input[type="search"]'));
   } catch (error) {
@@ -349,3 +349,143 @@ test("late searches preserve send failure and retry destinations even when selec
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
 });
 
+async function forwardFrames(f) {
+  return (await f.call("coordinatorFrames")).filter(({ frame }) =>
+    frame.kind === "request" && frame.method === "forwardHumanMessage");
+}
+
+async function forwardFrame(f, count = 1) {
+  await f.page.waitForFunction((expected) => window.__forwardHarness.coordinatorFrames()
+    .filter(({ frame }) => frame.kind === "request" && frame.method === "forwardHumanMessage").length >= expected, count);
+  return (await forwardFrames(f)).at(-1);
+}
+
+async function connectReadyCoordinator(f) {
+  const portId = await f.call("connectCoordinator");
+  await f.call("readyCoordinator");
+  return portId;
+}
+
+async function queuedCoordinatorForward(t, suffix = "") {
+  const f = await fixture(t, { coordinator: true, suffix });
+  await connectReadyCoordinator(f);
+  await f.settleSearch();
+  await f.select();
+  // The dialog remains open while the actual client loses its live port.
+  // Forward then enters currentReady, before any pending request registration.
+  await f.call("disconnectCoordinator");
+  await f.submit();
+  const queued = await f.request("forward");
+  assert.deepEqual(await forwardFrames(f), []);
+  assert.deepEqual(await f.call("coordinatorOutcomes"), []);
+  return { ...f, queued };
+}
+
+async function assertQueuedForwardRetired(f) {
+  // Releasing real readiness makes the pre-dispatch guard decisive. A mere
+  // stale-response filter would still leave a mutation frame in this ledger.
+  await connectReadyCoordinator(f);
+  assert.deepEqual(await forwardFrames(f), []);
+  assert.deepEqual(await f.call("coordinatorOutcomes"), [{ id: f.queued.id, status: "rejected" }]);
+  assert.equal((await f.call("coordinatorFrames")).some(({ frame }) => frame.kind === "cancel"), false);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 0);
+}
+
+test("actual coordinator never posts a queued forward after account rotation or logout", async (t) => {
+  for (const [name, accounts] of [["A-to-B", ["B"]], ["A-to-B-to-A", ["B", "A"]], ["logout", [null]]]) {
+    const f = await queuedCoordinatorForward(t, name);
+    for (const account of accounts) await f.call("switchAccount", account);
+    if (accounts.at(-1) != null) await f.call("reopen");
+    await assertQueuedForwardRetired(f);
+    assert.deepEqual(await f.call("events"), []);
+    assert.equal(await f.page.getByRole("alert").count(), 0);
+    if (accounts.at(-1) != null) {
+      await f.page.getByRole("dialog", { name: "Forward message" }).waitFor();
+      assert.equal(await f.page.getByText("No recipients selected", { exact: true }).count(), 1);
+    } else {
+      assert.equal(await f.page.getByRole("dialog", { name: "Forward message" }).count(), 0);
+    }
+  }
+});
+
+test("actual coordinator never posts a queued forward after close and reopen", async (t) => {
+  const f = await queuedCoordinatorForward(t);
+  await f.page.getByRole("button", { name: "Close", exact: true }).click();
+  await f.call("reopen");
+  await assertQueuedForwardRetired(f);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor();
+  assert.equal((await f.call("events")).filter((event) => event.kind === "closed").length, 1);
+  assert.equal(await f.page.getByRole("alert").count(), 0);
+  assert.equal(await f.page.getByText("No recipients selected", { exact: true }).count(), 1);
+});
+
+test("actual coordinator never posts a queued forward after source replacement", async (t) => {
+  const f = await queuedCoordinatorForward(t);
+  await f.call("replaceSource", "message-2");
+  const replacement = await f.request("search", 2);
+  assert.equal(replacement.args.sourceEntryId, "message-2");
+  await assertQueuedForwardRetired(f);
+  assert.deepEqual(await f.call("events"), []);
+  assert.equal(await f.page.getByRole("alert").count(), 0);
+  assert.equal(await f.page.getByText("No recipients selected", { exact: true }).count(), 1);
+});
+
+test("actual coordinator never posts a queued forward after layout unmount", async (t) => {
+  const f = await queuedCoordinatorForward(t);
+  const scope = await f.call("unmount");
+  assert.equal(scope.after, scope.before + 1);
+  // Keep the client transport alive to ensure the lifetime fence, rather than
+  // client disposal, is what prevents this stale request from being posted.
+  await assertQueuedForwardRetired(f);
+  assert.deepEqual(await f.call("events"), []);
+  assert.equal(await f.page.getByRole("dialog", { name: "Forward message" }).count(), 0);
+});
+
+test("actual coordinator reconnect posts one unchanged forward for a live lifetime", async (t) => {
+  const f = await queuedCoordinatorForward(t);
+  await f.call("refreshMessage");
+  await f.call("refreshCredential");
+  const portId = await connectReadyCoordinator(f);
+  const posted = await forwardFrame(f);
+  assert.equal(posted.portId, portId);
+  assert.deepEqual(posted.frame.args, f.queued.args);
+  assert.equal((await forwardFrames(f)).length, 1);
+  assert.deepEqual(await f.call("coordinatorOutcomes"), []);
+  await f.call("replyCoordinator", posted.frame.requestId, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  assert.deepEqual(await f.call("coordinatorOutcomes"), [{ id: f.queued.id, status: "resolved" }]);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 1);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "closed").length, 1);
+});
+
+test("closing after actual coordinator dispatch preserves the posted request and its reply", async (t) => {
+  const f = await fixture(t, { coordinator: true });
+  await connectReadyCoordinator(f);
+  await f.settleSearch(); await f.select(); await f.submit();
+  const first = await f.request("forward");
+  const firstFrame = await forwardFrame(f);
+  assert.deepEqual(firstFrame.frame.args, first.args);
+  await f.page.getByRole("button", { name: "Close", exact: true }).click();
+  await f.call("reopen");
+  const search = await f.request("search", 2);
+  await f.call("resolve", search.id, [{ id: "human:c", name: "human:c" }]);
+  await f.select("human:c"); await f.submit();
+  const second = await f.request("forward", 2);
+  const secondFrame = await forwardFrame(f, 2);
+  assert.notEqual(second.args.clientNonce, first.args.clientNonce);
+  assert.deepEqual(secondFrame.frame.args, second.args);
+  await f.call("replyCoordinator", firstFrame.frame.requestId, [{ conversationId: "human:b", status: "sent" }]);
+  assert.deepEqual(await f.call("coordinatorOutcomes"), [{ id: first.id, status: "resolved" }]);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 0);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "closed").length, 1);
+  assert.equal(await f.page.getByRole("button", { name: "Forwarding…", exact: true }).isDisabled(), true);
+  await f.call("replyCoordinator", secondFrame.frame.requestId, [{ conversationId: "human:c", status: "sent" }]);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  assert.deepEqual(await f.call("coordinatorOutcomes"), [
+    { id: first.id, status: "resolved" }, { id: second.id, status: "resolved" },
+  ]);
+  assert.equal((await forwardFrames(f)).length, 2);
+  assert.equal((await f.call("coordinatorFrames")).some(({ frame }) => frame.kind === "cancel"), false);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "settled").length, 1);
+  assert.equal((await f.call("events")).filter((event) => event.kind === "closed").length, 2);
+});

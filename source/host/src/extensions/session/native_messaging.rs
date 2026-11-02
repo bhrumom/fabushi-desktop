@@ -788,7 +788,22 @@ impl FabushiNativeMessagingClient {
     }
 
     pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {
+        self.list_friends_bound(None)
+    }
+
+    pub fn list_friends_for_user(
+        &self,
+        expected_user_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanContact>, String> {
+        self.list_friends_bound(Some(expected_user_id))
+    }
+
+    fn list_friends_bound(
+        &self,
+        expected_user_id: Option<&str>,
+    ) -> Result<Vec<FabushiRemoteHumanContact>, String> {
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let response = self
             .client
             .get(self.endpoint("/api/social/friends")?)
@@ -804,6 +819,10 @@ impl FabushiNativeMessagingClient {
         let body = response
             .text()
             .map_err(|error| format!("Fabushi Human contact sync response could not be read: {error}"))?;
+        // The roster may create durable conversations immediately on return.
+        // Bind the entire consumed body to the dispatched private credential,
+        // including token-only and same-account session/device rotations.
+        self.ensure_request_credential_stable(&credentials)?;
         let envelope: FriendEnvelope = serde_json::from_str(&body).map_err(|error| {
             format!(
                 "Fabushi Human contact sync response was invalid JSON (HTTP {}): {error}",

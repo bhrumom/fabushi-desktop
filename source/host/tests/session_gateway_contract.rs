@@ -1789,6 +1789,12 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
 // than silently passing a string/regex-only source inspection.
 enum HumanMessageFixtureReply {
     Json(u16, serde_json::Value),
+    StreamingJson(
+        u16,
+        serde_json::Value,
+        std::sync::mpsc::Sender<()>,
+        std::sync::mpsc::Receiver<()>,
+    ),
     Bytes(u16, Vec<u8>),
     Disconnect,
     Truncated(u16),
@@ -1829,14 +1835,17 @@ fn spawn_human_message_fixture(
             let after_id = requests.last().and_then(|request| request.split("afterId=").nth(1))
                 .and_then(|tail| tail.split(|character: char| !character.is_ascii_digit()).next())
                 .and_then(|value| value.parse::<u64>().ok());
-            let (response, release) = match response {
+            let (response, release, streaming) = match response {
                 HumanMessageFixtureReply::Deferred(response, accepted, release) => {
                     accepted.send(()).expect("observe accepted deferred request");
-                    (*response, Some(release))
+                    (*response, Some(release), None)
                 }
-                response => (response, None),
+                HumanMessageFixtureReply::StreamingJson(status, body, started, release) => {
+                    (HumanMessageFixtureReply::Json(status, body), None, Some((started, release)))
+                }
+                response => (response, None, None),
             };
-            let is_deferred = release.is_some();
+            let is_deferred = release.is_some() || streaming.is_some();
             let respond = move || {
                 if let Some(release) = release {
                     release.recv_timeout(std::time::Duration::from_secs(15))
@@ -1871,7 +1880,9 @@ fn spawn_human_message_fixture(
                         stream.flush().expect("flush truncated response");
                         return;
                     }
-                    HumanMessageFixtureReply::Deferred(..) => panic!("nested deferred replies are unsupported"),
+                    HumanMessageFixtureReply::Deferred(..) | HumanMessageFixtureReply::StreamingJson(..) => {
+                        panic!("nested deferred replies are unsupported");
+                    }
                 };
                 let reason = match status {
                     200 => "OK",
@@ -1884,7 +1895,16 @@ fn spawn_human_message_fixture(
                     "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                     body.len()
                 ).expect("write Human response headers");
-                stream.write_all(&body).expect("write Human response body");
+                if let Some((started, release)) = streaming {
+                    stream.write_all(&body[..1]).expect("write first Human response byte");
+                    stream.flush().expect("flush partial Human response body");
+                    started.send(()).expect("observe streaming Human response body");
+                    release.recv_timeout(std::time::Duration::from_secs(15))
+                        .expect("streaming Human response must be explicitly released");
+                    stream.write_all(&body[1..]).expect("write remaining Human response body");
+                } else {
+                    stream.write_all(&body).expect("write Human response body");
+                }
                 stream.flush().expect("flush Human fixture response");
             };
             if is_deferred {
@@ -4529,6 +4549,9 @@ struct ForwardHttpState {
     mutated_second_pin: Option<(std::path::PathBuf, Vec<u8>)>,
     mutation_observed_by_second_upload: bool,
     mutation_restored_before_message_ack: bool,
+    serve_accepted_history: bool,
+    reject_message_posts: bool,
+    friends: Vec<serde_json::Value>,
 }
 
 // Keep multipart payloads binary. The older text helper is sufficient for JSON
@@ -4615,6 +4638,8 @@ impl ForwardHttpFixture {
         let thread_stop = Arc::clone(&stop);
         let worker = thread::spawn(move || {
             let mut post_count = 0;
+            let mut first_release = Some(released);
+            let mut deferred_response = None;
             while !thread_stop.load(std::sync::atomic::Ordering::Acquire) {
                 let mut stream = match listener.accept() {
                     Ok((stream, _)) => stream,
@@ -4687,6 +4712,10 @@ impl ForwardHttpFixture {
                         (bytes.clone(), "application/octet-stream", 200)
                     } else if is_post {
                         post_count += 1;
+                        if state.reject_message_posts {
+                            (json!({"success":false,"error":"fixture forward destination is temporarily unavailable"})
+                                .to_string().into_bytes(), "application/json", 503)
+                        } else {
                         if post_count == 1 {
                             if let Some((path, original)) = state.mutated_second_pin.take() {
                                 assert!(state.mutation_observed_by_second_upload,
@@ -4716,34 +4745,62 @@ impl ForwardHttpFixture {
                         state.accepted.insert(nonce.to_string(), message.clone());
                         (json!({"success":true,"deduplicated":deduplicated,"message":message})
                             .to_string().into_bytes(), "application/json", 200)
+                        }
+                    } else if request.starts_with("GET /api/social/friends ") {
+                        (json!({"success":true,"data":{"friends":state.friends}})
+                            .to_string().into_bytes(), "application/json", 200)
+                    } else if request.starts_with("GET /api/social/calls?") {
+                        (json!({"success":true,"calls":[]}).to_string().into_bytes(), "application/json", 200)
                     } else {
                         assert!(request.starts_with("GET /api/social/messages?"), "{request}");
                         let after = request.split("afterId=").nth(1)
                             .and_then(|tail| tail.split(|c: char| !c.is_ascii_digit()).next())
                             .and_then(|value| value.parse::<u64>().ok()).expect("coverage cursor");
+                        let peer = request.split("contactId=").nth(1)
+                            .and_then(|tail| tail.split(|c: char| !c.is_ascii_digit()).next())
+                            .and_then(|value| value.parse::<u64>().ok()).expect("history peer");
+                        let mut messages = if state.serve_accepted_history {
+                            state.accepted.values().filter(|message|
+                                message["recipientUserId"].as_u64() == Some(peer)
+                                    && message["id"].as_u64().is_some_and(|id| id > after)
+                            ).cloned().collect::<Vec<_>>()
+                        } else { Vec::new() };
+                        messages.sort_by_key(|message| message["id"].as_u64());
+                        let next = messages.last().and_then(|message| message["id"].as_u64()).unwrap_or(after);
                         (json!({"success":true,"data":{
-                            "messages":[],"historyCursor":{"mode":"after-id","afterId":after},
-                            "nextAfterId":after
+                            "messages":messages,"historyCursor":{"mode":"after-id","afterId":after},
+                            "nextAfterId":next
                         }}).to_string().into_bytes(), "application/json", 200)
                     }
                 };
                 if is_post && post_count == 1 {
                     seen.send(()).expect("first POST observation");
-                    if hold_first_post {
-                        released.recv_timeout(std::time::Duration::from_secs(30))
+                }
+                let held_first_post = hold_first_post && is_post && post_count == 1;
+                let mut respond = move || {
+                    let response = format!(
+                        "HTTP/1.1 {status} OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    );
+                    let result = stream.write_all(response.as_bytes()).and_then(|_| stream.write_all(&body));
+                    // Process-kill cases deliberately cannot receive this ack.
+                    if !held_first_post { result.expect("forward response write"); }
+                };
+                if held_first_post {
+                    let release = first_release.take().expect("one deferred first POST");
+                    // Keep the existing fixture listener responsive to history
+                    // while only this accepted POST's response remains held.
+                    deferred_response = Some(thread::spawn(move || {
+                        release.recv_timeout(std::time::Duration::from_secs(30))
                             .expect("first POST must be explicitly released");
-                    }
+                        respond();
+                    }));
+                } else {
+                    respond();
                 }
-                let response = format!(
-                    "HTTP/1.1 {status} OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                let result = stream.write_all(response.as_bytes()).and_then(|_| stream.write_all(&body));
-                // The killed child deliberately cannot receive the first ack.
-                // All subsequent response writes must still be successful.
-                if !(hold_first_post && is_post && post_count == 1) {
-                    result.expect("forward response write");
-                }
+            }
+            if let Some(writer) = deferred_response {
+                writer.join().expect("deferred forward response writer");
             }
         });
         Self { url, state, stop, first_post, release: Some(release), thread: Some(worker) }
@@ -5940,4 +5997,274 @@ fn shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_af
     fs::remove_dir_all(root).expect("remove atomic reply fixture");
 }
 
+
+// NMR-50: recovery is an admission attempt on the existing batch owner, not
+// a prerequisite that may wait behind an already dispatched forward POST.
+#[test]
+fn shipping_human_forward_active_batch_allows_destination_and_unrelated_history() {
+    let root = temp_root("forward-active-history");
+    let mut server = ForwardHttpFixture::start(true);
+    server.state.lock().unwrap().serve_accepted_history = true;
+    let args = prepare_forward_process(&root, &server.url);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap().to_string();
+    let unrelated = runtime.create_human_conversation("5", "Independent history")
+        .expect("independent conversation")["id"].as_str().unwrap().to_string();
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let forwarding = {
+        let runtime = Arc::clone(&runtime);
+        let args = args.clone();
+        thread::spawn(move || forward_gateway_result(&runtime, &args))
+    };
+    server.wait_for_first_post();
+    let journal_before = source_owner.get_metadata("humanForwardBatches");
+    let (completed, results) = std::sync::mpsc::channel();
+    let mut syncing = Vec::new();
+    for (label, conversation) in [("destination", first.clone()), ("unrelated", unrelated)] {
+        let runtime = Arc::clone(&runtime);
+        let completed = completed.clone();
+        syncing.push(thread::spawn(move || {
+            completed.send((label, runtime.sync_human_conversation(&conversation)))
+                .expect("report completed history while forward response is held");
+        }));
+    }
+    drop(completed);
+    let observations = (0..2).map(|_| results.recv_timeout(std::time::Duration::from_secs(5)))
+        .collect::<Vec<_>>();
+    let journal_while_held = source_owner.get_metadata("humanForwardBatches");
+    let posts_while_held = server.post_count();
+    let histories_while_held = server.history_count();
+    // Release before every join/assertion so the pre-fix failure cannot leave
+    // an owned send or history worker waiting on this test's response barrier.
+    server.release_first_post();
+    let forward_result = forwarding.join().expect("forward worker");
+    for worker in syncing { worker.join().expect("history worker"); }
+    let completed = observations.into_iter().map(|observation|
+        observation.expect("history must complete before the forward response is released")
+    ).collect::<std::collections::BTreeMap<_, _>>();
+    let destination = completed["destination"].as_ref().expect("destination history");
+    assert_eq!(destination.len(), 1);
+    assert_eq!(destination[0]["id"], "human-server-message:70");
+    assert_eq!(destination[0]["delivery"], "sent");
+    assert_eq!(destination[0]["forwardContext"]["requestId"], args["clientNonce"]);
+    assert!(completed["unrelated"].as_ref().expect("unrelated history").is_empty());
+    assert_eq!(posts_while_held, 1, "automatic recovery cannot redispatch an active target");
+    assert_eq!(histories_while_held, 2, "both real history GETs ran before releasing the POST");
+    assert_eq!(journal_before.unwrap(), journal_while_held.unwrap(), "skipping an active batch does not write progress");
+    let result = forward_result.expect("late forward acknowledgement settles through canonical history");
+    assert!(result["destinations"].as_array().unwrap().iter().all(|target| target["status"] == "sent"));
+    assert_forward_settled(&runtime, &args);
+    assert_eq!(server.post_count(), 2, "one POST for each original destination");
+    runtime.shutdown(); drop(source_owner); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_forward_settled(&reopened, &args);
+    reopened.sync_human_conversation(&first).expect("ordinary history remains usable after reopen");
+    assert_eq!(server.post_count(), 2, "completed journal replay never sends again");
+    reopened.shutdown(); drop(reopened);
+    server.finish(); fs::remove_dir_all(root).unwrap();
+}
+
+fn roster_fixture_friend(peer: u64, display_name: &str) -> serde_json::Value {
+    json!({
+        "id":peer,"userId":peer,"username":format!("peer-{peer}"),
+        "displayName":display_name,"avatarUrl":null,"status":"accepted"
+    })
+}
+
+#[test]
+fn shipping_human_roster_forward_recovery_runs_once_per_invocation() {
+    let root = temp_root("roster-forward-once");
+    let server = ForwardHttpFixture::start(false);
+    let mut args = prepare_forward_process(&root, &server.url);
+    let first = args["destinationConversationIds"][0].as_str().unwrap().to_string();
+    args["destinationConversationIds"] = json!([first]);
+    {
+        let mut state = server.state.lock().unwrap();
+        state.reject_message_posts = true;
+        state.serve_accepted_history = true;
+        state.friends = vec![roster_fixture_friend(2, "Source"), roster_fixture_friend(5, "Independent")];
+    }
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let initial = forward_gateway_result(&runtime, &args).expect("retain failed forward intent");
+    assert_eq!(initial["destinations"][0]["status"], "failed");
+    assert_eq!(server.post_count(), 1);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let original_batch = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    for invocation in 1..=2 {
+        let roster = dispatch(&runtime, "syncHumanConversations", json!({}));
+        assert!(roster.as_array().unwrap().iter().any(|conversation|
+            conversation["participantIds"].as_array().unwrap().iter().any(|id| id == "5")
+        ), "unrelated friend histories progress despite a failed destination");
+        assert_eq!(server.post_count(), 1 + invocation,
+            "one failed recovery attempt per roster invocation, independent of friend count");
+        assert_eq!(server.history_count(), 2 * invocation);
+        let batch = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+        assert_eq!(batch, original_batch, "failed retry retains the same identity and error state");
+        assert_eq!(batch[0]["destinations"][0]["completed"], false);
+        assert!(batch[0]["destinations"][0]["error"].is_string());
+    }
+    server.state.lock().unwrap().reject_message_posts = false;
+    let recovered = runtime.sync_human_conversation(&first)
+        .expect("direct sync still performs its one recovery scan on the next invocation");
+    assert_eq!(server.post_count(), 4);
+    assert_eq!(recovered.len(), 1);
+    assert_eq!(recovered[0]["delivery"], "sent");
+    let batch = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    assert_eq!(batch[0]["destinations"][0]["completed"], true);
+    assert!(batch[0]["destinations"][0]["error"].is_null());
+    runtime.shutdown(); drop(source_owner); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_eq!(reopened.read_human_conversation_transcript(&first).unwrap(), recovered);
+    dispatch(&reopened, "syncHumanConversations", json!({}));
+    assert_eq!(server.post_count(), 4, "reopen cannot replay completed recovery");
+    assert_eq!(server.history_count(), 7);
+    let requests = server.state.lock().unwrap().requests.clone();
+    assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/friends ")).count(), 3);
+    assert_eq!(requests.iter().filter(|request| request.starts_with("GET /api/social/calls?")).count(), 3);
+    reopened.shutdown(); drop(reopened);
+    server.finish(); fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_roster_rejects_wrong_user_before_http() {
+    let root = temp_root("roster-wrong-user");
+    let server = ForwardHttpFixture::start(false);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let credential_path = root.join("host-credential.json");
+    let original = fs::read_to_string(&credential_path).unwrap();
+    let client = FabushiNativeMessagingClient::new(&server.url, &credential_path).unwrap();
+    let error = client.list_friends_for_user("9").expect_err("bind request credentials to the expected Host user");
+    assert_eq!(error, "Fabushi native messaging credential changed Human account");
+    assert!(server.state.lock().unwrap().requests.is_empty(), "wrong-user binding performs zero HTTP");
+    let mut changed: serde_json::Value = serde_json::from_str(&original).unwrap();
+    changed["userId"] = json!(9);
+    fs::write(&credential_path, changed.to_string()).unwrap();
+    runtime.sync_human_conversations().expect_err("active Host account rejects a different credential account");
+    assert!(server.state.lock().unwrap().requests.is_empty());
+    assert!(runtime.list_human_conversations().unwrap().is_empty());
+    fs::write(&credential_path, original).unwrap();
+    assert!(client.list_friends().expect("compatible native roster API").is_empty());
+    assert!(client.list_friends_for_user("1").expect("authorized bound roster API").is_empty());
+    let requests = server.state.lock().unwrap().requests.clone();
+    assert_eq!(requests.len(), 2);
+    assert!(requests.iter().all(|request| request.starts_with("GET /api/social/friends ")));
+    runtime.shutdown(); drop(runtime); drop(client);
+    server.finish(); fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_roster_rejects_six_credential_rotations_during_response_body() {
+    for (index, (label, field, replacement)) in [
+        ("account", "userId", json!(99)),
+        ("device", "deviceId", json!("rotated-device")),
+        ("token", "accessToken", json!("rotated-token")),
+        ("session", "sessionId", json!("rotated-session")),
+        ("expiry", "expiresAtMs", json!(12345)),
+        ("issuer", "issuer", json!("https://other.example")),
+    ].into_iter().enumerate() {
+        let root = temp_root(&format!("roster-body-{label}"));
+        let old_peer = 8200 + index as u64;
+        let new_peer = 7100 + index as u64;
+        let marker = format!("authorized-roster-{}", root.file_name().unwrap().to_string_lossy());
+        let remote_id = 90 + index as u64;
+        let friends = json!({"success":true,"data":{"friends":[
+            roster_fixture_friend(new_peer, "Authorized new friend"),
+            roster_fixture_friend(old_peer, "Remote title cannot replace existing metadata")
+        ]}});
+        let remote = fixture_remote_human_message(remote_id, new_peer, 1, &marker, None, json!([]));
+        let (body_started, wait_for_body) = std::sync::mpsc::channel();
+        let (release_body, wait_for_release) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::StreamingJson(200, friends.clone(), body_started, wait_for_release),
+            HumanMessageFixtureReply::Json(200, friends),
+            HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[remote]}})),
+            HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[]}})),
+            HumanMessageFixtureReply::Json(200, json!({"success":true,"calls":[]})),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let existing = runtime.create_human_conversation(&old_peer.to_string(), "Retained local title")
+            .unwrap()["id"].as_str().unwrap().to_string();
+        let owner = runtime.open_human_conversation_db_owner(&existing).unwrap();
+        let prior = json!({
+            "id":format!("existing-roster-{label}"),"kind":"message","role":"user",
+            "authorKind":"human","authorId":old_peer.to_string(),"content":"retained local transcript",
+            "timestampMs":1000.0,"delivery":"sent"
+        });
+        assert!(owner.append_transcript_entry(&prior).unwrap());
+        let prior_metadata = owner.read_metadata().unwrap();
+        let prior_roster = runtime.list_human_conversations().unwrap();
+        let events = Arc::new(std::sync::Mutex::new(Vec::<serde_json::Value>::new()));
+        let captured = Arc::clone(&events);
+        let event_marker = marker.clone();
+        let subscription = mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations(
+            move |mutation| {
+                if mutation.get("entries").and_then(serde_json::Value::as_array)
+                    .is_some_and(|entries| entries.iter().any(|entry|
+                        entry.get("content").and_then(serde_json::Value::as_str) == Some(event_marker.as_str())
+                    ))
+                {
+                    captured.lock().unwrap().push(serde_json::Value::Object(mutation.clone()));
+                }
+            },
+        );
+        let syncing = {
+            let runtime = Arc::clone(&runtime);
+            thread::spawn(move || runtime.sync_human_conversations())
+        };
+        wait_for_body.recv_timeout(std::time::Duration::from_secs(15))
+            .expect("friends HTTP headers and first body byte have been sent");
+        let credential_path = root.join("host-credential.json");
+        let mut credential: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(&credential_path).unwrap()
+        ).unwrap();
+        credential[field] = replacement;
+        fs::write(&credential_path, credential.to_string()).unwrap();
+        release_body.send(()).expect("finish the obsolete roster body before joining");
+        let error = syncing.join().expect("roster worker").expect_err("obsolete roster response must be rejected");
+        if label == "issuer" {
+            assert_eq!(error, "Fabushi messaging API must use an approved Native issuer origin.");
+        } else {
+            assert_eq!(error, "Fabushi native messaging credential changed during Human request", "{label}");
+        }
+        assert_eq!(runtime.list_human_conversations().unwrap(), prior_roster, "{label}: no stale roster creation");
+        assert_eq!(owner.read_metadata().unwrap(), prior_metadata, "{label}: no stale metadata update");
+        assert_eq!(owner.get_transcript_entries().unwrap(), vec![prior.clone()], "{label}");
+        assert!(events.lock().unwrap().is_empty(), "{label}: no downstream transcript event");
+        runtime.shutdown(); drop(owner); drop(runtime);
+
+        let restored = human_message_fixture_runtime(&root, &url);
+        assert_eq!(restored.list_human_conversations().unwrap(), prior_roster, "{label}: pure reopen");
+        let roster = restored.sync_human_conversations().expect("valid original credentials retry the roster");
+        assert_eq!(roster.len(), 2);
+        let new_conversation = roster.iter().find(|conversation|
+            conversation["participantIds"].as_array().unwrap().iter().any(|id| id == &json!(new_peer.to_string()))
+        ).expect("only the authorized new friend was persisted")["id"].as_str().unwrap().to_string();
+        let entries = restored.read_human_conversation_transcript(&new_conversation).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0]["content"], marker);
+        assert_eq!(entries[0]["id"], format!("human-server-message:{remote_id}"));
+        assert!(!events.lock().unwrap().is_empty(), "{label}: positive control proves event subscription");
+        subscription.unsubscribe();
+        let new_owner = restored.open_human_conversation_db_owner(&new_conversation).unwrap();
+        let settled_metadata = new_owner.read_metadata().unwrap();
+        let requests = server.join().expect("bounded roster response fixture");
+        assert_eq!(requests.len(), 5, "{label}: rejection cannot add history, calls or any other request");
+        assert!(requests[0].starts_with("GET /api/social/friends "));
+        assert!(requests[1].starts_with("GET /api/social/friends "));
+        assert!(requests[2].starts_with("GET /api/social/messages?"));
+        assert!(requests[2].contains(&format!("contactId={new_peer}")));
+        assert!(requests[3].starts_with("GET /api/social/messages?"));
+        assert!(requests[3].contains(&format!("contactId={old_peer}")));
+        assert!(requests[4].starts_with("GET /api/social/calls?"));
+        restored.shutdown(); drop(new_owner); drop(restored);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.list_human_conversations().unwrap(), roster, "{label}: authorized roster persists");
+        assert_eq!(reopened.read_human_conversation_transcript(&new_conversation).unwrap(), entries);
+        assert_eq!(reopened.open_human_conversation_db_owner(&new_conversation).unwrap().read_metadata().unwrap(), settled_metadata);
+        reopened.shutdown(); drop(reopened);
+        fs::remove_dir_all(root).unwrap();
+    }
+}
 

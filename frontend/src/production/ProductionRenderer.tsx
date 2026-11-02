@@ -102,7 +102,7 @@ import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspac
 import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
-import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
+import { ForwardMessageDialog, type ForwardDispatchScope, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { settleForwardProjection } from "./forward-settlement";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
@@ -1077,9 +1077,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
-  }): Promise<readonly ForwardSettlement[]> => {
+  }, scope?: ForwardDispatchScope): Promise<readonly ForwardSettlement[]> => {
     if (client == null) throw new Error("coordinator is unavailable for forwarding");
-    const result = await client.call("forwardHumanMessage", input);
+    const result = await client.call("forwardHumanMessage", input, scope);
     if (result == null || typeof result !== "object" || !("destinations" in result) || !Array.isArray(result.destinations)) {
       throw new Error("forwardHumanMessage returned an invalid settlement");
     }

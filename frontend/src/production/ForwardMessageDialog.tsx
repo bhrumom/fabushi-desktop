@@ -20,6 +20,10 @@ export interface ForwardSettlement {
   readonly error?: string;
 }
 
+export interface ForwardDispatchScope {
+  readonly isDispatchCurrent?: () => boolean;
+}
+
 export interface ForwardMessageDialogProps {
   readonly open: boolean;
   readonly accountScopeGeneration: number;
@@ -40,7 +44,7 @@ export interface ForwardMessageDialogProps {
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
-  }) => Promise<readonly ForwardSettlement[]>;
+  }, options?: ForwardDispatchScope) => Promise<readonly ForwardSettlement[]>;
   readonly onSettled?: (settlement: readonly ForwardSettlement[], accountScopeGeneration: number) => void;
 }
 
@@ -260,7 +264,7 @@ export function ForwardMessageDialog({
       const settlement = await forwardMessage({
         ...snapshot,
         destinationConversationIds,
-      });
+      }, { isDispatchCurrent: () => isCurrent(lifetime) });
       if (!isCurrent(lifetime)) return;
       const hasUnexpectedSettlement = settlement.some((item) => !destinationConversationIds.includes(item.conversationId));
       const completed = destinationConversationIds.map((conversationId): ForwardSettlement => {

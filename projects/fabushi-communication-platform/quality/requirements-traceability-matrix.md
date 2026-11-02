@@ -5,6 +5,31 @@ Matrix ID: FQT-RTM-001
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Updated: 2026-11-02
 
+## Current task20bf round1 — NMR-50 recovery progress and dispatch scope
+
+Canonical rows remain `FBCP-NMR-001` and
+`TDRP-R9-SHARE-FORWARD-PRIVACY-001`; fixed U is unchanged. Discovery at
+`b25c2003a8e76779f2535fc3dfa90e4fe5bde149` and spec checkpoint
+`3c9995a97c59d89824b2f6e0e49e72cef4825439` preserve concurrent NMR-49 reply,
+cached-source/journal and lock-diagnostic work. No new owner or wire schema.
+
+| Requirement | Actual production path | Behavior evidence required at frozen H |
+| --- | --- | --- |
+| NMR-50a | Session automatic recovery -> existing batch mutex/CAS -> ordinary history | Held POST response permits destination and unrelated GET completion, unchanged journal, unique settlement, restart |
+| NMR-50b | Top-level roster recovery -> private per-friend history | One failed recovery attempt per invocation, independent history progress, later direct retry and reopen |
+| NMR-50c | Host account -> bound Native friends request -> canonical conversation store | Wrong-user zero HTTP; six partial-body credential rotations reject before durable roster changes; valid retry/reopen |
+| NMR-50d | Picker lifetime -> ProductionRenderer -> actual Coordinator frame | Real-client queued requests retire on account/ABA/logout/close/source/unmount; live reconnect sends once; posted close preserves reply |
+
+Four new Host cases extend the concurrent Human48 to52; six real-client Chromium cases extend
+16 to22. Journal12/sharebox1, Agent4/private3, Transcript18/settlement5 and
+shipping/Electron/Windows gates remain. Independent source review completed;
+execution is pending at authoring, with no local or htch-runtime validation.
+Source review counters and final acceptance are unchanged. Exact H/results and
+all original-task open gates are recorded in
+`projects/telegram-desktop-rust/evidence/task20bf-round1-nmr50-recovery.json`.
+
+
+
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
 Fixed U unchanged; integration base `b25c2003a8e76779f2535fc3dfa90e4fe5bde149`.
@@ -203,7 +228,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–40 | NMR-01–06,09,18–26,31–49c | Existing Session/Transcript and SandAgentDb; whole-batch CAS, source denial, private attachment snapshots and atomic pending-reply identity repair | Exact59f5fa/run41508537631 Human38/sharebox1/journal3/Agent4/private3/Gateway1 all pass | Retain NMR-48 five byte cases, source-corruption recovery and journal12; NMR-49 adds three Host/SQLite/HTTP and two projection cases. Containing-H Human47/journal12/Transcript18 authored, not-run at preparation | Exact59 renderer16/settlement5/Chromium12, Electron and Windows gates pass; require combined Transcript18/settlement5/Chromium16 and retained shipping jobs at new H | Preserve source/credential and complete-buffer fences; pending-parent aliases require same conversation, local Human author and unique canonical nonce; failed identity/child-edge persistence rolls back without identity events | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 CAS/process; NMR-48 byte retention/repair; NMR-49 A→B→C, scoped aliases and parent/child ABORT/IGNORE recovery | fbcp-native-message-round4-20261102.json binds exact59 evidence; task20bf-round1-forward-intent-ui.json and round12-pending-parent-reply-recovery.json record authored extensions pending containing-H execution; historical round27 claims remain withdrawn | Focused source and independent static implementation review only; independent ACCEPT pending | IMPLEMENTED; NMR-48/NMR-49 and retained forward UI require containing-H execution; full acceptance BLOCKED |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–40 | NMR-01–06,09,18–26,31–50d | Existing Session/Transcript and SandAgentDb; whole-batch CAS, source denial, private attachment snapshots and atomic pending-reply identity repair | Exact59f5fa/run41508537631 Human38/sharebox1/journal3/Agent4/private3/Gateway1 all pass | Retain NMR-48 five byte cases, source-corruption recovery and journal12; NMR-49 adds three Host/SQLite/HTTP and two projection cases. Containing-H Human52/journal12/Transcript18 and Chromium22 authored, not-run at preparation | Exact59 renderer16/settlement5/Chromium12, Electron and Windows gates pass; require combined Transcript18/settlement5/Chromium22 and retained shipping jobs at new H | Preserve source/credential and complete-buffer fences; pending-parent aliases require same conversation, local Human author and unique canonical nonce; failed identity/child-edge persistence rolls back without identity events | REG-NMR-FORWARD-ACCOUNT-001; NMR-47 CAS/process; NMR-48 byte retention/repair; NMR-49 A→B→C, scoped aliases and parent/child ABORT/IGNORE recovery | fbcp-native-message-round4-20261102.json binds exact59 evidence; task20bf-round1-forward-intent-ui.json and round12-pending-parent-reply-recovery.json record authored extensions pending containing-H execution; historical round27 claims remain withdrawn | Focused source and independent static implementation review only; independent ACCEPT pending | IMPLEMENTED; NMR-48/NMR-49/NMR-50 and retained forward UI require containing-H execution; full acceptance BLOCKED |
 | TDRP-UPDATER-DISCOVERY-AUTHORITY-001 | critical | EUS-01–06 / EUS-WIN-01–06 | Explicit source and exact publisher/bytes/one-use invariants | Existing updater/service/Windows installer and Settings | At a119: source16, controlled publisher28, native Windows11; zero failures/skips | Controlled ports and native CI signer; authorized real signed install/upgrade/rollback open | Existing Settings helper; full visual/a11y pending | Source/redirect/abort/marker and signature/publisher/tamper/one-use negatives; performance/soak pending | Existing valid source scheduling and marker recovery | Round26 receipt: run41496846317 Electron125453934276/Windows125453934371 success | Bounded frozen review; release ACCEPT pending | IMPLEMENTED / BOUNDED TESTS EXECUTED; source/product/release BLOCKED |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
