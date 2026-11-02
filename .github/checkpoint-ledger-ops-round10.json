@@ -1,0 +1,53 @@
+{
+  "format_version": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "append": {
+        "fabushi_target_paths": [
+          "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+          "desktop/transcript-test.html",
+          "desktop/transcript-test.ts"
+        ],
+        "ui_functional_case_ids": [
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-OLDER-RETRY-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-INITIAL-RETRY-VIEWPORT-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-REFRESH-PAGE-RACE-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-CLEAR-PAGE-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-ACCOUNT-PAGE-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-CONVERSATION-PAGE-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-UNMOUNT-PAGE-001",
+          "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-FIND-PAGE-FAILURE-001"
+        ],
+        "test_evidence": [
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-OLDER-RETRY-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-INITIAL-RETRY-VIEWPORT-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-REFRESH-PAGE-RACE-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-CLEAR-PAGE-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-ACCOUNT-PAGE-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-CONVERSATION-PAGE-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-UNMOUNT-PAGE-001",
+          "Round10 authored-not-run: frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#UI-NMR-FIND-PAGE-FAILURE-001"
+        ],
+        "test_environment_ids": [
+          ".github/workflows/native-service-contracts.yml#native-message-ui:exact-H:actual ProductionRenderer Chromium Transcript8; GitHub-hosted only"
+        ],
+        "requirement_ids": [
+          "NMR-26a"
+        ]
+      },
+      "note": "\nRound10 actual-root Transcript continuation: the existing ProductionRenderer, ConversationTranscript and pagination controller retain their authority. The renderer now exposes an older-page failure with explicit accessible retry, stops automatic and find-driven repeats of a failed cursor, and binds the viewport to the actual mounted node after initial-load recovery. Eight Chromium cases mount the real production root, coordinator broker/client and transcript feed; they cover opaque continuation identity, cache return, page/refresh/live-row races, intermediate viewport commits, clear/account/conversation retirement, unmount disposal and failed find pagination. These eight cases are authored, not executed or accepted at this ledger-object preparation. The containing-H GitHub Actions result must be read before qualification. Historical exact d24783f4c000f765c8f65b58517f25753c5a20a3/run41421314346 failed Human20/22; our exact9d73d1bef1023d5b95f55cdaadf4f6a56d2b6a78/run41423909766 passed Human30+Agent4 and shipping, while the real renderer compilation failed on the pre-existing telemetry map and was subsequently repaired. The exact106bb prerequisite Human62/Transcript29/cursor17 counts remain historical; all later containing-head requirements and owners are preserved; no historical green is transferred to a later H. Backend compatible checkpoint remains unmerged and the observable production source still lacks afterId=0/historyCursor compatibility. All real service, source/legal, signed platform, full UI/a11y/performance/soak/upgrade/rollback/Bot and independent ACCEPT gates remain open. Exact evidence: projects/telegram-desktop-rust/evidence/fbcp-native-message-round10-20261102.json."
+    }
+  ],
+  "reviewed_delta_base_blob": "a64f3a5becae94767609d478e9667a27bc1859b5"
+}

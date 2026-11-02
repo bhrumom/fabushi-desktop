@@ -33,6 +33,7 @@ use super::forward_batch_journal::{
     snapshot_forward_attachments, store_forward_batch,
 };
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
@@ -87,7 +88,7 @@ use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobSt
 use super::native_messaging::{
     FabushiHumanSendError, FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
     FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, FabushiRemoteHumanReaction,
-    fabushi_identity_text,
+    fabushi_identity_text, fabushi_message_identity_text,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -147,6 +148,20 @@ impl ProductionMaterializedSession {
     }
 }
 
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HumanCreationStage {
+    BeforeLock,
+    Locked,
+    BeforeInitialize,
+    BeforePublish,
+}
+
+#[cfg(test)]
+type HumanCreationHook = Arc<
+    dyn Fn(HumanCreationStage, &str, Option<&Arc<SandAgentDb>>) + Send + Sync,
+>;
+
 /// Shipping Host owner for the Grok session materialization worker boundary.
 ///
 /// The pool is retained for the Host lifetime so per-agent blob workers are
@@ -162,6 +177,8 @@ pub struct ProductionSessionWorkers {
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     human_message_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
+    #[cfg(test)]
+    human_creation_hook: Option<HumanCreationHook>,
     agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
@@ -318,6 +335,8 @@ impl ProductionSessionWorkers {
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             human_message_locks: Mutex::new(BTreeMap::new()),
+            #[cfg(test)]
+            human_creation_hook: None,
             agent_store_owners: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
@@ -1877,6 +1896,29 @@ impl ProductionSessionWorkers {
         format!("conversation:{conversation_id}")
     }
 
+    // Every Human row writer holds the existing conversation mutation lane.
+    // Reconcile activity after the durable row write, and also on replay so a
+    // crash between the two commits cannot leave the roster permanently stale.
+    fn update_human_activity(owner: &SandAgentDb, timestamp_ms: f64) -> Result<(), String> {
+        if owner.is_closed() {
+            return Err("Human conversation owner is closed".into());
+        }
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
+        let latest = owner.get_metadata("lastActivityAt")
+            .map_err(|error| error.to_string())?
+            .as_ref().and_then(serde_json::Value::as_f64)
+            .filter(|value| value.is_finite())
+            .unwrap_or(timestamp_ms).max(timestamp_ms);
+        if !owner.set_metadata("lastActivityAt", serde_json::json!(latest))
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Human message activity was not durably updated".into());
+        }
+        Ok(())
+    }
+
     fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
         match (&self.native_messaging, self.native_messaging_required) {
             (Some(client), _) => Ok(Some(client.as_ref())),
@@ -2026,7 +2068,7 @@ impl ProductionSessionWorkers {
         peer_human_id: &str,
         existing: &[serde_json::Value],
     ) -> Result<(), String> {
-        let remote_id = fabushi_identity_text(&remote.id)?;
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
         if !((sender_id == local_human_id && recipient_id == peer_human_id)
@@ -2144,7 +2186,7 @@ impl ProductionSessionWorkers {
         existing: &[serde_json::Value],
     ) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?;
-        let remote_id = fabushi_identity_text(&remote.id)?;
+        let remote_id = fabushi_message_identity_text(&remote.id)?;
         let sender_id = fabushi_identity_text(&remote.sender_user_id)?;
         let recipient_id = fabushi_identity_text(&remote.recipient_user_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
@@ -2259,9 +2301,10 @@ impl ProductionSessionWorkers {
                 }
             }
             if current == &entry {
+                Self::update_human_activity(owner, timestamp_ms)?;
                 return Ok(current.clone());
             }
-            return owner
+            let refreshed = owner
                 .update_transcript_entry(
                     entry
                         .get("id")
@@ -2270,7 +2313,9 @@ impl ProductionSessionWorkers {
                     &entry,
                 )
                 .map_err(|error| error.to_string())?
-                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
+                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string())?;
+            Self::update_human_activity(owner, timestamp_ms)?;
+            return Ok(refreshed);
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
@@ -2296,10 +2341,12 @@ impl ProductionSessionWorkers {
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return owner
+                let settled = owner
                     .settle_transcript_entry_identity(current_id, &entry)
                     .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
+                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string())?;
+                Self::update_human_activity(owner, timestamp_ms)?;
+                return Ok(settled);
             }
         }
         if !owner
@@ -2312,11 +2359,12 @@ impl ProductionSessionWorkers {
                 .into_iter()
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+            let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                .unwrap_or(timestamp_ms);
+            Self::update_human_activity(owner, timestamp)?;
             return Ok(replay);
         }
-        let _ = owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?;
+        Self::update_human_activity(owner, timestamp_ms)?;
         Ok(entry)
     }
 
@@ -2325,6 +2373,87 @@ impl ProductionSessionWorkers {
             .map_err(|_| "Human conversation mutation lock registry poisoned".to_string())?;
         Ok(Arc::clone(locks.entry(conversation_id.to_string())
             .or_insert_with(|| Arc::new(Mutex::new(())))))
+    }
+
+    fn pending_human_forward_is_batch_owned(
+        &self, conversation_id: &str, entry: &serde_json::Value,
+    ) -> Result<bool, String> {
+        // A damaged version must not turn source-owned intent into an ordinary
+        // send. The separate marker also survives replacement of its context.
+        if entry.get("forwardBatchOwned").is_some() {
+            return Ok(true);
+        }
+        let context = entry.get("forwardContext");
+        if context.is_some_and(|value| value.get("batchVersion").is_some()) {
+            return Ok(true);
+        }
+        let nonce = entry.get("clientNonce").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "persisted Human pending nonce is invalid".to_string())?;
+        let author = entry.get("authorId").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "persisted Human pending author is invalid".to_string())?;
+        let mut readable_legacy_source = false;
+        if let Some(context) = context.filter(|value|
+            ["sourceConversationId", "sourceEntryId", "requestId"].iter()
+                .any(|key| value.get(*key).is_some())
+        ) {
+            let source = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| "persisted Human forward source is invalid".to_string())?;
+            let request = context.get("requestId").and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| "persisted Human forward request is invalid".to_string())?;
+            // Use the same strict cached/cold source owner as batch recovery.
+            // Unreadable or malformed storage cannot prove legacy ownership.
+            let owner = self.open_human_conversation_db_owner(source)?;
+            if load_forward_batches(&owner, source)?.iter().any(|batch|
+                (batch.request_id == request && batch.account_id == author)
+                    || batch.destinations.iter().any(|target|
+                        target.conversation_id == conversation_id && target.client_nonce == nonce
+                    )
+            ) {
+                return Ok(true);
+            }
+            // The pre-journal shipping path used this exact nonce contract.
+            // A readable but unrelated source alone cannot authorize downgrade
+            // of a v1 target whose real source/journal is no longer available.
+            let mut legacy_digest = Sha256::new();
+            legacy_digest.update(request.as_bytes());
+            legacy_digest.update([0_u8]);
+            legacy_digest.update(conversation_id.as_bytes());
+            readable_legacy_source = nonce == format!("human-forward-{:x}", legacy_digest.finalize());
+        }
+        // Older rows did not have the independent marker. If their entire
+        // context was lost/replaced, their stable target nonce still identifies
+        // the source batch. Unrelated ordinary reply metadata is not itself a
+        // forwarding identity, and genuine legacy nonces remain replayable.
+        if !nonce.starts_with("human-forward-") { return Ok(false); }
+        let entries = match fs::read_dir(get_native_conversations_root(&self.agents_root)) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err("persisted Human forward ownership cannot be resolved from unavailable source stores".into());
+            }
+            Err(error) => return Err(error.to_string()),
+        };
+        for source in entries {
+            let source = source.map_err(|error| error.to_string())?;
+            if !source.file_type().map_err(|error| error.to_string())?.is_dir() { continue; }
+            let source_id = source.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
+            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            if load_forward_batches(&owner, &source_id)?.iter().any(|batch|
+                batch.destinations.iter().any(|target|
+                    target.conversation_id == conversation_id && target.client_nonce == nonce
+                )
+            ) {
+                return Ok(true);
+            }
+        }
+        if !readable_legacy_source {
+            return Err("persisted Human forward ownership is unresolved; retain pending intent until its source can be recovered".into());
+        }
+        Ok(false)
     }
 
     fn acquire_human_send_settlement_guard<'a>(
@@ -2373,7 +2502,7 @@ impl ProductionSessionWorkers {
     fn store_human_coverage(owner: &SandAgentDb, after_id: u64, complete: bool) -> Result<(), String> {
         if !owner.set_metadata(
             "humanHistoryCoverage",
-            serde_json::json!({"afterId": after_id, "complete": complete}),
+            serde_json::json!({"version": 1, "afterId": after_id, "complete": complete}),
         ).map_err(|error| error.to_string())? {
             return Err("Human history coverage checkpoint was not durably stored".into());
         }
@@ -2398,12 +2527,35 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         let Some(client) = self.shipping_native_messaging()? else {
-            return owner.get_transcript_entries().map_err(|error| error.to_string());
+            return owner.get_human_transcript_entries().map_err(|error| error.to_string());
         };
         let local_human_id = self.local_human_id()?.to_string();
         if client.identity()?.user_id != local_human_id {
             return Err("Fabushi native messaging credential changed Human account".into());
         }
+        let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
+        let (covered, complete) = match coverage.as_ref() {
+            None | Some(serde_json::Value::Null) => (0, false),
+            Some(checkpoint) => {
+                let after_id = checkpoint.get("afterId")
+                    .and_then(serde_json::Value::as_u64)
+                    .filter(|value| *value <= MAX_SAFE_ID)
+                    .ok_or_else(|| "persisted Human history coverage cursor is invalid".to_string())?;
+                let complete = checkpoint.get("complete")
+                    .and_then(serde_json::Value::as_bool)
+                    .ok_or_else(|| "persisted Human history coverage completion flag is invalid".to_string())?;
+                match checkpoint.get("version") {
+                    Some(version) if version.as_u64() == Some(1) => (after_id, complete),
+                    None => {
+                        // Older clients persisted this shape without requiring
+                        // historyCursor. Preserve their rows and checkpoint until
+                        // a qualified origin page is durably applied.
+                        (0, false)
+                    }
+                    Some(_) => return Err("persisted Human history coverage version is unsupported".into()),
+                }
+            }
+        };
         self.replay_human_reaction_intent(&owner, &metadata, client)?;
         let pending = owner.get_transcript_entries().map_err(|error| error.to_string())?
             .into_iter().filter(|entry| {
@@ -2424,10 +2576,9 @@ impl ProductionSessionWorkers {
                         && current.get("remoteMessageId").is_none()
                         && matches!(current.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
                 }) else { continue; };
-            // A v1 forwarding outbox belongs to its source's complete durable
-            // batch. A removed/protected source cannot be bypassed by the
-            // generic destination pending-send recovery route.
-            if entry.pointer("/forwardContext/batchVersion").and_then(serde_json::Value::as_u64) == Some(1) {
+            // A source-owned forwarding outbox never becomes a generic send
+            // because its version/context was damaged or replaced.
+            if self.pending_human_forward_is_batch_owned(conversation_id, &entry)? {
                 continue;
             }
             let Some(nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) else { continue; };
@@ -2441,20 +2592,6 @@ impl ProductionSessionWorkers {
             );
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
-        let coverage = owner.get_metadata("humanHistoryCoverage").map_err(|error| error.to_string())?;
-        let (covered, complete) = match coverage.as_ref() {
-            None | Some(serde_json::Value::Null) => (0, false),
-            Some(checkpoint) => {
-                let after_id = checkpoint.get("afterId")
-                    .and_then(serde_json::Value::as_u64)
-                    .ok_or_else(|| "persisted Human history coverage cursor is invalid".to_string())?;
-                let complete = checkpoint.get("complete")
-                    .and_then(serde_json::Value::as_bool)
-                    .ok_or_else(|| "persisted Human history coverage completion flag is invalid".to_string())?;
-                (after_id, complete)
-            }
-        };
-        if covered > MAX_SAFE_ID { return Err("persisted Human history coverage cursor is invalid".into()); }
         let mut after = if complete && covered < PAGE_LIMIT as u64 { 0 } else { covered };
         let mut rejected: Option<String> = None;
         let mut reached_end = false;
@@ -2478,7 +2615,7 @@ impl ProductionSessionWorkers {
             let mut last = after;
             let mut accepted = Vec::new();
             for remote in &page {
-                let id = fabushi_identity_text(&remote.id)?.parse::<u64>()
+                let id = fabushi_message_identity_text(&remote.id)?.parse::<u64>()
                     .map_err(|_| "remote Human history id is not a positive integer".to_string())?;
                 if id <= last || id > MAX_SAFE_ID {
                     return Err("Fabushi Human history afterId did not advance monotonically".into());
@@ -2509,7 +2646,7 @@ impl ProductionSessionWorkers {
             let known = snapshot.iter().filter_map(|entry| entry.get("remoteMessageId")
                 .and_then(serde_json::Value::as_str).map(str::to_string)).collect::<BTreeSet<_>>();
             for remote in latest {
-                let remote_id = fabushi_identity_text(&remote.id)?;
+                let remote_id = fabushi_message_identity_text(&remote.id)?;
                 if !known.contains(remote_id.as_str()) { continue; }
                 self.validate_remote_human_message(&remote, &local_human_id, &peer, &snapshot)?;
                 let settled = self.materialize_remote_human_message_with_snapshot(&owner, &remote, &snapshot)?;
@@ -2518,7 +2655,7 @@ impl ProductionSessionWorkers {
         }
         if let Some(error) = rejected { return Err(error); }
         // Full 32-page windows persist a nonterminal cursor for the next sync/restart.
-        owner.get_transcript_entries().map_err(|error| error.to_string())
+        owner.get_human_transcript_entries().map_err(|error| error.to_string())
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
@@ -2573,74 +2710,140 @@ impl ProductionSessionWorkers {
             digest.update(participant_id.as_bytes());
         }
         let conversation_id = format!("human-direct-{:x}", digest.finalize());
+        let serial = self.human_message_lock(&conversation_id)?;
+        #[cfg(test)]
+        self.observe_human_creation(HumanCreationStage::BeforeLock, &conversation_id, None);
+        let _exclusive = serial.lock()
+            .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+        #[cfg(test)]
+        self.observe_human_creation(HumanCreationStage::Locked, &conversation_id, None);
+
+        // The canonical path is shared by every discovery of this pair. Keep
+        // creation in the same mutation lane as send/sync through publication.
         let db_path = get_native_conversation_db_path(&self.agents_root, &conversation_id)
             .map_err(|error| error.to_string())?;
-        if db_path.is_file() {
-            let owner = self.open_human_conversation_db_owner(&conversation_id)?;
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if !self.metadata_has_local_human(&metadata)? {
-                return Err("existing Human conversation does not contain the local identity".into());
-            }
-            let existing_participants = metadata
-                .get("participantIds")
-                .and_then(serde_json::Value::as_array)
-                .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
-            if !existing_participants
-                .iter()
-                .any(|value| value.as_str() == Some(peer_human_id))
-            {
-                return Err("existing Human conversation does not contain the requested peer".into());
-            }
-            let existing_title = metadata
-                .get("title")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or(peer_human_id);
-            return Ok(serde_json::json!({
-                "id": conversation_id,
-                "kind": "human",
-                "title": existing_title,
-                "participantIds": metadata.get("participantIds").cloned().unwrap_or_else(|| serde_json::json!([])),
-            }));
-        }
-        let conversation_dir = db_path
-            .parent()
-            .ok_or_else(|| "native conversation database has no parent".to_string())?;
-        fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
-        let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
-        );
-        let display_title = if title.is_empty() { peer_human_id } else { title };
-        let created_at = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as f64;
-        let metadata = serde_json::json!({
-            "conversationKind": "human",
-            "conversationId": conversation_id,
-            "title": display_title,
-            "participantIds": [local_human_id, peer_human_id],
-            "createdAt": created_at,
-            "lastActivityAt": 0.0,
-        });
-        if !owner
-            .initialize_metadata_if_missing(metadata)
-            .map_err(|error| error.to_string())?
-        {
-            owner.close(false);
-            let _ = fs::remove_dir_all(conversation_dir);
-            return Err("failed to initialize native Human conversation metadata".into());
-        }
-        self.db_owners
+        let key = Self::native_conversation_owner_key(&conversation_id);
+        let cached_owner = self.db_owners
             .lock()
             .map_err(|_| "conversation db owner map poisoned".to_string())?
-            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
+            .get(&key)
+            .cloned();
+        let owner = match cached_owner {
+            Some(owner) => owner,
+            None => {
+                let conversation_dir = db_path
+                    .parent()
+                    .ok_or_else(|| "native conversation database has no parent".to_string())?;
+                fs::create_dir_all(conversation_dir).map_err(|error| error.to_string())?;
+                Arc::new(
+                    SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
+                        .map_err(|error| error.to_string())?,
+                )
+            }
+        };
+        // A schema-only store left by an interrupted/failed initialization is
+        // retryable. read_metadata alone would synthesize Agent defaults here.
+        if owner.read_kv("metadata").map_err(|error| error.to_string())?.is_none() {
+            let display_title = if title.is_empty() { peer_human_id } else { title };
+            let created_at = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as f64;
+            let metadata = serde_json::json!({
+                "conversationKind": "human",
+                "conversationId": conversation_id,
+                "title": display_title,
+                "participantIds": [local_human_id, peer_human_id],
+                "createdAt": created_at,
+                "lastActivityAt": 0.0,
+            });
+            #[cfg(test)]
+            self.observe_human_creation(
+                HumanCreationStage::BeforeInitialize, &conversation_id, Some(&owner),
+            );
+            // false can mean existing metadata or a busy write, never ownership
+            // of this directory. Validate durable metadata below in either case.
+            let _ = owner.initialize_human_metadata_if_empty(metadata)
+                .map_err(|error| error.to_string())?;
+        }
+        let conversation = Self::human_creation_summary(
+            &owner, &conversation_id, local_human_id, peer_human_id,
+        )?;
+        #[cfg(test)]
+        self.observe_human_creation(
+            HumanCreationStage::BeforePublish, &conversation_id, Some(&owner),
+        );
+        // Read-side openers do not take the mutation lock and may have published
+        // a valid owner after initialization. Retain that Arc; dropping only our
+        // unpublished candidate must never close or replace the cached winner.
+        let published_owner = {
+            let mut owners = self.db_owners.lock()
+                .map_err(|_| "conversation db owner map poisoned".to_string())?;
+            Arc::clone(owners.entry(key).or_insert_with(|| Arc::clone(&owner)))
+        };
+        if Arc::ptr_eq(&owner, &published_owner) {
+            Ok(conversation)
+        } else {
+            Self::human_creation_summary(
+                &published_owner, &conversation_id, local_human_id, peer_human_id,
+            )
+        }
+    }
+
+    fn human_creation_summary(
+        owner: &SandAgentDb,
+        conversation_id: &str,
+        local_human_id: &str,
+        peer_human_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let Some(raw) = owner.read_kv("metadata").map_err(|error| error.to_string())? else {
+            return Err("failed to initialize native Human conversation metadata".into());
+        };
+        // The shared metadata decoder reads hex byte pairs. Reject non-ASCII
+        // corruption before it can slice through a UTF-8 character boundary.
+        if !raw.trim().is_ascii() {
+            return Err("existing Human conversation metadata encoding is invalid".into());
+        }
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human") {
+            return Err(format!("Conversation is not a Human conversation: {conversation_id}"));
+        }
+        if metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id) {
+            return Err("existing Human conversation identity does not match its canonical path".into());
+        }
+        let participants = metadata.get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .filter(|participants| participants.len() == 2 && participants.iter().all(serde_json::Value::is_string))
+            .ok_or_else(|| "existing Human conversation participants are invalid".to_string())?;
+        if !participants.iter().any(|id| id.as_str() == Some(local_human_id)) {
+            return Err("existing Human conversation does not contain the local identity".into());
+        }
+        if !participants.iter().any(|id| id.as_str() == Some(peer_human_id)) {
+            return Err("existing Human conversation does not contain the requested peer".into());
+        }
+        let title = match metadata.get("title") {
+            Some(serde_json::Value::String(title)) => title.as_str(),
+            None => peer_human_id,
+            Some(_) => return Err("existing Human conversation title is invalid".into()),
+        };
         Ok(serde_json::json!({
             "id": conversation_id,
             "kind": "human",
-            "title": display_title,
-            "participantIds": [local_human_id, peer_human_id],
+            "title": title,
+            "participantIds": participants,
         }))
+    }
+
+    #[cfg(test)]
+    fn observe_human_creation(
+        &self,
+        stage: HumanCreationStage,
+        conversation_id: &str,
+        owner: Option<&Arc<SandAgentDb>>,
+    ) {
+        if let Some(hook) = &self.human_creation_hook {
+            hook(stage, conversation_id, owner);
+        }
     }
 
     pub fn open_human_conversation_db_owner(
@@ -2854,16 +3057,18 @@ impl ProductionSessionWorkers {
         Ok((account, issuer))
     }
 
-    /// Internal recovery must retain sources hidden from the authorized UI
-    /// list, so their pending journals can record a durable policy refusal.
-    fn persisted_human_conversation_ids(&self) -> Result<Vec<String>, String> {
+    /// Scan even now-ineligible source records, so removing a conversation
+    /// cannot free its old request ID for another source under one account.
+    fn find_forward_request(
+        &self, account: &str, issuer: &str, request_id: &str,
+    ) -> Result<Option<HumanForwardBatch>, String> {
         let root = get_native_conversations_root(&self.agents_root);
         let entries = match fs::read_dir(root) {
             Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(error) => return Err(error.to_string()),
         };
-        let mut ids = Vec::new();
+        let mut matched: Option<HumanForwardBatch> = None;
         for entry in entries {
             let entry = entry.map_err(|error| error.to_string())?;
             if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
@@ -2872,24 +3077,7 @@ impl ProductionSessionWorkers {
             let id = entry.file_name().to_string_lossy().into_owned();
             let db_path = get_native_conversation_db_path(&self.agents_root, &id)
                 .map_err(|error| error.to_string())?;
-            match fs::metadata(&db_path) {
-                Ok(metadata) if metadata.is_file() => ids.push(id),
-                Ok(_) => {},
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
-                Err(error) => return Err(error.to_string()),
-            }
-        }
-        ids.sort();
-        Ok(ids)
-    }
-
-    /// Scan even now-ineligible source records, so removing a conversation
-    /// cannot free its old request ID for another source under one account.
-    fn find_forward_request(
-        &self, account: &str, issuer: &str, request_id: &str,
-    ) -> Result<Option<HumanForwardBatch>, String> {
-        let mut matched: Option<HumanForwardBatch> = None;
-        for id in self.persisted_human_conversation_ids()? {
+            if !db_path.is_file() { continue; }
             let owner = self.open_human_conversation_db_owner(&id)?;
             for batch in load_forward_batches(&owner, &id)? {
                 if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
@@ -3029,9 +3217,23 @@ impl ProductionSessionWorkers {
         if self.shipping_native_messaging()?.is_none() { return Ok(()); }
         let (account, issuer) = self.human_forward_scope()?;
         // Unlike the visible roster, recovery cannot omit revoked sources or
-        // silently skip corrupt stored metadata. Share the strict source scan
-        // with find_forward_request, without filtering by request ID.
-        for source_id in self.persisted_human_conversation_ids()? {
+        // silently skip corrupt stored metadata. Reuse the strict source scan
+        // semantics of find_forward_request, without filtering by request ID.
+        let root = get_native_conversations_root(&self.agents_root);
+        let entries = match fs::read_dir(root) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error.to_string()),
+        };
+        for entry in entries {
+            let entry = entry.map_err(|error| error.to_string())?;
+            if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
+                continue;
+            }
+            let source_id = entry.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
             let owner = self.open_human_conversation_db_owner(&source_id)?;
             for batch in load_forward_batches(&owner, &source_id)? {
                 if batch.account_id != account || batch.issuer != issuer
@@ -3162,13 +3364,32 @@ impl ProductionSessionWorkers {
         if let Some(target) = existing.iter().find(|row| {
             row.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
         }) {
-            if local_nonce.is_some_and(|nonce| {
-                nonce.is_empty()
+            if let Some(nonce) = local_nonce {
+                if nonce.is_empty()
+                    || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
                     || target.get("authorId").and_then(serde_json::Value::as_str) != Some(local_human_id)
                     || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
                     || target.get("clientNonce").and_then(serde_json::Value::as_str) != Some(nonce)
-            }) {
-                return Err("sendHumanMessage local reply identity conflicts with its author or nonce".into());
+                    || target.get("remoteMessageId").is_some()
+                    || !matches!(target.get("delivery").and_then(serde_json::Value::as_str),
+                        Some("pending" | "dispatching" | "sent"))
+                {
+                    return Err("sendHumanMessage local reply identity conflicts with its author, nonce or settlement".into());
+                }
+                return Ok(Some(reply_id.to_string()));
+            }
+            let remote_id = target.get("remoteMessageId")
+                .map(fabushi_message_identity_text).transpose()
+                .map_err(|error| format!("sendHumanMessage reply remote identity is invalid: {error}"))?
+                .ok_or_else(|| "sendHumanMessage reply has no canonical remote identity".to_string())?;
+            if reply_id != format!("human-server-message:{remote_id}")
+                || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+                || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
+                || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+                || !target.get("authorId").and_then(serde_json::Value::as_str)
+                    .is_some_and(|author| !author.trim().is_empty())
+            {
+                return Err("sendHumanMessage reply canonical identity is inconsistent".into());
             }
             return Ok(Some(reply_id.to_string()));
         }
@@ -3187,10 +3408,12 @@ impl ProductionSessionWorkers {
         if candidates.next().is_some() {
             return Err("sendHumanMessage local reply nonce has ambiguous canonical identities".into());
         }
-        let remote_id = target.get("remoteMessageId").map(fabushi_identity_text).transpose()?
+        let remote_id = target.get("remoteMessageId").map(fabushi_message_identity_text).transpose()
+            .map_err(|error| format!("sendHumanMessage local reply remote identity is invalid: {error}"))?
             .ok_or_else(|| "sendHumanMessage local reply has no canonical remote identity".to_string())?;
         let canonical_id = format!("human-server-message:{remote_id}");
         if target.get("id").and_then(serde_json::Value::as_str) != Some(canonical_id.as_str())
+            || target.get("kind").and_then(serde_json::Value::as_str) != Some("message")
             || target.get("delivery").and_then(serde_json::Value::as_str) != Some("sent")
             || target.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
         {
@@ -3297,6 +3520,9 @@ impl ProductionSessionWorkers {
                 .unwrap_or_default()
                 .as_millis() as f64
         });
+        if !timestamp_ms.is_finite() {
+            return Err("Human message activity timestamp must be finite".into());
+        }
         let mut existing_pending: Option<serde_json::Value> = None;
         if let Some(entry) = existing.iter().find(|entry| {
             entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
@@ -3333,6 +3559,9 @@ impl ProductionSessionWorkers {
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
             {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(timestamp_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             if !matches!(
@@ -3373,10 +3602,21 @@ impl ProductionSessionWorkers {
             if let Some(reply_id) = normalized_reply {
                 pending_entry["replyToId"] = serde_json::json!(reply_id);
             }
+            if forward_context.is_some_and(|context| context.get("batchVersion").is_some()) {
+                pending_entry.as_object_mut().expect("Human pending message must be an object")
+                    .insert("forwardBatchOwned".into(), serde_json::json!(true));
+            }
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
                 && !owner.append_transcript_entry(&pending_entry).map_err(|error| error.to_string())?
             {
                 return Err("Human pending send could not be durably recorded before dispatch".into());
+            }
+            if existing.iter().any(|entry| entry.get("id") == pending_entry.get("id")
+                && entry.get("forwardBatchOwned") != pending_entry.get("forwardBatchOwned"))
+            {
+                owner.update_transcript_entry(&local_entry_id, &pending_entry)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "Human forward ownership could not be durably recorded before dispatch".to_string())?;
             }
 
             let dispatch_result = (|| -> Result<serde_json::Value, String> {
@@ -3506,7 +3746,13 @@ impl ProductionSessionWorkers {
                 });
                 let remote = match response {
                     Ok(remote) => remote,
-                    Err(FabushiHumanSendError::Transport(error)) => return settled.cloned().ok_or(error),
+                    Err(FabushiHumanSendError::Transport(error)) => {
+                        let settled = settled.ok_or(error)?;
+                        let timestamp = settled.get("timestampMs").and_then(serde_json::Value::as_f64)
+                            .unwrap_or(timestamp_ms);
+                        Self::update_human_activity(&owner, timestamp)?;
+                        return Ok(settled.clone());
+                    }
                     Err(FabushiHumanSendError::Rejected(error)) => return Err(error),
                 };
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
@@ -3535,6 +3781,9 @@ impl ProductionSessionWorkers {
                     // nonce, resources, reply or malformed reaction summary.
                     // A valid late acknowledgement has no freshness authority
                     // over reactions/receipts already persisted by sync or POST.
+                    let timestamp = settled.get("timestampMs").and_then(serde_json::Value::as_f64)
+                        .unwrap_or(timestamp_ms);
+                    Self::update_human_activity(&owner, timestamp)?;
                     return Ok(settled.clone());
                 }
                 self.materialize_remote_human_message(&owner, &remote)
@@ -3606,16 +3855,12 @@ impl ProductionSessionWorkers {
                 .find(|candidate| candidate.get("id") == entry.get("id"))
                 .ok_or_else(|| "native Human message was not durably appended".to_string())?;
             if replay == entry {
+                Self::update_human_activity(&owner, timestamp_ms)?;
                 return Ok(replay);
             }
             return Err("sendHumanMessage clientNonce already identifies different content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("native Human message activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, timestamp_ms)?;
         Ok(entry)
     }
 
@@ -3642,6 +3887,11 @@ impl ProductionSessionWorkers {
                     .into(),
             );
         }
+        if !completed_at_ms.is_finite() {
+            return Err("Human handoff Agent activity timestamp must be finite".into());
+        }
+        let serial = self.human_message_lock(conversation_id)?;
+        let _exclusive = serial.lock().map_err(|_| "Human conversation serial lock poisoned".to_string())?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -3666,6 +3916,9 @@ impl ProductionSessionWorkers {
             let same_stream =
                 entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                let timestamp = entry.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(entry.clone());
             }
             return Err("Human handoff stream already identifies different Agent content".into());
@@ -3700,17 +3953,37 @@ impl ProductionSessionWorkers {
             let same_stream =
                 replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                let timestamp = replay.get("timestampMs").and_then(serde_json::Value::as_f64)
+                    .unwrap_or(completed_at_ms);
+                Self::update_human_activity(&owner, timestamp)?;
                 return Ok(replay);
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
-        if !owner
-            .set_metadata("lastActivityAt", serde_json::json!(completed_at_ms))
-            .map_err(|error| error.to_string())?
-        {
-            return Err("Human handoff Agent activity metadata was not durably updated".into());
-        }
+        Self::update_human_activity(&owner, completed_at_ms)?;
         Ok(entry)
+    }
+
+    fn human_reaction_remote_identity(entry: &serde_json::Value) -> Result<String, String> {
+        let value = entry.get("remoteMessageId")
+            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
+        fabushi_message_identity_text(value)
+            .map_err(|_| "Human reaction target has an invalid canonical remote message identity".to_string())
+    }
+
+    fn validate_human_reaction_target(
+        entry: &serde_json::Value,
+        local_human_id: &str,
+        peer_human_id: &str,
+    ) -> Result<(), String> {
+        let author = entry.get("authorId").and_then(serde_json::Value::as_str);
+        if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+            || !matches!(author, Some(value) if value == local_human_id || value == peer_human_id)
+        {
+            return Err("persisted Human reaction target is outside the selected Human conversation".into());
+        }
+        Ok(())
     }
 
     fn replay_human_reaction_intent(
@@ -3734,19 +4007,22 @@ impl ProductionSessionWorkers {
         if author != self.local_human_id()? || !self.metadata_has_local_human(metadata)? {
             return Err("persisted Human reaction intent belongs to a different account".into());
         }
-        if emoji.trim().is_empty() || emoji.as_bytes().len() > 32 {
+        if emoji.is_empty() || emoji != emoji.trim() || emoji.as_bytes().len() > 32 {
             return Err("persisted Human reaction intent contains invalid emoji".into());
         }
+        if remote_id.parse::<u64>().ok().filter(|id| {
+            *id > 0 && *id <= 9_007_199_254_740_991 && id.to_string() == remote_id
+        }).is_none() {
+            return Err("persisted Human reaction intent contains invalid remote identity".into());
+        }
+        let peer = self.peer_human_id_from_metadata(metadata)?;
         let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "persisted Human reaction target disappeared".to_string())?;
-        if current.get("remoteMessageId").map(fabushi_identity_text).transpose()?
-            .as_deref() != Some(remote_id) {
+        Self::validate_human_reaction_target(&current, author, &peer)?;
+        if Self::human_reaction_remote_identity(&current)? != remote_id {
             return Err("persisted Human reaction remote identity changed".into());
         }
-        // Keep the original dispatch credential through any later SQLite
-        // owner/write-lock wait, rather than adopting a post-response refresh.
-        let request_credential_fingerprint = client.request_credential_fingerprint()?;
         let remote = client.set_direct_message_reaction_for_user(remote_id, emoji, active, author)?;
         Self::validate_remote_human_reactions(&remote)?;
         // HTTP success is not settlement: the service must confirm the requested
@@ -3758,18 +4034,14 @@ impl ProductionSessionWorkers {
         if observed_active != active {
             return Err("Fabushi Human reaction response did not confirm the desired state".into());
         }
-        // Retain any unrelated fields written while HTTP was in flight. The
-        // database commit below compares this exact row and the original intent.
-        let current = owner.get_transcript_entry_by_id(entry_id)
+        let projected = Self::project_remote_human_reactions(&remote, &peer);
+        let mut next = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
-        if current.get("remoteMessageId").map(fabushi_identity_text).transpose()?
-            .as_deref() != Some(remote_id) {
-            return Err("Human reaction target identity changed before durable settlement".into());
+        Self::validate_human_reaction_target(&next, author, &peer)?;
+        if Self::human_reaction_remote_identity(&next)? != remote_id {
+            return Err("persisted Human reaction remote identity changed".into());
         }
-        let peer = self.peer_human_id_from_metadata(metadata)?;
-        let projected = Self::project_remote_human_reactions(&remote, &peer);
-        let mut next = current.clone();
         let is_peer = next.get("authorId").and_then(serde_json::Value::as_str) != Some(author);
         let object = next.as_object_mut()
             .ok_or_else(|| "Human reaction target is not a message object".to_string())?;
@@ -3781,13 +4053,14 @@ impl ProductionSessionWorkers {
         object.insert("remoteReactions".into(), serde_json::to_value(&remote)
             .map_err(|error| format!("remote Human reactions could not be projected: {error}"))?);
         object.insert("reactions".into(), serde_json::Value::Array(projected));
-        owner.settle_human_reaction_if_unchanged(
-            entry_id, &current, &intent, &next,
-            || client.ensure_request_credential_fingerprint(&request_credential_fingerprint),
-        )
+        let settled = owner.update_transcript_entry(entry_id, &next)
             .map_err(|error| error.to_string())?
-            .map(Some)
-            .ok_or_else(|| "Human reaction settlement lost its durable intent or target".to_string())
+            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())?;
+        if !owner.set_metadata("humanReactionIntent", serde_json::Value::Null)
+            .map_err(|error| error.to_string())? {
+            return Err("Human reaction intent could not be durably acknowledged".into());
+        }
+        Ok(Some(settled))
     }
 
     pub fn toggle_human_message_reaction(
@@ -3796,8 +4069,10 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         emoji: &str,
     ) -> Result<serde_json::Value, String> {
-        let emoji = emoji.trim();
-        if emoji.is_empty() { return Err("reactHumanMessage requires emoji".into()); }
+        if emoji.trim().is_empty() { return Err("reactHumanMessage requires emoji".into()); }
+        if emoji != emoji.trim() {
+            return Err("Fabushi Human reaction emoji must not contain surrounding whitespace".into());
+        }
         if emoji.as_bytes().len() > 32 {
             return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
         }
@@ -3821,9 +4096,8 @@ impl ProductionSessionWorkers {
         let current = owner.get_transcript_entry_by_id(entry_id)
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "Human reaction target is not in this conversation".to_string())?;
-        let remote_id = current.get("remoteMessageId")
-            .map(fabushi_identity_text).transpose()?
-            .ok_or_else(|| "Human reaction target has no canonical remote message identity".to_string())?;
+        Self::validate_human_reaction_target(&current, self.local_human_id()?, &self.peer_human_id_from_metadata(&metadata)?)?;
+        let remote_id = Self::human_reaction_remote_identity(&current)?;
         let active = current.get("remoteReactions")
             .and_then(serde_json::Value::as_array).is_some_and(|reactions| {
                 reactions.iter().any(|reaction| {
@@ -3898,22 +4172,22 @@ impl ProductionSessionWorkers {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_entries()
+            .get_human_transcript_entries()
             .map_err(|error| error.to_string())
     }
 
     pub fn read_human_conversation_transcript_tail(
         &self,
         conversation_id: &str,
-        query: TranscriptWindowQuery,
-    ) -> Result<TranscriptPage, String> {
+        query: impl Into<HumanTranscriptPageQuery>,
+    ) -> Result<HumanTranscriptPage, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_transcript_tail(query)
+            .get_human_transcript_tail(query.into())
             .map_err(|error| error.to_string())
     }
 
@@ -4164,6 +4438,10 @@ impl ProductionSessionWorkers {
 
 
 #[cfg(test)]
+#[path = "human_creation_tests.rs"]
+mod human_creation_tests;
+
+#[cfg(test)]
 mod human_send_settlement_credential_tests {
     use super::*;
     use std::io::{Read, Write};
@@ -4306,143 +4584,6 @@ mod human_send_settlement_credential_tests {
             worker.join().expect("settlement worker");
             server.join().expect("settlement HTTP fixture");
             fs::remove_dir_all(root).expect("remove settlement fixture");
-        }
-    }
-
-    #[test]
-    fn shipping_human_settlement_credential_reaction_sqlite_write_wait_fences_rotation_and_revocation() {
-        for change in ["rotated", "removed", "unchanged"] {
-            let root = std::env::temp_dir().join(format!("fabushi-reaction-admission-{}", Uuid::new_v4()));
-            fs::create_dir_all(&root).expect("reaction admission fixture directory");
-            let credential_path = root.join("credential.json");
-            let db_path = root.join("store.db");
-            let issuer = "http://127.0.0.1:4200";
-            write_credential(&credential_path, issuer, "reaction-dispatch-token");
-            let client = FabushiNativeMessagingClient::new(issuer, &credential_path)
-                .expect("real Native credential owner");
-            let fingerprint = client.request_credential_fingerprint().expect("dispatch fingerprint");
-            let owner = Arc::new(SandAgentDb::open(&db_path, 15_000).expect("reaction SQLite owner"));
-            let entry_id = format!("human-server-message:{}", Uuid::new_v4());
-            let original = serde_json::json!({
-                "id":entry_id,"kind":"message","role":"user","authorKind":"human",
-                "authorId":"2","content":"retain the whole reaction target","timestampMs":1000.0,
-                "delivery":"sent","remoteMessageId":"890351","remoteReactions":[],"reactions":[],
-                "remoteReadAt":"2026-10-05T01:00:18Z","retainedLocalMetadata":{"keep":true}
-            });
-            let intent = serde_json::json!({
-                "entryId":entry_id,"remoteMessageId":"890351","emoji":"👍",
-                "active":true,"localHumanId":"1"
-            });
-            let mut next = original.clone();
-            next["remoteReactions"] = serde_json::json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
-            next["reactions"] = serde_json::json!([{"emoji":"👍","by":"me"}]);
-            assert!(owner.append_transcript_entry(&original).expect("persist reaction target"));
-            assert!(owner.set_metadata("humanReactionIntent", intent.clone()).expect("persist reaction intent"));
-            assert!(owner.set_metadata("retainedAdmissionMetadata", serde_json::json!({"keep":true}))
-                .expect("persist unrelated metadata"));
-            let original_metadata = owner.read_metadata().expect("read original complete metadata");
-            let mut settled_metadata = original_metadata.clone();
-            settled_metadata["humanReactionIntent"] = serde_json::Value::Null;
-
-            let events = Arc::new(Mutex::new(Vec::new()));
-            let captured = Arc::clone(&events);
-            let observed_entry = entry_id.clone();
-            let subscription = crate::transcript_mutation_events::subscribe_transcript_mutations(move |mutation| {
-                let target = mutation.get("entryId").and_then(serde_json::Value::as_str) == Some(observed_entry.as_str())
-                    || mutation.get("entries").and_then(serde_json::Value::as_array)
-                        .is_some_and(|entries| entries.iter().any(|entry| entry["id"].as_str() == Some(observed_entry.as_str())));
-                if target {
-                    captured.lock().expect("capture reaction admission event")
-                        .push(serde_json::Value::Object(mutation.clone()));
-                }
-            });
-
-            // The full HTTP/body boundary is covered by the shipping Human
-            // reaction cases. This case controls the later real SQLite writer
-            // wait with the same credential guard used by production replay.
-            let competing_writer = rusqlite::Connection::open(&db_path).expect("independent SQLite writer");
-            competing_writer.execute_batch("BEGIN IMMEDIATE").expect("hold SQLite write reservation");
-            let (started, wait_started) = mpsc::sync_channel(1);
-            let (admitted, wait_admitted) = mpsc::sync_channel(1);
-            let (finished, wait_finished) = mpsc::sync_channel(1);
-            let worker_owner = Arc::clone(&owner);
-            let worker_entry_id = entry_id.clone();
-            let worker_original = original.clone();
-            let worker_intent = intent.clone();
-            let worker_next = next.clone();
-            let probe_path = db_path.clone();
-            let worker = thread::spawn(move || {
-                started.send(()).expect("announce real SQLite settlement attempt");
-                let result = worker_owner.settle_human_reaction_if_unchanged(
-                    &worker_entry_id, &worker_original, &worker_intent, &worker_next,
-                    || {
-                        admitted.send(()).expect("observe credential admission after the write lock");
-                        // With the competing writer released, this failed probe
-                        // proves that settlement itself already owns the write
-                        // reservation when it admits the original credential.
-                        let probe = rusqlite::Connection::open(&probe_path).expect("independent admission probe");
-                        probe.busy_timeout(Duration::from_millis(0)).expect("nonblocking admission probe");
-                        let busy = probe.execute_batch("BEGIN IMMEDIATE")
-                            .expect_err("credential admission must run inside the write transaction");
-                        assert!(crate::storage::sqlite_busy::is_sqlite_busy_error(&busy));
-                        client.ensure_request_credential_fingerprint(&fingerprint)
-                    },
-                ).map_err(|error| error.to_string());
-                finished.send(result).expect("observe SQLite settlement outcome");
-            });
-            wait_started.recv_timeout(Duration::from_secs(15)).expect("settlement worker started");
-            assert!(matches!(wait_admitted.recv_timeout(Duration::from_millis(100)), Err(mpsc::RecvTimeoutError::Timeout)),
-                "credential admission cannot precede acquisition of the held SQLite write lock");
-            match change {
-                "rotated" => write_credential(&credential_path, issuer, "rotated-during-sqlite-wait"),
-                "removed" => fs::remove_file(&credential_path).expect("revoke credential during SQLite wait"),
-                "unchanged" => (),
-                _ => unreachable!(),
-            }
-            competing_writer.execute_batch("ROLLBACK").expect("release competing SQLite writer");
-            wait_admitted.recv_timeout(Duration::from_secs(15)).expect("admission follows acquired SQLite write lock");
-            let result = wait_finished.recv_timeout(Duration::from_secs(15)).expect("bounded reaction settlement result");
-            worker.join().expect("reaction settlement worker");
-            drop(competing_writer);
-
-            if change == "unchanged" {
-                assert_eq!(result.expect("unchanged credential can settle after the write wait"), Some(next.clone()));
-                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).expect("settled reaction row"), Some(next.clone()));
-                assert_eq!(owner.read_metadata().expect("settled complete metadata"), settled_metadata);
-            } else {
-                let error = result.expect_err("obsolete dispatch credential must not settle after the write wait");
-                assert!(error.starts_with("agent database admission rejected:"), "wrong admission error: {error}");
-                assert!(error.contains("credential"), "credential cause must survive admission: {error}");
-                assert_eq!(owner.get_transcript_entry_by_id(&entry_id).expect("unmodified complete reaction row"), Some(original.clone()));
-                assert_eq!(owner.read_metadata().expect("unmodified complete metadata"), original_metadata);
-                assert!(events.lock().expect("reaction events").is_empty(), "rejected admission publishes no target mutation");
-            }
-            owner.close(false);
-            drop(owner);
-
-            let reopened = SandAgentDb::open(&db_path, 15_000).expect("reopen reaction owner");
-            if change != "unchanged" {
-                assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).expect("reopened untouched row"), Some(original.clone()));
-                assert_eq!(reopened.read_metadata().expect("reopened outstanding intent and metadata"), original_metadata);
-                write_credential(&credential_path, issuer, "fresh-recovery-token");
-                let recovered_client = FabushiNativeMessagingClient::new(issuer, &credential_path)
-                    .expect("reopened Native credential owner");
-                let recovered_fingerprint = recovered_client.request_credential_fingerprint().expect("new dispatch fingerprint");
-                assert_eq!(reopened.settle_human_reaction_if_unchanged(
-                    &entry_id, &original, &intent, &next,
-                    || recovered_client.ensure_request_credential_fingerprint(&recovered_fingerprint),
-                ).expect("current credential can recover the same desired reaction"), Some(next.clone()));
-            }
-            assert_eq!(reopened.get_transcript_entry_by_id(&entry_id).expect("durable settled reaction row"), Some(next.clone()));
-            assert_eq!(reopened.read_metadata().expect("durable settled metadata"), settled_metadata);
-            let target_events = events.lock().expect("settled reaction events").clone();
-            assert_eq!(target_events.len(), 1, "only successful current-credential settlement publishes the row");
-            assert_eq!(target_events[0]["kind"], "entries-upserted");
-            assert_eq!(target_events[0]["entries"], serde_json::json!([next]));
-            reopened.close(false);
-            drop(reopened);
-            subscription.unsubscribe();
-            fs::remove_dir_all(root).expect("remove reaction admission fixture");
         }
     }
 

@@ -15,7 +15,8 @@ use crate::storage::store_db::{
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
-    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db, recover_corrupt_store_db,
+    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
+    probe_human_conversation_store, recover_corrupt_store_db,
 };
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
@@ -32,9 +33,15 @@ use super::agent_db_serde::{
     resolve_spend_guard_state, serialize_spend_guard_state,
 };
 use super::agent_db_transcript_pages::{
+    HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
+    read_human_transcript_entries, read_human_transcript_tail,
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
+
+#[cfg(test)]
+#[path = "human_creation_storage_tests.rs"]
+mod human_creation_storage_tests;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AgentDbProjectionError {
@@ -42,8 +49,6 @@ pub enum AgentDbProjectionError {
     Recovery(#[from] AgentDbRecoveryError),
     #[error("agent session sqlite error: {0}")]
     Sqlite(#[from] rusqlite::Error),
-    #[error("agent database admission rejected: {0}")]
-    AdmissionRejected(String),
     #[error("agent metadata hex is invalid: {0}")]
     MetadataHex(String),
     #[error("agent metadata json is invalid utf-8: {0}")]
@@ -54,6 +59,8 @@ pub enum AgentDbProjectionError {
     LatestRootHex(String),
     #[error("agent db owner mutex poisoned")]
     OwnerPoisoned,
+    #[error("Human transcript page could not be durably prepared")]
+    HumanTranscriptUnavailable,
 }
 
 const KV_PROFILE: &str = "sandProfile";
@@ -246,6 +253,21 @@ impl SandAgentDb {
         Self::open_with_options_and_seed(db_path, options, false)
     }
 
+    /// Human creation must reject corruption without quarantining or resetting
+    /// the candidate. The live connection remains the identity authority.
+    pub fn open_human_conversation_store(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let db_path = resolve_agent_db_path(db_path.as_ref());
+        probe_human_conversation_store(&db_path, busy_timeout_ms)?;
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        options.recovery.recover_on_corruption = false;
+        options.recovery.reject_if_corrupt = true;
+        Self::open_with_options_and_seed(db_path, options, false)
+    }
+
     pub fn open_with_options(
         db_path: impl AsRef<Path>,
         options: SandAgentDbOptions,
@@ -367,6 +389,57 @@ impl SandAgentDb {
             db.execute(SET_KV_SQL, params!["metadata", encoded])
                 .map(|changes| changes == 1)
         })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata("metadata".to_string()),
+            );
+        }
+        Ok(changed)
+    }
+
+    /// Seed Human identity only when all durable tables are empty at the same
+    /// SQLite write boundary. Callers must read and validate the persisted
+    /// metadata before publishing an owner, including after a refused or busy
+    /// insert. Identity initialization never attempts corruption recovery.
+    pub fn initialize_human_metadata_if_empty(
+        &self,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() || !value.is_object() {
+            return Ok(false);
+        }
+        let encoded = encode_hex(&serde_json::to_vec(&value)?);
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(false);
+        };
+        let changed = match db.execute(
+            "INSERT INTO kv (key, value)
+             SELECT 'metadata', ?1
+             WHERE NOT EXISTS (SELECT 1 FROM kv)
+               AND NOT EXISTS (SELECT 1 FROM transcript_entries)
+               AND NOT EXISTS (SELECT 1 FROM blobs)",
+            params![encoded],
+        ) {
+            Ok(changes) => changes == 1,
+            Err(error) if is_sqlite_busy_error(&error) => {
+                let message = error.to_string();
+                drop(guard);
+                if let Some(callback) = self.options.on_busy_error.as_ref() {
+                    callback("initializeHumanMetadata", &message);
+                }
+                return Ok(false);
+            }
+            Err(error) => return Err(error.into()),
+        };
+        if changed {
+            bump_db_write_generation(&self.db_path);
+        }
+        drop(guard);
         if changed {
             notify_agent_db_listeners(
                 &self.db_path,
@@ -1334,126 +1407,6 @@ impl SandAgentDb {
         Ok(updated)
     }
 
-    /// Settle one acknowledged Human reaction and retire only its observed
-    /// durable intent in the same transaction. A replay of an already settled
-    /// row clears the matching intent without publishing the row again.
-    pub fn settle_human_reaction_if_unchanged(
-        &self,
-        entry_id: &str,
-        expected_entry: &serde_json::Value,
-        expected_intent: &serde_json::Value,
-        next: &serde_json::Value,
-        before_write: impl FnOnce() -> Result<(), String>,
-    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
-        if self.is_closed()
-            || entry_id.is_empty()
-            || expected_entry.get("id").and_then(serde_json::Value::as_str) != Some(entry_id)
-            || next.get("id").and_then(serde_json::Value::as_str) != Some(entry_id)
-        {
-            return Ok(None);
-        }
-        let mut guard = self
-            .connection
-            .lock()
-            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
-        if self.is_closed() {
-            return Ok(None);
-        }
-        let Some(db) = guard.as_mut() else {
-            return Ok(None);
-        };
-        let result = (|| -> Result<Option<(bool, bool)>, AgentDbProjectionError> {
-            // The transaction owns rollback on every early return, write error
-            // and failed commit, including a failure after the row update.
-            let transaction =
-                db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-            let raw_entry = transaction
-                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
-                    row.get::<_, String>(0)
-                })
-                .optional()?;
-            let Some(raw_entry) = raw_entry else {
-                return Ok(None);
-            };
-            let current: serde_json::Value = serde_json::from_str(&raw_entry)?;
-            if &current != expected_entry {
-                return Ok(None);
-            }
-
-            let raw_metadata = transaction
-                .query_row(GET_KV_SQL, params!["metadata"], |row| {
-                    row.get::<_, String>(0)
-                })
-                .optional()?;
-            let Some(raw_metadata) = raw_metadata else {
-                return Ok(None);
-            };
-            let bytes = decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?;
-            let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
-            let Some(object) = metadata.as_object_mut() else {
-                return Ok(None);
-            };
-            if object.get("humanReactionIntent") != Some(expected_intent) {
-                return Ok(None);
-            }
-            // Credential admission must follow acquisition of SQLite's write
-            // lock: waiting for another writer may outlive the HTTP response.
-            before_write().map_err(AgentDbProjectionError::AdmissionRejected)?;
-            let row_changed = &current != next;
-            let metadata_changed = !expected_intent.is_null();
-            if row_changed
-                && transaction.execute(
-                    UPDATE_TRANSCRIPT_ENTRY_SQL,
-                    params![next.to_string(), entry_id],
-                )? != 1
-            {
-                return Ok(None);
-            }
-            if metadata_changed {
-                object.insert("humanReactionIntent".into(), serde_json::Value::Null);
-                let next_metadata = encode_hex(&serde_json::to_vec(&metadata)?);
-                if transaction.execute(
-                    COMPARE_AND_SET_KV_SQL,
-                    params![next_metadata, "metadata", raw_metadata],
-                )? != 1
-                {
-                    return Ok(None);
-                }
-            }
-            transaction.commit()?;
-            Ok(Some((row_changed, metadata_changed)))
-        })();
-        drop(guard);
-        let Some((row_changed, metadata_changed)) = (match result {
-            Ok(settled) => settled,
-            Err(error) => {
-                if let AgentDbProjectionError::Sqlite(sqlite) = &error {
-                    if is_sqlite_busy_error(sqlite) {
-                        if let Some(callback) = self.options.on_busy_error.as_ref() {
-                            callback("settleHumanReactionIfUnchanged", &sqlite.to_string());
-                        }
-                    }
-                }
-                return Err(error);
-            }
-        }) else {
-            return Ok(None);
-        };
-        if row_changed || metadata_changed {
-            bump_db_write_generation(&self.db_path);
-        }
-        if row_changed {
-            publish_entries_upserted(&self.db_path, vec![next.clone()]);
-        }
-        if metadata_changed {
-            notify_agent_db_listeners(
-                &self.db_path,
-                AgentDbListenerChannel::Metadata("humanReactionIntent".into()),
-            );
-        }
-        Ok(Some(next.clone()))
-    }
-
     pub fn settle_transcript_entry_identity(
         &self,
         entry_id: &str,
@@ -1591,6 +1544,22 @@ impl SandAgentDb {
         Ok(read_transcript_entries_from_db(db)?)
     }
 
+    pub fn get_human_transcript_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        };
+        Ok(read_human_transcript_entries(db)?)
+    }
+
     pub fn get_transcript_page(
         &self,
         query: TranscriptPageQuery,
@@ -1670,6 +1639,26 @@ impl SandAgentDb {
             });
         };
         Ok(read_transcript_tail(db, query)?)
+    }
+
+    pub fn get_human_transcript_tail(
+        &self,
+        query: HumanTranscriptPageQuery,
+    ) -> Result<HumanTranscriptPage, AgentDbProjectionError> {
+        // Preparing the first page durably records its sequence index. Reuse
+        // the same write/recovery owner and reject its closed/busy no-op result.
+        let page = self.run_write_value("humanTranscriptTail", |db| {
+            let metadata = read_metadata_json(db).map_err(|error| match error {
+                AgentDbProjectionError::Sqlite(error) => error,
+                error => rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    error.to_string(),
+                ))),
+            })?.unwrap_or(serde_json::Value::Null);
+            read_human_transcript_tail(db, &query, &metadata)
+                .map(|(page, changed)| (Some(page), changed))
+        })?;
+        page.ok_or(AgentDbProjectionError::HumanTranscriptUnavailable)
     }
 
     pub fn get_transcript_entry_by_id(

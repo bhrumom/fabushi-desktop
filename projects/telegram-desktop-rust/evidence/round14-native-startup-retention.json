@@ -13,7 +13,7 @@
     "refreshed": false
   },
   "batch": "NMR-31/32/33: isolate Native startup from legacy Telegram state while preserving retained data and original-reader rollback compatibility",
-  "preparation_state": "Implementation/tests authored and independently statically reviewed; new containing-commit Actions execution is pending at receipt creation. This is not acceptance evidence for a future run.",
+  "preparation_state": "Original round14 production preparation is retained below as historical evidence. Production commit c15dfbd9631f8b9fb6920cb5f80b9aea35210d07 was remotely read back and its exact-H Actions run41438907013 attempt2 completed successfully. recovery_verification records the later recovery and concurrent-head observations. The ledger-only containing commit must obtain its own TDRP source-review/schema/candidate Actions; this receipt does not predeclare that future run or product ACCEPT.",
   "production_change": [
     "FabushiAuthService emits only the seven Native v1 credential fields. It no longer reads, creates, rotates, deletes or exports retained Telegram storage/application secrets.",
     "All AppHost constructors converge on the existing constructor, which no longer opens/migrates a Telegram database or creates a TelegramClientLease. HostCreateConfig receives no Telegram client/self identity; old auth calls cannot lazily recreate it.",
@@ -1276,5 +1276,311 @@
     "Public HostCreateConfig/FFI and default legacy links require remaining caller/data disposition.",
     "Backend PR137 review, explicit formal deployment authorization, current deployed Worker provenance, production authenticated afterId=0 multi-page/empty/unauthorized/recovery evidence remain missing. No merge/deploy.",
     "Final supported-platform packages, UI/visual/accessibility, timing/security/performance/soak, full Bot regression, actual upgrade/rollback and independent ACCEPT remain open."
-  ]
+  ],
+  "recovery_verification": {
+    "observed_at_utc": "2026-11-02T21:02:17Z",
+    "production_commit": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+    "production_parent": "50b0a2048adce13f2281143e6c3f7449d56344d5",
+    "production_tree": "5f02e6693602fcbabdbf07fb127a6ad2ae5228ba",
+    "github_readback": {
+      "commit_parent_tree_verified": true,
+      "all_fifteen_committed_file_contents_match_frozen_local_copy": true
+    },
+    "successor_checkpoint_observed": "aeb2af7b9a25a9ebfdcd47f07b287bf192ce84e7",
+    "successor_run": {
+      "id": 41508537631,
+      "head_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+      "status": "completed",
+      "conclusion": "success",
+      "scope": "Observed workflow result only; no successor production change is attributed to round14."
+    },
+    "recovery_scope": "Preserve the advanced migration line. Add missing round14 owner/test anchors to the current sole ledger and exact original-H execution evidence; no repeated production edits.",
+    "attempt1": {
+      "run_id": 41438907013,
+      "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+      "conclusion": "failure",
+      "electron_job": 125255546900,
+      "ui_job": 125255547292,
+      "reused_successes": [
+        "carrier10",
+        "Native auth8",
+        "UI16",
+        "Electron and renderer builds"
+      ],
+      "cancelled_before_steps": [
+        125255547295,
+        125255547398
+      ]
+    },
+    "attempt2": {
+      "run_id": 41438907013,
+      "retry_request": "rerun_failed_workflow_run_jobs",
+      "reason": "Only the two macOS jobs had no executed steps in attempt1; completed Electron/UI evidence at identical H/input is reused.",
+      "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+      "shipping_job": 125498461528,
+      "shipping_conclusion": "success",
+      "shipping_counts": {
+        "composition": 11,
+        "native_startup_retention": 3,
+        "normalization": 6,
+        "future_salts": 2,
+        "protocol": 122,
+        "tcp_including_live": 9,
+        "proxy": 4,
+        "native_credential": 1
+      },
+      "human_job": 125498460407,
+      "human_conclusion": "success",
+      "run_conclusion": "completed/success",
+      "human_counts": {
+        "human": 33,
+        "agent_nonce": 4,
+        "private_credential_settlement": 3
+      }
+    },
+    "artifacts": [
+      {
+        "id": 13172098929,
+        "name": "native-message-reconciliation-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:a0dc155e1e69ae6cb8930877f9f4278738f8a598565270f33e78c4c11cb2a2cc"
+      },
+      {
+        "id": 13172019289,
+        "name": "native-message-shipping-compile-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:f9a4ba25a84a5c5124126c3238848408925c2d1db512e4a27b45529af7fd6dae"
+      },
+      {
+        "id": 13138126451,
+        "name": "native-message-ui-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:3578acfb41f75225f13eeb09961262aab06584cf85600aa6b4f25cb4ed9c60bf"
+      },
+      {
+        "id": 13138047184,
+        "name": "native-message-electron-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "head_sha": "c15dfbd9631f8b9fb6920cb5f80b9aea35210d07",
+        "digest": "sha256:85ba93695f3a2f79e485c34f18b39b9499912b8f28fb8b2f90c974da2266db9b"
+      }
+    ],
+    "backend_recheck": {
+      "observed_at_utc": "2026-11-02T20:51:32Z",
+      "pr": 137,
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "previous_observed_head": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "main": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "review_count": 0,
+      "issue_comment_count": 0,
+      "inline_comment_count": 0,
+      "formal_authorization": false,
+      "exact_head_ci": [
+        {
+          "event": "push",
+          "run": 41510852280,
+          "job": 125502003031,
+          "attempt": 1,
+          "conclusion": "success",
+          "contracts": 29,
+          "sqlite": 10,
+          "readiness_injected_fetch": 24,
+          "production_readonly_readiness": "skipped",
+          "artifact": 13171519672,
+          "digest": "sha256:4c67b8b8e4f7fce10dc263cc0d862f1f1e95dad7d511ae31804077b61a4c3463"
+        },
+        {
+          "event": "pull_request",
+          "run": 41510861859,
+          "job": 125502035909,
+          "attempt": 1,
+          "conclusion": "success",
+          "contracts": 29,
+          "sqlite": 10,
+          "readiness_injected_fetch": 24,
+          "production_readonly_readiness": "skipped",
+          "artifact": 13172293999,
+          "digest": "sha256:823587410fe31018a7cdea60f47ff608cf461828ea8726112d8aa1f1d8ba00bb"
+        }
+      ],
+      "latest_visible_production_delivery_run": 40047409890,
+      "latest_visible_delivery_source": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+      "worker_version_from_that_delivery": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+      "current_active_worker_and_authenticated_afterId0_evidence": "not_accepted",
+      "missing": [
+        "Formal review/merge/deployment authorization",
+        "Current active Worker/source mapping",
+        "Production authenticated afterId=0 multi-page/empty/unauthorized controls",
+        "True restart/server recovery/D1 restore/rollback"
+      ],
+      "production_actions": [],
+      "latest_unchanged_read_only_observation": "2026-11-02T21:00:07Z"
+    },
+    "release_acceptance": false,
+    "source_contract_successor": {
+      "head": "59308cf3cee48213278c52e4ad60bfd9250fb545",
+      "run": 41510328604,
+      "status": "completed",
+      "conclusion": "success",
+      "read": "Latest FMEP-SOURCE-01 and source-acquisition guard were read and preserved. No source acceptance promotion."
+    },
+    "ledger_update": {
+      "scope": "Existing FBCP-NMR-001 row only: missing NMR31–33 owner paths/symbols, explicit credential-vs-launch handoff, exact authored test identities and actual c15 execution records.",
+      "independent_static_review": "approved; both nonblocking anchor precision comments applied",
+      "new_containing_commit_validation": "Requires its own existing TDRP source-review/schema/candidate Actions; no production code changes in this recovery update.",
+      "source_counters_and_acceptance_changed": false,
+      "other_rows_or_successor_records_overwritten": false,
+      "current_input_readback": {
+        "head": "aeb2af7b9a25a9ebfdcd47f07b287bf192ce84e7",
+        "ledger_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+        "prepared_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015"
+      }
+    },
+    "historical_source_inference_at_59": {
+      "source_sha": "59f5fa24827812f78336c464995d161f403dedfb",
+      "status": "source_inference_not_runtime_reproduction",
+      "observation": "Forward batch freezes attachment JSON/path/name but does not bind the original bytes. Unattempted destinations read the mutable path on resume; source cache readiness checks length. Existing forwarding crash fixtures are text-only.",
+      "paths": [
+        "source/host/src/extensions/session/forward_batch_journal.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/native_messaging.rs",
+        "source/host/tests/session_gateway_contract.rs"
+      ],
+      "next_behavior": "Within existing Session/resource owners, bind immutable attachment content and prove real upload plus post-first-POST SIGKILL, same-length cache rewrite/missing file, ordinary sync resume and original nonce replay; retain legacy journal/data and fail closed when original bytes cannot be established.",
+      "superseded_by_implementation_commit": "94dcf7a2213808a8ded6baddaf069562d365c6d7",
+      "do_not_repeat_as_current_missing_feature": true
+    },
+    "current_verification_followup": {
+      "observed_at_utc": "2026-11-02T20:54:17Z",
+      "original_failure": {
+        "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+        "run": 41522324008,
+        "job": 125541192099,
+        "classification": "TEST_FLAW",
+        "detail": "E0382: dropped runtime used again in shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling; Human62 did not execute."
+      },
+      "published_repair": {
+        "head": "106bb95ba97ef7722e9523285783824393039bc0",
+        "test_blob": "2e032c705fcec8256dd66476807dd1fd683625db",
+        "detail": "Shuts down restarted before drop/reopen; root read back the exact one-line diff."
+      },
+      "new_run": {
+        "id": 41523018920,
+        "head": "106bb95ba97ef7722e9523285783824393039bc0",
+        "observed_status": "queued",
+        "conclusion": null
+      },
+      "requirements": "Current head/source and required gates must be reread before additional implementation. Preserve concurrent production work; queued runs and authored tests are not acceptance.",
+      "latest_read_only_observation": {
+        "observed_at_utc": "2026-11-02T21:01:27Z",
+        "checkpoint": "07ea477f0312398f04e55110934dbd2ff5ab3727",
+        "current_production_test_head": "d8789216b6d3278d64cfec69ecafd56e130747f5",
+        "native_run": 41524395411,
+        "status": "in_progress_and_queued_jobs_not_accepted",
+        "reconciliation_job": 125548279795,
+        "shipping_job": 125548280298,
+        "prior_106_reconciliation_and_ui": "Full logs confirmed Human62/resource3/sharebox1/journal12/Agent4/private3/Gateway1 and Transcript29/cursors17/settlement5/Chromium16 passed. Shipping remained queued; overall run not accepted."
+      }
+    },
+    "large_file_transport_recovery": {
+      "cause": "Two complete-file connector blob calls were interrupted without a returned success result.",
+      "strategy": "Reviewed append-only existing-row operations, one immutable current input, no commit/ref writes by the producer. Root reads back complete input/output and integrates only when the current ledger blob still equals input_blob, using force=false expected_sha CAS.",
+      "producer": {
+        "preparation_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+        "run_id": 41523864056,
+        "run_attempt": 3,
+        "job_id": 125551483888,
+        "status": "completed",
+        "conclusion": "success",
+        "artifact_id": 13180056029,
+        "artifact_digest": "sha256:b1f20ab32e24c50ee9cdda56499173da71ad5cebce23b85e91e3feb6e11dfb7d",
+        "receipt": {
+          "acceptance_changed": false,
+          "bytes": 3631029,
+          "changed_existing_rows": [
+            "FBCP-NMR-001"
+          ],
+          "input_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
+          "input_commit": "aeb2af7b9a25a9ebfdcd47f07b287bf192ce84e7",
+          "operations_sha256": "68c8cbf2b0785371db1942eacc1f96ceaa1e4d2db6923d1a2fd9882ee4b31e45",
+          "preparation_head": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+          "prepared_blob": "1875f4f32255fc22c89de7a6c2981875bd76d015",
+          "product_validation": false,
+          "refs_written": false,
+          "source_accounting_preserved": true,
+          "source_reviews_preserved": true
+        },
+        "reason": "A concurrent product batch appended to the same canonical NMR row; second prepared input no longer matches. Reprepare the same reviewed additive operations on the new exact input, preserving all concurrent fields."
+      },
+      "independent_static_review": "APPROVED: fixed repository/input identity, append-only allowed fields, source/status preservation, no commit/ref write, integration CAS precondition. Static review is not product acceptance.",
+      "github_blob_readback": {
+        "complete_input_and_prepared_content_retrieved": true,
+        "prepared_bytes_exactly_equal_reviewed_delta_on_input": true
+      },
+      "helpers_removed_in_final_publication": [
+        ".github/workflows/round14-c15-ledger-object.yml",
+        ".github/round14-c15-ledger-ops.json"
+      ],
+      "product_validation": false,
+      "acceptance_changed": false,
+      "previous_prepared_objects": [
+        {
+          "preparation_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+          "run_id": 41523864056,
+          "job_id": 125546439499,
+          "status": "completed",
+          "conclusion": "success",
+          "artifact_id": 13179525482,
+          "artifact_digest": "sha256:1b1dd321516908533ee09cb601340bfabb1fa2f1d9487e50fd16918ba8dc2839",
+          "receipt": {
+            "acceptance_changed": false,
+            "bytes": 3620957,
+            "changed_existing_rows": [
+              "FBCP-NMR-001"
+            ],
+            "input_blob": "260c5dac9312c1cb4d456a2643c1f7313124adef",
+            "input_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+            "operations_sha256": "68c8cbf2b0785371db1942eacc1f96ceaa1e4d2db6923d1a2fd9882ee4b31e45",
+            "preparation_head": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+            "prepared_blob": "3fe14057af52546959282415aa85758a3e6de066",
+            "product_validation": false,
+            "refs_written": false,
+            "source_accounting_preserved": true,
+            "source_reviews_preserved": true
+          },
+          "invalidated_by": "Current ledger changed from260c5dac to0b142768 before integration; never attached to the checkpoint."
+        },
+        {
+          "preparation_commit": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+          "run_id": 41523864056,
+          "run_attempt": 2,
+          "job_id": 125548966068,
+          "status": "completed",
+          "conclusion": "success",
+          "artifact_id": 13179616097,
+          "artifact_digest": "sha256:d51cad7c156f7518a606360c8c7b70947d9a346927783fd780da91e3947c05f7",
+          "receipt": {
+            "acceptance_changed": false,
+            "bytes": 3627090,
+            "changed_existing_rows": [
+              "FBCP-NMR-001"
+            ],
+            "input_blob": "0b1427684a862213d04763ef3aa0d9e6a39234c9",
+            "input_commit": "f60515165b7bf382c1e38c0b6feeff2feb64bd92",
+            "operations_sha256": "68c8cbf2b0785371db1942eacc1f96ceaa1e4d2db6923d1a2fd9882ee4b31e45",
+            "preparation_head": "d1c639f14986e1e55f46fea99e9fb8723a3c984f",
+            "prepared_blob": "456b18e762e73b4f5ecb59f3b7e4ec643124a896",
+            "product_validation": false,
+            "refs_written": false,
+            "source_accounting_preserved": true,
+            "source_reviews_preserved": true
+          },
+          "reason": "Concurrent canonical ledger changed; prior immutable prepared object invalidated. Rerun only object preparation with unchanged reviewed operations, no product tests or ref writes.",
+          "invalidated_by": "Concurrent ledger advanced toa64f3a5becae94767609d478e9667a27bc1859b5; object was never attached."
+        }
+      ]
+    }
+  }
 }

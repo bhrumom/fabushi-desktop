@@ -1,0 +1,29 @@
+{
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 9,
+  "repository": "bhrumom/fabushi-desktop",
+  "failedHead": "aed9e8ab10eb4566631a89987511754bdc8dbfe7",
+  "runId": 41525211844,
+  "jobId": 125551061519,
+  "classification": "implementation compatibility defect",
+  "observed": {
+    "tests": 33,
+    "passed": 31,
+    "failed": 2,
+    "skipped": 0,
+    "failedCases": [
+      "NMR-26 update of an unloaded old row wins over an in-flight page",
+      "NMR-26 Human reaction settlement and a later event refresh an older row without moving it"
+    ]
+  },
+  "cause": "The shared mutation merge inserted optional attachments/clientNonce/delivery properties into sparse rows.",
+  "fix": {
+    "path": "frontend/src/production/transcript-projection.ts",
+    "baseBlob": "552aef1252f55c924e3fa999b07ce40c7b6320df",
+    "newBlob": "e5086e8f0e7cf28ae30fef975ee8ec58e1d9becc",
+    "behavior": "Preserve omitted fields while retaining explicit Human clears and Agent attachment merging.",
+    "testsAndAssertionsChanged": false
+  },
+  "validation": "Correction not run at preparation; exact containing-H Actions required. Downstream UI steps in the failed job were skipped.",
+  "sourceOrProductionAcceptance": false
+}

@@ -38,6 +38,8 @@ const LEGACY_METADATA: &[u8] = b"public retained encrypted metadata; no real acc
 const STANDALONE_MESSAGING_ERROR: &str = "host operation failed: standalone messaging is unavailable in the desktop host; use the Session/Transcript owner";
 const SOCIAL_OWNER_ERROR: &str = "host operation failed: social conversations are unavailable in the desktop host; use the Session/Transcript owner";
 const SOCIAL_HTTP_OWNER_ERROR: &str = "host operation failed: product API configuration failed: Desktop Human messages are owned by Session/Transcript";
+const SOCIAL_RESOURCE_OWNER_ERROR: &str = "host operation failed: product API configuration failed: Desktop Human messages are owned by Session/Transcript";
+const SOCIAL_HTTP_PATH_ERROR: &str = "host operation failed: request parameter path is invalid";
 const BOT_SOCIAL: &str = "Public retained social-owner Agent";
 const SOCIAL_TEXT: &str = "Public retained Human payload; never send or reinterpret as Agent input.\0Unicode: 人";
 
@@ -1455,26 +1457,36 @@ fn assert_social_entries_unavailable(host: &AppHost, lane: &PlatformRequestHost)
         }
     }
     for authenticated in [false, true] {
-        for (method, path) in [
-            ("POST", "/api/social/messages"),
-            ("GET", "/api/social/messages"),
-            ("PATCH", "/api/social/messages/1"),
-            ("DELETE", "/api/social/messages/1"),
-            ("POST", "/api/social/messages/1/reactions"),
-        ] {
+        for (method, path, expected_error) in [
+            ("POST", "/api/social/messages", SOCIAL_HTTP_OWNER_ERROR),
+            ("GET", "/api/social/messages", SOCIAL_HTTP_OWNER_ERROR),
+            ("PATCH", "/api/social/messages/1", SOCIAL_HTTP_OWNER_ERROR),
+            ("DELETE", "/api/social/messages/1", SOCIAL_HTTP_OWNER_ERROR),
+            ("POST", "/api/social/messages/1/reactions", SOCIAL_HTTP_OWNER_ERROR),
+        ].into_iter().chain(["GET", "POST", "PUT", "PATCH", "DELETE"].into_iter().flat_map(|method| {
+            [
+                "/api/social/message-resources",
+                "/api/social/message-resources/12345678-1234-1234-1234-123456789abc",
+            ].into_iter().map(move |path| (method, path, SOCIAL_RESOURCE_OWNER_ERROR))
+        })).chain([
+            ("GET", "/api/other/%2e%2e/social/message-resources/12345678-1234-1234-1234-123456789abc", SOCIAL_RESOURCE_OWNER_ERROR),
+            ("GET", "/api/social/%6dessage-resources/12345678-1234-1234-1234-123456789abc", SOCIAL_HTTP_PATH_ERROR),
+            ("GET", "/api/social/Message-resources/12345678-1234-1234-1234-123456789abc", SOCIAL_HTTP_PATH_ERROR),
+        ]) {
             let params = json!({"method": method, "path": path, "authenticated": authenticated,
+                "sessionOwned": false,
                 "body": {"text": SOCIAL_TEXT, "contact": "public-contact"}});
             let response = identified_request(host, "social-http-owner", "platform.request", params.clone());
             assert!(!response.ok);
             assert!(response.result.is_none());
-            assert_eq!(response.error.as_deref(), Some(SOCIAL_HTTP_OWNER_ERROR));
+            assert_eq!(response.error.as_deref(), Some(expected_error));
             let response: Value = serde_json::from_str(&lane.dispatch_json(&json!({
                 "id": "social-http-lane-owner", "method": "platform.request", "params": params,
             }).to_string())).expect("decode real platform lane response");
             assert_eq!(response["id"], "social-http-lane-owner");
             assert_eq!(response["ok"], false);
             assert!(response["result"].is_null());
-            assert_eq!(response["error"], SOCIAL_HTTP_OWNER_ERROR);
+            assert_eq!(response["error"], expected_error);
             assert!(!response.to_string().contains("Public retained Human payload"));
         }
     }
@@ -1518,9 +1530,27 @@ fn social_child_case(root: &Path, first: bool) {
     assert_social_entries_unavailable(&host, &lane);
     assert_eq!(fs::read(&credential).expect("Native credential after denied requests"), expected_credential);
     assert_eq!(social_sqlite_image(&host), before);
+    let switched_credential = replace_native_credential(&credential, PRODUCTION, "456");
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("switched Native scope").account_id, "456");
+    assert!(!contains_bot(&host, BOT_SOCIAL), "previous account Agent must remain isolated");
+    assert_social_entries_unavailable(&host, &lane);
+    assert_eq!(fs::read(&credential).expect("switched Native credential after refusal"), switched_credential);
+    assert_eq!(social_sqlite_image(&host), before, "account change altered retained social records");
+    let returned_credential = replace_native_credential(&credential, PRODUCTION, "123");
+    assert_eq!(auth(&host)["loggedIn"], true);
+    assert_eq!(host.mini_app_account_port().current_scope().expect("returned Native scope").account_id, "123");
+    assert!(contains_bot(&host, BOT_SOCIAL), "original account Agent remains durable");
+    assert_social_entries_unavailable(&host, &lane);
+    assert_eq!(fs::read(&credential).expect("returned Native credential after refusal"), returned_credential);
+    assert_eq!(social_sqlite_image(&host), before, "returning to original account altered retained social records");
     fs::remove_file(&credential).expect("Native logout fixture");
     assert_eq!(auth(&host)["loggedIn"], false);
     assert_social_entries_unavailable(&host, &lane);
+    assert!(matches!(fs::symlink_metadata(&credential), Err(error)
+        if error.kind() == std::io::ErrorKind::NotFound),
+        "rejected logged-out HTTP calls must not recreate the Native credential");
+    assert_eq!(auth(&host)["loggedIn"], false);
     assert_eq!(social_sqlite_image(&host), before, "unauthenticated denials changed retained data");
     assert!(!root.join("app-host/feature-host/account-session.json").exists());
     drop(lane);

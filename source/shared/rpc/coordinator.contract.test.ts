@@ -2,9 +2,44 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  parseCoordinatorHumanTranscriptPageRequest,
+  parseCoordinatorHumanTranscriptPageResponse,
   parseCoordinatorTelegramAuthorizationProjection,
   validateCoordinatorReply,
 } from "./coordinator.js";
+
+test("Human transcript cursors preserve the opaque traversal beside the physical anchor", () => {
+  const cursor = "htp1:8e51c11de4324995a6c6878a94e3d32f:4:17";
+  const request = { conversationId: "human:1:2", beforeSeq: 17, beforeCursor: cursor, limit: 200 };
+  assert.deepEqual(parseCoordinatorHumanTranscriptPageRequest(request), request);
+  const page = { entries: [{ id: "human-server-message:6", kind: "message" }], nextBeforeSeq: 17, nextBeforeCursor: cursor };
+  assert.deepEqual(parseCoordinatorHumanTranscriptPageResponse(page), page);
+  assert.equal(validateCoordinatorReply("getHumanConversationTranscriptTail", page), page);
+  assert.deepEqual(parseCoordinatorHumanTranscriptPageResponse({ entries: [], nextBeforeSeq: null, nextBeforeCursor: null }), { entries: [] });
+  assert.deepEqual(parseCoordinatorHumanTranscriptPageResponse({ entries: [], nextBeforeSeq: 17 }), { entries: [], nextBeforeSeq: 17 });
+});
+
+test("Human transcript cursor admission rejects malformed scope and continuation without coercion", () => {
+  for (const invalid of [
+    { conversationId: "" },
+    { conversationId: "human:1:2", beforeCursor: 3 },
+    { conversationId: "human:1:2", beforeCursor: "" },
+    { conversationId: "human:1:2", beforeCursor: "x".repeat(257) },
+    { conversationId: "human:1:2", beforeSeq: Number.MAX_SAFE_INTEGER + 1 },
+    { conversationId: "human:1:2", beforeSeq: -1 },
+    { conversationId: "human:1:2", limit: 1.5 },
+  ]) assert.equal(parseCoordinatorHumanTranscriptPageRequest(invalid), null);
+  for (const invalid of [
+    { entries: [], nextBeforeCursor: "opaque" },
+    { entries: [], nextBeforeSeq: 1, nextBeforeCursor: {} },
+    { entries: [], nextBeforeSeq: 1, nextBeforeCursor: "" },
+    { entries: [], nextBeforeSeq: 0 },
+    { entries: [{ id: "missing-kind" }], nextBeforeSeq: 1 },
+  ]) {
+    assert.equal(parseCoordinatorHumanTranscriptPageResponse(invalid), null);
+    assert.throws(() => validateCoordinatorReply("getHumanConversationTranscriptTail", invalid), /malformed Human transcript page/);
+  }
+});
 
 test("Telegram authorization projection accepts typed challenge, issue, and bounded backoff", () => {
   const value = {

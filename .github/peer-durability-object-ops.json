@@ -1,0 +1,105 @@
+{
+  "format_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "ledger_path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_delta_base_head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+  "reviewed_delta_base_blob": "f716580b22c6b6791b2e535e2b286df4f9257444",
+  "responsibility_id": "FBCP-NMR-001",
+  "source_identity": {
+    "source_repository": "telegramdesktop/tdesktop",
+    "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+    "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+  },
+  "append": {
+    "fabushi_target_paths": [
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs",
+      "source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs",
+      "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs"
+    ],
+    "requirement_ids": [
+      "NMR-PEER-DURABILITY-01",
+      "NMR-PEER-DURABILITY-01a",
+      "NMR-PEER-DURABILITY-01b",
+      "NMR-PEER-DURABILITY-01c",
+      "NMR-PEER-DURABILITY-01d",
+      "NMR-AC-PEER-DURABILITY-01"
+    ],
+    "oracle_ids": [
+      "NMR-AC-PEER-DURABILITY-01"
+    ],
+    "invariant_ids": [
+      "Peer mutation commits before live snapshot or success/frame publication",
+      "Latest-disk approval identity admission under the same shared lock",
+      "Stable advisory lock inode without timestamp stealing",
+      "Storage errors cannot become healthy absence or reach Host-facing approval dispatch"
+    ],
+    "unit_case_ids": [
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#server_request_uses_peer_json_rpc_and_stable_request_id",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#response_resolves_only_the_matching_open_request",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#cancel_emits_one_shared_request_cancel_notification",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#reconnect_replays_unanswered_request_and_locked_clarify_answers",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#last_clarify_lock_resolves_with_full_answer_set",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#locked_clarify_answer_wins_over_stale_client_response",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib.rs#exported_state_round_trips_for_future_canonical_restart_store",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#pending_request_survives_process_style_reopen",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#resolving_request_is_durable_and_preserves_replay_section",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_issue_retains_live_state_then_repairs_and_reopens",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_response_keeps_pending_and_stable_id_until_repaired",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_clarify_lock_and_completion_preserve_answers_before_retry",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_cancel_has_no_notifications_and_preserves_other_sessions",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#malformed_state_import_is_atomic_and_never_overwrites_inputs",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#stale_instances_merge_changes_without_resurrecting_resolved_requests",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#approval_issue_and_response_lookup_use_latest_transaction",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#only_backup_survives_failed_mutation_then_commits_on_repair",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#memory_only_registry_preserves_behavior_without_filesystem",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#business_errors_and_noops_leave_committed_state_unchanged",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#stale_clarify_writers_preserve_other_committed_answers"
+    ],
+    "fault_recovery_case_ids": [
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_issue_retains_live_state_then_repairs_and_reopens",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_response_keeps_pending_and_stable_id_until_repaired",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_clarify_lock_and_completion_preserve_answers_before_retry",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#failed_cancel_has_no_notifications_and_preserves_other_sessions",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#real_temp_creation_failure_rolls_back_every_mutation_then_reopens",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#malformed_state_import_is_atomic_and_never_overwrites_inputs",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#only_backup_survives_failed_mutation_then_commits_on_repair",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#nonregular_and_legacy_inputs_fail_closed_without_touching_targets",
+      "source/mahayana/mahayana-rs/mahayana-gateway-peer/src/durability_tests.rs#held_old_lock_cannot_be_stolen_and_killed_child_releases_it",
+      "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#failed_peer_commit_publishes_no_approval_event_or_frame_and_recovers",
+      "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#response_storage_failure_preserves_pending_and_never_calls_host",
+      "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#compatibility_approval_validates_then_commits_before_host",
+      "source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs#compatibility_approval_distinguishes_healthy_absence_from_broken_storage"
+    ],
+    "release_gate_ids": [
+      "NMR-AC-PEER-DURABILITY-01"
+    ],
+    "test_environment_ids": [
+      ".github/workflows/native-service-contracts.yml#native-message-shipping-compile:macos-15:Rust1.97.1:complete-peer23-real-files-and-process-lock:GitHub-hosted-only",
+      ".github/workflows/native-service-contracts.yml#gateway-peer-durability:ubuntu-24.04:Rust1.97.1:complete-peer23-real-files-and-process-lock:GitHub-hosted-only",
+      ".github/workflows/native-service-contracts.yml#gateway-peer-durability:windows-2025:Rust1.97.1:complete-peer23-real-files-and-process-lock:GitHub-hosted-only"
+    ],
+    "production_entrypoints": [
+      "Existing stdio mahayana-gateway run -> publish_projected_events -> PersistentServerRequestRegistry::issue_approval_request -> commit -> event/srq output; actual response route -> resolve_peer_response -> committed peer result -> Host; existing dispatch_request canonical parser -> PeerGuardedRuntime -> committed peer compatibility settlement -> underlying Host."
+    ],
+    "production_evidence": [
+      "authored-existing-owner:source/mahayana/mahayana-rs/mahayana-gateway-peer/src/lib_v2.rs@b996054d584aaa26e757330e856e928e815373ba#PersistentServerRequestRegistry::mutate; containing-H execution pending; complete Host/replay recovery remains open",
+      "authored-existing-owner:source/mahayana/mahayana-rs/mahayana-gateway/src/lib_v2.rs@c826e6f52091d7727a3815edbfa5e76e2eb4a54c#acquire_state_lock; containing-H execution pending; complete Host/replay recovery remains open",
+      "authored-existing-owner:source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs@f68aa7371113ec78d0997f46b087d5dbd314e574#run/publish_projected_events/resolve_peer_response/PeerGuardedRuntime; containing-H execution pending; complete Host/replay recovery remains open",
+      "path:docs/specs/fbcp-gateway-peer-durability.md#NMR-PEER-DURABILITY-01"
+    ],
+    "test_evidence": [
+      "NMR-AC-PEER-DURABILITY-01: authored peer23, CLI executable9 and full gateway library13; real filesystem failure/reopen, independent stale instances, killed OS-lock holder and actual Host-facing zero-call observations. Source review is not execution; exact containing-H Actions required. Receipt projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json."
+    ],
+    "blockers": [
+      "NMR-PEER-DURABILITY-01 containing-H peer23 on macOS/Linux/Windows and CLI9/gateway13 must execute; predecessor builds did not run the peer library.",
+      "Peer-to-Host commit/effect crash handoff, replay persistence/publication and cross-writer epochs, same-question clarify API conflict semantics, power-loss and mixed old/new binaries remain separate unqualified contracts."
+    ]
+  },
+  "note": "\nTask20bf round20 peer durability: unique NMR-PEER-DURABILITY-01/NMR-AC-PEER-DURABILITY-01 avoids the concurrent NMR48 forwarding-attachment contract. Existing peer pending requests and shared replay-file owners remain; temporary latest-disk mutation commits before live success, approval dedup/lookup shares that transaction, and the actual stdio publisher plus direct/compatibility response calls propagate storage failures before outputs or Host. Peer23/gateway13/CLI9 are authored and require the containing exact-H Actions. Frozen independent source reviews do not grant execution or ACCEPT. Preserve all concurrent source_reviews, source/legal identities, owners, acceptance fields, latest Human/Agent/UI/CLI/package gates and historical execution; no whole approval recovery or migration acceptance. See projects/telegram-desktop-rust/evidence/round20-peer-durable-mutations.json."
+}

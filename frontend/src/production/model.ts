@@ -530,10 +530,15 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     author: role === "assistant" ? (stringValue(value.authorName) ?? agentName) : "You",
     text,
     timestampMs,
-    ...(attachments.length === 0 ? {} : { attachments }),
+    ...(attachments.length > 0 || (value.authorKind === "human" && Array.isArray(value.attachments)) ? { attachments } : {}),
     ...(transcriptRichText(value) === undefined ? {} : { richText: transcriptRichText(value) }),
     delivery: transcriptDelivery(value) ?? "sent",
     ...(typeof value.clientNonce === "string" ? { clientNonce: value.clientNonce } : {}),
+    ...(value.authorKind === "human"
+      ? { authorKind: "human" as const,
+        ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
+        ...(typeof value.remoteMessageId === "string" ? { remoteMessageId: value.remoteMessageId } : {}) }
+      : {}),
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),
     ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
@@ -641,6 +646,7 @@ export function projectTranscriptFeedEntries(
 export interface ProjectedTranscriptPage {
   entries: ProductionTranscriptEntry[];
   nextBeforeSeq?: number;
+  nextBeforeCursor?: string;
   /** Only authoritative transcript-window responses carry this field. */
   threadSummaries?: readonly TranscriptThreadSummary[];
 }
@@ -667,10 +673,13 @@ export function projectTranscriptPageResult(value: unknown, agentName: string, a
       return composedAtMs == null ? entry : { ...entry, composedAtMs };
   }));
   const nextBeforeSeq = typeof value.nextBeforeSeq === "number" && Number.isFinite(value.nextBeforeSeq) ? value.nextBeforeSeq : undefined;
+  const nextBeforeCursor = typeof value.nextBeforeCursor === "string" && value.nextBeforeCursor.length > 0
+    ? value.nextBeforeCursor : undefined;
   const threadSummaries = projectThreadSummaries(value);
   return {
     entries,
     ...(nextBeforeSeq == null ? {} : { nextBeforeSeq }),
+    ...(nextBeforeCursor == null ? {} : { nextBeforeCursor }),
     ...(threadSummaries === undefined ? {} : { threadSummaries })
   };
 }

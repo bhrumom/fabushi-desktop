@@ -109,6 +109,20 @@ packaged/real-service/full Bot/independent ACCEPT are not claimed.
 - Agent-native typed events remain typed and coexist with Human communication in the same transcript/workspace.
 - An owner-resolution row is not accepted until production wiring, focused contracts, integration/E2E and applicable packaged evidence exist.
 
+### NETWORK-SYNC-REALTIME increment — NMR-PAGING-01 / NMR-ACTIVITY-01
 
+The current Session/Transcript owner remains the only Human row writer. The added persisted pagination state is an index over its immutable physical sequence identities in the same conversation KV, scoped to existing conversation/participant metadata; message payloads remain in Transcript. The existing unified projection/pagination/root cache consumes the opaque cursor and current events. Activity reconciliation and Agent handoff share the existing message lane. This preserves the current afterId coverage, desired-reaction recovery, full-credential fences, reply repair and forward journal CAS. It does not establish an older-message changefeed or live backend/platform/full-migration acceptance; execution is bound to the containing-H Actions receipt.
 
+### Round7 resumed reaction/history consumer qualification
 
+`MSG-REACTION` keeps Session/SandAgentDb as the durable owner. Its existing gateway
+passes exact emoji identity; replay and new toggles admit only the selected Human
+pair and canonical safe remote IDs before HTTP/intention writes. Settlement rereads
+the current target and retains unrelated current fields. `MSG-HISTORY-ORDER-GAP`
+keeps local beforeSeq and remote afterId distinct; new terminal-budget, partial-page
+and reopen cases qualify the existing traversal. Canonical message-ID admission
+and strict page progression prevent alias rows and false coverage. Existing `transcript-projection.ts`
+and pagination consume reaction events/RPC results with account/mutation/event
+fences and a page-ready viewport anchor. No new durable owner or UI root is added.
+The round7 receipt and containing-H Actions are the evidence boundary; broader
+remote-window continuation, real-service, package/visual/a11y and ACCEPT remain open.

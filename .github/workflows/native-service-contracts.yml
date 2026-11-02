@@ -1,14 +1,22 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
+      - 'frontend/src/production/ProductionRenderer.transcript.*'
+      - 'frontend/src/recovered/features/conversation/workspace/transcript.tsx'
+      - 'desktop/transcript-test.html'
+      - 'desktop/transcript-test.ts'
       - 'frontend/src/production/model.ts'
+      - 'desktop/native-message-projection.html'
+      - 'desktop/e2e/native-message-projection.spec.ts'
+      - 'desktop/e2e/fixtures/native-message-projection.tsx'
+      - 'desktop/playwright.config.ts'
       - 'desktop/forward-dialog-test.html'
       - 'desktop/forward-dialog-test.ts'
       - 'frontend/src/production/ForwardMessageDialog*'
@@ -17,9 +25,14 @@ on:
       - 'frontend/src/production/forward-recipient-navigation.ts'
       - 'frontend/src/recovered/runtime/coordinator-source.ts'
       - 'source/shared/rpc/coordinator.ts'
+      - 'source/shared/rpc/coordinator.contract.test.ts'
+      - 'frontend/src/production/model.ts'
+      - 'frontend/src/recovered/features/conversation/workspace/model.ts'
+      - 'frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts'
       - 'frontend/src/production/coordinator-client.ts'
       - 'frontend/src/production/transcript-projection*'
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
+      - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
       - 'source/electron-main/coordinator/rust-coordinator-carrier*'
       - 'source/product/fabushi/fabushi-account-service*'
       - 'source/electron-main/update/**'
@@ -47,6 +60,7 @@ on:
       - '.github/workflows/native-service-contracts.yml'
       - '.github/workflows/release-macos-main.yml'
       - '.github/scripts/promote-miniapp-candidate*.mjs'
+      - '.github/scripts/resolve-package-acceptance-scope*.mjs'
   pull_request:
     paths:
       - 'source/host/src/extensions/auth/**'
@@ -128,9 +142,61 @@ jobs:
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
           echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
+  retained-direct-ffi-compatibility:
+    if: github.event_name == 'push' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind retained direct C wrapper scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          mkdir -p artifacts/retained-direct-ffi
+          git rev-parse HEAD > artifacts/retained-direct-ffi/target-sha.txt
+          sha256sum source/mahayana/mahayana-rs/Cargo.lock source/mahayana/mahayana-rs/providers/telegram-runtime/tests/runtime_ffi.rs > artifacts/retained-direct-ffi/input-sha256.txt
+          printf '%s\n' 'NMR-39 compatibility retention: direct C wrappers and test-owned temporary encrypted-store reopen only; live DC remains ignored; no final shared/static library, installed consumer, real user data or service acceptance.' > artifacts/retained-direct-ffi/scope.txt
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: retained-direct-ffi-ubuntu-1.97.1
+      - name: Execute retained direct C lifecycle and rollback-reader contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version > artifacts/retained-direct-ffi/toolchain.txt
+          cargo --version >> artifacts/retained-direct-ffi/toolchain.txt
+          printf '%s\n' 'cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1' > artifacts/retained-direct-ffi/command.txt
+          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p fabushi-telegram-runtime --test runtime_ffi -- --nocapture --test-threads=1 2>&1 | tee artifacts/retained-direct-ffi/runtime-ffi.log
+          grep -Eq '^test result: ok\. 15 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+([.][0-9]+)?s$' artifacts/retained-direct-ffi/runtime-ffi.log
+          for case_name in \
+            exported_c_lifecycle_returns_owned_json_and_rejects_closed_handles \
+            exported_c_persistent_client_restores_committed_state_after_close \
+            exported_c_execute_rejects_null_non_utf8_and_invalid_json \
+            exported_c_persistent_create_rejects_null_and_non_utf8_inputs_before_storage \
+            exported_c_persistent_create_rejects_invalid_key_lengths_before_storage; do
+            grep -Fx "test $case_name ... ok" artifacts/retained-direct-ffi/runtime-ffi.log
+          done
+          grep -Fx 'test live_runtime_bootstrap_keeps_an_encrypted_transport_session ... ignored, requires a live Telegram production data center' artifacts/retained-direct-ffi/runtime-ffi.log
+          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
+      - name: Preserve retained C wrapper evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retained-direct-ffi-compatibility-${{ github.sha }}
+          path: artifacts/retained-direct-ffi
+          if-no-files-found: error
+
   native-message-reconciliation:
     if: github.event_name == 'push' || inputs.message_batch
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
@@ -152,12 +218,18 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Linux Host native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
       - name: Human ingress, settlement and restart contracts
         shell: bash
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 50 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 63 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
@@ -168,6 +240,14 @@ jobs:
           grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
+      - name: Concurrent Human creation and non-destructive initialization recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation.log
+          grep -Fq 'test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation.log
+          cargo test --locked --manifest-path source/host/Cargo.toml --lib human_creation_storage_tests -- --nocapture 2>&1 | tee artifacts/native-message/human-creation-storage.log
+          grep -Fq 'test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message/human-creation-storage.log
       - name: Durable forwarding sharebox owner contract
         shell: bash
         run: |
@@ -193,7 +273,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib shipping_human_settlement_credential_ -- --nocapture 2>&1 | tee artifacts/native-message/settlement-credential.log
-          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
+          grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/settlement-credential.log
       - name: Authenticated forward recipient gateway HTTP contract
         shell: bash
         run: |
@@ -282,7 +362,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/featurehost-messaging-boundary.log
-          grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log
+          grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/featurehost-messaging-boundary.log
       - name: Retained Social recovery and desktop HTTP ownership
         shell: bash
         run: |
@@ -566,11 +646,27 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 18' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 18' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 33' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 33' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
+      - name: Durable Human cursor and canonical pagination consumers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -e "$GITHUB_WORKSPACE/node_modules" ]; then
+            ln -s "$GITHUB_WORKSPACE/desktop/node_modules" "$GITHUB_WORKSPACE/node_modules"
+          fi
+          ./desktop/node_modules/.bin/esbuild source/shared/rpc/coordinator.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-cursor-bundle.log
+          ./desktop/node_modules/.bin/esbuild frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/pagination-cursor-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/coordinator-cursor.test.mjs artifacts/native-message-ui/pagination-cursor.test.mjs 2>&1 | tee artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# tests 17' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# pass 17' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/human-cursors.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/human-cursors.log
       - name: Compile actual production renderer
         shell: bash
         working-directory: desktop
@@ -599,12 +695,52 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
+      - name: Actual ProductionRenderer history, account and restart projection behaviors
+        shell: bash
+        working-directory: desktop
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../artifacts/native-message-ui/production-renderer.json
+        run: |
+          set -euo pipefail
+          npx --no-install playwright test e2e/native-message-projection.spec.ts --workers=1 --retries=0 --reporter=line,json 2>&1 | tee ../artifacts/native-message-ui/production-renderer.log
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
+          assert.equal(report.stats.expected, 11);
+          for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
+          assert.deepEqual(report.errors, []);
+          const cases = [];
+          const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
+          for (const suite of report.suites) walk(suite);
+          assert.equal(cases.length, 11);
+          for (const item of cases) {
+            assert.equal(item.expectedStatus, 'passed');
+            assert.equal(item.results.length, 1);
+            assert.equal(item.results[0].status, 'passed');
+            assert.equal(item.results[0].retry, 0);
+          }
+          console.log('actual ProductionRenderer: 11 passed, 0 failed, 0 skipped, 0 retries');
+          NODE
+      - name: Actual ProductionRenderer Transcript cache and continuation behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 8' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 8' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/production-transcript.log
       - name: Preserve exact renderer evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-message-ui-${{ github.sha }}
-          path: artifacts/native-message-ui
+          path: |
+            artifacts/native-message-ui
+            desktop/test-results
           if-no-files-found: error
   native-message-electron:
     if: github.event_name == 'push' || inputs.message_batch
@@ -698,13 +834,24 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/macos-metadata.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/macos-metadata.log
+      - name: Explicit artifact-only scope and side-effect admission contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/scripts/resolve-package-acceptance-scope.test.mjs 2>&1 | tee artifacts/native-message-electron/package-scope.log
+          grep -Fx '# tests 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# pass 10' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/package-scope.log
+          grep -Fx '# todo 0' artifacts/native-message-electron/package-scope.log
       - name: Existing installer promotion consumer contracts
         shell: bash
         run: |
           set -euo pipefail
           node --test --test-reporter=tap .github/scripts/promote-miniapp-candidate.test.mjs 2>&1 | tee artifacts/native-message-electron/promotion-consumer.log
-          grep -Fx '# tests 6' artifacts/native-message-electron/promotion-consumer.log
-          grep -Fx '# pass 6' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# tests 7' artifacts/native-message-electron/promotion-consumer.log
+          grep -Fx '# pass 7' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# fail 0' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/promotion-consumer.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/promotion-consumer.log
@@ -848,4 +995,3 @@ jobs:
           name: windows-update-publisher-${{ github.sha }}
           path: artifacts/windows-update-publisher
           if-no-files-found: error
-

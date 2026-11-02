@@ -6,33 +6,30 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current round5 reaction recovery qualification — NMR-R5-01/02
+## Round31 — canonical reply identity recovery
 
-Existing Session/Transcript remains the only Human message owner. This batch
-atomically settles an acknowledged reaction and its exact durable intent,
-checks the full Native credential fingerprint after SQLite write-lock
-acquisition, and publishes only changed committed rows. It also shares the
-existing persisted-journal directory scan and propagates non-NotFound errors.
-Current known-message refresh/history coverage, reaction serialization,
-current94 attachment snapshots/journal12, concurrent forward UI and six source
-review records, and NMR-49 pending-parent reply work are preserved.
+Retain the concurrent direct-parent guard, Ubuntu reconciliation and corrected
+reaction fixture. This round uses the existing strict message-ID parser for reply
+parents and extends existing real persistence/HTTP cases without changing owners
+or test-function counts. Complete old-H shipping logs and containing106bb recovery
+results are qualified separately; this new patch requires its own containing-H
+execution. Full migration and independent ACCEPT remain blocked. See
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
 
-Two real HTTP/SQLite/restart cases, one private SQLite wait/credential case and
-stronger ordinary-sync permission assertions are authored. Required gates are
-Human50, journal12 and private credential4; new containing-H execution is
-pending at preparation. Exact68/run41402071662 and exact59/run41508537631 are
-actually passed prerequisites, not evidence for unrun changes. Receipt:
-projects/telegram-desktop-rust/evidence/round5-recovery-resume-20261102.json.
+## Round7 resumed NMR-22/24/26 qualification
 
-No user data was deleted and no local executable validation was run. Full
-fixed-U source/legal and product closure, deployed authenticated service,
-original-byte legacy recovery, power-loss and multi-AppHost qualification,
-signed platforms, full UI/a11y/security/performance/soak/upgrade/Bot and
-independent ACCEPT remain open. Backend PR137 remains read-only.
-
-Concurrent936 parent/child reply repair and dispatching projection remain intact, including all three added Human cases and Transcript18. This batch adds only its two Human reaction cases.
-
-Qualification branch: checkpoint/tdrp-stage-a-msg-round5-reaction-atomic-76a84e8. Parent exact76a84e8 retains current service25MiB resource bounds/resource3 and real CLI/gateway process4. Shared checkpoint integration is pending; existing workflows qualify this frozen branch without disabling any gate.
+The existing Session/gateway now refuses malformed reaction targets and emoji
+before staging or HTTP, preserves current row fields at delayed settlement,
+and keeps durable rejected intentions diagnosable. Existing Transcript projection
+fences obsolete reaction responses, and pagination waits for the accepted page
+before consuming its viewport anchor. Later reply/upload/forward/credential/CLI
+changes remain intact. Eight Host and nine production-helper cases are added,
+including canonical message-ID and strictly advancing page refusal/recovery;
+containing-H Actions execution is required. Initial run41409695104 executed16
+Human cases:14passed/2failed; fixture repair30b4/run41410242810 passed16Human/4Agent
+and shipping gates.
+See `projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json`.
+Full migration, real service, source/legal, packages/UI/a11y/Bot and ACCEPT remain open.
 
 ## Current bounded batch: pending-parent reply recovery (NMR-49 / NMR-AC-40)
 
@@ -143,23 +140,39 @@ The UI fixture installs the existing runtime theme owner and proves actual
 light/dark colors before its four screenshots. No public schema, service API,
 message owner or data migration/deletion is introduced.
 
-Tests are authored, reviewed and **not-run at commit preparation**. Only the
-containing-H Actions logs/artifacts establish execution; no local executable
-validation was performed. Exact predecessor evidence, corrections, review
-findings and scoped case IDs are recorded in
+Execution correction: exact `59f5fa24827812f78336c464995d161f403dedfb`,
+run41508537631 attempt1 is completed/success. All five full job logs were
+read: reconciliation125494011040 passed Human38/sharebox1/journal3/Agent4/
+private3/Gateway1, including the five actual process/SQLite cases. UI125494010641
+passed renderer/Transcript16/settlement5/Chromium12; its four actual light/dark
+wide/narrow images were opened. Shipping125494011097 passed the locked actual
+AppHost build, gateway5/library11, protocol122/TCP9 and actual resource-copy4
+plus all three required refusal controls. Electron125494011030 and
+Windows125494011118 succeeded. These results qualify only that exact source.
+
+After concurrent migration changes, the same existing journal test is now
+strengthened through real valid batches and the actual observed-value
+merge/write path. The reviewed e8b48cb journal keeps12 cases, later attachment
+and completion protections, and the independently strengthened concurrency
+test. The new oracle is not-run at preparation and requires containing-H
+Actions; historical Human38 and journal3 do not qualify later code. No local
+executable validation was performed. Complete IDs, digests and scope are in
 `projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
 
-The single inventory/ledger still has6895 root/16381 recursive Git identities
-and184 responsibility rows; source_reviews is absent and unknown/unread are
-undetermined. FMEP-SOURCE-01 schema/checker contracts are present; no source or
+At the inspected65253740 base, inventory recorded6895 root/16381 recursive
+Git identities and184 responsibility rows, with source_reviews absent and
+unknown/unread undetermined. Later concurrent source reviews are preserved;
+these historical counts do not state current semantic coverage. FMEP-SOURCE-01 schema/checker contracts are present; no source or
 acceptance state is promoted. Remote forward provenance/policy, attachment
-retention under cache loss, simultaneous multi-AppHost cross-source uniqueness,
+power-loss/filesystem qualification, simultaneous multi-AppHost cross-source uniqueness,
 real production service/pagination, full source/legal closure, Bot regression,
 signed supported-platform packages, upgrade/rollback, performance/soak and
 independent ACCEPT/release remain open.
 
 Backend PR #137 was read only: open/draft/unmerged,
-H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
+baseline H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`; later readback observed
+H=`52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23`, still open/draft/unmerged.
+This round made no Backend changes, merge or deployment.
 
 ## Historical planning snapshot (2026-10-02)
 
@@ -201,6 +214,32 @@ H=`06047d3ea69313ec4cfec58bbee36a7afc9cf007`. No merge or deployment.
 9. full capability acceptance
 10. packaged/release acceptance
 
+## Resumed round 6 — durable Human history traversal (2026-11-02)
 
+The interrupted old round-6 candidate is not applied over later work. On the current checkpoint, NMR-PAGING-01/NMR-ACTIVITY-01 add bounded persistent Human page membership, opaque RPC/cache continuation, committed-update retry overlays and monotonic activity recovery through existing Session/Transcript and renderer owners. Existing full-credential fences, reply/forward journals, resource limits, shipping/source and Agent gates are preserved. Tests are authored at this checkpoint; exact containing-H Actions must establish execution. Historical 849 failure and f68 prerequisite success are separately recorded in `projects/telegram-desktop-rust/evidence/task20bf-round6-resumed-stable-pagination.json`. This is stage-A implementation, not source/real-service/package or independent ACCEPT.
 
+## Round27 resumed: source-owned forwarding pending recovery
 
+At exact936115b0aa578c340c74dd6aa7c71c362572bd72, renderer/Transcript18/
+settlement5/Chromium16, Electron, Windows11 and source157/schema37 passed;
+Human47 and shipping were still queued at the recorded audit. Exact59's five
+message jobs passed earlier; those results do not qualify later attachment,
+reply or upload-limit code. Original2a/run41500770749 remains a failed fixture
+run with cancelled shipping. Full log identities are retained in
+`projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json`.
+
+NMR-47g now keeps damaged/missing forwarding context under the original
+source journal owner. An independent pending marker is stored before effects;
+strict request/target-nonce lookup prevents generic replay after source denial.
+One actual child-kill/SQLite/HTTP matrix preserves the current reply and pinned
+attachment paths, with a prefixed legacy positive. New containing-H execution
+is not-run at preparation; the current gate adds one Human case (53 after the
+52-case pagination base). Concurrent NMR-50 work is retained.
+
+The canonical ledger receives only the two reviewed existing-row changes and
+current shipping-owner correction. Actions prepares the large blob with an
+exact-base guard and no ref writes; integration uses non-forced expected-head
+CAS. Six source reviews/two complete at936 are scoped historical counts; later
+source records remain preserved. Complete source/legal/product/platform/Bot/
+real-service and independent ACCEPT/release remain blocked. Backend PR137 is
+not modified, merged or deployed.

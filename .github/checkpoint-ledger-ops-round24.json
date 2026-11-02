@@ -1,10 +1,9 @@
 {
-  "format_version": 1,
   "repository": "bhrumom/fabushi-desktop",
-  "parent_sha": "ff6d49dadfb3fbc8f7d65260ce558760d7213ef2",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
-  "expected_input_blob": "81e9d4009231b07d78a851cbdff3a4cc0ef29796",
-  "expected_output_blob": "d3dc765536a4e9fb2790310a3450d265758e0a8f",
+  "prepared_from_head": "cc631ac554bd3f4506fdf1c6d18024f3e0e8421d",
+  "expected_input_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+  "expected_output_blob": "4792662e8186b3d85516c308b3b543b2e1821602",
   "operations": [
     {
       "id": "FBCP-NMR-001",
@@ -12,13 +11,16 @@
       "append": {
         "fabushi_target_paths": [
           "source/host/src/extensions/session/human_creation_tests.rs",
-          "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs"
+          "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+          "source/host/src/extensions/session/agent_db.rs",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs"
         ],
         "fabushi_target_symbols": [
           "ProductionSessionWorkers::create_human_conversation",
           "ProductionSessionWorkers::human_creation_summary",
           "ProductionSessionWorkers::human_message_lock",
-          "session_owned_platform_path"
+          "session_owned_platform_path",
+          "SandAgentDb::initialize_human_metadata_if_empty"
         ],
         "requirement_ids": [
           "NMR-46",
@@ -41,7 +43,12 @@
           "NMR-48a",
           "NMR-48b",
           "NMR-48c",
-          "NMR-AC-39"
+          "NMR-AC-39",
+          "NMR-CREATE-01c",
+          "FBCP-HUMAN-CREATE-01",
+          "FBCP-HUMAN-CREATE-02",
+          "FBCP-HUMAN-CREATE-03",
+          "FBCP-HUMAN-CREATE-04"
         ],
         "release_gate_ids": [
           "NMR-AC-37",
@@ -57,7 +64,14 @@
           "source/host/src/extensions/session/human_creation_tests.rs#storage_error_at_initializer_preserves_directory_and_allows_same_worker_retry",
           "source/host/src/extensions/session/human_creation_tests.rs#initializer_refusal_reuses_valid_metadata_and_an_already_published_reader_owner",
           "source/host/src/extensions/session/human_creation_tests.rs#reader_published_after_initialization_keeps_its_arc_and_durable_state",
-          "source/host/src/extensions/session/human_creation_tests.rs#malformed_or_foreign_metadata_is_preserved_and_rejected_with_or_without_cached_owner"
+          "source/host/src/extensions/session/human_creation_tests.rs#malformed_or_foreign_metadata_is_preserved_and_rejected_with_or_without_cached_owner",
+          "source/host/src/extensions/session/human_creation_tests.rs#distinct_worker_creators_keep_first_committed_metadata_and_independent_owners",
+          "source/host/src/extensions/session/human_creation_tests.rs#first_initializer_refuses_identityless_kv_transcript_or_blob_without_adoption",
+          "source/host/src/extensions/session/human_creation_tests.rs#cached_owner_with_missing_identity_never_relabels_retained_data",
+          "source/host/src/extensions/session/human_creation_tests.rs#existing_empty_directory_and_schema_only_store_resume_without_replacing_files",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit"
         ],
         "security_case_ids": [
           "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_rejects_message_routes_before_credentials",
@@ -74,7 +88,15 @@
           "source/host/src/extensions/session/human_creation_tests.rs#initializer_refusal_reuses_valid_metadata_and_an_already_published_reader_owner",
           "source/host/src/extensions/session/human_creation_tests.rs#reader_published_after_initialization_keeps_its_arc_and_durable_state",
           "source/host/src/extensions/session/human_creation_tests.rs#malformed_or_foreign_metadata_is_preserved_and_rejected_with_or_without_cached_owner",
-          "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass"
+          "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass",
+          "source/host/src/extensions/session/human_creation_tests.rs#distinct_worker_creators_keep_first_committed_metadata_and_independent_owners",
+          "source/host/src/extensions/session/human_creation_tests.rs#first_initializer_refuses_identityless_kv_transcript_or_blob_without_adoption",
+          "source/host/src/extensions/session/human_creation_tests.rs#cached_owner_with_missing_identity_never_relabels_retained_data",
+          "source/host/src/extensions/session/human_creation_tests.rs#existing_empty_directory_and_schema_only_store_resume_without_replacing_files",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
+          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
         ],
         "regression_ids": [
           "source/host/src/extensions/session/human_creation_tests.rs#same_pair_waits_before_open_while_other_pair_progresses_and_state_survives_restart",
@@ -87,7 +109,15 @@
           "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_rejects_message_routes_before_credentials",
           "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_never_follows_redirects_to_messages",
           "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_does_not_change_other_product_entrypoints",
-          "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass"
+          "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass",
+          "source/host/src/extensions/session/human_creation_tests.rs#distinct_worker_creators_keep_first_committed_metadata_and_independent_owners",
+          "source/host/src/extensions/session/human_creation_tests.rs#first_initializer_refuses_identityless_kv_transcript_or_blob_without_adoption",
+          "source/host/src/extensions/session/human_creation_tests.rs#cached_owner_with_missing_identity_never_relabels_retained_data",
+          "source/host/src/extensions/session/human_creation_tests.rs#existing_empty_directory_and_schema_only_store_resume_without_replacing_files",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
+          "source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
+          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
         ],
         "production_evidence": [
           "resumed-round24-base:59308cf3cee48213278c52e4ad60bfd9250fb545:ProductionRenderer roster refresh -> Coordinator per-request dispatch -> authenticated per-connection gateway -> Session create_human_conversation; same canonical SandAgentDb owner, no alternate store/schema/command. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
@@ -103,10 +133,19 @@
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_rejects_message_routes_before_credentials",
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_never_follows_redirects_to_messages",
           "authored-not-run-at-preparation:source/mahayana/mahayana-rs/mahayana-product/src/lib.rs#session_owned_platform_does_not_change_other_product_entrypoints",
-          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass"
+          "authored-not-run-at-preparation:source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs#native_social_owner_preserves_sqlite_waiting_turn_and_refuses_bypass",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_tests.rs#distinct_worker_creators_keep_first_committed_metadata_and_independent_owners",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_tests.rs#first_initializer_refuses_identityless_kv_transcript_or_blob_without_adoption",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_tests.rs#cached_owner_with_missing_identity_never_relabels_retained_data",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_tests.rs#existing_empty_directory_and_schema_only_store_resume_without_replacing_files",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_storage_tests.rs#distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_storage_tests.rs#held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer",
+          "authored-not-run-at-preparation:source/host/src/extensions/session/human_creation_storage_tests.rs#held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit",
+          "authored-expanded-gateway-create-and-events-not-run-at-preparation:source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
         ],
         "test_environment_ids": [
-          ".github/workflows/native-service-contracts.yml#native-message-reconciliation:human_creation_tests7:real-SQLite-owned-barriers:GitHub-Actions-only"
+          ".github/workflows/native-service-contracts.yml#native-message-reconciliation:human_creation_tests11+human_creation_storage_tests3:real-SQLite-owned-barriers:GitHub-Actions-only",
+          ".github/workflows/native-service-contracts.yml#native-human-creation-linux:creation11+atomic-storage3+shipping-gateway1:additional-not-macOS-substitute"
         ],
         "test_execution_evidence": [
           "exact:efc58a55cca018ea66c96004ded4291781f2764c:run41489716798:attempt1:failure:shipping125429227384 Social9 passed then regex TEST_FLAW, HTTP6/later-shipping not run; Windows125429227032 11 common-before-hook failures before assertions; reconciliation125429227086 Human33/Agent4/private3 passed; complete logs and decoded hashes in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json",
@@ -114,12 +153,15 @@
           "exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:UI125494010641 renderer/Transcript16/settlement5/Chromium12 pass; Electron125494011030 carrier10/account8/copy3/update-source16/publisher28/metadata18/build pass; immutable historical installer experiment is not a current-source package; complete logs/artifact bindings in projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json"
         ],
         "blockers": [
-          "New NMR-CREATE-01 creation7 and expanded NMR-HTTP-OWNER-01 HTTP6/Native7 are authored; containing-H Actions execution is required. Base59 results cannot qualify these edits. Preserve concurrent Human44/journal12/Chromium16 expectations.",
+          "New NMR-CREATE-01 creation11/storage3 and expanded NMR-HTTP-OWNER-01 HTTP6/Native7 are authored; containing-H Actions execution is required. Base59 results cannot qualify these edits. Preserve concurrent Human53/resource3/journal12/Transcript20/cursors17/Chromium16 expectations.",
           "Formal publisher authorization, full signed supported-platform application install/upgrade/rollback, complete source/external/generated/legal closure, full Bot/UI/a11y/temporal/performance/soak and independent ACCEPT remain open.",
           "Remote-forward provenance/policy, pinned-attachment power-loss/filesystem qualification, simultaneous independent AppHost cross-source uniqueness, full multi-device/cancellation/permission and read-receipt UI coverage remain open."
+        ],
+        "integration_case_ids": [
+          "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload"
         ]
       },
-      "note": "\nResumed round24: after interruption, remote had advanced to59f5fa and then59308 source guard. Preserve all later forwarding/UI/source work; do not replay the old working tree. New NMR-CREATE-01 creation safety and NMR-HTTP-OWNER-01 expanded resource/account recovery tests are authored with7creation/HTTP6/Native7 selected; containing-H Actions is required. Initial efc58 failure and full subsequent59f5fa success are recorded separately. Old target_commit/workflow/job fields remain historical exact95 evidence; no relabeling as a new execution. Current source accounting remains fixed U, six source_reviews preserved (two complete, four pending), unknown/unread null, no final acceptance. Historical blocker text is recoverable at59308; current blockers above supersede resolved fixture/count failures. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json Later73cc6 preserves pinned attachment snapshots, Human44/journal12 and immutable-picker Chromium16; creation/resource identifiers were reconciled to NMR-CREATE-01/50 and AC-40/41 without changing their reviewed behavior. Canonical pair discovery enters the existing per-conversation mutation lane; absent metadata initializes, valid metadata reuses the saved identity, and failed initialization preserves a retryable store. Existing Human pending/dispatching outbox settles through validated Native HTTP and the same transcript; history coverage persists ordered progress. Whole forwarding intent is stored in source metadata before destination work, and ordinary sync resumes it with expected-value CAS and source-policy fencing. New creation behavior requires containing-H execution; full service and product acceptance remains open. Existing Session human_message_locks serialize each canonical pair. NMR-CREATE-01 extends that lane before first path/open/metadata decisions through owner publication; independent pairs progress, and a read-side published Arc is retained. Existing send/sync/forwarding locking and credential settlement fencing are preserved. Multiple independent AppHost processes, external deletion behind a cached owner and post-shutdown reuse are not qualified by this batch. Stable named creation/resource requirement IDs avoid concurrent numeric reservations; the existing NMR-49/AC-40 reply contract remains untouched."
+      "note": "\nResumed round24: after interruption, remote had advanced to59f5fa and then59308 source guard. Preserve all later forwarding/UI/source work; do not replay the old working tree. New NMR-CREATE-01 creation safety and NMR-HTTP-OWNER-01 expanded resource/account recovery tests are authored with11creation/3atomic-storage/HTTP6/Native7 selected; containing-H Actions is required. Initial efc58 failure and full subsequent59f5fa success are recorded separately. Old target_commit/workflow/job fields remain historical exact95 evidence; no relabeling as a new execution. Current source accounting remains fixed U, six source_reviews preserved (two complete, four pending), unknown/unread null, no final acceptance. Historical blocker text is recoverable at59308; current blockers above supersede resolved fixture/count failures. projects/telegram-desktop-rust/evidence/round24-human-create-and-resource-recovery.json Later73cc6 preserves pinned attachment snapshots, Human44/journal12 and immutable-picker Chromium16; creation/resource identifiers were reconciled to NMR-CREATE-01 / NMR-HTTP-OWNER-01 and NMR-AC-CREATE-01 / NMR-AC-HTTP-OWNER-01 without changing their reviewed behavior. Canonical pair discovery enters the existing per-conversation mutation lane; absent metadata initializes, valid metadata reuses the saved identity, and failed initialization preserves a retryable store. Existing Human pending/dispatching outbox settles through validated Native HTTP and the same transcript; history coverage persists ordered progress. Whole forwarding intent is stored in source metadata before destination work, and ordinary sync resumes it with expected-value CAS and source-policy fencing. New creation behavior requires containing-H execution; full service and product acceptance remains open. Existing Session human_message_locks serialize each canonical pair. NMR-CREATE-01 extends that lane before first path/open/metadata decisions through owner publication; independent pairs progress, and a read-side published Arc is retained. Existing send/sync/forwarding locking and credential settlement fencing are preserved. Multiple independent AppHost processes, external deletion behind a cached owner and post-shutdown reuse are not qualified by this batch. Stable named creation/resource requirement IDs avoid concurrent numeric reservations; the existing NMR-49/AC-40 reply contract remains untouched. Current FBCP-HUMAN-CREATE-01/03 task exposed a required atomicity extension before publication: one SQLite INSERT checks kv/transcript_entries/blobs empty at the same write boundary; an identityless populated store is refused rather than adopted. The new Human initializer preserves busy callback and mutation notifications but never invokes corruption salvage/replacement. General Agent initialization and reply settlement are unchanged. The initial unpublished seven-case fixture seeded identityless rows before retry; it is corrected to a genuinely empty schema with retained directory sentinel. New production and storage cases qualify distinct owners, first committed identity and retained data; whole independent AppHost lifecycle remains open. No original or subsequent execution result is upgraded by test authorship. Focused review R24-ATOMIC-01 repaired the same-call SQLite wait oracle with a connection/thread-owned one-shot busy callback: winner commits only after actual INSERT wait, then the same invocation must refuse without any terminal busy result. R24-ATOMIC-02 routes an existing selected ambiguous-send/restart case through the shipping create gateway and asserts pending/settled events for its unique nonce. Current observed06decb retains Human52, resource3, journal12, Transcript20, cursors17 and Chromium16. Additional same-H Linux11+3+1 can provide targeted evidence while macOS queues; all required macOS and shipping gates remain open until executed."
     },
     {
       "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",

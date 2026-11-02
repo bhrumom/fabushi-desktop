@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, currentTranscriptReadBuffers, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, recordTranscriptReadUpdate, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, transcriptEntriesCorrelate, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -99,7 +99,7 @@ import { WindowStatusBadge } from "../recovered/features/window-chrome/status-ba
 import { RootShellNotificationHost } from "../recovered/features/window-chrome/notification-host";
 import { AppAlertHost } from "../recovered/features/window-chrome/app-alert/view";
 import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspace-indicator";
-import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus } from "../recovered/features/window-chrome/model";
+import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus, WINDOW_CHROME_METRICS } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
 import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
@@ -330,6 +330,13 @@ function optimisticAcknowledgementEntries(nonce: string, attachments: readonly {
   ];
 }
 
+function localTranscriptNonce(entry: ConversationTranscriptEntry, account: CursorAuthStatus | null): string | null {
+  if (entry.kind !== "message" || entry.role !== "user") return null;
+  if ((entry.authorKind === "human" || entry.authorId != null)
+    && (account?.kind !== "logged-in" || !account.authId || entry.authorId !== account.authId)) return null;
+  return entry.clientNonce ?? null;
+}
+
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
   if (!sections.some((section) => section.id === sectionId)) return null;
   const knownAgentIds = new Set(sections.flatMap((section) => section.agentIds));
@@ -356,6 +363,17 @@ const OVERLAY_FRAME_STYLE = {
   placeItems: "center",
   position: "fixed",
   zIndex: 100
+} as const;
+
+// Plugins must escape the workspace stacking context while leaving the native
+// 52px window-control band reachable. Its old z=100 frame put Close underneath
+// WindowChrome's drag carrier (4999) and the chat header (5000) in short windows.
+const PLUGINS_OVERLAY_FRAME_STYLE = {
+  ...OVERLAY_FRAME_STYLE,
+  inset: `${WINDOW_CHROME_METRICS.controlsBlock}px 0 0`,
+  zIndex: 5002,
+  WebkitAppRegion: "no-drag",
+  "--fabushi-plugins-chrome-block": `${WINDOW_CHROME_METRICS.controlsBlock}px`
 } as const;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2726844-2728320 (Nmt info-pane header)
@@ -949,6 +967,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const resendSubmissionNoncesRef = useRef(new Set<string>());
   const accountIdentityRef = useRef<string | null>(null);
   const accountScopeGenerationRef = useRef(0);
+  const submissionScopesRef = useRef(new Map<string, { generation: number; accountSlot: string | null }>());
   const renderedAccountScopeGeneration = accountScopeGenerationRef.current;
   const accountObservationGenerationRef = useRef(0);
   const accountRef = useRef<CursorAuthStatus | null>(account);
@@ -970,6 +989,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const navigationHistoryRef = useRef(createRootShellNavigationState());
   const activeAgentIdRef = useRef(activeAgentId);
   const openAgentRequestGenerationRef = useRef(0);
+  const initialTranscriptRequestRef = useRef<{
+    agentId: string;
+    accountGeneration: number;
+    requestGeneration: number;
+    transportGeneration: number;
+    isHuman: boolean;
+  } | null>(null);
   const transportScopeGenerationRef = useRef(0);
   const findInChatOpenRef = useRef(findInChatOpen);
   const humanFindGenerationRef = useRef(0);
@@ -980,7 +1006,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const rebuildRevisionRef = useRef(0);
   const entriesByAgentRef = useRef(entriesByAgent);
   // Rows remain in entriesByAgent; only the exclusive history cursor is cached here.
-  const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number }>());
+  const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number; nextBeforeCursor?: string }>());
   const pendingTranscriptReadsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
   const transportRef = useRef<TransportState>(transport);
   transportRef.current = transport;
@@ -1028,20 +1054,27 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [agents, groupMembersRoot]);
 
   const [transcriptPaginationController] = useState(() => createTranscriptPaginationController({
-    fetchPage: async ({ id, limit, beforeSeq }) => {
+    fetchPage: async ({ id, limit, beforeSeq, beforeCursor }) => {
       if (client == null) throw new Error("coordinator is unavailable for transcript history");
       const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === id);
       const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === id)?.name ?? UI_TEXT.title;
       const page = humanConversation == null
         ? await client.call("getAgentTranscriptTail", { id, limit, beforeSeq })
-        : await client.call("getHumanConversationTranscriptTail", { conversationId: id, limit, beforeSeq });
+        : await client.call("getHumanConversationTranscriptTail", {
+          conversationId: id, limit, beforeSeq,
+          ...(beforeCursor === undefined ? {} : { beforeCursor }),
+        });
       return projectTranscriptPageResult(page, agentName, id);
     },
     onPageApplied: ({ accountSlot, agentId }, page) => {
       const accountNow = accountRef.current;
       const liveSlot = accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null;
       if (accountSlot == null || liveSlot !== accountSlot) return;
-      transcriptHistoryCursorsRef.current.set(agentId, { accountSlot, nextBeforeSeq: page.nextBeforeSeq });
+      transcriptHistoryCursorsRef.current.set(agentId, {
+        accountSlot,
+        nextBeforeSeq: page.nextBeforeSeq,
+        nextBeforeCursor: page.nextBeforeCursor,
+      });
       setEntriesByAgent((current) => ({
         ...current,
         [agentId]: mergeOlderTranscriptEntries(current[agentId] ?? [], page.entries),
@@ -1119,10 +1152,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const sendComposerPrompt = async (submission: ComposerSubmission): Promise<void> => {
     if (client == null) throw new Error("coordinator is unavailable for sendPrompt");
+    const scope = submissionScopesRef.current.get(submission.nonce);
+    const isCurrent = () => scope != null && scope.generation === accountScopeGenerationRef.current
+      && accountRef.current?.kind === "logged-in";
+    if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
     if (humanConversation != null) {
       const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
       const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
+      if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
       for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
       const result = await client.call("sendHumanMessage", {
         conversationId: submission.agentId,
@@ -1132,35 +1170,43 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         attachments,
         ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
       });
+      if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
       if (authoritative != null) {
         setEntriesByAgent((current) => {
-          const existing = current[submission.agentId] ?? [];
-          const correlatedIndex = existing.findIndex((entry) =>
-            entry.id === authoritative.id
-            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
-          );
+          if (!isCurrent()) return current;
           return {
             ...current,
-            [submission.agentId]: correlatedIndex < 0
-              ? [...existing, authoritative]
-              : existing.map((entry, index) => index === correlatedIndex ? authoritative : entry)
+            [submission.agentId]: reconcileTranscriptMutation(current[submission.agentId] ?? [], authoritative, {
+              previousId: `pending-${submission.nonce}`, appendIfMissing: true, preserveSettled: true,
+            }),
           };
         });
         acknowledgementController.reconcileEcho({
-          accountSlot: acknowledgementScopeRef.current.accountSlot,
+          accountSlot: scope!.accountSlot,
           agentId: submission.agentId,
           nonce: submission.nonce,
           echoedNonce: submission.nonce
         });
       }
-      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-      humanConversationsRef.current = projectedHumans;
-      setHumanConversations(projectedHumans);
+      try {
+        const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
+        if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
+        humanConversationsRef.current = projectedHumans;
+        setHumanConversations(projectedHumans);
+      } catch (error) {
+        if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
+        // The Host has already settled this send. A roster read failure must
+        // not restore its draft or turn that canonical message into a retry.
+        setNotice((current) => !isCurrent() ? current : error instanceof Error
+          ? `Human roster refresh unavailable: ${error.message}`
+          : `Human roster refresh unavailable: ${String(error)}`);
+      }
       return;
     }
     const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
     const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
+    if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
     for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
     setEntriesByAgent((current) => ({
       ...current,
@@ -1181,6 +1227,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
       ...(submission.isFork === undefined ? {} : { isFork: submission.isFork })
     });
+    if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
   };
   const [sendJournalApprovalLifecycle] = useState(() => createSendJournalApprovalLifecycle<
     ComposerSubmission,
@@ -1216,20 +1263,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [composerSubmissionQueue] = useState(() => {
     const queue = createComposerSubmissionQueue({
       isTransportDown: () => transportRef.current !== "connected",
-      send: (submission) => resendSubmissionNoncesRef.current.has(submission.nonce)
-        ? sendComposerPrompt(submission)
-        : sendJournalApprovalLifecycle.sendPrompt(submission),
+      send: async (submission) => {
+        const scope = submissionScopesRef.current.get(submission.nonce);
+        if (scope == null || scope.generation !== accountScopeGenerationRef.current
+          || accountRef.current?.kind !== "logged-in") {
+          throw new Error("Composer submission is outside its account scope");
+        }
+        return resendSubmissionNoncesRef.current.has(submission.nonce)
+          ? sendComposerPrompt(submission)
+          : sendJournalApprovalLifecycle.sendPrompt(submission);
+      },
     onPhase: (submission) => {
-      const scope = acknowledgementScopeRef.current;
+      const scope = submissionScopesRef.current.get(submission.nonce);
+      if (scope == null || scope.generation !== accountScopeGenerationRef.current) return;
       if (submission.phase === "pending") acknowledgementController.markDispatching(scope.accountSlot, submission.nonce);
       if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
       if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
       if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
       setEntriesByAgent((current) => {
+        if (scope.generation !== accountScopeGenerationRef.current) return current;
         if (submission.phase === "cancelled") {
           return {
             ...current,
-            [submission.agentId]: (current[submission.agentId] ?? []).filter((entry) => entry.kind !== "message" || entry.clientNonce !== submission.nonce)
+            [submission.agentId]: (current[submission.agentId] ?? []).filter((entry) => entry.id !== `pending-${submission.nonce}`)
           };
         }
         const delivery: "pending" | "queued" | "failed" | "sent" = submission.phase === "pending" || submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent"
@@ -1237,15 +1293,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           : "pending";
         return {
           ...current,
-          [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && entry.clientNonce === submission.nonce
+          [submission.agentId]: (current[submission.agentId] ?? []).map((entry) => entry.kind === "message" && entry.id === `pending-${submission.nonce}`
             ? { ...entry, delivery }
             : entry)
         };
       });
       if (submission.phase === "pending") setBusy(true);
       if (submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent" || submission.phase === "cancelled") setBusy(false);
+      if (submission.phase === "sent" || submission.phase === "cancelled") submissionScopesRef.current.delete(submission.nonce);
     },
     onFailure: (submission, error) => {
+      if (submissionScopesRef.current.get(submission.nonce)?.generation !== accountScopeGenerationRef.current) return;
       composerDraftStore.recoverDraft(submission.agentId, {
         prompt: submission.prompt,
         attachments: [...submission.attachments]
@@ -1260,11 +1318,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   useStrictModeSafeDisposal(composerSubmissionQueue);
   useStrictModeSafeDisposal(sendJournalApprovalLifecycle);
   useEffect(() => {
-    if (client == null) return;
-    return client.subscribeTransport((state) => {
-      if (state === "connected") composerSubmissionQueue.flush();
-    });
-  }, [client, composerSubmissionQueue]);
+    // Transport callbacks can precede the render that updates transportRef.
+    // Flush only after this committed state makes the queue dispatchable.
+    if (transport === "connected") composerSubmissionQueue.flush();
+  }, [transport, composerSubmissionQueue]);
 
   const paletteAccountIdentity = account?.kind === "logged-in"
     ? `logged-in:${account.authId ?? account.email ?? "account"}`
@@ -1309,26 +1366,49 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     scope: { accountSlot: null, agentId: null },
     ...reactionRootCallbacks
   }));
+  const [humanReactionSettlement] = useState(() => createHumanReactionSettlement(() => accountScopeGenerationRef.current));
+  useStrictModeSafeDisposal(humanReactionSettlement);
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
-      const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
-      if (conversation == null) throw new Error("Human reaction conversation is unavailable");
-      const value = await client.call("reactHumanMessage", {
-        conversationId: input.agentId,
-        entryId: input.entryId,
-        emoji: input.emoji
-      });
-      const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
-      if (projected == null) throw new Error("Human reaction settlement returned an invalid transcript entry");
-      setEntriesByAgent((current) => {
-        const entries = current[input.agentId];
-        if (entries == null) return current;
-        const next = entries.map((entry) => entry.id === input.entryId ? projected : entry);
-        return { ...current, [input.agentId]: next };
-      });
+      const currentAccount = accountRef.current;
+      if (currentAccount?.kind !== "logged-in") return;
+      const accountSlot = currentAccount.authId ?? currentAccount.email ?? "account";
+      await humanReactionSettlement.run(
+        { conversationId: input.agentId, entryId: input.entryId },
+        async () => {
+          const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
+          if (conversation == null) throw new Error("Human reaction conversation is unavailable");
+          const value = await client.call("reactHumanMessage", {
+            conversationId: input.agentId,
+            entryId: input.entryId,
+            emoji: input.emoji
+          });
+          const projected = projectTranscriptEntry(value, 0, conversation.name, conversation.id);
+          if (projected == null || projected.id !== input.entryId) throw new Error("Human reaction settlement returned an invalid transcript entry");
+          return projected;
+        },
+        (projected, isCurrent) => {
+          transcriptPaginationController.ingestEntryUpdate(accountSlot, input.agentId, projected);
+          setEntriesByAgent((current) => {
+            if (!isCurrent()) return current;
+            const entries = current[input.agentId];
+            if (entries == null || !entries.some((entry) => entry.id === input.entryId)) return current;
+            return {
+              ...current,
+              [input.agentId]: entries.map((entry) => entry.id !== input.entryId ? entry
+                : entry.kind === "message" && projected.kind === "message"
+                  ? mergeAuthoritativeTranscriptMessage(entry, projected)
+                  : projected)
+            };
+          });
+        },
+        (error, isCurrent) => setNotice((current) => isCurrent()
+          ? error instanceof Error ? `Human reaction unavailable: ${error.message}` : `Human reaction unavailable: ${String(error)}`
+          : current),
+      );
     }
-  } : undefined, [activeIsHuman, client]);
+  } : undefined, [activeIsHuman, client, humanReactionSettlement, transcriptPaginationController]);
   const reactionScope = useMemo(() => ({
     accountSlot: transcriptAccountSlot,
     agentId: activeIsHuman || activeAgentId.length === 0 ? null : activeAgentId
@@ -1572,22 +1652,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot
       && entriesByAgentRef.current[activeAgentId] != null
       && transcriptPaginationController.getSnapshot().cursor.kind === "unprobed") {
-      transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: cachedCursor.nextBeforeSeq });
+      transcriptPaginationController.installInitialPage({
+        entries: [],
+        nextBeforeSeq: cachedCursor.nextBeforeSeq,
+        nextBeforeCursor: cachedCursor.nextBeforeCursor,
+      });
     }
   }, [activeAgentId, transcriptAccountSlot, transcriptPaginationController]);
   useEffect(() => {
     replyThreadController.setScope({ accountSlot: transcriptAccountSlot, agentId: activeAgentId.length > 0 ? activeAgentId : null });
   }, [activeAgentId, replyThreadController, transcriptAccountSlot]);
-  useLayoutEffect(() => {
-    if (typeof document === "undefined") return;
-    const transcript = document.querySelector<HTMLElement>(".sand-virtual-transcript");
+  const bindTranscriptViewport = useCallback((transcript: HTMLDivElement | null) => {
     transcriptPaginationController.bindViewport(transcript);
     setFindTranscriptContainer(transcript);
-    return () => {
-      transcriptPaginationController.bindViewport(null);
-      setFindTranscriptContainer(null);
-    };
-  }, [activeAgentId, transcriptPaginationController]);
+  }, [transcriptPaginationController]);
   useLayoutEffect(() => {
     transcriptPaginationController.onEntriesCommitted();
   }, [transcriptPaginationController, transcriptPaginationSnapshot.entries]);
@@ -1891,7 +1969,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         ) return;
         if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
         const pagination = transcriptPaginationController.getSnapshot();
-        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder) return;
+        if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder || pagination.olderFailure != null) return;
         await transcriptPaginationController.loadOlder();
       }
       transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
@@ -2657,9 +2735,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const openAgent = useCallback(async (agentId: string) => {
     const accountScopeGeneration = accountScopeGenerationRef.current;
     const transportScopeGeneration = transportScopeGenerationRef.current;
+    if (accountRef.current?.kind !== "logged-in") return;
+    const isHumanTranscript = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
+    if (initialTranscriptRequestRef.current?.agentId === agentId
+      && initialTranscriptRequestRef.current.accountGeneration === accountScopeGeneration
+      && initialTranscriptRequestRef.current.requestGeneration === openAgentRequestGenerationRef.current
+      && initialTranscriptRequestRef.current.isHuman === isHumanTranscript
+      && (isHumanTranscript || initialTranscriptRequestRef.current.transportGeneration === transportScopeGeneration)) return;
     const requestGeneration = ++openAgentRequestGenerationRef.current;
     pendingTranscriptReadsRef.current.clear();
-    if (accountRef.current?.kind !== "logged-in") return;
     setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const cachedCursor = transcriptHistoryCursorsRef.current.get(agentId);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null
@@ -2675,6 +2759,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       transcriptPaginationController.installInitialPage({
         entries: [],
         nextBeforeSeq: cachedCursor?.nextBeforeSeq,
+        nextBeforeCursor: cachedCursor?.nextBeforeCursor,
       });
       selectionStore.settle(agentId);
     }
@@ -2694,6 +2779,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         && accountRef.current?.kind === "logged-in",
       updates: new Map(),
     };
+    initialTranscriptRequestRef.current = {
+      agentId, accountGeneration: accountScopeGeneration, requestGeneration,
+      transportGeneration: transportScopeGeneration, isHuman: humanConversation != null,
+    };
     try {
       let page: unknown;
       if (humanConversation == null) {
@@ -2704,7 +2793,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           try {
             await client.call("syncHumanConversation", { conversationId: agentId });
           } catch (error) {
-            setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
+            if (pendingRead.isCurrent()) setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
           }
         }
         if (!pendingRead.isCurrent()) return;
@@ -2717,7 +2806,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       // otherwise current Human transcript. Agent tail reads remain transport-fenced.
       if (!pendingRead.isCurrent()) return;
       const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
-      setEntriesByAgent((current) => ({
+      setEntriesByAgent((current) => !pendingRead.isCurrent() ? current : ({
         ...current,
         // Preserve canonical rows already projected by the feed, then apply
         // events captured during this read over both snapshot projections.
@@ -2726,9 +2815,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (transcriptAccountSlot != null) transcriptHistoryCursorsRef.current.set(agentId, {
         accountSlot: transcriptAccountSlot,
         nextBeforeSeq: projectedPage.nextBeforeSeq,
+        nextBeforeCursor: projectedPage.nextBeforeCursor,
       });
       // The root projection already contains the tail and concurrent events.
-      transcriptPaginationController.installInitialPage({ entries: [], nextBeforeSeq: projectedPage.nextBeforeSeq });
+      transcriptPaginationController.installInitialPage({
+        entries: [],
+        nextBeforeSeq: projectedPage.nextBeforeSeq,
+        nextBeforeCursor: projectedPage.nextBeforeCursor,
+      });
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
@@ -2739,6 +2833,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setTranscriptLoadError({ agentId, accountScopeGeneration });
     } finally {
       pendingTranscriptReadsRef.current.delete(pendingRead);
+      if (initialTranscriptRequestRef.current?.requestGeneration === requestGeneration) initialTranscriptRequestRef.current = null;
     }
   }, [client, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
@@ -2842,14 +2937,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           projectedEntries = applyTranscriptReadUpdates(projectedEntries, read.updates);
         }
         for (const entry of projectedEntries) {
-          if (entry.kind !== "message" || entry.clientNonce == null) continue;
+          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
+          const clientNonce = localTranscriptNonce(entry, accountRef.current);
+          if (clientNonce == null) continue;
           acknowledgementController.ingestTranscriptEvent({
             accountSlot: acknowledgementScopeRef.current.accountSlot,
             agentId: ownerId,
             entry: {
               id: entry.id,
               kind: "sourceKind" in entry && entry.sourceKind === "user-attachment" ? "user-attachment" : "message",
-              clientNonce: entry.clientNonce,
+              clientNonce,
             },
           });
         }
@@ -2861,31 +2958,37 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
       },
-      onUpdated: ({ agentId: ownerId, after: event }) => {
+      onUpdated: ({ agentId: ownerId, before, after: event }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         const owner = agentsRef.current.find((agent) => agent.id === ownerId);
         const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
         if (projected == null || !ownerId) return;
+        humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
         rememberPreBaselineFeedEntry(ownerId, projected.id);
-        for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
-          read.updates.set(projected.id, projected);
+        const previousId = before != null && typeof before === "object" && "id" in before && typeof before.id === "string" ? before.id : undefined;
+        if (previousId != null) {
+          humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: previousId });
+          rememberPreBaselineFeedEntry(ownerId, previousId);
         }
-        transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
+        for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
+          recordTranscriptReadUpdate(read.updates, projected, previousId);
+        }
+        transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected, previousId);
+        const clientNonce = localTranscriptNonce(projected, accountRef.current);
+        const isAttachmentEcho = projected.kind === "message" && "sourceKind" in projected && projected.sourceKind === "user-attachment";
+        if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({
+          accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId,
+          entry: { id: projected.id, kind: isAttachmentEcho ? "user-attachment" : "message", clientNonce },
+        });
         setEntriesByAgent((current) => {
           const existing = current[ownerId] ?? [];
-          if (!existing.some((entry) => entry.id === projected.id)) return current;
-          return {
-            ...current,
-            [ownerId]: existing.map((entry) =>
-              entry.id === projected.id && entry.kind === "message" && projected.kind === "message"
-                ? mergeAuthoritativeTranscriptMessage(entry, projected)
-                : entry.id === projected.id ? projected : entry
-            )
-          };
+          const next = reconcileTranscriptMutation(existing, projected, { previousId, preserveCurrentId: isAttachmentEcho });
+          return next === existing ? current : { ...current, [ownerId]: next };
         });
       },
       onCleared: (ownerId) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+        humanReactionSettlement.clearConversation(ownerId);
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
         transcriptHistoryCursorsRef.current.delete(ownerId);
@@ -2902,55 +3005,39 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         // A pending first-page response must never repopulate a cleared
         // transcript after its authoritative clear event.
         openAgentRequestGenerationRef.current += 1;
+        initialTranscriptRequestRef.current = null;
         acknowledgementController.reset();
         transcriptPaginationController.reset();
+        // An initial load can still have no cache entry to delete. Schedule
+        // its replacement directly instead of depending on a cache re-render.
+        if (activeAgentIdRef.current === ownerId) void openAgentRef.current(ownerId);
       },
       onAppended: ({ agentId: ownerId, entry: event }) => {
       if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
       const owner = agentsRef.current.find((agent) => agent.id === ownerId);
       const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
       if (projected == null || !ownerId) return;
+      humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: projected.id });
       rememberPreBaselineFeedEntry(ownerId, projected.id);
       for (const read of currentTranscriptReadBuffers(pendingTranscriptReadsRef.current, transcriptAccountSlot, ownerId)) {
-        read.updates.set(projected.id, projected);
+        recordTranscriptReadUpdate(read.updates, projected);
       }
       transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
-      const clientNonce = event && typeof event === "object" && "clientNonce" in event && typeof event.clientNonce === "string" ? event.clientNonce : null;
+      const clientNonce = localTranscriptNonce(projected, accountRef.current);
       const acknowledgementBefore = clientNonce == null ? null : acknowledgementController.getSnapshot().records.find((record) => record.nonce === clientNonce || record.priorNonces.includes(clientNonce));
       const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
       const acknowledgementEntryKind = event && typeof event === "object" && "kind" in event && event.kind === "user-attachment" ? "user-attachment" as const : "message" as const;
       if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({ accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId, entry: { id: projected.id, kind: acknowledgementEntryKind, clientNonce } });
-      const projectedMessage = projected.kind === "message" ? projected : null;
-      const projectedAttachments = projectedMessage?.attachments ?? [];
+      const isAttachmentEcho = projected.kind === "message" && "sourceKind" in projected && projected.sourceKind === "user-attachment";
       setEntriesByAgent((current) => {
         const existing = current[ownerId] ?? [];
-        const pendingId = resolvedNonce == null ? null : `pending-${resolvedNonce}`;
-        const correlated = projectedMessage == null ? null : existing.find((entry): entry is TranscriptMessage =>
-          entry.kind === "message"
-          && (
-            entry.id === projected.id
-            || (pendingId != null && entry.id === pendingId)
-            || (resolvedNonce != null && entry.clientNonce === resolvedNonce)
-          )
-        );
-        if (correlated != null && projectedMessage != null) {
-          const isAttachmentEcho = "sourceKind" in projectedMessage && projectedMessage.sourceKind === "user-attachment";
-          const merged = mergeAuthoritativeTranscriptMessage(correlated, projectedMessage, {
-            preserveCurrentId: isAttachmentEcho,
-          });
-          const reconciled = {
-            ...merged,
-            ...(isAttachmentEcho ? { delivery: correlated.delivery } : { delivery: "sent" as const }),
-          };
-          return {
-            ...current,
-            [ownerId]: existing.map((entry) =>
-              entry.kind === "message" && entry.id === correlated.id ? reconciled : entry
-            )
-          };
-        }
-        if (existing.some((entry) => entry.id === projected.id)) return current;
-        return { ...current, [ownerId]: [...existing, projected] };
+        const correlationTarget = projected.kind !== "message" || resolvedNonce == null
+          ? projected : { ...projected, clientNonce: resolvedNonce };
+        const previousId = existing.find((entry) => transcriptEntriesCorrelate(entry, correlationTarget))?.id
+          ?? (resolvedNonce == null ? undefined : `pending-${resolvedNonce}`);
+        return { ...current, [ownerId]: reconcileTranscriptMutation(existing, projected, {
+          previousId, preserveCurrentId: isAttachmentEcho, appendIfMissing: true,
+        }) };
       });
       }
     }) ?? null;
@@ -2965,7 +3052,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanReactionSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -3248,6 +3335,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const identityChanged = accountIdentityRef.current != null && accountIdentityRef.current !== identity;
       if (accountIdentityRef.current !== identity) {
         accountScopeGenerationRef.current += 1;
+        submissionScopesRef.current.clear();
+        // Invalidate approval cleanup before completing abandoned queue work.
+        // Host requests already in flight retain their own durable settlement.
+        sendJournalApprovalLifecycle.reset();
+        composerSubmissionQueue.reset();
+        initialTranscriptRequestRef.current = null;
+        setBusy(false);
         setForwardTarget(null);
         localToolPermissionScopeGate.reset();
         groupMembersRoot.reset();
@@ -3343,7 +3437,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     applyRootShellTheme(bridge.theme.initial.resolved);
     void bridge.deepLinksReady().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
     return () => { active = false; stopAccount(); stopTheme(); themeInstaller?.dispose(); stopWindow(); stopFocus(); stopDeepLink(); stopOnboarding(); stopSkip(); stopFeedback(); stopAbout(); };
-  }, [applyAccountStatus, bridge, client, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sharedRoomProvider]);
+  }, [applyAccountStatus, bridge, client, composerSubmissionQueue, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sendJournalApprovalLifecycle, sharedRoomProvider]);
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L537
   useEffect(() => {
@@ -3542,6 +3636,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork })
     });
     const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
+    const submissionAccountGeneration = accountScopeGenerationRef.current;
+    const authorId = accountRef.current?.kind === "logged-in" ? accountRef.current.authId : undefined;
+    submissionScopesRef.current.set(clientNonce, { generation: submissionAccountGeneration, accountSlot: submissionAccountSlot });
     const draftIdentity = composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft });
     replyThreadController.clearReply();
     acknowledgementController.insertOptimistic({
@@ -3551,14 +3648,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       entries: optimisticAcknowledgementEntries(clientNonce, attachments),
       phase: transportRef.current === "connected" ? "pending" : "queued"
     });
-    setEntriesByAgent((current) => ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
+    setEntriesByAgent((current) => accountScopeGenerationRef.current !== submissionAccountGeneration ? current : ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
       kind: "message", id: `pending-${clientNonce}`, role: "user", author: "You", text: prompt, timestampMs: enteredAt, attachments, delivery: "pending", clientNonce,
+      ...(activeIsHuman ? { authorKind: "human", ...(authorId ? { authorId } : {}) } : {}),
       ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
     }] }));
     const queuedSubmission = composerSubmissionQueue.submit(submission);
     void queuedSubmission.completion.then((phase) => {
       if (phase !== "sent") return;
-      if (activeAgentIdRef.current !== submission.agentId || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
+      if (accountScopeGenerationRef.current !== submissionAccountGeneration || activeAgentIdRef.current !== submission.agentId || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
       const cleared = draftIdentity == null
         ? composerDraftStore.clearDraftIfMatches({ agentId: submission.agentId, draft: liveBaseDraft })
         : composerDraftStore.clearDraftIfCurrent(draftIdentity)
@@ -3616,10 +3714,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       createdAtMs: enteredAt
     };
     const retryAccountSlot = acknowledgementScopeRef.current.accountSlot;
+    const retryAccountGeneration = accountScopeGenerationRef.current;
+    submissionScopesRef.current.set(clientNonce, { generation: retryAccountGeneration, accountSlot: retryAccountSlot });
     const journaledRetry = sendJournalApprovalLifecycle.resendFailed({ submission: retrySubmission, onJournaled: () => {} });
     void journaledRetry.then((phase) => {
       if (phase !== "sent") return;
-      if (activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
+      if (accountScopeGenerationRef.current !== retryAccountGeneration || activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
       composerDraftStore.clearRecovery(retrySubmission.agentId);
     });
   }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle]);
@@ -3720,6 +3820,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountScopeGeneration = accountScopeGenerationRef.current;
     await client.call("deleteAgents", { ids: [agentId] });
     if (accountScopeGenerationRef.current !== accountScopeGeneration) return;
+    humanReactionSettlement.clearConversation(agentId);
     transcriptHistoryCursorsRef.current.delete(agentId);
     for (const read of pendingTranscriptReadsRef.current) {
       if (read.agentId === agentId) pendingTranscriptReadsRef.current.delete(read);
@@ -4168,6 +4269,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 entries={entries}
                 hasOlder={transcriptPaginationSnapshot.hasOlder}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
+                olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
+                onViewportChanged={bindTranscriptViewport}
                 isAgentRunning={activeIsHuman ? false : activeAgent.isRunning}
                 isTransportDown={transport === "down"}
                 loadOlder={loadOlderTranscript}
@@ -4380,7 +4483,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
       {overlay === "hidden-chats" ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={null}><HiddenChatsDialog hiddenAgents={hiddenAgents} isOpen onClose={() => setOverlay(null)} onOpenAgent={(id) => void openAgent(id)} onUnhide={(id) => void unhide(id)} /></Suspense></div> : null}
       {overlay === "settings" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.settings)}><SettingsOverlayErrorBoundary onClose={() => setOverlay(null)}><SettingsDesktopSurface bridge={bridge} computer={settingsComputerMount} coordinatorClient={client} initialSection={settingsSection} isOpen onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} /></SettingsOverlayErrorBoundary></Suspense></div> : null}
-      {overlay === "plugins" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
+      {overlay === "plugins" && bridge != null ? <div style={PLUGINS_OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
       {overlay === "about" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><RecoveredAboutDialog
         bridge={bridge}
         labels={{ copied: UI_TEXT.copied, copyVersionInfo: UI_TEXT.copyVersionInfo, copyright: UI_TEXT.copyright, title: UI_TEXT.title }}
@@ -4483,3 +4586,4 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     </div>
   );
 }
+
