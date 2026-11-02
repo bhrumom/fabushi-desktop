@@ -1654,7 +1654,10 @@ existing NMR contract remain unchanged.
   cannot turn that send into a failure or restore its draft.
   Retain all current dialog, pagination, Electron and shipping gates. Add eleven
   real Chromium renderer scenarios, with no retries or skipped cases, complete
-  JSON result assertions and inspectable screenshots/traces. Controlled
+  JSON result assertions and inspectable screenshots/traces. Pointer-based
+  reaction scenarios must hover the message action anchor and assert its
+  toolbar can receive pointer events before performing the real click; keep
+  the request-count and stale-receipt oracles intact. Controlled
   browser/service fixtures do not constitute deployed-service, signed-package,
   visual/a11y or independent acceptance.
 

@@ -862,6 +862,30 @@
           }
         }
       ]
+    },
+    "social_followup": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "run": 41528369271,
+      "job": 125561860202,
+      "status": "completed",
+      "conclusion": "success",
+      "full_log_characters": 153794,
+      "feature_host": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "runtime_social": {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0
+      },
+      "desktop_http": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      },
+      "repair": "Concurrent workflow retains named test discovery and strict aggregate outcomes while permitting intentional caught-panic output to split the named test line; no weakened result counts or product workaround."
     }
   },
   "artifact_visual_inspection": {
@@ -925,6 +949,53 @@
         "receipt_blob": "9e0367fe32fe6eee5add38343a82c9b9c02c0c10",
         "full_contents_match": true,
         "verified": true
+      },
+      "execution": {
+        "head": "6f692309387aa549d98740968997d70e1f48011d",
+        "run": 41528778067,
+        "status": "completed",
+        "conclusion": "success",
+        "contract": {
+          "job": 125563297373,
+          "full_log_characters": 90271,
+          "node": {
+            "passed": 158,
+            "failed": 0
+          },
+          "python": {
+            "passed": 37,
+            "failed": 0
+          },
+          "schema_errors": 0
+        },
+        "candidate": {
+          "job": 125564294213,
+          "full_log_characters": 146064,
+          "status": "unaccepted-candidate-consistent",
+          "target_commit": "6f692309387aa549d98740968997d70e1f48011d",
+          "source_entries_total": 16381,
+          "root_source_entries_total": 6895,
+          "responsibility_rows": 184,
+          "authored_source_review_records": 14,
+          "completed_source_review_records": 2,
+          "unknown": null,
+          "unread": null,
+          "baseline_accepted": false,
+          "source_closure_ready": false,
+          "product_accepted": false,
+          "independent_acceptance": false,
+          "accepted_mode_negative_guard": "passed"
+        },
+        "artifacts": [
+          {
+            "id": 13181705707,
+            "digest": "sha256:f31603aee230597e4ce38af8f8d646cd6e5f1de9eba5ac3875bc0e548e2aa294"
+          },
+          {
+            "id": 13180977314,
+            "digest": "sha256:a902d5eb8de5f7c4cb8fb8aafb08269fd1e54e1d9aa6ecdb5ce4b42787c78f55"
+          }
+        ]
       }
     },
     "target_gap_observation": "35fe95331cdb67eb32430e03043ab9246b9b1453: complete=false has no consumer continuation under the precisely stated no-independent-trigger conditions; static finding, no browser reproduction",
@@ -962,6 +1033,124 @@
     "production_fix_commits": [
       "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
       "8b801ffdd0ca1b14fcd9f277de7b27d16b7456b1"
-    ]
+    ],
+    "zero_length_positive_publication": {
+      "sha": "e787ab0ffb78ff1dc247948a45e230888da8890e",
+      "parent": "3df5fbb565b9367592ad7d017536c6a9dbb0af63",
+      "full_remote_contents_match": true,
+      "production_blob": "8b6cafa332f10a1372a61b6727f003c914bf3eeb",
+      "tests_blob": "cebca2cf871cab6dc8693a9f241c190041359490",
+      "run": 41529448145,
+      "human_job": 125565560598,
+      "last_observed_status": "queued",
+      "scope": "Adds zero-length file to existing recovery positive table; retains concurrent full-100-byte header admission and all six corruption negatives."
+    },
+    "pre_header_extension_execution": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "run": 41528369271,
+      "job": 125561859923,
+      "status": "completed",
+      "conclusion": "success",
+      "full_log_characters": 457541,
+      "groups": {
+        "transcript_recovery": 3,
+        "human": 63,
+        "resource": 3,
+        "human_creation": 12,
+        "human_creation_storage": 3,
+        "forward_sharebox": 1,
+        "forward_batches": 12,
+        "agent_send_nonce": 4,
+        "settlement_credential": 3,
+        "forward_http": 1
+      },
+      "passed": 105,
+      "failed": 0,
+      "ignored": 0,
+      "boundary": "Binds only the source at 9b9cadd7, before the later complete-100-byte header guard and zero-length table variant. These later changes still require their containing-H execution.",
+      "source_blobs": {
+        "human_creation_tests": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+        "agent_db_recovery": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167"
+      },
+      "executed_tables": {
+        "creation_positive": [
+          "empty",
+          "schema"
+        ],
+        "creation_corruption": [
+          "notadb",
+          "schema",
+          "data-page-delete-mode"
+        ]
+      }
+    }
+  },
+  "reaction_pointer_fixture_repair": {
+    "classification": "TEST_FLAW",
+    "base": "64e821d4c9526f4385588415a15c892e4491846b",
+    "observed": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "run": 41528369271,
+      "job": 125561860003,
+      "status": "completed",
+      "conclusion": "failure",
+      "full_log_characters": 96486,
+      "transcript": {
+        "passed": 33,
+        "failed": 0
+      },
+      "human_cursors": {
+        "passed": 17,
+        "failed": 0
+      },
+      "renderer_compile": "success",
+      "forward_settlement": {
+        "passed": 5,
+        "failed": 0
+      },
+      "actual_forward_dialog": {
+        "passed": 16,
+        "failed": 0
+      },
+      "actual_renderer": {
+        "executed": 11,
+        "passed": 10,
+        "failed": 1,
+        "retries": 0
+      },
+      "later_transcript_cache": {
+        "executed": 0,
+        "expected": 8,
+        "status": "skipped"
+      },
+      "failure": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation: first Add reaction click times out because sand-virtual-transcript intercepts pointer events; no reaction RPC or settlement assertions reached."
+    },
+    "cause": "messageRow selects the full flex row, while the short user bubble's action anchor is aligned to the trailing edge. Hovering the row center does not activate anchor:hover; toolbar pointer-events remains none. Full log, actual failure screenshot/trace and current JSX/CSS support a fixture interaction setup defect. No product reaction defect is inferred.",
+    "change": "Retains concurrent two anchor-hover corrections and adds only two pointer-events:auto assertions before the existing real clicks. All request counts, empty-row/content/attachment/reaction race checks, 11 scenarios and zero retries remain.",
+    "production_changes": false,
+    "independent_static_review": "Direct-child anchor and sole toolbar confirmed for m1/m2 against current production JSX and fixture; no first()/force click or skipped oracle.",
+    "artifact": {
+      "id": 13181266771,
+      "name": "native-message-ui-9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "bytes": 33891656,
+      "digest": "sha256:24f914a7b5b9c22ed59eac35dd1d5757d1d8d41082705230ad7d981bf87a8157",
+      "download_sha256_matches": true,
+      "inspected": [
+        "native-message-projection--63e5d--a-later-empty-row-mutation/test-failed-1.png",
+        "native-message-projection--63e5d--a-later-empty-row-mutation/error-context.md",
+        "native-message-projection--63e5d--a-later-empty-row-mutation/trace.zip: recorded row hover followed by real Add reaction click"
+      ]
+    },
+    "execution": {
+      "status": "requires new exact-H Actions",
+      "required": "Actual ProductionRenderer 11 and subsequent Transcript cache 8 with unchanged assertions"
+    },
+    "full_product_acceptance": false,
+    "concurrent_repair": {
+      "observed_head": "64e821d4c9526f4385588415a15c892e4491846b",
+      "test_blob": "2728e5e026b815c62d5f73715e7129977443b45d",
+      "change": "Concurrent change already replaces both row hover targets with sand-message-action-anchor; preserved, not reimplemented.",
+      "commit": "221d7097f5603a6be06c8c51763047e03420090a"
+    }
   }
 }
