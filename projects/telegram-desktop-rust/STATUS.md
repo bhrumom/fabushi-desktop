@@ -227,3 +227,29 @@ Do not report Telegram-provider, Telegram-network, survey, document count, or ve
 
 Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. NMR-PAGING-01/NMR-ACTIVITY-01 extend the existing Human responsibility and actual owner path; concurrent recursive acquisition, six source reviews and all acceptance fields are preserved. The unpushed earlier candidate is superseded by the current-branch integration. New exact-H tests remain required; bounded evidence is in `evidence/task20bf-round6-resumed-stable-pagination.json`. No source coverage or full-migration completion is promoted.
 
+## Round27 resumed: source-owned forwarding pending recovery
+
+At exact936115b0aa578c340c74dd6aa7c71c362572bd72, renderer/Transcript18/
+settlement5/Chromium16, Electron, Windows11 and source157/schema37 passed;
+Human47 and shipping were still queued at the recorded audit. Exact59's five
+message jobs passed earlier; those results do not qualify later attachment,
+reply or upload-limit code. Original2a/run41500770749 remains a failed fixture
+run with cancelled shipping. Full log identities are retained in
+`projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json`.
+
+NMR-47g now keeps damaged/missing forwarding context under the original
+source journal owner. An independent pending marker is stored before effects;
+strict request/target-nonce lookup prevents generic replay after source denial.
+One actual child-kill/SQLite/HTTP matrix preserves the current reply and pinned
+attachment paths, with a prefixed legacy positive. New containing-H execution
+is not-run at preparation; the current gate adds one Human case (53 after the
+52-case pagination base). Concurrent NMR-50 work is retained.
+
+The canonical ledger receives only the two reviewed existing-row changes and
+current shipping-owner correction. Actions prepares the large blob with an
+exact-base guard and no ref writes; integration uses non-forced expected-head
+CAS. Six source reviews/two complete at936 are scoped historical counts; later
+source records remain preserved. Complete source/legal/product/platform/Bot/
+real-service and independent ACCEPT/release remain blocked. Backend PR137 is
+not modified, merged or deployed.
+

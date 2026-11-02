@@ -6377,3 +6377,135 @@ fn shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_
         "GET /api/social/messages?contactId=2&limit=200&afterId=0 ")));
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources() {
+    let root = temp_root("forward-pending-ownership");
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_process(&root, &server.url);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post(); child.terminate(); server.release_first_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let target_owner = runtime.open_human_conversation_db_owner(first).unwrap();
+    let original = target_owner.get_transcript_entries().unwrap().remove(0);
+    assert_eq!(original["delivery"], "dispatching");
+    assert_eq!(original["forwardBatchOwned"], true, "ownership must be durable before the first POST");
+    let original_id = original["id"].as_str().unwrap();
+    let admitted = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    assert!(source_owner.set_metadata("participantIds", json!(["2", "9"])).unwrap());
+    // The current source scan includes revoked sources and persists their
+    // policy denial. Establish that legitimate journal transition first;
+    // the damaged destination markers must not mutate this denied intent.
+    let denied = forward_gateway_result(&runtime, &args).expect("persist revoked-source policy denial");
+    assert!(denied["destinations"].as_array().unwrap().iter().all(|target|
+        target["status"] == "failed" && target["error"].as_str().unwrap().contains("participant")));
+    let journal = source_owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    for field in ["version", "accountId", "issuer", "requestId", "sourceConversationId",
+        "sourceEntryId", "text", "attachments", "context"] {
+        assert_eq!(journal[0][field], admitted[0][field], "denial retains immutable {field}");
+    }
+    for (before, after) in admitted[0]["destinations"].as_array().unwrap().iter()
+        .zip(journal[0]["destinations"].as_array().unwrap()) {
+        assert_eq!(after["conversationId"], before["conversationId"]);
+        assert_eq!(after["clientNonce"], before["clientNonce"]);
+        assert_eq!(after["completed"], false);
+        assert!(after["error"].as_str().unwrap().contains("participant"));
+    }
+    assert_eq!(server.post_count(), 1);
+    for case in ["future-version", "missing-version", "changed-request", "marker-only",
+        "missing-context", "unrelated-context"] {
+        let mut pending = original.clone();
+        if case == "marker-only" {
+            pending.as_object_mut().unwrap().remove("forwardContext");
+        } else {
+            // Model persisted v1 rows written before the extra ownership marker
+            // existed, so the journal lookup must stand on its own.
+            pending.as_object_mut().unwrap().remove("forwardBatchOwned");
+            if case == "missing-context" {
+                pending.as_object_mut().unwrap().remove("forwardContext");
+            } else if case == "unrelated-context" {
+                pending["forwardContext"] = json!({"preserve":"unrelated retained metadata"});
+            } else {
+                let context = pending["forwardContext"].as_object_mut().unwrap();
+                if case == "future-version" {
+                    context.insert("batchVersion".into(), json!(2));
+                } else {
+                    context.remove("batchVersion");
+                    if case == "changed-request" {
+                        context.insert("requestId".into(), json!("corrupted-request-marker"));
+                    }
+                }
+            }
+        }
+        target_owner.update_transcript_entry(original_id, &pending).unwrap().unwrap();
+        runtime.sync_human_conversation(first).expect("owned pending row cannot starve independent history");
+        assert_eq!(server.post_count(), 1, "{case}: source ownership cannot be bypassed by generic replay");
+        let rows = target_owner.get_transcript_entries().unwrap();
+        assert_eq!(rows.len(), 1, "{case}");
+        let mut preserved = rows[0].clone();
+        // Adoption may add an ownership marker, but cannot alter the original
+        // payload, nonce, context, or pending settlement state.
+        preserved.as_object_mut().unwrap().remove("forwardBatchOwned");
+        pending.as_object_mut().unwrap().remove("forwardBatchOwned");
+        assert_eq!(preserved, pending, "{case}: retain the original pending intent");
+        assert_eq!(source_owner.get_metadata("humanForwardBatches").unwrap(), Some(journal.clone()));
+    }
+    assert_eq!(server.history_count(), 6);
+    let mut markerless = original.clone();
+    markerless.as_object_mut().unwrap().remove("forwardBatchOwned");
+    markerless["forwardContext"].as_object_mut().unwrap().remove("batchVersion");
+    target_owner.update_transcript_entry(original_id, &markerless).unwrap().unwrap();
+    assert!(source_owner.set_metadata("humanForwardBatches", json!({"invalid":"not a journal array"})).unwrap());
+    assert!(runtime.sync_human_conversation(first).is_err(), "malformed source journal is not proof of legacy ownership");
+    assert_eq!(server.post_count(), 1);
+    assert_eq!(target_owner.get_transcript_entries().unwrap(), vec![markerless.clone()]);
+    assert!(source_owner.set_metadata("humanForwardBatches", journal.clone()).unwrap());
+    let source_path = forward_db_path(&root, source);
+    let unavailable_path = source_path.with_extension("temporarily-unavailable");
+    fs::rename(&source_path, &unavailable_path).expect("make the exact source store unavailable");
+    let unavailable = runtime.sync_human_conversation(first);
+    fs::rename(&unavailable_path, &source_path).expect("restore owned source store");
+    assert!(unavailable.is_err(), "unreadable source cannot authorize markerless generic replay");
+    assert_eq!(server.post_count(), 1);
+    assert_eq!(target_owner.get_transcript_entries().unwrap(), vec![markerless]);
+    assert_eq!(source_owner.get_metadata("humanForwardBatches").unwrap(), Some(journal));
+    runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime); drop(child);
+    server.finish(); fs::remove_dir_all(root).expect("remove ownership negative fixture");
+
+    // Genuine pre-journal intent uses a readable source with no source-owned
+    // batch. Preserve this compatibility path without manufacturing a missing
+    // journal for the v1 batch exercised above.
+    let legacy_root = temp_root("forward-genuine-legacy");
+    let legacy_server = ForwardHttpFixture::start(false);
+    let legacy_args = prepare_forward_process(&legacy_root, &legacy_server.url);
+    let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
+    let legacy_source = legacy_args["sourceConversationId"].as_str().unwrap();
+    let legacy_target = legacy_args["destinationConversationIds"][0].as_str().unwrap();
+    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    let context = json!({
+        "requestId":"pre-journal-request","sourceConversationId":legacy_source,
+        "sourceEntryId":legacy_args["sourceEntryId"],
+        "privacy":{"dropSenderNames":false,"dropCaptions":false}
+    });
+    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap()
+        .append_transcript_entry(&json!({
+            "id":"human-message:human-forward-legacy-replay","kind":"message","role":"user",
+            "authorKind":"human","authorId":"1","content":"legacy forward content",
+            "clientNonce":"human-forward-legacy-replay","timestampMs":1000.0,
+            "delivery":"pending","forwardContext":context
+        })).unwrap());
+    let legacy_rows = legacy_runtime.sync_human_conversation(legacy_target)
+        .expect("readable genuine legacy forward remains replayable");
+    assert_eq!(legacy_server.post_count(), 1);
+    assert_eq!(legacy_rows.len(), 1);
+    assert_eq!(legacy_rows[0]["delivery"], "sent");
+    assert_eq!(legacy_rows[0]["clientNonce"], "human-forward-legacy-replay");
+    assert_eq!(legacy_rows[0]["forwardContext"], context);
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    legacy_runtime.shutdown(); drop(legacy_owner); drop(legacy_runtime);
+    legacy_server.finish(); fs::remove_dir_all(legacy_root).expect("remove genuine legacy fixture");
+}

@@ -2357,6 +2357,73 @@ impl ProductionSessionWorkers {
             .or_insert_with(|| Arc::new(Mutex::new(())))))
     }
 
+    fn pending_human_forward_is_batch_owned(
+        &self, conversation_id: &str, entry: &serde_json::Value,
+    ) -> Result<bool, String> {
+        // A damaged version must not turn source-owned intent into an ordinary
+        // send. The separate marker also survives replacement of its context.
+        if entry.get("forwardBatchOwned").is_some() {
+            return Ok(true);
+        }
+        let context = entry.get("forwardContext");
+        if context.is_some_and(|value| value.get("batchVersion").is_some()) {
+            return Ok(true);
+        }
+        let nonce = entry.get("clientNonce").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "persisted Human pending nonce is invalid".to_string())?;
+        let author = entry.get("authorId").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "persisted Human pending author is invalid".to_string())?;
+        if let Some(context) = context.filter(|value|
+            ["sourceConversationId", "sourceEntryId", "requestId"].iter()
+                .any(|key| value.get(*key).is_some())
+        ) {
+            let source = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| "persisted Human forward source is invalid".to_string())?;
+            let request = context.get("requestId").and_then(serde_json::Value::as_str)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| "persisted Human forward request is invalid".to_string())?;
+            // Use the same strict cached/cold source owner as batch recovery.
+            // Unreadable or malformed storage cannot prove legacy ownership.
+            let owner = self.open_human_conversation_db_owner(source)?;
+            if load_forward_batches(&owner, source)?.iter().any(|batch|
+                (batch.request_id == request && batch.account_id == author)
+                    || batch.destinations.iter().any(|target|
+                        target.conversation_id == conversation_id && target.client_nonce == nonce
+                    )
+            ) {
+                return Ok(true);
+            }
+        }
+        // Older rows did not have the independent marker. If their entire
+        // context was lost/replaced, their stable target nonce still identifies
+        // the source batch. Unrelated ordinary reply metadata is not itself a
+        // forwarding identity, and genuine legacy nonces remain replayable.
+        if !nonce.starts_with("human-forward-") { return Ok(false); }
+        let entries = match fs::read_dir(get_native_conversations_root(&self.agents_root)) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => return Err(error.to_string()),
+        };
+        for source in entries {
+            let source = source.map_err(|error| error.to_string())?;
+            if !source.file_type().map_err(|error| error.to_string())?.is_dir() { continue; }
+            let source_id = source.file_name().to_string_lossy().into_owned();
+            let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
+                .map_err(|error| error.to_string())?;
+            if !db_path.is_file() { continue; }
+            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            if load_forward_batches(&owner, &source_id)?.iter().any(|batch|
+                batch.destinations.iter().any(|target|
+                    target.conversation_id == conversation_id && target.client_nonce == nonce
+                )
+            ) {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     fn acquire_human_send_settlement_guard<'a>(
         client: &FabushiNativeMessagingClient,
         serial: &'a Mutex<()>,
@@ -2454,10 +2521,9 @@ impl ProductionSessionWorkers {
                         && current.get("remoteMessageId").is_none()
                         && matches!(current.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching"))
                 }) else { continue; };
-            // A v1 forwarding outbox belongs to its source's complete durable
-            // batch. A removed/protected source cannot be bypassed by the
-            // generic destination pending-send recovery route.
-            if entry.pointer("/forwardContext/batchVersion").and_then(serde_json::Value::as_u64) == Some(1) {
+            // A source-owned forwarding outbox never becomes a generic send
+            // because its version/context was damaged or replaced.
+            if self.pending_human_forward_is_batch_owned(conversation_id, &entry)? {
                 continue;
             }
             let Some(nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) else { continue; };
@@ -3408,10 +3474,21 @@ impl ProductionSessionWorkers {
             if let Some(reply_id) = normalized_reply {
                 pending_entry["replyToId"] = serde_json::json!(reply_id);
             }
+            if forward_context.is_some_and(|context| context.get("batchVersion").is_some()) {
+                pending_entry.as_object_mut().expect("Human pending message must be an object")
+                    .insert("forwardBatchOwned".into(), serde_json::json!(true));
+            }
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
                 && !owner.append_transcript_entry(&pending_entry).map_err(|error| error.to_string())?
             {
                 return Err("Human pending send could not be durably recorded before dispatch".into());
+            }
+            if existing.iter().any(|entry| entry.get("id") == pending_entry.get("id")
+                && entry.get("forwardBatchOwned") != pending_entry.get("forwardBatchOwned"))
+            {
+                owner.update_transcript_entry(&local_entry_id, &pending_entry)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| "Human forward ownership could not be durably recorded before dispatch".to_string())?;
             }
 
             let dispatch_result = (|| -> Result<serde_json::Value, String> {

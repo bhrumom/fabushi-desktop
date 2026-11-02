@@ -1036,6 +1036,28 @@ batch with a deleted/protected source currently aborts unrelated ordinary sync.
 The data format, command/service schema, unique Session/Transcript owner,
 Backend PR #137 read-only boundary and all final acceptance blockers remain.
 
+### NMR-47g: source-owned pending forwarding cannot become generic replay
+
+Generic destination replay must preserve ownership when a forward's context
+version is unsupported, malformed or missing. Persist an independent
+`forwardBatchOwned` marker before resource upload or message POST, including
+adoption of older v1 pending rows. Any explicit ownership/version marker stays
+under source-batch recovery. For markerless context with source/request fields,
+read the referenced source journal directly; a matching request or destination
+nonce remains owned even after membership removal. Missing or corrupt source
+storage cannot prove legacy ownership. A forwarding-shaped nonce without
+usable context must also be checked against the stored source journals; ordinary
+reply metadata alone is not a forwarding identity. Preserve genuine readable
+pre-journal replay, existing pinned-byte guarantees and NMR-49 reply repair.
+
+NMR-AC-38 ownership continuation adds one actual killed-process/SQLite/HTTP
+case: durable marker before first POST; revoked-source pending rows with future
+or missing context version, changed request marker, missing context and retained
+nonce; unavailable/corrupt source refusal; and a readable genuine legacy control.
+The complete original intent and pending payload must remain retained. Tests
+execute only at exact-H GitHub Actions. NMR-50 retains nonblocking batch recovery;
+this extension does not replace that work or change public commands/service APIs.
+
 ### Round 4 resumed batch: immutable forwarding attachment bytes (NMR-48)
 
 Prerequisite run `41508537631` at `59f5fa24827812f78336c464995d161f403dedfb`
