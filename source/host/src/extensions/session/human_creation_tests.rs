@@ -714,7 +714,7 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for corruption in ["notadb", "short-header", "schema", "data-page-delete-mode"] {
+    for corruption in ["notadb", "short-header", "truncated-header", "notadb-full-header", "schema", "data-page-delete-mode"] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -763,6 +763,12 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         } else {
             let retained_bytes: &[u8] = if corruption == "short-header" {
                 b"SQLite"
+            } else if corruption == "truncated-header" {
+                // Valid magic must not admit an incomplete main-file header.
+                b"SQLite format 3\0retained truncated database header"
+            } else if corruption == "notadb-full-header" {
+                // Full length alone must not admit a non-SQLite main file.
+                &[b'X'; 100]
             } else {
                 b"retained NOTADB bytes; never quarantine or replace"
             };

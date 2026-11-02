@@ -133,9 +133,11 @@ pub(super) fn probe_human_conversation_store(
     match std::fs::File::open(db_path) {
         Ok(mut file) => {
             if file.metadata()?.len() > 0 {
-                let mut header = [0_u8; 16];
+                // The magic alone does not admit a truncated main-file header.
+                // Read the complete header before SQLite can touch its sidecars.
+                let mut header = [0_u8; 100];
                 file.read_exact(&mut header)?;
-                if header != *b"SQLite format 3\0" {
+                if &header[..16] != b"SQLite format 3\0" {
                     return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
                 }
             }

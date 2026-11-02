@@ -814,7 +814,7 @@
     {
       "id": 4,
       "state": "bounded-regression-implemented",
-      "evidence": "The losing valid batch is rejected without data loss and recovers after fresh read/reopen; all five original forward integration cases and the strengthened CAS oracle were individually confirmed at exact106 after retaining the beaf fixture compile failure."
+      "evidence": "The strengthened concurrent forwarding oracle passed at106/d878. Later f544 exposed true Human creation sidecar loss, an automatic-history wiring defect and a Social log-oracle defect; preserve concurrent repairs and minimally strengthen full-header admission plus two real sidecar subcases. These new assertions remain pending until their containing-H execution."
     },
     {
       "id": 5,
@@ -848,7 +848,7 @@
     }
   ],
   "remaining": [
-    "Read exactf544/run41526852400 current Human63/creation12+3/journal12, actual ProductionRenderer11+8 and Social terminal logs; retain failed attempts and fix only observed defects",
+    "Read the containing fixed-H native run: creation12/storage3/Human63 plus journal and real ProductionRenderer11+8/Social gates; retain f544 failures and all skipped-stage distinctions",
     "Read current shipping125556685929 AppHost/gateway/protocol/TCP/actual resource copy; exact106/d878 shipping remain separate pending observations",
     "Complete source/build/generated/LFS/legal review and all applicable production behavior",
     "Authenticated live backend paging/recovery and real remote migration/restore evidence; Backend PR137 remains read-only",
@@ -1417,8 +1417,8 @@
       {
         "id": 125556685749,
         "name": "native-message-ui",
-        "status": "in_progress",
-        "conclusion": null
+        "status": "completed",
+        "conclusion": "failure"
       },
       {
         "id": 125556685929,
@@ -1447,14 +1447,14 @@
       {
         "id": 125556686433,
         "name": "native-message-reconciliation",
-        "status": "in_progress",
-        "conclusion": null
+        "status": "completed",
+        "conclusion": "failure"
       },
       {
         "id": 125556686458,
         "name": "desktop-social-owner-behaviors",
-        "status": "in_progress",
-        "conclusion": null
+        "status": "completed",
+        "conclusion": "failure"
       },
       {
         "id": 125556687993,
@@ -1473,6 +1473,99 @@
       "FeatureHost10 and Social9/HTTP6",
       "shipping AppHost/gateway/protocol/TCP/actual-copy"
     ],
-    "rule": "Old59/106/d878 logs retain their own exact-input scope; later run API status, count assertions or partial steps are not terminal execution proof."
+    "rule": "Do not rerun unchanged f544 or borrow historical106/d878 successes for the newer failed inputs. Require a containing fixed-H run.",
+    "status": "observed failed; retain exact outcomes",
+    "failedOracles": {
+      "humanCreation": "11/12 with real sidecar loss; subsequent storage/journal groups skipped",
+      "ui": "Actual ProductionRenderer11:1 passed10 failed waiting for automatic older request; subsequent viewport8 unexecuted",
+      "social": "FeatureHost10 actually passed; a strict single-line grep failed on an intentional caught-panic output; Runtime9/HTTP6 skipped"
+    },
+    "knownConcurrentRepairs": [
+      {
+        "head": "f2903f53ded5b07faea73e7f07d780eda0423283",
+        "scope": "Social caught-panic log oracle; cargo status and10/0/0 retained"
+      },
+      {
+        "head": "441425cd65a661f95d8b629c388281c77115d2b2",
+        "scope": "ProductionRenderer hands ready cursor to automatic older-load effect"
+      },
+      {
+        "head": "27058348051d8160937bf072e2d0766cf8eeeacf",
+        "scope": "Retain automatic older-request assertion before real scroll/single-flight controls"
+      },
+      {
+        "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+        "scope": "Existing16-byte invalid-store preflight and active-history-read fix preserved"
+      }
+    ]
+  },
+  "followupHumanSidecarRepair": {
+    "classification": "IMPL_BUG with retained concurrent fix",
+    "failureHead": "f544e9b3161d758141e1b419bcdab22cc522952e",
+    "failureRun": 41526852400,
+    "failureJob": 125556686433,
+    "fullLogRead": true,
+    "executedBeforeFailure": {
+      "retainedTranscriptRecovery": 3,
+      "Human": 63,
+      "resourceBounds": 3
+    },
+    "creation": {
+      "passed": 11,
+      "failed": 1,
+      "ignored": 0,
+      "case": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "failureLine": 777
+    },
+    "skippedAfterFailure": [
+      "creation storage3",
+      "sharebox1",
+      "journal12",
+      "Agent4",
+      "credential3",
+      "forward HTTP1"
+    ],
+    "actualFailure": "The original main database and unrelated sibling survived refusal but SQLite removed the pre-existing -journal/-shm/-wal. Nonempty sidecars bypassed the immutable probe; recover_on_corruption=false did not prevent SQLite's own open-time effects.",
+    "observedConcurrentRepair": {
+      "head": "9b9cadd7d5b7cc3b7a294568fa26a3919c35021f",
+      "path": "source/host/src/extensions/session/agent_db_recovery.rs",
+      "recoveryBlob": "91105c4c23fd18cb2da1ec9ef7d81fedd5e0f167",
+      "behavior": "Adds a filesystem-only16-byte SQLite magic check before delegating sidecar-backed stores. Preserve this existing owner change and its error/missing-path handling."
+    },
+    "authoredDelta": "On that current implementation only, read the complete100-byte header and compare its first16 bytes, so valid magic with an incomplete header is refused before SQLite touches sidecars. Retain the concurrent active-history and all other owner changes.",
+    "tests": {
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "existingCase": "corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings",
+      "addedSubcases": [
+        "truncated-header: correct magic but fewer than100 bytes plus original sidecars",
+        "notadb-full-header:100 bytes with invalid magic plus original sidecars"
+      ],
+      "preservedControls": [
+        "concurrent f95 six-byte short-header with all original sidecars",
+        "original NOTADB bytes and sidecars",
+        "corrupt schema with valid header",
+        "corrupt data page in DELETE mode",
+        "entire directory bytes unchanged",
+        "same-worker retry and reopened-worker refusal",
+        "no published owner and zero live handles"
+      ],
+      "topLevelCreationCount": 12,
+      "storageCount": 3
+    },
+    "productionPath": "createHumanConversation -> existing Session creation/mutation lane -> SandAgentDb::open_human_conversation_store -> probe_human_conversation_store -> existing WAL-aware opener; ordinary Agent recovery is unchanged.",
+    "requiredContainingHeadGates": [
+      "Human63",
+      "creation12 and storage3 including valid uncheckpointed WAL winner/reopen positive control",
+      "sharebox1/journal12/Agent4/credential3/HTTP1",
+      "Host/AppHost compilation and unchanged shipping gates"
+    ],
+    "status": "authored; containing-H Actions execution pending",
+    "localExecutableValidation": false,
+    "limit": "This bounded header admission change does not establish every valid-header/hot-or-corrupt-WAL recovery case, multi-process race, full data migration or final acceptance.",
+    "observedConcurrentTest": {
+      "head": "f95a33b13672095d68c6ca731f2f42e6c10b9890",
+      "baseBlob": "7ce0914f9010d7d7fda0676929d57b154fa38f45",
+      "scope": "Retain its added six-byte short-header case unchanged; extend the current same test with two distinct100-byte-boundary/magic controls."
+    }
   }
 }
