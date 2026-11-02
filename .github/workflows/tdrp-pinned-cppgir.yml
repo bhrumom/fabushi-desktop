@@ -1,0 +1,37 @@
+name: TDRP pinned cppgir acquisition
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - scripts/tdrp-acquire-cppgir.py
+      - .github/workflows/tdrp-pinned-cppgir.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-host-tree:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact target
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire declared exact cppgir source from its original host
+        env:
+          TDRP_TARGET_SHA: ${{ github.sha }}
+          GIT_TERMINAL_PROMPT: '0'
+        run: python scripts/tdrp-acquire-cppgir.py
+      - name: Preserve source acquisition evidence without granting acceptance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-cppgir-original-host-${{ github.sha }}
+          path: artifacts/cppgir
+          if-no-files-found: error

@@ -112,7 +112,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-protocol-test-import-repair",
+    "status": "blocked-protocol-failure-diagnosis",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked",
     "full_product_acceptance": false,
@@ -299,6 +299,108 @@
         "rust": "1.97.1",
         "cargo_locked": true
       }
+    },
+    {
+      "id": 41394020435,
+      "attempt": 1,
+      "head_sha": "93b5977f99115bd41a9ff30441e0b22696797364",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41394020435",
+      "jobs": [
+        {
+          "id": 125111348901,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "success",
+          "tests": {
+            "human": {
+              "passed": 10,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 14
+            },
+            "agent_nonce": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0,
+              "filtered_out": 0
+            }
+          },
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125111348901/logs"
+        },
+        {
+          "id": 125111348691,
+          "name": "native-message-shipping-compile",
+          "status": "completed",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Compile actual desktop AppHost entry",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify protocol and TCP compatibility behavior",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Verify proxy rejection and Native credential boundary",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Diagnose locked AppHost dependency drift (no acceptance)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Preserve shipping compile evidence",
+              "conclusion": "success"
+            }
+          ],
+          "classification": "unclassified-pending-complete-failure-log",
+          "log": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125111348691/logs",
+          "log_retrieval": "Decoded job-log connector returned Transport closed twice. Other API reads succeeded. The 22,930,418-byte compressed shipping artifact is preserved; its payload and failure root cause are not inferred from its size. A read-only Actions artifact reader will verify the ZIP digest, read/hash full logs and emit bounded diagnostic context before any test rerun."
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 13118478143,
+          "name": "native-message-shipping-compile-93b5977f99115bd41a9ff30441e0b22696797364",
+          "size_in_bytes": 22930418,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118478143",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118478143/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:30:32Z",
+          "expires_at": "2027-01-31T05:26:16Z",
+          "updated_at": "2026-11-02T05:30:32Z",
+          "digest": "sha256:2e824d9acf5582db3780ffe5311a8aa4147b13a43d97711b804818a4d07bd080",
+          "workflow_run": {
+            "id": 41394020435,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "93b5977f99115bd41a9ff30441e0b22696797364"
+          }
+        },
+        {
+          "id": 13118368195,
+          "name": "native-message-reconciliation-93b5977f99115bd41a9ff30441e0b22696797364",
+          "size_in_bytes": 10027,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118368195",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13118368195/zip",
+          "expired": false,
+          "created_at": "2026-11-02T05:28:08Z",
+          "expires_at": "2027-01-31T05:26:16Z",
+          "updated_at": "2026-11-02T05:28:08Z",
+          "digest": "sha256:48691e63822f8c4faaff017f620ff7e89a82906d1e2686dd83b6f16a28a11e97",
+          "workflow_run": {
+            "id": 41394020435,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "93b5977f99115bd41a9ff30441e0b22696797364"
+          }
+        }
+      ]
     }
   ],
   "review": {
@@ -409,11 +511,43 @@
     "base": "9f678dd5d8824d52d9713a730eb73ffce01a3400",
     "classification": "TEST_BUG",
     "rationale": "Import the existing public factoring type and DH failure constructor; keep every negative oracle unchanged. Include the exact selected protocol/network/runtime/product input paths in the native workflow push filter. Explicitly execute the TCP suite's existing ignored live production-DC handshake/ping/service-RPC case with --include-ignored; retain the zero-ignored success gate and do not treat absence of live evidence as success.",
-    "validation": "pending-exact-followup-commit",
+    "validation": "93b597 shipping compile succeeded; protocol/TCP step failed; complete failure artifact recovery required before classification or rerun",
     "live_probe": {
       "test": "live_session_exchanges_encrypted_ping_and_service_rpc",
       "scope": "Anonymous Telegram compatibility AuthKey exchange, encrypted ping and service RPC; no user sign-in or message send; not Fabushi deployed-service acceptance.",
       "blocked_if": "GitHub runner cannot reach the configured Telegram production DC or protocol exchange fails; retain the exact failure classification and do not bypass the gate."
     }
+  },
+  "independent_source_acquisition": {
+    "status": "pending-exact-actions-attempt",
+    "scope": [
+      "scripts/tdrp-acquire-cppgir.py",
+      ".github/workflows/tdrp-pinned-cppgir.yml"
+    ],
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "parent_commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+    "parent_gitmodules": "c92fbea3467f72e188cba4cbfe51c8c68a7e2e77",
+    "original_child_repository": "https://gitlab.com/mnauw/cppgir.git",
+    "child_commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+    "review": {
+      "verdict": "approved-for-focused-actions",
+      "blocking_findings": [],
+      "method": "Independent read-only mechanism/provenance/failure/output review; no local execution."
+    },
+    "source_closure": false,
+    "acceptance": false
+  },
+  "fixed_upstream_message_research": {
+    "path": "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md",
+    "target_comparison": "62a3fc19501a5c6f5e25495c833120ae67b973e6",
+    "status": "responsibility-research-only",
+    "findings": [
+      "Known IDs are discarded before state refresh, despite existing canonical update and reaction UI consumers.",
+      "Newly settled sends do not establish historical coverage; a transient pre-retry snapshot alone does not preserve recovery across failure/restart.",
+      "Known-row full replacement, nullable receipts, unbounded reaction-count expansion and GET/POST freshness need explicit bounded contracts."
+    ],
+    "implementation": "not-started; required message protocol/TCP gate remains blocked",
+    "whole_file_review": "Only explicitly listed full readings are full. Partial readings, unresolved callers and unexecuted cases remain identified.",
+    "source_closure": false
   }
 }
