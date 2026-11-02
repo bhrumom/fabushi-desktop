@@ -1,0 +1,414 @@
+{
+  "schema_version": 1,
+  "audit": "Exact f75ba3 Ubuntu Social behavior execution",
+  "reviewer": "/root/resume_current_native",
+  "repository": "bhrumom/fabushi-desktop",
+  "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+  "run_id": 41526236521,
+  "workflow_blob_sha": "7785f634ae48a49d9792d0dac0776998365bfec7",
+  "source_blobs": {
+    "feature_tests": "0aebff41e55f58921742440e9f0b896a03d25638",
+    "runtime_retained_tests": "ea8f8e5092e126e62b2dc671438f25b106dce493",
+    "product_lib": "f5fa5ba672422f60111d92c90bc218e506e168e7",
+    "note": "Feature and Runtime fixtures match reviewed integration; Product has concurrent changes and is bound to this exact current input."
+  },
+  "observations": [
+    {
+      "at": "2026-11-02 21:13:16 UTC",
+      "jobs": [
+        {
+          "id": 125554565808,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125554566040,
+          "name": "native-message-electron",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 125554566242,
+          "name": "desktop-social-owner-behaviors",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 125554566274,
+          "name": "native-message-reconciliation",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 125554566335,
+          "name": "native-message-ui",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 125554566384,
+          "name": "retained-direct-ffi-compatibility",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 125554566727,
+          "name": "windows-update-publisher",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125554568810,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "social_job_id": 125554566242,
+      "social_stage": "Dependency installation completed successfully; FeatureHost Cargo stage in progress.",
+      "executed_pass_claims": [],
+      "required_counts": {
+        "feature": 10,
+        "runtime": 9,
+        "http": 6
+      },
+      "current_other_counts": {
+        "human": 63,
+        "human_creation": 12,
+        "human_creation_storage": 3,
+        "ui_transcript": 33,
+        "ui_production_transcript": 8
+      },
+      "mac_shipping": {
+        "job_id": 125554565808,
+        "status": "queued",
+        "steps": 0
+      }
+    },
+    {
+      "at": "2026-11-02 21:17:57 UTC",
+      "jobs": [
+        {
+          "id": 125554565808,
+          "name": "native-message-shipping-compile",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125554566040,
+          "name": "native-message-electron",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125554566242,
+          "name": "desktop-social-owner-behaviors",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 125554566274,
+          "name": "native-message-reconciliation",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 125554566335,
+          "name": "native-message-ui",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 125554566384,
+          "name": "retained-direct-ffi-compatibility",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125554566727,
+          "name": "windows-update-publisher",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 125554568810,
+          "name": "native-auth-and-journal",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "social": {
+        "job_id": 125554566242,
+        "status": "completed",
+        "conclusion": "failure",
+        "classification": "TEST_FLAW",
+        "actual_feature_counts": {
+          "passed": 10,
+          "failed": 0,
+          "ignored": 0
+        },
+        "runtime9": "skipped",
+        "http6": "skipped",
+        "evidence": "f75-social-oracle-failure.json"
+      },
+      "other_failures": {
+        "reconciliation": "Human63 passed; lib-test E0277 in concurrent Human creation fixture.",
+        "ui": "33/17/5/16 passed; ProductionRenderer11 has10failed/1passed.",
+        "live_readback": "f75-other-failures-live-readback.json"
+      },
+      "completed_groups": {
+        "windows_native": 11,
+        "electron": [
+          10,
+          8,
+          3,
+          16,
+          28,
+          18,
+          10,
+          7
+        ],
+        "direct_c_abi": {
+          "passed": 15,
+          "ignored": 1,
+          "ignored_reason": "live Telegram DC required"
+        }
+      },
+      "mac_shipping": {
+        "job_id": 125554565808,
+        "status": "queued",
+        "steps": 0
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13180335979,
+      "name": "retained-direct-ffi-compatibility-f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+      "size_in_bytes": 2545,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180335979",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180335979/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:13:12Z",
+      "expires_at": "2027-01-31T21:12:37Z",
+      "updated_at": "2026-11-02T21:13:12Z",
+      "digest": "sha256:b51b51468617c31f25a3271ad78bdeb00815f5415387aa557c5e208515554eea",
+      "workflow_run": {
+        "id": 41526236521,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33"
+      }
+    },
+    {
+      "id": 13180112244,
+      "name": "desktop-social-owner-behaviors-f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+      "size_in_bytes": 14734,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180112244",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180112244/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:16:10Z",
+      "expires_at": "2027-01-31T21:12:37Z",
+      "updated_at": "2026-11-02T21:16:10Z",
+      "digest": "sha256:a55f216edabdfe9ce9166a3d65300fd919c8dbba51089cb2dd2756eb7565ce47",
+      "workflow_run": {
+        "id": 41526236521,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33"
+      }
+    },
+    {
+      "id": 13179463536,
+      "name": "native-message-reconciliation-f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+      "size_in_bytes": 10508,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179463536",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179463536/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:17:09Z",
+      "expires_at": "2027-01-31T21:12:37Z",
+      "updated_at": "2026-11-02T21:17:09Z",
+      "digest": "sha256:b178477ee703efaa3ce6d92b8d80a06aadff09e81657e4dcd8aea1495fe573e9",
+      "workflow_run": {
+        "id": 41526236521,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33"
+      }
+    },
+    {
+      "id": 13179364101,
+      "name": "windows-update-publisher-f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+      "size_in_bytes": 1831,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179364101",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179364101/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:14:41Z",
+      "expires_at": "2027-01-31T21:12:37Z",
+      "updated_at": "2026-11-02T21:14:41Z",
+      "digest": "sha256:ceeb8ae93bc2e34677b41e4ba62dcd77b079ef1dbf291a4fec38c7bc43513f18",
+      "workflow_run": {
+        "id": 41526236521,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33"
+      }
+    },
+    {
+      "id": 13179044064,
+      "name": "native-message-electron-f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+      "size_in_bytes": 14818,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179044064",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179044064/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:14:31Z",
+      "expires_at": "2027-01-31T21:12:37Z",
+      "updated_at": "2026-11-02T21:14:31Z",
+      "digest": "sha256:62793d674984955c0e84db57c92e751f7adb828911e665ef7fb8fafdffb5287f",
+      "workflow_run": {
+        "id": 41526236521,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33"
+      }
+    },
+    {
+      "id": 13179029376,
+      "name": "native-message-ui-f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+      "size_in_bytes": 21235101,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179029376",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13179029376/zip",
+      "expired": false,
+      "created_at": "2026-11-02T21:16:28Z",
+      "expires_at": "2027-01-31T21:12:37Z",
+      "updated_at": "2026-11-02T21:16:28Z",
+      "digest": "sha256:af360e7e222748ea119f497ba392a15e738a38287e955c54176d2d8e1bc454d3",
+      "workflow_run": {
+        "id": 41526236521,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+        "head_sha": "f75ba3b0c3a75631662a8d5bba72121cf9598b33"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "run_id": 41526236521,
+      "job_id": 125554566040,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41526236521-125554566040.log",
+      "bytes": 92506,
+      "sha256": "77861e6de0bf48c391aebd657d97d78817095bfcf90e489c7019972c7d061a33",
+      "encoding": "Exact UTF-8 of complete connector-decoded log, preserving CR and final newline"
+    },
+    {
+      "run_id": 41526236521,
+      "job_id": 125554566242,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41526236521-125554566242.log",
+      "bytes": 207459,
+      "sha256": "aa721e9c6243399294e3ad9fd2c13a4902ff5a6ceb674a160eb93056a4a4acb8",
+      "encoding": "Exact UTF-8 of complete connector-decoded log, preserving CR and final newline"
+    },
+    {
+      "run_id": 41526236521,
+      "job_id": 125554566274,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41526236521-125554566274.log",
+      "bytes": 146061,
+      "sha256": "6d197d59da28f789c5ae93d16072b45a9aa00f2d18fd5fe5c6a692496cc8be22",
+      "encoding": "Exact UTF-8 of complete connector-decoded log, preserving CR and final newline"
+    },
+    {
+      "run_id": 41526236521,
+      "job_id": 125554566335,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41526236521-125554566335.log",
+      "bytes": 139286,
+      "sha256": "58a9b994998313a54c8099ddcd1a4f0ace1edea5b6cac398c8c36e65891a106b",
+      "encoding": "Exact UTF-8 of complete connector-decoded log, preserving CR and final newline"
+    },
+    {
+      "run_id": 41526236521,
+      "job_id": 125554566384,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41526236521-125554566384.log",
+      "bytes": 55805,
+      "sha256": "abfde16771f76092d5306d7aed4cd7b79e586bf9b57cbf74452ade4acd3741d8",
+      "encoding": "Exact UTF-8 of complete connector-decoded log, preserving CR and final newline"
+    },
+    {
+      "run_id": 41526236521,
+      "job_id": 125554566727,
+      "path": "/workspace/scratch/5cf7d4b0b831/final-resume/native-logs/41526236521-125554566727.log",
+      "bytes": 34326,
+      "sha256": "a345e6c60ede6bd0432a8e1692c42bed31cdf2580ff2688f8c399d40e8e6a975",
+      "encoding": "Exact UTF-8 of complete connector-decoded log, preserving CR and final newline"
+    }
+  ],
+  "remaining_gate": "Apply one-line Social log oracle recovery through root's CAS, then obtain actual Runtime9/expanded HTTP6 and successful Social lane; verify already-concurrent Human creation and UI fixes at their containing exact H; macOS shipping remains queued.",
+  "limits": {
+    "local_build": false,
+    "local_test": false,
+    "local_validator": false,
+    "remote_mutation": false,
+    "independent_accept": false,
+    "linux_replaces_macos_shipping": false
+  },
+  "product_http_delta": {
+    "schema_version": 1,
+    "review": "83c to f75 Product Social HTTP delta",
+    "read_only": true,
+    "before_head": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "after_head": "f75ba3b0c3a75631662a8d5bba72121cf9598b33",
+    "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+    "before_blob": "f0fdddef00af4e5750b0b498037f611c21856f3f",
+    "after_blob": "f5fa5ba672422f60111d92c90bc218e506e168e7",
+    "finding": "The whole production prefix before the single cfg(test) tests module is byte-identical. Only 4 of the 6 existing session_owned_platform_ test bodies change.",
+    "production_boundaries": {
+      "selection": "execute_session_owned_platform_request hardcodes owner=true; request JSON cannot turn it off.",
+      "credentials": "safe path plus normalized owner path and configured-origin checks still occur before authorization_token; bearer attachment remains inside the existing request builder.",
+      "url_origin": "safe_platform_path, session_owned_platform_path and session_owned_platform_target are unchanged, including normalized path inspection, canonical resource categories, HTTP(S) origin-only checks and target recheck.",
+      "redirects": "Both session_owned_http_client and native_http_client retain redirect Policy::none(). The existing fallback reuses the guarded send closure; no policy code changed."
+    },
+    "added_assertions": [
+      "UUID resource IDs and /download refusal across five HTTP methods and authenticated true/false; renderer sessionOwned:false cannot opt out; exact non-disclosing error.",
+      "Additional case, encoded slash/category and normalized dot-segment resource aliases.",
+      "307/308 redirects to resource UUID endpoints in addition to message routes.",
+      "Non-desktop compatibility entrypoint remains usable for resource UUID endpoints and returns the actual loopback control body."
+    ],
+    "callers": {
+      "app_host": {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "both_heads_blob": "5468b02fe9c8ee91ee452726deaee07ad7885d6d",
+        "entrypoints": [
+          "PlatformRequestHost::dispatch_json -> execute_platform_request (lines 634-638)",
+          "AppHost::handle platform.request -> execute_platform_request (lines 841-850)"
+        ],
+        "selection": "helper lines681-689 selects session-owned client for Electron; surface_platform lines1998-2005 derives iOS/Android/desktop from compiled target, not renderer JSON."
+      },
+      "feature_host": {
+        "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+        "current_blob": "56cc9788ae104e1acce98841efab7274f5548f8b",
+        "unchanged": true,
+        "selection": "Electron selects MahayanaHost::create_with_session_transcript_owner; unchanged early Social command guard."
+      },
+      "host": {
+        "path": "source/mahayana/mahayana-rs/mahayana-host/src/lib.rs",
+        "current_blob": "9b4bdaf53de31370a651e5a8d8e30eea14707026",
+        "unchanged": true,
+        "selection": "create_with_session_transcript_owner -> session_owned true -> retained Social policy and omission of generic Social provider."
+      }
+    },
+    "evidence_reuse": {
+      "production_source_understanding": "Retained: no production path, URL, origin, redirect, token or directly inspected caller change in this delta.",
+      "old_http6_execution": "Does not cover the expanded current assertions despite the unchanged suite count; new exact-H execution required.",
+      "f75_http6": "not-run: prior Feature step failed its log grep after actual Feature10 success."
+    },
+    "proof": "product-http-83-to-f75.diff and product-http-delta-source.json",
+    "no_local_execution": true,
+    "independent_accept": false
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "run_id": 41527614236,
+  "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283",
+  "status": "completed",
+  "conclusion": "success",
+  "attempt": 1,
+  "job_id": 125559290737,
+  "receipt": {
+    "repository": "bhrumom/fabushi-desktop",
+    "ref": "refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "harness_sha": "f2903f53ded5b07faea73e7f07d780eda0423283",
+    "run_id": "41527614236",
+    "run_attempt": "1",
+    "ledger_path": "projects/telegram-desktop-rust/parity-ledger.json",
+    "payload_path": ".github/checkpoint-ledger-ops-round23.json",
+    "input_blob": "240a31aed59e8db794a9d54532831349d965b8da",
+    "payload_blob": "8081a491b37169d5e195f97bac4413d279519029",
+    "output_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+    "input_sha256": "00ce1dc29c2c6bd174689a5b54608ba242b747421ff9b11143e91436117bd6a1",
+    "payload_sha256": "d4d758749082a1b9a1b7747012b59962fc244bdc9d446c6981981640a1eeb3d9",
+    "output_sha256": "e310155de34022f1b64b8d3f9e62c524a4b0319c2611ed1e0313d3c2a8c95935",
+    "input_bytes": 3648456,
+    "payload_bytes": 4852,
+    "output_bytes": 3652576,
+    "row_count": 184,
+    "source_reviews_count": 6,
+    "operations_count": 2,
+    "counts": {
+      "requested_values": 22,
+      "appended_values": 22,
+      "requested_notes": 2,
+      "appended_notes": 2
+    },
+    "rows": [
+      {
+        "id": "FBCP-NMR-001",
+        "arrays": {
+          "requirement_ids": {
+            "before": 92,
+            "requested": 6,
+            "appended": 6,
+            "after": 98
+          },
+          "fabushi_target_paths": {
+            "before": 33,
+            "requested": 2,
+            "appended": 2,
+            "after": 35
+          },
+          "integration_case_ids": {
+            "before": 60,
+            "requested": 3,
+            "appended": 3,
+            "after": 63
+          },
+          "security_case_ids": {
+            "before": 44,
+            "requested": 2,
+            "appended": 2,
+            "after": 46
+          },
+          "test_evidence": {
+            "before": 91,
+            "requested": 1,
+            "appended": 1,
+            "after": 92
+          },
+          "production_evidence": {
+            "before": 42,
+            "requested": 1,
+            "appended": 1,
+            "after": 43
+          },
+          "test_execution_evidence": {
+            "before": 49,
+            "requested": 5,
+            "appended": 5,
+            "after": 54
+          }
+        },
+        "note_appended": true
+      },
+      {
+        "id": "TDRP-UPDATER-DISCOVERY-AUTHORITY-001",
+        "arrays": {
+          "test_execution_evidence": {
+            "before": 4,
+            "requested": 2,
+            "appended": 2,
+            "after": 6
+          }
+        },
+        "note_appended": true
+      }
+    ],
+    "changed_rows": [
+      "FBCP-NMR-001",
+      "TDRP-UPDATER-DISCOVERY-AUTHORITY-001"
+    ],
+    "product_validation": false,
+    "source_acceptance": false,
+    "independent_acceptance": false,
+    "commit_created": false,
+    "ref_updated": false,
+    "integration_condition": "Root API reads the exact input/output and scoped delta, requires current canonical ledger input equality, then integrates with force=false and expected_sha CAS. A changed ledger input requires regeneration.",
+    "github_blob": "4bc2f00f9304d3d2542b412f605b1f92e78265d2"
+  },
+  "artifact_metadata": {
+    "id": 13180990451,
+    "name": "round23-ledger-object-f2903f53ded5b07faea73e7f07d780eda0423283",
+    "size_in_bytes": 558619,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180990451",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13180990451/zip",
+    "expired": false,
+    "created_at": "2026-11-02T21:21:52Z",
+    "expires_at": "2027-01-31T21:21:33Z",
+    "updated_at": "2026-11-02T21:21:52Z",
+    "digest": "sha256:524e4729267e0eccd26c18b4f2ef36353259f874d5e8382e1e2b25dc0d28e0ee",
+    "workflow_run": {
+      "id": 41527614236,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+      "head_sha": "f2903f53ded5b07faea73e7f07d780eda0423283"
+    }
+  },
+  "archive_downloaded_for_this_review": false,
+  "local_full_log": "final-resume/source-1c0b/helper-125559290737.log",
+  "local_full_log_sha256": "e1c678b06e02fc6702d536625fccba0b7459613a3f7a57564424518a86f70048",
+  "integrated_at": "1c0bd07f85c4f17ee465509c766eead878879185",
+  "containing_commit_ledger_blob_read_back": "4bc2f00f9304d3d2542b412f605b1f92e78265d2",
+  "root_cas_report": "Root performed force=false expected_sha CAS and readback; reviewer made no remote writes."
+}
