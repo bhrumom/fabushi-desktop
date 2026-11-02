@@ -280,7 +280,7 @@ impl ProductionSessionWorkers {
                         Ok(
                             store
                                 .apply_synthesis(snapshot, changes, now_ms)
-                                .unwrap_or(SynthesisApplyResult::Invalid),
+                                .unwrap_or(SynthesisApplyResult::Failed),
                         )
                     })
                     .unwrap_or(SynthesisApplyResult::Invalid)

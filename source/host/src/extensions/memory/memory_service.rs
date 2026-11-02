@@ -109,6 +109,8 @@ pub enum SynthesisApplyResult {
     Committed,
     Stale,
     Invalid,
+    /// Store I/O failed; consumers must not mark the temporal review complete.
+    Failed,
 }
 
 pub type SynthesisApplyGate = Arc<
@@ -306,6 +308,8 @@ impl FileMemoryStore {
         if normalized.is_empty() {
             return Ok(None);
         }
+        // Admit the destination before dedupe can change origin/tombstone metadata.
+        let (path, raw) = self.read_append_destination(created_at, kind)?;
         let key = memory_dedupe_key(&normalized);
         if let Some(existing) = self
             .facts()
@@ -320,17 +324,6 @@ impl FileMemoryStore {
             return Ok(None);
         }
 
-        let path = match kind {
-            MemoryKind::Profile => self.profile_file.clone(),
-            MemoryKind::Log => self.log_dir.join(format!(
-                "{}.md",
-                format_memory_date(created_at)
-                    .chars()
-                    .take(7)
-                    .collect::<String>()
-            )),
-        };
-        let raw = fs::read_to_string(&path).unwrap_or_default();
         let header = match kind {
             MemoryKind::Profile => PROFILE_HEADER,
             MemoryKind::Log => LOG_HEADER,
@@ -447,6 +440,19 @@ impl FileMemoryStore {
         let (fingerprint, facts) = self.read_synthesis_state();
         if fingerprint != snapshot.fingerprint {
             return Ok(SynthesisApplyResult::Stale);
+        }
+        // Check every declared append destination before an earlier change can
+        // remove data or mutate metadata. Each append rereads after prior changes.
+        for change in changes {
+            match change {
+                SynthesisChange::Create { content, kind }
+                | SynthesisChange::Update { content, kind, .. } => {
+                    if !normalize_memory_content(content).is_empty() {
+                        self.read_append_destination(now_ms, *kind)?;
+                    }
+                }
+                SynthesisChange::Remove { .. } => {}
+            }
         }
         let allowed = snapshot
             .memories
@@ -651,6 +657,7 @@ impl FileMemoryStore {
     }
 
     fn add_synthesized(&self, content: &str, created_at: i64, kind: MemoryKind) -> io::Result<()> {
+        let (path, raw) = self.read_append_destination(created_at, kind)?;
         if self
             .facts()
             .iter()
@@ -658,17 +665,6 @@ impl FileMemoryStore {
         {
             return Ok(());
         }
-        let path = match kind {
-            MemoryKind::Profile => self.profile_file.clone(),
-            MemoryKind::Log => self.log_dir.join(format!(
-                "{}.md",
-                format_memory_date(created_at)
-                    .chars()
-                    .take(7)
-                    .collect::<String>()
-            )),
-        };
-        let raw = fs::read_to_string(&path).unwrap_or_default();
         let header = match kind {
             MemoryKind::Profile => PROFILE_HEADER,
             MemoryKind::Log => LOG_HEADER,
@@ -686,6 +682,29 @@ impl FileMemoryStore {
         self.dir.write_file_atomic(&path, next.as_bytes())?;
         self.clear_origins(content)?;
         self.mark_origin(content, MemoryOrigin::Synthesis)
+    }
+
+    fn read_append_destination(
+        &self,
+        created_at: i64,
+        kind: MemoryKind,
+    ) -> io::Result<(PathBuf, String)> {
+        let path = match kind {
+            MemoryKind::Profile => self.profile_file.clone(),
+            MemoryKind::Log => self.log_dir.join(format!(
+                "{}.md",
+                format_memory_date(created_at)
+                    .chars()
+                    .take(7)
+                    .collect::<String>()
+            )),
+        };
+        let raw = match fs::read_to_string(&path) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => String::new(),
+            Err(error) => return Err(error),
+        };
+        Ok((path, raw))
     }
 
     fn facts(&self) -> Vec<StoredMemoryFact> {

@@ -1,0 +1,117 @@
+# Memory append read integrity — MWR-v1
+
+Status: implementation contract; exact-H Actions and final acceptance pending.
+Discovery source: `6034da1fcc1ecfe95db4fe5532c61cf88872fb5b`; implementation base
+`bcada1ae9831aba9b021906fc878ec1a7506532b`; integrated after the parallel
+media/config/search batches at `8e5545b61ad916bb9781539dfe0f28543ffc68dd`.
+Fixed upstream U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`.
+
+## Problem, responsibility and production path
+
+`FileMemoryStore::add_memory` and `add_synthesized` currently turn every
+`read_to_string` failure into an empty string. When an existing profile or
+monthly log contains unreadable bytes, the subsequent atomic replacement can
+discard those bytes and existing history while reporting a successful append.
+The read-side fact parser skips that file; it does not provide a write guard.
+The synthesis fingerprint also treats the same unreadable file as empty, so
+unchanged corrupt input is not necessarily stale.
+
+The existing producer is the Runner memory tool / `SandAgentState::write_memory`.
+Agent-scoped writes pass through the composition-bound
+`ProductionSessionWorkers::write_agent_memory`; user/project scopes retain
+their existing membership and shard selection. Every append reaches the same
+FileMemoryStore. Synthesis reaches it through the existing MemoryService
+apply gate and Session filesystem/admission owner. Keep those owners, locks,
+formats, callback/error contracts and permission decisions.
+
+Decision **MWR-01 — FIX / IMPL_BUG**: distinguish a missing append destination
+from an unreadable existing destination before replacing file contents.
+For synthesis, check every declared Create/Update append destination before
+the first mutation; a later corrupt destination must not be discovered only
+after an earlier Remove or the removal half of Update.
+
+## Required behavior
+
+| ID | Contract and oracle |
+| --- | --- |
+| MWR-01 | A missing destination preserves existing first-write behavior. Any other destination read error, including invalid UTF-8, propagates as the original `io::Error`; do not substitute an empty file or recreate/truncate/rename over its bytes. |
+| MWR-02 | Explicit append performs this read admission before its own file or synthesis-metadata writes. Empty input retains the existing no-op. Readable files retain headers/comments, normalization, deduplication, record IDs, ordering, timestamps and origin behavior. |
+| MWR-03 | Synthesis checks all declared nonempty Create/Update destinations before executing any changes, including a preceding Remove and a cross-Profile/Log Update. Existing invalid-ID, explicit-origin, duplicate-change, tombstone and stale-snapshot rules remain. A known unreadable destination refuses the operation without modifying memory, origin/tombstone or temporal-review bytes. A duplicate/no-op append request may also be refused when its declared destination is unreadable: an unreadable file is not authoritative evidence that the append is unnecessary. |
+| MWR-04 | Existing Session/Runner error consumers must observe failure instead of successful Remember/Committed. After fixture-owned repair, the same live owner can append successfully while preserving the repaired history. Opening the same files through another Store handle also refuses unreadable input without implicit repair; this control does not claim full process restart acceptance. |
+| MWR-05 | Actual store and production consumer tests retain valid missing/readable/duplicate and synthesis create-update-remove controls, demonstrate the original corrupt bytes are present/readable as raw bytes, compare complete owned Memory trees before/after refusals, and prove a valid operation after repair. |
+
+Use one existing-owner helper for append-path/read policy where it removes
+duplicated policy. No second store, transaction journal, permission truth or
+synthesis scheduler is introduced. Existing filesystem admission and deletion
+fences remain in force. Readability checks are synchronous and add no accepted
+background work or cancellation state.
+
+Keep the existing fingerprint-based Stale decision before the new synthesis
+preflight. With a matching fingerprint, a destination read error may precede
+an independently invalid change in the same batch; preserve the read error
+and refuse before mutation. This deliberately does not promise the former
+Invalid-versus-I/O ordering for two simultaneous faults. Empty content retains
+its original Invalid handling without requiring a destination read.
+
+Decision **MWR-02 — FIX / IMPL_BUG**: the real temporal synthesis consumer must
+also preserve that refusal. Keep Store I/O failure as the internal
+`SynthesisApplyResult::Failed` through the existing Session gate and target,
+and report `SynthesisOutcome::Failed`. The service must not mark temporal
+review complete after a failed apply. Preserve the existing Invalid, Stale,
+Committed and canonical/admission refusal decisions. The current attempt still
+finishes through the existing queue owner; it does not automatically replay a
+possibly partially applied write. New evidence or the normal due poll obtains
+a fresh snapshot. This changes no wire schema, persisted format or scheduler.
+
+## Verification and integration
+
+Production changes use `source/host/src/extensions/memory/memory_service.rs`,
+the existing Session synthesis gate, and MemorySynthesisService's apply-result
+consumer. Independent review identified the temporal marker side effect in
+MWR-02; no replacement owner is needed. Store oracles belong in the existing
+`memory_service_contract.rs` and `memory_synthesis_store_contract.rs`;
+production consumer controls use existing Session/Runner composition,
+`SandAgentState`, and the actual production synthesis target plus Session gate
+and service. A controlled proposal exercises the real consumer without claiming
+provider compatibility. Root integrates workflow
+and RTM changes serially. Preserve MGS-v1 selector controls and every inherited
+shared contract.
+
+Freeze the complete implementation/tests/CI candidate and obtain independent
+source review. Extend the existing Linux portable Host command and macOS
+recovery command with the affected targets and named positives, bind receipts
+to actual H/tree/U and command/log identities, and read their results from
+GitHub Actions. All executable validation remains in Actions; authored tests
+and source review are not runtime evidence. This batch preserves existing
+Fabushi behavior under OCRM-R13/R24 and AC13/AC17/AC18/AC24; it does not grant
+new upstream reading, equivalence or global completion credit.
+
+## Failure, migration, rollback and limits
+
+No persisted format or migration changes. The existing `StateWriteResult`
+failure / tool error and synthesis apply failure carry refusal; the user must
+repair or restore the existing file before retrying. Do not log memory content
+or silently perform that repair. A source rollback needs no data conversion.
+
+This contract prevents replacement caused by a known append-destination read
+failure. It does not establish a multi-file transaction for arbitrary later
+write/disk failures, protection against external writers changing files after
+the read, cross-process locking, symlink confinement, strict read-side listing
+errors, clear/delete recovery for unrelated corrupt files, or complete Memory
+equivalence. Those remain required work under the full migration. Real
+providers, UI, devices/platform packages, source/dependency closure and final
+G01-G12/AC01-AC24 acceptance remain open; no inventory or global flag is raised.
+
+## Source anchors
+
+Discovery source: `memory_service.rs::{add_memory, add_synthesized,
+apply_synthesis, read_synthesis_state}`; `watched_directory.rs` atomic
+file replacement; `host_runner_composition.rs` memory-writer binding;
+`session/production.rs::{write_agent_memory, synthesis apply gate}`;
+`memory/agent_state.rs::write_memory`; `runner/sand_memory.rs` error consumer;
+`memory/production.rs::ProductionSynthesisTarget` and
+`memory_synthesis_service.rs::run_agent` temporal settlement.
+Authority: OCRM §10, §12 and §17; existing Session work admission and Memory
+synthesis contracts. Historical Memory dossiers retain their original source
+identities and review depth.

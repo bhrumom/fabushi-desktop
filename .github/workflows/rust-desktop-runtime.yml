@@ -307,8 +307,20 @@ jobs:
               "source/host/tests/automation_run_path_contract.rs",
               "source/host/tests/agent_session_contract.rs",
               "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+              "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
               "source/host/src/extensions/transcript/transcript_manager.rs",
               "source/host/src/extensions/memory/memory_service.rs",
+              "source/host/src/extensions/memory/memory_synthesis_service.rs",
+              "source/host/src/extensions/memory/production.rs",
+              "source/host/src/extensions/memory/production_append_read_tests.rs",
+              "source/host/src/watched_directory.rs",
+              "source/host/src/extensions/memory/agent_state.rs",
+              "source/host/src/host_runner_composition.rs",
+              "source/host/src/runner/sand_memory.rs",
+              "source/host/src/runner/tools/sand_state_tool.rs",
+              "source/host/tests/memory_service_contract.rs",
+              "source/host/tests/memory_synthesis_store_contract.rs",
+              "source/host/tests/memory_synthesis_service_contract.rs",
               "source/host/src/storage/agent_paths.rs",
               "source/host/src/storage/folder_id.rs",
               "source/host/tests/transcript_manager_contract.rs",
@@ -730,6 +742,9 @@ jobs:
             --test transcript_manager_contract \
             --test agent_content_search_contract \
             --test roster_search_contract \
+            --test memory_service_contract \
+            --test memory_synthesis_store_contract \
+            --test memory_synthesis_service_contract \
             --test transcript_production_composition_contract \
             --test host_upgrade_service_contract \
             --test agent_lifecycle_kickstart_production_contract \
@@ -798,6 +813,7 @@ jobs:
               extensions::session::production::original_turn_terminal_tests \
               extensions::transcript::sand_ack_obligation_store::checked_reads \
               extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests \
+              extensions::memory::production::append_read_tests \
               gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection \
               extensions::transcript::sand_upgrade_resume_store::checked_marker_tests \
               extensions::transcript::production_runtime::checked_upgrade_handoff_tests \
@@ -821,7 +837,7 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
-      - name: Require Memory and roster search positives from the existing macOS recovery command
+      - name: Require Memory selector, append integrity and roster search positives from existing macOS commands
         if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
         shell: bash
         run: |
@@ -867,7 +883,54 @@ jobs:
               "scope": "Actual TranscriptManager Memory read selector with real inside/outside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and mutation/snapshot control. RSU uses the existing Session gateway and persisted transcripts to preserve Unicode match spans across index fallback/reopen, with existing typed-character and roster-byte context windows plus ready-index controls. Not symlink, cross-account, full HTTP/UI, Windows, indexed-backend equivalence or whole-Memory acceptance."})
           (root / "memory-gateway-selector.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
-          raise SystemExit(0 if accepted else 1)
+          append_required = [
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "production_memory_tool_refuses_corrupt_append_destinations_and_recovers_after_repair",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+          ]
+          append_missing = [name for name in append_required if passed.count(name) != 1]
+          synthesis_label = "lib-extensions_memory_production_append_read_tests"
+          synthesis_log = root / (synthesis_label + ".log")
+          synthesis_raw = synthesis_log.read_bytes() if synthesis_log.is_file() else b""
+          synthesis_command_path = root / (synthesis_label + ".command.txt")
+          synthesis_command = synthesis_command_path.read_text().strip() if synthesis_command_path.is_file() else None
+          synthesis_exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
+                             if line.split("\t")[0] == synthesis_label]
+          synthesis_required = [
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+          ]
+          synthesis_passed = re.findall(r"^test (\S+) \.\.\. ok$", synthesis_raw.decode("utf-8", errors="replace"), re.MULTILINE)
+          synthesis_missing = [name for name in synthesis_required if synthesis_passed.count(name) != 1]
+          append_accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"] and exits == [["integration-contracts", "0"]]
+              and not append_missing and synthesis_command
+              and synthesis_exits == [[synthesis_label, "0"]] and not synthesis_missing)
+          append_receipt = dict(receipt, contract="MWR-v1", required_tests=append_required,
+              missing_or_nonunique_positive_results=append_missing,
+              production_synthesis_command=synthesis_command,
+              production_synthesis_exit_records=synthesis_exits,
+              production_synthesis_required_tests=synthesis_required,
+              production_synthesis_observed_passed_names=synthesis_passed,
+              production_synthesis_missing_or_nonunique=synthesis_missing,
+              production_synthesis_log_sha256=hashlib.sha256(synthesis_raw).hexdigest(),
+              result="passed" if append_accepted else "failed",
+              scope="Actual Store append admission, byte/metadata preservation, composed Runner tool, and production synthesis target/Session gate/service failure settlement, temporal-marker preservation, retained Invalid/Stale controls and repair. No immediate replay; controlled proposals are not real provider compatibility. Not arbitrary write transactions, filesystem races, symlink confinement, full permissions, UI or packaged acceptance.")
+          (root / "memory-append-read.receipt.json").write_text(json.dumps(append_receipt, indent=2) + "\n")
+          print(json.dumps(append_receipt, indent=2))
+          raise SystemExit(0 if accepted and append_accepted else 1)
           PY
       - name: Preserve failed owned Automation fixtures
         if: ${{ failure() && (steps.ocrm_recovery.outcome == 'failure' || steps.ocrm_app_contracts.outcome == 'failure') }}
@@ -1232,8 +1295,8 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "agent_content_search_contract", "roster_search_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
-              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "agent_content_search_contract", "roster_search_contract", "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "original_turn_completion_contract": "ORT-v1",
               "original_turn_fresh_process_parent": "production_checkpoint_restart_contract::original_turn_real_generated_completion_acknowledges_exact_marker_in_fresh_app_after_ack_repair",
@@ -1775,7 +1838,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
           PY
-      - name: Test portable recovery, Memory selectors and roster search on the existing Linux Host cache
+      - name: Test portable recovery, Memory safety and roster search on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         timeout-minutes: 15
@@ -1795,6 +1858,7 @@ jobs:
               ".github/workflows/rust-desktop-runtime.yml",
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+              "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
               "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
               "source/host/src/extensions/content_search/agent_content_search.rs",
@@ -1808,7 +1872,12 @@ jobs:
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
               "source/host/src/extensions/transcript/transcript_manager.rs",
+              "source/host/src/extensions/session/production.rs",
               "source/host/src/extensions/memory/memory_service.rs",
+              "source/host/src/extensions/memory/memory_synthesis_service.rs",
+              "source/host/src/extensions/memory/production.rs",
+              "source/host/src/extensions/memory/production_append_read_tests.rs",
+              "source/host/src/watched_directory.rs",
               "source/host/src/storage/agent_paths.rs", "source/host/src/storage/folder_id.rs",
               "source/host/src/host_gateway_api.rs",
               "source/host/src/extensions/transcript/background_wakes.rs",
@@ -1817,12 +1886,16 @@ jobs:
               "source/host/tests/pending_wake_rearm_contract.rs",
               "source/host/tests/transcript_manager_contract.rs",
               "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs",
+              "source/host/tests/memory_service_contract.rs",
+              "source/host/tests/memory_synthesis_store_contract.rs",
+              "source/host/tests/memory_synthesis_service_contract.rs",
           ]
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
           for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
                          "transcript_manager_contract", "cloud_agent_pending_wake_rearm_production_contract",
-                         "agent_content_search_contract", "roster_search_contract"):
+                         "agent_content_search_contract", "roster_search_contract",
+                         "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract"):
               integration += ["--test", target]
           required_integration = [
               "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
@@ -1857,6 +1930,20 @@ jobs:
               "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
               "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
               "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
               "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
               "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
               "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
@@ -1873,9 +1960,13 @@ jobs:
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
               ("checked-store", base + ["--lib", store_filter, "--", "--test-threads=1"], required_store),
               ("paired-device-sse", base + ["--lib", sse_filter, "--", "--exact", "--test-threads=1"], [sse_filter]),
+              ("production-memory-synthesis", base + ["--lib", "extensions::memory::production::append_read_tests::", "--", "--test-threads=1"], [
+                  "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
+                  "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              ]),
           ]
           receipt = {
-              "contract": "CWR-v1-portable/MGS-v1/RSU-v1", "subject_commit": head,
+              "contract": "CWR-v1-portable/MGS-v1/RSU-v1/MWR-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -1884,7 +1975,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal, projection/order/bound and mutation/snapshot behavior. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, shared match mapping, preserved character/byte windows, ordering/limits and ready-index controls. Cloud-agent checks are source-wiring only. Full HTTP/UI, symlink, cross-account, macOS/Windows, indexed-backend and real provider equivalence, unknown-effect and platform acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. Cloud-agent checks remain source-wiring only. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -1991,12 +2082,25 @@ jobs:
           )
           occurrences = {name: invoked.count(name) for name in required}
           missing = [name for name, count in occurrences.items() if count == 0]
+          memory_consumer = "production_memory_tool_refuses_corrupt_append_destinations_and_recovers_after_repair"
+          passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+          memory_consumer_passed = passed.count(memory_consumer) == 1
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and head == os.environ["FABUSHI_TARGET_SHA"]
+          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and head == os.environ["FABUSHI_TARGET_SHA"]
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock",
               "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+              "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+              "source/host/src/extensions/memory/memory_service.rs",
+              "source/host/src/extensions/memory/memory_synthesis_service.rs",
+              "source/host/src/extensions/memory/production.rs",
+              "source/host/src/extensions/memory/production_append_read_tests.rs",
+              "source/host/src/watched_directory.rs",
+              "source/host/src/extensions/memory/agent_state.rs",
+              "source/host/src/host_runner_composition.rs",
+              "source/host/src/runner/sand_memory.rs",
+              "source/host/src/runner/tools/sand_state_tool.rs",
               "source/host/src/extensions/transcript/automation_run_path.rs",
               "source/host/src/extensions/transcript/automation_runtime.rs",
               "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs",
@@ -2011,7 +2115,7 @@ jobs:
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1", "subject_commit": head,
+              "contract": "AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/MWR-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -2019,11 +2123,14 @@ jobs:
               "command": sys.argv[3:], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
               "required_tests": required, "required_invocation_occurrences": occurrences,
               "missing_named_invocations": missing, "observed_invoked_test_names": invoked,
+              "memory_consumer_required_test": memory_consumer,
+              "memory_consumer_positive_occurrences": passed.count(memory_consumer),
+              "memory_consumer_passed": memory_consumer_passed,
               "target_and_owned_child_summaries": summaries, "summaries_pass": summaries_pass,
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Actual Linux RunPath/Runtime/Session/FileStore typed refusal, full raw-history fresh admission, observed nonregular input return, legacy/error/retained controls and shipping-source callback wiring. Owned-child receipts remain required by each bounded case. Not actual App execution, macOS/platform or real backend acceptance; legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux RunPath/Runtime/Session/FileStore typed refusal, full raw-history fresh admission, observed nonregular input return, legacy/error/retained controls and shipping-source callback wiring; MWR-v1 additionally requires the actual composed Runner memory tool's corrupt-destination refusal and repair control. Owned-child receipts remain required by each bounded case. Not actual App execution, macOS/platform or real backend acceptance; legacy covered-slot, metadata/open races and unknown write effects remain open.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))

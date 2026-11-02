@@ -708,7 +708,13 @@
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
         "projects/openclaw-rust/dossiers/model-picker-scoped.md",
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -1221,7 +1227,12 @@
         "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
         "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
         "source/host/tests/roster_search_contract.rs",
-        "source/host/tests/agent_content_search_contract.rs"
+        "source/host/tests/agent_content_search_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1898,7 +1909,13 @@
         "source/host/tests/transcript_manager_contract.rs",
         "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
         "source/host/tests/roster_search_contract.rs",
-        "source/host/tests/agent_content_search_contract.rs"
+        "source/host/tests/agent_content_search_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
@@ -2032,7 +2049,13 @@
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
         "projects/openclaw-rust/dossiers/model-picker-scoped.md",
         "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2078,7 +2101,13 @@
       "evidence_refs": [
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -2386,7 +2415,12 @@
         "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
         "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
         "source/host/tests/roster_search_contract.rs",
-        "source/host/tests/agent_content_search_contract.rs"
+        "source/host/tests/agent_content_search_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/memory_synthesis_store_contract.rs",
+        "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "source/host/tests/memory_synthesis_service_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

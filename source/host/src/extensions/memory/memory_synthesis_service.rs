@@ -436,6 +436,7 @@ pub fn apply_verified_changes(
         SynthesisApplyResult::Committed => SynthesisOutcome::Committed,
         SynthesisApplyResult::Stale => SynthesisOutcome::Stale,
         SynthesisApplyResult::Invalid => SynthesisOutcome::InvalidOutput,
+        SynthesisApplyResult::Failed => SynthesisOutcome::Failed,
     }
 }
 
@@ -472,7 +473,7 @@ impl SynthesisTarget for FileMemoryStore {
         now_ms: i64,
     ) -> SynthesisApplyResult {
         FileMemoryStore::apply_synthesis(self, snapshot, changes, now_ms)
-            .unwrap_or(SynthesisApplyResult::Invalid)
+            .unwrap_or(SynthesisApplyResult::Failed)
     }
 
     fn has_memories(&self) -> bool {
@@ -1090,6 +1091,7 @@ impl MemorySynthesisService {
             SynthesisApplyResult::Committed => SynthesisOutcome::Committed,
             SynthesisApplyResult::Stale => SynthesisOutcome::Stale,
             SynthesisApplyResult::Invalid => SynthesisOutcome::InvalidOutput,
+            SynthesisApplyResult::Failed => SynthesisOutcome::Failed,
         };
         if outcome == SynthesisOutcome::Stale {
             self.state
@@ -1098,7 +1100,9 @@ impl MemorySynthesisService {
                 .queue
                 .mark_stale();
         } else {
-            if temporal && outcome != SynthesisOutcome::Committed {
+            // A failed store apply did not finish review. Keep the due marker
+            // untouched; the current attempt still settles without replay.
+            if temporal && outcome == SynthesisOutcome::InvalidOutput {
                 target.mark_temporal_review(started);
             }
             self.finish(agent_id, &evidence, temporal);

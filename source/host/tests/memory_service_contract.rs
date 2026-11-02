@@ -1,5 +1,7 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -117,6 +119,288 @@ fn file_memory_store_round_trips_recall_dedupe_remove_and_clear() {
     assert_eq!(store.recall(20).recent, Vec::new());
 
     let _ = fs::remove_dir_all(root);
+}
+
+struct AppendReadFixture {
+    root: PathBuf,
+    store: FileMemoryStore,
+}
+
+impl AppendReadFixture {
+    fn new(label: &str) -> Self {
+        let root = temp_root(label);
+        fs::create_dir(&root).expect("exclusively owned append fixture");
+        let memory = root.join("memory");
+        fs::create_dir(&memory).expect("memory directory");
+        Self {
+            root,
+            store: FileMemoryStore::with_synthesis_metadata(memory, true),
+        }
+    }
+}
+
+impl Drop for AppendReadFixture {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.root);
+    }
+}
+
+// Compare raw bytes and every directory entry, including all synthesis metadata
+// and any unexpected staging files. The production fact reader is not the oracle.
+fn append_memory_tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+    let mut tree = BTreeMap::new();
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(path) = pending.pop() {
+        let kind = fs::symlink_metadata(&path).expect("owned entry metadata").file_type();
+        let relative = path.strip_prefix(root).expect("owned relative path").to_path_buf();
+        if kind.is_dir() {
+            tree.insert(relative, None);
+            for entry in fs::read_dir(&path).expect("owned directory") {
+                pending.push(entry.expect("owned directory entry").path());
+            }
+        } else {
+            assert!(kind.is_file(), "fixture contains only files and directories");
+            tree.insert(relative, Some(fs::read(&path).expect("raw owned file bytes")));
+        }
+    }
+    tree
+}
+
+fn append_test_time() -> i64 {
+    chrono::DateTime::parse_from_rfc3339("2026-09-24T00:00:00Z")
+        .expect("append date")
+        .timestamp_millis()
+}
+
+#[test]
+fn file_memory_store_append_read_errors_preserve_bytes_and_allow_repair() {
+    for (kind, relative) in [
+        (MemoryKind::Profile, "profile.md"),
+        (MemoryKind::Log, "log/2026-09.md"),
+    ] {
+        let fixture = AppendReadFixture::new("append-corrupt-bytes");
+        let store = &fixture.store;
+        let now = append_test_time();
+        let history = store
+            .add_memory("History retained by repair", now - 86_400_000, kind)
+            .expect("seed readable history")
+            .expect("new history");
+        let forgotten = store
+            .add_memory("Previously forgotten fact", now, kind)
+            .expect("seed forgotten fact")
+            .expect("new forgotten fact");
+        assert!(store.remove_memory(&forgotten.id).expect("seed tombstone"));
+        store.mark_temporal_review(now - 86_400_000).expect("seed temporal metadata");
+
+        let destination = store.get_location().join(relative);
+        let repaired = fs::read(&destination).expect("history bytes before corruption");
+        let mut corrupt = repaired.clone();
+        corrupt.extend_from_slice(b"<!-- unreadable existing history: \xff\xfe -->\n");
+        fs::write(&destination, &corrupt).expect("fixture-owned corruption");
+        assert_eq!(fs::read(&destination).expect("corrupt bytes remain readable"), corrupt);
+        let read_error = fs::read_to_string(&destination).expect_err("invalid UTF-8 fixture");
+        assert_eq!(read_error.kind(), io::ErrorKind::InvalidData);
+        let before = append_memory_tree(&store.get_location());
+
+        let error = store
+            .add_memory("  New append   after repair  ", now, kind)
+            .expect_err("unreadable existing destination must refuse append");
+        assert_eq!(error.kind(), read_error.kind());
+        assert_eq!(error.raw_os_error(), read_error.raw_os_error());
+        assert_eq!(append_memory_tree(&store.get_location()), before);
+        assert!(store.add_memory(" \n\t ", now, kind).expect("empty no-op").is_none());
+        assert_eq!(append_memory_tree(&store.get_location()), before);
+
+        // A newly opened handle must preserve the same still-corrupt files.
+        {
+            let reopened = FileMemoryStore::with_synthesis_metadata(store.get_location(), true);
+            assert_eq!(append_memory_tree(&store.get_location()), before);
+            let reopen_error = reopened
+                .add_memory("  New append   after repair  ", now, kind)
+                .expect_err("handle reopen must not repair or replace unreadable history");
+            assert_eq!(reopen_error.kind(), read_error.kind());
+            assert_eq!(reopen_error.raw_os_error(), read_error.raw_os_error());
+            assert_eq!(append_memory_tree(&store.get_location()), before);
+        }
+
+        fs::write(&destination, &repaired).expect("fixture-owned repair");
+        let appended = store
+            .add_memory("  New append   after repair  ", now, kind)
+            .expect("same live store retries after repair")
+            .expect("new repaired append");
+        let mut expected = repaired;
+        expected.extend_from_slice(b"- (2026-09-24) New append after repair\n");
+        assert_eq!(fs::read(&destination).expect("repaired append bytes"), expected);
+        assert_eq!(appended.id, memory_id_for("New append after repair"));
+        assert_eq!(appended.content, "New append after repair");
+        assert_eq!(appended.created_at, now);
+        assert_eq!(appended.kind, kind);
+        assert!(store.list_memories(10).iter().any(|record| record.id == history.id));
+        assert_eq!(
+            store.snapshot_for_recovery(std::slice::from_ref(&appended))[0].origin,
+            MemoryOrigin::Explicit
+        );
+    }
+}
+
+#[test]
+fn file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata() {
+    for (kind, relative, existing_kind) in [
+        (MemoryKind::Profile, "profile.md", MemoryKind::Log),
+        (MemoryKind::Log, "log/2026-09.md", MemoryKind::Profile),
+    ] {
+        let fixture = AppendReadFixture::new("append-corrupt-duplicate");
+        let store = &fixture.store;
+        let now = append_test_time();
+        let existing = store
+            .add_memory("Shared duplicate fact", now, existing_kind)
+            .expect("seed duplicate in readable other kind")
+            .expect("new duplicate control");
+        store
+            .restore_records_exact(&[MemoryRecoveryRecord {
+                record: existing.clone(),
+                origin: MemoryOrigin::Synthesis,
+                tombstoned: true,
+            }])
+            .expect("seed exact origin and tombstone recovery state");
+        store.mark_temporal_review(now).expect("seed temporal metadata");
+        let destination = store.get_location().join(relative);
+        fs::create_dir_all(destination.parent().expect("destination parent")).expect("parent");
+        let corrupt = b"# Existing history\n<!-- bytes: \xff\xfe -->\n";
+        fs::write(&destination, corrupt).expect("corrupt declared destination");
+        assert_eq!(fs::read(&destination).expect("raw corrupt destination"), corrupt);
+        let read_error = fs::read_to_string(&destination).expect_err("invalid UTF-8 fixture");
+        assert_eq!(read_error.kind(), io::ErrorKind::InvalidData);
+        let before = append_memory_tree(&store.get_location());
+
+        let error = store
+            .add_memory(" SHARED   DUPLICATE FACT ", now, kind)
+            .expect_err("dedupe must not alter metadata before destination admission");
+        assert_eq!(error.kind(), read_error.kind());
+        assert_eq!(append_memory_tree(&store.get_location()), before);
+        let retained = store.snapshot_for_recovery(std::slice::from_ref(&existing));
+        assert_eq!(retained[0].origin, MemoryOrigin::Synthesis);
+        assert!(retained[0].tombstoned);
+
+        let repaired = b"# Repaired history\n<!-- retain this comment -->\n";
+        fs::write(&destination, repaired).expect("fixture-owned repair");
+        assert!(
+            store
+                .add_memory(" SHARED   DUPLICATE FACT ", now, kind)
+                .expect("readable duplicate retains existing behavior")
+                .is_none()
+        );
+        assert_eq!(fs::read(&destination).expect("duplicate leaves repaired bytes"), repaired);
+        assert_eq!(store.list_memories(10), vec![existing.clone()]);
+        let explicit = store.snapshot_for_recovery(std::slice::from_ref(&existing));
+        assert_eq!(explicit[0].origin, MemoryOrigin::Explicit);
+        assert!(!explicit[0].tombstoned);
+    }
+}
+
+#[test]
+fn file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls() {
+    for (kind, relative, header) in [
+        (
+            MemoryKind::Profile,
+            "profile.md",
+            "# About the user\n\n<!-- Enduring facts, one per line as \"- (YYYY-MM-DD) <fact>\". -->\n\n",
+        ),
+        (
+            MemoryKind::Log,
+            "log/2026-09.md",
+            "# Memory log\n\n<!-- Dated facts, one per line as \"- (YYYY-MM-DD) <fact>\". -->\n\n",
+        ),
+    ] {
+        let fixture = AppendReadFixture::new("append-controls");
+        let store = &fixture.store;
+        let now = append_test_time();
+        let destination = store.get_location().join(relative);
+        assert_eq!(
+            fs::read_to_string(&destination).expect_err("missing first-write destination").kind(),
+            io::ErrorKind::NotFound
+        );
+        let empty = append_memory_tree(&store.get_location());
+        assert!(store.add_memory(" \t\n ", now, kind).expect("empty input").is_none());
+        assert_eq!(append_memory_tree(&store.get_location()), empty);
+
+        let first = store
+            .add_memory("  First   durable\n fact  ", now - 86_400_000, kind)
+            .expect("missing destination admits first write")
+            .expect("new first fact");
+        let first_text = format!("{header}- (2026-09-23) First durable fact\n");
+        assert_eq!(fs::read_to_string(&destination).expect("first file"), first_text);
+        assert_eq!(first.id, memory_id_for("First durable fact"));
+        assert_eq!(first.content, "First durable fact");
+        assert_eq!(first.created_at, now - 86_400_000);
+        assert_eq!(first.kind, kind);
+
+        let readable = format!("{first_text}<!-- preserve this comment without a trailing newline -->");
+        fs::write(&destination, &readable).expect("readable custom comment");
+        let second = store
+            .add_memory(" Later   note ", now, kind)
+            .expect("readable destination admits append")
+            .expect("new second fact");
+        assert_eq!(
+            fs::read_to_string(&destination).expect("appended readable file"),
+            format!("{readable}\n- (2026-09-24) Later note\n")
+        );
+        assert_eq!(second.id, memory_id_for("Later note"));
+        assert_eq!(second.created_at, now);
+        assert_eq!(second.kind, kind);
+        assert_eq!(store.list_memories(10), vec![second, first]);
+
+        let before_noops = append_memory_tree(&store.get_location());
+        assert!(
+            store.add_memory(" FIRST DURABLE FACT ", now, kind).expect("duplicate").is_none()
+        );
+        assert!(store.add_memory(" \n ", now, kind).expect("empty append").is_none());
+        assert_eq!(append_memory_tree(&store.get_location()), before_noops);
+    }
+}
+
+#[test]
+fn file_memory_store_append_directory_read_error_is_preserved() {
+    for (kind, relative) in [
+        (MemoryKind::Profile, "profile.md"),
+        (MemoryKind::Log, "log/2026-09.md"),
+    ] {
+        let fixture = AppendReadFixture::new("append-directory-io");
+        let store = &fixture.store;
+        let now = append_test_time();
+        let destination = store.get_location().join(relative);
+        fs::create_dir_all(&destination).expect("directory at append destination");
+        let sentinel = destination.join("owned-history.bin");
+        fs::write(&sentinel, b"owned directory bytes\x00\xff").expect("directory sentinel");
+        store.mark_temporal_review(now).expect("seed metadata");
+        // This proves a real I/O read failure even when the test runs as root.
+        let read_error = fs::read_to_string(&destination).expect_err("directory cannot be text");
+        assert_ne!(read_error.kind(), io::ErrorKind::NotFound);
+        assert!(read_error.raw_os_error().is_some());
+        let before = append_memory_tree(&store.get_location());
+
+        let error = store
+            .add_memory("Append after directory repair", now, kind)
+            .expect_err("destination I/O read error must propagate before staging");
+        assert_eq!(error.kind(), read_error.kind());
+        assert_eq!(error.raw_os_error(), read_error.raw_os_error());
+        assert_eq!(append_memory_tree(&store.get_location()), before);
+
+        fs::remove_file(&sentinel).expect("remove only fixture-owned sentinel");
+        fs::remove_dir(&destination).expect("remove only fixture-owned empty directory");
+        let repaired = "# Repaired history\n<!-- retain repaired comment -->\n";
+        fs::write(&destination, repaired).expect("fixture-owned directory repair");
+        assert!(
+            store
+                .add_memory("Append after directory repair", now, kind)
+                .expect("same live store accepts repaired path")
+                .is_some()
+        );
+        assert_eq!(
+            fs::read_to_string(&destination).expect("repaired directory append"),
+            format!("{repaired}- (2026-09-24) Append after directory repair\n")
+        );
+    }
 }
 
 #[test]

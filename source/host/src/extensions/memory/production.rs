@@ -178,3 +178,7 @@ pub fn create_production_memory_synthesis(
     }));
     Arc::new(MemorySynthesisService::new(options))
 }
+
+#[cfg(test)]
+#[path = "production_append_read_tests.rs"]
+mod append_read_tests;

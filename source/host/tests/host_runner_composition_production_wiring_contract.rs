@@ -318,6 +318,228 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
 }
 
 #[test]
+fn production_memory_tool_refuses_corrupt_append_destinations_and_recovers_after_repair() {
+    use std::collections::BTreeMap;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::sync::Arc;
+
+    use chrono::{Datelike, Months, Utc};
+    use mahayana_host_runtime::extensions::inference::provider_session::{
+        ProviderSessionError, RoutedToolDefinition,
+    };
+    use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController;
+    use mahayana_host_runtime::extensions::memory::agent_state::{MemoryScope, MemoryTier};
+    use mahayana_host_runtime::extensions::memory::memory_service::{
+        MemoryKind, MemoryOrigin, MemorySynthesisBridge, memory_id_for,
+    };
+    use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
+        MemorySynthesisOptions, MemorySynthesisService,
+    };
+    use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+    use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+    use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+    use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
+    use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+    use mahayana_host_runtime::runner::tools::sand_state_tool::{
+        SAND_UPDATE_STATE_TOOL_NAME, SandStateToolBridge,
+    };
+    use serde_json::{Value, json};
+
+    struct NoMemoryFallback;
+    impl RoutedToolBridge for NoMemoryFallback {
+        fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+            Ok(Vec::new())
+        }
+
+        fn call_tool(
+            &self,
+            _tool: &RoutedToolDefinition,
+            _args: Value,
+            _tool_call_id: &str,
+        ) -> Result<Value, ProviderSessionError> {
+            panic!("the production update_state bridge must consume memory writes");
+        }
+    }
+
+    fn memory_tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+        fn visit(root: &Path, path: &Path, tree: &mut BTreeMap<PathBuf, Option<Vec<u8>>>) {
+            tree.insert(path.strip_prefix(root).unwrap().to_path_buf(), None);
+            for entry in fs::read_dir(path).expect("read complete owned memory tree") {
+                let entry = entry.expect("memory entry");
+                let path = entry.path();
+                let kind = entry.file_type().expect("memory entry type");
+                if kind.is_dir() {
+                    visit(root, &path, tree);
+                } else {
+                    assert!(kind.is_file(), "fixture must contain only directories and files");
+                    tree.insert(
+                        path.strip_prefix(root).unwrap().to_path_buf(),
+                        Some(fs::read(&path).expect("raw memory bytes")),
+                    );
+                }
+            }
+        }
+        let mut tree = BTreeMap::new();
+        visit(root, root, &mut tree);
+        tree
+    }
+
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-production-memory-append-{}", uuid::Uuid::new_v4().simple(),
+    ));
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("real admitted agent");
+    let admission = workers.read_session_work_admission(&agent.id)
+        .expect("read admission").expect("materialized admission");
+    assert_eq!(admission.session_id, agent.id);
+    assert_eq!(admission.session_key, format!("agent:{}:main", agent.id));
+    assert!(!admission.lifecycle_revision.is_empty());
+    assert!(!admission.deletion_pending);
+
+    let memory = workers.memory_service();
+    // Enable the real origin/tombstone policy without accepting background
+    // synthesis or provider work. Memory appends still enter the Session owner.
+    let synthesis = Arc::new(MemorySynthesisService::new(MemorySynthesisOptions::new(
+        Arc::new(Vec::new),
+        Arc::new(|_| None),
+        Arc::new(|_, _| panic!("explicit-memory fixture must not request synthesis")),
+    )));
+    synthesis.start();
+    let synthesis_bridge: Arc<dyn MemorySynthesisBridge> = synthesis.clone();
+    memory.set_synthesis_bridge(Arc::downgrade(&synthesis_bridge));
+    assert!(memory.synthesis_enabled());
+    let store = memory.store_for_agent(&agent.id);
+    let memory_dir = store.get_location();
+
+    let controller = Arc::new(SandLocalToolPermissionController::production(Arc::new(
+        SettingsService::new(root.join("settings.json")),
+    )));
+    let composition = HostRunnerComposition::production(controller, Arc::clone(&workers));
+    let writer = composition.compose_turn_state_surfaces(
+        Arc::clone(&workers), &agent.id, false, false, None,
+    ).expect("production turn state").state_writer.expect("private state writer");
+    let bridge = SandStateToolBridge::new(Arc::new(NoMemoryFallback), Arc::clone(&writer));
+    let tool = bridge.list_tools().expect("real state tool registration").into_iter()
+        .find(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME).expect("update_state");
+    let write_tool = |fact: &str, tier: &str| {
+        bridge.call_tool(&tool, json!({
+            "target": "memory", "action": "write", "scope": "agent",
+            "fact": fact, "tier": tier,
+        }), "mwr-append").expect("existing state-tool response contract")
+            .as_str().expect("state tool message").to_string()
+    };
+
+    for (tier, kind, label, history, appended) in [
+        (MemoryTier::Profile, MemoryKind::Profile, "profile",
+            "Retained profile history", "Recovered profile append"),
+        (MemoryTier::Log, MemoryKind::Log, "log",
+            "Retained monthly log history", "Recovered monthly log append"),
+    ] {
+        let missing_destination = match kind {
+            MemoryKind::Profile => memory_dir.join("profile.md"),
+            MemoryKind::Log => memory_dir.join("log").join(format!("{}.md", Utc::now().format("%Y-%m"))),
+        };
+        assert!(!missing_destination.exists(), "first-write control: {label}");
+        assert_eq!(write_tool(history, label), format!("Remembered in agent memory ({label}): {history}"));
+        assert_eq!(write_tool(appended, label), format!("Remembered in agent memory ({label}): {appended}"));
+        let removed = writer.remove_memory(appended, MemoryScope::Agent, None);
+        assert!(removed.ok, "{}", removed.message);
+        let tombstone = memory_dir.join(".dreaming/tombstones")
+            .join(format!("{}.deleted", memory_id_for(appended)));
+        assert!(tombstone.is_file(), "real removal must leave the retry's tombstone");
+        store.mark_temporal_review(1_000).expect("retained review metadata");
+
+        let destinations = match kind {
+            MemoryKind::Profile => vec![memory_dir.join("profile.md")],
+            MemoryKind::Log => {
+                // Session chooses the real current time. Cover the following
+                // month too so a UTC month boundary cannot escape the fault.
+                let month = Utc::now().date_naive().with_day(1).unwrap();
+                [month, month.checked_add_months(Months::new(1)).unwrap()]
+                    .into_iter().map(|month| memory_dir.join("log")
+                        .join(format!("{}.md", month.format("%Y-%m"))))
+                    .collect()
+            }
+        };
+        let mut repairs = Vec::new();
+        for path in destinations {
+            let mut repaired = match fs::read_to_string(&path) {
+                Ok(raw) => raw,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound =>
+                    "# Memory log\n\n<!-- Retained rollover history -->\n".to_string(),
+                Err(error) => panic!("fixture history was unreadable before corruption: {error}"),
+            };
+            repaired.push_str("\n<!-- MWR-v1 retained destination comment -->\n");
+            let mut corrupt = repaired.as_bytes().to_vec();
+            corrupt.extend_from_slice(&[0xff, 0xfe]);
+            fs::write(&path, &corrupt).expect("inject invalid UTF-8 into the real destination");
+            assert_eq!(fs::read(&path).expect("corruption remains raw-readable"), corrupt);
+            assert_eq!(fs::read_to_string(&path).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+            repairs.push((path, repaired));
+        }
+        let before = memory_tree(&memory_dir);
+        let read_error = fs::read_to_string(&repairs[0].0).unwrap_err().to_string();
+        let refused = writer.write_memory(appended, tier, MemoryScope::Agent, None);
+        assert!(!refused.ok, "corrupt {label} append must not report Remembered");
+        assert_eq!(refused.message, format!("could not update agent memory: {read_error}"));
+        assert_eq!(memory_tree(&memory_dir), before, "writer refusal changed {label} bytes or metadata");
+        assert_eq!(write_tool(appended, label), format!("Not saved — {}", refused.message));
+        assert_eq!(memory_tree(&memory_dir), before, "tool refusal changed {label} bytes or metadata");
+        assert_eq!(workers.read_session_work_admission(&agent.id).unwrap(), Some(admission.clone()));
+
+        // Only the fixture repairs the file; retain the same live Session,
+        // composition, SandAgentState writer and tool bridge for the retry.
+        for (path, repaired) in &repairs {
+            fs::write(path, repaired).expect("fixture-owned repair");
+        }
+        assert_eq!(write_tool(appended, label), format!("Remembered in agent memory ({label}): {appended}"));
+        for (path, repaired) in &repairs {
+            assert!(fs::read_to_string(path).unwrap().starts_with(repaired.as_str()),
+                "successful append must preserve repaired history and comments");
+        }
+        let records = store.prepare_synthesis().memories;
+        assert!(records.iter().any(|record| record.content == history && record.kind == kind));
+        let recovered = records.iter().filter(|record| record.content == appended).collect::<Vec<_>>();
+        assert_eq!(recovered.len(), 1);
+        assert_eq!(recovered[0].kind, kind);
+        assert_eq!(recovered[0].origin, MemoryOrigin::Explicit);
+        assert!(!tombstone.exists(), "only the successful retry clears the tombstone");
+
+        let after = memory_tree(&memory_dir);
+        assert_eq!(write_tool(&format!("  {}  ", appended.to_uppercase()), label),
+            "Not saved — nothing was saved to agent memory - the fact was empty or already recorded.");
+        assert_eq!(memory_tree(&memory_dir), after, "readable duplicate must preserve the tree");
+    }
+
+    // A retained production writer still obeys both Session deletion fences;
+    // bypassing the composition callback for a raw SandAgentState cannot pass.
+    let before_delete = memory_tree(&memory_dir);
+    workers.begin_agent_delete(&agent.id).expect("begin canonical deletion fence");
+    for durable_only in [false, true] {
+        if durable_only {
+            workers.clear_agent_delete_fast_path(&agent.id);
+        }
+        let prefix = if durable_only { "durable deletion" } else { "deletion" };
+        assert_eq!(write_tool("Forbidden during deletion", "profile"), format!(
+            "Not saved — could not update agent memory: agent {} {prefix} cleanup is pending; new session work is not admitted",
+            agent.id,
+        ));
+        assert_eq!(memory_tree(&memory_dir), before_delete);
+    }
+    workers.end_agent_delete(&agent.id).expect("release fixture deletion fence");
+    assert_eq!(workers.read_session_work_admission(&agent.id).unwrap(), Some(admission));
+    assert_eq!(write_tool("Allowed after deletion fence release", "profile"),
+        "Remembered in agent memory (profile): Allowed after deletion fence release");
+
+    composition.dispose();
+    synthesis.dispose();
+    workers.shutdown();
+    fs::remove_dir_all(root).expect("remove owned fixture");
+}
+
+#[test]
 fn host_runner_composition_owns_shipping_runner_construction() {
     for needle in [
         "pub fn compose_production_runner(",
