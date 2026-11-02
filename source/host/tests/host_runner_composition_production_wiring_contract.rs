@@ -272,8 +272,14 @@ fn host_runner_composition_owns_shipping_runner_construction() {
             "HostRunnerComposition missing Runner construction responsibility: {needle}"
         );
     }
+    assert_shipping_runner_construction(SHIPPING_HOST);
+}
+
+fn assert_shipping_runner_construction(source: &str) {
+    let production = production_host_source(source)
+        .expect("shipping Host production scope must be unambiguous");
     assert!(
-        shipping_host().contains("worker_host_runner_composition.compose_production_runner("),
+        production.contains("worker_host_runner_composition.compose_production_runner("),
         "shipping Host must delegate Runner facade construction",
     );
     for needle in [
@@ -281,8 +287,161 @@ fn host_runner_composition_owns_shipping_runner_construction() {
         "SandAgentRunner::new(owner)",
     ] {
         assert!(
-            !shipping_host().contains(needle),
+            !production.contains(needle),
             "shipping Host still constructs the Runner owner path directly: {needle}",
+        );
+    }
+}
+
+const DELEGATING_RUNNER_PRODUCTION: &str =
+    "\nfn main() { worker_host_runner_composition.compose_production_runner(); }\n";
+const EMPTY_RUNNER_TEST_MODULE: &str = "\n#[cfg(test)]\nmod tests {\n}\n";
+
+#[test]
+fn runner_construction_oracle_allows_test_only_constructors_and_preserves_source() {
+    let production = r#"// Preserve whitespace, strings and comments in the production prefix.
+fn main() {
+    let _quoted = "} // {";
+    /* { /* nested comment } */ } */
+    worker_host_runner_composition.compose_production_runner();
+}
+
+"#;
+    let test_module = r##"
+#[cfg(test)]
+mod tests {
+    fn fixture() {
+        let _quoted = "} \" {";
+        let _raw = r#"} /* { */"#;
+        let _brace = '}';
+        // } } {
+        /* } /* { */ } */
+        if true {
+            let owner = ProductionTurnAgentOwner::new(composition);
+            let _runner = SandAgentRunner::new(owner);
+        }
+    }
+}
+"##;
+    let source = format!("{production}{test_module}");
+
+    assert_eq!(
+        production_host_source(&source).expect("valid production and test syntax"),
+        production
+    );
+    assert_shipping_runner_construction(&source);
+}
+
+#[test]
+#[should_panic(
+    expected = "shipping Host still constructs the Runner owner path directly: ProductionTurnAgentOwner::new(composition)"
+)]
+fn runner_construction_oracle_rejects_production_turn_owner_constructor() {
+    let source = format!(
+        "{DELEGATING_RUNNER_PRODUCTION}\nfn bypass() {{ let _ = ProductionTurnAgentOwner::new(composition); }}{EMPTY_RUNNER_TEST_MODULE}"
+    );
+    assert_shipping_runner_construction(&source);
+}
+
+#[test]
+#[should_panic(
+    expected = "shipping Host still constructs the Runner owner path directly: SandAgentRunner::new(owner)"
+)]
+fn runner_construction_oracle_rejects_production_runner_constructor() {
+    let source = format!(
+        "{DELEGATING_RUNNER_PRODUCTION}\nfn bypass() {{ let _ = SandAgentRunner::new(owner); }}{EMPTY_RUNNER_TEST_MODULE}"
+    );
+    assert_shipping_runner_construction(&source);
+}
+
+#[test]
+#[should_panic(expected = "shipping Host must delegate Runner facade construction")]
+fn runner_construction_oracle_rejects_delegation_present_only_in_tests() {
+    assert_shipping_runner_construction(
+        "\nfn main() {}\n#[cfg(test)]\nmod tests {\n    fn fixture() { worker_host_runner_composition.compose_production_runner(); }\n}\n",
+    );
+}
+
+#[test]
+fn runner_construction_scope_refuses_production_after_test_module() {
+    let valid = format!("{DELEGATING_RUNNER_PRODUCTION}{EMPTY_RUNNER_TEST_MODULE}");
+    assert_eq!(
+        production_host_source(&valid),
+        Some(DELEGATING_RUNNER_PRODUCTION)
+    );
+    for trailing in [
+        "fn bypass() { let _ = ProductionTurnAgentOwner::new(composition); }",
+        "    fn bypass() { let _ = SandAgentRunner::new(owner); }",
+        "const PRODUCTION_ITEM: bool = true;",
+    ] {
+        let source =
+            format!("{DELEGATING_RUNNER_PRODUCTION}{EMPTY_RUNNER_TEST_MODULE}{trailing}\n");
+        assert!(
+            production_host_source(&source).is_none(),
+            "shipping ownership assertions must refuse trailing production: {trailing}"
+        );
+    }
+}
+
+#[test]
+fn runner_construction_scope_refuses_missing_duplicate_or_malformed_boundaries() {
+    let valid = format!("{DELEGATING_RUNNER_PRODUCTION}{EMPTY_RUNNER_TEST_MODULE}");
+    assert_eq!(
+        production_host_source(&valid),
+        Some(DELEGATING_RUNNER_PRODUCTION)
+    );
+    for (label, source) in [
+        (
+            "absent boundary",
+            DELEGATING_RUNNER_PRODUCTION.to_string(),
+        ),
+        (
+            "duplicate boundary",
+            format!("{valid}{EMPTY_RUNNER_TEST_MODULE}"),
+        ),
+        (
+            "indirect cfg",
+            valid.replace("#[cfg(test)]", "#[cfg(any(test))]"),
+        ),
+        (
+            "different module",
+            valid.replace("mod tests {", "mod fixtures {"),
+        ),
+        (
+            "out-of-line module",
+            valid.replace("mod tests {\n}", "mod tests;"),
+        ),
+        (
+            "unclosed test module",
+            format!("{DELEGATING_RUNNER_PRODUCTION}\n#[cfg(test)]\nmod tests {{"),
+        ),
+        (
+            "malformed module body",
+            format!("{DELEGATING_RUNNER_PRODUCTION}\n#[cfg(test)]\nmod tests {{ fn broken( }}"),
+        ),
+    ] {
+        assert!(
+            production_host_source(&source).is_none(),
+            "shipping ownership assertions must refuse {label}"
+        );
+    }
+}
+
+#[test]
+fn runner_construction_scope_refuses_boundaries_inside_incomplete_prefixes() {
+    // A complete main precedes each bad prefix so the main-entry check cannot
+    // mask a regression that bypasses grammar qualification.
+    for source in [
+        format!("{DELEGATING_RUNNER_PRODUCTION}fn enclosing() {{{EMPTY_RUNNER_TEST_MODULE}}}"),
+        format!("{DELEGATING_RUNNER_PRODUCTION}mod production {{{EMPTY_RUNNER_TEST_MODULE}}}"),
+        format!("{DELEGATING_RUNNER_PRODUCTION}/*{EMPTY_RUNNER_TEST_MODULE}*/"),
+        format!(
+            "{DELEGATING_RUNNER_PRODUCTION}const TEXT: &str = r#\"{EMPTY_RUNNER_TEST_MODULE}\"#;"
+        ),
+    ] {
+        assert!(
+            production_host_source(&source).is_none(),
+            "shipping ownership assertions must refuse incomplete production prefixes"
         );
     }
 }

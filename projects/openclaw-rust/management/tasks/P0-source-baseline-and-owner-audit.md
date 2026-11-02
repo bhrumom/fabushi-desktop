@@ -8,6 +8,51 @@ Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
 Last updated: 2026-10-31（Asia/Shanghai）
 
+### 2026-11-02 production batch: MCP reply isolation across relay replacement
+
+`MCP-LIFE-006..008` in the existing runtime parity spec repairs a concrete
+local adapter defect observed at `ec1ace1611d41f920294f794137017b03f6fd790`:
+per-instance counters reuse `host-mcp-1`, while the asynchronous Coordinator
+worker can deliver its old response to the replacement Host. The existing Rust
+relay owns a fresh instance UUID plus non-wrapping sequence; no account,
+permission, transport or durable state owner is added. Real request/resolve,
+Skills loader and Coordinator parser/executor controls cover stale success and
+failure, simultaneous instances, duplicate refusal and opaque-ID compatibility.
+The workflow retains prior assertions and adds only the scoped Coordinator
+target. Model inheritance with actual xhigh effort applies to implementation
+and independent review; no local executable validation is allowed.
+
+The first integration parent was `4fe16f4689e23da2f027d09b2e8d39f56755c6ec`,
+whose four incoming files were read back and preserved. The publication lease
+then advanced through `c7fc0decf452f7c5a34580479bc05e2fc9d070d1` to
+`4a18019f2926e4ab7de90776b6adf92901180bf4`. Preserve all five incoming paths,
+including the shipping cancellation negatives and both dispatch-entry controls;
+the shared workflow is their complete target/receipt union with this MCP batch.
+The next lease advanced through the four incoming commits to
+`f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`. All 19 changed paths and their
+exact remote blobs were preserved, including tool-effect custody and its
+actual-provider/MCP oracles. The already-published routed-tool waiter contract
+retains `MCP-LIFE-005`; this unpublished incarnation contract uses
+`MCP-LIFE-006..008`. The shared workflow retains the complete incoming target,
+filter and receipt union. Its composition oracle shares the qualified Rust
+source boundary recorded in `RUNNER-WIRING-ORACLE-01`; all assertions remain.
+
+Parent `4eb0d25ade0d06b8a467e240440a5691ec36efc8` then supplied the equivalent
+Syn source-boundary implementation and identical Host dev dependency edge.
+Adopt its existing parser and all controls; add the already-authored causal
+input controls through that helper without retaining a duplicate parser. Only
+eight owned paths remain changed, and the complete workflow union is retained.
+
+Independent review approved the six-path MCP tree
+`863246c6bf87f4d4496ebc611e674319181fd178`; the revised workflow/task integration
+requires focused review with that complete scope retained. Parent ec1's source Actions
+`41413591198` passed; its runtime `41413591285` was cancelled while pending
+with zero jobs and supplies no runtime evidence. Source/runtime evidence for
+each new frozen H remains required. The bounded fixed-U lifecycle evidence in
+the existing MCP dossier §6 is reused without upgrading source review, stdio/
+channel wiring, verification, acceptance or any global flag. Remote-effect
+cancellation, account switching and permission revocation remain open.
+
 ### 2026-11-02 production batch: cancellation request and terminal custody
 
 On integration parent `58f1fb359c71e203cb82a6fe43cb52336f4542e5`,

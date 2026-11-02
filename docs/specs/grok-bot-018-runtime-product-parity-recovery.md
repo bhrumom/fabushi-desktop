@@ -2262,6 +2262,53 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - This lifecycle repair does not promote any architecture-manifest row. All five remaining MCP mappings retain their production-wiring blockers, and PR #20 stays draft. Exact-HEAD Actions results must be inspected before claiming verification of this patch.
 
 
+### 2026-11-02 MCP relay instance correlation recovery
+
+Base `ec1ace1611d41f920294f794137017b03f6fd790` assigns every new
+`CoordinatorMcpLifecycleRelay` the first ID `host-mcp-1`. The Coordinator's
+asynchronous MCP worker resolves against the current Host connection after the
+SDK call returns. An old successful or failed reply can therefore consume an
+unrelated new Host waiter with the same sequence. This is an implementation
+defect in the existing Fabushi adapter, not new MCP permission authority.
+
+- **MCP-LIFE-006:** each relay instance allocates a fresh UUID v4 using the
+  existing Host dependency, and includes it with its monotonic request sequence
+  in every opaque `requestId`. A sequence must not wrap and reuse an ID; an
+  exhausted sequence returns a protocol error before waiter insertion or event
+  publication. IDs remain below the Coordinator's 256-byte limit. No credential,
+  account identifier or persisted installation state belongs in the ID.
+- **MCP-LIFE-007:** replies belonging to a closed, replaced or different live
+  relay cannot remove or settle a current waiter, for either success or remote
+  error. The matching current reply still settles exactly once. Preserve the
+  existing allowlist, malformed-response refusal, timeout/closure ownership,
+  close-versus-registration fence and publication outside the pending lock.
+- **MCP-LIFE-008:** the Coordinator treats the ID as opaque and echoes it without
+  regeneration on both executor success and failure. Legacy opaque IDs remain
+  valid there; the Host resolves only an ID actually pending in that instance.
+  Correlation is not authentication, and an unknown reply remains an error.
+
+The production chain stays MCP management / `CoordinatorPluginSkillsLoader` →
+Host relay and pending map → event bus → Coordinator → existing Electron SDK
+owner → current Host resolution. Only the relay owns local waiter identity;
+no schema, scheduler, store, permission owner or transport is added. There is no
+durable ID migration. Rolling back restores the collision risk; it cannot
+transfer in-flight waiters between Host lifetimes.
+
+Deterministic contracts must replace the real relay while an old reply is held,
+prove both old success and error leave a real new Skills load pending, and then
+resolve the new ID through the existing loader. Cover concurrent first requests
+from two live instances, sequence exhaustion without publication, duplicate
+resolution refusal, and the actual Coordinator parser/executor success/error
+echo with both legacy and instance-qualified IDs. Run affected Host contracts,
+shipping compilation and the scoped Coordinator contract only in GitHub
+Actions on the frozen H; exact-H success and independent source review are the
+exit conditions. Fixed U and its bounded lifecycle reading remain as recorded
+in `projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md` §6. This local
+repair does not upgrade upstream review, stdio/channel wiring or acceptance.
+Actual external operation cancellation, original-generation dispatch, account
+switch, permission revocation, retries/unknown outcomes and full MCP ecosystem
+acceptance remain separate open responsibilities.
+
 ### 2026-09-28 MCP plugin-skills concurrent-result recovery
 
 - Starting revision: `9d9a5448b6d4507e65735bdfeff6da41c9a50de9`. The authenticated installed-plugin loader and full shipping MCP registry composition remain absent. This prerequisite does not claim to complete that composition or close any of the five remaining MCP mappings.

@@ -96,6 +96,7 @@ impl PluginSkillsLoader for CoordinatorPluginSkillsLoader {
 pub struct CoordinatorMcpLifecycleRelay {
     events: GatewayEventHub,
     pending: Mutex<HashMap<String, PendingReply>>,
+    incarnation: uuid::Uuid,
     next_request_id: AtomicU64,
     timeout: Duration,
     closed: AtomicBool,
@@ -112,6 +113,7 @@ impl CoordinatorMcpLifecycleRelay {
         Self {
             events,
             pending: Mutex::new(HashMap::new()),
+            incarnation: uuid::Uuid::new_v4(),
             next_request_id: AtomicU64::new(0),
             timeout,
             closed: AtomicBool::new(false),
@@ -128,8 +130,20 @@ impl CoordinatorMcpLifecycleRelay {
             return Err(CoordinatorMcpLifecycleRelayError::Closed("Mahayana Host is shutting down".into()));
         }
 
-        let sequence = self.next_request_id.fetch_add(1, Ordering::AcqRel) + 1;
-        let request_id = format!("host-mcp-{sequence}");
+        // A late Coordinator reply may reach a replacement Host. Namespace
+        // each relay's requests independently, and never recycle its sequence.
+        let sequence = self
+            .next_request_id
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |sequence| {
+                sequence.checked_add(1)
+            })
+            .map_err(|_| {
+                CoordinatorMcpLifecycleRelayError::Protocol(
+                    "Host MCP lifecycle request sequence exhausted".into(),
+                )
+            })?
+            + 1;
+        let request_id = format!("host-mcp-{}-{sequence}", self.incarnation);
         let (reply_tx, reply_rx) = mpsc::sync_channel(1);
         #[cfg(test)]
         if let Some(before_registration) = &self.before_pending_registration {
@@ -617,6 +631,75 @@ mod lifecycle_tests {
                 Err(CoordinatorMcpLifecycleRelayError::Closed(_))
             ));
             assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+        });
+    }
+
+    #[test]
+    fn exhausted_request_sequence_never_registers_or_publishes() {
+        completes_without_deadlock(|| {
+            let events = GatewayEventHub::default();
+            let receiver = events.subscribe();
+            let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events,
+                REQUEST_TIMEOUT,
+            ));
+            // Exercise the real allocation/admission path at its final ID.
+            relay.next_request_id.store(u64::MAX - 1, Ordering::Release);
+            let (result_tx, result_rx) = mpsc::channel();
+            let worker_relay = Arc::clone(&relay);
+            let worker = thread::spawn(move || {
+                let _ = result_tx.send(worker_relay.request(MCP_LIST_CATALOG_METHOD, json!({})));
+            });
+            let event = receiver
+                .recv_timeout(ORACLE_TIMEOUT)
+                .expect("last sequence must still admit a real request");
+            let request_id = event["payload"]["requestId"].as_str().unwrap();
+            assert_eq!(relay.pending_count(), 1);
+
+            for _ in 0..2 {
+                assert_eq!(
+                    relay.request(MCP_LIST_CATALOG_METHOD, json!({})),
+                    Err(CoordinatorMcpLifecycleRelayError::Protocol(
+                        "Host MCP lifecycle request sequence exhausted".into()
+                    ))
+                );
+                assert_eq!(relay.pending_count(), 1);
+                assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+                assert!(matches!(result_rx.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            }
+            assert_eq!(relay.next_request_id.load(Ordering::Acquire), u64::MAX);
+            assert_eq!(
+                request_id,
+                format!("host-mcp-{}-{}", relay.incarnation, u64::MAX)
+            );
+            assert!(request_id.len() < 256);
+
+            let response = json!({
+                "requestId": request_id,
+                "ok": true,
+                "result": [{"id": "last-plugin"}],
+            });
+            relay
+                .resolve(&response)
+                .expect("last waiter keeps its own reply");
+            assert_eq!(
+                result_rx.recv_timeout(ORACLE_TIMEOUT).unwrap(),
+                Ok(json!([{"id": "last-plugin"}]))
+            );
+            worker.join().unwrap();
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(
+                relay.resolve(&response),
+                Err(CoordinatorMcpLifecycleRelayError::Protocol(_))
+            ));
+            assert_eq!(
+                relay.request(MCP_LIST_CATALOG_METHOD, json!({})),
+                Err(CoordinatorMcpLifecycleRelayError::Protocol(
+                    "Host MCP lifecycle request sequence exhausted".into()
+                ))
+            );
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
         });
     }
 

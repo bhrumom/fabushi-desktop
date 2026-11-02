@@ -8,6 +8,109 @@ Historical scoped source oracle (not current authority): `openclaw/openclaw@ad8d
 Fixed implementation source: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` / tree `90c8aab39972da11cfad220361781d49e1bc6700`; accepted identity and scoped evidence remain pending. Later discovery candidates do not reopen this fixed subject.
 Investigated target: `bhrumom/fabushi-desktop` HEAD
 
+### Active shared-gate recovery — RUNNER-WIRING-ORACLE-01 (2026-11-02)
+
+Decision: **FIX / TEST_FLAW**, recorded before the oracle repair. Exact H
+`4fe16f4689e23da2f027d09b2e8d39f56755c6ec`, runtime `41414234389`, job
+`125174410868` failed only
+`host_runner_composition_owns_shipping_runner_construction`. Its full-file
+`include_str!` scan mistakes the compaction fixture's direct Runner construction
+inside `#[cfg(test)] mod tests` for shipping code. The actual shipping call
+still delegates to `worker_host_runner_composition.compose_production_runner`.
+Do not change that production path or the passing behavioral compaction tests
+to evade a string oracle; retain both forbidden-constructor checks and the
+positive requirement that production delegates through the existing owner.
+
+The repaired source oracle must exclude the explicitly test-only module while
+still inspecting production before and after it. Missing/ambiguous source
+boundaries must fail rather than silently hide code. Controls must distinguish
+the allowed test fixture, each forbidden production constructor, a positive
+owner call that exists only in tests, and production appended after the tests.
+Keep the existing owner-body assertions. No runtime authority, source-read
+status, ledger or global acceptance flag changes with this test-only repair.
+Qualify the existing exact `\n#[cfg(test)]\nmod tests {` boundary with the
+already-locked `syn` 2.0.119 parser as a dev-only dependency with `full` enabled:
+there must be one boundary, the unchanged prefix must parse as a complete Rust
+file, and the suffix including the boundary must parse as exactly one inline
+`tests` module directly gated by `cfg(test)`. Additional trailing items, including
+indented production code, are a refusal. Return the original prefix without
+token rendering; apply the original positive and both forbidden-literal
+assertions to it. Parsing braces in strings/comments must not change the scope.
+Limit source edits to the existing composition-wiring test and Host dev
+manifest/lock. Shipping source, compaction fixtures and permission owners remain
+unchanged. Preserve every existing positive, negative, order and count assertion.
+Independent directness assessment selected
+this bounded grammar check because a bare prefix split or indentation/brace
+counter can silently exclude later production, and replacing the real fixture
+would repair a different subject. The scoped Host commands use `--locked` so
+the exact committed dev-dependency graph is checked rather than rewritten.
+Dependency contract review read `dtolnay/syn@2.0.119` `Cargo.toml`
+(`a2a8d2987893767680b3c183e5825b0861a0268d`) and the `parse_file` / item exports
+in `src/lib.rs` (`aeb74a20120c1f7df5f733ee0c781ed8ffd8bfb1`). The parser is
+MIT OR Apache-2.0; only `full`/`parsing` are requested, default features are off,
+and existing package identities/checksums remain intact. This dependency reads
+committed source in tests; it adds no shipping parser or execution capability.
+Freeze the affected test/spec/dependency scope, obtain independent review, then
+run the selected contract and shared gates in exact-H GitHub Actions.
+
+Integration decision **FIX / TEST_FLAW** at incoming
+`f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`: preserve the concurrent
+`SWA-COMPOSITION-ORACLE-v1` repair and its use of `shipping_host()` throughout
+this target. Its bare prefix split still accepts a test module followed by
+production, excluding that production from every ownership assertion. Make
+`production_host_source` call the same grammar-qualified helper and retain its
+main-entry check; keep all incoming controls, wrapping their test-only statements
+in a valid fixture function so they are actual Rust module input. Retain the
+seven parser/refusal controls and apply trailing-item and malformed-boundary
+refusal to both entry helpers. No production change is required. Independent v3
+source review approved tree `566452b2243a0d833864de09e4a0003d5c09be38`; the
+merged oracle, workflow and narrow task/spec delta require a fresh focused
+review before publication. The incoming tool-effect custody implementation is
+preserved; failed checkpoint publication after an admitted effect remains
+ineligible through its started-versus-covered revision fence, so the earlier
+proposed duplicate adapter latch is not implemented.
+
+The next publication lease reached
+`4eb0d25ade0d06b8a467e240440a5691ec36efc8`, which independently supplied the
+equivalent grammar repair and the identical dev manifest/lock blobs.
+**ADOPT / equivalent existing implementation**: retain its canonical
+`production_host_source` implementation unchanged, including full-file parsing,
+real top-level main, terminal test-module and item-count checks. Do not keep a
+second parser helper. Preserve its two new boundary controls and add the seven
+already-reviewed negative/positive distinctions through this actual helper;
+adapt their unpublished Result diagnostics to the existing Option refusal
+contract without weakening any accepted/rejected input or byte-preservation
+assertion. Constructor controls still call the same shipping assertion helper
+and require the original specific failure messages. The earlier v4 source
+approval remains historical; freeze the eight remaining owned paths and review
+this reconciliation before publishing. No dependency edit remains in this batch.
+
+Adjacent recovery finding **REC-UNKNOWN-01 — FIX / IMPL_BUG**, still open on
+that parent: after the Coordinator publishes an execution request, its 15-second
+control-reply timeout does not prove that the remote tool ended. The current
+Runner relay and shipping `CoordinatorRoutedToolBridge::call_tool` flatten that
+failure to an ordinary tool error; the new execution guard completes its local
+receipt, and Responses can checkpoint the error as a definitive outcome. Keep
+the incoming custody implementation, but carry typed admitted/unknown outcome
+information through those existing owners before accepting such a checkpoint.
+Host relay timeout or closure after admission needs the same treatment. This
+separate production fix requires real relay/bridge/Responses controls and
+preservation of ordinary completed failures and pre-publication refusals.
+
+Retained 4fe evidence: shipping Host compilation passed; configuration/inference
+11 targets passed 119 distinct cases; 15 selected shipping app cases passed;
+recovery 53 targets passed 417, failed one and ignored the private restart
+entry; 11 library filters passed 81. Total Rust: 632 unique passed, one failed,
+one ignored. Seven repeated child summaries are not extra tests. Four passing
+restart parents cover 22 bounded child launches separately. The renderer
+passed 15 SDK/Host cases. Source Actions `41414234376` passed. Runtime audit and
+configuration-evidence creation/upload were skipped after the failure; these
+positive results belong only to 4fe and do not certify the repair candidate.
+Its shipping app check also resolved nine previously unrecorded lock entries
+from the committed manifests. That successful compilation is not proof of a
+fully frozen shipping dependency graph; app lock/provenance reconciliation
+remains open. This repair's `--locked` gate covers the affected Host tests.
+
 ### Active shared-gate recovery — CANCEL-SOURCE-01 (2026-11-02)
 
 Exact b3 Runtime `41411715447` / job `125166533584` is failed: the real held

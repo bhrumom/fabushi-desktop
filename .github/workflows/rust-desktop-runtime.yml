@@ -173,7 +173,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --no-fail-fast --manifest-path source/host/Cargo.toml \
+          cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test settings_service_contract \
             --test openclaw_sessions_and_config_contract \
             --test inference_extension_composition_contract \
@@ -222,7 +222,7 @@ jobs:
         run: |
           set -euo pipefail
           recovery_status=0
-          cargo test --no-fail-fast --manifest-path source/host/Cargo.toml \
+          cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \
             --test production_turn_agent_owner_contract \
             --test production_agent_store_contract \
@@ -283,7 +283,7 @@ jobs:
             --test agent_db_recovery_contract \
             --test session_maintenance_contract \
             --test session_gateway_contract || recovery_status=1
-          if cargo test --manifest-path source/host/Cargo.toml --lib --no-run; then
+          if cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               extensions::session::typed_replay::tests \
               extensions::session::production_agent_store::checked_state_tests \
@@ -298,12 +298,16 @@ jobs:
               extensions::inference::provider_session::tests \
               extensions::mcp::plugin_skills::sync_tests \
               extensions::mcp::plugin_skills_cache::tests; do
-              cargo test --manifest-path source/host/Cargo.toml --lib "$recovery_filter" || recovery_status=1
+              cargo test --locked --manifest-path source/host/Cargo.toml --lib "$recovery_filter" || recovery_status=1
             done
           else
             recovery_status=1
           fi
           exit "$recovery_status"
+      - name: Test scoped Coordinator MCP relay correlation
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml --test mcp_lifecycle_relay_contract
       - name: Verify OpenClaw migration audit integrity
         shell: bash
         run: |
@@ -381,6 +385,10 @@ jobs:
               "checkpoint_process_reopen_scope": "Storage and Host readiness only; provider replay and unknown-effect settlement remain pending",
               "mcp_lifecycle_waiter_contract": "MCP-LIFE-004",
               "mcp_lifecycle_waiter_result": "passed",
+              "mcp_lifecycle_incarnation_contract": "MCP-LIFE-006..008",
+              "mcp_lifecycle_incarnation_result": "passed",
+              "mcp_lifecycle_coordinator_target": "source/node-agent-coordinator:mcp_lifecycle_relay_contract",
+              "mcp_lifecycle_incarnation_scope": "Real relay replacement and simultaneous-owner waiter isolation, actual Skills loader decoding, no-wrap refusal, and opaque Coordinator success/error echo. This does not prove real Host process replacement, remote-effect cancellation, account binding or permission revocation.",
               "routed_tool_waiter_contract": "MCP-LIFE-005",
               "routed_tool_waiter_result": "passed",
               "runner_effect_custody_contract": "OCRM-RUNNER-EFFECT-CUSTODY-v1",

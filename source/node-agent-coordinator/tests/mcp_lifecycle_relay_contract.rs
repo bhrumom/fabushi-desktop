@@ -82,3 +82,87 @@ fn host_mcp_lifecycle_relay_preserves_request_id_and_remote_failure() {
     assert_eq!(failed["ok"], false);
     assert_eq!(failed["error"], "MCP_OWNER_OFFLINE: desktop owner unavailable");
 }
+
+#[test]
+fn host_mcp_lifecycle_relay_echoes_instance_qualified_ids_on_success_and_failure() {
+    for request_id in [
+        "host-mcp-5f94563b-4e9d-44cf-8cb7-b6b8b789e441-1",
+        "host-mcp-5f94563b-4e9d-44cf-8cb7-b6b8b789e441-18446744073709551615",
+    ] {
+        let payload = json!({
+            "requestId": request_id,
+            "method": MCP_LOAD_PLUGIN_SKILLS_METHOD,
+            "args": {},
+        });
+        let parsed = parse_host_mcp_lifecycle_request(&payload).expect("opaque instance ID parses");
+        assert_eq!(parsed.request_id, request_id);
+        assert_eq!(parsed.method, MCP_LOAD_PLUGIN_SKILLS_METHOD);
+
+        let success = execute_host_mcp_lifecycle_request(&payload, |method, args| {
+            assert_eq!(method, MCP_LOAD_PLUGIN_SKILLS_METHOD);
+            assert_eq!(args, json!({}));
+            Ok(json!({"plugins": [], "currentUserId": 11}))
+        })
+        .expect("instance-qualified request executes");
+        assert_eq!(
+            success,
+            json!({
+                "requestId": request_id,
+                "ok": true,
+                "result": {"plugins": [], "currentUserId": 11},
+            })
+        );
+
+        let failure = execute_host_mcp_lifecycle_request(&payload, |method, args| {
+            assert_eq!(method, MCP_LOAD_PLUGIN_SKILLS_METHOD);
+            assert_eq!(args, json!({}));
+            Err(Failure::new("MCP_OWNER_OFFLINE", "desktop owner unavailable"))
+        })
+        .expect("failed execution still returns the opaque request ID");
+        assert_eq!(
+            failure,
+            json!({
+                "requestId": request_id,
+                "ok": false,
+                "error": "MCP_OWNER_OFFLINE: desktop owner unavailable",
+            })
+        );
+    }
+}
+
+#[test]
+fn host_mcp_lifecycle_request_id_limit_remains_256_bytes() {
+    for request_id in ["x".repeat(256), "é".repeat(128)] {
+        let payload = json!({
+            "requestId": request_id,
+            "method": MCP_LIST_CATALOG_METHOD,
+            "args": {},
+        });
+        let response = execute_host_mcp_lifecycle_request(&payload, |_, _| Ok(json!([])))
+            .expect("opaque ID at the byte limit remains accepted");
+        assert_eq!(response["requestId"], request_id);
+        assert_eq!(response["ok"], true);
+    }
+
+    for request_id in ["x".repeat(257), format!("{}x", "é".repeat(128))] {
+        let mut executed = false;
+        let denied = execute_host_mcp_lifecycle_request(
+            &json!({
+                "requestId": request_id,
+                "method": MCP_LIST_CATALOG_METHOD,
+                "args": {},
+            }),
+            |_, _| {
+                executed = true;
+                Ok(json!([]))
+            },
+        )
+        .expect_err("oversized ID must fail before reaching the executor");
+        assert_eq!(denied.code, "MCP_LIFECYCLE_RELAY_PROTOCOL_ERROR");
+        assert_eq!(
+            denied.message,
+            "Host MCP lifecycle requestId exceeds 256 bytes"
+        );
+        assert!(!executed);
+    }
+}
