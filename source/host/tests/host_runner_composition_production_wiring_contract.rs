@@ -200,7 +200,8 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         ".agents_root_dir()",
         "group_member_turn: bool",
         "state_writer: None",
-        "SandAgentState::new(sand_root, agent_id.to_string())",
+        "SandAgentState::new_with_workflow_store(",
+        "sessions.open_workflow_store(agent_id)?",
         "avatar_box_file_reader: Option<AvatarBoxFileReader>",
         "state = state.with_box_file_reader(reader)",
         "state = state.with_agent_memory_remover(Arc::new(move |memory_id|",
@@ -657,4 +658,52 @@ fn generated_agent_stream_owns_canonical_stream_attempt_runtime() {
     assert!(ATTEMPT_ADAPTER.contains(
         "runtime_for_checkpoint.is_current(generation)"
     ));
+}
+
+fn shipping_skills_wiring_matches(source: &str) -> bool {
+    let Some(production) = production_host_source(source) else { return false; };
+    let Some((_, after_start)) = production.split_once("\nfn start_routed_provider_task(") else {
+        return false;
+    };
+    let Some((turn, _)) = after_start.split_once("\nfn ") else { return false; };
+    let Some(store) = turn.find("let workflow_store = session_workers\n        .open_workflow_store(&agent_id)") else {
+        return false;
+    };
+    let Some(projection) = turn.find("let available_skill_prompts =") else { return false; };
+    let Some(prompt) = turn.find("append_budgeted_workflows_system_prompt(") else { return false; };
+    if !(store < projection && projection < prompt)
+        || !turn[projection..prompt].contains("workflow_store")
+        || !turn[projection..prompt].contains(".list()")
+        || !turn[prompt..].starts_with(
+            "append_budgeted_workflows_system_prompt(\n        &mut provider_messages,\n        Some(&workflow_location),\n        &available_skill_prompts,"
+        )
+    {
+        return false;
+    }
+    production.contains("let mcp_sand_root = match session_workers.agents_root().parent() {")
+        && production.contains("Session agents root has no SAND root parent")
+        && production.contains("production_extensions.start_mcp(\n        mcp_sand_root,")
+}
+
+#[test]
+fn shipping_skills_cache_and_prompt_use_the_bound_session_store_and_root() {
+    assert!(shipping_skills_wiring_matches(SHIPPING_HOST),
+        "actual shipping MCP root and provider skill projection must share the Session owner");
+    for wrong in [
+        SHIPPING_HOST.replacen(
+            "production_extensions.start_mcp(\n        mcp_sand_root,",
+            "production_extensions.start_mcp(\n        &app_data_dir,", 1,
+        ),
+        SHIPPING_HOST.replacen(
+            "let workflow_store = session_workers\n        .open_workflow_store(&agent_id)",
+            "let workflow_store = unbound_sessions\n        .open_workflow_store(&agent_id)", 1,
+        ),
+        SHIPPING_HOST.replacen(
+            "Some(&workflow_location),\n        &available_skill_prompts,",
+            "Some(&workflow_location),\n        &unbound_skill_prompts,", 1,
+        ),
+    ] {
+        assert!(!shipping_skills_wiring_matches(&wrong),
+            "a wrong root, unbound store or unrelated prompt projection must fail the wiring oracle");
+    }
 }

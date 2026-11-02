@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
@@ -10,6 +10,7 @@ use serde_json::Value;
 use super::legacy_live_references::remove_workflow_live_references;
 use super::plugin_skills_cache::{
     PluginAuthBlock, PluginSkillRecord, PluginSkillsCache, PluginSkillsCacheWriteIndex,
+    PluginSkillsSnapshot,
     get_plugin_skills_dir, get_plugins_root_dir, read_plugin_skills_cache,
     read_plugin_skills_snapshot, stage_plugin_skills_cache,
 };
@@ -357,6 +358,29 @@ pub trait PluginSkillsLoader: Send + Sync {
     fn load(&self) -> Result<LoadedPlugins, String>;
 }
 
+/// Read-only negative admission from the existing Plugin Skills owner. A false
+/// result is not a grant: consumers must also enforce committed eligibility and
+/// their existing publisher/account rules.
+pub trait PluginSkillsAdmissionQuery: Send + Sync {
+    fn is_denied(&self, plugin_id: &str) -> bool;
+}
+
+pub type PluginSkillsAdmissionReader = Arc<dyn PluginSkillsAdmissionQuery>;
+
+#[derive(Default)]
+struct PluginSkillsLiveAdmission {
+    denied: Mutex<BTreeMap<String, PluginAuthBlock>>,
+}
+
+impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
+    fn is_denied(&self, plugin_id: &str) -> bool {
+        self.denied
+            .lock()
+            .map(|denied| denied.contains_key(plugin_id))
+            .unwrap_or(true)
+    }
+}
+
 type SyncResult = Result<Vec<PluginSkillRecord>, String>;
 
 #[derive(Default)]
@@ -374,6 +398,7 @@ struct PendingSync {
 #[derive(Default)]
 struct ServiceState {
     disposed: bool,
+    replacement_claimed: bool,
     active: Option<Arc<SyncPass>>,
     active_thread: Option<ThreadId>,
     pending: Option<PendingSync>,
@@ -404,21 +429,80 @@ pub struct SandPluginSkillsService {
     now: Arc<dyn Fn() -> i64 + Send + Sync>,
     report_sync: Option<Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>>,
     publication: Mutex<()>,
+    admission: Arc<PluginSkillsLiveAdmission>,
     state: Mutex<ServiceState>,
     changed: Condvar,
+    #[cfg(test)]
+    test_hooks: sync_tests::ServiceTestHooks,
 }
 
 impl SandPluginSkillsService {
     pub fn new(sand_root_dir: impl Into<PathBuf>, loader: Arc<dyn PluginSkillsLoader>) -> Self {
+        Self::with_admission(
+            sand_root_dir.into(),
+            loader,
+            Arc::new(PluginSkillsLiveAdmission::default()),
+        )
+    }
+
+    fn with_admission(
+        sand_root_dir: PathBuf,
+        loader: Arc<dyn PluginSkillsLoader>,
+        admission: Arc<PluginSkillsLiveAdmission>,
+    ) -> Self {
         Self {
-            sand_root_dir: sand_root_dir.into(),
+            sand_root_dir,
             loader,
             now: Arc::new(|| chrono::Utc::now().timestamp_millis()),
             report_sync: None,
             publication: Mutex::new(()),
+            admission,
             state: Mutex::new(ServiceState::default()),
             changed: Condvar::new(),
+            #[cfg(test)]
+            test_hooks: sync_tests::ServiceTestHooks::default(),
         }
+    }
+
+    pub fn admission_reader(&self) -> PluginSkillsAdmissionReader {
+        self.admission.clone()
+    }
+
+    pub(crate) fn sand_root_dir(&self) -> &Path {
+        &self.sand_root_dir
+    }
+
+    pub(crate) fn successor_with_loader(
+        &self,
+        loader: Arc<dyn PluginSkillsLoader>,
+    ) -> Result<Self, String> {
+        self.retire_for_replacement()?;
+        Ok(Self::with_admission(
+            self.sand_root_dir.clone(),
+            loader,
+            Arc::clone(&self.admission),
+        ))
+    }
+
+    pub(crate) fn retire_for_replacement(&self) -> Result<(), String> {
+        // The predecessor's publication lock also orders committed cleanup.
+        // No successor may begin materialization before this one-shot claim.
+        let _publication = self
+            .publication
+            .lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| "plugin skills state poisoned".to_string())?;
+        if state.replacement_claimed {
+            return Err("plugin skills replacement already claimed".into());
+        }
+        state.disposed = true;
+        state.replacement_claimed = true;
+        state.pending = None;
+        self.changed.notify_all();
+        Ok(())
     }
 
     pub fn with_now(mut self, now: Arc<dyn Fn() -> i64 + Send + Sync>) -> Self {
@@ -439,9 +523,10 @@ impl SandPluginSkillsService {
     }
 
     pub fn current(&self) -> Vec<PluginSkillRecord> {
-        read_plugin_skills_snapshot(get_plugin_skills_dir(&self.sand_root_dir))
+        let records = read_plugin_skills_snapshot(get_plugin_skills_dir(&self.sand_root_dir))
             .map(|snapshot| snapshot.eligible_skills().cloned().collect())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        self.filter_live_records(records)
     }
 
     pub fn current_auth_blocked(&self) -> Vec<PluginAuthBlock> {
@@ -462,18 +547,110 @@ impl SandPluginSkillsService {
         self.changed.notify_all();
     }
 
+    fn filter_live_records(&self, mut records: Vec<PluginSkillRecord>) -> Vec<PluginSkillRecord> {
+        records.retain(|record| !self.admission.is_denied(&record.plugin_id));
+        records
+    }
+
+    fn filter_live_result(&self, result: SyncResult) -> SyncResult {
+        result.map(|records| self.filter_live_records(records))
+    }
+
+    fn import_live_refusals_if_active(
+        &self,
+        blocks: &[PluginAuthBlock],
+    ) -> Result<Option<Vec<PluginAuthBlock>>, String> {
+        let _publication = self
+            .publication
+            .lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        if self
+            .state
+            .lock()
+            .map_err(|_| "plugin skills state poisoned".to_string())?
+            .disposed
+        {
+            return Ok(None);
+        }
+        // The complete loader aggregate was validated before reaching this
+        // boundary. Never hold ServiceState while reading or changing admission.
+        let mut denied = self
+            .admission
+            .denied
+            .lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        for block in blocks {
+            denied.insert(block.plugin_id.clone(), block.clone());
+        }
+        Ok(Some(denied.values().cloned().collect()))
+    }
+
     fn publish_snapshot_if_active(
         &self,
         staged: super::plugin_skills_cache::StagedPluginSkillsCache,
-    ) -> Result<bool, String> {
-        // Lock order is publication, then the brief state check. Staging and
-        // all external callbacks stay outside both locks.
-        let _publication = self.publication.lock().expect("plugin skills publication poisoned");
-        if self.state.lock().expect("plugin skills state poisoned").disposed {
-            return Ok(false);
+        successful_ids: &HashSet<String>,
+        denied_ids: &HashSet<String>,
+    ) -> Result<Option<PluginSkillsSnapshot>, String> {
+        // This service has one pass writer. Keep rename, strict readback and
+        // positive release in one publication interval; a successor cannot be
+        // constructed until it has claimed this predecessor's same lock.
+        let _publication = self
+            .publication
+            .lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        if self
+            .state
+            .lock()
+            .map_err(|_| "plugin skills state poisoned".to_string())?
+            .disposed
+        {
+            return Ok(None);
         }
         staged.publish()?;
-        Ok(true)
+        #[cfg(test)]
+        sync_tests::pause_at(&self.test_hooks.after_rename);
+        let committed = read_plugin_skills_snapshot(get_plugin_skills_dir(&self.sand_root_dir))
+            .ok_or_else(|| "could not read committed plugin skills snapshot".to_string())?;
+        let mut live = self
+            .admission
+            .denied
+            .lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        for id in successful_ids {
+            if !denied_ids.contains(id) {
+                live.remove(id);
+            }
+        }
+        Ok(Some(committed))
+    }
+
+    fn prune_committed_if_current(
+        &self,
+        listed: &[ListedCacheKey],
+        retained_paths: &[String],
+    ) -> Result<(), String> {
+        let _publication = self
+            .publication
+            .lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        if self
+            .state
+            .lock()
+            .map_err(|_| "plugin skills state poisoned".to_string())?
+            .replacement_claimed
+        {
+            return Ok(());
+        }
+        // Plain dispose does not revoke cleanup from an already committed pass.
+        // Drop state before pure filesystem work; a replacement must wait for P.
+        #[cfg(test)]
+        sync_tests::pause_at(&self.test_hooks.prune_locked);
+        prune_uninstalled_plugin_dirs(
+            &get_plugins_root_dir(&self.sand_root_dir).join("cache"),
+            listed,
+            retained_paths,
+        );
+        Ok(())
     }
 
     pub fn sync(&self, trigger: &str) -> SyncResult {
@@ -511,7 +688,10 @@ impl SandPluginSkillsService {
                 .expect("plugin skills pass poisoned")
                 .clone();
             if let Some(result) = result {
-                return result;
+                drop(state);
+                #[cfg(test)]
+                sync_tests::pause_at(&self.test_hooks.coalesced_result);
+                return self.filter_live_result(result);
             }
             if state.disposed {
                 drop(state);
@@ -546,7 +726,7 @@ impl SandPluginSkillsService {
         let result = self.run_pass(trigger);
         self.complete_pass(&guard.pass, result.clone());
         guard.completed = true;
-        result
+        self.filter_live_result(result)
     }
 
     fn complete_pass(&self, pass: &Arc<SyncPass>, result: SyncResult) {
@@ -584,14 +764,9 @@ impl SandPluginSkillsService {
                 return Err(error);
             }
         };
-        if self
-            .state
-            .lock()
-            .expect("plugin skills state poisoned")
-            .disposed
-        {
+        let Some(live_blocks) = self.import_live_refusals_if_active(&loaded.auth_blocked)? else {
             return Ok(self.current());
-        }
+        };
         let cache_dir = get_plugin_skills_dir(&self.sand_root_dir);
         let previous = read_plugin_skills_snapshot(&cache_dir);
         let previous_records = previous
@@ -616,8 +791,9 @@ impl SandPluginSkillsService {
             .filter_map(|plugin| plugin_db_id(&plugin.identifier).map(str::to_string))
             .collect::<HashSet<_>>();
 
-        // Current denial wins over success. Prior canonical denials survive a
-        // transient failure only while the plugin is still authoritatively listed.
+        // Current denial wins over success. Retained live facts also constrain
+        // fallback when a prior failed publication left the disk cache unchanged.
+        // Only listed, unresolved denials belong in the new committed snapshot.
         let mut denied = HashSet::new();
         let mut auth_blocked = Vec::new();
         for block in &loaded.auth_blocked {
@@ -625,7 +801,7 @@ impl SandPluginSkillsService {
                 auth_blocked.push(block.clone());
             }
         }
-        for block in previous_blocks {
+        for block in previous_blocks.iter().chain(live_blocks.iter()) {
             if listed.contains(&block.plugin_id)
                 && !loaded_ids.contains(&block.plugin_id)
                 && denied.insert(block.plugin_id.clone())
@@ -667,12 +843,12 @@ impl SandPluginSkillsService {
         // Sample the callback before the publication fence. It may reenter or
         // dispose the service; no callback runs while publication is locked.
         let duration_ms = (self.now)().saturating_sub(started);
-        if !self.publish_snapshot_if_active(staged)? {
+        let Some(committed) = self.publish_snapshot_if_active(staged, &loaded_ids, &denied)? else {
             return Ok(self.current());
-        }
-        let committed = read_plugin_skills_snapshot(&cache_dir)
-            .ok_or_else(|| "could not read committed plugin skills snapshot".to_string())?;
+        };
         let records = committed.eligible_skills().cloned().collect::<Vec<_>>();
+        #[cfg(test)]
+        sync_tests::pause_at(&self.test_hooks.after_commit);
         // A partial materialization may still publish denials or safe fallback,
         // but cannot prove that old materialized directories are uninstalled.
         if listed.is_subset(&loaded_ids) && denied.is_empty() {
@@ -693,11 +869,7 @@ impl SandPluginSkillsService {
                         .map(|plugin| plugin.install_path.to_string_lossy().into_owned()),
                 )
                 .collect::<Vec<_>>();
-            prune_uninstalled_plugin_dirs(
-                &get_plugins_root_dir(&self.sand_root_dir).join("cache"),
-                &loaded.listed_cache_keys,
-                &retained_paths,
-            );
+            self.prune_committed_if_current(&loaded.listed_cache_keys, &retained_paths)?;
         }
         if let Some(report) = &self.report_sync {
             let changed = previous.is_none()

@@ -15765,8 +15765,16 @@ fn main() {
         box_status_loader,
     ));
     let box_store_idle_runtime = Arc::clone(&transcript_manager);
+    let mcp_sand_root = match session_workers.agents_root().parent() {
+        Some(root) => root,
+        None => {
+            host_lifecycle.fail();
+            eprintln!("failed to start production MCP extension: Session agents root has no SAND root parent");
+            return;
+        }
+    };
     let mcp_service = match production_extensions.start_mcp(
-        &app_data_dir,
+        mcp_sand_root,
         Arc::clone(&mcp_lifecycle_relay),
         mcp_manager_backend,
     ) {

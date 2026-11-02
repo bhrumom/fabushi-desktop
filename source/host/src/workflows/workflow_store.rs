@@ -15,6 +15,7 @@ use crate::extensions::managed_setup::managed_skills_cache::{
     ManagedSkill, ManagedSkillsCache, get_managed_skill_file_path,
     get_managed_skills_cache_path, get_managed_skills_dir, read_managed_skills_cache,
 };
+use crate::extensions::mcp::plugin_skills::PluginSkillsAdmissionReader;
 use crate::extensions::mcp::plugin_skills_cache::{
     PluginSkillRecord, PluginSkillsCache, PluginSkillsSnapshot, get_plugin_skills_cache_path,
     get_plugin_skills_dir, read_plugin_skills_snapshot,
@@ -97,6 +98,7 @@ pub struct FileWorkflowStore {
     managed_index_cache: StatKeyedParseCache<Option<ManagedSkillsCache>>,
     plugin_index_cache: StatKeyedParseCache<Option<PluginSkillsSnapshot>>,
     plugin_parse_cache: StatKeyedParseCache<Option<PluginSkillFacts>>,
+    plugin_skills_admission: Option<PluginSkillsAdmissionReader>,
 }
 
 impl FileWorkflowStore {
@@ -137,10 +139,25 @@ impl FileWorkflowStore {
             managed_index_cache: StatKeyedParseCache::default(),
             plugin_index_cache: StatKeyedParseCache::default(),
             plugin_parse_cache: StatKeyedParseCache::default(),
+            plugin_skills_admission: None,
             agent_dir,
         };
         value.migrate_legacy_per_agent_workflows();
         value
+    }
+
+    pub fn with_plugin_skills_admission(
+        mut self,
+        reader: PluginSkillsAdmissionReader,
+    ) -> Self {
+        self.plugin_skills_admission = Some(reader);
+        self
+    }
+
+    fn plugin_is_denied(&self, plugin_id: &str) -> bool {
+        self.plugin_skills_admission
+            .as_ref()
+            .is_some_and(|reader| reader.is_denied(plugin_id))
     }
 
     pub fn get_location(&self) -> &Path {
@@ -324,8 +341,16 @@ impl FileWorkflowStore {
         record: PluginSkillRecord,
         index: &PluginSkillsCache,
     ) -> Option<WorkflowRecord> {
+        if self.plugin_is_denied(&record.plugin_id) {
+            return None;
+        }
         let path = PathBuf::from(&record.file_path);
         let facts = self.read_plugin_skill_facts(&path)?;
+        // The facts can be a warm parse-cache hit. Admission is live owner
+        // state, so neither this cache nor the index cache can capture it.
+        if self.plugin_is_denied(&record.plugin_id) {
+            return None;
+        }
         let mut workflow = self.base_workflow(
             record.id,
             if facts.name.is_empty() {
@@ -366,6 +391,9 @@ impl FileWorkflowStore {
     fn plugin_skill_record(&self, id: &str) -> Option<(PluginSkillRecord, PluginSkillsCache)> {
         let index = self.read_plugin_skills_index()?;
         let record = index.eligible_skills().find(|record| record.id == id)?.clone();
+        if self.plugin_is_denied(&record.plugin_id) {
+            return None;
+        }
         Some((record, index.index))
     }
 
@@ -562,6 +590,9 @@ impl FileWorkflowStore {
             return Ok(None);
         };
         let encoded = serialize_workflow_file(spec, &parsed.data);
+        if self.plugin_is_denied(&record.plugin_id) {
+            return Ok(None);
+        }
         self.plugin_skills_dir_watcher
             .write_file_atomic(&record.file_path, encoded.as_bytes())
             .map_err(|error| error.to_string())?;

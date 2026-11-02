@@ -190,3 +190,200 @@ fn owns_profile_settings_channel_and_avatar_mutations() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+mod live_admission {
+    use super::*;
+    use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController;
+    use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
+        ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills::{
+        LoadedPlugins, PluginSkillsLoader, SandPluginSkillsService,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        PluginAuthBlock, get_plugin_skills_cache_path, get_plugin_skills_dir,
+    };
+    use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+    use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+    use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+    use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
+    use mahayana_host_runtime::workflows::workflow_library::LEGACY_WORKFLOW_FILENAME;
+    use mahayana_host_runtime::workflows::workflow_store::{FileWorkflowStore, WorkflowRecord};
+
+    struct Loader(Mutex<LoadedPlugins>);
+
+    impl PluginSkillsLoader for Loader {
+        fn load(&self) -> Result<LoadedPlugins, String> {
+            Ok(self.0.lock().unwrap().clone())
+        }
+    }
+
+    fn assert_records(records: Vec<WorkflowRecord>, private_allowed: bool) {
+        assert_eq!(records.iter().any(|row| row.id == "plugin-9-private"), private_allowed);
+        assert!(records.iter().any(|row| row.id == "plugin-10-allowed"));
+        assert!(records.iter().any(|row| row.id == "managed-state-control"));
+        assert!(records.iter().any(|row| row.name == "Retained callback workflow"));
+    }
+
+    #[test]
+    fn supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default() {
+        let root = temp_root("supplied-store-no-migration");
+        let agent_id = "agent-supplied";
+        let agent_dir = root.join("agents").join(agent_id);
+        let supplied = FileWorkflowStore::new(&agent_dir, root.join("workflows"));
+        // A later constructor must not perform a second migration while injecting
+        // this already-opened store. The legacy source is deliberately created
+        // only after the caller opened the supplied store.
+        let legacy = agent_dir.join("workflows/legacy-after-open");
+        fs::create_dir_all(&legacy).unwrap();
+        let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
+        let raw = "---\nname: Legacy after open\n---\nLEGACY_BODY\n";
+        fs::write(&legacy_file, raw).unwrap();
+        let supplied_state = SandAgentState::new_with_workflow_store(&root, agent_id, supplied).unwrap();
+        assert_eq!(supplied_state.agent_dir(), agent_dir.as_path());
+        assert_eq!(fs::read_to_string(&legacy_file).unwrap(), raw);
+        assert!(!root.join("workflows/legacy-after-open/SKILL.md").exists());
+        assert!(!supplied_state.workflow_records().iter().any(|row| row.id == "legacy-after-open"));
+
+        let default_state = SandAgentState::new(&root, agent_id).unwrap();
+        assert!(!legacy.exists(), "the original constructor retains legacy migration");
+        assert_eq!(fs::read_to_string(root.join("workflows/legacy-after-open/SKILL.md")).unwrap(), raw);
+        assert!(default_state.workflow_records().iter().any(|row| row.id == "legacy-after-open"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration() {
+        let root = temp_root("supplied-store-invalid-id");
+        for (index, id) in ["", " agent", "agent ", "../escape", "a/b", "a\\b", ".", "..", "a\0b"]
+            .into_iter().enumerate()
+        {
+            let invalid_root = root.join(format!("invalid-{index}"));
+            assert!(!invalid_root.exists());
+            assert!(SandAgentState::new(&invalid_root, id).is_err(), "default accepted {id:?}");
+            assert!(!invalid_root.exists());
+            let caller_root = root.join(format!("caller-{index}"));
+            let supplied = FileWorkflowStore::new(caller_root.join("agents/valid"), caller_root.join("workflows"));
+            assert!(SandAgentState::new_with_workflow_store(&invalid_root, id, supplied).is_err(),
+                "supplied-store constructor accepted {id:?}");
+            assert!(!invalid_root.exists(), "invalid owned root was created for {id:?}");
+        }
+        let invalid_root = root.join("invalid-with-migration-source");
+        let legacy = invalid_root.join("agents/ invalid /workflows/untouched-invalid");
+        fs::create_dir_all(&legacy).unwrap();
+        let legacy_file = legacy.join(LEGACY_WORKFLOW_FILENAME);
+        let raw = "---\nname: Untouched invalid\n---\nDO_NOT_MIGRATE\n";
+        fs::write(&legacy_file, raw).unwrap();
+        let caller_root = root.join("independent-caller");
+        let supplied = FileWorkflowStore::new(caller_root.join("agents/valid"), caller_root.join("workflows"));
+        assert!(SandAgentState::new(&invalid_root, " invalid ").is_err());
+        assert!(SandAgentState::new_with_workflow_store(&invalid_root, " invalid ", supplied).is_err());
+        assert_eq!(fs::read_to_string(&legacy_file).unwrap(), raw,
+            "invalid IDs must be refused before a default-store migration can move this file");
+        assert!(!invalid_root.join("workflows/untouched-invalid").exists());
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces() {
+        let root = temp_root("host-runner-live-admission");
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let session = SandAgentSessionStore::new(Arc::clone(&workers));
+        let agent = session.create_session(None, "user", None).unwrap();
+        let supplied_state = SandAgentState::new_with_workflow_store(
+            &root, &agent.id, workers.open_workflow_store(&agent.id).unwrap(),
+        ).unwrap();
+        let controller = Arc::new(SandLocalToolPermissionController::production(Arc::new(
+            SettingsService::new(root.join("settings.json")),
+        )));
+        let composition = HostRunnerComposition::production(controller, Arc::clone(&workers));
+        let retained = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &agent.id, false, true, None,
+        ).unwrap();
+        let retained_writer = retained.state_writer.unwrap();
+        let group = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), "../must-not-open", true, true, None,
+        ).unwrap();
+        assert!(group.state_writer.is_none());
+        assert!(group.multitask_todo_state.is_none());
+
+        let mut plugins = Vec::new();
+        let mut skill_files = Vec::new();
+        for (id, name) in [("9", "Private"), ("10", "Allowed")] {
+            let install = root.join(format!("plugins/cache/market/p{id}/v1"));
+            let relative = format!("skills/{}/SKILL.md", name.to_lowercase());
+            let file = install.join(&relative);
+            fs::create_dir_all(file.parent().unwrap()).unwrap();
+            fs::write(&file, format!("---\nname: {name}\n---\n{id}_ORIGINAL_BODY\n")).unwrap();
+            plugins.push(json!({
+                "identifier":{"source":"cursor-third-party","name":format!("p{id}"),
+                    "pluginDbId":id,"version":"v1"},
+                "installPath":install,"skills":[{"name":name,"path":relative}]
+            }));
+            skill_files.push(file);
+        }
+        let published: LoadedPlugins = serde_json::from_value(json!({
+            "plugins":plugins,"authBlocked":[],"listedPluginIds":["9","10"],
+            "listedCacheKeys":[{"marketplaceSlug":"market","pluginId":"p9"},
+                {"marketplaceSlug":"market","pluginId":"p10"}],
+            "publisherFacts":{"9":{"publisherUserId":12},"10":{"publisherUserId":12}},
+            "currentUserId":12
+        })).unwrap();
+        let loader = Arc::new(Loader(Mutex::new(published.clone())));
+        let service = SandPluginSkillsService::new(&root, loader.clone());
+        assert_eq!(service.sync("seed").unwrap().len(), 2);
+        write_managed_skills_cache(get_managed_skills_dir(&root), &[ManagedSkill {
+            id: "managed-state-control".into(), name: "Managed state control".into(),
+            description: String::new(), body: "MANAGED_STATE_BODY".into(),
+        }], 1_000.0).unwrap();
+        let created = retained_writer.write_workflow(None, "Retained callback workflow",
+            Some("Session owned mutation"), "CALLBACK_ORIGINAL_BODY");
+        assert!(created.ok, "{}", created.message);
+        let callback_workflow = session.list_agent_workflows(&agent.id).unwrap().into_iter()
+            .find(|row| row.name == "Retained callback workflow").unwrap();
+        assert_records(supplied_state.workflow_records(), true);
+        assert_records(retained_writer.workflow_records(), true);
+        workers.bind_plugin_skills_admission(service.admission_reader()).unwrap();
+
+        let cache_path = get_plugin_skills_cache_path(get_plugin_skills_dir(&root));
+        let cache_before = fs::read(&cache_path).unwrap();
+        let private_before = fs::read(&skill_files[0]).unwrap();
+        let mut refusal = published.clone();
+        refusal.plugins.retain(|plugin| plugin.identifier.plugin_db_id.as_deref() != Some("9"));
+        refusal.plugins[0].install_path = std::path::PathBuf::from("relative/invalid-stage");
+        refusal.auth_blocked = vec![PluginAuthBlock {
+            plugin_id: "9".into(), plugin_name: "Private".into(), marketplace_name: None,
+        }];
+        *loader.0.lock().unwrap() = refusal;
+        assert_eq!(service.sync("stage-failure").unwrap_err(), "invalid plugin skills cache snapshot");
+        assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
+        assert_records(supplied_state.workflow_records(), false);
+        assert_records(retained_writer.workflow_records(), false);
+        let reopened = composition.compose_turn_state_surfaces(
+            Arc::clone(&workers), &agent.id, false, true, None,
+        ).unwrap();
+        assert_records(reopened.state_writer.unwrap().workflow_records(), false);
+        assert!(!supplied_state.write_workflow(Some("plugin-9-private"), "Forbidden", None, "MUST_NOT_WRITE").ok);
+        // Session's existing update API returns its refreshed list even when no
+        // record is editable. Its observable safety result is unchanged bytes.
+        let _ = retained_writer.write_workflow(Some("plugin-9-private"), "Forbidden", None, "MUST_NOT_WRITE");
+        assert_eq!(fs::read(&skill_files[0]).unwrap(), private_before);
+
+        *loader.0.lock().unwrap() = published;
+        assert_eq!(service.sync("fresh-success").unwrap().len(), 2);
+        assert_records(supplied_state.workflow_records(), true);
+        assert_records(retained_writer.workflow_records(), true);
+
+        let callback_before = fs::read(&callback_workflow.file_path).unwrap();
+        let admission = workers.read_session_work_admission(&agent.id).unwrap().unwrap();
+        workers.transition_session_work_archive(&agent.id, &format!("agent:{}:main", agent.id),
+            &agent.id, Some(&admission.lifecycle_revision), true, Some("contract"),
+            Some("retained-state-fence"), 1_000.0).unwrap();
+        let refused = retained_writer.write_workflow(Some(&callback_workflow.id),
+            "Retained callback workflow", None, "ARCHIVED_MUST_NOT_WRITE");
+        assert!(!refused.ok, "Runner must retain the Session mutation fence");
+        assert_eq!(fs::read(&callback_workflow.file_path).unwrap(), callback_before);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+}

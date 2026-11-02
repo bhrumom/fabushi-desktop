@@ -3,7 +3,7 @@
 Contract: `OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1`  
 Status: implementation in progress; exact-H evidence and ecosystem acceptance pending  
 Discovery base: `3aa679586d76e446f76a1c94700ff7abab623d42`  
-Current integration base: `2391dc04cd118f9aa5e809c8198690182b21b6ec`  
+Current integration base: `febef8ba077fd667ce2c06f4b0cdd3edd1570cde`  
 Fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`
 
 ## Problem, flow and ownership
@@ -77,10 +77,19 @@ the same committed-snapshot admission helper.
   mutex, followed by a brief disposed check under the existing state mutex.
   If dispose wins, discard only the owned staged file, do not rename, prune or
   report successful change, and return retained eligible current records.
-  If publication wins, the committed pass may finish reporting after dispose;
-  callbacks and pruning remain outside state/publication locks to allow
-  reentrant callbacks. Staging/publication error preserves the prior cache and
-  reports failure through the existing Result; no success event or pruning.
+  If publication wins, the committed pass may finish reporting after dispose.
+  Reporting and external callbacks remain outside state/publication locks to
+  allow reentry. Pure filesystem pruning reacquires the old service publication
+  lock, briefly checks its one-shot replacement claim under state, drops state,
+  and retains publication through the prune. If replacement claimed first,
+  skip the old prune; if prune entered first, successor claim/construction waits.
+  Plain dispose without a successor still permits this already-committed prune.
+  This narrow ordering supports same-owner handoff without allowing stale
+  cleanup to delete a successor's materialization. No state/admission lock or
+  external callback spans cleanup I/O. Staging/rename error preserves the prior
+  cache and reports failure through the existing Result; no success event or
+  pruning. Failed strict readback after rename retains live refusals, reports
+  failure and does not prune; it does not promise restoration of old bytes.
 - PS-07: Host materialization disables SDK pruning before Rust commits. Honor
   explicit `pruneOldVersions: false` at both SDK pruning sites while preserving
   other callers' default behavior. Rust prunes only after a committed valid
@@ -260,3 +269,286 @@ inventory and plugin dossier. Source review at fixed U covers plugin-skill
 enablement/loading, root contributions, configuration activation and uninstall
 cleanup; exact blob identities and read limits stay in the existing dossier.
 No historical reading fact, inventory identity or global flag is promoted.
+
+## Live admission amendment — OCRM-PLUGIN-LIVE-ADMISSION-v1
+
+Status: implementation in progress under the approved v2 contract and exact-path
+authorization. The prior shared gate has passed; this batch still requires its
+own independent review and exact-H Actions evidence. Implementation base:
+`febef8ba077fd667ce2c06f4b0cdd3edd1570cde`; fixed U:
+`1440bb1771372334bea23d7642bb52deb7db1845`. Design authoring base was
+`f2f2ba00d66b3db79f9cd46690b3ce3737fe296b`; that old source is not the
+implementation input. The incoming PS-IDENTITY-01..03 contract, its controls
+and its currentUserId reader/changed-report behavior are preserved in full.
+The live refusal reader adds a negative admission condition; it does not
+replace publisher identity or infer a refusal from unknown publisher identity.
+Parent-H results do not verify this live-admission implementation.
+
+### Problem and user behavior
+
+At this implementation base, a valid newly observed canonical refusal is local to
+`SandPluginSkillsService::run_pass`. A stage or rename error preserves the
+old disk snapshot, but also loses that refusal. `current()` and existing or
+new workflow stores can then serve the old eligible plugin skill. A later
+partial materialization can republish the same old fallback. This is a live
+admission implementation gap, not a reason to weaken PS-06's preservation of
+old cache bytes and materialized files.
+
+There is also a concrete production root mismatch: shipping `start_mcp`
+receives `default_unified_app_data_dir()`, whereas the SDK materializer and
+Session workflow stores use the configured SAND root. Desktop bootstrap
+intentionally permits different `FABUSHI_APP_DATA` and `SAND_DATA_ROOT` paths.
+This batch must bind MCP publication and its actual consumers to the existing
+Session SAND root; it must not merge the two global data directories.
+
+After the existing Plugin Skills owner accepts a fully validated canonical
+refusal, subsequent skill-admission reads exclude that plugin even if cache
+publication fails. A fresh successful materialization may lift the refusal
+only after its corresponding valid snapshot commits. Existing data and
+unrelated user, managed and allowed plugin workflows remain available under
+their existing rules.
+
+### Requirements
+
+- **PS-LIVE-01 — One owner and observation boundary.** Keep canonical refusal
+  state private to `SandPluginSkillsService`. Import the validated current
+  `auth_blocked` facts before any fallible cache serialization, staging or
+  rename. Reject malformed `LoadedPlugins` as before; do not manufacture a
+  canonical refusal from a display name, slug, directory, unclassified error,
+  unavailable listing, or merely absent plugin. The import has one ordering
+  point against the existing publication/dispose boundary. A pass already
+  retired at that boundary cannot add a new fact.
+- **PS-LIVE-02 — Failure persistence.** A successfully imported refusal
+  survives load, stage and publication failures, unresolved partial passes,
+  coalesced returns and disposal. Readers retained after disposal still read
+  the same refusal state. Publication failures still return the existing
+  error, preserve old cache/file bytes, emit no publication-success event and
+  perform no prune. Raw cache/status/reference metadata remains diagnostic
+  data with its existing shape, not live admission authority.
+- **PS-LIVE-03 — Positive release.** A current refusal wins over simultaneous
+  fresh success. Otherwise only a fresh successful materialization of the
+  exact canonical plugin ID, including a success with zero skills, may lift
+  its live refusal, and only after the corresponding staged snapshot is
+  renamed and read back as valid under the publication boundary. A failed
+  fresh-success publication cannot reopen the old snapshot. Retained live
+  refusals participate in later unresolved reconciliation; they are not lost
+  merely because the old disk cache lacks them. PS-03's committed absent-ID
+  retirement remains unchanged. This amendment does not infer a new live
+  uninstall/revoke fact from absence alone.
+- **PS-LIVE-04 — Read-only sharing.** Expose a read-only admission reader from
+  the same owner. Every actual admission combines committed snapshot
+  eligibility with that reader. Consumers hold the reader, not a copied
+  denial table. `FileWorkflowStore` checks it on every plugin list/get/update
+  admission, including parse-cache hits, before reading or modifying skill
+  content. `current()` and every successful `sync` return, including a
+  completed coalesced pass, apply the same check. A poisoned admission or
+  forwarding-reader lock fails closed for plugin admission; it does not
+  silently become an empty denial set. Unrelated workflow families retain
+  their current behavior.
+- **PS-LIVE-05 — Session and Runner binding.** `ProductionSessionWorkers`
+  owns only a shared forwarding reader slot; it stores no refusal policy.
+  Every store it opens, including an instance created before the first MCP
+  binding, uses that same slot. Session list/get/update, run-now, reference
+  expansion and the next provider skill prompt therefore consume the same
+  admission. `HostRunnerComposition::compose_turn_state_surfaces` passes the
+  actual Session-opened workflow store directly to
+  `SandAgentState::new_with_workflow_store`; it must not first construct and
+  discard a default store, whose constructor performs legacy migration.
+  Runner workflow/reference/review reads cannot fall back to an independent
+  store. Existing `new` and agent-ID validation ordering remain; mutations
+  remain routed through Session.
+- **PS-LIVE-06 — Actual root identity.** Shipping startup passes the parent
+  of the actual `session_workers.agents_root()` to `start_mcp`. Missing parent
+  is an explicit Host startup error through its existing fail/log/return
+  path, without a fallback to app-data or the current directory. MCP cache,
+  prune, publication/reference and legacy-sweep paths use this SAND root,
+  matching SDK materialization and Session plugin reads. When a Session is
+  registered, `start_mcp` checks its supplied root against that actual
+  Session's root before retiring or constructing a service, starting polling
+  or changing a binding. Mismatch is a diagnostic error preserving the old
+  owner. Use the existing configured `Path` component semantics only: no
+  new `canonicalize`, filesystem creation, symlink traversal, case folding,
+  or guessed alias equivalence. This repairs an inconsistent producer/
+  consumer configuration; it does not establish arbitrary Session root
+  switching or filesystem alias equivalence.
+- **PS-LIVE-07 — Same-root stop/start.** Preserve legitimate MCP stop/start
+  within the same Host and Session lifetime. Host composition retains the
+  latest service `Arc` after `stop_mcp` takes its runtime. Before a replacement
+  can start, a crate-internal one-shot successor operation permanently fences
+  the predecessor through publication then state, and inherits its same
+  private admission `Arc`. A predecessor cannot fork two successor writers.
+  Reader binding to that same `Arc` is idempotent. Old loader/stage work and
+  delayed old-runtime stop cannot add refusals, rename a snapshot, clear the
+  successor's refusals, or dispose its local lifecycle state. Old committed
+  cleanup orders against handoff under old publication: briefly read the
+  one-shot replacement claim, drop state, then either skip superseded prune
+  or retain publication until the pure filesystem prune ends. Ordinary
+  dispose without a replacement claim keeps valid committed cleanup;
+  reporting remains outside publication and may finish after handoff. The
+  original PS-06 clause is narrowed consistently above.
+- **PS-LIVE-08 — Unbound startup and different roots.** Preserve MCP startup
+  before Session registration. Once a Session is registered it must bind to
+  the already-current service reader before that registration succeeds; both
+  startup orders must be serialized so neither can miss the other. If there
+  has never been a registered Session consumer in this Host, a stopped MCP
+  runtime may still restart with a different configured root: permanently
+  fence the old service and create a separate reader for the new root.
+  Never carry a denial-release operation from one root into another root's
+  retained reader. A later Session must match the current root. This is one
+  current Host binding, not a map of roots or a new permission registry.
+  A registered Session cannot be silently unbound or rebound to an unrelated
+  service by this operation; broader Session/account/root migration remains
+  open.
+- **PS-LIVE-09 — Failure-safe handoff.** Check root and known lifecycle
+  preconditions before retiring the old service. Once a successor has been
+  constructed, retain its `Arc` in Host before any later fallible Session
+  binding or startup action; a failed startup cannot leave Host pointing at
+  an already-consumed predecessor and make the next attempt fork or lose the
+  refusal state. Do not start polling after a binding error. Failed successor
+  retirement/one-shot claim does not create another writer. Pending old
+  callers wake under the existing dispose rules and return live-filtered
+  retained records; old runtime stop remains idempotent. Preserve existing
+  active-pass completion, panic recovery, recursive-sync refusal and real
+  polling shutdown behavior.
+- **PS-LIVE-10 — Lock and callback boundaries.** Consumer reads never acquire
+  `ServiceState` or the publication lock. A forwarding slot clones its
+  delegate and releases its lock before invoking the query. Service writers
+  take publication, briefly inspect state, release state, then update
+  admission; no state/admission lock covers I/O or a callback. Positive
+  release is inside the final publication transaction, after strict valid
+  readback; staging remains outside those locks. Correspondence to this pass
+  relies on the existing single production writer, that P interval, and a
+  successor being constructed only after predecessor P is claimed. It is not
+  a cross-process CAS or protection from arbitrary external file writers.
+  Missing/malformed readback does not release a refusal. The old pure prune
+  may hold P as PS-06 specifies; it holds neither state nor admission.
+  State-to-pass-result ordering stays unchanged. Preserve the existing explicit `drop(state)` before disposed
+  `current()` returns; those releases already exist and are not a current
+  deadlock defect. Host binding synchronization must have no reverse edge
+  into Session/MCP lifecycle slots and must release before callbacks, poll
+  startup, joins, reporting or cleanup. Do not introduce a public setter,
+  writer generation service, second scheduler or permission truth.
+
+### Minimum shared interface
+
+The frozen read surface is `PluginSkillsAdmissionQuery::is_denied(&self,
+plugin_id: &str) -> bool`, shared as `Arc<dyn PluginSkillsAdmissionQuery>`.
+`SandPluginSkillsService::admission_reader()` returns its stable read-only
+handle. Its mutable implementation remains private. Session binds this handle
+through an idempotent `bind_plugin_skills_admission` operation and gives its
+forwarding reader to `FileWorkflowStore::with_plugin_skills_admission`.
+`SandAgentState::new_with_workflow_store(sand_root: impl Into<PathBuf>,
+agent_id: impl Into<String>, workflows: FileWorkflowStore) -> Result<Self,
+String>` directly accepts the Session-opened store used by production
+composition. Existing `new` keeps its original default store behavior; both
+constructors retain the original agent-ID validation before owned path/store
+construction or default-store migration. These are admission/routing
+interfaces, not grants or a new disk format.
+
+The restricted service handoff is one-shot and crate-internal. Same-root
+successor construction preserves the exact reader. Unbound different-root
+replacement only fences the old service and creates a new owner-local reader;
+it never shares writable refusal state across the two roots. Host keeps only
+the current service and the actual registered Session reference needed to
+compose them. The integrator owns the exact Host binding lock implementation
+and the minimal shipping-main hunk; no worker modifies a shared main file.
+
+### Required verification and acceptance
+
+Run only in GitHub Actions after freezing the integrated exact H. The tests
+must call real service/store/Session/composition entrypoints and use channels
+or existing production-used control callbacks for ordering; no sleep oracle
+or duplicate test-only reconciliation loop is acceptable.
+
+1. Seed allowed canonical plugin 9 and unrelated plugin 10. Introduce a
+   validated refusal for 9, force a real stage error and separately a real
+   rename error, and prove old cache/files stay byte-identical while service,
+   old/warm and new workflow stores refuse 9 and retain the controls.
+2. Retain the existing no-new-refusal publication-failure control unchanged:
+   the old allowed snapshot remains available. Invalid loader data must not
+   fabricate a new refusal. Preserve strict/legacy cache and canonical ID/
+   slug controls, user/managed workflows and plugin edit permissions.
+3. Exercise refusal plus publication failure, listing failure, unresolved
+   partial success, fresh success whose publication fails, then fresh success
+   whose valid snapshot commits. Only the final step lifts the live refusal;
+   zero-skill success and current-denial-wins remain independently covered.
+4. Prove a genuine stable parse-cache hit with controlled old file metadata
+   or an actual cache clock, then verify the live reader still denies it.
+   Merely reading a newly written file twice is insufficient because of the
+   existing racy-mtime non-cache window.
+5. Use actual `ProductionSessionWorkers`, `SandAgentSessionStore`, run-now,
+   reference expansion and `HostRunnerComposition` state surfaces. Verify
+   refused content/path is absent after failure, and unaffected user/managed/
+   allowed plugin content remains. Feed the actual Session store projection
+   into the production `append_budgeted_workflows_system_prompt` and inspect
+   its real `ProviderMessage` output: the refused skill path/description must
+   be absent and the unaffected controls present. Run-now/reference tests
+   separately inspect recipe bodies. Add a bounded shipping-source assertion
+   that the real turn calls this builder with that Session store; it is a
+   wiring supplement, not a substitute for the prompt-output assertion.
+6. Construct distinct app-data and SAND roots as existing desktop bootstrap
+   does. Prove the selected MCP owner writes/reads/prunes/publishes/sweeps
+   against the Session/SDK root and never treats the other root as that
+   producer's cache. A mismatched registered Session root fails before old
+   service retirement, new polling or reader binding. Cover the missing
+   parent error without guessing a fallback or physical alias.
+7. Cover same-root stop/start after a failed-refusal publication, an old
+   loader returning after handoff, an old staged success attempting late
+   rename/positive release, delayed old-runtime stop, one-shot fork refusal,
+   retry after binding/start failure, and both Session/MCP startup orders.
+   Readers opened before binding or before replacement remain effective.
+   Pause an old real pass after valid commit and before cleanup, let its
+   successor materialize and publish a new directory, then release old cleanup:
+   the successor directory and actual consumer content must survive while
+   the old report still completes. An isolated direct invocation of the real
+   old pruner with the old keys/paths must delete an equivalent new directory,
+   proving the fixture detects the defect. In a separate plain-dispose control
+   with no successor, old committed cleanup must still delete an obsolete
+   sentinel. Also order a real prune before handoff and prove the successor
+   is constructed only after that protected prune ends. Use private bounded
+   barriers around the production-used cleanup operation, not a copied loop;
+   prove state/admission are not held during its filesystem work.
+8. Without any registered Session consumer, replace root A with root B and
+   prove a success on B cannot clear a refusal held by an old A reader. A
+   later Session for B binds; a Session for A is rejected without changing
+   current B. No root registry or union of denials is introduced.
+9. Keep dispose/coalescing, late-return, panic, recursive callback and real
+   poll-join controls. Prove any newly added Host binding lock is released
+   before external startup/cleanup callbacks, and that consumer reads cannot
+   reenter `ServiceState` through the reader path.
+
+Acceptance requires complete candidate review, the affected shipping Host
+compile and selected actual owner contracts on the same H, plus the required
+scoped source authority/coverage. Existing parent-H green results, this spec,
+source-only assertions or mocks do not establish this batch as verified.
+
+### Migration, observability and remaining scope
+
+There is no cache schema change, deletion of old cache bytes, or persisted
+permission grant. A corrected successful sync writes the existing canonical
+snapshot in the actual Session/SDK root. Any cache under the previous wrong
+app-data path is left intact as historical data; it must not be merged or
+promoted into the SAND root's authority on this batch's behalf. Current sync
+errors and Host startup diagnostics remain the observable failure surfaces.
+Rollback to a binary without live admission/root wiring loses this protection
+and is not permission acceptance.
+
+This batch does not durably preserve a refusal through process loss when disk
+publication failed, complete post-response account principal invalidation, add live uninstall
+facts, revoke already captured prompts/records or in-flight tool effects,
+complete MCP OAuth/per-tool grants, repair manual sync/status dispatch, or
+prove UI invalidation, direct file-access sandboxing or real ecosystem
+compatibility. Legitimate in-process same-root stop/start is included above;
+it must not be dismissed as an excluded process-restart case. Full OCRM
+source/implementation/platform/ecosystem gates remain unchanged.
+
+### Source provenance
+
+Reuse the unchanged fixed-U review in `dossiers/snapshot-skills-scoped.md`
+and its existing responsibility mapping; do not relabel that work as new
+full-source reading. This amendment is motivated by exact target-source
+owner/consumer/lifecycle reads at the authoring base, including the real
+startup root producer and existing desktop bootstrap root tests. Main,
+large Session/Host files and SDK consumers were read in the cited relevant
+scope, not promoted to complete-file reading. No ledger/RTM/global completion
+flag is changed by this scoped implementation.

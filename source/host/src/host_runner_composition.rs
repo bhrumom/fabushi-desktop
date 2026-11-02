@@ -133,7 +133,10 @@ impl HostRunnerComposition {
             .parent()
             .map(Path::to_path_buf)
             .ok_or_else(|| "production memory agents root has no sand root parent".to_string())?;
-        let mut state = SandAgentState::new(sand_root, agent_id.to_string())?;
+        let workflows = sessions.open_workflow_store(agent_id)?;
+        let mut state = SandAgentState::new_with_workflow_store(
+            sand_root, agent_id.to_string(), workflows,
+        )?;
         if let Some(reader) = avatar_box_file_reader {
             state = state.with_box_file_reader(reader);
         }

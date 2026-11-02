@@ -438,9 +438,13 @@ fn mcp_plugin_skills_have_one_shipping_production_owner() {
     for needle in [
         "HostExtensionId::Mcp",
         "mcp: Mutex<Option<McpExtensionRuntime>>",
+        "plugin_skills_binding: Mutex<PluginSkillsBinding>",
         "pub fn start_mcp(",
         "CoordinatorPluginSkillsLoader::new(relay)",
         "SandPluginSkillsService::new(",
+        "prepare_plugin_skills_service(",
+        "previous.successor_with_loader(loader)?",
+        "previous.retire_for_replacement()?",
         "McpHostService::new(backend, Some(plugin_port))",
         "PluginSkillsAuthenticatedStartup::start(",
         "cleanup_legacy_mcp_auth_credentials(sand_root_dir)",
@@ -633,4 +637,33 @@ fn structured_log_domain_reporter_adapters_preserve_frozen_fields() {
         }
         other => panic!("unexpected GC projection: {other:?}"),
     }
+}
+
+#[test]
+fn plugin_skills_binding_precedes_lifecycle_callbacks_and_preserves_the_retained_owner() {
+    let mcp_start = PRODUCTION_OWNER.split_once("    pub fn start_mcp(")
+        .expect("actual Host MCP startup method").1
+        .split_once("    pub fn stop_mcp(").expect("bounded actual MCP startup method").0;
+    let bind = mcp_start.find("prepare_plugin_skills_service(").expect("shared owner binding");
+    for later in [
+        "McpHostService::new(", "cleanup_legacy_mcp_auth_credentials(",
+        "PluginSkillsAuthenticatedStartup::start(", "create_production_skill_publish(",
+    ] {
+        assert!(bind < mcp_start.find(later).expect(later),
+            "root checking and binding must precede {later}");
+    }
+    assert!(mcp_start[bind..].starts_with(
+        "prepare_plugin_skills_service(\n            &self.plugin_skills_binding, sand_root_dir, loader, reporter,\n        )?;"
+    ), "a binding error must leave before external startup");
+    let session_start = PRODUCTION_OWNER.split_once("    pub fn start_session(")
+        .expect("actual Session startup method").1
+        .split_once("    pub fn shutdown_session(").expect("bounded Session startup").0;
+    assert!(session_start.find("register_plugin_skills_session(&self.plugin_skills_binding, &store)?;").unwrap()
+        < session_start.find("start_session_extension(").unwrap());
+    let stop = PRODUCTION_OWNER.split_once("    pub fn stop_mcp(").unwrap().1
+        .split_once("    pub fn start_box_store_sync(").unwrap().0;
+    assert!(!stop.contains("plugin_skills_binding"),
+        "taking the old runtime cannot erase a retained reader or pending Session binding");
+    assert!(stop.contains(".take()"));
+    assert!(stop.contains("runtime.stop()"));
 }

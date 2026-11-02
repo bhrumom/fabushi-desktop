@@ -74,6 +74,9 @@ use crate::extensions::memory::agent_state::{MemoryTier, StateWriteResult, MEMOR
 use crate::extensions::memory::project_membership::AgentProjectMembership;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
+use crate::extensions::mcp::plugin_skills::{
+    PluginSkillsAdmissionQuery, PluginSkillsAdmissionReader,
+};
 use super::session_maintenance::{
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
     recover_conversation_root_if_missing, repair_hidden_transcript_entries_once,
@@ -183,7 +186,27 @@ pub struct ProductionSessionWorkers {
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
     provider_review_capabilities: Mutex<BTreeMap<String, ProviderReviewCapabilityState>>,
+    plugin_skills_admission: Arc<SessionPluginSkillsAdmission>,
     busy_timeout_ms: u64,
+}
+
+/// Every Session-opened workflow store keeps this same forwarding handle.
+/// Only the Plugin Skills owner holds refusal facts; an unbound Session keeps
+/// the existing committed-snapshot behavior.
+#[derive(Default)]
+struct SessionPluginSkillsAdmission {
+    reader: Mutex<Option<PluginSkillsAdmissionReader>>,
+}
+
+impl PluginSkillsAdmissionQuery for SessionPluginSkillsAdmission {
+    fn is_denied(&self, plugin_id: &str) -> bool {
+        let reader = match self.reader.lock() {
+            Ok(slot) => slot.clone(),
+            Err(_) => return true,
+        };
+        // Do not enter the owner's query (or any delegate) under our slot lock.
+        reader.is_some_and(|reader| reader.is_denied(plugin_id))
+    }
 }
 
 #[derive(Debug)]
@@ -384,6 +407,7 @@ impl ProductionSessionWorkers {
             call_session_store,
             call_session_store_error,
             provider_review_capabilities: Mutex::new(BTreeMap::new()),
+            plugin_skills_admission: Arc::new(SessionPluginSkillsAdmission::default()),
             busy_timeout_ms,
         }
     }
@@ -1358,10 +1382,27 @@ impl ProductionSessionWorkers {
 
     pub fn open_workflow_store(&self, agent_id: &str) -> Result<FileWorkflowStore, String> {
         let db_path = self.session_db_path(agent_id)?;
+        let reader: PluginSkillsAdmissionReader = self.plugin_skills_admission.clone();
         Ok(workflow_store_for_db_path_with_time_zone_resolver(
             &db_path,
             Arc::clone(&self.user_time_zone_resolver),
-        ))
+        ).with_plugin_skills_admission(reader))
+    }
+
+    pub fn bind_plugin_skills_admission(
+        &self,
+        reader: PluginSkillsAdmissionReader,
+    ) -> Result<(), String> {
+        let mut slot = self.plugin_skills_admission.reader.lock()
+            .map_err(|_| "Session plugin skills admission reader is poisoned".to_string())?;
+        match slot.as_ref() {
+            Some(current) if Arc::ptr_eq(current, &reader) => Ok(()),
+            Some(_) => Err("Session plugin skills admission is already bound to another owner".into()),
+            None => {
+                *slot = Some(reader);
+                Ok(())
+            }
+        }
     }
 
     pub fn agent_has_workflows(&self, agent_id: &str) -> Result<bool, String> {
@@ -6116,6 +6157,108 @@ mod sharebox_shipping_tests {
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
         restarted.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[cfg(test)]
+mod plugin_skills_admission_tests {
+    use super::*;
+    use crate::extensions::mcp::plugin_skills::{
+        LoadedPlugins, PluginSkillsLoader, SandPluginSkillsService,
+    };
+    use std::sync::Weak;
+
+    struct Loader(LoadedPlugins);
+
+    impl PluginSkillsLoader for Loader {
+        fn load(&self) -> Result<LoadedPlugins, String> {
+            Ok(self.0.clone())
+        }
+    }
+
+    fn service(root: &Path, blocked: bool) -> SandPluginSkillsService {
+        let loaded: LoadedPlugins = serde_json::from_value(json!({
+            "plugins":[],
+            "authBlocked": if blocked { vec![json!({"pluginId":"9", "pluginName":"Private"})] }
+                else { Vec::<Value>::new() },
+            "listedPluginIds": if blocked { vec!["9"] } else { Vec::<&str>::new() },
+            "listedCacheKeys":[], "publisherFacts":{}, "currentUserId":12
+        })).unwrap();
+        let service = SandPluginSkillsService::new(root, Arc::new(Loader(loaded)));
+        assert!(service.sync("real-forwarder-fixture").unwrap().is_empty());
+        service
+    }
+
+    #[test]
+    fn first_bind_same_arc_and_non_overwriting_rebind_preserve_real_owner_decisions() {
+        let root = std::env::temp_dir().join(format!("fabushi-plugin-forward-bind-{}", Uuid::new_v4()));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        assert!(!workers.plugin_skills_admission.is_denied("9"), "standalone unbound behavior");
+        let owner = service(&root, true);
+        let reader = owner.admission_reader();
+        assert!(reader.is_denied("9"));
+        workers.bind_plugin_skills_admission(Arc::clone(&reader)).unwrap();
+        workers.bind_plugin_skills_admission(owner.admission_reader()).unwrap();
+        let unrelated = service(&root.join("unrelated"), false);
+        assert!(!unrelated.admission_reader().is_denied("9"));
+        assert!(workers.bind_plugin_skills_admission(unrelated.admission_reader()).is_err());
+        assert!(workers.plugin_skills_admission.is_denied("9"));
+        assert!(!workers.plugin_skills_admission.is_denied("10"));
+        let slot = workers.plugin_skills_admission.reader.lock().unwrap();
+        assert!(Arc::ptr_eq(slot.as_ref().unwrap(), &reader));
+        drop(slot);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    struct LockObservingReader {
+        forwarding: Weak<SessionPluginSkillsAdmission>,
+        delegate: PluginSkillsAdmissionReader,
+    }
+
+    impl PluginSkillsAdmissionQuery for LockObservingReader {
+        fn is_denied(&self, plugin_id: &str) -> bool {
+            let forwarding = self.forwarding.upgrade().unwrap();
+            let slot = forwarding.reader.try_lock();
+            assert!(slot.is_ok(), "forwarding must release its slot before calling the real owner");
+            drop(slot);
+            self.delegate.is_denied(plugin_id)
+        }
+    }
+
+    #[test]
+    fn forwarding_releases_its_slot_before_querying_the_real_owner() {
+        let root = std::env::temp_dir().join(format!("fabushi-plugin-forward-unlock-{}", Uuid::new_v4()));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        let owner = service(&root, true);
+        let observer: PluginSkillsAdmissionReader = Arc::new(LockObservingReader {
+            forwarding: Arc::downgrade(&workers.plugin_skills_admission),
+            delegate: owner.admission_reader(),
+        });
+        workers.bind_plugin_skills_admission(observer).unwrap();
+        assert!(workers.plugin_skills_admission.is_denied("9"));
+        assert!(!workers.plugin_skills_admission.is_denied("10"));
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn poisoned_forwarding_slot_refuses_queries_and_rebinding() {
+        let root = std::env::temp_dir().join(format!("fabushi-plugin-forward-poison-{}", Uuid::new_v4()));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        let owner = service(&root, true);
+        workers.bind_plugin_skills_admission(owner.admission_reader()).unwrap();
+        assert!(!workers.plugin_skills_admission.is_denied("10"));
+        let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _slot = workers.plugin_skills_admission.reader.lock().unwrap();
+            panic!("deliberately poison the actual forwarding slot");
+        }));
+        assert!(poisoned.is_err());
+        assert!(workers.plugin_skills_admission.is_denied("9"));
+        assert!(workers.plugin_skills_admission.is_denied("10"), "poison must not become an empty refusal set");
+        assert!(workers.bind_plugin_skills_admission(owner.admission_reader()).is_err());
+        workers.shutdown();
         let _ = fs::remove_dir_all(root);
     }
 }

@@ -112,6 +112,24 @@ pub struct SandAgentState {
 
 impl SandAgentState {
     pub fn new(sand_root: impl Into<PathBuf>, agent_id: impl Into<String>) -> Result<Self, String> {
+        Self::with_workflow_store_factory(sand_root, agent_id, |sand_root, agent_dir| {
+            FileWorkflowStore::new(agent_dir, get_global_workflows_dir(sand_root))
+        })
+    }
+
+    pub fn new_with_workflow_store(
+        sand_root: impl Into<PathBuf>,
+        agent_id: impl Into<String>,
+        workflows: FileWorkflowStore,
+    ) -> Result<Self, String> {
+        Self::with_workflow_store_factory(sand_root, agent_id, |_, _| workflows)
+    }
+
+    fn with_workflow_store_factory(
+        sand_root: impl Into<PathBuf>,
+        agent_id: impl Into<String>,
+        workflow_store: impl FnOnce(&Path, &Path) -> FileWorkflowStore,
+    ) -> Result<Self, String> {
         let sand_root = sand_root.into();
         let agent_id = agent_id.into();
         if agent_id.trim() != agent_id || !is_safe_folder_id(&agent_id) {
@@ -122,7 +140,7 @@ impl SandAgentState {
             memory: FileMemoryStore::new(get_agent_memory_dir(&agent_dir)),
             membership: AgentProjectMembership::new(&agent_dir),
             channels: FileChannelStore::new(get_agent_channels_dir(&agent_dir)),
-            workflows: FileWorkflowStore::new(&agent_dir, get_global_workflows_dir(&sand_root)),
+            workflows: workflow_store(&sand_root, &agent_dir),
             agent_id, agent_dir, sand_root,
             now: Arc::new(system_now_ms),
             on_avatar_changed: None,
