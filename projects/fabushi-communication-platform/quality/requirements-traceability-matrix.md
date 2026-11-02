@@ -6,6 +6,33 @@ Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2
 Updated: 2026-11-02
 
 
+## Round 18 — native CLI composition and installer members
+
+Production changes are frozen at `1b0e674b3e39292ae715a3eb50435d83e2cb8577`; ledger binding
+is `1a2b864aee290db21548262c983033d184cab356`. Fixed U and all concurrent numeric message
+requirements are retained. These named IDs avoid redefining those requirements.
+
+| Requirement / acceptance | Existing production chain | Observed execution | Remaining gate |
+| --- | --- | --- | --- |
+| NMR-CLI-HOST-01 / NMR-AC-CLI-HOST-01 | CLI/gateway RuntimeHandle -> MahayanaHost with desktop-full/local-only -> NativeEngine/NativeAgentBackend and real local MCP | Three source files and the workflow were API-read back at exact1b0; prior59 CLI3/gateway5/library11 are prerequisite only | Exact1b0 queued shipping must execute new MCP assertions, single-root production graph/build, both binary hash/symbol/library inventories and process4; complete external model/Bot and external FFI remain open |
+| NMR-PACKAGE-DELIVERY-01 / NMR-AC-PACKAGE-DELIVERY-01 | Existing release artifact uploader -> unchanged installer promotion member allowlist | Exact1b0 Electron job125524808067 passed promotion6 (5 behavioral +1 source-shape), metadata18 and immutable historical ZIP/DMG control; three current contract artifacts were digest/target verified | Current source signed archive membership, complete installed runtime and immutable promotion acceptance remain unqualified; historical package bytes are not a new-H installer |
+
+Original exact99 run41456371872 completed with composition12/Native6,125 auth
+parameter requests (not125 Rust test cases),17 typed Settings calls/15 variants
+plus real restart, proxy30, actual AppHost copy4 and2 required rejecting controls.
+The complete logs and artifact byte identities are retained in the round18
+receipt. Later exact59 proxy48/48/all6 permutations are separate evidence.
+At exact1b0, UI18/settlement5/Chromium16, Electron10/8/3/16/28/18/6 and Windows11
+passed; the two macOS Rust jobs had no runner/steps at the recorded observation.
+Source-contract41518863601 at exact ledger1a2 passed Node157/Python37 and
+candidate consistency; two actual ZIPs matched their digest and target SHA.
+Accepted-mode rejected the candidate, with no source/product/release promotion. Required full service,
+supported-platform, Bot, visual/a11y, security, performance, soak, upgrade/rollback
+and independent ACCEPT gates remain open.
+
+Evidence: `projects/telegram-desktop-rust/evidence/round18-current-host-features-and-delivery.json`;
+`projects/telegram-desktop-rust/evidence/round18-ffi-caller-reference-index.json`.
+
 ## NMR-47g pending forward ownership
 
 Exact source/oracle/old-failure/execution boundary: `projects/telegram-desktop-rust/evidence/round27-forward-pending-ownership.json`.

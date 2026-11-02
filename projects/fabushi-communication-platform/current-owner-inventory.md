@@ -14,6 +14,32 @@ This file records the current production owners that FBCP must absorb into. It i
 
 ## Method
 
+### Round 18 — actual CLI Host and packaged runtime consumers
+
+Frozen production input `1b0e674b3e39292ae715a3eb50435d83e2cb8577`. CLI and gateway own
+`RuntimeHandle(MahayanaHost)`; their ordinary dependency explicitly selects
+`desktop-full` and `local-only`. NativeEngine/NativeAgentBackend and the existing
+local MCP owner retain lifecycle and command authority. Status/provider names
+alone were compatible with an unavailable fallback; real MCP assertions and
+single-root production binary/process checks now guard that composition.
+No FFI dependency, new runtime, provider, public schema or external ABI removal
+was added. The package workflow remains the final-byte owner and the unchanged
+promotion consumer remains the installer-member authority.
+
+The reviewed desktop path is Electron entry -> utilityProcess carrier ->
+Coordinator child process -> AppHost child process, using MessagePorts/stdio/HTTP.
+The complete selected non-Rust executable-surface scan at this H found no actual
+target C ABI caller; its1780 paths/1769 distinct blobs and exclusions are recorded
+in the caller index. Retained C exports and Dart/iOS comments do not identify a
+tracked caller or prove external absence. Keep historical SQLite, credentials
+and compatibility readers pending actual external-client evidence.
+
+Exact-H Electron/UI/Windows and promotion6 passed; Rust jobs were still queued at
+the recorded observation. Actual CLI binary/MCP/process and signed installer
+acceptance remain open. See the round18 delivery receipt and its exact run/blob
+identities. Concurrent Session/Transcript/forward/reply/resource owners are
+preserved; no message or account authority moves into the CLI or renderer.
+
 ### 2026-11-02 immutable forward picker intent (task20bf round1 resumed)
 
 Current inspected input is `59f5fa24827812f78336c464995d161f403dedfb` on the
