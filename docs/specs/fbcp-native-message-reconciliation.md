@@ -1138,6 +1138,79 @@ may proceed only after the exact original metadata is restored. Extend the
 existing corrupted-journal test across cold and cached owners without removing
 its process-kill, unchanged-bytes, zero-network and exact-repair assertions.
 
+### Pending-parent reply identity and restart recovery (NMR-49 / NMR-AC-40)
+
+Current source `59f5fa24827812f78336c464995d161f403dedfb` and its
+completed/success run `41508537631` are the prerequisite. The existing UI
+delivery decoder does not recognize Host `dispatching` and defaults it to
+`sent`, making an in-flight local parent actionable for Reply. A child is
+durably staged before dispatch discovers that parent has no remote ID. Parent
+settlement currently rekeys only the parent; the child's persisted reply and
+the sync pending snapshot still name the old local ID. This is a source-observed
+recovery defect; no pre-fix runtime reproduction is claimed.
+
+- NMR-49a: Treat Host `dispatching` as existing UI `pending`, preserving the
+  current prohibition on pending/queued/failed message reply actions. Keep
+  all existing sent, failed and Agent projections and component roots. Do not
+  introduce a new public delivery state, route or message owner.
+- NMR-49b: When the existing Session store settles a local Human parent to
+  its canonical identity, atomically rekey that parent and rewrite exact old
+  `replyToId` references on the same conversation's local-author unsent
+  pending/dispatching children. Preserve their nonce, text, attachments,
+  forwarding metadata, sequence and other fields. No remote-authored or already
+  canonical child is rewritten. Use the existing SQLite owner and an explicit
+  transaction; its write wrapper alone is not a transaction. Failed parent or
+  child persistence rolls back the whole change and the atomic store method
+  publishes no mutation. An outer send may still record its existing pending
+  dispatch error; it must not publish canonical identity or child-reference
+  changes from the rolled-back transaction.
+  After commit, emit the existing deletion/upsert events for every changed row
+  so the mounted projection receives the new references.
+- NMR-49c: Pending replay must consume each row's current durable reply
+  reference after earlier parent settlement, rather than the initial stale
+  snapshot. Preserve current account/participant checks, per-conversation
+  locking, ordered retries and forwarding-batch policy exclusions. For data
+  already orphaned by older code, resolve `human-message:<nonce>` only to one
+  canonical sent parent in this same conversation with the matching local
+  author and exact nonce. Validate canonical ID and remote ID agreement.
+  Normalize both requested and persisted reply identities before idempotency
+  comparison and persist the canonical reference before dispatch. Missing,
+  foreign, ambiguous or conflicting identity never drops the reply or borrows
+  a peer's nonce; retain durable retry evidence and refuse that send.
+  Retrying an unsent local row also requires its existing Human author kind and
+  exact `human-message:<its own nonempty nonce>` ID. A canonical-looking row
+  missing remote identity, or a non-Human row with the same author ID, is not a
+  local outbox intent; preserve it without HTTP dispatch or child-edge repair.
+- NMR-AC-40: Add actual Host/SQLite/loopback tests for A→B→C staging,
+  failure/restart and ordered canonical replay; historical dangling local
+  parent references with same-nonce peer and foreign-conversation negatives;
+  and a SQLite child-update trigger failure proving parent/children and the
+  atomic owner's event stream remain unchanged, followed by recovery after
+  reopen through the real send path. Preserve the existing outer pending-error
+  event semantics separately from forbidden identity/reference changes. Check
+  immutable content/resources/nonces and no duplicate sends. Add a behavior
+  regression using the actual renderer delivery projection for dispatching
+  and unchanged normal/Agent states. Preserve all existing Human44/Agent4 (including the concurrent source-corruption restart case),
+  credential3, forwarding journal/HTTP and UI/Chromium gates. Bind new actual
+  counts and complete logs to the new exact H in GitHub Actions only.
+
+This repair changes no server contract, schema or owner and deletes no user
+data. A normal code revert retains canonicalized references; it cannot repair
+new dangling references created by older code. Full source/legal closure,
+real service/Worker recovery, signed packages, complete Bot regression and
+independent ACCEPT remain open. Fixed U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+
+Delivery constraint: the direct 3.5MB ledger-object request was interrupted and
+the expected remote blob is absent. A temporary checkpoint-only Actions job may
+apply the exact reviewed NMR row delta to the expected base blob, prove every
+other row and all source/acceptance fields unchanged, and create only the exact
+unattached Git blob. It may not commit, update refs, push or modify production.
+The main integrator must read back that blob, use ordinary expected-head CAS to
+integrate the sole canonical ledger, and remove this temporary delivery job.
+Existing schema/source and product gates remain required; object creation is
+neither validation nor acceptance evidence.
+
 
 
 
