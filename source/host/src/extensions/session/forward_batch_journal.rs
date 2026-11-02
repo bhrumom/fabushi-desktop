@@ -802,6 +802,13 @@ mod tests {
         let error = store_forward_batch(&first, &original).unwrap_err();
         assert!(error.contains("stale"), "{error}");
         assert_eq!(load_forward_batches(&first, "s").unwrap(), vec![settled.clone()]);
+        // A stale whole-batch writer cannot trade back a completed first
+        // target for progress on the second target. Reject all of that write.
+        let mut mixed = original.clone();
+        mixed.destinations[1].completed = true;
+        let error = store_forward_batch(&first, &mixed).unwrap_err();
+        assert!(error.contains("stale"), "{error}");
+        assert_eq!(load_forward_batches(&second, "s").unwrap(), vec![settled.clone()]);
         let mut fresh = load_forward_batches(&first, "s").unwrap().remove(0);
         fresh.destinations[1].completed = true;
         store_forward_batch(&first, &fresh).unwrap();
