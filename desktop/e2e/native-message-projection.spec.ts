@@ -42,6 +42,9 @@ async function scrollToOlderHistory(page: Page) {
 async function openAlice(page: Page, theme = 'dark') {
   await page.goto(`${origin}/native-message-projection.html?theme=${theme}`);
   await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+  // The roster opens Alice automatically. Reselecting it must retain this page.
+  await expect(messageRow(page, 'm3')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().older)).toBe(1);
   await page.getByRole('button', { name: 'Alice', exact: true }).click();
   await expect(messageRow(page, 'm3')).toBeVisible();
   await scrollToOlderHistory(page);

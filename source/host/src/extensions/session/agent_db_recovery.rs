@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -126,6 +127,22 @@ pub(super) fn probe_human_conversation_store(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<(), AgentDbRecoveryError> {
+    // SQLite may remove invalid journal files even when opening a NOTADB main
+    // file ultimately fails. Refuse its bytes before delegating sidecar-backed
+    // stores to SQLite; a valid WAL still remains the existing owner's authority.
+    match std::fs::File::open(db_path) {
+        Ok(mut file) => {
+            if file.metadata()?.len() > 0 {
+                let mut header = [0_u8; 16];
+                file.read_exact(&mut header)?;
+                if header != *b"SQLite format 3\0" {
+                    return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+                }
+            }
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+        Err(error) => return Err(error.into()),
+    }
     for suffix in ["-wal", "-journal"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
