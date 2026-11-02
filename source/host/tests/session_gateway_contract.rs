@@ -685,7 +685,7 @@ fn fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_s
             |row| row.get(0)).unwrap();
         assert_eq!(serde_json::from_str::<serde_json::Value>(&retained).unwrap(), opaque);
         assert_eq!(db.query_row("SELECT count(*) FROM transcript_entries", [],
-            |row| row.get::<_, usize>(0)).unwrap(), 4);
+            |row| row.get::<_, i64>(0)).unwrap(), 4);
 
         let events = Arc::new(AtomicUsize::new(0));
         let subscription = subscribe_transcript_mutations({

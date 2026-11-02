@@ -3781,7 +3781,7 @@ fn channel_inbound_checked_history_refuses_storage_and_decoding_errors() {
         } else {
             assert_eq!(compaction_durable_snapshot(&fixture.owner), damaged_snapshot.unwrap());
             assert_eq!(connection.query_row("SELECT count(*) FROM transcript_entries", [],
-                |row| row.get::<_, usize>(0)).unwrap(), 1);
+                |row| row.get::<_, i64>(0)).unwrap(), 1);
             connection.execute("UPDATE transcript_entries SET entry = ?1 WHERE id = 't0u'", [original]).unwrap();
         }
         let mut successor = fixture.admission.clone();

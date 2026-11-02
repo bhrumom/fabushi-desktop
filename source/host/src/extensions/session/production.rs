@@ -6205,6 +6205,7 @@ mod plugin_skills_admission_tests {
     use crate::extensions::mcp::plugin_skills::{
         LoadedPlugins, PluginSkillsLoader, SandPluginSkillsService,
     };
+    use serde_json::{Value, json};
     use std::sync::Weak;
 
     struct Loader(LoadedPlugins);

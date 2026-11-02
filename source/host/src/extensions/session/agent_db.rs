@@ -7302,7 +7302,7 @@ mod channel_inbound_append_tests {
         assert_eq!(live_db_handle_count(owner.db_path()), 0);
         let inspection = rusqlite::Connection::open(owner.db_path()).unwrap();
         assert_eq!(inspection.query_row("SELECT count(*) FROM transcript_entries", [],
-            |row| row.get::<_, usize>(0)).unwrap(), 0);
+            |row| row.get::<_, i64>(0)).unwrap(), 0);
         assert!(matches!(owner.append_channel_inbound_entries(
             &mut attempt, |_, _| panic!("retired connection cannot be reused"),
         ), ChannelInboundAppendOutcome::NotWritten(failure)

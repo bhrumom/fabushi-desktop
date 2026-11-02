@@ -210,6 +210,40 @@ were fully read. The current OCRM inventory/ledger/RTM remain the only source
 and responsibility accounts; full recursive ingress dependencies and actual
 channel services/devices remain unaccepted.
 
+## Shared test compilation repair — 2026-11-02
+
+Decision **CA-SKILLS-TEST-COMPILE-01 — FIX / TEST_FLAW**, before editing.
+At `e70a72574c108f8b7704eb45e5109875a24eddb9`, Runtime run `41432270535`,
+job `125233494245`, the recovery step cannot compile two SQLite count
+observations (`row.get::<_, usize>`) and the Session live-Skills fixture's
+unimported `json!` macro. These same test expressions remain in incoming
+`0ac0a8030dc74bbd0d9832fea684458b4e52da0e`. Read SQLite counts as its supported
+signed `i64` representation and import the macro inside the affected test
+module. Preserve exact zero/one counts, strict history refusal, retired-owner
+and publication assertions, and all permission/lifecycle assertions. No
+production behavior, transaction policy, test selection or dependency changes.
+The earlier successful shipping, Settings/COMMIT and app results remain facts
+for e70 only; recovery/lib and later skipped checks require new exact-H evidence.
+Independent source review and the existing selected Actions gate are required.
+
+Decision **CA-SKILLS-TEST-COMPILE-02 — FIX / TEST_FLAW**, before editing.
+Incoming source review identified the same unsupported SQLite count type in
+`session_gateway_contract::fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_semantics`.
+The integrator confirmed this new 0ac expression and its exact four-physical-row
+assertion. Change only its read type to `i64`; retain the opaque-row, unique-ID,
+committed-echo, duplicate nonce and no-publication assertions. This is a source
+diagnosis of an incoming test defect, not a claim that its 0ac job has executed.
+Freeze the five-path repair and its delta from the first four-path snapshot for
+fresh focused review before publication.
+
+Decision **CA-SKILLS-TEST-COMPILE-03 — FIX / TEST_FLAW**, before editing.
+The first frozen review found that resolving `json!` also exposes the fixture's
+unqualified `Vec::<Value>` expression. The integrator confirmed that neither
+this module nor its parent imports `Value`; import both `json` and `Value` in
+the test module. Keep both blocked/unblocked fixture branches and their exact
+payloads. Preserve earlier snapshots and review a new complete five-path
+snapshot with its delta; no new execution result is claimed from source review.
+
 ## Fresh Transcript commit — `SESSION-FRESH-APPEND-v1`
 
 Original implementation base: `3761bde297377bca80ad7497d1664f6f3d32bc58`;
