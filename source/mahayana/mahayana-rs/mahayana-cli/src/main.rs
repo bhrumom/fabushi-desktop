@@ -2287,11 +2287,18 @@ mod direct_cli_host_contract_tests {
         let host = RuntimeHandle::create_with_config(json!({
             "hostPlatform": "cli",
             "cwd": root, "workspaceRoots": [root], "dataDir": root,
+            "productSessionPath": root.join("session.json"),
+            "productSurfaceStatePath": root.join("surfaces.json"),
             "inheritInstalledPlugins": false
         }))
         .expect("direct Host starts");
         let status = host.execute(json!({"@type": "mahayana.runtime.status"})).unwrap();
         assert_eq!(status["runtimeAbiVersion"], 1);
+        // The unavailable fallback also advertises the same provider names.
+        // Exercise the real native Agent-control backend without network I/O.
+        let servers = host.execute(json!({"@type": "mahayana.mcp.servers"}))
+            .expect("native Agent backend exposes its local MCP inventory");
+        assert_eq!(servers, json!({"@type": "mahayana.mcp.servers", "data": []}));
         let ready = host.receive(100).unwrap().expect("initial ready event");
         assert_eq!(ready["@type"], "mahayana.runtime.ready");
         drop(host);
