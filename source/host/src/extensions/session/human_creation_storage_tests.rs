@@ -93,8 +93,105 @@ impl Drop for ScopedInsertBusyHandler<'_> {
     }
 }
 
+const LOCK_CHILD_PATH: &str = "FABUSHI_NMR_CREATE_LOCK_CHILD_PATH";
+const LOCK_CHILD_EXPECTATION: &str = "FABUSHI_NMR_CREATE_LOCK_CHILD_EXPECTATION";
+
+fn run_external_lock_child_if_selected() -> bool {
+    let Some(path) = std::env::var_os(LOCK_CHILD_PATH) else {
+        return false;
+    };
+    let expectation = std::env::var(LOCK_CHILD_EXPECTATION).expect("explicit lock-child mode");
+    let db = Connection::open_with_flags(PathBuf::from(path), OpenFlags::SQLITE_OPEN_READ_WRITE)
+        .expect("child opens the existing fixture through SQLite");
+    db.busy_timeout(Duration::ZERO).unwrap();
+    let started = db.execute_batch("BEGIN IMMEDIATE");
+    match expectation.as_str() {
+        "blocked" => {
+            let error = started.expect_err("the parent's existing write lock must still exclude another process");
+            assert!(matches!(error, rusqlite::Error::SqliteFailure(code, _)
+                if code.code == rusqlite::ErrorCode::DatabaseBusy));
+        }
+        "available" => {
+            started.expect("the child writer must succeed after the parent's rollback");
+            assert_eq!(db.execute("UPDATE lock_fixture SET value = 'temporary child write'", []).unwrap(), 1);
+            let changed: String = db.query_row("SELECT value FROM lock_fixture", [], |row| row.get(0)).unwrap();
+            assert_eq!(changed, "temporary child write");
+            db.execute_batch("ROLLBACK").unwrap();
+        }
+        other => panic!("unexpected lock-child mode: {other}"),
+    }
+    println!("NMR-CREATE-LOCK child: {expectation}");
+    true
+}
+
+fn assert_external_writer(path: &Path, expectation: &str) {
+    let module = module_path!().split_once("::").expect("test module has a crate prefix").1;
+    let case = format!("{module}::distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen");
+    let output = std::process::Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", &case, "--nocapture", "--test-threads=1"])
+        .env(LOCK_CHILD_PATH, path)
+        .env(LOCK_CHILD_EXPECTATION, expectation)
+        .output().expect("run a distinct SQLite writer process");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "external writer {expectation}: {}\nstdout:\n{stdout}\nstderr:\n{stderr}", output.status);
+    assert!(stdout.contains("running 1 test"), "the exact child case must run: {stdout}");
+    assert!(stdout.contains(&format!("NMR-CREATE-LOCK child: {expectation}")),
+        "the child must execute its SQLite admission oracle: {stdout}");
+}
+
+fn human_probe_preserves_another_connections_existing_write_lock() {
+    let root = test_root("external-lock");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("store.db");
+    let mut writer = Connection::open(&path).unwrap();
+    let mode: String = writer.query_row("PRAGMA journal_mode=DELETE", [], |row| row.get(0)).unwrap();
+    assert_eq!(mode, "delete");
+    writer.execute_batch("CREATE TABLE lock_fixture(value TEXT NOT NULL);
+        INSERT INTO lock_fixture(value) VALUES ('retained before probe');").unwrap();
+    let held = writer.transaction_with_behavior(TransactionBehavior::Immediate).unwrap();
+
+    // The first child proves an OS-visible lock exists before the real owner
+    // probe. Closing an independent raw database FD would silently release it
+    // on POSIX; same-process SQLite bookkeeping alone cannot detect that loss.
+    assert_external_writer(&path, "blocked");
+    super::probe_human_conversation_store(&path, 0).unwrap();
+    assert_external_writer(&path, "blocked");
+    held.rollback().unwrap();
+    assert_external_writer(&path, "available");
+
+    #[cfg(unix)]
+    {
+        // Negative control in this disposable fixture only: reproduce the old
+        // raw-FD admission so this platform proves the lock-loss oracle is live.
+        // No connection or descriptor is inherited by the exec'd child.
+        let held = writer.transaction_with_behavior(TransactionBehavior::Immediate).unwrap();
+        assert_external_writer(&path, "blocked");
+        {
+            let mut raw = fs::File::open(&path).unwrap();
+            let mut header = [0_u8; 100];
+            std::io::Read::read_exact(&mut raw, &mut header).unwrap();
+        }
+        assert_external_writer(&path, "available");
+        held.rollback().unwrap();
+        println!("NMR-CREATE-LOCK negative control: raw-FD close admits the external writer");
+    }
+
+    let retained: String = writer.query_row(
+        "SELECT value FROM lock_fixture", [], |row| row.get(0),
+    ).unwrap();
+    assert_eq!(retained, "retained before probe");
+    drop(writer);
+    fs::remove_dir_all(root).unwrap();
+    println!("NMR-CREATE-LOCK: external writer blocked before/after Human probe and allowed after rollback");
+}
+
 #[test]
 fn distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen() {
+    if run_external_lock_child_if_selected() {
+        return;
+    }
+    human_probe_preserves_another_connections_existing_write_lock();
     let root = test_root("distinct-handles");
     let path = root.join("store.db");
     let owners = [
