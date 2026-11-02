@@ -278,6 +278,23 @@ fn legacy_unbound_writes_and_computer_models_keep_their_compatibility_contract()
     let reply = service.set_host_settings(&serde_json::json!({"computerUseModel": computer_control}))
         .expect("unchanged whole-document computer model validator");
     assert_eq!(reply["computerUseModel"], computer_control);
+
+    let malformed_binding = serde_json::json!({
+        "provider": null, "modelId": "bad-binding", "maxMode": true, "parameters": []
+    });
+    fs::write(&path, serde_json::to_vec(&serde_json::json!({
+        "version": 1, "agentDefaultModel": malformed_binding
+    })).expect("encode malformed existing binding"))
+        .expect("seed malformed existing binding");
+    assert!(service.get_agent_default_model_checked().is_err());
+    assert!(service.set_has_seen_onboarding(true).expect("unrelated writer keeps its contract"));
+    assert!(service.get_agent_default_model_checked().is_err(),
+        "an unrelated write does not repair the invalid model binding");
+    let persisted: serde_json::Value = serde_json::from_slice(
+        &fs::read(&path).expect("read unrelated write"),
+    ).expect("decode unrelated write");
+    assert_eq!(persisted["hasSeenOnboarding"], true);
+    assert_eq!(persisted["agentDefaultModel"], malformed_binding);
     let _ = fs::remove_file(path);
 }
 

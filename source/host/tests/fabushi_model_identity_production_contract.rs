@@ -64,6 +64,8 @@ const AGENT_ID: &str = "model-identity-agent";
 const CHILD_ROOT_ENV: &str = "FABUSHI_MODEL_IDENTITY_CONTRACT_CHILD_ROOT";
 const TEST_NAME: &str = "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization";
 
+type CheckpointFiles = Vec<(PathBuf, Vec<u8>)>;
+
 struct FixtureDirectory(PathBuf);
 
 impl Drop for FixtureDirectory {
@@ -77,6 +79,7 @@ struct LoopbackFixture {
     endpoint: String,
     credential_path: PathBuf,
     requests: Arc<Mutex<Vec<Value>>>,
+    checkpoint_files_before_503: Arc<Mutex<Option<CheckpointFiles>>>,
     stop: Arc<AtomicBool>,
     server: Option<JoinHandle<Result<(), String>>>,
 }
@@ -118,6 +121,12 @@ impl LoopbackFixture {
             .expect("write fixture credential");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = Arc::clone(&requests);
+        let checkpoint_files_before_503 = Arc::new(Mutex::new(None));
+        let captured_checkpoint_files = Arc::clone(&checkpoint_files_before_503);
+        let checkpoint_store = ProductionRoutedProviderCheckpointStore::new(
+            &root.0, AGENT_ID, "turn-a",
+        );
+        let settings_path = root.0.join("settings.json");
         let stop = Arc::new(AtomicBool::new(false));
         let stopped = Arc::clone(&stop);
         let server = thread::spawn(move || {
@@ -141,6 +150,24 @@ impl LoopbackFixture {
                     requests.push(request);
                     index
                 };
+                if index == 2 {
+                    // The third request must follow both durable accepted
+                    // boundaries before this server releases the retryable 503.
+                    let requests = captured.lock().map_err(|_| "capture lock poisoned")?;
+                    let files = assert_durable_provider_checkpoints(
+                        &checkpoint_store,
+                        Some(requests.as_slice()),
+                    );
+                    assert_eq!(
+                        SettingsService::new(&settings_path)
+                            .get_agent_default_model_checked()
+                            .expect("read committed default before 503"),
+                        Some(bound_model(MODEL_B)),
+                        "the first delivery must persist B before the accepted continuation fails"
+                    );
+                    *captured_checkpoint_files.lock()
+                        .map_err(|_| "checkpoint capture lock poisoned")? = Some(files);
+                }
                 let (status, content_type, body) = scripted_response(index)?;
                 write!(
                     stream,
@@ -156,12 +183,13 @@ impl LoopbackFixture {
             endpoint: format!("{origin}/v1/responses"),
             credential_path,
             requests,
+            checkpoint_files_before_503,
             stop,
             server: Some(server),
         }
     }
 
-    fn finish(&mut self) -> Vec<Value> {
+    fn finish(&mut self) -> (Vec<Value>, CheckpointFiles) {
         self.stop.store(true, Ordering::Release);
         self.server
             .take()
@@ -169,7 +197,13 @@ impl LoopbackFixture {
             .join()
             .expect("fixture server must not panic")
             .expect("fixture server must complete without protocol errors");
-        self.requests.lock().expect("captured requests").clone()
+        let requests = self.requests.lock().expect("captured requests").clone();
+        let files = self.checkpoint_files_before_503
+            .lock()
+            .expect("captured checkpoint files")
+            .take()
+            .expect("checkpoint files were observed before the 503");
+        (requests, files)
     }
 }
 
@@ -432,14 +466,28 @@ fn assert_accepted_history(input: &[Value], tool_count: usize) {
     }
 }
 
-fn assert_durable_provider_checkpoints(store: &ProductionRoutedProviderCheckpointStore) {
-    let mut checkpoints = fs::read_dir(store.directory())
+fn read_checkpoint_files(store: &ProductionRoutedProviderCheckpointStore) -> CheckpointFiles {
+    let mut files = fs::read_dir(store.directory())
         .expect("production provider checkpoint directory")
         .map(|entry| {
             let path = entry.expect("checkpoint entry").path();
             assert_eq!(path.extension().and_then(|value| value.to_str()), Some("json"));
-            let bytes = fs::read(path).expect("read durably written checkpoint");
-            match serde_json::from_slice::<RoutedProviderCheckpoint>(&bytes)
+            let bytes = fs::read(&path).expect("read durably written checkpoint");
+            (path, bytes)
+        })
+        .collect::<Vec<_>>();
+    files.sort_by(|left, right| left.0.cmp(&right.0));
+    files
+}
+
+fn assert_durable_provider_checkpoints(
+    store: &ProductionRoutedProviderCheckpointStore,
+    accepted_requests: Option<&[Value]>,
+) -> CheckpointFiles {
+    let files = read_checkpoint_files(store);
+    let mut checkpoints = files.iter()
+        .map(|(_, bytes)| {
+            match serde_json::from_slice::<RoutedProviderCheckpoint>(bytes)
                 .expect("decode actual production checkpoint JSON")
             {
                 RoutedProviderCheckpoint::Fabushi(checkpoint) => checkpoint,
@@ -455,6 +503,26 @@ fn assert_durable_provider_checkpoints(store: &ProductionRoutedProviderCheckpoin
         assert_eq!(checkpoint.tool_calls_completed, index + 1);
         assert_eq!(checkpoint.text, "working ");
         assert_accepted_history(&checkpoint.input, index + 1);
+        if let Some(requests) = accepted_requests {
+            assert_eq!(
+                checkpoint.input.as_slice(),
+                requests[index + 1]["input"].as_array()
+                    .expect("captured accepted continuation input").as_slice(),
+                "the persisted checkpoint must contain the complete input sent after its boundary"
+            );
+        }
+    }
+    files
+}
+
+fn assert_no_provider_checkpoints(store: &ProductionRoutedProviderCheckpointStore) {
+    match fs::read_dir(store.directory()) {
+        Ok(mut entries) => assert!(
+            entries.next().is_none(),
+            "a turn without accepted tools must not create a provider checkpoint"
+        ),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => panic!("could not inspect the later turn's checkpoint directory: {error}"),
     }
 }
 
@@ -507,6 +575,7 @@ fn run_isolated_production_owners(root: &Path) {
         deliveries: Mutex::new(Vec::new()),
     });
     let retry_events = Arc::new(Mutex::new(Vec::<ProviderRetryEvent>::new()));
+    let mut turn_a_checkpoint_files = None;
 
     for (stream_id, expected_model, expected_text) in [
         ("turn-a", MODEL_A, "working done"),
@@ -630,11 +699,23 @@ fn run_isolated_production_owners(root: &Path) {
                 ("working ".to_string(), "working ".to_string()),
                 ("done".to_string(), "working done".to_string()),
             ]);
-            assert_durable_provider_checkpoints(&checkpoint_store);
+            turn_a_checkpoint_files = Some(assert_durable_provider_checkpoints(
+                &checkpoint_store, None,
+            ));
             assert_eq!(
                 settings.get_agent_default_model_checked().expect("default after delivery"),
                 Some(bound_model(MODEL_B))
             );
+        } else {
+            let turn_a_store = ProductionRoutedProviderCheckpointStore::new(
+                root, AGENT_ID, "turn-a",
+            );
+            assert_eq!(
+                read_checkpoint_files(&turn_a_store),
+                *turn_a_checkpoint_files.as_ref().expect("turn A checkpoint snapshot"),
+                "turn B must leave turn A checkpoint paths and bytes unchanged"
+            );
+            assert_no_provider_checkpoints(&checkpoint_store);
         }
     }
 
@@ -698,13 +779,24 @@ fn persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization() {
         .spawn()
         .expect("start isolated production owner test"));
     let status = child.wait_bounded();
-    let requests = fixture.finish();
+    let (requests, checkpoint_files_before_503) = fixture.finish();
     assert!(
         status.success(),
         "isolated owner flow failed: {status}; captured {} requests",
         requests.len()
     );
     assert_eq!(requests.len(), 6);
+    let turn_a_store = ProductionRoutedProviderCheckpointStore::new(
+        &fixture.root.0, AGENT_ID, "turn-a",
+    );
+    assert_eq!(
+        read_checkpoint_files(&turn_a_store),
+        checkpoint_files_before_503,
+        "retry, turn B and summarization must preserve the paths and bytes captured before the 503"
+    );
+    assert_no_provider_checkpoints(&ProductionRoutedProviderCheckpointStore::new(
+        &fixture.root.0, AGENT_ID, "turn-b",
+    ));
     let turn_models = requests[..5]
         .iter()
         .map(|request| request["model"].as_str().expect("actual serialized model"))
@@ -730,6 +822,14 @@ fn persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization() {
         requests[2], requests[3],
         "retry reuses the complete accepted reasoning/tool context under model A"
     );
+    let turn_b_input = requests[4]["input"].as_array().expect("later turn input");
+    assert!(turn_b_input.iter().all(|item| !matches!(
+        item.get("type").and_then(Value::as_str),
+        Some("reasoning" | "function_call" | "function_call_output"),
+    )), "turn B must not inherit turn A reasoning, calls or accepted tool results");
+    assert!(turn_b_input.iter().any(|item| {
+        item["role"] == "user" && item["content"] == "execute turn-b"
+    }), "turn B must contain its new user request");
     assert!(requests[0]["tools"].as_array().expect("native tools")
         .iter().any(|tool| tool["name"] == "SendMessage"));
     assert!(

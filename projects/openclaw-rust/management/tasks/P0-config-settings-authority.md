@@ -453,3 +453,54 @@ listener contract in Actions. This is a test/production-seam correction, not
 an environment fault or evidence to reintroduce a retired listener helper.
 Preserve H9 positives as H9 evidence; the repair needs fresh immutable focused
 review and its own exact-H checks. No migration flags or acceptance advance.
+
+### Compaction continuation and concurrent model reconciliation
+
+The unpublished combined model/compaction candidate was frozen against H8 as
+tree `0e45f315d20d747f46b92d3653dca94f10ad9015`, full diff SHA-256
+`94e0bd2c325998b72652636c40da4087f70978d853cc5b1a1c25cfa8ac3412a0`.
+The publication lease found the concurrent model successor H9 and its app-test
+repair `81d48636b06d20f8bec551cdc334fe40f31e614b`, tree
+`13b8852dbbf52c4e26af1fc7ab73898eb8c45b13`. Both exact commit objects and all
+17 changed file contents/blob identities were read back and imported without
+overwriting the branch. The unpublished candidate remains preserved; the
+continuation adopts the remote model implementation and its tests. Independent
+xhigh source reconciliation checks the model invariants and retained controls.
+
+This delta implements `CC-05` in the existing Session owner: admission revision
+is the canonical generation when present; busy work prevents rotation; entry,
+metadata and admission CAS commit together; stale/idempotent paths do not
+publish. Production facade tests cover repeat compaction, reopened replay,
+settleable cron custody, raw CAS loss and archive/restore fencing. The shipping
+summary/fallback must fit before commit. Media/tool replay, full compaction
+semantics and actual provider acceptance remain open.
+
+Pre-freeze decision `C1 FIX / IMPL_BUG`: real cron custody exposed missing SQL
+token separators in the existing begin, finish, finish-with-fences, publish and
+list statements. Repair whitespace only, preserving all predicates; exercise
+actual begin/finish/list/publication and stale/terminal negatives.
+
+Review decision `C2 FIX / IMPL_BUG`: synchronous compaction admission listeners
+could read the same owner while its connection mutex remained held after
+COMMIT. Release that guard before all publication. The bounded regression
+requires both callback and commit to return, checks the observed committed
+generation, and retains raw rollback and no-publication controls. Fresh xhigh
+focused review approved the three-path fix delta
+`71497baa3cf87b3f9bc4c998a730c57475d28ebf8e0c28237db0863eb655b471`;
+that source approval is not execution evidence for the reconciled successor.
+
+Decision `C3 DEFER / NON_BLOCKING`: the unchanged split-prefix cancellation
+fallback remains a Runner recovery follow-up; it must recheck cancellation at
+commit and prove no durable mutation. Fitter refusal alone does not prove it.
+
+Reconciliation decision `C4 PRESERVE`: keep the earlier public Inference/Settings
+consumer controls, post-call cancellation priority, pre-503 checkpoint durability,
+checkpoint bytes unchanged after a later model-B turn, and absence of inherited
+tool results or a new tool checkpoint on that turn. Extend the remote fixtures
+instead of adding a second loopback harness. No production model implementation
+is replaced. Preserve generic Codex request-model/legacy-serialization/reasoning
+controls and the unrelated Settings writer's refusal to silently repair a bad
+model binding. Independent reconciliation approved adoption of the remote
+production implementation, with these complementary controls retained. The
+reconciled snapshot requires fresh source review and exact-H Actions; fixed U
+and all global completion flags remain unchanged.

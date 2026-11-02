@@ -103,6 +103,45 @@ negative candidates prove there is no durable summary on refusal. This is a
 consumer correction for the previously unreadable control records, not a
 claim that unsupported tool/media/provider or restart scopes are accepted.
 
+### Admission generation and production refusal (`CC-05` recovery)
+
+At base `126dea3a7f077677e86f2e0fbfe73b660e11bd60`, the Runner captures
+`SessionWorkAdmissionRecord::lifecycle_revision`, while compaction compares and advances
+only metadata's independently mutable revision. The existing Session admission
+is the generation authority whenever present. Validate its canonical binding
+inside the compaction transaction; malformed present admission cannot fall back
+to metadata. A genuinely absent admission retains metadata-only compatibility.
+
+A new compaction must preserve generation-bound custody: refuse while background
+work, media work/paths, provider-review identity/facts/continuation, a pending
+memory/profile journal, or a running cron projection in the current generation
+remains. Cron settlement reads the current admission generation and must remain
+able to finish its registered row after a refused compaction.
+Only absent review phase or clean `completed`
+history with no retained review custody is eligible. Keep all archive/deletion,
+transcript-tail and typed retained-replay guards. On success, one transaction
+inserts the summary and CAS-updates admission and metadata to one new revision,
+preserving their other fields. Any CAS failure rolls back every write and
+publishes no listener/write-generation change.
+
+An admission-backed identical retry is valid only while its resulting generation
+is current and its entry remains the latest compaction, including after a
+successor written by an older binary that does not advance admission.
+For a historical split-generation entry, compatibility may recognize the
+unchanged source admission generation only if that entry is still the latest
+compaction; this returns existing state without writes or custody transfer.
+Archive/restore or a successor compaction fences the old retry. Conflicting
+payloads remain conflicts. Metadata-only legacy duplicate behavior is retained.
+
+The production caller must also stop when both primary and fallback summary
+fitting fail. It cannot commit an unfitted fallback or discard the required
+details suffix. This repairs the deferred caller gap from planner recovery.
+Actions oracles use the actual admission value, ordinary metadata divergence,
+two successive compactions and owner reopen, archive/restore with an unchanged
+tail, busy custody that remains settleable, and injected post-insert CAS loss.
+Refusal leaves transcript, raw KV values, write generation and publications
+unchanged. These are bounded recovery contracts, not full compaction acceptance.
+
 ## 5. Current state
 
 ### Planning recovery at H `49200bf2577c9d83aee1f02eef2c65150ca2c2d8`

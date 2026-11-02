@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::VecDeque;
 use std::fs;
 use std::io::Cursor;
@@ -112,10 +113,23 @@ fn refused_fabushi_dispatch(
     checkpoint: Option<&RoutedProviderCheckpoint>,
     cancelled: bool,
 ) -> ProviderSessionError {
-    let root = std::env::temp_dir();
-    let should_cancel = || cancelled;
-    run_routed_provider_text_with_lifecycle(
+    refused_provider_dispatch(
         RoutedProvider::Fabushi,
+        requested,
+        checkpoint,
+        &|| cancelled,
+    )
+}
+
+fn refused_provider_dispatch(
+    provider: RoutedProvider,
+    requested: Option<&str>,
+    checkpoint: Option<&RoutedProviderCheckpoint>,
+    should_cancel: &dyn Fn() -> bool,
+) -> ProviderSessionError {
+    let root = std::env::temp_dir();
+    run_routed_provider_text_with_lifecycle(
+        provider,
         &[],
         &mut RoutedProviderOptions {
             data_dir: &root,
@@ -125,18 +139,18 @@ fn refused_fabushi_dispatch(
             tools: &[],
             mcp_server_url: None,
             execute_tool: &mut |_tool, _args, _call_id| {
-                panic!("refused Fabushi dispatch must not execute a tool")
+                panic!("refused provider dispatch must not execute a tool")
             },
             on_text_delta: &mut |_delta, _accumulated| {
-                panic!("refused Fabushi dispatch must not emit text")
+                panic!("refused provider dispatch must not emit text")
             },
             on_partial_tool_call: None,
-            should_cancel: &should_cancel,
+            should_cancel,
         },
         checkpoint,
-        &mut |_accepted| panic!("refused Fabushi dispatch must not accept a checkpoint"),
+        &mut |_accepted| panic!("refused provider dispatch must not accept a checkpoint"),
     )
-    .expect_err("Fabushi dispatch must fail before provider activity")
+    .expect_err("provider dispatch must fail before provider activity")
 }
 
 #[test]
@@ -278,6 +292,24 @@ fn fabushi_environment_fallback_checkpoint_pin_and_auth_order_are_isolated() {
                 ProviderSessionError::Configuration(message) if message.contains("model selection"),
             ));
         }
+        let checks = Cell::new(0_usize);
+        let error = refused_provider_dispatch(
+            RoutedProvider::Fabushi,
+            Some("\tModel"),
+            None,
+            &|| {
+                let previous = checks.get();
+                checks.set(previous + 1);
+                previous > 0
+            },
+        );
+        assert!(matches!(&error, ProviderSessionError::Cancelled(_)), "{error}");
+        assert_eq!(checks.get(), 2,
+            "routed post-call cancellation must run after the pre-auth model refusal");
+        assert!(matches!(
+            refused_provider_dispatch(RoutedProvider::Cursor, Some("\tModel"), None, &|| false),
+            ProviderSessionError::Configuration(message) if message.contains("Cursor inference requires"),
+        ), "Cursor must ignore the Fabushi-only model field and reach its own auth boundary");
         eprintln!("{CHILD_COMPLETED}:{case}");
         return;
     }

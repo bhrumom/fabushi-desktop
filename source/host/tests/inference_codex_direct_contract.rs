@@ -246,6 +246,9 @@ fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
     assert!(error.to_string().contains("transient upstream failure"));
     assert_eq!(first_tool_calls, 1);
     assert_eq!(first_deltas[0].0, "Checking ");
+    assert_eq!(first_transport.requests.len(), 2);
+    assert_eq!(first_transport.requests[0]["model"], "gpt-test");
+    assert_eq!(first_transport.requests[1]["model"], "gpt-test");
 
     let checkpoint = checkpoint.expect("tool boundary checkpoint");
     assert_eq!(checkpoint.model.as_deref(), Some("gpt-test"));
@@ -479,6 +482,7 @@ fn codex_direct_resumes_a_legacy_checkpoint_without_model_identity() {
     let checkpoint: CodexDirectCheckpoint = serde_json::from_value(json!({
         "input": [
             {"role":"user","content":"calendar"},
+            {"type":"reasoning","encrypted_content":"opaque-legacy-reasoning"},
             {
                 "type":"function_call", "name":"calendar_list",
                 "call_id":"legacy-call", "arguments":"{}"
@@ -496,6 +500,8 @@ fn codex_direct_resumes_a_legacy_checkpoint_without_model_identity() {
     }))
     .expect("decode legacy checkpoint without a model field");
     assert_eq!(checkpoint.model, None);
+    assert!(serde_json::to_value(&checkpoint).expect("serialize legacy checkpoint")
+        .get("model").is_none());
     let mut transport = FakeTransport {
         responses: VecDeque::from([vec![
             json!({"type":"response.output_text.delta","delta":"done"}),
@@ -514,7 +520,7 @@ fn codex_direct_resumes_a_legacy_checkpoint_without_model_identity() {
         Some(&checkpoint),
         &mut |_tool, _args, _call_id| panic!("accepted legacy tools must not execute again"),
         &mut |_delta, _accumulated| {},
-        &mut |_checkpoint| Ok(()),
+        &mut |_checkpoint| panic!("text-only continuation must not create a tool checkpoint"),
         &|| false,
     )
     .expect("generic Codex retains legacy checkpoint compatibility");

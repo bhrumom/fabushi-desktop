@@ -1574,13 +1574,13 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "INSERT INTO cron_session_runs (session_key, automation_id, run_id, session_id, lifecycle_revision, updated_at_ms, base_session, state)\
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 'running')\
-                     ON CONFLICT(session_key) DO UPDATE SET updated_at_ms = excluded.updated_at_ms\
-                     WHERE cron_session_runs.automation_id = excluded.automation_id\
-                       AND cron_session_runs.run_id = excluded.run_id\
-                       AND cron_session_runs.session_id = excluded.session_id\
-                       AND cron_session_runs.lifecycle_revision = excluded.lifecycle_revision\
+                    "INSERT INTO cron_session_runs (session_key, automation_id, run_id, session_id, lifecycle_revision, updated_at_ms, base_session, state) \
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 'running') \
+                     ON CONFLICT(session_key) DO UPDATE SET updated_at_ms = excluded.updated_at_ms \
+                     WHERE cron_session_runs.automation_id = excluded.automation_id \
+                       AND cron_session_runs.run_id = excluded.run_id \
+                       AND cron_session_runs.session_id = excluded.session_id \
+                       AND cron_session_runs.lifecycle_revision = excluded.lifecycle_revision \
                        AND cron_session_runs.state = 'running'",
                     params![
                         session_key,
@@ -1642,8 +1642,8 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "UPDATE cron_session_runs\
-                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, terminal_detail = ?3\
+                    "UPDATE cron_session_runs \
+                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, terminal_detail = ?3 \
                      WHERE session_key = ?4 AND session_id = ?5 AND lifecycle_revision = ?6 AND state = 'running'",
                     params![
                         finished_at_ms,
@@ -1708,12 +1708,12 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "UPDATE cron_session_runs\
-                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2,\
-                         terminal_detail = ?3, active_controller = ?4,\
-                         pending_outgoing_media = ?5, unsettled_subagent = ?6,\
-                         fence_state_known = 1\
-                     WHERE session_key = ?7 AND session_id = ?8\
+                    "UPDATE cron_session_runs \
+                     SET updated_at_ms = ?1, state = 'terminal', terminal_outcome = ?2, \
+                         terminal_detail = ?3, active_controller = ?4, \
+                         pending_outgoing_media = ?5, unsettled_subagent = ?6, \
+                         fence_state_known = 1 \
+                     WHERE session_key = ?7 AND session_id = ?8 \
                        AND lifecycle_revision = ?9 AND state = 'running'",
                     params![
                         finished_at_ms,
@@ -1771,10 +1771,10 @@ impl SandAgentDb {
                     return Ok(false);
                 }
                 Ok(db.execute(
-                    "UPDATE cron_session_runs\
-                     SET active_controller = ?1, pending_outgoing_media = ?2,\
-                         unsettled_subagent = ?3, fence_state_known = 1\
-                     WHERE session_key = ?4 AND session_id = ?5\
+                    "UPDATE cron_session_runs \
+                     SET active_controller = ?1, pending_outgoing_media = ?2, \
+                         unsettled_subagent = ?3, fence_state_known = 1 \
+                     WHERE session_key = ?4 AND session_id = ?5 \
                        AND lifecycle_revision = ?6 AND state = 'running'",
                     params![
                         active_controller,
@@ -1821,9 +1821,9 @@ impl SandAgentDb {
             return Ok(Vec::new());
         };
         let mut statement = db.prepare(
-            "SELECT session_key, automation_id, run_id, session_id, lifecycle_revision,\
-                    updated_at_ms, base_session, state, terminal_outcome, terminal_detail,\
-                    active_controller, pending_outgoing_media, unsettled_subagent, fence_state_known\
+            "SELECT session_key, automation_id, run_id, session_id, lifecycle_revision, \
+                    updated_at_ms, base_session, state, terminal_outcome, terminal_detail, \
+                    active_controller, pending_outgoing_media, unsettled_subagent, fence_state_known \
              FROM cron_session_runs ORDER BY updated_at_ms ASC, session_key ASC",
         )?;
         let rows = statement.query_map([], |row| {
@@ -3876,10 +3876,16 @@ impl SandAgentDb {
         };
 
         db.execute_batch("BEGIN IMMEDIATE")?;
+        let mut admission_updated = false;
         let result = (|| -> Result<CompactionCommitOutcome, AgentDbProjectionError> {
             if !session_work_write_is_admitted(db)? {
                 return Ok(CompactionCommitOutcome::RejectedStale);
             }
+            let raw_admission = read_kv(db, KV_SESSION_WORK_ADMISSION)?;
+            let admission = raw_admission
+                .as_deref()
+                .map(serde_json::from_str::<SessionWorkAdmissionRecord>)
+                .transpose()?;
             let existing = db
                 .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
                     row.get::<_, String>(0)
@@ -3895,9 +3901,50 @@ impl SandAgentDb {
                     compaction_first_kept_entry_id(&existing)?;
                 }
                 if compaction_payload_matches(&existing, commit) {
+                    if let Some(admission) = admission.as_ref() {
+                        let current_revision = admission.lifecycle_revision.as_str();
+                        let result_revision = existing
+                            .get("lifecycleRevision")
+                            .and_then(serde_json::Value::as_str);
+                        let source_revision = existing
+                            .get("sourceLifecycleRevision")
+                            .and_then(serde_json::Value::as_str);
+                        // Historical compactions advanced metadata only. Their
+                        // unchanged source admission remains a compatible retry
+                        // only while no successor compaction has been written.
+                        let latest_compaction_id = db
+                            .query_row(
+                                "SELECT id FROM transcript_entries \
+                                 WHERE json_extract(entry, '$.kind') = 'compaction' \
+                                 ORDER BY seq DESC LIMIT 1",
+                                [],
+                                |row| row.get::<_, String>(0),
+                            )
+                            .optional()?;
+                        if latest_compaction_id.as_deref() != Some(entry_id)
+                            || (Some(current_revision) != result_revision
+                                && Some(current_revision) != source_revision)
+                        {
+                            return Ok(CompactionCommitOutcome::RejectedStale);
+                        }
+                    }
                     return Ok(CompactionCommitOutcome::AlreadyCommitted(existing));
                 }
                 return Err(AgentDbProjectionError::CompactionConflict(entry_id.to_string()));
+            }
+
+            if admission.as_ref().is_some_and(|record| {
+                record.admitted_work_id.is_some()
+                    || record.admitted_media_work_id.is_some()
+                    || !record.admitted_media_paths.is_empty()
+                    || record.provider_review_id.is_some()
+                    || record.provider_review.is_some()
+                    || record.provider_review_continuation_run_id.is_some()
+                    || !matches!(record.provider_review_phase.as_deref(), None | Some("completed"))
+            }) || read_kv(db, KV_PENDING_MEMORY_MUTATION)?.is_some()
+                || read_kv(db, KV_PENDING_PROFILE_MUTATION)?.is_some()
+            {
+                return Ok(CompactionCommitOutcome::RejectedStale);
             }
 
             let raw_metadata = db
@@ -3910,7 +3957,7 @@ impl SandAgentDb {
             };
             let metadata_bytes = decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?;
             let mut metadata: serde_json::Value = serde_json::from_slice(&metadata_bytes)?;
-            let current_revision = metadata
+            let metadata_revision = metadata
                 .get("lifecycleRevision")
                 .and_then(serde_json::Value::as_str)
                 .map(str::trim)
@@ -3920,10 +3967,23 @@ impl SandAgentDb {
                         "metadata has no lifecycleRevision".into(),
                     )
                 })?;
+            let current_revision = admission
+                .as_ref()
+                .map(|record| record.lifecycle_revision.as_str())
+                .unwrap_or(metadata_revision);
             if !session_work_write_is_admitted(db)? {
                 return Ok(CompactionCommitOutcome::RejectedStale);
             }
             if current_revision != expected_revision {
+                return Ok(CompactionCommitOutcome::RejectedStale);
+            }
+            let running_cron = db.query_row(
+                "SELECT EXISTS(SELECT 1 FROM cron_session_runs \
+                 WHERE lifecycle_revision = ?1 AND state = 'running')",
+                params![current_revision],
+                |row| row.get::<_, bool>(0),
+            )?;
+            if running_cron {
                 return Ok(CompactionCommitOutcome::RejectedStale);
             }
 
@@ -3996,7 +4056,7 @@ impl SandAgentDb {
             })?;
             metadata_object.insert(
                 "lifecycleRevision".into(),
-                serde_json::Value::String(next_revision),
+                serde_json::Value::String(next_revision.clone()),
             );
             let next_metadata = encode_hex(&serde_json::to_vec(&metadata)?);
             if db.execute(
@@ -4005,6 +4065,26 @@ impl SandAgentDb {
             )? != 1
             {
                 return Ok(CompactionCommitOutcome::RejectedStale);
+            }
+            if let Some(raw_admission) = raw_admission {
+                // Preserve fields written by newer owners instead of
+                // serializing only the currently known admission struct.
+                let mut admission_json: serde_json::Value = serde_json::from_str(&raw_admission)?;
+                let admission_object = admission_json.as_object_mut().ok_or_else(|| {
+                    AgentDbProjectionError::CompactionInvalid("admission is not an object".into())
+                })?;
+                admission_object.insert(
+                    "lifecycle_revision".into(),
+                    serde_json::Value::String(next_revision),
+                );
+                if db.execute(
+                    COMPARE_AND_SET_KV_SQL,
+                    params![admission_json.to_string(), KV_SESSION_WORK_ADMISSION, raw_admission],
+                )? != 1
+                {
+                    return Ok(CompactionCommitOutcome::RejectedStale);
+                }
+                admission_updated = true;
             }
             Ok(CompactionCommitOutcome::Committed(entry))
         })();
@@ -4015,6 +4095,8 @@ impl SandAgentDb {
                     let _ = db.execute_batch("ROLLBACK");
                     return Err(error.into());
                 }
+                // Listeners may synchronously read this same owner.
+                drop(guard);
                 bump_db_write_generation(&self.db_path);
                 if let CompactionCommitOutcome::Committed(entry) = &outcome {
                     publish_entries_upserted(&self.db_path, vec![entry.clone()]);
@@ -4022,6 +4104,12 @@ impl SandAgentDb {
                         &self.db_path,
                         AgentDbListenerChannel::Metadata("lifecycleRevision".into()),
                     );
+                    if admission_updated {
+                        notify_agent_db_listeners(
+                            &self.db_path,
+                            AgentDbListenerChannel::Metadata(KV_SESSION_WORK_ADMISSION.into()),
+                        );
+                    }
                 }
                 Ok(outcome)
             }

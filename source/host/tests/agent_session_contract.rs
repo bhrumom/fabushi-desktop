@@ -23,7 +23,8 @@ use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
-    CompactionCommit, CompactionCommitOutcome, SessionWorkAdmissionRecord,
+    AgentDbSubscription, CompactionCommit, CompactionCommitOutcome, SandAgentDb,
+    SessionWorkAdmissionRecord,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::typed_replay::{
@@ -33,7 +34,9 @@ use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     UserMessageOptions, create_send_message_entry, create_user_message,
 };
 use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
-use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+use mahayana_host_runtime::transcript_mutation_events::{
+    TranscriptMutationSubscription, subscribe_transcript_mutations,
+};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -44,6 +47,59 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-agent-session-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+fn compaction_session_snapshot(
+    owner: &SandAgentDb,
+) -> (Vec<(i64, String, String)>, Vec<(String, String)>, u64) {
+    let observation = rusqlite::Connection::open_with_flags(
+        owner.db_path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    ).expect("read-only compaction observation");
+    let mut transcript = observation.prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq").unwrap();
+    let rows = transcript.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    let mut kv = observation.prepare("SELECT key, value FROM kv ORDER BY key").unwrap();
+    let values = kv.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    (rows, values, get_sand_agent_db_write_generation(owner.db_path()))
+}
+
+fn observe_compaction_session_publications(
+    owner: &SandAgentDb,
+) -> (Arc<AtomicUsize>, [AgentDbSubscription; 2], TranscriptMutationSubscription) {
+    let count = Arc::new(AtomicUsize::new(0));
+    let subscriptions = ["lifecycleRevision", "sessionWorkAdmission"].map(|key| {
+        let count = Arc::clone(&count);
+        owner.subscribe_metadata(key, Arc::new(move || { count.fetch_add(1, Ordering::SeqCst); }))
+    });
+    let agent_id = owner.read_metadata().unwrap()["agentId"].as_str().unwrap().to_string();
+    let transcript = subscribe_transcript_mutations({
+        let count = Arc::clone(&count);
+        move |mutation| {
+            if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                count.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+    });
+    (count, subscriptions, transcript)
+}
+
+fn seed_session_compaction(production: &ProductionSessionWorkers, agent_id: &str) -> CompactionCommit {
+    assert_eq!(production.append_agent_transcript_entries(agent_id, &[
+        create_user_message("old", "earlier request", UserMessageOptions::default(), 1.0),
+        create_user_message("tail", "retained request", UserMessageOptions::default(), 2.0),
+    ]).unwrap(), 2);
+    CompactionCommit {
+        entry_id: "compaction-1".into(),
+        expected_transcript_tail_id: "tail".into(),
+        first_kept_entry_id: Some("tail".into()),
+        summary: "earlier request summarized".into(),
+        tokens_before: 123,
+        details: None,
+        source_turn_id: "turn-1".into(),
+        expected_lifecycle_revision: production.read_session_work_admission(agent_id)
+            .unwrap().expect("production admission").lifecycle_revision,
+    }
 }
 
 #[test]
@@ -72,15 +128,13 @@ fn production_compaction_preserves_text_send_messages_for_current_and_later_repl
         .read_agent_typed_compacted_transcript_entries(&record.id)
         .expect("no active compaction")
         .is_empty());
-    // The guarded compaction owner compares metadata lifecycle identity, not
-    // the distinct Session work-admission revision.
-    let revision = production
-        .open_agent_db_owner(&record.id)
-        .expect("metadata owner")
-        .get_metadata("lifecycleRevision")
-        .expect("metadata lifecycle")
-        .and_then(|value| value.as_str().map(ToOwned::to_owned))
-        .expect("metadata lifecycle identity");
+    // Capture the same admission generation as the production Runner, then
+    // let an ordinary metadata write demonstrate the independent revision.
+    let revision = production.read_session_work_admission(&record.id)
+        .expect("production admission").expect("materialized admission").lifecycle_revision;
+    let owner = production.open_agent_db_owner(&record.id).expect("owner");
+    assert!(owner.set_metadata("name", serde_json::json!("renamed before compaction")).unwrap());
+    assert_ne!(owner.read_metadata().unwrap()["lifecycleRevision"], revision);
     let commit = CompactionCommit {
         entry_id: "compaction-1".into(),
         expected_transcript_tail_id: "sent-1".into(),
@@ -89,12 +143,17 @@ fn production_compaction_preserves_text_send_messages_for_current_and_later_repl
         tokens_before: 123,
         details: None,
         source_turn_id: "turn-1".into(),
-        expected_lifecycle_revision: revision,
+        expected_lifecycle_revision: revision.clone(),
     };
-    assert!(matches!(
-        production.commit_agent_compaction(&record.id, &commit).expect("compaction"),
-        CompactionCommitOutcome::Committed(_)
-    ));
+    let CompactionCommitOutcome::Committed(first_compaction) = production
+        .commit_agent_compaction(&record.id, &commit).expect("compaction") else {
+        panic!("production admission must commit despite metadata divergence");
+    };
+    let first_revision = production.read_session_work_admission(&record.id).unwrap().unwrap().lifecycle_revision;
+    assert_ne!(first_revision, revision);
+    assert_eq!(first_compaction["sourceLifecycleRevision"], revision);
+    assert_eq!(first_compaction["lifecycleRevision"], first_revision);
+    assert_eq!(owner.read_metadata().unwrap()["lifecycleRevision"], first_revision);
     let durable = production.read_agent_transcript_entries(&record.id).expect("durable history");
     assert_eq!(durable.len(), 4);
     assert_eq!(&durable[..3], entries.as_slice());
@@ -157,13 +216,46 @@ fn production_compaction_preserves_text_send_messages_for_current_and_later_repl
         "role": "assistant", "content": [{"type": "input_text", "text": later_text}]
     }));
 
+    let second_commit = CompactionCommit {
+        entry_id: "compaction-2".into(),
+        expected_transcript_tail_id: "sent-2".into(),
+        first_kept_entry_id: Some("next-user".into()),
+        summary: "earlier request and first answer summarized".into(),
+        tokens_before: 456,
+        details: None,
+        source_turn_id: "turn-2".into(),
+        expected_lifecycle_revision: production.read_session_work_admission(&record.id)
+            .unwrap().unwrap().lifecycle_revision,
+    };
+    let CompactionCommitOutcome::Committed(second_compaction) = production
+        .commit_agent_compaction(&record.id, &second_commit).expect("successive compaction") else {
+        panic!("the next captured admission must permit a second compaction");
+    };
+    let second_revision = production.read_session_work_admission(&record.id).unwrap().unwrap().lifecycle_revision;
+    assert_ne!(second_revision, first_revision);
+    assert_eq!(second_compaction["sourceLifecycleRevision"], first_revision);
+    assert_eq!(second_compaction["lifecycleRevision"], second_revision);
+    assert_eq!(owner.read_metadata().unwrap()["lifecycleRevision"], second_revision);
+    let second_replay = production.read_agent_typed_compacted_transcript_entries(&record.id).unwrap();
+    assert_eq!(second_replay.len(), 3);
+    assert!(matches!(&second_replay[0], TypedReplayEntry::CompactionSummary(summary)
+        if summary.summary == second_commit.summary && summary.tokens_before == 456));
+    assert_eq!(&second_replay[1..], &later_replay[3..]);
+    let second_wire = serialize_responses_replay(&second_replay).unwrap();
+    assert_eq!(&second_wire[1..], &later_wire[3..]);
+    let before_old_retry = compaction_session_snapshot(&owner);
+    assert_eq!(production.commit_agent_compaction(&record.id, &commit).unwrap(), CompactionCommitOutcome::RejectedStale);
+    assert_eq!(compaction_session_snapshot(&owner), before_old_retry);
+
     production.shutdown();
     let reopened = ProductionSessionWorkers::with_agents_root(&agents, 500);
     let reopened_replay = reopened
         .read_agent_typed_compacted_transcript_entries(&record.id)
         .expect("reopened production replay");
-    assert_eq!(reopened_replay, later_replay);
-    assert_eq!(serialize_responses_replay(&reopened_replay).expect("reopened Responses replay"), later_wire);
+    assert_eq!(reopened_replay, second_replay);
+    assert_eq!(serialize_responses_replay(&reopened_replay).expect("reopened Responses replay"), second_wire);
+    assert_eq!(reopened.read_session_work_admission(&record.id).unwrap().unwrap().lifecycle_revision, second_revision);
+    assert!(matches!(reopened.commit_agent_compaction(&record.id, &second_commit).unwrap(), CompactionCommitOutcome::AlreadyCommitted(_)));
     reopened.shutdown();
     let _ = fs::remove_dir_all(root);
 }
@@ -192,6 +284,8 @@ fn production_compaction_rejects_invalid_send_message_without_publishing_boundar
         );
         let owner = production.open_agent_db_owner(&record.id).expect("owner");
         let metadata_before = owner.read_metadata().expect("metadata before");
+        let admission_before = production.read_session_work_admission(&record.id)
+            .unwrap().expect("actual production admission");
         let generation_before = get_sand_agent_db_write_generation(owner.db_path());
         // A malformed text row is intentionally invisible to presentation
         // decoding. Observe raw durable rows so a decoder drop cannot satisfy
@@ -225,8 +319,7 @@ fn production_compaction_rejects_invalid_send_message_without_publishing_boundar
             tokens_before: 123,
             details: None,
             source_turn_id: "turn-1".into(),
-            expected_lifecycle_revision: metadata_before["lifecycleRevision"]
-                .as_str().expect("metadata lifecycle identity").into(),
+            expected_lifecycle_revision: admission_before.lifecycle_revision.clone(),
         };
         let error = production.commit_agent_compaction(&record.id, &commit)
             .expect_err("unsupported SendMessage must reject compaction");
@@ -234,12 +327,146 @@ fn production_compaction_rejects_invalid_send_message_without_publishing_boundar
         assert!(error.contains("send-message"), "{error}");
         assert_eq!(raw_rows(), rows_before);
         assert_eq!(owner.read_metadata().expect("metadata after rejection"), metadata_before);
+        assert_eq!(owner.read_session_work_admission().unwrap(), Some(admission_before));
         assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation_before);
         assert!(production
             .read_agent_typed_compacted_transcript_entries(&record.id)
             .expect("rejected boundary remains inactive")
             .is_empty());
     }
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_compaction_archive_restore_fences_saved_plan_and_committed_retry() {
+    let root = temp_root("compaction-archive-restore");
+    let production = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    let record = production.materialize_new_session(None, "user", None).unwrap();
+    let saved_plan = seed_session_compaction(&production, &record.id);
+    let owner = production.open_agent_db_owner(&record.id).unwrap();
+    let session_key = format!("agent:{}:main", record.id);
+    let rows_before = compaction_session_snapshot(&owner).0;
+    let metadata_before = owner.read_kv("metadata").unwrap();
+    let archived = production.transition_session_work_archive(
+        &record.id, &session_key, &record.id, Some(&saved_plan.expected_lifecycle_revision),
+        true, Some("operator"), Some("pause"), 3.0,
+    ).unwrap();
+    let restored = production.transition_session_work_archive(
+        &record.id, &session_key, &record.id, Some(&archived.lifecycle_revision),
+        false, None, None, 4.0,
+    ).unwrap();
+    assert_ne!(restored.lifecycle_revision, saved_plan.expected_lifecycle_revision);
+    assert_eq!(compaction_session_snapshot(&owner).0, rows_before);
+    assert_eq!(owner.read_kv("metadata").unwrap(), metadata_before);
+    let (publications, _subscriptions, transcript_subscription) = observe_compaction_session_publications(&owner);
+    let before_stale_plan = compaction_session_snapshot(&owner);
+    assert_eq!(production.commit_agent_compaction(&record.id, &saved_plan).unwrap(), CompactionCommitOutcome::RejectedStale);
+    assert_eq!(compaction_session_snapshot(&owner), before_stale_plan);
+    assert_eq!(publications.load(Ordering::SeqCst), 0);
+
+    let mut fresh_plan = saved_plan;
+    fresh_plan.expected_lifecycle_revision = restored.lifecycle_revision;
+    let CompactionCommitOutcome::Committed(entry) = production.commit_agent_compaction(&record.id, &fresh_plan).unwrap() else {
+        panic!("a fresh post-restore admission must permit compaction");
+    };
+    let resulting_revision = entry["lifecycleRevision"].as_str().unwrap();
+    assert_eq!(production.read_session_work_admission(&record.id).unwrap().unwrap().lifecycle_revision, resulting_revision);
+    assert_eq!(owner.read_metadata().unwrap()["lifecycleRevision"], resulting_revision);
+    let archived = production.transition_session_work_archive(
+        &record.id, &session_key, &record.id, Some(resulting_revision),
+        true, Some("operator"), Some("pause again"), 5.0,
+    ).unwrap();
+    production.transition_session_work_archive(
+        &record.id, &session_key, &record.id, Some(&archived.lifecycle_revision),
+        false, None, None, 6.0,
+    ).unwrap();
+    let before_old_retry = compaction_session_snapshot(&owner);
+    let publications_before_retry = publications.load(Ordering::SeqCst);
+    assert_eq!(before_old_retry.0.last().unwrap().1, fresh_plan.entry_id);
+    assert_eq!(production.commit_agent_compaction(&record.id, &fresh_plan).unwrap(), CompactionCommitOutcome::RejectedStale);
+    assert_eq!(compaction_session_snapshot(&owner), before_old_retry);
+    assert_eq!(publications.load(Ordering::SeqCst), publications_before_retry);
+    transcript_subscription.unsubscribe();
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_compaction_retains_captured_background_and_media_generations() {
+    let root = temp_root("compaction-active-custody");
+    let production = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    for media in [false, true] {
+        let record = production.materialize_new_session(None, "user", None).unwrap();
+        let mut commit = seed_session_compaction(&production, &record.id);
+        let owner = production.open_agent_db_owner(&record.id).unwrap();
+        let session_key = format!("agent:{}:main", record.id);
+        let revision = if media {
+            production.capture_session_media_admission(
+                &record.id, &session_key, "media-1", Some(&root.join("outgoing.bin")),
+            ).unwrap()
+        } else {
+            production.capture_session_work_admission(&record.id, &session_key, "work-1").unwrap()
+        };
+        assert_eq!(revision, commit.expected_lifecycle_revision);
+        let (publications, _subscriptions, transcript_subscription) = observe_compaction_session_publications(&owner);
+        let before_refusal = compaction_session_snapshot(&owner);
+        assert_eq!(production.commit_agent_compaction(&record.id, &commit).unwrap(), CompactionCommitOutcome::RejectedStale);
+        assert_eq!(compaction_session_snapshot(&owner), before_refusal);
+        assert_eq!(publications.load(Ordering::SeqCst), 0);
+        if media {
+            assert!(production.release_session_media_admission(&record.id, &revision, "media-1").unwrap());
+        } else {
+            assert!(matches!(production.commit_session_work_result(
+                &record.id, &session_key, &revision, "work-1", "result-1", "finished", 0,
+            ).unwrap(), mahayana_host_runtime::extensions::session::agent_db::SessionWorkResultCommitOutcome::Committed(_)));
+        }
+        assert_eq!(production.read_session_work_admission(&record.id).unwrap().unwrap().lifecycle_revision, revision);
+        commit.expected_transcript_tail_id = compaction_session_snapshot(&owner).0.last().unwrap().1.clone();
+        assert!(matches!(production.commit_agent_compaction(&record.id, &commit).unwrap(), CompactionCommitOutcome::Committed(_)));
+        transcript_subscription.unsubscribe();
+    }
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_compaction_waits_for_current_generation_cron_settlement() {
+    let root = temp_root("compaction-running-cron");
+    let production = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    let record = production.materialize_new_session(None, "user", None).unwrap();
+    let commit = seed_session_compaction(&production, &record.id);
+    let owner = production.open_agent_db_owner(&record.id).unwrap();
+    // Older-generation running rows remain the existing reconciliation gap;
+    // this guard protects custody that the current finish path can settle.
+    let historical_key = format!("agent:{}:cron:historical:run-old", record.id);
+    assert!(owner.begin_cron_session_run(
+        &historical_key, "historical", "run-old", &historical_key, "old-generation", 0.0,
+    ).unwrap());
+    assert!(production.begin_cron_session_run(&record.id, "automation-1", "run-current", 1.0).unwrap());
+    let running = production.list_cron_session_runs(&record.id).unwrap();
+    let current = running.iter().find(|row| row.run_id == "run-current").unwrap();
+    assert_eq!(current.state, "running");
+    assert_eq!(current.lifecycle_revision, commit.expected_lifecycle_revision);
+    let (publications, _subscriptions, transcript_subscription) = observe_compaction_session_publications(&owner);
+    let before_refusal = compaction_session_snapshot(&owner);
+    assert_eq!(production.commit_agent_compaction(&record.id, &commit).unwrap(), CompactionCommitOutcome::RejectedStale);
+    assert_eq!(compaction_session_snapshot(&owner), before_refusal);
+    assert_eq!(production.list_cron_session_runs(&record.id).unwrap(), running);
+    assert_eq!(publications.load(Ordering::SeqCst), 0);
+    assert!(production.finish_cron_session_run(
+        &record.id, "automation-1", "run-current", "ok", 2.0, Some("completed"),
+    ).unwrap());
+    let settled = production.list_cron_session_runs(&record.id).unwrap();
+    let current = settled.iter().find(|row| row.run_id == "run-current").unwrap();
+    assert_eq!(current.state, "terminal");
+    assert_eq!(current.terminal_outcome.as_deref(), Some("ok"));
+    assert_eq!(current.lifecycle_revision, commit.expected_lifecycle_revision);
+    assert_eq!(production.read_session_work_admission(&record.id).unwrap().unwrap().lifecycle_revision, commit.expected_lifecycle_revision);
+    assert!(matches!(production.commit_agent_compaction(&record.id, &commit).unwrap(), CompactionCommitOutcome::Committed(_)));
+    assert_eq!(publications.load(Ordering::SeqCst), 3);
+    assert_eq!(production.list_cron_session_runs(&record.id).unwrap(), settled);
+    transcript_subscription.unsubscribe();
     production.shutdown();
     let _ = fs::remove_dir_all(root);
 }

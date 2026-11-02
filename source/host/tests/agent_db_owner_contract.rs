@@ -1,10 +1,10 @@
 use std::fs;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
-    AgentDbProjectionError, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
+    AgentDbProjectionError, AgentDbSubscription, CompactionCommit, CompactionCommitOutcome, PendingMemoryMutation,
     PendingProfileMutation, ProfileFileSnapshot,
     ProviderReviewContinuationOutcome, SandAgentDb,
     SandAgentDbOptions, SessionProviderReview, SessionWorkAdmissionRecord,
@@ -23,7 +23,9 @@ use mahayana_host_runtime::extensions::memory::memory_service::{
 use mahayana_host_runtime::storage::store_db::{
     get_sand_agent_db_write_generation, live_db_handle_count,
 };
-use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+use mahayana_host_runtime::transcript_mutation_events::{
+    TranscriptMutationSubscription, subscribe_transcript_mutations,
+};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -34,6 +36,140 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-agent-db-owner-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+fn compaction_fixture(
+    label: &str,
+) -> (std::path::PathBuf, SandAgentDb, SessionWorkAdmissionRecord, CompactionCommit) {
+    let root = temp_root(label);
+    let agent_id = format!("agent-compaction-{label}");
+    let agent_dir = root.join(&agent_id);
+    fs::create_dir_all(&agent_dir).expect("agent directory");
+    let owner = SandAgentDb::open(agent_dir.join("store.db"), 50).expect("owner");
+    owner.append_transcript_entries(&[
+        serde_json::json!({"id":"old", "kind":"message", "role":"user", "content":"earlier"}),
+        serde_json::json!({"id":"tail", "kind":"message", "role":"user", "content":"retained"}),
+    ]).expect("candidate history");
+    let revision = owner.read_metadata().unwrap()["lifecycleRevision"]
+        .as_str().expect("metadata generation").to_string();
+    let admission = SessionWorkAdmissionRecord {
+        session_key: format!("agent:{agent_id}:main"),
+        session_id: agent_id,
+        lifecycle_revision: revision.clone(),
+        deletion_pending: false,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+    let commit = CompactionCommit {
+        entry_id: "compaction-1".into(),
+        expected_transcript_tail_id: "tail".into(),
+        first_kept_entry_id: Some("tail".into()),
+        summary: "earlier request summarized".into(),
+        tokens_before: 123,
+        details: None,
+        source_turn_id: "turn-1".into(),
+        expected_lifecycle_revision: revision,
+    };
+    (root, owner, admission, commit)
+}
+
+fn compaction_durable_snapshot(
+    owner: &SandAgentDb,
+) -> (Vec<(i64, String, String)>, Vec<(String, String)>, u64) {
+    let observation = rusqlite::Connection::open_with_flags(
+        owner.db_path(), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    ).expect("read-only owner observation");
+    let mut transcript = observation
+        .prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq")
+        .expect("raw transcript query");
+    let rows = transcript.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    let mut kv = observation.prepare("SELECT key, value FROM kv ORDER BY key").unwrap();
+    let values = kv.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        .unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    (rows, values, get_sand_agent_db_write_generation(owner.db_path()))
+}
+
+struct CompactionPublications {
+    counts: [Arc<AtomicUsize>; 3],
+    _metadata: AgentDbSubscription,
+    _admission: AgentDbSubscription,
+    transcript: Option<TranscriptMutationSubscription>,
+}
+
+impl CompactionPublications {
+    fn new(owner: &SandAgentDb) -> Self {
+        let counts: [Arc<AtomicUsize>; 3] = std::array::from_fn(|_| Arc::new(AtomicUsize::new(0)));
+        let metadata = owner.subscribe_metadata("lifecycleRevision", {
+            let count = Arc::clone(&counts[0]);
+            Arc::new(move || { count.fetch_add(1, Ordering::SeqCst); })
+        });
+        let admission = owner.subscribe_metadata("sessionWorkAdmission", {
+            let count = Arc::clone(&counts[1]);
+            Arc::new(move || { count.fetch_add(1, Ordering::SeqCst); })
+        });
+        let agent_id = owner.read_metadata().unwrap()["agentId"].as_str().unwrap().to_string();
+        let transcript = subscribe_transcript_mutations({
+            let count = Arc::clone(&counts[2]);
+            move |mutation| {
+                if mutation.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                    count.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        });
+        Self { counts, _metadata: metadata, _admission: admission, transcript: Some(transcript) }
+    }
+
+    fn counts(&self) -> [usize; 3] {
+        std::array::from_fn(|index| self.counts[index].load(Ordering::SeqCst))
+    }
+}
+
+impl Drop for CompactionPublications {
+    fn drop(&mut self) {
+        if let Some(subscription) = self.transcript.take() {
+            subscription.unsubscribe();
+        }
+    }
+}
+
+fn assert_compaction_refused_unchanged(
+    owner: &SandAgentDb,
+    commit: &CompactionCommit,
+    publications: &CompactionPublications,
+) {
+    let before = compaction_durable_snapshot(owner);
+    let counts = publications.counts();
+    assert!(matches!(owner.commit_compaction(commit).unwrap(), CompactionCommitOutcome::RejectedStale));
+    assert_eq!(compaction_durable_snapshot(owner), before);
+    assert_eq!(publications.counts(), counts);
+}
+
+fn compaction_review(session_id: &str) -> SessionProviderReview {
+    SessionProviderReview {
+        id: "review-1".into(),
+        session_id: session_id.into(),
+        run_id: "refusal-run".into(),
+        provider: "openai".into(),
+        model: "model-1".into(),
+        runtime_id: "openclaw".into(),
+        api: Some("openai-chatgpt-responses".into()),
+        native_thread_id: None,
+        native_turn_id: None,
+        explanation: "provider-authored refusal".into(),
+        continuation_message: Some("continue".into()),
+        error_type: None,
+    }
 }
 
 #[test]
@@ -2263,6 +2399,379 @@ fn transcript_delete_replay_commits_without_new_events_or_write_generation() {
     owner.close(false);
     assert!(!owner.delete_transcript_entry("delete-1").expect("closed delete replay"));
     drop(blocked);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn compaction_uses_admission_and_preserves_unknown_fields_in_both_records() {
+    let (root, owner, admission, commit) = compaction_fixture("generation-authority");
+    let mut admission_json = serde_json::to_value(&admission).unwrap();
+    admission_json["provider_review_phase"] = serde_json::json!("completed");
+    admission_json["terminal_result_idempotency_key"] = serde_json::json!("settled-result");
+    admission_json["future_owner_field"] = serde_json::json!({"nested": [1, "retain", true]});
+    assert!(owner.write_kv("sessionWorkAdmission", &admission_json.to_string()).unwrap());
+    assert!(owner.set_metadata("futureMetadata", serde_json::json!({"retain": true})).unwrap());
+    let metadata_before = owner.read_metadata().unwrap();
+    assert_ne!(metadata_before["lifecycleRevision"], admission.lifecycle_revision);
+    let publications = CompactionPublications::new(&owner);
+    let mut metadata_plan = commit.clone();
+    metadata_plan.expected_lifecycle_revision = metadata_before["lifecycleRevision"].as_str().unwrap().into();
+    assert_compaction_refused_unchanged(&owner, &metadata_plan, &publications);
+
+    let generation = get_sand_agent_db_write_generation(owner.db_path());
+    let CompactionCommitOutcome::Committed(entry) = owner.commit_compaction(&commit).unwrap() else {
+        panic!("the captured admission generation must commit despite metadata divergence");
+    };
+    let next_revision = entry["lifecycleRevision"].as_str().unwrap();
+    assert_ne!(next_revision, admission.lifecycle_revision);
+    assert_eq!(entry["sourceLifecycleRevision"], admission.lifecycle_revision);
+    let stored_admission: serde_json::Value = serde_json::from_str(
+        &owner.read_kv("sessionWorkAdmission").unwrap().unwrap(),
+    ).unwrap();
+    admission_json["lifecycle_revision"] = serde_json::json!(next_revision);
+    assert_eq!(stored_admission, admission_json);
+    let mut expected_metadata = metadata_before;
+    expected_metadata["lifecycleRevision"] = serde_json::json!(next_revision);
+    assert_eq!(owner.read_metadata().unwrap(), expected_metadata);
+    assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation + 1);
+    assert_eq!(publications.counts(), [1, 1, 1]);
+
+    let before_retry = compaction_durable_snapshot(&owner);
+    assert_eq!(owner.commit_compaction(&commit).unwrap(), CompactionCommitOutcome::AlreadyCommitted(entry));
+    assert_eq!(compaction_durable_snapshot(&owner), before_retry);
+    assert_eq!(publications.counts(), [1, 1, 1]);
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn compaction_admission_listener_can_read_the_committed_generation_from_same_owner() {
+    let (root, owner, admission, commit) = compaction_fixture("listener-reentry");
+    let owner = Arc::new(owner);
+    let weak_owner = Arc::downgrade(&owner);
+    let (callback_sender, callback_receiver) = mpsc::channel();
+    let _subscription = owner.subscribe_metadata("sessionWorkAdmission", Arc::new(move || {
+        let observed = weak_owner.upgrade()
+            .ok_or_else(|| "committing owner was dropped".to_string())
+            .and_then(|owner| owner.read_session_work_admission().map_err(|error| error.to_string()))
+            .and_then(|record| record.ok_or_else(|| "committed admission is missing".to_string()));
+        let _ = callback_sender.send(observed);
+    }));
+    let publications = CompactionPublications::new(&owner);
+    let generation = get_sand_agent_db_write_generation(owner.db_path());
+    let (commit_sender, commit_receiver) = mpsc::channel();
+    let committing_owner = Arc::clone(&owner);
+    let worker = std::thread::spawn(move || {
+        let outcome = committing_owner.commit_compaction(&commit).map_err(|error| error.to_string());
+        let _ = commit_sender.send(outcome);
+    });
+    // Join only after bounded completion: the former mutex reentry deadlock
+    // must fail this test instead of blocking the test process on join.
+    let outcome = commit_receiver.recv_timeout(Duration::from_secs(5))
+        .expect("compaction and its synchronous listener must return within the deadline")
+        .expect("compaction commit");
+    let observed = callback_receiver.recv_timeout(Duration::from_secs(5))
+        .expect("the admission callback must complete its same-owner read")
+        .expect("callback admission snapshot");
+    worker.join().expect("compaction worker returned");
+    let CompactionCommitOutcome::Committed(entry) = outcome else {
+        panic!("listener oracle requires a newly committed compaction");
+    };
+    assert_ne!(observed.lifecycle_revision, admission.lifecycle_revision);
+    assert_eq!(entry["sourceLifecycleRevision"], admission.lifecycle_revision);
+    assert_eq!(entry["lifecycleRevision"], observed.lifecycle_revision);
+    assert_eq!(owner.read_metadata().unwrap()["lifecycleRevision"], observed.lifecycle_revision);
+    assert_eq!(owner.read_session_work_admission().unwrap(), Some(observed));
+    assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation + 1);
+    assert_eq!(publications.counts(), [1, 1, 1]);
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn compaction_refuses_each_generation_bound_admission_custody_field() {
+    for case in [
+        "background", "media-work", "media-paths", "review-id", "review-facts",
+        "review-continuation", "pending", "accepted", "cancelled", "failed",
+        "outcome-unknown", "future-phase", "completed-with-custody",
+    ] {
+        let (root, owner, admission, commit) = compaction_fixture(case);
+        let mut busy = admission.clone();
+        match case {
+            "background" => busy.admitted_work_id = Some("work-1".into()),
+            "media-work" => busy.admitted_media_work_id = Some("media-1".into()),
+            "media-paths" => busy.admitted_media_paths = vec!["/tmp/owned-media".into()],
+            "review-id" => busy.provider_review_id = Some("review-1".into()),
+            "review-facts" => busy.provider_review = Some(compaction_review(&admission.session_id)),
+            "review-continuation" => busy.provider_review_continuation_run_id = Some("continuation-1".into()),
+            "completed-with-custody" => {
+                busy.provider_review_phase = Some("completed".into());
+                busy.provider_review_id = Some("review-1".into());
+            }
+            phase => busy.provider_review_phase = Some(phase.into()),
+        }
+        assert!(owner.compare_and_set_session_work_admission(Some(&admission.lifecycle_revision), &busy).unwrap());
+        let publications = CompactionPublications::new(&owner);
+        assert_compaction_refused_unchanged(&owner, &commit, &publications);
+        assert_eq!(owner.read_session_work_admission().unwrap(), Some(busy));
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn compaction_refuses_malformed_or_unbound_present_admission_without_legacy_fallback() {
+    for case in ["invalid-json", "null", "missing", "session-id", "session-key", "empty-revision"] {
+        let (root, owner, admission, commit) = compaction_fixture(case);
+        let mut value = serde_json::to_value(&admission).unwrap();
+        match case {
+            "null" => value = serde_json::Value::Null,
+            "missing" => value = serde_json::json!({}),
+            "session-id" => value["session_id"] = serde_json::json!("different-agent"),
+            "session-key" => value["session_key"] = serde_json::json!("agent:different:main"),
+            "empty-revision" => value["lifecycle_revision"] = serde_json::json!(" "),
+            _ => {}
+        }
+        let raw = if case == "invalid-json" { "{".into() } else { value.to_string() };
+        assert!(owner.write_kv("sessionWorkAdmission", &raw).unwrap());
+        let publications = CompactionPublications::new(&owner);
+        assert_compaction_refused_unchanged(&owner, &commit, &publications);
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn compaction_refuses_even_malformed_pending_journals_without_replacing_them() {
+    for key in ["pendingExternalMemoryMutation", "pendingExternalProfileMutation"] {
+        let (root, owner, _, commit) = compaction_fixture(key);
+        assert!(owner.write_kv(key, "malformed recovery journal").unwrap());
+        let publications = CompactionPublications::new(&owner);
+        assert_compaction_refused_unchanged(&owner, &commit, &publications);
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn compaction_rolls_back_insert_and_both_records_when_either_raw_cas_loses() {
+    for key in ["metadata", "sessionWorkAdmission"] {
+        let (root, owner, admission, commit) = compaction_fixture(&format!("cas-{key}"));
+        let trigger = rusqlite::Connection::open(owner.db_path()).unwrap();
+        trigger.execute_batch(&format!(
+            "CREATE TRIGGER change_compaction_generation AFTER INSERT ON transcript_entries
+             WHEN NEW.id = 'compaction-1'
+             BEGIN UPDATE kv SET value = value || ' ' WHERE key = '{key}'; END;"
+        )).expect("inject post-insert raw CAS loss");
+        let publications = CompactionPublications::new(&owner);
+        assert_compaction_refused_unchanged(&owner, &commit, &publications);
+        assert_eq!(owner.read_session_work_admission().unwrap(), Some(admission));
+        assert!(owner.get_transcript_entry_by_id("compaction-1").unwrap().is_none());
+        trigger.execute_batch("DROP TRIGGER change_compaction_generation").unwrap();
+        assert!(matches!(owner.commit_compaction(&commit).unwrap(), CompactionCommitOutcome::Committed(_)));
+        assert_eq!(publications.counts(), [1, 1, 1]);
+        owner.close(false);
+        drop(trigger);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn refused_compaction_keeps_captured_work_media_review_and_journals_settleable() {
+    for case in ["work", "media", "review", "memory", "profile"] {
+        let (root, owner, admission, mut commit) = compaction_fixture(&format!("settle-{case}"));
+        let revision = admission.lifecycle_revision.as_str();
+        let memory = PendingMemoryMutation {
+            mutation_id: "memory-clear:compaction".into(),
+            operation: "clear".into(),
+            session_key: admission.session_key.clone(),
+            session_id: admission.session_id.clone(),
+            lifecycle_revision: admission.lifecycle_revision.clone(),
+            records: Vec::new(),
+            prior_snapshot: None,
+        };
+        let mut profile = PendingProfileMutation {
+            mutation_id: "avatar-remove:compaction".into(),
+            operation: "avatar-remove".into(),
+            session_key: admission.session_key.clone(),
+            session_id: admission.session_id.clone(),
+            lifecycle_revision: admission.lifecycle_revision.clone(),
+            before_files: vec![ProfileFileSnapshot { filename: "avatar.png".into(), contents: None }],
+            after_files: Vec::new(),
+            previous_profile: owner.get_sand_profile().unwrap(),
+            next_profile: None,
+        };
+        match case {
+            "work" | "media" => {
+                let mut busy = admission.clone();
+                if case == "work" {
+                    busy.admitted_work_id = Some("work-1".into());
+                } else {
+                    busy.admitted_media_work_id = Some("media-1".into());
+                    busy.admitted_media_paths = vec!["/tmp/owned-media".into()];
+                }
+                assert!(owner.compare_and_set_session_work_admission(Some(revision), &busy).unwrap());
+            }
+            "review" => {
+                owner.record_session_provider_review(revision, &compaction_review(&admission.session_id)).unwrap();
+                let mut accepted = owner.read_session_work_admission().unwrap().unwrap();
+                accepted.admitted_work_id = Some("continuation-1".into());
+                accepted.provider_review_phase = Some("accepted".into());
+                accepted.provider_review_continuation_run_id = Some("continuation-1".into());
+                assert!(owner.compare_and_set_session_work_admission(Some(revision), &accepted).unwrap());
+            }
+            "memory" => assert!(owner.prepare_pending_memory_mutation(&memory).unwrap()),
+            "profile" => {
+                assert!(owner.prepare_pending_profile_mutation(&profile).unwrap());
+                profile.after_files = vec![ProfileFileSnapshot { filename: "avatar.png".into(), contents: None }];
+                assert!(owner.seal_pending_profile_mutation(&profile).unwrap());
+            }
+            _ => unreachable!(),
+        }
+        let publications = CompactionPublications::new(&owner);
+        assert_compaction_refused_unchanged(&owner, &commit, &publications);
+        match case {
+            "work" => assert!(matches!(
+                owner.commit_session_work_result(&admission.session_key, revision, "work-1", "result-1", "finished", 0).unwrap(),
+                SessionWorkResultCommitOutcome::Committed(_)
+            )),
+            "media" => assert_eq!(owner.append_transcript_entries_and_release_media(
+                &[serde_json::json!({
+                    "id": "sent", "kind": "send-message", "sessionKey": admission.session_key,
+                    "message": {"type": "text", "content": "settled output"}
+                })],
+                &admission.session_key, revision, "media-1",
+            ).unwrap(), 1),
+            "review" => assert!(owner.settle_provider_review_continuation(
+                revision, "continuation-1", ProviderReviewContinuationOutcome::Completed,
+            ).unwrap()),
+            "memory" => assert!(owner.commit_pending_memory_mutation(&memory).unwrap()),
+            "profile" => assert!(owner.commit_pending_profile_mutation(&profile).unwrap()),
+            _ => unreachable!(),
+        }
+        assert_eq!(owner.read_session_work_admission().unwrap().unwrap().lifecycle_revision, revision);
+        let rows = compaction_durable_snapshot(&owner).0;
+        commit.expected_transcript_tail_id = rows.last().unwrap().1.clone();
+        assert!(matches!(owner.commit_compaction(&commit).unwrap(), CompactionCommitOutcome::Committed(_)));
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn admission_backed_compaction_retries_require_current_generation_and_latest_entry() {
+    for (historical_split, archive_restore) in [(false, false), (false, true), (true, false), (true, true)] {
+        let label = format!("retry-split-{historical_split}-archive-{archive_restore}");
+        let (root, owner, admission, commit) = compaction_fixture(&label);
+        if historical_split {
+            // Persist the shape produced by the former metadata-only commit:
+            // admission retains the source generation, metadata has advanced.
+            assert!(owner.append_transcript_entry(&serde_json::json!({
+                "id": commit.entry_id, "kind": "compaction", "firstKeptEntryId": "tail",
+                "summary": commit.summary, "tokensBefore": commit.tokens_before,
+                "sourceTurnId": commit.source_turn_id,
+                "sourceLifecycleRevision": admission.lifecycle_revision,
+                "lifecycleRevision": "historical-result"
+            })).unwrap());
+            assert!(owner.set_metadata("lifecycleRevision", serde_json::json!("historical-result")).unwrap());
+        } else {
+            assert!(matches!(owner.commit_compaction(&commit).unwrap(), CompactionCommitOutcome::Committed(_)));
+        }
+        // Unrelated metadata changes must not fence a current admission retry.
+        assert!(owner.set_metadata("name", serde_json::json!("renamed session")).unwrap());
+        let mut busy = owner.read_session_work_admission().unwrap().unwrap();
+        busy.admitted_work_id = Some("newly-captured-work".into());
+        assert!(owner.compare_and_set_session_work_admission(Some(&busy.lifecycle_revision), &busy).unwrap());
+        let publications = CompactionPublications::new(&owner);
+        let before_retry = compaction_durable_snapshot(&owner);
+        assert!(matches!(owner.commit_compaction(&commit).unwrap(), CompactionCommitOutcome::AlreadyCommitted(_)));
+        assert_eq!(compaction_durable_snapshot(&owner), before_retry);
+        assert_eq!(publications.counts(), [0, 0, 0]);
+        let mut conflict = commit.clone();
+        conflict.summary = "conflicting retry".into();
+        assert!(matches!(owner.commit_compaction(&conflict), Err(AgentDbProjectionError::CompactionConflict(_))));
+        assert_eq!(compaction_durable_snapshot(&owner), before_retry);
+        assert_eq!(publications.counts(), [0, 0, 0]);
+
+        if archive_restore {
+            busy.admitted_work_id = None;
+            assert!(owner.compare_and_set_session_work_admission(Some(&busy.lifecycle_revision), &busy).unwrap());
+            let archived = owner.transition_session_work_archive(
+                &busy.session_key, &busy.session_id, Some(&busy.lifecycle_revision),
+                true, Some("operator"), None, 1.0,
+            ).unwrap();
+            owner.transition_session_work_archive(
+                &busy.session_key, &busy.session_id, Some(&archived.lifecycle_revision),
+                false, None, None, 2.0,
+            ).unwrap();
+            assert_eq!(compaction_durable_snapshot(&owner).0.last().unwrap().1, commit.entry_id);
+        } else {
+            // An older writer can add a successor without advancing admission.
+            // This fences both result-generation and source-generation retries.
+            let source_revision = owner.read_metadata().unwrap()["lifecycleRevision"].clone();
+            assert!(owner.append_transcript_entry(&serde_json::json!({
+                "id": "older-writer-successor", "kind": "compaction", "firstKeptEntryId": "tail",
+                "summary": "newer summary", "tokensBefore": 456,
+                "sourceTurnId": "turn-2", "sourceLifecycleRevision": source_revision,
+                "lifecycleRevision": "older-writer-result"
+            })).unwrap());
+            assert!(owner.set_metadata("lifecycleRevision", serde_json::json!("older-writer-result")).unwrap());
+            assert_eq!(owner.read_session_work_admission().unwrap(), Some(busy));
+        }
+        assert_compaction_refused_unchanged(&owner, &commit, &publications);
+        owner.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn cron_fence_publication_and_terminal_settlement_preserve_stale_and_terminal_rows() {
+    let (root, owner, admission, _) = compaction_fixture("cron-fences");
+    let session_key = format!("agent:{}:cron:automation-1:run-1", admission.session_id);
+    let revision = admission.lifecycle_revision.as_str();
+    assert!(owner.begin_cron_session_run(&session_key, "automation-1", "run-1", &session_key, revision, 1.0).unwrap());
+    let publications = CompactionPublications::new(&owner);
+    let before_stale = compaction_durable_snapshot(&owner);
+    let running = owner.list_cron_session_runs().unwrap();
+    assert_eq!(running.len(), 1);
+    assert_eq!(running[0].state, "running");
+    assert!(!running[0].fence_state_known);
+    assert!(!owner.publish_cron_session_run_fences(&session_key, &session_key, "stale-generation", true, true, true).unwrap());
+    assert!(!owner.finish_cron_session_run_with_fences(
+        &session_key, &session_key, "stale-generation", "error", 2.0, Some("stale"), true, true, true,
+    ).unwrap());
+    assert_eq!(owner.list_cron_session_runs().unwrap(), running);
+    assert_eq!(compaction_durable_snapshot(&owner), before_stale);
+    assert_eq!(publications.counts(), [0, 0, 0]);
+
+    assert!(owner.publish_cron_session_run_fences(&session_key, &session_key, revision, true, false, true).unwrap());
+    let mut expected = running[0].clone();
+    expected.active_controller = true;
+    expected.unsettled_subagent = true;
+    expected.fence_state_known = true;
+    assert_eq!(owner.list_cron_session_runs().unwrap(), vec![expected.clone()]);
+    assert!(owner.finish_cron_session_run_with_fences(
+        &session_key, &session_key, revision, "ok", 3.0, Some("completed"), false, true, false,
+    ).unwrap());
+    expected.updated_at_ms = 3.0;
+    expected.state = "terminal".into();
+    expected.terminal_outcome = Some("ok".into());
+    expected.terminal_detail = Some("completed".into());
+    expected.active_controller = false;
+    expected.pending_outgoing_media = true;
+    expected.unsettled_subagent = false;
+    assert_eq!(owner.list_cron_session_runs().unwrap(), vec![expected.clone()]);
+
+    let before_terminal_retry = compaction_durable_snapshot(&owner);
+    let counts = publications.counts();
+    assert!(!owner.publish_cron_session_run_fences(&session_key, &session_key, revision, true, false, true).unwrap());
+    assert!(!owner.finish_cron_session_run_with_fences(
+        &session_key, &session_key, revision, "error", 4.0, Some("late"), true, false, true,
+    ).unwrap());
+    assert_eq!(owner.list_cron_session_runs().unwrap(), vec![expected]);
+    assert_eq!(compaction_durable_snapshot(&owner), before_terminal_retry);
+    assert_eq!(publications.counts(), counts);
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 

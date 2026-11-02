@@ -3648,6 +3648,9 @@
         "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
         "projects/openclaw-rust/decisions/2026-11-01-context-compaction-owner-contract.md",
         "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "source/host/tests/agent_db_owner_contract.rs",
+        "source/host/tests/agent_session_contract.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/app/src/main.rs"
@@ -3659,7 +3662,7 @@
         },
         {
           "path": "source/host/src/extensions/session/production.rs",
-          "reason": "Canonical ProductionSessionWorkers transcript facade; owner-local guarded compaction commit/replay exists, but the production Runner producer is absent"
+          "reason": "Canonical ProductionSessionWorkers transcript facade; the shipping Runner producer uses its guarded compaction commit and typed replay consumer"
         }
       ],
       "historical_source_refs": [
@@ -3713,8 +3716,8 @@
       "integration": {
         "consumer": "Production start_routed_provider_task reads the typed compacted replay through the existing Runner/provider projection when a compaction entry is present; unsupported rows fail closed. Live-turn/provider acceptance remains pending.",
         "entrypoint": "source/host/app/src/main.rs::start_routed_provider_task compaction completion boundary -> source/host/src/extensions/session/production.rs::ProductionSessionWorkers::read_agent_typed_compacted_transcript_entries",
-        "owner": "source/host/src/runner/compaction_planning.rs plus existing ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; guarded compaction commit/replay owner is wired, but fixed-source semantic closure and acceptance remain open",
-        "producer": "Non-test routed-provider completion boundary uses provider input-token usage, canonical transcript rows, the Runner planning owner, the bound summarizer, and SandAgentDb guarded commit; exact fixed-source semantics and frozen verification remain pending"
+        "owner": "source/host/src/runner/compaction_planning.rs plus existing ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; admission generation, busy custody, tail and typed retained replay guard the transaction; full fixed-source semantic closure and acceptance remain open",
+        "producer": "Non-test routed-provider completion uses provider input-token usage, canonical transcript rows, Runner planning and the bound summarizer; the selected primary or fallback summary must fit before guarded commit, and failure of both refuses compaction. H8 planner/recovery evidence and current continuation are recorded in P0-config-settings-authority; no full compaction acceptance is claimed"
       },
       "invariants": [
         "Compaction triggered when token estimate exceeds configured reserve",
@@ -3725,7 +3728,7 @@
         "OCRM-AGENT-O09",
         "OCRM-AGENT-O10"
       ],
-      "owner_decision": "Use ProductionSessionWorkers/SandAgentDb as the canonical transcript owner per decisions/2026-11-01-context-compaction-owner-contract.md; owner-local guarded commit/replay exists, but identify and wire the real Runner producer/next-turn consumer before promotion",
+      "owner_decision": "Use ProductionSessionWorkers/SandAgentDb as the canonical transcript owner per decisions/2026-11-01-context-compaction-owner-contract.md; retain the shipping Runner producer/typed next-turn consumer and complete remaining source, protocol and recovery acceptance before promotion",
       "postconditions": [
         "Compacted summary replaces historical message slice"
       ],
@@ -3747,7 +3750,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Medium; keeps session context within LLM window limits",
-      "selected_owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; Runner producer/next-turn consumer pending",
+      "selected_owner": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb; existing Runner planning/production composition owns producer and next-turn consumer",
       "source_refs": [
         {
           "blob_sha": "26f973ce17756ebe0ae6754798b31eabd2773ba8",
@@ -3770,7 +3773,7 @@
       ],
       "status": {
         "acceptance": "pending",
-        "implementation": "not-started",
+        "implementation": "implementing",
         "mapping": "reviewed",
         "read": "read-complete",
         "verification": "not-run",
@@ -3779,14 +3782,16 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb",
-        "symbol": "owner-local guarded compaction commit/replay; production ContextWindowTracker producer and next-turn consumer absent"
+        "symbol": "commit_compaction and read_agent_typed_compacted_transcript_entries; shipping start_routed_provider_task planning/summarization/commit/replay chain, remaining protocol scope not accepted"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o09_context_window_compaction_trigger",
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o10_tool_argument_validation"
       ],
       "typed_contracts": [
-        "ContextWindowTracker::check_compaction"
+        "ContextWindowTracker::check_compaction",
+        "CompactionCommit",
+        "SessionWorkAdmissionRecord::lifecycle_revision"
       ],
       "unit_id": "OCRM-UNIT-AGENT-TURN-001"
     },
@@ -20580,7 +20585,10 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_model_picker_contract.rs",
-        "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+        "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/fabushi_model_identity_production_contract.rs",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md"
       ],
       "existing_owner_candidates": [
         {
@@ -20628,7 +20636,7 @@
       ],
       "id": "OCRM-RESP-MODEL-PICKER-001",
       "integration": {
-        "consumer": "runner.startRoutedProvider reads the persisted sessionModelSelection at source/host/app/src/main.rs:6434-6436 and projects model_override/thinking_level into SandSessionOptions at :7296-7312; the existing Runner/Inference consumer edge is confirmed",
+        "consumer": "start_routed_provider_task reads sessionModelSelection under the accepted turn lease guard; OCRM-MODEL-IDENTITY-v1 carries the validated Fabushi provider/model pair or checked bound default through existing Inference, Runner, actual Responses JSON and accepted retry checkpoint. New exact-H evidence is pending; process restart ingress is absent",
         "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection -> source/host/src/extensions/inference/model_picker_service.rs::apply_session_model_selection",
         "owner": "source/host/src/extensions/inference/model_picker_service.rs",
         "producer": "No production session-model mutation producer identified; SandAgentSessionStore exposes the mutation method but current non-test search finds no caller"

@@ -189,7 +189,9 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
@@ -212,7 +214,11 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/fabushi_model_identity_production_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R06",
@@ -1172,7 +1178,9 @@
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
         "source/host/tests/settings_service_contract.rs",
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC05",
@@ -1208,7 +1216,11 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/openclaw_agent_turn_contract.rs",
-        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md"
+        "projects/openclaw-rust/dossiers/transcript-round94-openclaw-agent-turn-and-channel-delivery-native-fusion-20261026.md",
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "projects/openclaw-rust/docs/specs/context-compaction-production-boundary.md",
+        "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "source/host/tests/fabushi_model_identity_production_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC06",

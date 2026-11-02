@@ -11461,7 +11461,7 @@ fn start_routed_provider_task(
                                                             plan.summary_token_budget,
                                                             &suffix,
                                                         ) {
-                                                            Ok(summary) => summary,
+                                                            Ok(summary) => Ok(summary),
                                                             Err(error) => {
                                                                 quality_degraded = true;
                                                                 eprintln!(
@@ -11484,10 +11484,15 @@ fn start_routed_provider_task(
                                                                     plan.summary_token_budget,
                                                                     &fallback_suffix,
                                                                 )
-                                                                .unwrap_or(fallback)
                                                             }
                                                         };
-                                                        commit_compaction(summary, quality_degraded);
+                                                        match summary {
+                                                            Ok(summary) => commit_compaction(summary, quality_degraded),
+                                                            Err(error) => eprintln!(
+                                                                "mahayana-host compaction_fallback_refused agent={} run={} error={error}",
+                                                                agent_id, worker_stream_id
+                                                            ),
+                                                        }
                                                     } else {
                                                         eprintln!(
                                                             "mahayana-host compaction_cancelled_during_split_prefix agent={} run={}",
@@ -11515,15 +11520,17 @@ fn start_routed_provider_task(
                                                             format_compaction_details_suffix(
                                                                 fallback_details.as_ref(),
                                                             );
-                                                        commit_compaction(
-                                                            fit_compaction_summary_with_suffix(
-                                                                &fallback,
-                                                                plan.summary_token_budget,
-                                                                &fallback_suffix,
-                                                            )
-                                                            .unwrap_or(fallback),
-                                                            true,
-                                                        );
+                                                        match fit_compaction_summary_with_suffix(
+                                                            &fallback,
+                                                            plan.summary_token_budget,
+                                                            &fallback_suffix,
+                                                        ) {
+                                                            Ok(summary) => commit_compaction(summary, true),
+                                                            Err(error) => eprintln!(
+                                                                "mahayana-host compaction_fallback_refused agent={} run={} error={error}",
+                                                                agent_id, worker_stream_id
+                                                            ),
+                                                        }
                                                     }
                                                 }
                                             }
