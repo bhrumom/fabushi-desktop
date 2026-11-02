@@ -77,7 +77,9 @@ async function powershell(script, extraEnv = {}) {
   ], {
     env: { ...process.env, ...extraEnv },
     windowsHide: true,
-    timeout: 90_000,
+    // Bound a stuck native trust-store import before the global hook expires,
+    // so its exact last stage remains available as diagnostic evidence.
+    timeout: 60_000,
     maxBuffer: 1024 * 1024,
   });
 }
@@ -92,6 +94,8 @@ $subject = $env:FABUSHI_CI_NATIVE_FIXTURE_SUBJECT
 $manifestPath = Join-Path $fixtureDirectory 'fixture.json'
 $unsignedPath = Join-Path $fixtureDirectory 'unsigned-fixture.exe'
 $signedPath = Join-Path $fixtureDirectory 'signed-fixture.exe'
+$stagePath = Join-Path $fixtureDirectory 'setup-stage.txt'
+[System.IO.File]::WriteAllText($stagePath, 'creating', [System.Text.UTF8Encoding]::new($false))
 $cert = $null
 try {
   $certificateParameters = @{
@@ -108,6 +112,7 @@ try {
     NotAfter = (Get-Date).AddHours(2)
   }
   $cert = New-SelfSignedCertificate @certificateParameters
+  [System.IO.File]::WriteAllText($stagePath, 'created', [System.Text.UTF8Encoding]::new($false))
   $manifest = [ordered]@{
     subject = $cert.Subject
     certificateSha256 = (Get-FixtureCertificateSha256 $cert)
@@ -120,23 +125,28 @@ try {
   # Persist only nonsecret cleanup identity immediately after creation. No
   # private key, PFX, certificate bytes or trust-store export is written.
   [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Compress), [System.Text.UTF8Encoding]::new($false))
-  $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new([byte[]]$cert.RawData)
-  try {
-    foreach ($storeName in @('Root', 'TrustedPublisher')) {
-      $store = [System.Security.Cryptography.X509Certificates.X509Store]::new($storeName, [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser)
-      try {
-        $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        $store.Add($publicCertificate)
-      } finally {
-        $store.Close()
-      }
+  # X509Store.Add(CurrentUser\Root) may block behind interactive root-trust
+  # confirmation on hosted runners. Use the documented certutil user-store
+  # command instead, explicitly scoped to this ephemeral GitHub Actions job.
+  # Never install a test identity in LocalMachine or treat it as a release pin.
+  $publicCertificatePath = Join-Path $fixtureDirectory 'public-fixture.cer'
+  [System.IO.File]::WriteAllBytes($publicCertificatePath, [byte[]]$cert.RawData)
+  foreach ($storeName in @('Root', 'TrustedPublisher')) {
+    [System.IO.File]::WriteAllText($stagePath, ('import:' + $storeName), [System.Text.UTF8Encoding]::new($false))
+    & certutil.exe -f -user -addstore $storeName $publicCertificatePath 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      throw ('CI-only certificate import failed for ' + $storeName + ' (exit ' + $LASTEXITCODE + ')')
     }
-  } finally {
-    $publicCertificate.Dispose()
+    $imported = Get-Item -LiteralPath ('Cert:\CurrentUser\' + $storeName + '\' + $cert.Thumbprint) -ErrorAction Stop
+    if ($imported.Subject -cne $manifest.subject -or (Get-FixtureCertificateSha256 $imported) -cne $manifest.certificateSha256) {
+      throw 'Trust-store import did not preserve the exact CI-only certificate'
+    }
   }
+  [System.IO.File]::WriteAllText($stagePath, 'trusted', [System.Text.UTF8Encoding]::new($false))
   $source = 'internal static class FabushiCiInertFixture { public static int Main() { return 0; } }'
   Add-Type -TypeDefinition $source -Language CSharp -OutputAssembly $unsignedPath -OutputType ConsoleApplication -ErrorAction Stop | Out-Null
   Copy-Item -LiteralPath $unsignedPath -Destination $signedPath -ErrorAction Stop
+  [System.IO.File]::WriteAllText($stagePath, 'signing', [System.Text.UTF8Encoding]::new($false))
   $signed = Set-AuthenticodeSignature -LiteralPath $signedPath -Certificate $cert -HashAlgorithm SHA256 -IncludeChain Signer -ErrorAction Stop
   if ($signed.Status.ToString() -ne 'Valid') {
     throw ('Signing the owned CI fixture failed: ' + $signed.Status.ToString())
@@ -145,6 +155,7 @@ try {
   if ($probe.Status.ToString() -ne 'Valid' -or $probe.SignatureType.ToString() -ne 'Authenticode' -or $probe.SignerCertificate.Subject -cne $manifest.subject -or (Get-FixtureCertificateSha256 $probe.SignerCertificate) -cne $manifest.certificateSha256) {
     throw 'The actual Windows API did not verify the exact CI fixture certificate'
   }
+  [System.IO.File]::WriteAllText($stagePath, 'verified', [System.Text.UTF8Encoding]::new($false))
   $manifest['nativeStatus'] = $probe.Status.ToString()
   $manifest['signatureType'] = $probe.SignatureType.ToString()
   [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Compress), [System.Text.UTF8Encoding]::new($false))
@@ -175,10 +186,20 @@ before(async () => {
     packages: "external",
   });
   ({ SandWindowsInstaller, SandInstallerSignatureError, resolveWindowsUpdatePublisherPolicy } = await import(pathToFileURL(bundlePath).href));
-  await powershell(setupScript, {
-    FABUSHI_CI_NATIVE_FIXTURE_DIR: fixtureRoot,
-    FABUSHI_CI_NATIVE_FIXTURE_SUBJECT: `CN=Fabushi CI ONLY Inert Updater Fixture 测试签名 ${randomUUID().replace(/-/g, "").slice(0, 16)}`,
-  });
+  try {
+    await powershell(setupScript, {
+      FABUSHI_CI_NATIVE_FIXTURE_DIR: fixtureRoot,
+      FABUSHI_CI_NATIVE_FIXTURE_SUBJECT: `CN=Fabushi CI ONLY Inert Updater Fixture 测试签名 ${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+    });
+  } catch (error) {
+    const lastStage = await readFile(join(fixtureRoot, "setup-stage.txt"), "utf8")
+      .catch(() => "no-stage-recorded");
+    console.error("FABUSHI_WINDOWS_NATIVE_SETUP_FAILURE " + JSON.stringify({
+      lastStage, code: error.code ?? null, signal: error.signal ?? null,
+      killed: Boolean(error.killed),
+    }));
+    throw error;
+  }
   fixture = JSON.parse(await readFile(join(fixtureRoot, "fixture.json"), "utf8"));
   assert.match(fixture.subject, /^CN=Fabushi CI ONLY Inert Updater Fixture /);
   assert.match(fixture.certificateSha256, /^[a-f0-9]{64}$/);

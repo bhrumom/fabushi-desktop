@@ -3591,7 +3591,7 @@ fn session_owned_platform_path(value: &str) -> Result<&str, ProductError> {
             if !canonical(resource) {
                 return Err(ProductError::InvalidParameter("path"));
             }
-            if resource == "messages" {
+            if resource == "messages" || resource == "message-resources" {
                 return Err(ProductError::Configuration(
                     "Desktop Human messages are owned by Session/Transcript".into(),
                 ));
@@ -3795,7 +3795,12 @@ mod tests {
     fn session_owned_platform_rejects_message_routes_before_credentials() {
         let client = session_owned_platform_client("http://127.0.0.1:1");
         for method in ["GET", "POST", "PUT", "PATCH", "DELETE"] {
-            for path in ["/api/social/messages", "/api/social/messages/7", "/api/social/messages/7/reactions", "/api/social/messages/read"] {
+            for path in [
+                "/api/social/messages", "/api/social/messages/7",
+                "/api/social/messages/7/reactions", "/api/social/messages/read",
+                "/api/social/message-resources", "/api/social/message-resources/7",
+                "/api/social/message-resources/7/download", "/api/social/message-resources/upload",
+            ] {
                 for authenticated in [true, false] {
                     let error = client.execute_session_owned_platform_request(&json!({
                         "method": method, "path": path, "authenticated": authenticated,
@@ -3816,6 +3821,12 @@ mod tests {
             "/api//social/messages", "/api/./social/messages", "/api/%73ocial/messages",
             "/api/other/%2e%2e/social/messages", "/v1/other/%2e%2e/%2e%2e/api/social/messages",
             "/api/social/friends/%2e%2e/messages", "/api/social/messages?alias=friends",
+            "/api/social/%6dessage-resources", "/api/SOCIAL/message-resources",
+            "/api/social/message-resources;mode=legacy",
+            "/api//social/message-resources", "/api/./social/message-resources",
+            "/api/other/%2e%2e/social/message-resources",
+            "/v1/other/%2e%2e/%2e%2e/api/social/message-resources",
+            "/api/social/message-resources?alias=friends",
         ] {
             assert!(session_owned_platform_path(path).is_err(), "alias reached message transport: {path}");
         }
