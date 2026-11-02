@@ -4,8 +4,8 @@
   "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
   "path": "projects/telegram-desktop-rust/parity-ledger.json",
   "responsibility_id": "FBCP-NMR-001",
-  "base_blob": "59d18f5de12fe6c4fe72bb110996c0cb0e07e9f4",
-  "target_blob": "1e0e3cb513109642b44ef9b430a5447ed0f47379",
+  "base_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+  "target_blob": "106546f283fef92b67b193cc846b29c3b12f1717",
   "append": {
     "requirement_ids": [
       "NMR-48a",
