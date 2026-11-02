@@ -744,14 +744,16 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
                 let db = Connection::open(&path).unwrap();
                 let mode: String = db.query_row("PRAGMA journal_mode=DELETE", [], |row| row.get(0)).unwrap();
                 assert_eq!(mode, "delete");
-                let page_size: usize = db.query_row("PRAGMA page_size", [], |row| row.get(0)).unwrap();
-                let root_page: usize = db.query_row(
+                let page_size: i64 = db.query_row("PRAGMA page_size", [], |row| row.get(0)).unwrap();
+                let root_page: i64 = db.query_row(
                     "SELECT rootpage FROM sqlite_schema WHERE name='transcript_entries'",
                     [], |row| row.get(0),
                 ).unwrap();
+                assert!(page_size > 0);
                 assert!(root_page > 1);
                 drop(db);
-                (root_page - 1) * page_size
+                usize::try_from(root_page - 1).unwrap()
+                    .checked_mul(usize::try_from(page_size).unwrap()).unwrap()
             } else { 100 };
             let mut bytes = fs::read(&path).unwrap();
             assert!(bytes.len() > damage_offset);
