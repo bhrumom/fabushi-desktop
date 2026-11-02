@@ -176,7 +176,7 @@ jobs:
   persist-verified-inventory:
     # P0 source-derived files only; never overwrite a moved PR head.
     needs: source-authority
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]')) }}
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence-v2]')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -285,8 +285,8 @@ jobs:
           PY
 
   recover-original-host-log:
-    # Recover completed 812 commands; this carrier never executes product validation.
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]') }}
+    # Finish original 563 evidence; do not repeat the completed 812 collection.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence-v2]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -304,9 +304,9 @@ jobs:
           from pathlib import Path, PurePosixPath
           
           repository = "bhrumom/fabushi-desktop"
-          subject = "812bf3a47b7ab16e49545446bd25f5e5ce8da27d"
-          subject_tree = "597ea5e0406c9fb292652deb20002bca5b6b2552"
-          source_run, source_attempt, source_job = 41503643837, 1, 125477225268
+          subject = "56386a66a1f2944545cee35b58d10cb085e3c292"
+          subject_tree = "86f8fded50a54fc60b8f3a5d69af3af735e6c12a"
+          source_run, source_attempt, source_job = 41498228438, 1, 125459002378
           upstream = {"repository": "openclaw/openclaw", "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
                       "tree": "90c8aab39972da11cfad220361781d49e1bc6700"}
           base = f"https://api.github.com/repos/{repository}"
@@ -317,27 +317,20 @@ jobs:
           lock_path = "projects/openclaw-rust/upstream.lock.json"
           runtime_root = "source/mahayana/mahayana-rs"
           input_paths = {
-              "recovery": {workflow_path, lock_path, "source/host/Cargo.toml", "source/host/Cargo.lock",
-                           "source/host/build.rs",
-                           "source/packages/proto/generated/agent/v1/mcp_exec_pb.ts",
-                           "source/host/src/runner/generated_agent_turn_stream.rs",
-                           "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
-                           "source/host/tests/generated_occurrence_codec_contract.rs",
-                           "source/host/tests/production_checkpoint_restart_contract.rs",
-                           "source/host/tests/routed_send_acceptance_contract.rs"},
+              "recovery": {workflow_path, lock_path, "source/host/Cargo.toml", "source/host/Cargo.lock"},
               "native": {workflow_path, lock_path, f"{runtime_root}/Cargo.toml", f"{runtime_root}/Cargo.lock",
                          f"{runtime_root}/mahayana-runtime/Cargo.toml",
                          *[f"{runtime_root}/mahayana-runtime/src/{name}.rs" for name in
                            ("lib", "conversation_actor", "runtime_store", "dispatch_admission_tests", "acceptance_admission_tests")]},
           }
           artifacts = [
-              {"label": "recovery", "id": 13169974470, "size": 877133,
-               "sha256": "28edec2e08eeb55d29117a69bb1a734ce1a637c0f195c7a3ff46437b71f6b738",
+              {"label": "recovery", "id": 13167684148, "size": 877191,
+               "sha256": "ee0c70b19203bd452d25510da83f4b7dd686968afd3b468cc13061e155d8c583",
                "name": f"ocrm-recovery-commands-{subject}-{source_run}-{source_attempt}",
                "kind": "ocrm-recovery-command-diagnostics",
                "upload_step": "Preserve exact-subject Recovery command diagnostics"},
-              {"label": "native", "id": 13170956493, "size": 3603,
-               "sha256": "c6029e3705906a2661be20b86ddfe99783f8855e3d3fa34747c1506d4b07b670",
+              {"label": "native", "id": 13169190332, "size": 3605,
+               "sha256": "6fe5f43e03285d5516089e214bbc76510c914f7cad9b84f570e1913db7ae19f9",
                "name": f"ocrm-native-runtime-{subject}-{source_run}-{source_attempt}",
                "kind": "ocrm-native-runtime-command-diagnostics",
                "upload_step": "Preserve exact-subject native Runtime diagnostics"},
@@ -476,6 +469,19 @@ jobs:
               return (any(artifact_id.search(line) for line in lines)
                       and any(digest.search(line) for line in lines))
 
+          def encode_record(record):
+              # Actions also recognizes legacy commands inside a JSON string.
+              # Unicode escapes preserve the value while denying command syntax.
+              return json.dumps(record, ensure_ascii=True, sort_keys=True).replace(
+                  "##[", r"\u0023\u0023[").replace("::", r"\u003a\u003a")
+
+          def terminal_text(line):
+              return re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", line)
+
+          def is_harness_line(line):
+              return re.match(r"^\s*(?:Running |running \d+ tests?\b|test .+ \.\.\. |test result:)",
+                              terminal_text(line)) is not None
+
           records, output_bytes = [], 0
           def emit(record):
               global output_bytes
@@ -483,7 +489,7 @@ jobs:
                         "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
                         "carrier_commit": os.environ["GITHUB_SHA"], "product_validation_executed_by_carrier": False,
                         **record}
-              encoded = json.dumps(record, ensure_ascii=True, sort_keys=True)
+              encoded = encode_record(record)
               output_bytes += len(("OCRM_EVIDENCE " + encoded + "\n").encode("utf-8"))
               require(len(records) < 12000 and output_bytes <= 2 * 1024 * 1024, "outcome_output_limit")
               records.append(encoded)
@@ -521,9 +527,9 @@ jobs:
                     "exit_file": exit_file, "exit_line": exit_line, "exit_code": status})
               summaries = 0
               for number, line in enumerate(log.splitlines(), 1):
-                  if re.match(r"^\s*(?:Running |running \d+ tests?\b|test .+ \.\.\. |test result:)", line):
+                  if is_harness_line(line):
                       emit({"kind": "raw-harness", "artifact": label, "file": log_name, "line": number, "text": line})
-                  if line.lstrip().startswith("test result:"):
+                  if terminal_text(line).lstrip().startswith("test result:"):
                       summaries += 1
               if status == 0 and command.startswith("cargo test ") and "--no-run" not in command:
                   require(summaries > 0, "missing_successful_test_summary")
@@ -574,6 +580,18 @@ jobs:
                       ("missing_digest", ["Artifact ID 123"])):
                   require(not upload_identity_present(lines, fixture_artifact), "invalid_upload_identity_accepted")
                   controls.append({"control": "upload_" + label, "result": "rejected"})
+              # This literal canary must survive the actual Actions stdout path.
+              canary = {"legacy": "##[error]fixture", "modern": "::error::fixture"}
+              encoded_canary = encode_record(canary)
+              require(decode_json(encoded_canary) == canary and "##[" not in encoded_canary
+                      and "::" not in encoded_canary, "workflow_command_encoding_control")
+              controls.append({"control": "workflow_command_round_trip", "result": "accepted", "canary": canary})
+              colored_target = "\x1b[1m\x1b[32m     Running\x1b[0m tests/gateway_server_contract.rs (target/debug/deps/gateway_server_contract-fixture)"
+              require(is_harness_line(colored_target), "colored_harness_target_control")
+              controls.append({"control": "colored_harness_target", "result": "accepted"})
+              require(not is_harness_line("   Compiling mahayana_host_runtime v0.1.0"),
+                      "non_harness_line_control")
+              controls.append({"control": "non_harness_line", "result": "rejected"})
               save_json("instrument-controls.json", controls)
               emit({"kind": "instrument-controls", "controls": controls, "product_tests": False})
           
@@ -615,7 +633,7 @@ jobs:
               stage = "original_failure_context"
               selected = set()
               for number, line in enumerate(host_lines):
-                  if re.search(r"(?:panicked at|has overflowed its stack|fatal runtime error|assertion .*failed|error: test failed|Process completed with exit code)", line):
+                  if re.search(r"(?:panicked at|has overflowed its stack|fatal runtime error|assertion .*failed|error: test failed|Process completed with exit code|checkpoint child token=|original Responses producer_pid=|original Responses cleanup outcome=|late original Responses outcome=)", line):
                       selected.update(range(max(0, number - 2), min(len(host_lines), number + 9)))
               require(bool(selected), "missing_original_failure_context")
               for number in sorted(selected):
@@ -717,7 +735,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ocrm-original-host-log-812bf3a47b7ab16e49545446bd25f5e5ce8da27d-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ocrm-original-host-log-56386a66a1f2944545cee35b58d10cb085e3c292-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ocrm-original-host-log/
           if-no-files-found: error
           retention-days: 7

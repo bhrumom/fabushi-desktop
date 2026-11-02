@@ -145,3 +145,48 @@ workflow/spec change must not trigger a product retry; recheck the current
 branch lease and open-PR state before publication. Review the frozen delta,
 then run the collection controls only in Actions. The running 4ed product
 campaign retains its own subject and is neither restarted nor cancelled.
+
+
+## 2026-11-02: finish the original 563 read without repeating 812
+
+Implementation base: `bdc8ca68ca564bcb13a90d74ca7678478ed72333`.
+The incoming 812 collector (run `41507762315`, job `125491312487`)
+completed successfully. Its source-bound output contains all 114 command/exit
+records: 113 zero and only the integration command nonzero (101). The original
+Gateway fixture failure is directly readable as HTTP 400 / JSON EOF at column
+18, before authorization. Preserve that evidence and the separate 4ed fixture
+repair; no 812 product command or successful collection is repeated here.
+
+The console transport has a distinct TEST_FLAW: two replayed context records
+containing legacy `##[error]` / `##[group]` syntax became Actions commands.
+The receipt records 1984 emitted records while the decoded console retains 1982
+JSON records; raw `outcomes.jsonl` and original archives remain preserved.
+FIX this transport boundary before the remaining 563 collection. Encode both
+legacy `##[` and modern `::` command delimiters as JSON Unicode escapes,
+without changing decoded values. Add a literal mixed-marker round-trip control
+and emit it through the real output path; final evidence review must reconcile
+the count and canary. This does not discard any source text or reinterpret
+the original failed Runtime as a carrier failure.
+
+Cargo's declared forced-color output also requires recognizing ANSI-decorated
+harness target lines. Strip CSI formatting only for classification; emit the
+unaltered original line and line number. Add a colored real-format target
+positive and a non-harness negative. Retain every prior identity, archive,
+upload-format and digest control; controls are instrument checks only.
+
+Restore this job's single fixed source to 563 with its original four Recovery
+and ten Native inputs and the REC-01–05 identities above. Preserve the incoming
+incremental partial-record protocol, early source-log transport receipt and
+failure context, complete source/API/hash/command checks, output bounds and
+seven-day raw retention. Also select existing checkpoint/worker phase lines
+when present. Use `[ocrm-recover-563-command-evidence-v2]` for the focused
+collection and exclude that marker from the same inventory writer. Historical
+563/812 exclusions remain. This is 563's first focused collection after the
+6ad instrument failure, not a third product campaign. The reviewed unpublished
+two-subject snapshot `1e6ee71ded60b8c308e3fbd776ade2946aef9899` is retired
+because incoming bdc already collected 812; do not publish it over that work.
+
+Only this spec and the existing Source workflow change. Keep the current
+Runtime campaign, U, ledger, gates and all sound product assertions unchanged.
+Fresh frozen review, a live branch/PR check and leased publication precede
+Actions execution. Collection success remains transport evidence only.
