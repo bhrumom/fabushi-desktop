@@ -54,6 +54,52 @@ fn history_store(label: &str) -> (std::path::PathBuf, FileAutomationStore, Strin
 }
 
 #[test]
+fn checked_history_rejects_duplicate_object_members_without_custody_or_writes() {
+    let cases: &[(&str, &[u8])] = &[
+        ("status-overwrite", br#"[{"id":"run","startedAt":1000,"status":"running","status":"ok"}]"#),
+        ("status-reverse", br#"[{"id":"run","startedAt":1000,"status":"ok","status":"running"}]"#),
+        ("id-overwrite", br#"[{"id":"run","startedAt":1000,"id":"other","status":"running"}]"#),
+        ("alias-overwrite", br#"[{"id":"run","startedAt":1000,"status":"running","coalescedRunIds":["alias"],"coalescedRunIds":[]}]"#),
+        ("nested-unknown", br#"[{"id":"run","startedAt":1000,"status":"running","extension":{"key":1,"key":2}}]"#),
+    ];
+    for &(label, raw) in cases {
+        let (root, store, id) = history_store(&format!("duplicate-member-{label}"));
+        let config = fs::read(store.config_path(&id)).unwrap();
+        fs::write(store.runs_path(&id), raw).unwrap();
+        if label == "status-overwrite" {
+            assert_eq!(store.read_runs(&id)[0].status, "ok",
+                "the normal display projection is not checked delivery authority");
+        }
+        assert!(matches!(store.read_run_for_delivery(&id, "run"),
+            Err(AutomationStoreError::Json(_))), "{label}: custody lookup");
+        assert!(matches!(store.begin_run(&id, "manual", 2000.0, None, Some("new"), None),
+            Err(AutomationStoreError::Json(_))), "{label}: new admission");
+        assert!(matches!(store.begin_run(&id, "manual", 2000.0, None, Some("run"), None),
+            Err(AutomationStoreError::Json(_))), "{label}: duplicate admission");
+        assert!(matches!(store.finish_run(&id, "run", "ok", 3000.0, None),
+            Err(AutomationStoreError::Json(_))), "{label}: settlement");
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}: immutable history");
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}: immutable definition");
+        let _ = fs::remove_dir_all(root);
+    }
+
+    // Unique-key legacy rows, aliases, unknown extensions and idempotent begin
+    // continue to work; this change must not block legitimate terminal ACKs.
+    let (root, store, id) = history_store("unique-member-positive");
+    let valid = br#"[{"id":"run","startedAt":1000,"status":"running","coalescedRunIds":["alias"],"extension":{"key":1,"other":2}}]"#;
+    fs::write(store.runs_path(&id), valid).unwrap();
+    assert_eq!(store.read_run_for_delivery(&id, "alias").unwrap().unwrap().id, "run");
+    assert!(store.read_run_for_delivery(&id, "absent").unwrap().is_none());
+    assert_eq!(store.begin_run(&id, "manual", 2000.0, None, Some("run"), None)
+        .unwrap().unwrap().status, "running");
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), valid, "duplicate begin must not write");
+    assert!(store.finish_run(&id, "run", "ok", 3000.0, None).unwrap().unwrap()
+        .runs.iter().any(|run| run.id == "run" && run.status == "ok"));
+    assert_eq!(store.read_run_for_delivery(&id, "alias").unwrap().unwrap().status, "ok");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn begin_rejects_malformed_and_ambiguous_history_without_salvaging_rows() {
     let cases: &[(&str, &[u8], bool)] = &[
         ("invalid-json", b"[", true),

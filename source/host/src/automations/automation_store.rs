@@ -156,11 +156,11 @@ impl FileAutomationStore{
          Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
          Err(error) => return Err(error.into()),
      };
-     let items: Vec<Value> = serde_json::from_str(&raw)?;
+     let items: Vec<UniqueJson> = serde_json::from_str(&raw)?;
      let mut runs = Vec::with_capacity(items.len());
      let mut ids = std::collections::HashSet::new();
      for item in &items {
-         let run = parse_stored_run(item).ok_or_else(|| {
+         let run = parse_stored_run(&item.0).ok_or_else(|| {
              io::Error::new(io::ErrorKind::InvalidData, "automation run history contains an invalid row")
          })?;
          if !ids.insert(run.id.clone()) {
@@ -175,6 +175,66 @@ impl FileAutomationStore{
      Ok(runs)
  }
  pub fn remove(&self,id:&str)->Result<bool,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(false);}let folder=self.dir.get_location().join(id);match fs::metadata(&folder){Ok(m)if m.is_dir()=>{},Ok(_)=>return Ok(false),Err(e)if e.kind()==io::ErrorKind::NotFound=>return Ok(false),Err(e)=>return Err(e.into())}fs::remove_dir_all(folder)?;self.dir.schedule_notify();Ok(true)}
+}
+
+// Checked decisions cannot use Value's last-wins decoding of duplicate keys.
+struct UniqueJson(Value);
+
+impl<'de> serde::Deserialize<'de> for UniqueJson {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct UniqueVisitor;
+        impl<'de> serde::de::Visitor<'de> for UniqueVisitor {
+            type Value = UniqueJson;
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("JSON without duplicate object members")
+            }
+            fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Null))
+            }
+            fn visit_none<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Null))
+            }
+            fn visit_bool<E: serde::de::Error>(self, v: bool) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Bool(v)))
+            }
+            fn visit_i64<E: serde::de::Error>(self, v: i64) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Number(v.into())))
+            }
+            fn visit_u64<E: serde::de::Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Number(v.into())))
+            }
+            fn visit_f64<E: serde::de::Error>(self, v: f64) -> Result<Self::Value, E> {
+                serde_json::Number::from_f64(v).map(Value::Number).map(UniqueJson)
+                    .ok_or_else(|| E::custom("non-finite JSON number"))
+            }
+            fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::String(v.to_owned())))
+            }
+            fn visit_string<E: serde::de::Error>(self, v: String) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::String(v)))
+            }
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut items = Vec::new();
+                while let Some(item) = seq.next_element::<UniqueJson>()? {
+                    items.push(item.0);
+                }
+                Ok(UniqueJson(Value::Array(items)))
+            }
+            fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+                let mut items = Map::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if items.contains_key(&key) {
+                        return Err(serde::de::Error::custom(
+                            "automation history contains a duplicate JSON object member",
+                        ));
+                    }
+                    items.insert(key, map.next_value::<UniqueJson>()?.0);
+                }
+                Ok(UniqueJson(Value::Object(items)))
+            }
+        }
+        deserializer.deserialize_any(UniqueVisitor)
+    }
 }
 
 fn retain_run_history(runs: &mut Vec<AutomationRun>, settled_run_id: Option<&str>) {

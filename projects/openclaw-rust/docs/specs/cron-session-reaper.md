@@ -950,6 +950,12 @@ refresh semantics or introducing another registry, store or execution owner.
   invoking completion. Known Running retains `existing_run_unsettled`, terminal
   replay remains existing Complete, and only checked absence proceeds. The
   shipping Host supplies the real resolver; there is no permissive default.
+- ARH08: Checked history parsing must reject duplicate JSON object members
+  recursively before Value normalization. Duplicated `status`, `id`,
+  `coalescedRunIds` or an unknown nested key could otherwise hide Running
+  identity or permit a false terminal ACK. Checked delivery lookup, new/existing
+  begin and finish all fail without writing; normal fail-soft display stays
+  unchanged. Valid unique-key legacy rows and legitimate terminal receipts pass.
 - ARH07: Preserve Session deletion/filesystem admission, Runtime mutation and
   in-flight ownership, Spend Guard, all ACK/custody/deadline predicates and the
   existing backend completion/ACK path. AHA-04 still applies: lastRunAt may
