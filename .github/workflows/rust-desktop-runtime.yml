@@ -299,14 +299,48 @@ jobs:
         shell: bash
         env:
           FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT: ${{ runner.temp }}/ocrm-automation-fixtures-${{ github.run_id }}-${{ github.run_attempt }}
+          OCRM_RECOVERY_EVIDENCE_DIR: ${{ runner.temp }}/ocrm-recovery-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           set -euo pipefail
           mkdir -p "$FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT"
+          mkdir -p "$OCRM_RECOVERY_EVIDENCE_DIR"
+          trap 'recovery_exit=$?; trap - EXIT; printf "%s\n" "$recovery_exit" > "$OCRM_RECOVERY_EVIDENCE_DIR/step-exit-code.txt"; exit "$recovery_exit"' EXIT
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"]
+          source_paths = [".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock", "projects/openclaw-rust/upstream.lock.json"]
+          lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          receipt = {
+              "kind": "ocrm-recovery-command-diagnostics",
+              "verification_verdict": None,
+              "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in source_paths},
+          }
+          Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          PY
+          run_recovery_check() {
+            local check_name="$1"
+            shift
+            local check_status=0
+            printf '%q ' "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
+            printf '\n' >> "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
+            "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" 2>&1 || check_status=$?
+            printf '%s\t%s\n' "$check_name" "$check_status" >> "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" || return $?
+            cat "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" || return $?
+            return "$check_status"
+          }
           # SESSION-JSON-ROUNDTRIP-v1: retain the effective locked dependency
           # feature graph with each baseline/fixed subject; do not infer it from Cargo.lock.
-          cargo tree --locked --manifest-path source/host/Cargo.toml --edges features --invert serde_json
+          run_recovery_check feature-graph cargo tree --locked --manifest-path source/host/Cargo.toml --edges features --invert serde_json
           recovery_status=0
-          cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
+          run_recovery_check integration-contracts cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml \
             --test production_turn_input_projection_contract \
             --test production_turn_agent_owner_contract \
             --test production_agent_store_contract \
@@ -378,7 +412,7 @@ jobs:
             --test session_maintenance_contract \
             --test agent_to_agent_messaging_contract \
             --test session_gateway_contract || recovery_status=1
-          if cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
+          if run_recovery_check library-build cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               host_lock::physical_guard_tests \
               extensions::auth::credential_renewer::worker_exit_tests \
@@ -412,7 +446,7 @@ jobs:
               extensions::inference::codex_direct_responses::tests::provider_refusal_parser \
               extensions::mcp::plugin_skills::sync_tests \
               extensions::mcp::plugin_skills_cache::tests; do
-              cargo test --locked --manifest-path source/host/Cargo.toml --lib "$recovery_filter" || recovery_status=1
+              run_recovery_check "lib-${recovery_filter//::/_}" cargo test --locked --manifest-path source/host/Cargo.toml --lib "$recovery_filter" || recovery_status=1
             done
           else
             recovery_status=1
@@ -425,6 +459,14 @@ jobs:
           name: ocrm-automation-fixtures-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ocrm-automation-fixtures-${{ github.run_id }}-${{ github.run_attempt }}/
           if-no-files-found: warn
+          retention-days: 7
+      - name: Preserve exact-subject Recovery command diagnostics
+        if: ${{ always() && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-recovery-commands-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ocrm-recovery-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: error
           retention-days: 7
       - name: Test scoped Coordinator control retirement and relay correlation
         id: coordinator_scoped

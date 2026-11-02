@@ -158,6 +158,83 @@ impl CredentialRenewalBackend for SequenceBackend {
 
 #[test]
 fn background_renewer_reports_failure_then_supports_immediate_retry() {
+    use std::process::{Child, Command, Stdio};
+    use std::sync::mpsc;
+    use std::time::Instant;
+
+    const CASE: &str = "background_renewer_reports_failure_then_supports_immediate_retry";
+    const CHILD_NONCE_ENV: &str = "FABUSHI_AUTH_RETRY_CONTRACT_CHILD_NONCE";
+    const RECEIPT_PREFIX: &str = "FABUSHI_AUTH_RETRY_CONTRACT_COMPLETED:";
+    const WORK_LIMIT: Duration = Duration::from_millis(CREDENTIAL_RETRY_BASE_DELAY_MS / 2);
+    const CHILD_LIMIT: Duration = Duration::from_secs(20);
+
+    if std::env::var_os(CHILD_NONCE_ENV).is_none() {
+        struct OwnedRetryChild(Child);
+
+        impl Drop for OwnedRetryChild {
+            fn drop(&mut self) {
+                if self.0.try_wait().ok().flatten().is_none() {
+                    let _ = self.0.kill();
+                }
+                let _ = self.0.wait();
+            }
+        }
+
+        let nonce = uuid::Uuid::new_v4().to_string();
+        let mut child = OwnedRetryChild(
+            Command::new(std::env::current_exe().expect("current Auth contract executable"))
+                .args(["--exact", CASE, "--nocapture", "--test-threads=1"])
+                .env(CHILD_NONCE_ENV, &nonce)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::inherit())
+                .spawn()
+                .expect("start the exact owned Auth retry case"),
+        );
+        let started = Instant::now();
+        let observed = loop {
+            match child.0.try_wait() {
+                Ok(Some(status)) if started.elapsed() < CHILD_LIMIT => break Ok(status),
+                Ok(None) if started.elapsed() < CHILD_LIMIT => {
+                    // Backoff for process supervision only; exit plus the
+                    // per-run receipt below is the execution oracle.
+                    thread::sleep(Duration::from_millis(5));
+                }
+                Ok(_) => break Err("owned Auth retry case exceeded its deadline".to_string()),
+                Err(error) => break Err(format!("wait for owned Auth retry case: {error}")),
+            }
+        };
+        let status = match observed {
+            Ok(status) => status,
+            Err(failure) => {
+                // Preserve the failed observation before stopping only this
+                // child. Cleanup can never turn a timeout into success.
+                let killed = match child.0.try_wait() {
+                    Ok(Some(_)) => Ok(()),
+                    _ => child.0.kill(),
+                };
+                let reaped = child.0.wait();
+                if reaped.is_ok() {
+                    let mut output = String::new();
+                    let _ = child.0.stdout.take().unwrap().read_to_string(&mut output);
+                    eprintln!("owned Auth retry child output:\n{output}");
+                }
+                panic!("{failure}; exact-child kill={killed:?}, wait={reaped:?}");
+            }
+        };
+        let mut output = String::new();
+        child.0.stdout.take().unwrap().read_to_string(&mut output).unwrap();
+        assert!(status.success(), "owned Auth retry case failed: {status}\n{output}");
+        let receipt = format!("{RECEIPT_PREFIX}{nonce}");
+        assert!(
+            output.lines().any(|line| line == receipt.as_str()),
+            "the exact child must run all retry assertions, not zero filtered tests:\n{output}",
+        );
+        return;
+    }
+
+    // The parent supervises this same single case; there is no extra helper
+    // test whose default execution could be mistaken for owner coverage.
+    let child_nonce = std::env::var(CHILD_NONCE_ENV).expect("owned Auth retry child nonce");
     let backend = Arc::new(SequenceBackend {
         calls: Mutex::new(0),
     });
@@ -166,6 +243,7 @@ fn background_renewer_reports_failure_then_supports_immediate_retry() {
     let stored_sink = Arc::clone(&stored);
     let reports = Arc::new(Mutex::new(Vec::new()));
     let reports_sink = Arc::clone(&reports);
+    let (report_published, report_events) = mpsc::channel();
 
     let mut renewer = SandInferenceCredentialRenewer::new(
         backend,
@@ -176,33 +254,55 @@ fn background_renewer_reports_failure_then_supports_immediate_retry() {
             }),
             on_result: Some(Arc::new(move |result| {
                 reports_sink.lock().unwrap().push(result);
+                let _ = report_published.send(());
             })),
             now_ms: Arc::new(now_ms),
         },
     );
+    // Share one pre-start budget, strictly shorter than the first automatic
+    // retry delay. A late report cannot open a fresh request window after a
+    // timer-driven renewal has already produced token-2.
+    let work_deadline = Instant::now() + WORK_LIMIT;
     renewer.start();
 
-    for _ in 0..100 {
-        if reports.lock().unwrap().len() >= 1 {
-            break;
-        }
-        thread::sleep(Duration::from_millis(5));
+    let report_remaining = work_deadline.saturating_duration_since(Instant::now());
+    let first_report = if report_remaining.is_zero() {
+        Err(mpsc::RecvTimeoutError::Timeout)
+    } else {
+        report_events.recv_timeout(report_remaining)
+    };
+    let first_report_on_time = first_report.is_ok() && Instant::now() < work_deadline;
+    if !first_report_on_time {
+        eprintln!("first Auth retry report missing or late before owner cleanup: {first_report:?}");
+        renewer.close();
     }
+    assert!(first_report_on_time, "the first report must arrive within the shared work deadline");
+    assert_eq!(first_report, Ok(()), "the first failure report must arrive");
     assert_eq!(reports.lock().unwrap()[0].outcome, RenewalOutcome::Failed);
-    assert!(renewer.request_immediate_renewal());
 
-    for _ in 0..100 {
-        if !stored.lock().unwrap().is_empty() {
-            break;
+    // The report is not idle admission. A false public request has not been
+    // admitted; only a true return proves the real owner admitted and completed
+    // this retry. The child supervisor also bounds an admitted call that hangs.
+    let retry_completed = loop {
+        if Instant::now() >= work_deadline {
+            break false;
         }
-        thread::sleep(Duration::from_millis(5));
+        if renewer.request_immediate_renewal() {
+            break Instant::now() < work_deadline;
+        }
+        thread::yield_now();
+    };
+    if !retry_completed {
+        eprintln!("public Auth retry did not complete within its deadline before owner cleanup");
     }
     renewer.close();
+    assert!(retry_completed, "the real public retry must complete before the deadline");
 
     let reports = reports.lock().unwrap();
     assert_eq!(reports.len(), 2);
     assert_eq!(reports[1].outcome, RenewalOutcome::Renewed);
     assert_eq!(stored.lock().unwrap()[0].access_token, "token-2");
+    println!("\n{RECEIPT_PREFIX}{child_nonce}");
 }
 
 #[test]
