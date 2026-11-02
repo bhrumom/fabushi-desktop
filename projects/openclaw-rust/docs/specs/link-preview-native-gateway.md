@@ -194,3 +194,16 @@ the exact shared-service call count, the existing qualified MCP tail oracle,
 and all actual cached-preview, refusal and ordinary-lane controls. The broad
 negative was an invalid instrument; no production behavior is changed by its
 repair. Fresh focused review and the new exact-H app executions remain required.
+
+**LPG-METHOD-01 — FIX / TEST_FLAW (authority alias coverage).** Adopt the
+published LPG implementation and its app/cache safeguards; do not restore the
+superseded local LPR prototype. Exact native-method refusal also depends on the
+existing HTTP dispatcher's ASCII method grammar. Query, slash, percent and
+whitespace spellings must retain their existing transport-error refusal before
+any Host connection. Extend the actual Coordinator process oracle with those
+names, complete failure classification, unchanged HTTP observations, a following
+ordinary Data success, and the final joined peer log. Broaden that log's preview
+observation to include unexpected preview-prefixed paths. Keep all existing
+native successes, owner-error and unknown-neighbor assertions. This is a scoped
+evidence correction under the existing route/permission owner; it changes no
+production policy and uses the already required shipping Coordinator test.

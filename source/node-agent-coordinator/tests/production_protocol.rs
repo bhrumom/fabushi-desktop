@@ -924,9 +924,9 @@ mod unix {
     }
 
     fn assert_link_preview_http_requests(requests: &[GatewayApiRequest], expected: &[(&str, Value)]) {
-        let observed: Vec<_> = requests.iter().filter(|request| matches!(
-            request.path.as_str(), "/api/fetchLinkMetadata" | "/api/fetchLinkMetadata.extra"
-        )).collect();
+        let observed: Vec<_> = requests.iter().filter(|request|
+            request.path.starts_with("/api/fetchLinkMetadata")
+        ).collect();
         assert_eq!(observed.len(), expected.len(), "denied or repeated preview forwarding: {observed:?}");
         for (request, (method, args)) in observed.iter().zip(expected) {
             assert_eq!(request.http_method, "POST");
@@ -942,14 +942,65 @@ mod unix {
         rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
         stdin: &mut impl Write,
         seen_control_methods: &mut Vec<String>,
+        gateway: &FakeGateway,
     ) -> Vec<(&'static str, Value)> {
+        let mut expected_http_count = gateway.api_requests().len();
         send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
             request_id: "r-preview-denied".into(), method: "fetchLinkMetadata".into(),
             args: json!({"url":"https://example.com/renderer","cacheDir":"/renderer-chosen-path"}),
         });
-        match recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, "r-preview-denied") {
-            ReplyOutcome::Failed { failure } => assert_eq!(failure.code, "ATTACHMENTS_NATIVE_ONLY"),
-            other => panic!("renderer preview RPC acquired native authority: {other:?}"),
+        assert_eq!(
+            recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, "r-preview-denied"),
+            ReplyOutcome::Failed { failure: Failure::new(
+                "ATTACHMENTS_NATIVE_ONLY", "link preview requires native main-data carrier",
+            ) },
+            "renderer preview RPC acquired native authority",
+        );
+        assert_eq!(gateway.api_requests().len(), expected_http_count,
+            "refused renderer preview reached the HTTP gateway");
+
+        // These aliases pass the exact carrier-name check but must fail the
+        // existing HTTP method grammar before connecting. Ordinary Data calls
+        // before and after prove the refusal preserves a usable transport.
+        for (index, method) in [
+            "echo",
+            "fetchLinkMetadata?x",
+            "fetchLinkMetadata/extra",
+            "fetchLinkMetadata%3F",
+            "fetchLinkMetadata ",
+            "fetchLinkMetadata\t",
+            "echo",
+        ].into_iter().enumerate() {
+            let request_id = format!("r-preview-method-{index}");
+            let args = json!({"url":"https://example.com/renderer","cacheDir":"/renderer-chosen-path"});
+            send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(), args: args.clone(),
+            });
+            let expected_reply = if method == "echo" {
+                expected_http_count += 1;
+                ReplyOutcome::Ok { value: json!({"echoed":true}) }
+            } else {
+                ReplyOutcome::Failed { failure: Failure::new(
+                    "gateway-transport-failed", "invalid Host gateway method",
+                ) }
+            };
+            assert_eq!(
+                recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, &request_id),
+                expected_reply,
+                "preview method {method:?} must preserve its complete result classification",
+            );
+            let observed = gateway.api_requests();
+            assert_eq!(observed.len(), expected_http_count,
+                "preview method {method:?} changed the expected HTTP request count: {observed:?}");
+            if method == "echo" {
+                let request = observed.last().expect("ordinary Data echo HTTP request");
+                assert_eq!(request.http_method, "POST");
+                assert_eq!(request.path, "/api/echo");
+                let body: Value = serde_json::from_slice(
+                    request.body.as_deref().expect("complete Data echo HTTP body"),
+                ).expect("Data echo HTTP JSON");
+                assert_eq!(body, args, "ordinary Data echo must reach the live HTTP peer");
+            }
         }
         let mut expected = Vec::new();
         for (channel, method, args, reply) in [
@@ -1373,7 +1424,7 @@ exit 17
             &rx, &mut stdin, &mut seen_control_methods,
         );
         let expected_link_preview_requests = exercise_link_preview_native_routing(
-            &rx, &mut stdin, &mut seen_control_methods,
+            &rx, &mut stdin, &mut seen_control_methods, &gateway,
         );
 
         send(
@@ -1506,7 +1557,7 @@ exit 17
         gateway.stop_and_join().expect("join fake Host gateway and all owned HTTP exchanges");
         // Coordinator exit plus the drained listener/handler join closes the
         // observation interval. No sleep or early empty snapshot proves zero:
-        // all three Data requests are absent, and even the uncertain execution
+        // all denied Data requests are absent, and even the uncertain execution
         // failure reached HTTP exactly once without a transport retry.
         assert_box_mcp_http_requests(&gateway.api_requests(), &expected_box_mcp_requests);
         assert_desktop_mcp_http_requests(&gateway.api_requests(), &expected_desktop_mcp_requests);
