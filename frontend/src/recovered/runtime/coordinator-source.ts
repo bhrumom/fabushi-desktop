@@ -515,6 +515,18 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 }
 
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
+  "feature.auth.telegramStatus": "auth",
+  "feature.auth.telegramSendCode": "auth",
+  "feature.auth.telegramSignIn": "auth",
+  "feature.auth.telegramPassword": "auth",
+  "feature.auth.telegramRegistration": "auth",
+  "feature.auth.telegramResendCode": "auth",
+  "feature.auth.telegramCancelCode": "auth",
+  "feature.auth.telegramRequestPasswordRecovery": "auth",
+  "feature.auth.telegramCheckRecoveryPassword": "auth",
+  "feature.auth.telegramSendVerifyEmailCode": "auth",
+  "feature.auth.telegramVerifyEmail": "auth",
+  "feature.auth.telegramRefreshPasswordChallenge": "auth",
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
   sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
