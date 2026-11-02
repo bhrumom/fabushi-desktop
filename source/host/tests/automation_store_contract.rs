@@ -77,6 +77,10 @@ fn checked_history_rejects_duplicate_object_members_without_custody_or_writes() 
             Err(AutomationStoreError::Json(_))), "{label}: new admission");
         assert!(matches!(store.begin_run(&id, "manual", 2000.0, None, Some("run"), None),
             Err(AutomationStoreError::Json(_))), "{label}: duplicate admission");
+        for requested in ["new", "run"] {
+            assert!(matches!(store.begin_fresh_run(&id, "manual", 2000.0, None, Some(requested), None),
+                Err(AutomationStoreError::Json(_))), "{label}: fresh admission {requested}");
+        }
         assert!(matches!(store.finish_run(&id, "run", "ok", 3000.0, None),
             Err(AutomationStoreError::Json(_))), "{label}: settlement");
         assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}: immutable history");
@@ -131,6 +135,17 @@ fn begin_rejects_malformed_and_ambiguous_history_without_salvaging_rows() {
             }
             assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}");
             assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}");
+            match store.begin_fresh_run(&id, "manual", 3_000.0, None, Some(requested_id), None)
+                .expect_err(label)
+            {
+                AutomationStoreError::Json(_) => assert!(json_error, "{label}: fresh admission"),
+                AutomationStoreError::Io(error) => {
+                    assert!(!json_error, "{label}: fresh admission");
+                    assert_eq!(error.kind(), io::ErrorKind::InvalidData, "{label}: fresh admission");
+                }
+            }
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}: fresh admission");
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}: fresh admission");
         }
         let _ = fs::remove_dir_all(root);
     }
@@ -197,6 +212,386 @@ fn execution_only_begin_refuses_replayed_primary_and_coalesced_ids_without_histo
     assert_eq!(distinct.id, "distinct");
     assert_eq!(store.read_run_for_delivery(&id, "original").unwrap(), Some(first));
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn fresh_admission_rejects_lossy_history_before_publication() {
+    let mut cases = Vec::<(String, Vec<serde_json::Value>)>::new();
+    for (label, field, replacement) in [
+        ("missing-status", "status", None),
+        ("unknown-status", "status", Some(json!("future"))),
+        ("null-status", "status", Some(json!(null))),
+        ("nontext-status", "status", Some(json!(true))),
+        ("running-finished", "finishedAt", Some(json!(1001))),
+        ("running-text-finish", "finishedAt", Some(json!("legacy"))),
+        ("running-boolean-finish", "finishedAt", Some(json!(false))),
+        ("text-aliases", "coalescedRunIds", Some(json!("alias"))),
+        ("object-aliases", "coalescedRunIds", Some(json!({}))),
+        ("boolean-aliases", "coalescedRunIds", Some(json!(true))),
+        ("empty-alias", "coalescedRunIds", Some(json!(["valid", ""]))),
+        ("numeric-alias", "coalescedRunIds", Some(json!(["valid", 7]))),
+        ("null-alias", "coalescedRunIds", Some(json!(["valid", null]))),
+    ] {
+        let mut row = json!({"id":"legacy","startedAt":1000,"status":"running"});
+        if field == "status" {
+            row["finishedAt"] = json!(1001);
+        }
+        if let Some(replacement) = replacement {
+            row[field] = replacement;
+        } else {
+            row.as_object_mut().unwrap().remove(field);
+        }
+        cases.push((label.into(), vec![row]));
+    }
+    for status in ["ok", "error"] {
+        for (label, finish) in [
+            ("missing", None),
+            ("null", Some(json!(null))),
+            ("text", Some(json!("1001"))),
+            ("boolean", Some(json!(true))),
+        ] {
+            let mut row = json!({"id":"legacy","startedAt":1000,"status":status});
+            if let Some(finish) = finish {
+                row["finishedAt"] = finish;
+            }
+            cases.push((format!("{status}-finish-{label}"), vec![row]));
+        }
+    }
+    let mut overflow_aliases = (0..MAX_EVENTS_IN_AUTOMATION_WAKE)
+        .map(|index| format!("old-alias-{index}")).collect::<Vec<_>>();
+    overflow_aliases.push("pending-fire".into());
+    cases.push(("alias-26-is-pending".into(), vec![json!({
+        "id":"legacy","startedAt":1000,"status":"running","coalescedRunIds":overflow_aliases
+    })]));
+    cases.push(("repeated-alias-overflow".into(), vec![json!({
+        "id":"legacy","startedAt":1000,"status":"running",
+        "coalescedRunIds":vec!["same"; MAX_EVENTS_IN_AUTOMATION_WAKE + 1]
+    })]));
+    for (label, first, second) in [
+        ("primary-as-alias",
+            json!({"id":"legacy","startedAt":1000,"status":"running"}),
+            json!({"id":"other","startedAt":1001,"status":"running","coalescedRunIds":["legacy"]})),
+        ("cross-row-alias",
+            json!({"id":"legacy","startedAt":1000,"status":"running","coalescedRunIds":["shared"]}),
+            json!({"id":"other","startedAt":1001,"status":"running","coalescedRunIds":["shared"]})),
+    ] {
+        for reverse in [false, true] {
+            let mut rows = vec![first.clone(), second.clone()];
+            if reverse {
+                rows.reverse();
+            }
+            cases.push((format!("{label}-reverse-{reverse}"), rows));
+        }
+    }
+    let mut hidden_tail = (0..AUTOMATION_MAX_RUN_HISTORY + 2).map(|index| {
+        json!({"id":format!("visible-{index}"),"startedAt":100 + index,"finishedAt":200 + index,"status":"ok"})
+    }).collect::<Vec<_>>();
+    hidden_tail.push(json!({"id":"legacy","startedAt":0,"finishedAt":1,"status":"future"}));
+    cases.push(("invalid-hidden-tail".into(), hidden_tail));
+
+    for (label, invalid_rows) in cases {
+        let (root, store, id) = history_store(&format!("fresh-lossy-{label}"));
+        let mut rows = vec![json!({
+            "id":"retained","startedAt":10000,"status":"running","coalescedRunIds":["retained-alias"]
+        })];
+        rows.extend(invalid_rows);
+        assert!(rows.iter().all(|row| parse_stored_run(row).is_some()),
+            "{label} must expose strict custody lost by the still-supported legacy parser");
+        let raw = serde_json::to_vec_pretty(&rows).unwrap();
+        fs::write(store.runs_path(&id), &raw).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        assert_eq!(store.list_definitions()[0].runs.len(), rows.len().min(AUTOMATION_MAX_RUN_HISTORY),
+            "{label}: regular-file display keeps real legacy run counts");
+        if label == "alias-26-is-pending" {
+            let legacy = store.read_runs(&id).into_iter().find(|run| run.id == "legacy").unwrap();
+            let aliases = legacy.coalesced_run_ids.unwrap();
+            assert_eq!(aliases.len(), MAX_EVENTS_IN_AUTOMATION_WAKE);
+            assert!(!aliases.iter().any(|alias| alias == "pending-fire"),
+                "the pending identity is precisely the custody the old path loses");
+        }
+        if label == "invalid-hidden-tail" {
+            assert!(!store.read_runs(&id).iter().any(|run| run.id == "legacy"));
+        }
+        // Neither an unrelated new identity nor an apparent match can bypass
+        // complete raw validation. Alias 26 also must not become a fresh ID.
+        for requested in ["pending-fire", "unrelated-fire", "retained-alias"] {
+            let error = store.begin_fresh_run(&id, "event", 20000.0, None, Some(requested), None)
+                .expect_err(&format!("{label}: {requested}"));
+            assert!(matches!(error, AutomationStoreError::Io(ref error)
+                if error.kind() == io::ErrorKind::InvalidData), "{label}: {error}");
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}: {requested}");
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}: {requested}");
+        }
+        // The same image remains accepted through the deliberate legacy API.
+        // This control would fail if fresh admission were fixed by tightening
+        // parse_stored_run for every caller.
+        let legacy = store.begin_run(&id, "manual", 20000.0, None, Some("legacy-new"), None)
+            .expect(&format!("{label}: legacy admission")).unwrap();
+        assert_eq!(legacy.id, "legacy-new");
+        assert!(store.finish_run(&id, "legacy-new", "ok", 21000.0, None).unwrap().unwrap()
+            .runs.iter().any(|run| run.id == "legacy-new" && run.status == "ok"));
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        drop(store);
+        fs::remove_dir_all(root).expect("remove successful lossy-history fixture");
+    }
+}
+
+#[test]
+fn fresh_admission_rejects_invalid_identity_inputs_without_rewriting_history() {
+    let (root, store, id) = history_store("fresh-invalid-input");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let cases = [
+        ("nan", f64::NAN, Some("new"), Vec::<String>::new()),
+        ("infinity", f64::INFINITY, Some("new"), Vec::new()),
+        ("negative-infinity", f64::NEG_INFINITY, Some("new"), Vec::new()),
+        ("time-overflow", f64::MAX + f64::MAX, Some("new"), Vec::new()),
+        ("empty-primary", 2000.0, Some(""), Vec::new()),
+        ("empty-alias", 2000.0, Some("new"), vec!["valid".into(), "".into()]),
+        ("generated-with-empty-alias", 2000.0, None, vec!["".into()]),
+        ("alias-overflow", 2000.0, Some("new"), (0..MAX_EVENTS_IN_AUTOMATION_WAKE + 1)
+            .map(|index| format!("alias-{index}")).collect()),
+        ("repeated-alias-overflow", 2000.0, Some("new"), vec!["same".into(); MAX_EVENTS_IN_AUTOMATION_WAKE + 1]),
+    ];
+    let existing = br#"[ { "id": "prior", "startedAt": 1000, "status": "running", "coalescedRunIds": ["prior-alias"] } ]"#;
+    for raw in [None, Some(&existing[..])] {
+        if let Some(raw) = raw {
+            fs::write(store.runs_path(&id), raw).unwrap();
+        }
+        for (label, at, run_id, aliases) in &cases {
+            assert!(store.begin_fresh_run("missing-definition", "event", *at, None, *run_id, Some(aliases))
+                .unwrap().is_none(), "{label}: missing definition retains precedence");
+            assert!(!store.get_location().join("missing-definition").exists());
+            let error = store.begin_fresh_run(&id, "event", *at, None, *run_id, Some(aliases))
+                .expect_err(label);
+            assert!(matches!(error, AutomationStoreError::Io(ref error)
+                if error.kind() == io::ErrorKind::InvalidInput), "{label}: {error}");
+            if let Some(raw) = raw {
+                assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}");
+            } else {
+                assert!(!store.runs_path(&id).exists(), "{label}: cannot create poisoned history");
+            }
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}");
+        }
+    }
+    fs::remove_file(store.config_path(&id)).unwrap();
+    fs::write(store.runs_path(&id), b"[ malformed orphaned history").unwrap();
+    assert!(store.begin_fresh_run(&id, "manual", f64::NAN, None, Some(""), Some(&["".into()]))
+        .unwrap().is_none(), "missing definition precedes both input and history validation");
+    assert!(!store.config_path(&id).exists());
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), b"[ malformed orphaned history");
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful fresh-input fixture");
+}
+
+#[test]
+fn fresh_admission_preserves_literal_custody_and_legacy_normalization() {
+    let (root, store, id) = history_store("fresh-literal-custody");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let old_aliases = vec!["prior".to_owned(), " old alias ".to_owned(), " old alias ".to_owned()];
+    let mut rows = (0..AUTOMATION_MAX_RUN_HISTORY + 2).map(|index| {
+        json!({"id":format!("terminal-{index}"),"startedAt":100 + index,"finishedAt":200 + index,"status":"ok"})
+    }).collect::<Vec<_>>();
+    rows.push(json!({
+        "id":"prior","startedAt":0,"status":"running","trigger":"legacy",
+        "event":" old event ","detail":" old detail ","coalescedRunIds":old_aliases
+    }));
+    fs::write(store.runs_path(&id), serde_json::to_vec_pretty(&rows).unwrap()).unwrap();
+    assert!(!store.read_runs(&id).iter().any(|run| run.id == "prior"));
+    let mut aliases = vec!["  ".to_owned(), " new alias ".to_owned(), " new alias ".to_owned(), "\t".to_owned()];
+    aliases.extend((aliases.len()..MAX_EVENTS_IN_AUTOMATION_WAKE).map(|index| format!("new-alias-{index}")));
+    let fresh = store.begin_fresh_run(&id, "legacy", -1.0, Some(" new event "), Some("  "), Some(&aliases))
+        .unwrap().expect("backdated fresh identity with the exact literal alias bound");
+    assert_eq!(fresh.id, "  ");
+    assert_eq!(fresh.trigger, "schedule");
+    assert_eq!(fresh.event.as_deref(), Some("new event"));
+    assert_eq!(fresh.started_at, -1.0);
+    assert_eq!(fresh.finished_at, None);
+    assert_eq!(fresh.coalesced_run_ids.as_ref(), Some(&aliases));
+    let persisted = persisted_history(&store, &id);
+    assert_eq!(persisted.len(), AUTOMATION_MAX_RUN_HISTORY);
+    assert_eq!(persisted.iter().find(|run| run.id == fresh.id), Some(&fresh));
+    let prior = persisted.iter().find(|run| run.id == "prior").expect("hidden Running custody retained");
+    assert_eq!(prior.coalesced_run_ids.as_ref(), Some(&old_aliases));
+    assert_eq!(prior.trigger, "schedule");
+    assert_eq!(prior.event.as_deref(), Some("old event"));
+    assert_eq!(prior.detail.as_deref(), Some("old detail"));
+    assert!(!persisted.iter().any(|run| run.id == "terminal-0"));
+    for alias in &aliases {
+        assert_eq!(store.read_run_for_delivery(&id, alias).unwrap(), Some(fresh.clone()));
+    }
+    for alias in &old_aliases {
+        assert_eq!(store.read_run_for_delivery(&id, alias).unwrap().as_ref(), Some(prior));
+    }
+    let before = fs::read(store.runs_path(&id)).unwrap();
+    for alias in ["prior", " old alias ", "  ", " new alias "] {
+        let error = store.begin_fresh_run(&id, "event", 2000.0, None, Some("distinct"), Some(&[alias.into()]))
+            .expect_err("every supplied alias participates in existing custody");
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::AlreadyExists));
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), before);
+    }
+    let literal = store.begin_fresh_run(&id, "event", 3000.0, None, Some("new alias"), None)
+        .unwrap().expect("trimmed identity is a distinct literal ID");
+    assert_eq!(literal.id, "new alias");
+    let generated = store.begin_fresh_run(&id, "manual", f64::MAX, None, None, Some(&[]))
+        .unwrap().expect("generated ID, empty alias set and finite extreme time");
+    assert!(!generated.id.is_empty());
+    assert_eq!(generated.coalesced_run_ids, None);
+    assert_eq!(store.read_run_for_delivery(&id, &generated.id).unwrap(), Some(generated));
+    assert_eq!(store.list_definitions()[0].runs.len(), AUTOMATION_MAX_RUN_HISTORY,
+        "regular history remains available to Spend Guard and lifecycle counts");
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+
+    let legacy_raw = br#"[{"id":"legacy","startedAt":1000,"status":"future","finishedAt":"legacy","trigger":"legacy","event":" event ","coalescedRunIds":["",7,"legacy-alias"]}]"#;
+    fs::write(store.runs_path(&id), legacy_raw).unwrap();
+    let mut legacy_aliases = vec!["".to_owned()];
+    legacy_aliases.extend((0..MAX_EVENTS_IN_AUTOMATION_WAKE + 1).map(|index| format!("legacy-input-{index}")));
+    let legacy = store.begin_run(&id, "event", 2000.0, None, Some("legacy-new"), Some(&legacy_aliases))
+        .unwrap().expect("legacy proposed aliases are still normalized");
+    assert_eq!(legacy.coalesced_run_ids, Some(legacy_aliases[1..=MAX_EVENTS_IN_AUTOMATION_WAKE].to_vec()));
+    let normalized = store.read_runs(&id).into_iter().find(|run| run.id == "legacy").unwrap();
+    assert_eq!(normalized.status, "ok");
+    assert_eq!(normalized.finished_at, None);
+    assert_eq!(normalized.trigger, "schedule");
+    assert_eq!(normalized.event.as_deref(), Some("event"));
+    assert_eq!(normalized.coalesced_run_ids, Some(vec!["legacy-alias".into()]));
+    let finished = store.finish_run(&id, "legacy", "error", 3000.0, Some(" failed ")).unwrap().unwrap();
+    let receipt = finished.runs.iter().find(|run| run.id == "legacy").unwrap();
+    assert_eq!(receipt.finished_at, Some(3000.0));
+    assert_eq!(receipt.status, "error");
+    assert_eq!(receipt.detail.as_deref(), Some("failed"));
+    assert_eq!(store.read_run_for_delivery(&id, "legacy-alias").unwrap().as_ref(), Some(receipt));
+    let nonfinite = store.begin_run(&id, "manual", f64::NAN, None, Some("legacy-nan"), None)
+        .unwrap().expect("legacy time input behavior is unchanged");
+    assert!(nonfinite.started_at.is_nan());
+    let raw: serde_json::Value = serde_json::from_slice(&fs::read(store.runs_path(&id)).unwrap()).unwrap();
+    assert!(raw.as_array().unwrap().iter().find(|row| row["id"] == "legacy-nan").unwrap()["startedAt"].is_null());
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful literal and legacy fixture");
+}
+
+#[test]
+fn fresh_admission_distinguishes_missing_history_from_nonregular_paths_and_links() {
+    let (root, store, id) = history_store("fresh-input-objects");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let runs_path = store.runs_path(&id);
+    fs::create_dir(&runs_path).unwrap();
+    fs::write(runs_path.join("sentinel"), b"preserve history directory").unwrap();
+    let error = store.begin_fresh_run(&id, "manual", 2000.0, None, Some("new"), None)
+        .expect_err("an existing nonregular history cannot become first-run absence");
+    assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidData));
+    assert!(store.read_runs(&id).is_empty());
+    assert!(store.get(&id).unwrap().runs.is_empty(), "display returns its existing fail-soft shape");
+    assert!(runs_path.is_dir());
+    assert_eq!(fs::read(runs_path.join("sentinel")).unwrap(), b"preserve history directory");
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    fs::remove_dir_all(&runs_path).unwrap();
+    let first = store.begin_fresh_run(&id, "manual", 2000.0, None, None, None)
+        .unwrap().expect("genuinely missing history admits a generated first identity");
+    assert!(!first.id.is_empty());
+    assert_eq!(store.read_run_for_delivery(&id, &first.id).unwrap(), Some(first));
+    let history = fs::read(&runs_path).unwrap();
+    let config_path = store.config_path(&id);
+    fs::remove_file(&config_path).unwrap();
+    fs::create_dir(&config_path).unwrap();
+    fs::write(config_path.join("sentinel"), b"preserve definition directory").unwrap();
+    assert!(store.read_config(&id).is_none());
+    assert!(store.get(&id).is_none());
+    assert!(store.list_definitions().is_empty());
+    assert!(store.begin_fresh_run(&id, "manual", 3000.0, None, Some("new"), None).unwrap().is_none(),
+        "unreadable legacy definition retains None before fresh admission");
+    assert_eq!(fs::read(config_path.join("sentinel")).unwrap(), b"preserve definition directory");
+    assert_eq!(fs::read(&runs_path).unwrap(), history);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful fresh path-object fixture");
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        let (root, store, id) = history_store("fresh-input-links");
+        let config = fs::read(store.config_path(&id)).unwrap();
+        let config_target = root.join("regular-config-target");
+        fs::rename(store.config_path(&id), &config_target).unwrap();
+        symlink(&config_target, store.config_path(&id)).unwrap();
+        let raw = br#"[{"id":"prior","startedAt":1000,"status":"running","coalescedRunIds":["linked-alias"]}]"#;
+        let history_target = root.join("regular-history-target");
+        fs::write(&history_target, raw).unwrap();
+        symlink(&history_target, store.runs_path(&id)).unwrap();
+        let root_link = root.join("linked-automations");
+        symlink(store.get_location(), &root_link).unwrap();
+        let linked = FileAutomationStore::new(&root_link);
+        assert_eq!(linked.get(&id).unwrap().runs.len(), 1);
+        assert_eq!(linked.list_definitions()[0].runs.len(), 1, "regular-file links retain run counts");
+        let error = linked.begin_fresh_run(&id, "event", 2000.0, None, Some("linked-alias"), None)
+            .expect_err("checked linked history retains its identity authority");
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::AlreadyExists));
+        assert_eq!(fs::read_link(store.runs_path(&id)).unwrap(), history_target);
+        assert_eq!(fs::read(&history_target).unwrap(), raw);
+        let fresh = linked.begin_fresh_run(&id, "event", 2000.0, None, Some("linked-fresh"), None)
+            .unwrap().expect("valid root and regular-file links preserve admission");
+        assert_eq!(linked.read_run_for_delivery(&id, &fresh.id).unwrap(), Some(fresh));
+        assert_eq!(linked.read_run_for_delivery(&id, "linked-alias").unwrap().unwrap().id, "prior");
+        assert_eq!(fs::read(&history_target).unwrap(), raw,
+            "the existing atomic writer replaces the history link, not its target");
+        assert!(fs::symlink_metadata(store.runs_path(&id)).unwrap().is_file());
+        assert_eq!(fs::read_link(&root_link).unwrap(), store.get_location());
+        assert_eq!(fs::read_link(store.config_path(&id)).unwrap(), config_target);
+        assert_eq!(fs::read(&config_target).unwrap(), config);
+
+        let child_id = "linked-child";
+        let child_link = store.get_location().join(child_id);
+        let child_target = store.get_location().join(&id);
+        symlink(&child_target, &child_link).unwrap();
+        for has_history in [true, false] {
+            if !has_history {
+                fs::remove_file(store.runs_path(&id)).unwrap();
+            }
+            let before = has_history.then(|| fs::read(store.runs_path(&id)).unwrap());
+            let error = linked.begin_fresh_run(child_id, "manual", 3000.0, None, Some("child-fresh"), None)
+                .expect_err("a readable definition through a child link cannot authorize fresh history");
+            assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidData));
+            assert_eq!(fs::read_link(&child_link).unwrap(), child_target);
+            if let Some(before) = before {
+                assert_eq!(fs::read(store.runs_path(&id)).unwrap(), before);
+            } else {
+                assert!(!store.runs_path(&id).exists());
+            }
+            assert_eq!(fs::read(&config_target).unwrap(), config);
+        }
+        let missing_history = root.join("missing-history-target");
+        symlink(&missing_history, store.runs_path(&id)).unwrap();
+        let error = linked.begin_fresh_run(&id, "manual", 4000.0, None, Some("dangling-fresh"), None)
+            .expect_err("a dangling history link is unavailable, not absent");
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::NotFound));
+        assert_eq!(fs::read_link(store.runs_path(&id)).unwrap(), missing_history);
+        assert!(!missing_history.exists());
+        assert!(linked.read_runs(&id).is_empty());
+        assert_eq!(linked.begin_run(&id, "manual", 4000.0, None, Some("legacy-dangling"), None)
+            .unwrap().unwrap().id, "legacy-dangling", "legacy missing-history input behavior remains");
+        assert!(!missing_history.exists());
+
+        fs::remove_file(store.runs_path(&id)).unwrap();
+        let directory_target = root.join("history-directory-target");
+        fs::create_dir(&directory_target).unwrap();
+        fs::write(directory_target.join("sentinel"), b"preserve linked directory").unwrap();
+        symlink(&directory_target, store.runs_path(&id)).unwrap();
+        let error = linked.begin_fresh_run(&id, "manual", 5000.0, None, Some("directory-link"), None)
+            .expect_err("a valid link to a nonregular object is still refused");
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidData));
+        assert_eq!(fs::read_link(store.runs_path(&id)).unwrap(), directory_target);
+        assert_eq!(fs::read(directory_target.join("sentinel")).unwrap(), b"preserve linked directory");
+        let missing_config = root.join("missing-config-target");
+        fs::remove_file(store.config_path(&id)).unwrap();
+        symlink(&missing_config, store.config_path(&id)).unwrap();
+        assert!(linked.begin_fresh_run(&id, "manual", 5000.0, None, Some("new"), None).unwrap().is_none());
+        assert_eq!(fs::read_link(store.config_path(&id)).unwrap(), missing_config);
+        assert!(!missing_config.exists());
+        assert_eq!(fs::read_link(store.runs_path(&id)).unwrap(), directory_target);
+        assert_eq!(fs::read(&config_target).unwrap(), config);
+        drop(linked);
+        drop(store);
+        fs::remove_dir_all(root).expect("remove successful fresh link fixture");
+    }
 }
 
 #[test]
@@ -587,6 +982,12 @@ fn full_running_capacity_refuses_growth_but_keeps_existing_lookup_and_settlement
     let error = store.begin_run(&id, "manual", 9_000.0, None, Some("over-capacity"), None)
         .expect_err("twenty Running authorities cannot be evicted");
     assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::WouldBlock));
+    let error = store.begin_fresh_run(&id, "manual", 9_000.0, None, Some("over-capacity"), None)
+        .expect_err("fresh admission cannot grow twenty checked Running rows");
+    assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::WouldBlock));
+    let error = store.begin_fresh_run(&id, "manual", 9_000.0, None, Some("running-0"), None)
+        .expect_err("fresh collisions retain precedence over full capacity");
+    assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::AlreadyExists));
     assert_eq!(fs::read(store.runs_path(&id)).unwrap(), before);
     assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
 
@@ -603,6 +1004,16 @@ fn full_running_capacity_refuses_growth_but_keeps_existing_lookup_and_settlement
         assert_eq!(after.iter().find(|entry| entry.id == run.id), Some(run));
     }
     assert!(!after.iter().any(|run| run.id == "running-0"), "only the settled row is now evictable");
+    store.finish_run(&id, "backdated", "ok", 11_000.0, None).unwrap().unwrap();
+    let fresh = store.begin_fresh_run(&id, "manual", -2.0, None, Some("fresh-backdated"), None)
+        .unwrap().expect("settlement makes capacity available to a backdated fresh run");
+    let fresh_history = persisted_history(&store, &id);
+    assert_eq!(fresh_history.len(), AUTOMATION_MAX_RUN_HISTORY);
+    assert_eq!(fresh_history.iter().find(|run| run.id == fresh.id), Some(&fresh));
+    for run in all.iter().filter(|run| run.id != "running-0") {
+        assert_eq!(fresh_history.iter().find(|entry| entry.id == run.id), Some(run));
+    }
+    assert!(!fresh_history.iter().any(|run| run.id == "backdated"));
     assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
     let _ = fs::remove_dir_all(root);
 }
@@ -626,6 +1037,18 @@ fn legacy_running_excess_drains_without_growth_or_loss_and_returns_bounded_recei
         let error = store.begin_run(&id, "manual", 9_000.0, None, Some("new"), None).unwrap_err();
         assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::WouldBlock));
         assert_eq!(fs::read(store.runs_path(&id)).unwrap(), before);
+
+        // Give the legacy terminal a checked finish solely for the fresh
+        // capacity control, then restore the original legacy settlement input.
+        let mut checked_rows = rows.clone();
+        checked_rows.last_mut().unwrap()["finishedAt"] = json!(1001);
+        let checked_bytes = serde_json::to_vec_pretty(&checked_rows).unwrap();
+        fs::write(store.runs_path(&id), &checked_bytes).unwrap();
+        let error = store.begin_fresh_run(&id, "manual", 9_000.0, None, Some("fresh-new"), None)
+            .expect_err("checked excess Running authority must not grow");
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::WouldBlock));
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), checked_bytes);
+        fs::write(store.runs_path(&id), &before).unwrap();
 
         let mut prior_len = original.len();
         for index in 0..4 {

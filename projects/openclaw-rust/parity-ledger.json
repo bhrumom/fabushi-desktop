@@ -7736,7 +7736,15 @@
         "source/host/tests/automation_runtime_contract.rs",
         "source/host/tests/agent_session_contract.rs",
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
-        "source/host/tests/automation_run_path_contract.rs"
+        "source/host/tests/automation_run_path_contract.rs",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_rejects_lossy_history_before_publication",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_rejects_invalid_identity_inputs_without_rewriting_history",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_preserves_literal_custody_and_legacy_normalization",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_distinguishes_missing_history_from_nonregular_paths_and_links",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_nonregular_inputs_return_without_losing_custody",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_preserves_regular_history_counts_and_links",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair"
       ],
       "typed_contracts": [
         "cron_session_runs",
@@ -7747,7 +7755,8 @@
         "OCRM-AUTOMATION-KNOWN-RUN-REDELIVERY-v1",
         "AUTO-RETAINED-HISTORY-v1: complete checked original/alias lookup, Running retention and capacity, exact terminal receipt, required Host resolver; existing reaper and broader durable claims remain open",
         "AUTO-BACKEND-HISTORY-v2: complete raw custody and typed-return validation; checked stable target discovery through existing Session admission and Runtime; shipping callback refusal on unknown state; authored tests require exact-H Actions, real backend compatibility and broader reaper acceptance remain open",
-        "AUTO-BACKEND-ADMISSION-v1: explicit typed refusal before this attempt receives a fresh history identity reaches the real backend None callback while legacy String errors, Session admission, fresh begin and admitted/terminal settlement remain unchanged; current-revision causal tests require exact-H Actions; legacy covered-slot, late accepted-invalid inputs and full reaper acceptance remain open"
+        "AUTO-BACKEND-ADMISSION-v1: explicit typed refusal before this attempt receives a fresh history identity reaches the real backend None callback while legacy String errors, Session admission, fresh begin and admitted/terminal settlement remain unchanged; current-revision causal tests require exact-H Actions; legacy covered-slot, late accepted-invalid inputs and full reaper acceptance remain open",
+        "AUTO-FRESH-CUSTODY-v1: existing FileAutomationStore fresh mutation and checked delivery share one fully validated raw image; proposed literal identities are lossless, observed nonregular admission reads return without discarding regular run counts, and existing Session/Runtime/Host refusal preserves backend retry custody. Authored Store/real-owner/App controls require exact-H Actions; metadata/open races, unknown write effects, legacy covered-slot and full reaper acceptance remain open"
       ],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
     },
@@ -16891,7 +16900,15 @@
         "source/host/app/src/tests/channel_host_lane_tests.rs::channel_recovery_worker_suppresses_cleared_or_replaced_queued_snapshots",
         "source/host/tests/transcript_manager_contract.rs::manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
         "source/host/tests/automation_run_path_contract.rs",
-        "source/host/tests/automation_run_production_wiring_contract.rs"
+        "source/host/tests/automation_run_production_wiring_contract.rs",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_rejects_lossy_history_before_publication",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_rejects_invalid_identity_inputs_without_rewriting_history",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_preserves_literal_custody_and_legacy_normalization",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_distinguishes_missing_history_from_nonregular_paths_and_links",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_nonregular_inputs_return_without_losing_custody",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_preserves_regular_history_counts_and_links",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair"
       ],
       "typed_contracts": [
         "Session work admission and archive lifecycle",
@@ -16902,7 +16919,8 @@
         "ORT-v1 completed ordinary Native Journal turn: accepted original identity/model, private committed checkpoint observations and frozen terminal custody, bounded strict Session slot, whole-image marker v2 migration, guarded completed-marker acknowledgment and automatic ACK containment; newly declared implementation/tests require exact-H execution, unfinished and Legacy turn restoration remain open",
         "CWR-v1 exact pending-channel-failure recovery: checked whole-image custody, original-marker admission and settlement, coalesced existing wake queue, retained missing-provider/quiescence/error state; real channel and unknown-effect acceptance remain open",
         "AUTO-BACKEND-HISTORY-v2 checked target read uses the existing per-agent Runtime and Session filesystem/deletion boundaries once; known absence differs from invalid, unreadable or deleting state",
-        "AUTO-BACKEND-ADMISSION-v1: explicit typed refusal before this attempt receives a fresh history identity reaches the real backend None callback while legacy String errors, Session admission, fresh begin and admitted/terminal settlement remain unchanged; current-revision causal tests require exact-H Actions; legacy covered-slot, late accepted-invalid inputs and full reaper acceptance remain open"
+        "AUTO-BACKEND-ADMISSION-v1: explicit typed refusal before this attempt receives a fresh history identity reaches the real backend None callback while legacy String errors, Session admission, fresh begin and admitted/terminal settlement remain unchanged; current-revision causal tests require exact-H Actions; legacy covered-slot, late accepted-invalid inputs and full reaper acceptance remain open",
+        "AUTO-FRESH-CUSTODY-v1: existing FileAutomationStore fresh mutation and checked delivery share one fully validated raw image; proposed literal identities are lossless, observed nonregular admission reads return without discarding regular run counts, and existing Session/Runtime/Host refusal preserves backend retry custody. Authored Store/real-owner/App controls require exact-H Actions; metadata/open races, unknown write effects, legacy covered-slot and full reaper acceptance remain open"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
     },

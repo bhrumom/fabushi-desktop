@@ -9,7 +9,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::{AutomationSpec, AUTOMATION_MAX_RUN_HISTORY};
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
-use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
+use mahayana_host_runtime::automations::automation_store::{FileAutomationStore, parse_stored_run};
 use mahayana_host_runtime::automations::automation_trigger::trigger_schedule;
 use mahayana_host_runtime::automations::routine_notices::GITHUB_LISTENER_SCOPE;
 use mahayana_host_runtime::extensions::automations::backend_transport::{
@@ -430,28 +430,34 @@ fn history_admission_failure_then_independent_run(
     assert!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap().is_empty());
     fixture.inject_history_fault(fault);
     let refused_bytes = fs::read(&runs_path).expect("capture invalid input before admission");
+    let before_config = fs::read(fixture.store.config_path(&fixture.automation_id)).unwrap();
     let mut executed = 0;
     let error = fixture.run(trigger, "admission-refused", |_| {
         executed += 1;
         Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
     }).expect_err("pre-existing invalid history must refuse the actual production executor");
-    let expected_error = match fault {
-        HistoryFault::CorruptJson => "automation store json error",
-        HistoryFault::MixedRows if trigger.is_background() => "history contains invalid delivery custody",
-        HistoryFault::MixedRows => "history contains an invalid row",
-        HistoryFault::DuplicateIds if trigger.is_background() => "run identity is claimed by different history rows",
-        HistoryFault::DuplicateIds => "history contains duplicate run IDs",
+    match fault {
+        HistoryFault::CorruptJson => assert!(error.contains("automation store json error"), "{trigger:?}/{fault:?}: {error}"),
+        HistoryFault::MixedRows => assert_eq!(error,
+            "automation store io error: automation run history contains invalid delivery custody", "{trigger:?}/{fault:?}"),
+        HistoryFault::DuplicateIds => assert_eq!(error,
+            "automation store io error: automation run identity is claimed by different history rows", "{trigger:?}/{fault:?}"),
         _ => panic!("unsupported history-admission control"),
-    };
-    assert!(error.contains(expected_error), "{trigger:?}/{fault:?}: expected {expected_error:?}, got {error:?}");
+    }
     assert_eq!(executed, 0, "{trigger:?}/{fault:?}");
     assert_eq!(fs::read(&runs_path).unwrap(), refused_bytes, "{trigger:?}/{fault:?}");
     assert!(fixture.observed.lock().unwrap().is_empty());
     assert!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap().is_empty(),
         "history refusal must precede real cron registration");
     assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
-    // Background identity precheck precedes bookkeeping; manual fresh-history
-    // admission follows it. Neither path claims cross-file rollback.
+    // Background calls reject at the existing checked preflight before any
+    // notice/lastRunAt bookkeeping. Manual fresh admission now uses the same
+    // strict custody reader later in RunPath; its earlier bookkeeping is not
+    // rolled back. Legacy Store mutation/settlement diagnostics stay separate.
+    if trigger.is_background() {
+        assert_eq!(fs::read(fixture.store.config_path(&fixture.automation_id)).unwrap(), before_config,
+            "checked preflight refusal precedes background config bookkeeping");
+    }
 
     fs::write(&runs_path, prior_history).expect("explicitly repair the invalid stored input");
     let repaired = fixture.run(trigger, "admission-repaired", |_| {
@@ -1952,6 +1958,248 @@ fn real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors() {
     );
 }
 
+fn strict_only_lifecycle_history(fault: &str, original: &[u8]) -> Option<Vec<u8>> {
+    let shared_fault = match fault {
+        "missing-status" => Some(BackendHistoryFault::MissingStatus),
+        "future-status" => Some(BackendHistoryFault::FutureStatus),
+        "malformed-alias" => Some(BackendHistoryFault::MalformedAlias),
+        "cross-row-alias" => Some(BackendHistoryFault::CrossRowAlias),
+        "invalid-tail" => Some(BackendHistoryFault::InvalidTail),
+        _ => None,
+    };
+    let mut rows: Vec<Value> = serde_json::from_slice(original).unwrap();
+    let raw = if let Some(shared_fault) = shared_fault {
+        raw_backend_history_fault(shared_fault, original)
+    } else {
+        match fault {
+            "alias-26-request" | "alias-26-unrelated" => {
+                let mut aliases = rows[0]["coalescedRunIds"].as_array().unwrap().clone();
+                while aliases.len() < 25 {
+                    aliases.push(json!(format!("retained-alias-{}", aliases.len())));
+                }
+                aliases.push(json!(if fault == "alias-26-request" {
+                    "late-request"
+                } else {
+                    "unrelated-alias-26"
+                }));
+                assert_eq!(aliases.len(), 26);
+                rows[0]["coalescedRunIds"] = Value::Array(aliases);
+            }
+            "running-finish" => rows[0]["finishedAt"] = json!(200),
+            "terminal-no-finish" => {
+                rows[0]["status"] = json!("ok");
+                rows[0].as_object_mut().unwrap().remove("finishedAt");
+            }
+            "terminal-bad-finish" => {
+                rows[0]["status"] = json!("error");
+                rows[0]["finishedAt"] = json!("unresolved");
+            }
+            "cross-row-primary-alias" => rows.push(json!({
+                "id":"other-primary", "startedAt":200, "finishedAt":201,
+                "status":"ok", "coalescedRunIds":[CUSTODY_RUN_UUIDS[0]],
+            })),
+            "primary" | "alias" | "terminal-primary" | "malformed" => return None,
+            other => panic!("unknown late history fixture: {other}"),
+        }
+        serde_json::to_vec_pretty(&rows).unwrap()
+    };
+    // These fixtures must pass the old row parser and primary-ID/capacity
+    // checks. Malformed JSON alone cannot establish the fresh custody gap.
+    let rows: Vec<Value> = serde_json::from_slice(&raw).unwrap();
+    let normalized = rows.iter().map(|row| parse_stored_run(row)
+        .expect("strict-only fixture remains legacy-parser-admissible")).collect::<Vec<_>>();
+    let primary_ids = normalized.iter().map(|run| &run.id).collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(primary_ids.len(), normalized.len());
+    assert!(normalized.iter().filter(|run| run.status == "running").count() < AUTOMATION_MAX_RUN_HISTORY);
+    assert!(normalized.iter().all(|run| run.id != "late-request"
+        && run.coalesced_run_ids.as_ref().is_none_or(|ids| ids.iter().all(|id| id != "late-request"))),
+        "legacy normalization would permit this fresh identity");
+    if fault.starts_with("alias-26-") {
+        assert_eq!(normalized[0].coalesced_run_ids.as_ref().unwrap().len(), 25);
+        assert_eq!(rows[0]["coalescedRunIds"][25], if fault == "alias-26-request" {
+            json!("late-request")
+        } else {
+            json!("unrelated-alias-26")
+        });
+    }
+    Some(raw)
+}
+
+fn fresh_history_lifecycle_refusal_case(fault: &'static str, legacy: bool) {
+    let fixture = ShippingAutomation::new(&format!("late history/{fault}/legacy={legacy}"));
+    seed_backend_history(&fixture);
+    stale_admission_definition(&fixture);
+    let fired_at_ms = if fault == "terminal-primary" {
+        let now = 1_900_000_000_000.0;
+        prepare_admission_nudge(&fixture, now);
+        now
+    } else {
+        2_000.0
+    };
+    let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+    let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+    let raw_history = strict_only_lifecycle_history(fault, before.history.as_ref().unwrap());
+    let strict_only = raw_history.is_some();
+    let trigger = if fault == "malformed-alias" {
+        AutomationRunTrigger::Event
+    } else {
+        AutomationRunTrigger::Schedule
+    };
+    let mut expected_config = fixture.store.read_config(&fixture.automation_id).unwrap();
+    expected_config.last_run_at = Some(fired_at_ms);
+    expected_config.raised_notices.push(GITHUB_LISTENER_SCOPE.to_string());
+    before.preserve_evidence(&fixture.root, "fresh-before");
+    let lifecycle = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+    let published = Arc::new(Mutex::new(None::<(AdmissionOwnerState, String)>));
+    let callback_count = Arc::new(AtomicUsize::new(0));
+    let callback_workers = Arc::clone(&fixture.workers);
+    let callback_store = fixture.store.clone();
+    let callback_agent = fixture.agent_id.clone();
+    let callback_automation = fixture.automation_id.clone();
+    let callback_owner = Arc::clone(&owner);
+    let callback_events = Arc::clone(&lifecycle);
+    let callback_published = Arc::clone(&published);
+    let callback_seen = Arc::clone(&callback_count);
+    fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+        assert_eq!(event.source, AutomationLifecycleSource::Agent);
+        assert_eq!(event.action, AutomationLifecycleAction::Updated);
+        assert_eq!(event.agent_id, callback_agent);
+        assert_eq!(event.automation_id, callback_automation);
+        assert_eq!(callback_seen.fetch_add(1, Ordering::SeqCst), 0,
+            "only the deliberately stale baseline opens this injection boundary");
+        callback_events.lock().unwrap().push(event.clone());
+        let competing_id = if fault == "alias" { "late-competing-primary" } else { "late-request" };
+        let aliases = (fault == "alias").then(|| vec!["late-request".to_string()]);
+        // Runtime still owns its mutation mutex, but its prior
+        // Session closure has returned. Use only Session/store
+        // here, and let this closure return before cron calls.
+        SandAgentSessionStore::new(Arc::clone(&callback_workers))
+            .with_admitted_filesystem_mutation(&callback_agent, || {
+                assert_eq!(callback_store.read_run_for_delivery(&callback_automation, "late-request")
+                    .map_err(|error| error.to_string())?, None);
+                if let Some(raw) = raw_history.as_ref() {
+                    fs::write(callback_store.runs_path(&callback_automation), raw)
+                        .map_err(|error| error.to_string())?;
+                    let display = callback_store.read_runs(&callback_automation);
+                    assert!(!display.is_empty(), "legacy display accepts this strict-only-invalid image");
+                    if fault == "invalid-tail" {
+                        assert_eq!(display.len(), AUTOMATION_MAX_RUN_HISTORY);
+                        assert!(display.iter().all(|run| run.id != "invalid-tail"));
+                    }
+                } else if fault == "malformed" {
+                    fs::write(callback_store.runs_path(&callback_automation), b"[ malformed")
+                        .map_err(|error| error.to_string())?;
+                } else {
+                    let claimed = callback_store.begin_fresh_run(
+                        &callback_automation, "event", 150.0, None,
+                        Some(competing_id), aliases.as_deref(),
+                    ).map_err(|error| error.to_string())?.expect("competing fresh claim");
+                    assert_eq!(claimed.id, competing_id);
+                }
+                Ok(())
+            }).unwrap();
+        if fault != "malformed" && !strict_only {
+            assert!(callback_workers.begin_cron_session_run(
+                &callback_agent, &callback_automation, competing_id, 150.0,
+            ).unwrap());
+            if fault == "terminal-primary" {
+                assert!(callback_workers.finish_cron_session_run(
+                    &callback_agent, &callback_automation, competing_id, "ok", 160.0, None,
+                ).unwrap());
+                SandAgentSessionStore::new(Arc::clone(&callback_workers))
+                    .with_admitted_filesystem_mutation(&callback_agent, || {
+                        assert!(callback_store.finish_run(
+                            &callback_automation, competing_id, "ok", 160.0, None,
+                        ).map_err(|error| error.to_string())?.is_some());
+                        Ok(())
+                    }).unwrap();
+            }
+        }
+        let detail = if fault == "malformed" || strict_only {
+            callback_store.read_run_for_delivery(&callback_automation, "late-request")
+                .unwrap_err().to_string()
+        } else {
+            "automation store io error: automation run identity has already been admitted".to_string()
+        };
+        *callback_published.lock().unwrap() = Some((
+            AdmissionOwnerState::capture(&callback_store, &callback_automation, &callback_owner),
+            detail,
+        ));
+    })));
+    let executions = AtomicUsize::new(0);
+    let result = if legacy {
+        fixture.runtime.run_background_automation_with(
+            &fixture.agent_id, &fixture.automation_id, trigger,
+            Vec::new(), Some("late-request".into()), Vec::new(), fired_at_ms, None,
+            |_| {
+                executions.fetch_add(1, Ordering::SeqCst);
+                Ok(AutomationExecutionResult::Completed)
+            },
+        ).map(AutomationRunAttempt::Outcome)
+    } else {
+        fixture.runtime.run_background_automation_attempt_with(
+            &fixture.agent_id, &fixture.automation_id, trigger,
+            Vec::new(), Some("late-request".into()), Vec::new(), fired_at_ms, None,
+            |_| {
+                executions.fetch_add(1, Ordering::SeqCst);
+                Ok(AutomationExecutionResult::Completed)
+            },
+        )
+    };
+    let (claimed, expected_detail) = published.lock().unwrap().clone()
+        .expect("the existing lifecycle event published the competing state");
+    claimed.preserve_evidence(&fixture.root, "fresh-competing-claim");
+    if legacy {
+        assert_eq!(result, Err(expected_detail));
+    } else {
+        assert_eq!(expect_admission_refusal(result, AutomationAdmissionStage::FreshHistory), expected_detail);
+    }
+    assert_eq!(callback_count.load(Ordering::SeqCst), 1);
+    assert_eq!(lifecycle.lock().unwrap().len(), 1);
+    assert_eq!(executions.load(Ordering::SeqCst), 0);
+    assert!(fixture.observed.lock().unwrap().is_empty());
+    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+    let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+    after.preserve_evidence(&fixture.root, "fresh-refused");
+    assert_eq!(after.history, claimed.history, "refusal cannot rewrite the competing image");
+    assert_eq!(after.cron, claimed.cron, "refusal cannot register or settle a competing cron row");
+    if fault == "terminal-primary" {
+        assert_eq!(claimed.guard, before.guard, "the lifecycle claim precedes Guard's admitted write");
+        assert_eq!(after.guard.nudged_at_ms, Some(fired_at_ms));
+        assert_eq!(after.guard.card_entry_ids.len(), 1);
+        assert_eq!(after.transcript.len(), before.transcript.len() + 1);
+        assert_eq!(after.unread.unread_count, before.unread.unread_count + 1.0);
+        assert!(after.transcript.iter().any(|entry|
+            entry.get("id").and_then(Value::as_str) == Some(after.guard.card_entry_ids[0].as_str())),
+            "FreshHistory refusal retains the already-committed Guard card");
+    } else {
+        assert_eq!(after.guard, before.guard);
+        assert_eq!(after.unread, before.unread);
+        assert_eq!(after.transcript, before.transcript);
+    }
+    assert_eq!(fixture.store.read_config(&fixture.automation_id), Some(expected_config),
+        "FreshHistory refusal follows the already-authorized notice and lastRunAt writes");
+
+    fixture.runtime.set_lifecycle_reporter(None);
+    if fault == "malformed" || strict_only {
+        SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+            .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                fs::write(fixture.store.runs_path(&fixture.automation_id), before.history.as_ref().unwrap())
+                    .map_err(|error| error.to_string())
+            }).unwrap();
+    }
+    let original = fixture.store.read_runs(&fixture.automation_id);
+    assert_distinct_admission_control(&fixture, "distinct-after-late-claim", fired_at_ms + 1_000.0);
+    let current = fixture.store.read_runs(&fixture.automation_id);
+    for run in &original {
+        assert_eq!(current.iter().find(|current| current.id == run.id), Some(run));
+    }
+    let rows = owner.list_cron_session_runs().unwrap();
+    for row in &claimed.cron {
+        assert_eq!(rows.iter().find(|current| current.run_id == row.run_id), Some(row));
+    }
+}
+
 #[test]
 fn real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images() {
     bounded_automation_case(
@@ -1959,163 +2207,24 @@ fn real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images() {
         || {
             for fault in ["primary", "alias", "terminal-primary", "malformed"] {
                 for legacy in [false, true] {
-                    let fixture = ShippingAutomation::new(&format!("late history/{fault}/legacy={legacy}"));
-                    seed_backend_history(&fixture);
-                    stale_admission_definition(&fixture);
-                    let fired_at_ms = if fault == "terminal-primary" {
-                        let now = 1_900_000_000_000.0;
-                        prepare_admission_nudge(&fixture, now);
-                        now
-                    } else {
-                        2_000.0
-                    };
-                    let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
-                    let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
-                    let mut expected_config = fixture.store.read_config(&fixture.automation_id).unwrap();
-                    expected_config.last_run_at = Some(fired_at_ms);
-                    expected_config.raised_notices.push(GITHUB_LISTENER_SCOPE.to_string());
-                    before.preserve_evidence(&fixture.root, "fresh-before");
-                    let lifecycle = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
-                    let published = Arc::new(Mutex::new(None::<(AdmissionOwnerState, String)>));
-                    let callback_count = Arc::new(AtomicUsize::new(0));
-                    let callback_workers = Arc::clone(&fixture.workers);
-                    let callback_store = fixture.store.clone();
-                    let callback_agent = fixture.agent_id.clone();
-                    let callback_automation = fixture.automation_id.clone();
-                    let callback_owner = Arc::clone(&owner);
-                    let callback_events = Arc::clone(&lifecycle);
-                    let callback_published = Arc::clone(&published);
-                    let callback_seen = Arc::clone(&callback_count);
-                    fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
-                        assert_eq!(event.source, AutomationLifecycleSource::Agent);
-                        assert_eq!(event.action, AutomationLifecycleAction::Updated);
-                        assert_eq!(event.agent_id, callback_agent);
-                        assert_eq!(event.automation_id, callback_automation);
-                        assert_eq!(callback_seen.fetch_add(1, Ordering::SeqCst), 0,
-                            "only the deliberately stale baseline opens this injection boundary");
-                        callback_events.lock().unwrap().push(event.clone());
-                        let competing_id = if fault == "alias" { "late-competing-primary" } else { "late-request" };
-                        let aliases = (fault == "alias").then(|| vec!["late-request".to_string()]);
-                        // Runtime still owns its mutation mutex, but its prior
-                        // Session closure has returned. Use only Session/store
-                        // here, and let this closure return before cron calls.
-                        SandAgentSessionStore::new(Arc::clone(&callback_workers))
-                            .with_admitted_filesystem_mutation(&callback_agent, || {
-                                assert_eq!(callback_store.read_run_for_delivery(&callback_automation, "late-request")
-                                    .map_err(|error| error.to_string())?, None);
-                                if fault == "malformed" {
-                                    fs::write(callback_store.runs_path(&callback_automation), b"[ malformed")
-                                        .map_err(|error| error.to_string())?;
-                                } else {
-                                    let claimed = callback_store.begin_fresh_run(
-                                        &callback_automation, "event", 150.0, None,
-                                        Some(competing_id), aliases.as_deref(),
-                                    ).map_err(|error| error.to_string())?.expect("competing fresh claim");
-                                    assert_eq!(claimed.id, competing_id);
-                                }
-                                Ok(())
-                            }).unwrap();
-                        if fault != "malformed" {
-                            assert!(callback_workers.begin_cron_session_run(
-                                &callback_agent, &callback_automation, competing_id, 150.0,
-                            ).unwrap());
-                            if fault == "terminal-primary" {
-                                assert!(callback_workers.finish_cron_session_run(
-                                    &callback_agent, &callback_automation, competing_id, "ok", 160.0, None,
-                                ).unwrap());
-                                SandAgentSessionStore::new(Arc::clone(&callback_workers))
-                                    .with_admitted_filesystem_mutation(&callback_agent, || {
-                                        assert!(callback_store.finish_run(
-                                            &callback_automation, competing_id, "ok", 160.0, None,
-                                        ).map_err(|error| error.to_string())?.is_some());
-                                        Ok(())
-                                    }).unwrap();
-                            }
-                        }
-                        let detail = if fault == "malformed" {
-                            callback_store.read_run_for_delivery(&callback_automation, "late-request")
-                                .unwrap_err().to_string()
-                        } else {
-                            "automation store io error: automation run identity has already been admitted".to_string()
-                        };
-                        *callback_published.lock().unwrap() = Some((
-                            AdmissionOwnerState::capture(&callback_store, &callback_automation, &callback_owner),
-                            detail,
-                        ));
-                    })));
-                    let executions = AtomicUsize::new(0);
-                    let result = if legacy {
-                        fixture.runtime.run_background_automation_with(
-                            &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
-                            Vec::new(), Some("late-request".into()), Vec::new(), fired_at_ms, None,
-                            |_| {
-                                executions.fetch_add(1, Ordering::SeqCst);
-                                Ok(AutomationExecutionResult::Completed)
-                            },
-                        ).map(AutomationRunAttempt::Outcome)
-                    } else {
-                        fixture.runtime.run_background_automation_attempt_with(
-                            &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
-                            Vec::new(), Some("late-request".into()), Vec::new(), fired_at_ms, None,
-                            |_| {
-                                executions.fetch_add(1, Ordering::SeqCst);
-                                Ok(AutomationExecutionResult::Completed)
-                            },
-                        )
-                    };
-                    let (claimed, expected_detail) = published.lock().unwrap().clone()
-                        .expect("the existing lifecycle event published the competing state");
-                    claimed.preserve_evidence(&fixture.root, "fresh-competing-claim");
-                    if legacy {
-                        assert_eq!(result, Err(expected_detail));
-                    } else {
-                        assert_eq!(expect_admission_refusal(result, AutomationAdmissionStage::FreshHistory), expected_detail);
-                    }
-                    assert_eq!(callback_count.load(Ordering::SeqCst), 1);
-                    assert_eq!(lifecycle.lock().unwrap().len(), 1);
-                    assert_eq!(executions.load(Ordering::SeqCst), 0);
-                    assert!(fixture.observed.lock().unwrap().is_empty());
-                    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
-                    let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
-                    after.preserve_evidence(&fixture.root, "fresh-refused");
-                    assert_eq!(after.history, claimed.history, "refusal cannot rewrite the competing image");
-                    assert_eq!(after.cron, claimed.cron, "refusal cannot register or settle a competing cron row");
-                    if fault == "terminal-primary" {
-                        assert_eq!(claimed.guard, before.guard, "the lifecycle claim precedes Guard's admitted write");
-                        assert_eq!(after.guard.nudged_at_ms, Some(fired_at_ms));
-                        assert_eq!(after.guard.card_entry_ids.len(), 1);
-                        assert_eq!(after.transcript.len(), before.transcript.len() + 1);
-                        assert_eq!(after.unread.unread_count, before.unread.unread_count + 1.0);
-                        assert!(after.transcript.iter().any(|entry|
-                            entry.get("id").and_then(Value::as_str) == Some(after.guard.card_entry_ids[0].as_str())),
-                            "FreshHistory refusal retains the already-committed Guard card");
-                    } else {
-                        assert_eq!(after.guard, before.guard);
-                        assert_eq!(after.unread, before.unread);
-                        assert_eq!(after.transcript, before.transcript);
-                    }
-                    assert_eq!(fixture.store.read_config(&fixture.automation_id), Some(expected_config),
-                        "FreshHistory refusal follows the already-authorized notice and lastRunAt writes");
-
-                    fixture.runtime.set_lifecycle_reporter(None);
-                    if fault == "malformed" {
-                        SandAgentSessionStore::new(Arc::clone(&fixture.workers))
-                            .with_admitted_filesystem_mutation(&fixture.agent_id, || {
-                                fs::write(fixture.store.runs_path(&fixture.automation_id), before.history.as_ref().unwrap())
-                                    .map_err(|error| error.to_string())
-                            }).unwrap();
-                    }
-                    let original = fixture.store.read_runs(&fixture.automation_id);
-                    assert_distinct_admission_control(&fixture, "distinct-after-late-claim", fired_at_ms + 1_000.0);
-                    let current = fixture.store.read_runs(&fixture.automation_id);
-                    for run in &original {
-                        assert_eq!(current.iter().find(|current| current.id == run.id), Some(run));
-                    }
-                    let rows = owner.list_cron_session_runs().unwrap();
-                    for row in &claimed.cron {
-                        assert_eq!(rows.iter().find(|current| current.run_id == row.run_id), Some(row));
-                    }
+                    fresh_history_lifecycle_refusal_case(fault, legacy);
                 }
+            }
+        },
+    );
+}
+
+#[test]
+fn real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair() {
+    bounded_automation_case(
+        "real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+        || {
+            for fault in [
+                "alias-26-request", "alias-26-unrelated", "missing-status", "future-status",
+                "running-finish", "terminal-no-finish", "terminal-bad-finish", "malformed-alias",
+                "cross-row-primary-alias", "cross-row-alias", "invalid-tail",
+            ] {
+                fresh_history_lifecycle_refusal_case(fault, false);
             }
         },
     );
@@ -2543,6 +2652,317 @@ fn real_backend_history_invalid_image_and_tail_refuse_without_completion_or_ack(
             backend_history_refusal_case(BackendHistoryFault::InvalidTail, false);
             backend_history_refusal_case(BackendHistoryFault::InvalidJson, true);
             backend_history_refusal_case(BackendHistoryFault::InvalidUtf8, false);
+        },
+    );
+}
+
+#[cfg(unix)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct AdmissionFifoIdentity {
+    device: u64,
+    inode: u64,
+    mode: u32,
+    links: u64,
+    length: u64,
+    owner: (u32, u32),
+    accessed: (i64, i64),
+    modified: (i64, i64),
+    changed: (i64, i64),
+}
+
+#[cfg(unix)]
+impl AdmissionFifoIdentity {
+    fn capture(path: &Path) -> Self {
+        use std::os::unix::fs::{FileTypeExt, MetadataExt};
+
+        let metadata = fs::symlink_metadata(path).unwrap();
+        assert!(metadata.file_type().is_fifo(), "the refused input must remain the owned FIFO");
+        Self {
+            device: metadata.dev(),
+            inode: metadata.ino(),
+            mode: metadata.mode(),
+            links: metadata.nlink(),
+            length: metadata.len(),
+            owner: (metadata.uid(), metadata.gid()),
+            accessed: (metadata.atime(), metadata.atime_nsec()),
+            modified: (metadata.mtime(), metadata.mtime_nsec()),
+            changed: (metadata.ctime(), metadata.ctime_nsec()),
+        }
+    }
+
+    fn replace_regular_input(path: &Path) -> Self {
+        use std::os::unix::ffi::OsStrExt;
+
+        assert!(fs::symlink_metadata(path).unwrap().is_file());
+        fs::remove_file(path).unwrap();
+        let native = std::ffi::CString::new(path.as_os_str().as_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(native.as_ptr(), 0o600) }, 0,
+            "create owned FIFO: {}", io::Error::last_os_error());
+        // No peer ever opens this object. Only the exact owned child may time
+        // out; no unjoinable reader thread or synthetic completion is evidence.
+        Self::capture(path)
+    }
+}
+
+#[cfg(unix)]
+fn nonregular_fresh_admission_case(config_fault: bool, after_precheck: bool) {
+    let fixture = ShippingAutomation::new(&format!(
+        "fresh nonregular/config={config_fault}/after-precheck={after_precheck}",
+    ));
+    seed_backend_history(&fixture);
+    stale_admission_definition(&fixture);
+    let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+    // Both inputs are still regular here. Never use this byte-reading
+    // snapshot while either path contains the FIFO.
+    let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+    before.preserve_evidence(&fixture.root, "fifo-before-installation");
+    let mut expected_config = fixture.store.read_config(&fixture.automation_id).unwrap();
+    expected_config.last_run_at = Some(2_000.0);
+    expected_config.raised_notices.push(GITHUB_LISTENER_SCOPE.to_string());
+
+    let backend_id = stable_automation_id(&fixture.agent_id, &fixture.automation_id);
+    let target = fixture.runtime.find_automation_for_backend_delivery(
+        &fixture.agent_id, &backend_id,
+    ).unwrap().expect("checked production target before the input changes");
+    let definition = sand_cloud_definition(&fixture.agent_id, &ScheduledCloudAutomation {
+        id: target.automation.id.clone(), name: target.automation.name.clone(),
+        prompt: target.automation.prompt.clone(), is_enabled: target.automation.is_enabled,
+        trigger: target.automation.trigger.clone(),
+    }, None).unwrap();
+    let fire = BackendAutomationFire {
+        id: "fifo-request".into(), sand_agent_id: fixture.agent_id.clone(),
+        automation_id: backend_id, timestamp_ms: 2_000,
+        definition_revision: Some(definition.hash.clone()), scheduled_for_ms: Some(1_900), event: None,
+    };
+    let prepared = prepare_backend_fire(&[target], &fire, |_| Some(definition.hash.clone()),
+        |entry, id| fixture.runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, id));
+    let PreparedBackendFire::Schedule { agent_id, automation_id, run_uuid, scheduled_for_ms } = prepared else {
+        panic!("regular inputs must pass actual checked preparation: {prepared:?}");
+    };
+    assert_eq!((&agent_id, &automation_id, &run_uuid), (&fixture.agent_id, &fixture.automation_id, &fire.id));
+
+    let path = if config_fault {
+        fixture.store.config_path(&fixture.automation_id)
+    } else {
+        fixture.store.runs_path(&fixture.automation_id)
+    };
+    let installed = Arc::new(Mutex::new(None::<AdmissionFifoIdentity>));
+    let injected = Arc::new(AtomicUsize::new(0));
+    let lifecycle = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+    let callback_workers = Arc::clone(&fixture.workers);
+    let callback_store = fixture.store.clone();
+    let callback_agent = fixture.agent_id.clone();
+    let callback_automation = fixture.automation_id.clone();
+    let callback_path = path.clone();
+    let callback_root = fixture.root.clone();
+    let callback_installed = Arc::clone(&installed);
+    let callback_injected = Arc::clone(&injected);
+    let install = Arc::new(move || {
+        assert_eq!(callback_injected.fetch_add(1, Ordering::SeqCst), 0,
+            "install the stable no-peer FIFO exactly once");
+        SandAgentSessionStore::new(Arc::clone(&callback_workers))
+            .with_admitted_filesystem_mutation(&callback_agent, || {
+                assert_eq!(callback_store.read_run_for_delivery(&callback_automation, "fifo-request")
+                    .map_err(|error| error.to_string())?, None);
+                let identity = AdmissionFifoIdentity::replace_regular_input(&callback_path);
+                fs::write(callback_root.join("fifo-installed-metadata.txt"), format!("{identity:#?}"))
+                    .map_err(|error| error.to_string())?;
+                *callback_installed.lock().unwrap() = Some(identity);
+                Ok(())
+            }).unwrap();
+    });
+    let callback_install = Arc::clone(&install);
+    let callback_events = Arc::clone(&lifecycle);
+    let callback_agent = fixture.agent_id.clone();
+    let callback_automation = fixture.automation_id.clone();
+    fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+        assert_eq!(event.agent_id, callback_agent);
+        assert_eq!(event.automation_id, callback_automation);
+        callback_events.lock().unwrap().push(event.clone());
+        if event.source == AutomationLifecycleSource::Agent
+            && event.action == AutomationLifecycleAction::Updated
+        {
+            assert!(after_precheck, "early refusal precedes lifecycle reconciliation");
+            // The early Session precheck has returned. Runtime's mutex remains
+            // held, so the injector uses Session/FileStore only, never Runtime.
+            callback_install();
+        }
+    })));
+    if !after_precheck {
+        install();
+    }
+    let executions = AtomicUsize::new(0);
+    let result = fixture.runtime.run_background_automation_attempt_with(
+        &agent_id, &automation_id, AutomationRunTrigger::Schedule,
+        Vec::new(), Some(run_uuid), Vec::new(), 2_000.0,
+        scheduled_for_ms.map(|value| value as f64), |_| {
+            executions.fetch_add(1, Ordering::SeqCst);
+            Ok(AutomationExecutionResult::Completed)
+        },
+    );
+    fs::write(fixture.root.join("fifo-returned-attempt.txt"), format!("{result:#?}")).unwrap();
+    if config_fault {
+        assert_eq!(result, Ok(AutomationRunAttempt::Outcome(None)),
+            "early missing definition or late Guard missing/off policy returns its existing None");
+    } else {
+        let stage = if after_precheck {
+            AutomationAdmissionStage::FreshHistory
+        } else {
+            AutomationAdmissionStage::HistoryPrecheck
+        };
+        let detail = expect_admission_refusal(result, stage);
+        assert!(detail.contains("not a regular file"), "the actual nonregular reader refused: {detail}");
+    }
+    assert_eq!(injected.load(Ordering::SeqCst), 1);
+    assert_eq!(executions.load(Ordering::SeqCst), 0);
+    assert!(fixture.observed.lock().unwrap().is_empty());
+    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+    let after = AdmissionFifoIdentity::capture(&path);
+    fs::write(fixture.root.join("fifo-refused-metadata.txt"), format!("{after:#?}")).unwrap();
+    assert_eq!(Some(after), *installed.lock().unwrap(), "no input replacement or metadata mutation");
+    assert_eq!(owner.list_cron_session_runs().unwrap(), before.cron);
+    assert_eq!(owner.get_automation_spend_guard_state().unwrap(), before.guard);
+    assert_eq!(owner.get_unread_state().unwrap(), before.unread);
+    assert_eq!(owner.get_transcript_entries().unwrap(), before.transcript);
+    if config_fault {
+        assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(),
+            *before.history.as_ref().unwrap());
+    } else if after_precheck {
+        assert_eq!(fixture.store.read_config(&fixture.automation_id), Some(expected_config),
+            "late history refusal retains its authorized notice and lastRunAt writes");
+    } else {
+        assert_eq!(fs::read(fixture.store.config_path(&fixture.automation_id)).unwrap(),
+            *before.config.as_ref().unwrap());
+    }
+    let events = lifecycle.lock().unwrap().clone();
+    let actual = events.iter().map(|event| (event.source, event.action)).collect::<Vec<_>>();
+    let expected = if !after_precheck {
+        Vec::new()
+    } else if config_fault {
+        vec![(AutomationLifecycleSource::Agent, AutomationLifecycleAction::Updated),
+            (AutomationLifecycleSource::SpendGuard, AutomationLifecycleAction::Deleted)]
+    } else {
+        vec![(AutomationLifecycleSource::Agent, AutomationLifecycleAction::Updated)]
+    };
+    assert_eq!(actual, expected, "one injection is distinct from subsequent missing-definition telemetry");
+
+    fixture.runtime.set_lifecycle_reporter(None);
+    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+            fs::remove_file(&path).map_err(|error| error.to_string())?;
+            fs::write(&path, if config_fault { before.config.as_ref().unwrap() } else { before.history.as_ref().unwrap() })
+                .map_err(|error| error.to_string())
+        }).unwrap();
+    assert_distinct_admission_control(&fixture, "distinct-after-fifo-repair", 3_000.0);
+    let rows = owner.list_cron_session_runs().unwrap();
+    for row in &before.cron {
+        assert_eq!(rows.iter().find(|current| current.run_id == row.run_id), Some(row));
+    }
+    let restored: Vec<Value> = serde_json::from_slice(before.history.as_ref().unwrap()).unwrap();
+    for original in restored.iter().map(|row| parse_stored_run(row).unwrap()) {
+        assert_eq!(fixture.store.read_run_for_delivery(&fixture.automation_id, &original.id).unwrap(), Some(original));
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn real_fresh_admission_nonregular_inputs_return_without_losing_custody() {
+    bounded_automation_case(
+        "real_fresh_admission_nonregular_inputs_return_without_losing_custody", || {
+            for config_fault in [true, false] {
+                for after_precheck in [false, true] {
+                    nonregular_fresh_admission_case(config_fault, after_precheck);
+                }
+            }
+        },
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn real_fresh_admission_preserves_regular_history_counts_and_links() {
+    use std::os::unix::fs::symlink;
+
+    bounded_automation_case(
+        "real_fresh_admission_preserves_regular_history_counts_and_links", || {
+            for linked in [false, true] {
+                let fixture = ShippingAutomation::new(&format!("regular history count/linked={linked}"));
+                let original = seed_backend_history(&fixture);
+                let now = 1_900_000_000_000.0;
+                let last_viewed = now - SPEND_GUARD_IDLE_TTL_MS - 10_000.0;
+                fixture.workers.mark_agent_viewed(&fixture.agent_id, last_viewed, false).unwrap();
+                let mut rows: Vec<Value> = serde_json::from_slice(&original.history).unwrap();
+                rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| json!({
+                    "id":format!("counted-terminal-{index}"), "status":"ok",
+                    "startedAt":last_viewed + index as f64 + 1.0,
+                    "finishedAt":last_viewed + index as f64 + 2.0,
+                })));
+                SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                    .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                        fs::write(fixture.store.runs_path(&fixture.automation_id), serde_json::to_vec_pretty(&rows).unwrap())
+                            .map_err(|error| error.to_string())
+                    }).unwrap();
+                stale_admission_definition(&fixture);
+                let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+                let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                let mut link_targets = Vec::new();
+                if linked {
+                    for (path, name) in [
+                        (fixture.store.config_path(&fixture.automation_id), "linked-config.json"),
+                        (fixture.store.runs_path(&fixture.automation_id), "linked-history.json"),
+                    ] {
+                        let target = fixture.root.join(name);
+                        fs::rename(&path, &target).unwrap();
+                        symlink(&target, &path).unwrap();
+                        assert!(fs::symlink_metadata(&path).unwrap().file_type().is_symlink());
+                        link_targets.push((target.clone(), fs::read(&target).unwrap()));
+                    }
+                }
+                let definitions = fixture.store.list_definitions();
+                assert_eq!(definitions.len(), 1);
+                assert_eq!(definitions[0].runs.len(), AUTOMATION_MAX_RUN_HISTORY);
+                assert!(definitions[0].runs.iter().all(|run| run.id.starts_with("counted-terminal-")));
+                assert_eq!(fixture.runtime.read_run_for_delivery(
+                    &fixture.agent_id, &fixture.automation_id, CUSTODY_RUN_UUIDS[0],
+                ).unwrap().unwrap().status, "running", "the complete history still owns its hidden Running row");
+                let evaluated = fixture.runtime.spend_guard().evaluate_with_store(
+                    &fixture.agent_id, &fixture.store, now,
+                ).unwrap();
+                assert_eq!(evaluated.evaluation.unread_count, 0);
+                assert_eq!(evaluated.evaluation.fires_since_viewed_count, AUTOMATION_MAX_RUN_HISTORY);
+                assert_eq!(evaluated.decision, SpendGuardDecision::Nudge,
+                    "real regular history alone must cross Guard's fire threshold");
+                let lifecycle = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+                let sink = Arc::clone(&lifecycle);
+                fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+                    sink.lock().unwrap().push(event.clone());
+                })));
+                assert_distinct_admission_control(&fixture, "regular-count-control", now);
+                let events = lifecycle.lock().unwrap().clone();
+                assert_eq!(events.len(), 1);
+                assert_eq!(events[0].source, AutomationLifecycleSource::Agent);
+                assert_eq!(events[0].action, AutomationLifecycleAction::Updated);
+                assert_eq!(events[0].recorded_run_count, AUTOMATION_MAX_RUN_HISTORY);
+                let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                assert_eq!(after.guard.nudged_at_ms, Some(now));
+                assert_eq!(after.guard.card_entry_ids.len(), 1);
+                assert_eq!(after.unread.unread_count, before.unread.unread_count + 1.0);
+                assert_eq!(after.transcript.len(), before.transcript.len() + 1);
+                assert!(after.transcript.iter().any(|entry|
+                    entry.get("id").and_then(Value::as_str) == Some(after.guard.card_entry_ids[0].as_str())));
+                for row in &original.cron {
+                    assert_eq!(after.cron.iter().find(|current| current.run_id == row.run_id), Some(row));
+                }
+                for id in CUSTODY_RUN_UUIDS {
+                    assert_eq!(fixture.runtime.read_run_for_delivery(
+                        &fixture.agent_id, &fixture.automation_id, id,
+                    ).unwrap().unwrap().status, "running");
+                }
+                for (target, bytes) in link_targets {
+                    assert_eq!(fs::read(target).unwrap(), bytes,
+                        "the existing atomic writer replaces the path without rewriting the regular link target");
+                }
+            }
         },
     );
 }

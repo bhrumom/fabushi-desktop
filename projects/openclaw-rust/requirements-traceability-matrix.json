@@ -1024,7 +1024,10 @@
         "source/host/tests/agent_session_contract.rs",
         "source/host/src/extensions/transcript/automation_run_path.rs",
         "source/host/tests/automation_run_path_contract.rs",
-        "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_rejects_lossy_history_before_publication",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
@@ -2173,7 +2176,10 @@
         "source/host/tests/agent_session_contract.rs",
         "source/host/src/extensions/transcript/automation_run_path.rs",
         "source/host/tests/automation_run_path_contract.rs",
-        "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json",
+        "source/host/tests/automation_store_contract.rs::fresh_admission_rejects_lossy_history_before_publication",
+        "source/host/tests/automation_run_production_wiring_contract.rs::real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair"
       ],
       "gate_ids": [],
       "id": "OCRM-AC21",

@@ -22,7 +22,7 @@ impl FileAutomationStore{
  pub fn config_path(&self,id:&str)->PathBuf{self.dir.get_location().join(id).join(CONFIG_FILENAME)}
  pub fn runs_path(&self,id:&str)->PathBuf{self.dir.get_location().join(id).join(RUNS_FILENAME)}
  pub fn list_ids(&self)->Vec<String>{self.dir.list_subdirectory_names().into_iter().filter(|id|is_safe_folder_id(id)).collect()}
- pub fn read_config(&self,id:&str)->Option<AutomationConfig>{if !is_safe_folder_id(id){return None;}let path=self.config_path(id);let raw=fs::read_to_string(&path).ok()?;parse_stored_config(&raw,file_time_ms(&path))}
+ pub fn read_config(&self,id:&str)->Option<AutomationConfig>{if !is_safe_folder_id(id){return None;}let path=self.config_path(id);let(raw,_)=read_regular_file(&path).ok()?;parse_stored_config(&raw,file_time_ms(&path))}
  /// Find one backend definition without reading or trusting display history.
  pub fn find_for_backend_delivery(
      &self,
@@ -73,7 +73,7 @@ impl FileAutomationStore{
      Ok(Some(self.record_from_config(&id, config, true)))
  }
 
- fn read_config_for_delivery(&self, id: &str) -> Result<AutomationConfig, AutomationStoreError> {
+ fn require_local_directory(&self, id: &str) -> Result<(), AutomationStoreError> {
      let folder = self.dir.get_location().join(id);
      if !fs::symlink_metadata(&folder)?.is_dir() {
          return Err(io::Error::new(
@@ -81,15 +81,13 @@ impl FileAutomationStore{
              "automation delivery target is not a local directory",
          ).into());
      }
+     Ok(())
+ }
+
+ fn read_config_for_delivery(&self, id: &str) -> Result<AutomationConfig, AutomationStoreError> {
+     self.require_local_directory(id)?;
      let path = self.config_path(id);
-     let metadata = fs::metadata(&path)?;
-     if !metadata.is_file() {
-         return Err(io::Error::new(
-             io::ErrorKind::InvalidData,
-             "automation delivery definition is not a regular file",
-         ).into());
-     }
-     let raw = fs::read_to_string(&path)?;
+     let (raw, metadata) = read_regular_file(&path)?;
      serde_json::from_str::<UniqueJson>(&raw)
          .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
      // Keep the legacy timestamp/default/trigger semantics, after checked
@@ -102,7 +100,7 @@ impl FileAutomationStore{
          "automation delivery definition is invalid",
      ).into())
  }
- pub fn read_runs(&self,id:&str)->Vec<AutomationRun>{let Ok(raw)=fs::read_to_string(self.runs_path(id))else{return Vec::new();};let Ok(value)=serde_json::from_str::<Value>(&raw)else{return Vec::new();};let Some(items)=value.as_array()else{return Vec::new();};let mut runs=items.iter().filter_map(parse_stored_run).collect::<Vec<_>>();runs.sort_by(|a,b|b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));runs.truncate(AUTOMATION_MAX_RUN_HISTORY);runs}
+ pub fn read_runs(&self,id:&str)->Vec<AutomationRun>{let Ok((raw,_))=read_regular_file(&self.runs_path(id))else{return Vec::new();};let Ok(value)=serde_json::from_str::<Value>(&raw)else{return Vec::new();};let Some(items)=value.as_array()else{return Vec::new();};let mut runs=items.iter().filter_map(parse_stored_run).collect::<Vec<_>>();runs.sort_by(|a,b|b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));runs.truncate(AUTOMATION_MAX_RUN_HISTORY);runs}
  /// Resolve delivery custody from the complete raw history, before legacy normalization.
  pub fn read_run_for_delivery(
      &self,
@@ -116,9 +114,18 @@ impl FileAutomationStore{
          return Err(io::Error::new(io::ErrorKind::InvalidInput, "automation run ID must not be empty").into());
      }
      self.read_config_for_delivery(id)?;
+     Ok(self.read_runs_for_custody(id)?.into_iter().find(|run| {
+         run.id == run_id || run.coalesced_run_ids.as_ref()
+             .is_some_and(|ids| ids.iter().any(|identity| identity == run_id))
+     }))
+ }
+
+ // Delivery and fresh admission consume the same complete checked image.
+ // No lookup, capacity check or retention may hide a later invalid row.
+ fn read_runs_for_custody(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
      let items = self.read_run_image(id, true)?;
      let mut identity_owners = std::collections::HashMap::<&str, usize>::new();
-     let mut matched = None;
+     let mut runs = Vec::with_capacity(items.len());
      for (row_index, item) in items.iter().enumerate() {
          let invalid = || io::Error::new(
              io::ErrorKind::InvalidData,
@@ -148,7 +155,6 @@ impl FileAutomationStore{
          for alias in aliases {
              row_identities.push(alias.as_str().filter(|id| !id.is_empty()).ok_or_else(invalid)?);
          }
-         let mut row_matches = false;
          for identity in row_identities {
              if identity_owners.insert(identity, row_index)
                  .is_some_and(|previous| previous != row_index)
@@ -158,15 +164,11 @@ impl FileAutomationStore{
                      "automation run identity is claimed by different history rows",
                  ).into());
              }
-             row_matches |= identity == run_id;
          }
-         if row_matches {
-             // Custody fields are now lossless; keep the existing metadata parser.
-             matched = Some(parse_stored_run(item).ok_or_else(invalid)?);
-         }
+         // Custody fields are now lossless; keep the existing metadata parser.
+         runs.push(parse_stored_run(item).ok_or_else(invalid)?);
      }
-     // A bad later row invalidates a match or absence, including beyond the display window.
-     Ok(matched)
+     Ok(runs)
  }
  pub fn write_config(&self,id:&str,config:&AutomationConfig)->Result<(),AutomationStoreError>{self.dir.write_file_atomic(self.config_path(id),serialize_config(config).as_bytes())?;Ok(())}
  pub fn write_runs(&self,id:&str,runs:&[AutomationRun])->Result<(),AutomationStoreError>{let values=runs.iter().map(run_to_json).collect::<Vec<_>>();let mut raw=serde_json::to_string_pretty(&values)?;raw.push('\n');self.dir.write_file_atomic(self.runs_path(id),raw.as_bytes())?;Ok(())}
@@ -229,7 +231,28 @@ impl FileAutomationStore{
              "automation run ID must not be empty",
          ).into());
      }
-     let mut runs = self.read_runs_for_mutation(id)?;
+     if require_fresh {
+         if !at.is_finite() {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidInput,
+                 "automation run start time must be finite",
+             ).into());
+         }
+         if coalesced.is_some_and(|ids| {
+             ids.len() > super::automation::MAX_EVENTS_IN_AUTOMATION_WAKE
+                 || ids.iter().any(String::is_empty)
+         }) {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidInput,
+                 "automation run aliases must be nonempty and within the batch limit",
+             ).into());
+         }
+     }
+     let mut runs = if require_fresh {
+         self.read_runs_for_custody(id)?
+     } else {
+         self.read_runs_for_mutation(id)?
+     };
      let run_id = run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);
      if require_fresh {
          let requested = std::iter::once(run_id.as_str())
@@ -311,37 +334,27 @@ impl FileAutomationStore{
      Ok(Some(record))
  }
 
- fn read_run_image(&self, id: &str, for_delivery: bool) -> Result<Vec<Value>, AutomationStoreError> {
+ fn read_run_image(&self, id: &str, for_custody: bool) -> Result<Vec<Value>, AutomationStoreError> {
      let path = self.runs_path(id);
-     if for_delivery {
+     if for_custody {
+         // Fresh admission has checked the definition through the legacy API;
+         // establish this same local-child policy independently of delivery.
+         self.require_local_directory(id)?;
          match fs::symlink_metadata(&path) {
-             Ok(_) => {
-                 // Follow a valid file link as the legacy reader does, but a
-                 // dangling link or non-file is unavailable, never first run.
-                 if !fs::metadata(&path)?.is_file() {
-                     return Err(io::Error::new(
-                         io::ErrorKind::InvalidData,
-                         "automation delivery history is not a regular file",
-                     ).into());
-                 }
-             }
+             // The regular-file reader follows a valid link, but a dangling
+             // link cannot take the missing-history branch below.
+             Ok(_) => {}
              Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                 // The definition was just checked. If its directory has
-                 // since disappeared, history absence is no longer established.
-                 if !fs::symlink_metadata(self.dir.get_location().join(id))?.is_dir() {
-                     return Err(io::Error::new(
-                         io::ErrorKind::InvalidData,
-                         "automation delivery target is not a local directory",
-                     ).into());
-                 }
+                 // If the directory has since disappeared, absence is unknown.
+                 self.require_local_directory(id)?;
                  return Ok(Vec::new());
              }
              Err(error) => return Err(error.into()),
          }
      }
-     let raw = match fs::read_to_string(path) {
-         Ok(raw) => raw,
-         Err(error) if !for_delivery && error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+     let raw = match read_regular_file(&path) {
+         Ok((raw, _)) => raw,
+         Err(error) if !for_custody && error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
          Err(error) => return Err(error.into()),
      };
      let items: Vec<UniqueJson> = serde_json::from_str(&raw)?;
@@ -370,6 +383,20 @@ impl FileAutomationStore{
      Ok(runs)
  }
  pub fn remove(&self,id:&str)->Result<bool,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(false);}let folder=self.dir.get_location().join(id);match fs::metadata(&folder){Ok(m)if m.is_dir()=>{},Ok(_)=>return Ok(false),Err(e)if e.kind()==io::ErrorKind::NotFound=>return Ok(false),Err(e)=>return Err(e.into())}fs::remove_dir_all(folder)?;self.dir.schedule_notify();Ok(true)}
+}
+
+// This rejects an observed nonregular input before a potentially blocking
+// content read, while preserving valid regular-file links. It does not close
+// metadata-to-open replacement races or bound storage/writer staging latency.
+fn read_regular_file(path: &Path) -> io::Result<(String, fs::Metadata)> {
+    let metadata = fs::metadata(path)?;
+    if !metadata.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "automation store input is not a regular file",
+        ));
+    }
+    Ok((fs::read_to_string(path)?, metadata))
 }
 
 // Missing descendants of an existing directory are genuine absence. A broken

@@ -1236,7 +1236,7 @@ mod checked_backend_delivery {
     }
 
     #[derive(Debug, Clone, Copy)]
-    enum LateClaim { Primary, Alias, Terminal, Malformed, Deletion }
+    enum LateClaim { Primary, Alias, Terminal, Malformed, Deletion, OverflowAliases, UnknownStatus, RunningWithFinish }
     impl LateClaim {
         fn primary_id(self, requested: &str) -> String {
             if matches!(self, Self::Alias) { format!("{requested}-other-owner") } else { requested.to_string() }
@@ -1249,6 +1249,65 @@ mod checked_backend_delivery {
                     fs::write(&fixture.history, b"{invalid-after-preparation").map_err(|error| error.to_string())
                 }).unwrap(),
                 Self::Deletion => workers.begin_agent_delete(&fixture.agent_id).unwrap(),
+                Self::OverflowAliases | Self::UnknownStatus | Self::RunningWithFinish => {
+                    sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                        let mut rows: Vec<Value> = serde_json::from_slice(
+                            &fs::read(&fixture.history).map_err(|error| error.to_string())?,
+                        ).map_err(|error| error.to_string())?;
+                        assert_eq!(rows.len(), 1, "strict-only faults retain the actual original admission");
+                        let original = &mut rows[0];
+                        assert_eq!(original["id"], ORIGINAL);
+                        assert_eq!(original["status"], "running");
+                        assert!(original["finishedAt"].is_null());
+                        assert_eq!(original["coalescedRunIds"], json!([ALIAS]));
+                        assert_ne!(requested, ORIGINAL);
+                        assert_ne!(requested, ALIAS);
+                        match self {
+                            Self::OverflowAliases => {
+                                let mut aliases = vec![ALIAS.to_string()];
+                                aliases.extend((1..25).map(|index| format!("fresh-history-alias-{index}")));
+                                aliases.push(requested.to_string());
+                                assert_eq!(aliases.len(), 26);
+                                assert_eq!(aliases.last().map(String::as_str), Some(requested));
+                                original["coalescedRunIds"] = json!(aliases);
+                            }
+                            Self::UnknownStatus => original["status"] = json!("fresh_outcome_unknown"),
+                            Self::RunningWithFinish => original["finishedAt"] = json!(600.0),
+                            _ => unreachable!(),
+                        }
+                        fs::write(&fixture.history, serde_json::to_vec_pretty(&rows).unwrap())
+                            .map_err(|error| error.to_string())?;
+                        // All three inputs remain accepted by the legacy row
+                        // projection, with no normalized claim of requested.
+                        // They distinguish strict custody validation from the
+                        // former fresh parser, syntax errors and collisions.
+                        let displayed = store.read_runs(&fixture.automation_id);
+                        assert_eq!(displayed.len(), 1);
+                        let normalized = &displayed[0];
+                        assert_eq!(normalized.id, ORIGINAL);
+                        assert!(!normalized.coalesced_run_ids.as_ref().unwrap().iter()
+                            .any(|alias| alias == requested));
+                        match self {
+                            Self::OverflowAliases => {
+                                assert_eq!(normalized.coalesced_run_ids.as_ref().unwrap().len(), 25);
+                                assert_eq!(normalized.status, "running");
+                                assert_eq!(normalized.finished_at, None);
+                            }
+                            Self::UnknownStatus => {
+                                assert_eq!(normalized.status, "ok");
+                                assert_eq!(normalized.finished_at, None);
+                            }
+                            Self::RunningWithFinish => {
+                                assert_eq!(normalized.status, "running");
+                                assert_eq!(normalized.finished_at, Some(600.0));
+                            }
+                            _ => unreachable!(),
+                        }
+                        assert!(store.read_run_for_delivery(&fixture.automation_id, requested).is_err(),
+                            "the late image is strict-delivery-invalid before fresh admission");
+                        Ok(())
+                    }).unwrap();
+                }
                 _ => {
                     let primary = self.primary_id(requested);
                     let aliases = if matches!(self, Self::Alias) { vec![requested.to_string()] } else { Vec::new() };
@@ -1270,7 +1329,7 @@ mod checked_backend_delivery {
         }
         fn repair(self, fixture: &Fixture, workers: &Arc<ProductionSessionWorkers>, requested: &str, before: &AdmissionSnapshot) {
             match self {
-                Self::Malformed => {
+                Self::Malformed | Self::OverflowAliases | Self::UnknownStatus | Self::RunningWithFinish => {
                     SandAgentSessionStore::new(Arc::clone(workers)).with_admitted_filesystem_mutation(&fixture.agent_id, || {
                         fs::write(&fixture.history, &before.history).map_err(|error| error.to_string())
                     }).unwrap();
@@ -1280,6 +1339,41 @@ mod checked_backend_delivery {
                 Self::Terminal => {}
             }
         }
+    }
+
+    fn inject_fresh_history_on_lifecycle_update(
+        fixture: &Fixture, owners: &Owners, claim: LateClaim, requested: &str,
+    ) -> (Arc<AtomicUsize>, Arc<Mutex<Option<AdmissionSnapshot>>>) {
+        owners.runtime.seed_known_automations(&fixture.agent_id).unwrap();
+        let sessions = owners.sessions();
+        let store = sessions.automation_store_for(&fixture.agent_id).unwrap();
+        sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+            let mut config = store.read_config(&fixture.automation_id).expect("current valid definition");
+            config.prompt.push_str("; deliberately stale lifecycle baseline");
+            store.write_config(&fixture.automation_id, &config).map_err(|error| error.to_string())
+        }).unwrap();
+        // No directory watcher is attached. Shipping preparation reads the
+        // changed definition without refreshing the lifecycle baseline.
+        let injections = Arc::new(AtomicUsize::new(0));
+        let injected = Arc::new(Mutex::new(None));
+        let hook_count = Arc::clone(&injections);
+        let hook_snapshot = Arc::clone(&injected);
+        let hook_fixture = fixture.clone();
+        let hook_workers = Arc::clone(&owners.workers);
+        let requested = requested.to_string();
+        owners.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+            if event.agent_id == hook_fixture.agent_id && event.automation_id == hook_fixture.automation_id
+                && event.action == AutomationLifecycleAction::Updated
+            {
+                assert_eq!(event.source, AutomationLifecycleSource::Agent);
+                assert_eq!(hook_count.fetch_add(1, Ordering::SeqCst), 0, "exactly one stale-baseline Updated event");
+                // Runtime still owns its mutex, but its history-precheck
+                // Session closure has returned. Use Session/FileStore only,
+                // with no Runtime reentry or nested Session lock.
+                *hook_snapshot.lock().unwrap() = Some(claim.install(&hook_fixture, &hook_workers, &requested));
+            }
+        })));
+        (injections, injected)
     }
 
     fn settle_existing(fixture: &Fixture, workers: &Arc<ProductionSessionWorkers>, run: &str) {
@@ -1647,37 +1741,10 @@ mod checked_backend_delivery {
                 let fixture = Fixture::create(root, &format!("fresh-{claim:?}"));
                 let owners = fixture.open();
                 fixture.enable(&owners);
-                owners.runtime.seed_known_automations(&fixture.agent_id).unwrap();
-                let sessions = owners.sessions();
-                let store = sessions.automation_store_for(&fixture.agent_id).unwrap();
-                sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
-                    let mut config = store.read_config(&fixture.automation_id).expect("current valid definition");
-                    config.prompt.push_str("; deliberately stale lifecycle baseline");
-                    store.write_config(&fixture.automation_id, &config).map_err(|error| error.to_string())
-                }).unwrap();
-                // No directory watcher is attached. The shipping preparation
-                // reads the changed definition without refreshing this baseline.
                 let run = "fresh-raced-fire";
+                let (injections, injected) = inject_fresh_history_on_lifecycle_update(&fixture, &owners, claim, run);
                 let fire = fixture.revisioned_fire(&owners, run);
                 let before = AdmissionSnapshot::read(&fixture, &owners.workers);
-                let injections = Arc::new(AtomicUsize::new(0));
-                let injected = Arc::new(Mutex::new(None));
-                let hook_count = Arc::clone(&injections);
-                let hook_snapshot = Arc::clone(&injected);
-                let hook_fixture = fixture.clone();
-                let hook_workers = Arc::clone(&owners.workers);
-                owners.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
-                    if event.agent_id == hook_fixture.agent_id && event.automation_id == hook_fixture.automation_id
-                        && event.action == AutomationLifecycleAction::Updated
-                    {
-                        assert_eq!(event.source, AutomationLifecycleSource::Agent);
-                        assert_eq!(hook_count.fetch_add(1, Ordering::SeqCst), 0, "exactly one stale-baseline Updated event");
-                        // Runtime still owns its mutex, but its history-precheck
-                        // Session closure has returned. Use Session/FileStore
-                        // only, with no Runtime reentry or nested Session lock.
-                        *hook_snapshot.lock().unwrap() = Some(claim.install(&hook_fixture, &hook_workers, run));
-                    }
-                })));
                 let backend = Backend::start_queued(&fixture, &owners, "fresh-first", vec![fire.clone()], None, None);
                 assert_eq!(backend.refused_attempt(run, AutomationAdmissionStage::FreshHistory, 1, 0),
                     "automation store io error: automation run identity has already been admitted");
@@ -1697,8 +1764,6 @@ mod checked_backend_delivery {
                 assert_eq!(injections.load(Ordering::SeqCst), 1);
                 drop(backend);
                 owners.runtime.set_lifecycle_reporter(None);
-                drop(store);
-                drop(sessions);
                 drop(owners);
 
                 let reopened = fixture.open();
@@ -1709,6 +1774,82 @@ mod checked_backend_delivery {
                 drop(backend);
                 claim.repair(&fixture, &reopened.workers, run, &before);
                 complete_distinct(&fixture, &reopened, "fresh-repaired-distinct", "fresh-new-valid-fire");
+            }
+        });
+    }
+
+    #[test]
+    fn backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair() {
+        bounded("tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair", |root| {
+            for claim in [LateClaim::OverflowAliases, LateClaim::UnknownStatus, LateClaim::RunningWithFinish] {
+                let fixture = Fixture::create(root, &format!("strict-fresh-history-{claim:?}"));
+                let owners = fixture.open();
+                fixture.enable(&owners);
+                let run = "strict-fresh-history-refused-fire";
+                let (injections, injected) = inject_fresh_history_on_lifecycle_update(&fixture, &owners, claim, run);
+                let fire = fixture.revisioned_fire(&owners, run);
+                let before = AdmissionSnapshot::read(&fixture, &owners.workers);
+                let backend = Backend::start_queued(&fixture, &owners, "strict-fresh-history-first",
+                    vec![fire.clone()], None, None);
+                assert_eq!(backend.refused_attempt(run, AutomationAdmissionStage::FreshHistory, 1, 0),
+                    "automation store io error: automation run history contains invalid delivery custody");
+                assert_eq!(*backend.counts.launches.lock().unwrap(),
+                    vec![(run.to_string(), fixture.agent_id.clone(), fixture.automation_id.clone())]);
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                let invalid = injected.lock().unwrap().clone().expect("post-precheck lifecycle event installed strict-invalid history");
+                assert_eq!(invalid.config, before.config, "the lifecycle injection preserves the checked definition");
+                assert_eq!(invalid.cron, before.cron, "the injection changes only raw history, not cron custody");
+                assert_ne!(invalid.history, before.history);
+                invalid.assert_history_and_cron(&fixture, &owners.workers);
+                assert_no_attempt_effects(&fixture, &owners);
+                // The first attempt may perform the already-authorized notice,
+                // lastRunAt and Spend Guard bookkeeping. Refused history and
+                // cron custody remain byte/row-identical to the injected image.
+                let post_refusal = AdmissionSnapshot::read(&fixture, &owners.workers);
+                post_refusal.preserve(&fixture, "strict-fresh-history-after-refusal");
+                for _ in 0..2 {
+                    let after = backend.replay();
+                    backend.later_preparation_refusal(run, 1, after);
+                    // A new dispatch receipt for this same UUID proves the
+                    // forwarded None callback removed backend Running. Checked
+                    // preparation now observes the invalid image and refuses
+                    // before another launch or callback.
+                    assert_eq!(AdmissionSnapshot::read(&fixture, &owners.workers), post_refusal);
+                    assert_no_attempt_effects(&fixture, &owners);
+                }
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                drop(backend);
+                owners.runtime.set_lifecycle_reporter(None);
+                drop(owners);
+
+                // Reconstruct both real durable owners and the volatile backend
+                // consumer. This current revision avoids the separate legacy
+                // no-revision covered-slot behavior after lastRunAt changed.
+                let reopened = fixture.open();
+                let backend = Backend::start_queued(&fixture, &reopened, "strict-fresh-history-reopened",
+                    vec![fire], None, None);
+                backend.repeated_refusal(&[run]);
+                assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), post_refusal);
+                assert_no_attempt_effects(&fixture, &reopened);
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                drop(backend);
+
+                // Repair is explicit fixture work through the Session mutation
+                // owner. Neither refusal nor reopen is allowed to normalize it.
+                claim.repair(&fixture, &reopened.workers, run, &before);
+                assert_eq!(fs::read(&fixture.history).unwrap(), before.history);
+                assert_eq!(reopened.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), before.cron);
+                let retained = reopened.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, ALIAS)
+                    .unwrap().expect("explicit repair restores the original retained row");
+                assert_eq!(retained.id, ORIGINAL);
+                assert_eq!(retained.status, "running");
+                assert_eq!(retained.finished_at, None);
+                complete_distinct(&fixture, &reopened, "strict-fresh-history-repaired-distinct", "strict-fresh-history-new-valid-fire");
+                assert_eq!(reopened.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, ALIAS)
+                    .unwrap(), Some(retained));
+                let cron = reopened.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+                assert_eq!(cron.iter().find(|row| row.run_id == ORIGINAL), before.cron.first());
+                assert!(!cron.iter().any(|row| row.run_id == run), "refused UUID never acquired cron custody");
             }
         });
     }

@@ -1262,3 +1262,114 @@ all corrupt-JSON cases, and the settlement helper's original mutation-reader
 expectations. Fresh focused source review and new exact-H execution remain
 required; the skipped actual-App step is not evidence of compilation or pass.
 
+## Fresh history custody — AUTO-FRESH-CUSTODY-v1
+
+Decision **AUTO-FRESH-CUSTODY-01 — FIX / IMPL_BUG**, before implementation
+against H `f890002148f122aacdfc78fe39530a7e9c1bef6e`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. BA preserves a refused delivery,
+but `begin_fresh_run` still uses the legacy mutation parser. For example, an
+existing row's 26th alias can equal the pending fire ID: normalization truncates
+that alias before collision detection, then admission overwrites the history
+without its prior custody. Unknown status, incompatible finish fields, mixed
+aliases and cross-row aliases have the same strict-versus-normalized gap.
+An observed FIFO installed after checked preparation can also block an earlier
+display/config read before the fresh admission boundary is reached.
+
+The producer remains manual/scheduled/event ingress, the unique state owner is
+FileAutomationStore inside the existing Session-admitted mutation, and the
+consumer remains the existing RunPath/Runtime and BA Host callback. No new
+schema, scheduler, receipt store, execution loop or authority is introduced.
+
+- FC-01: Extract the existing full raw delivery-custody validation into one
+  owner-local checked-history reader returning all validated rows. Both delivery
+  lookup and fresh mutation use it. Validate every row before lookup, capacity,
+  retention or publication, including tails beyond the display window. Retain
+  recursive duplicate-member rejection; explicit running/ok/error status;
+  finite timestamps; Running with absent/null finish and terminal with finite
+  finish; nonempty literal primary/aliases; at most 25 aliases; and no identity
+  owned by different rows. Repeats/self-aliases in one row and literal whitespace
+  remain valid. Metadata normalization may follow custody validation. Do not
+  use a fabricated lookup ID or strict precheck followed by a legacy reread.
+- FC-02: Fresh admission consumes that same checked image for all requested
+  primary/alias collision checks, Running capacity, retention and its one
+  history write. Retain every Running row, reject growth at 20 Running rows,
+  retain the existing terminal window and preserve settlement of legacy excess
+  Running rows. Legacy `begin_run`, `finish_run`, display parsing and their
+  ordinary-file normalization remain compatible. A fresh validation refusal
+  must leave the exact existing history bytes/object unchanged.
+- FC-03: Validate the proposed fresh row before publication: supplied time must
+  be finite, an explicit primary ID must be nonempty, and supplied aliases must
+  contain at most 25 nonempty literal strings. Do not silently drop or truncate
+  requested custody. Generated IDs, whitespace, repeated/self aliases and
+  exactly 25 aliases remain valid. Missing definition still returns None before
+  these checks and must never create a definition/history. Trigger/detail/event
+  normalization is unchanged. The legacy API keeps its existing input behavior.
+- FC-04: Checked fresh history establishes a local child automation directory,
+  follows valid regular-file links, and distinguishes genuine missing history
+  from dangling links, nonregular objects and unavailable paths. Preserve BH's
+  root-directory link policy. Reuse one owner-local regular-file content-read
+  primitive on config/display/raw-history reads that precede admission; reject
+  an observed nonregular object before attempting a blocking content read.
+  Preserve fail-soft display None/empty results and real run counts for regular
+  inputs: `list_definitions().runs` feeds Spend Guard and lifecycle snapshots.
+  Do not replace those histories with empty projections or broaden locks.
+- FC-05: Errors at fresh mutation propagate through BA's existing FreshHistory
+  stage and the actual backend callback None/abandon path. Earlier config
+  disappearance/nonregular reads can legitimately preserve Outcome(None) or an
+  earlier refusal stage. Assert the actual reached stage; do not relabel all
+  failures. Zero executor/new cron/terminal observer activity is required for
+  these refusals. Previously authorized notice, lastRunAt and Spend Guard
+  writes remain; exact-byte no-write claims apply to refused history, not the
+  entire attempt. Post-ID execution/cron/settlement and ACK-05 remain unchanged.
+  Diagnostic expectations follow the reader actually reached: background
+  HistoryPrecheck already returns strict-custody errors; this contract makes
+  manual FreshHistory use that same checked reader. String compatibility
+  wrappers preserve the resulting detail verbatim. Legacy FileStore begin/
+  finish errors remain separate, as do post-admission settlement diagnostics.
+- FC-06: Store oracles distinguish strict-only-invalid from malformed JSON and
+  from still-supported legacy normalization. Cover alias 26 equal to pending
+  ID and an unrelated ID, unknown/missing status, invalid finish/alias forms,
+  cross-row primary/alias and alias/alias ownership, invalid hidden tails,
+  nonfinite proposed time, alias overflow/empty values, literal valid controls,
+  true absence, capacity and links. Reuse existing owner test homes and retain
+  every valid earlier assertion. Production oracles inject strict-invalid
+  history in the existing synchronous lifecycle seam after Runtime precheck,
+  assert unchanged custody/zero execution, explicitly repair it, and prove a
+  distinct run succeeds through the real Session owner.
+- FC-07: Exercise stable config/history FIFOs with no peer after checked
+  preparation and after the lifecycle precheck, using the existing exact owned
+  child/deadline/receipt harness. The child must return the declared outcome,
+  not just avoid executor entry. Snapshot FIFO metadata/inode and other regular
+  state without reading the FIFO. Preserve regular-file/link and Spend Guard
+  run-count positive controls. Scope is observed nonregular input rejection;
+  metadata-to-open replacement, arbitrary filesystem latency and writer staging
+  liveness are not proved by these checks.
+- FC-08: Actual App coverage uses checked shipping preparation, typed scheduled
+  Runtime, the real completion mapper/callback and backend consumer. A late
+  strict-only-invalid image must yield FreshHistory, one None callback after
+  launch, zero completion POST/ACK, retained bytes and released volatile state.
+  Reopen the real owners/consumer, re-poll the revisioned fire, then explicitly
+  repair history and prove a distinct valid fire completes. Keep the legacy
+  no-revision covered-slot limitation explicit and preserve admitted failure
+  controls. No mocks may substitute for actual provider/channel acceptance.
+
+Implement in `source/host/src/automations/automation_store.rs`; extend existing
+store, Runtime production-wiring and App terminal-custody tests. Root alone
+integrates the existing workflow's named positive controls, spec and additive
+ledger/RTM references. Freeze a complete source tree, review the changed owner
+and adjacent callers independently, and run affected Store/Runtime/Guard/event/
+lifecycle/contracts and actual App controls on exact-H GitHub Actions. Preserve
+earlier valid evidence and classify a failed oracle separately from a product
+failure. No local/htch execution; no acceptance or source-coverage promotion.
+
+There is no persisted format migration. Rollback restores the lossy fresh
+admission risk; do not repair existing history automatically. Manual inspection
+and explicit repair are required for refused invalid history. Existing String
+error detail/typed stage provide diagnostics. This contract does not solve
+cross-process writes, path replacement, unknown write/cron outcomes, config
+revision races, post-admission normalization, historical data already lost,
+legacy covered-slot completion, crash durability, full reaper or final OCRM
+acceptance. The fixed-U receipt/queue sources and exact existing owner chain
+are reconciled in this task's recorded source handoff; imported SQL/state-worker
+closure and global recursive/legal source closure remain open.
+
