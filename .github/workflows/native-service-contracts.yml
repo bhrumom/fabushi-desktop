@@ -217,6 +217,15 @@ jobs:
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/host-legacy-handoff.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-ffi --lib -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/ffi-legacy-handoff.log
           grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/ffi-legacy-handoff.log
+      - name: Verify generic Host has no direct Telegram adapter dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo tree --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-host --edges normal --depth 1 2>&1 | tee artifacts/native-message-shipping/host-direct-dependencies.log
+          if grep -q 'mahayana-telegram v' artifacts/native-message-shipping/host-direct-dependencies.log; then
+            echo 'generic Host still depends directly on legacy Telegram adapter' >&2
+            exit 1
+          fi
       - name: Verify DNS and special-config response normalization
         shell: bash
         run: |
