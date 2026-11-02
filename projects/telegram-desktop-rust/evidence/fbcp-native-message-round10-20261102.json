@@ -2174,7 +2174,7 @@
       "new_root_transcript": 8,
       "qualification": "Authored containing-base requirements; none is a new candidate execution claim."
     },
-    "execution_status": "authored-not-run; containing-H Actions required",
+    "execution_status": "At c830 all eight were skipped after existing11 failed; executed=0. This test-oracle correction requires new exact-H verification.",
     "opaque_cursor_contract": "All eight Human cases carry exact beforeSeq and beforeCursor on continuation and both next fields on partial pages; initial reads carry neither. Legacy numeric compatibility remains in inherited contracts.",
     "viewport_contract": "Actual callback-bound replacement viewport and existing pendingAnchor.ready survive an intermediate row commit during prepend.",
     "test_review_correction": "Use a real scroll-to-top action after initial read and initial retry; do not assume the unprobed pagination effect automatically repeats after tail readiness.",
@@ -2323,10 +2323,228 @@
     "reviewed_delta_base_blob": "a64f3a5becae94767609d478e9667a27bc1859b5",
     "ops_blob": "5ff1105730d774985919850398aa489d76ad8a2b",
     "workflow_blob": "063db40bf201789cc288ec5907e602a37e06390e",
-    "execution": "not-run at product freeze",
+    "execution": "c830 and subsequent immutable-input preparations succeeded and full objects were read; canonical input keeps advancing. Do not attach an output without fresh input equality.",
     "integration": "After exact-checkout preparation, root must read full input/output and independently apply only the reviewed append delta; prove current input equality, then force=false expected_sha CAS and remove both temporary files.",
     "ci_commits_or_ref_updates": false,
     "acceptance": false
   },
-  "batch_completion": "Product code and required tests are frozen here; append-only canonical ledger/RTM/STATUS qualification will be attached after the object and actual execution evidence are read. No acceptance claimed."
+  "batch_completion": "Product code is remotely saved; actual c830 failures and bounded passes are preserved. Canonical ledger/RTM/STATUS final qualification remains pending; no stale prepared ledger output has been attached.",
+  "product_publication": {
+    "sha": "c83039f9da8330560680a3efccc5ae83bf2db419",
+    "parent": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+    "force": false,
+    "expected_sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+    "full_commit_and_all_eleven_files_read_back": true,
+    "files": [
+      {
+        "path": "frontend/src/production/ProductionRenderer.tsx",
+        "sha": "43bb7c21609f9a822801b0f23e86652863ace69a",
+        "full_content_match": true
+      },
+      {
+        "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "sha": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+        "full_content_match": true
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
+        "sha": "98f981a808f83bb2cb2f03c5131bb2db99e401ee",
+        "full_content_match": true
+      },
+      {
+        "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        "sha": "0929f54e3a836c6d90a2e8ee059c75fec0aca986",
+        "full_content_match": true
+      },
+      {
+        "path": "desktop/transcript-test.html",
+        "sha": "3fe73cbaddac7c4b7c0495b0e7c333531612f5a1",
+        "full_content_match": true
+      },
+      {
+        "path": "desktop/transcript-test.ts",
+        "sha": "203bc41fc8dfa103577205cdd54b81a13250c723",
+        "full_content_match": true
+      },
+      {
+        "path": ".github/workflows/native-service-contracts.yml",
+        "sha": "504d2b65c223d1425ceb4a7a07c0b87392279a35",
+        "full_content_match": true
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "sha": "edaa7ea422cbac42b0993b612b3e0ee13c50df7c",
+        "full_content_match": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/evidence/fbcp-native-message-round10-20261102.json",
+        "sha": "613d95cce121cde1e03cc0c694bf0896661a9251",
+        "full_content_match": true
+      },
+      {
+        "path": ".github/checkpoint-ledger-ops-round10.json",
+        "sha": "5ff1105730d774985919850398aa489d76ad8a2b",
+        "full_content_match": true
+      },
+      {
+        "path": ".github/workflows/checkpoint-ledger-object-round10.yml",
+        "sha": "063db40bf201789cc288ec5907e602a37e06390e",
+        "full_content_match": true
+      }
+    ],
+    "native_run": 41526114480,
+    "plugins_run": 41526114423
+  },
+  "c830_execution": {
+    "head": "c83039f9da8330560680a3efccc5ae83bf2db419",
+    "run": 41526114480,
+    "attempt": 1,
+    "overall_accepted": false,
+    "human": {
+      "job": 125554157040,
+      "passed": 63,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 15,
+      "seconds": 95.39,
+      "following_lib_test_compilation": "E0277 in human_creation_tests.rs:747/750 because SQLite Row::get does not support usize",
+      "resource_executed": 0,
+      "following_steps": "creation12/storage3/sharebox/journal/Agent/credential/HTTP skipped",
+      "full_log_sha256": "77e1f57a60ce6290c5736d533536204f3dee1e0c36fee1f9abb0de046b46c593"
+    },
+    "ui": {
+      "job": 125554157593,
+      "projection": {
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0
+      },
+      "cursor_rpc": {
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0
+      },
+      "renderer_build": "success",
+      "forward_settlement": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0
+      },
+      "forward_chromium": {
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0
+      },
+      "existing_root": {
+        "executed": 11,
+        "passed": 1,
+        "failed": 10,
+        "flaky": 0,
+        "skipped": 0,
+        "retries": 0
+      },
+      "new_transcript": {
+        "executed": 0,
+        "status": "skipped after existing root failure"
+      },
+      "classification": "TEST_ORACLE: ten failures await one older request but only the initial tail was triggered; nine openAlice and one held-initial location. Artifact requests confirm no older RPC; renderer-errors arrays empty.",
+      "artifact": {
+        "id": 13179662934,
+        "bytes": 21158057,
+        "digest": "sha256:e3a4370ff28cdfad6c680a4585243d48c6a8249c29da31f0d28a9caa2328c320",
+        "archive_bytes_read": true,
+        "json_actual_counts_verified": true
+      }
+    },
+    "electron": {
+      "job": 125554157573,
+      "status": "success",
+      "groups": {
+        "carrier": 10,
+        "auth": 8,
+        "package_resources": 3,
+        "update_source": 16,
+        "windows_policy": 28,
+        "macos_metadata": 18,
+        "scope": 10,
+        "promotion": 7
+      },
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0,
+      "actual_cjs_bundles": 9,
+      "full_log_sha256": "96855606eafd8d93d940adba7a09b2683aaff723ebd47b7523e4de9becdebdc4",
+      "artifact": {
+        "id": 13178653888,
+        "digest": "sha256:68fde1bfd68b87126d69737aeed846455e2971abfec11fbd38561f77e3f92d4e"
+      },
+      "packaged_acceptance": false
+    },
+    "windows": {
+      "job": 125554157671,
+      "status": "success",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0,
+      "owned_fixture_certificates_remaining": 0,
+      "artifact": {
+        "id": 13179183828,
+        "digest": "sha256:999e7208697e2d57e88f3997854105f538af495263d74b546ed321707e249ec3"
+      },
+      "production_signing_acceptance": false
+    },
+    "retained_ffi": {
+      "job": 125554157521,
+      "passed": 15,
+      "failed": 0,
+      "ignored": 1,
+      "live_dc": "not executed",
+      "full_log_sha256": "2ff2af27aba8cbea414a353c7978211e14784a14bd4cff63e2fd127d0e796838",
+      "artifact": {
+        "id": 13178624592,
+        "digest": "sha256:c71054798956d9f8d2aed0a44433399cdf5b37ef21c1c58e8df83768e2bff76c",
+        "bytes": 2546,
+        "archive_bytes_read": true,
+        "exact_target_verified": true
+      }
+    },
+    "shipping": {
+      "job": 125554157576,
+      "status_at_observation": "queued",
+      "runner_id": 0,
+      "executed_steps": 0,
+      "accepted": false
+    },
+    "plugins_pointer": {
+      "run": 41526114423,
+      "job": 125554157321,
+      "status_at_observation": "queued",
+      "actual_tests": null,
+      "accepted": false
+    }
+  },
+  "c830_follow_up": {
+    "human_test_repair": {
+      "classification": "TEST_FLAW",
+      "commit": "f544e9b3161d758141e1b419bcdab22cc522952e",
+      "path": "source/host/src/extensions/session/human_creation_tests.rs",
+      "blob": "6f59c6249a3c9be84fa36a22b1a79bc8c9d2b4ab",
+      "full_content_read_back": true,
+      "already_fixed_by_concurrent_session": true,
+      "change": "SQLite i64 reads and checked usize/page-offset conversion; all original tests and assertions retained."
+    },
+    "renderer_test_repair": {
+      "classification": "TEST_ORACLE",
+      "path": "desktop/e2e/native-message-projection.spec.ts",
+      "base_blob": "ecbeb5b9f4091da33bf4da87608811310cf58856",
+      "repaired_blob": "b46404da5567673cec2fb4a7a3a116dc433eb290",
+      "change": "Use real viewport scroll after rows/effect frames in openAlice, reload and held-initial paths; preserve all eleven cases and assertions; no production behavior change.",
+      "independent_source_review": "No remaining identified blocker; no local executable validation.",
+      "execution": "not-run; new containing-H Actions required"
+    }
+  }
 }
