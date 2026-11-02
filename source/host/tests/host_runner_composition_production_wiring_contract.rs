@@ -852,6 +852,19 @@ fn desktop_mcp_dispatch_precedes_host_fallback(source: &str) -> bool {
 
 // Recognize the actual returned ingress edge, not an unused helper reference.
 // Runtime behavior and checked-read error semantics have real-owner oracles.
+fn backend_fire_dispatch_method(parsed: &syn::File) -> Option<&syn::ImplItemFn> {
+    let mut methods = parsed.items.iter().filter_map(|item| {
+        let syn::Item::Impl(owner) = item else { return None; };
+        let syn::Type::Path(path) = owner.self_ty.as_ref() else { return None; };
+        (owner.trait_.is_none() && path.path.is_ident("UnifiedGatewayApi")).then_some(owner)
+    }).flat_map(|owner| owner.items.iter()).filter_map(|item| {
+        let syn::ImplItem::Fn(method) = item else { return None; };
+        (method.sig.ident == "dispatch_production_backend_fire").then_some(method)
+    });
+    let method = methods.next()?;
+    methods.next().is_none().then_some(method)
+}
+
 fn backend_fire_uses_checked_shipping_boundary(source: &str) -> bool {
     fn named(expr: &syn::Expr, name: &str) -> bool {
         matches!(expr, syn::Expr::Path(path) if path.path.is_ident(name))
@@ -867,16 +880,7 @@ fn backend_fire_uses_checked_shipping_boundary(source: &str) -> bool {
         (function.sig.ident == "dispatch_checked_production_backend_fire").then_some(function)
     });
     if helpers.next().is_none() || helpers.next().is_some() { return false; }
-    let mut methods = parsed.items.iter().filter_map(|item| {
-        let syn::Item::Impl(owner) = item else { return None; };
-        let syn::Type::Path(path) = owner.self_ty.as_ref() else { return None; };
-        (owner.trait_.is_none() && path.path.is_ident("UnifiedGatewayApi")).then_some(owner)
-    }).flat_map(|owner| owner.items.iter()).filter_map(|item| {
-        let syn::ImplItem::Fn(method) = item else { return None; };
-        (method.sig.ident == "dispatch_production_backend_fire").then_some(method)
-    });
-    let Some(method) = methods.next() else { return false; };
-    if methods.next().is_some() { return false; }
+    let Some(method) = backend_fire_dispatch_method(&parsed) else { return false; };
     let Some((syn::Stmt::Expr(syn::Expr::Call(call), None), before)) = method.block.stmts.split_last()
         else { return false; };
     if !named(&call.func, "dispatch_checked_production_backend_fire") || call.args.len() != 6 {
@@ -941,6 +945,149 @@ fn checked_backend_fire_wiring_oracle_rejects_bypasses_and_dead_calls() {
     }
     let test_only = fixture(&format!("{open} {dispatch}"), "", helper);
     assert!(!backend_fire_uses_checked_shipping_boundary(&test_only));
+}
+
+// A bounded production-shape proof: the actual spawned scheduled worker must
+// pass the canonical Runtime's typed attempt directly to the actual callback.
+// Real owner/backend tests establish the behavior of that attempt and mapper.
+fn backend_schedule_attempt_reaches_completion(source: &str) -> bool {
+    fn named(expr: &syn::Expr, name: &str) -> bool {
+        matches!(expr, syn::Expr::Path(path) if path.path.is_ident(name))
+    }
+    fn path_is(path: &syn::Path, owner: &str, member: &str) -> bool {
+        path.leading_colon.is_none() && path.segments.len() == 2
+            && path.segments.first().is_some_and(|part| part.ident == owner)
+            && path.segments.last().is_some_and(|part| part.ident == member)
+    }
+    fn borrowed(expr: &syn::Expr, name: &str) -> bool {
+        matches!(expr, syn::Expr::Reference(reference)
+            if reference.mutability.is_none() && named(&reference.expr, name))
+    }
+    fn binding<'a>(statements: &'a [syn::Stmt], name: &str) -> Option<&'a syn::Expr> {
+        let mut locals = statements.iter().filter_map(|statement| {
+            let syn::Stmt::Local(local) = statement else { return None; };
+            let syn::Pat::Ident(pattern) = &local.pat else { return None; };
+            (pattern.ident == name).then_some((local, pattern))
+        });
+        let (local, pattern) = locals.next()?;
+        if locals.next().is_some() || pattern.by_ref.is_some()
+            || pattern.mutability.is_some() || pattern.subpat.is_some()
+        { return None; }
+        let init = local.init.as_ref()?;
+        init.diverge.is_none().then_some(init.expr.as_ref())
+    }
+    fn cloned_from(expr: &syn::Expr, name: &str) -> bool {
+        let syn::Expr::Call(call) = expr else { return false; };
+        let syn::Expr::Path(path) = call.func.as_ref() else { return false; };
+        path_is(&path.path, "Arc", "clone") && call.args.len() == 1
+            && call.args.first().is_some_and(|arg| borrowed(arg, name))
+    }
+    if !backend_fire_uses_checked_shipping_boundary(source) { return false; }
+    let Some(production) = production_host_source(source) else { return false; };
+    let Ok(parsed) = syn::parse_file(production) else { return false; };
+    let Some(method) = backend_fire_dispatch_method(&parsed) else { return false; };
+    let Some((syn::Stmt::Expr(syn::Expr::Call(dispatch), None), before)) = method.block.stmts.split_last()
+        else { return false; };
+    if !binding(before, "launch_runtime").is_some_and(|value| cloned_from(value, "runtime"))
+        || !binding(before, "launch_completion").is_some_and(|value| cloned_from(value, "completion"))
+    { return false; }
+    let Some(syn::Expr::Closure(launch)) = dispatch.args.last() else { return false; };
+    let syn::Expr::Block(launch) = launch.body.as_ref() else { return false; };
+    let Some((syn::Stmt::Expr(syn::Expr::Match(prepared), None), bindings)) = launch.block.stmts.split_last()
+        else { return false; };
+    if !named(&prepared.expr, "prepared")
+        || !binding(bindings, "runtime").is_some_and(|value| named(value, "launch_runtime"))
+        || !binding(bindings, "completion").is_some_and(|value| named(value, "launch_completion"))
+    { return false; }
+    let mut schedules = prepared.arms.iter().filter(|arm| {
+        matches!(&arm.pat, syn::Pat::Struct(pattern)
+            if path_is(&pattern.path, "PreparedBackendFire", "Schedule"))
+    });
+    let Some(schedule) = schedules.next() else { return false; };
+    if schedules.next().is_some() || schedule.guard.is_some() { return false; }
+    let syn::Expr::Block(schedule) = schedule.body.as_ref() else { return false; };
+    let Some(syn::Stmt::Expr(syn::Expr::MethodCall(accepted), None)) = schedule.block.stmts.last()
+        else { return false; };
+    if accepted.method != "is_ok" || !accepted.args.is_empty() { return false; }
+    let syn::Expr::MethodCall(spawn) = accepted.receiver.as_ref() else { return false; };
+    if spawn.method != "spawn" || spawn.args.len() != 1 { return false; }
+    let Some(syn::Expr::Closure(worker)) = spawn.args.first() else { return false; };
+    let syn::Expr::Block(worker) = worker.body.as_ref() else { return false; };
+    let [result, syn::Stmt::Expr(syn::Expr::Call(callback), Some(_))] = worker.block.stmts.as_slice()
+        else { return false; };
+    let Some(syn::Expr::MethodCall(attempt)) = binding(std::slice::from_ref(result), "result")
+        else { return false; };
+    if attempt.method != "run_server_scheduled_automation_attempt_with"
+        || !named(&attempt.receiver, "runtime") || attempt.args.len() != 5
+    { return false; }
+    let args = attempt.args.iter().collect::<Vec<_>>();
+    if !borrowed(args[0], "agent_id") || !borrowed(args[1], "automation_id")
+        || !named(args[2], "run_uuid") || !matches!(args[4], syn::Expr::Closure(_))
+        || !matches!(args[3], syn::Expr::MethodCall(value)
+            if value.method == "map" && named(&value.receiver, "scheduled_for_ms")
+                && value.args.len() == 1 && matches!(value.args.first(), Some(syn::Expr::Closure(_))))
+    { return false; }
+    if !named(&callback.func, "completion") || callback.args.len() != 1 { return false; }
+    let Some(syn::Expr::Call(mapper)) = callback.args.first() else { return false; };
+    named(&mapper.func, "automation_fire_completion") && mapper.args.len() == 1
+        && mapper.args.first().is_some_and(|value| named(value, "result"))
+}
+
+#[test]
+fn shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback() {
+    assert!(backend_schedule_attempt_reaches_completion(SHIPPING_HOST),
+        "the spawned shipping schedule worker must forward its actual typed attempt to the actual backend completion callback");
+}
+
+#[test]
+fn typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls() {
+    let worker = "let result = runtime.run_server_scheduled_automation_attempt_with(&agent_id, &automation_id, run_uuid, scheduled_for_ms.map(|value| value as f64), |_| Ok(())); completion(automation_fire_completion(result));";
+    let fixture = |worker: &str| format!(r#"
+fn main() {{}}
+fn dispatch_checked_production_backend_fire() {{}}
+impl UnifiedGatewayApi {{
+    fn dispatch_production_backend_fire(&self, fire: Fire, completion: Callback) -> bool {{
+        let runtime = self.transcript_manager.automation_runtime();
+        let launch_runtime = Arc::clone(&runtime);
+        let launch_completion = Arc::clone(&completion);
+        dispatch_checked_production_backend_fire(runtime.as_ref(), &fire, definition_time_zone.as_deref(), completion.as_ref(), |_| {{}}, |prepared, target| {{
+            let runtime = launch_runtime;
+            let completion = launch_completion;
+            match prepared {{
+                PreparedBackendFire::Schedule {{ agent_id, automation_id, run_uuid, scheduled_for_ms }} => {{
+                    thread::Builder::new().spawn(move || {{ {worker} }}).is_ok()
+                }}
+                _ => false,
+            }}
+        }})
+    }}
+}}
+#[cfg(test)]
+mod tests {{}}
+"#);
+    assert!(backend_schedule_attempt_reaches_completion(&fixture(worker)));
+    for wrong in [
+        worker.replace("runtime.run_server", "unbound_runtime.run_server"),
+        worker.replace("run_server_scheduled_automation_attempt_with", "run_server_scheduled_automation_with"),
+        worker.replace("&agent_id", "&other_agent"),
+        worker.replace("run_uuid,", "other_run_uuid,"),
+        worker.replace("completion(automation_fire_completion", "other_completion(automation_fire_completion"),
+        worker.replace("automation_fire_completion(result)", "automation_fire_completion(unrelated_result)"),
+        worker.replace("let result =", "let _ignored ="),
+        format!("let _unused = || {{ {worker} }};"),
+    ] {
+        let source = fixture(&wrong);
+        assert!(syn::parse_file(&source).is_ok(), "negative remains syntactically valid");
+        assert!(!backend_schedule_attempt_reaches_completion(&source), "false typed shipping edge: {source}");
+    }
+    for (from, to) in [
+        ("Arc::clone(&runtime)", "Arc::clone(&unbound_runtime)"),
+        ("Arc::clone(&completion)", "Arc::clone(&other_completion)"),
+        ("let runtime = launch_runtime;", "let runtime = unbound_runtime;"),
+        ("let completion = launch_completion;", "let completion = other_completion;"),
+    ] {
+        assert!(!backend_schedule_attempt_reaches_completion(&fixture(worker).replace(from, to)));
+    }
 }
 
 #[test]

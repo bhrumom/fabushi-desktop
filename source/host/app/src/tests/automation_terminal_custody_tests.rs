@@ -214,7 +214,9 @@ fn automation_unknown_tool_terminal_retains_durable_run_and_backend_delivery() {
     };
     use mahayana_host_runtime::extensions::notify_bus::notify_bus_client::NotifyBusTiming;
     use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
-    use mahayana_host_runtime::extensions::transcript::automation_run_path::AutomationRunObservation;
+    use mahayana_host_runtime::extensions::transcript::automation_run_path::{
+        AutomationRunAttempt, AutomationRunObservation,
+    };
     use mahayana_host_runtime::extensions::transcript::automation_runtime::AutomationRuntime;
     use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderAttemptControl;
     use mahayana_host_runtime::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout_ms;
@@ -417,8 +419,8 @@ fn automation_unknown_tool_terminal_retains_durable_run_and_backend_delivery() {
             },
         );
         assert_eq!(outcome, Ok(None), "the real run path must retain, not synthesize a local failure");
-        assert_eq!(automation_fire_completion(outcome.clone()), None);
-        completion(automation_fire_completion(outcome));
+        assert_eq!(automation_fire_completion(outcome.clone().map(AutomationRunAttempt::Outcome)), None);
+        completion(automation_fire_completion(outcome.map(AutomationRunAttempt::Outcome)));
         drop(completion);
         assert!(!automations.run_path().is_in_flight(&agent_id, &automation_id));
         let (config_bytes, history_bytes, rows) = baseline.expect("baseline after actual admission");
@@ -503,6 +505,9 @@ mod checked_backend_delivery {
     };
     use mahayana_host_runtime::extensions::automations::fire_delivery::PreparedBackendFire;
     use mahayana_host_runtime::extensions::automations::production::ProductionAutomationsBackendRuntime;
+    use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::{
+        ScheduledCloudAutomation, sand_cloud_definition,
+    };
     use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::FireCompletion;
     use mahayana_host_runtime::extensions::browser_ua::extension::StopSubscription;
     use mahayana_host_runtime::extensions::notify_bus::extension::{
@@ -513,11 +518,14 @@ mod checked_backend_delivery {
     use mahayana_host_runtime::extensions::session::agent_db::CronSessionRunRecord;
     use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
     use mahayana_host_runtime::extensions::transcript::automation_run_path::{
-        AutomationRunObservation, AutomationRunTrigger,
+        AutomationAdmissionStage, AutomationRunAttempt, AutomationRunObservation, AutomationRunTrigger,
+        FireAutomationOutcome,
     };
-    use mahayana_host_runtime::extensions::transcript::automation_runtime::AutomationRuntime;
+    use mahayana_host_runtime::extensions::transcript::automation_runtime::{
+        AutomationLifecycleAction, AutomationLifecycleSource, AutomationRuntime,
+    };
     use serde_json::{Value, json};
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeSet, VecDeque};
     use std::ffi::OsString;
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -614,6 +622,7 @@ mod checked_backend_delivery {
         fn drop(&mut self) { self.runtime.dispose(); self.workers.shutdown(); }
     }
 
+    #[derive(Clone)]
     struct Fixture {
         root: PathBuf,
         agent_id: String,
@@ -709,6 +718,24 @@ mod checked_backend_delivery {
                 fire["definitionRevision"] = json!("obsolete-backend-definition");
                 fire
             }).into_iter().collect()
+        }
+        fn revisioned_fire(&self, owners: &Owners, run: &str) -> Value {
+            let entry = owners.runtime.find_automation_for_backend_delivery(
+                &self.agent_id, &stable_automation_id(&self.agent_id, &self.automation_id),
+            ).unwrap().expect("current checked definition for admission oracle");
+            let definition = sand_cloud_definition(&self.agent_id, &ScheduledCloudAutomation {
+                id: entry.automation.id, name: entry.automation.name, prompt: entry.automation.prompt,
+                is_enabled: entry.automation.is_enabled, trigger: entry.automation.trigger,
+            }, None).expect("real current cloud definition revision");
+            let mut fire = self.fire(run, &self.automation_id);
+            // Admission may legitimately record lastRunAt before refusal. The
+            // separate no-revision covered-slot policy is deliberately unchanged
+            // and remains outside these revisioned redelivery assertions.
+            fire["definitionRevision"] = json!(definition.hash);
+            fire
+        }
+        fn enable(&self, owners: &Owners) {
+            owners.sessions().set_agent_automation_enabled(&self.agent_id, &self.automation_id, true).unwrap();
         }
         fn assert_retained_cron(&self, owners: &Owners) {
             let rows = owners.workers.list_cron_session_runs(&self.agent_id).unwrap().into_iter()
@@ -881,8 +908,9 @@ mod checked_backend_delivery {
         fn check_feature_gate(&self, _: &str) -> bool { false }
         fn subscribe(&self, _: Arc<dyn Fn() + Send + Sync>) -> StopSubscription { Box::new(|| {}) }
     }
+    enum Replies { Repeat(Vec<Value>), Queued(VecDeque<Vec<Value>>) }
     struct Transport {
-        events: Vec<Value>,
+        replies: Mutex<Replies>,
         calls: Mutex<Vec<(String, Value)>>,
         poll_count: AtomicUsize,
         polls: mpsc::Sender<(usize, Value)>,
@@ -899,12 +927,24 @@ mod checked_backend_delivery {
                 "/sand/listener-subscriptions" => Ok(json!({"slack":{"status":"ok"},"github":{"status":"ok"}})),
                 "/sand/listener-events/poll" => Ok(json!({"events":[]})),
                 "/sand/automation-events/poll" => {
+                    let events = match &mut *self.replies.lock().unwrap() {
+                        Replies::Repeat(events) => events.clone(),
+                        Replies::Queued(replies) => replies.pop_front().expect("ready controlled transport has a queued response"),
+                    };
                     let poll = self.poll_count.fetch_add(1, Ordering::SeqCst) + 1;
                     self.polls.send((poll, body.clone())).expect("owned poll observer");
-                    Ok(json!({"events":self.events}))
+                    Ok(json!({"events":events}))
                 }
                 "/sand/automation-runs/complete" => Ok(json!({})),
                 _ => Err(AutomationsBackendError::Transport(format!("unexpected checked-backend request {path}"))),
+            }
+        }
+    }
+    impl Transport {
+        fn ready(&self) -> bool {
+            match &*self.replies.lock().unwrap() {
+                Replies::Repeat(_) => true,
+                Replies::Queued(replies) => !replies.is_empty(),
             }
         }
     }
@@ -916,8 +956,12 @@ mod checked_backend_delivery {
         executions: Mutex<Vec<String>>,
         completions: Mutex<Vec<(String, Option<FireCompletion>)>>,
         dropped: Mutex<Vec<(String, &'static str)>>,
+        attempts: Mutex<Vec<(String, Result<AutomationRunAttempt, String>)>>,
+        runtime_errors: Mutex<Vec<String>>,
         errors: Mutex<Vec<String>>,
     }
+    type BeforeAttempt = Arc<dyn Fn(&str) + Send + Sync>;
+    type ControlledExecution = Arc<dyn Fn(&str) -> Result<AutomationExecutionResult, String> + Send + Sync>;
     struct Backend {
         runtime: Arc<ProductionAutomationsBackendRuntime>,
         notify: HostNotifyBusExtension,
@@ -925,9 +969,22 @@ mod checked_backend_delivery {
         counts: Arc<Counts>,
         dispatches: mpsc::Receiver<DispatchReceipt>,
         polls: mpsc::Receiver<(usize, Value)>,
+        events: Vec<Value>,
     }
     impl Backend {
         fn start(fixture: &Fixture, owners: &Owners, phase: &str, events: Vec<Value>) -> Self {
+            Self::start_configured(fixture, owners, phase, events, false, None, None)
+        }
+        fn start_queued(
+            fixture: &Fixture, owners: &Owners, phase: &str, events: Vec<Value>,
+            before_attempt: Option<BeforeAttempt>, execute: Option<ControlledExecution>,
+        ) -> Self {
+            Self::start_configured(fixture, owners, phase, events, true, before_attempt, execute)
+        }
+        fn start_configured(
+            fixture: &Fixture, owners: &Owners, phase: &str, events: Vec<Value>, queued: bool,
+            before_attempt: Option<BeforeAttempt>, execute: Option<ControlledExecution>,
+        ) -> Self {
             let notify = start_notify_bus_extension_with_options(Arc::new(NoNotifyConnection),
                 NotifyBusExtensionOptions {
                     get_backend_url: Arc::new(|| panic!("controlled poll cannot open notify transport")),
@@ -935,7 +992,9 @@ mod checked_backend_delivery {
                     now_ms: Arc::new(|| 0), timing: NotifyBusTiming::default(), log: Arc::new(|_| {}),
                 }).expect("actual notify owner without external connection readiness");
             let (poll_tx, polls) = mpsc::channel();
-            let transport = Arc::new(Transport { events, calls: Mutex::new(Vec::new()),
+            let replies = if queued { Replies::Queued(VecDeque::from([events.clone()])) }
+                else { Replies::Repeat(events.clone()) };
+            let transport = Arc::new(Transport { replies: Mutex::new(replies), calls: Mutex::new(Vec::new()),
                 poll_count: AtomicUsize::new(0), polls: poll_tx,
                 evidence: fixture.root.join(format!("{phase}-requests.json")),
             });
@@ -945,7 +1004,9 @@ mod checked_backend_delivery {
             let dispatch_counts = Arc::clone(&counts);
             let poll_errors = Arc::clone(&counts);
             let dispatch_transport = Arc::clone(&transport);
+            let ready_transport = Arc::clone(&transport);
             let trace_path = fixture.root.join(format!("{phase}-dispatches.txt"));
+            let attempt_path = fixture.root.join(format!("{phase}-attempts.txt"));
             let trace = Mutex::new(Vec::<String>::new());
             let backend = ProductionAutomationsBackendRuntime::start(
                 transport.clone(), notify.clone(), Arc::new(|| (Vec::new(), Vec::new())), Arc::new(|_| false),
@@ -970,13 +1031,22 @@ mod checked_backend_delivery {
                                 dispatch_counts.errors.lock().unwrap().push("non-schedule reached controlled schedule executor".into());
                                 return false;
                             };
-                            let result = runtime.run_server_scheduled_automation_with(
+                            if let Some(before_attempt) = &before_attempt { before_attempt(&run_uuid); }
+                            let result = runtime.run_server_scheduled_automation_attempt_with(
                                 &agent_id, &automation_id, run_uuid.clone(), scheduled_for_ms.map(|value| value as f64), |_| {
                                     dispatch_counts.executions.lock().unwrap().push(run_uuid.clone());
-                                    Ok(AutomationExecutionResult::Completed)
+                                    match &execute {
+                                        Some(execute) => execute(&run_uuid),
+                                        None => Ok(AutomationExecutionResult::Completed),
+                                    }
                                 },
                             );
-                            if let Err(error) = &result { dispatch_counts.errors.lock().unwrap().push(error.clone()); }
+                            if let Err(error) = &result { dispatch_counts.runtime_errors.lock().unwrap().push(error.clone()); }
+                            {
+                                let mut attempts = dispatch_counts.attempts.lock().unwrap();
+                                attempts.push((run_uuid, result.clone()));
+                                fs::write(&attempt_path, format!("{attempts:#?}")).unwrap();
+                            }
                             launch_callback(automation_fire_completion(result));
                             true
                         },
@@ -992,13 +1062,23 @@ mod checked_backend_delivery {
                     dispatch_tx.send(receipt).expect("owned shipping-dispatch observer");
                     accepted
                 }),
-                // External readiness is controlled so a broken display list
-                // cannot prevent the backend from exercising target discovery.
-                Arc::new(|| (true, true)),
+                // External readiness is controlled, never obtained from a
+                // display list. Queued responses gate individual real polls;
+                // Repeat preserves the original BH polling behavior.
+                Arc::new(move || (ready_transport.ready(), true)),
                 Arc::new(move |error| poll_errors.errors.lock().unwrap().push(error.to_string())),
                 Arc::new(|_| {}),
             );
-            Self { runtime: backend, notify, transport, counts, dispatches, polls }
+            Self { runtime: backend, notify, transport, counts, dispatches, polls, events }
+        }
+        fn replay(&self) -> usize {
+            let before = self.transport.poll_count.load(Ordering::SeqCst);
+            if let Replies::Queued(replies) = &mut *self.transport.replies.lock().unwrap() {
+                assert!(replies.is_empty(), "previous controlled poll must consume its response");
+                replies.push_back(self.events.clone());
+            }
+            self.runtime.request_reconcile();
+            before
         }
         fn wait_dispatches(&self, ids: &[&str], after: usize, accepted: bool) {
             let deadline = Instant::now() + WAIT;
@@ -1014,8 +1094,7 @@ mod checked_backend_delivery {
         fn repeated_refusal(&self, ids: &[&str]) {
             self.wait_dispatches(ids, 0, false);
             for _ in 0..2 {
-                let before = self.transport.poll_count.load(Ordering::SeqCst);
-                self.runtime.request_reconcile();
+                let before = self.replay();
                 self.wait_dispatches(ids, before, false);
             }
             self.runtime.stop();
@@ -1023,6 +1102,8 @@ mod checked_backend_delivery {
             assert!(self.counts.executions.lock().unwrap().is_empty(), "refusal cannot enter the executor");
             assert!(self.counts.completions.lock().unwrap().is_empty(), "refusal cannot invoke even a None completion callback");
             assert!(self.counts.dropped.lock().unwrap().is_empty(), "unknown discovery is not a known dropped fire");
+            assert!(self.counts.attempts.lock().unwrap().is_empty());
+            assert!(self.counts.runtime_errors.lock().unwrap().is_empty());
             assert!(self.counts.errors.lock().unwrap().is_empty());
             let calls = self.transport.calls.lock().unwrap();
             assert!(calls.iter().filter(|(path, _)| path == "/sand/automation-events/poll").count() >= 3);
@@ -1032,12 +1113,23 @@ mod checked_backend_delivery {
             }
         }
         fn completed_and_acked(&self, ids: &[&str], terminal: &FireCompletion, executions: usize) {
-            self.wait_dispatches(ids, 0, true);
+            self.completed_after(ids, terminal, executions, 0, 0, 0);
+        }
+        fn completed_after(
+            &self, ids: &[&str], terminal: &FireCompletion, executions: usize,
+            prior_none: usize, outer_errors: usize, after: usize,
+        ) {
+            self.wait_dispatches(ids, after, true);
+            self.assert_completion_and_ack(ids, terminal, executions, prior_none, outer_errors);
+        }
+        fn assert_completion_and_ack(
+            &self, ids: &[&str], terminal: &FireCompletion, executions: usize,
+            prior_none: usize, outer_errors: usize,
+        ) {
             // Poll twice after actual callbacks. This reaches the unchanged
             // Reported -> ACK consumer and proves reported UUIDs do not launch again.
             for _ in 0..2 {
-                let before = self.transport.poll_count.load(Ordering::SeqCst);
-                self.runtime.request_reconcile();
+                let before = self.replay();
                 let deadline = Instant::now() + WAIT;
                 loop {
                     let (poll, body) = self.polls.recv_timeout(deadline.saturating_duration_since(Instant::now()))
@@ -1050,11 +1142,13 @@ mod checked_backend_delivery {
                 }
             }
             self.runtime.stop();
-            assert_eq!(self.counts.launches.lock().unwrap().len(), executions);
+            assert_eq!(self.counts.launches.lock().unwrap().len(), executions + prior_none);
             assert_eq!(self.counts.executions.lock().unwrap().len(), executions);
+            assert_eq!(self.counts.runtime_errors.lock().unwrap().len(), outer_errors);
             assert!(self.counts.errors.lock().unwrap().is_empty());
             let callbacks = self.counts.completions.lock().unwrap();
-            assert_eq!(callbacks.len(), ids.len(), "one actual completion callback per backend UUID");
+            assert_eq!(callbacks.len(), ids.len() + prior_none, "one actual callback per accepted attempt or terminal replay");
+            assert_eq!(callbacks.iter().filter(|(_, value)| value.is_none()).count(), prior_none);
             for id in ids {
                 assert_eq!(callbacks.iter().filter(|(run, value)| run.as_str() == *id && value.as_ref() == Some(terminal)).count(), 1);
             }
@@ -1068,9 +1162,166 @@ mod checked_backend_delivery {
                 })).count(), 1);
             }
         }
+        fn assert_no_terminal_traffic(&self) {
+            assert!(self.counts.executions.lock().unwrap().is_empty());
+            assert!(self.counts.completions.lock().unwrap().iter().all(|(_, terminal)| terminal.is_none()));
+            assert!(self.counts.dropped.lock().unwrap().is_empty());
+            assert!(self.counts.runtime_errors.lock().unwrap().is_empty());
+            assert!(self.counts.errors.lock().unwrap().is_empty());
+            for (path, body) in self.transport.calls.lock().unwrap().iter() {
+                assert_ne!(path, "/sand/automation-runs/complete", "admission refusal cannot POST completion");
+                if path == "/sand/automation-events/poll" { assert_eq!(body, &json!({"ackRunUuids":[]})); }
+            }
+        }
+        fn refused_attempt(&self, run: &str, stage: AutomationAdmissionStage, count: usize, after: usize) -> String {
+            self.wait_dispatches(&[run], after, true);
+            assert_eq!(self.counts.launches.lock().unwrap().len(), count);
+            let attempts = self.counts.attempts.lock().unwrap();
+            assert_eq!(attempts.len(), count);
+            for (id, result) in attempts.iter() {
+                assert_eq!(id, run);
+                let Ok(AutomationRunAttempt::AdmissionRefused { stage: actual, detail }) = result else {
+                    panic!("None must originate in a typed admission refusal: {result:?}");
+                };
+                assert_eq!(*actual, stage);
+                assert!(!detail.is_empty());
+            }
+            let detail = match &attempts.last().unwrap().1 {
+                Ok(AutomationRunAttempt::AdmissionRefused { detail, .. }) => detail.clone(),
+                _ => unreachable!(),
+            };
+            drop(attempts);
+            assert_eq!(*self.counts.completions.lock().unwrap(), vec![(run.to_string(), None); count],
+                "every accepted refused launch must invoke the actual backend callback exactly once with None");
+            self.assert_no_terminal_traffic();
+            detail
+        }
+        fn later_preparation_refusal(&self, run: &str, accepted_before: usize, after: usize) {
+            self.wait_dispatches(&[run], after, false);
+            assert_eq!(self.counts.launches.lock().unwrap().len(), accepted_before);
+            assert_eq!(self.counts.attempts.lock().unwrap().len(), accepted_before);
+            assert_eq!(*self.counts.completions.lock().unwrap(), vec![(run.to_string(), None); accepted_before],
+                "a later preparation refusal invokes no callback");
+            self.assert_no_terminal_traffic();
+        }
     }
     impl Drop for Backend {
         fn drop(&mut self) { self.runtime.stop(); self.notify.stop(); }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct AdmissionSnapshot {
+        config: Vec<u8>,
+        history: Vec<u8>,
+        cron: Vec<CronSessionRunRecord>,
+    }
+    impl AdmissionSnapshot {
+        fn read(fixture: &Fixture, workers: &ProductionSessionWorkers) -> Self {
+            Self {
+                config: fs::read(&fixture.config).unwrap(),
+                history: fs::read(&fixture.history).unwrap(),
+                cron: workers.list_cron_session_runs(&fixture.agent_id).unwrap(),
+            }
+        }
+        fn preserve(&self, fixture: &Fixture, phase: &str) {
+            fs::write(fixture.root.join(format!("{phase}-history.bin")), &self.history).unwrap();
+            fs::write(fixture.root.join(format!("{phase}-definition.bin")), &self.config).unwrap();
+            fs::write(fixture.root.join(format!("{phase}-cron.txt")), format!("{:#?}", self.cron)).unwrap();
+        }
+        fn assert_history_and_cron(&self, fixture: &Fixture, workers: &ProductionSessionWorkers) {
+            let actual = Self::read(fixture, workers);
+            assert_eq!(actual.history, self.history, "refused attempt cannot rewrite competing history");
+            assert_eq!(actual.cron, self.cron, "refused attempt cannot register or settle a cron row");
+        }
+    }
+
+    #[derive(Debug, Clone, Copy)]
+    enum LateClaim { Primary, Alias, Terminal, Malformed, Deletion }
+    impl LateClaim {
+        fn primary_id(self, requested: &str) -> String {
+            if matches!(self, Self::Alias) { format!("{requested}-other-owner") } else { requested.to_string() }
+        }
+        fn install(self, fixture: &Fixture, workers: &Arc<ProductionSessionWorkers>, requested: &str) -> AdmissionSnapshot {
+            let sessions = SandAgentSessionStore::new(Arc::clone(workers));
+            let store = sessions.automation_store_for(&fixture.agent_id).unwrap();
+            match self {
+                Self::Malformed => sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                    fs::write(&fixture.history, b"{invalid-after-preparation").map_err(|error| error.to_string())
+                }).unwrap(),
+                Self::Deletion => workers.begin_agent_delete(&fixture.agent_id).unwrap(),
+                _ => {
+                    let primary = self.primary_id(requested);
+                    let aliases = if matches!(self, Self::Alias) { vec![requested.to_string()] } else { Vec::new() };
+                    sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                        store.begin_fresh_run(&fixture.automation_id, "schedule", 500.0, None,
+                            Some(&primary), (!aliases.is_empty()).then_some(aliases.as_slice()))
+                            .map_err(|error| error.to_string())?.ok_or_else(|| "competing owner did not admit its row".to_string())?;
+                        Ok(())
+                    }).unwrap();
+                    // The admitted filesystem closure has returned. This public
+                    // Session operation acquires its own existing lock once.
+                    assert!(workers.begin_cron_session_run(&fixture.agent_id, &fixture.automation_id, &primary, 500.0).unwrap());
+                    if matches!(self, Self::Terminal) { settle_existing(fixture, workers, &primary); }
+                }
+            }
+            let snapshot = AdmissionSnapshot::read(fixture, workers);
+            snapshot.preserve(fixture, "injected-admission-authority");
+            snapshot
+        }
+        fn repair(self, fixture: &Fixture, workers: &Arc<ProductionSessionWorkers>, requested: &str, before: &AdmissionSnapshot) {
+            match self {
+                Self::Malformed => {
+                    SandAgentSessionStore::new(Arc::clone(workers)).with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                        fs::write(&fixture.history, &before.history).map_err(|error| error.to_string())
+                    }).unwrap();
+                }
+                Self::Deletion => workers.end_agent_delete(&fixture.agent_id).unwrap(),
+                Self::Primary | Self::Alias => settle_existing(fixture, workers, &self.primary_id(requested)),
+                Self::Terminal => {}
+            }
+        }
+    }
+
+    fn settle_existing(fixture: &Fixture, workers: &Arc<ProductionSessionWorkers>, run: &str) {
+        assert!(workers.finish_cron_session_run(&fixture.agent_id, &fixture.automation_id, run, "ok", 600.0, None).unwrap());
+        let sessions = SandAgentSessionStore::new(Arc::clone(workers));
+        let store = sessions.automation_store_for(&fixture.agent_id).unwrap();
+        sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+            store.finish_run(&fixture.automation_id, run, "ok", 600.0, None)
+                .map_err(|error| error.to_string())?.ok_or_else(|| "explicit competing settlement missing".to_string())?;
+            Ok(())
+        }).unwrap();
+    }
+
+    fn assert_no_attempt_effects(fixture: &Fixture, owners: &Owners) {
+        assert!(owners.observations.lock().unwrap().is_empty());
+        assert!(!owners.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+    }
+
+    fn complete_distinct(fixture: &Fixture, owners: &Owners, phase: &str, run: &str) {
+        let observed_before = owners.observations.lock().unwrap().len();
+        let backend = Backend::start_queued(fixture, owners, phase,
+            vec![fixture.revisioned_fire(owners, run)], None, None);
+        backend.completed_and_acked(&[run], &FireCompletion::succeeded(), 1);
+        assert_eq!(*backend.counts.attempts.lock().unwrap(), vec![(run.to_string(),
+            Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Ok))))]);
+        assert_eq!(*backend.counts.executions.lock().unwrap(), vec![run.to_string()]);
+        assert_eq!(*backend.counts.launches.lock().unwrap(),
+            vec![(run.to_string(), fixture.agent_id.clone(), fixture.automation_id.clone())]);
+        assert!(backend.counts.dropped.lock().unwrap().is_empty());
+        drop(backend);
+        let history = owners.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, run).unwrap().unwrap();
+        assert_eq!(history.status, "ok");
+        assert!(history.finished_at.is_some());
+        let cron = owners.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+        let row = cron.iter().find(|row| row.run_id == run).expect("new run has an actual cron receipt");
+        assert_eq!(row.state, "terminal");
+        assert_eq!(row.terminal_outcome.as_deref(), Some("ok"));
+        let observed = owners.observations.lock().unwrap();
+        assert_eq!(observed.len(), observed_before + 1);
+        assert_eq!(observed.last().unwrap().automation_run_id.as_deref(), Some(run));
+        assert_eq!(observed.last().unwrap().outcome, FireAutomationOutcome::Ok);
+        assert!(!owners.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
     }
 
     fn refusal_across_reopen(fixture: &Fixture, injected: &InjectedFault) {
@@ -1255,6 +1506,300 @@ mod checked_backend_delivery {
             assert!(reopened.runtime.find_automation_for_backend_delivery(
                 &fixture.agent_id, &stable_automation_id(&fixture.agent_id, &fixture.unrelated_id),
             ).unwrap().is_some());
+        });
+    }
+
+    #[test]
+    fn backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair() {
+        bounded("tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair", |root| {
+            let fixture = Fixture::create(root, "typed-capacity");
+            let owners = fixture.open();
+            fixture.enable(&owners);
+            let mut admitted_executions = 0;
+            // The fixture already contains ORIGINAL. Fill the remaining slots
+            // with actual Runtime admissions, each retaining its real cron row.
+            for index in 1..AUTOMATION_MAX_RUN_HISTORY {
+                let result = owners.runtime.run_background_automation_attempt_with(
+                    &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                    Vec::new(), Some(format!("capacity-retained-{index}")), Vec::new(),
+                    100.0 + index as f64, None, |_| {
+                        admitted_executions += 1;
+                        Ok(AutomationExecutionResult::RetainedUnsettled {
+                            terminal: Box::new(AutomationExecutionResult::Completed),
+                        })
+                    },
+                );
+                assert_eq!(result, Ok(AutomationRunAttempt::Outcome(None)));
+            }
+            assert_eq!(admitted_executions, AUTOMATION_MAX_RUN_HISTORY - 1);
+            let full = AdmissionSnapshot::read(&fixture, &owners.workers);
+            full.preserve(&fixture, "full-running-capacity");
+            let rows: Vec<Value> = serde_json::from_slice(&full.history).unwrap();
+            assert_eq!(rows.len(), AUTOMATION_MAX_RUN_HISTORY);
+            assert!(rows.iter().all(|row| row["status"] == "running" && row["finishedAt"].is_null()));
+            assert_eq!(full.cron.len(), AUTOMATION_MAX_RUN_HISTORY);
+            assert!(full.cron.iter().all(|row| row.state == "running" && !row.fence_state_known));
+            assert_no_attempt_effects(&fixture, &owners);
+            let run = "capacity-refused-fire";
+            let fire = fixture.revisioned_fire(&owners, run);
+            let backend = Backend::start_queued(&fixture, &owners, "capacity-refused", vec![fire.clone()], None, None);
+            for attempt in 1..=3 {
+                let after = if attempt == 1 { 0 } else { backend.replay() };
+                assert_eq!(backend.refused_attempt(run, AutomationAdmissionStage::FreshHistory, attempt, after),
+                    "automation store io error: automation history has reached its unsettled run capacity");
+                full.assert_history_and_cron(&fixture, &owners.workers);
+                assert_no_attempt_effects(&fixture, &owners);
+            }
+            // A second accepted same-UUID launch is causal proof that None
+            // reached the actual backend abandon branch, releasing Running.
+            drop(backend);
+            drop(owners);
+            let reopened = fixture.open();
+            let backend = Backend::start_queued(&fixture, &reopened, "capacity-reopened", vec![fire], None, None);
+            for attempt in 1..=3 {
+                let after = if attempt == 1 { 0 } else { backend.replay() };
+                backend.refused_attempt(run, AutomationAdmissionStage::FreshHistory, attempt, after);
+                full.assert_history_and_cron(&fixture, &reopened.workers);
+                assert_no_attempt_effects(&fixture, &reopened);
+            }
+            drop(backend);
+            settle_existing(&fixture, &reopened.workers, ORIGINAL);
+            complete_distinct(&fixture, &reopened, "capacity-repaired-distinct", "capacity-new-valid-fire");
+            let after = reopened.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+            for retained in full.cron.iter().filter(|row| row.run_id != ORIGINAL) {
+                assert_eq!(after.iter().find(|row| row.run_id == retained.run_id), Some(retained));
+            }
+            assert!(!after.iter().any(|row| row.run_id == run), "refused UUID never acquired a cron row");
+        });
+    }
+
+    #[test]
+    fn backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay() {
+        bounded("tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay", |root| {
+            for claim in [LateClaim::Primary, LateClaim::Alias, LateClaim::Terminal, LateClaim::Malformed, LateClaim::Deletion] {
+                let fixture = Fixture::create(root, &format!("precheck-{claim:?}"));
+                let owners = fixture.open();
+                fixture.enable(&owners);
+                let before = AdmissionSnapshot::read(&fixture, &owners.workers);
+                let run = "precheck-raced-fire";
+                let fire = fixture.revisioned_fire(&owners, run);
+                let injections = Arc::new(AtomicUsize::new(0));
+                let injected = Arc::new(Mutex::new(None));
+                let hook_count = Arc::clone(&injections);
+                let hook_snapshot = Arc::clone(&injected);
+                let hook_fixture = fixture.clone();
+                let hook_workers = Arc::clone(&owners.workers);
+                let before_attempt: BeforeAttempt = Arc::new(move |requested| {
+                    assert_eq!(requested, run);
+                    assert_eq!(hook_count.fetch_add(1, Ordering::SeqCst), 0, "one post-preparation injection");
+                    *hook_snapshot.lock().unwrap() = Some(claim.install(&hook_fixture, &hook_workers, requested));
+                });
+                let backend = Backend::start_queued(&fixture, &owners, "precheck-first", vec![fire.clone()], Some(before_attempt), None);
+                let detail = backend.refused_attempt(run, AutomationAdmissionStage::HistoryPrecheck, 1, 0);
+                if matches!(claim, LateClaim::Primary | LateClaim::Alias | LateClaim::Terminal) {
+                    assert_eq!(detail, "automation run identity has already been admitted");
+                }
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                let claimed = injected.lock().unwrap().clone().expect("actual launch closure introduced authority");
+                assert_eq!(AdmissionSnapshot::read(&fixture, &owners.workers), claimed,
+                    "early precheck refusal precedes guard, notices and lastRunAt bookkeeping");
+                assert_no_attempt_effects(&fixture, &owners);
+
+                if matches!(claim, LateClaim::Terminal) {
+                    // The first launch deferred. The next checked preparation
+                    // replays the other owner's actual success, with no launch.
+                    let after = backend.replay();
+                    backend.completed_after(&[run], &FireCompletion::succeeded(), 0, 1, 0, after);
+                    assert_eq!(backend.counts.attempts.lock().unwrap().len(), 1);
+                } else {
+                    for _ in 0..2 {
+                        let after = backend.replay();
+                        backend.later_preparation_refusal(run, 1, after);
+                    }
+                }
+                assert_eq!(AdmissionSnapshot::read(&fixture, &owners.workers), claimed);
+                assert_no_attempt_effects(&fixture, &owners);
+                drop(backend);
+                drop(owners);
+
+                let reopened = fixture.open();
+                let again = Backend::start_queued(&fixture, &reopened, "precheck-reopened", vec![fire], None, None);
+                if matches!(claim, LateClaim::Terminal) {
+                    again.completed_and_acked(&[run], &FireCompletion::succeeded(), 0);
+                } else {
+                    again.repeated_refusal(&[run]);
+                }
+                assert!(again.counts.attempts.lock().unwrap().is_empty(), "reopen reads current custody before launch");
+                assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), claimed);
+                assert_no_attempt_effects(&fixture, &reopened);
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                drop(again);
+                claim.repair(&fixture, &reopened.workers, run, &before);
+                complete_distinct(&fixture, &reopened, "precheck-repaired-distinct", "precheck-new-valid-fire");
+            }
+        });
+    }
+
+    #[test]
+    fn backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims() {
+        bounded("tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims", |root| {
+            for claim in [LateClaim::Primary, LateClaim::Alias] {
+                let fixture = Fixture::create(root, &format!("fresh-{claim:?}"));
+                let owners = fixture.open();
+                fixture.enable(&owners);
+                owners.runtime.seed_known_automations(&fixture.agent_id).unwrap();
+                let sessions = owners.sessions();
+                let store = sessions.automation_store_for(&fixture.agent_id).unwrap();
+                sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                    let mut config = store.read_config(&fixture.automation_id).expect("current valid definition");
+                    config.prompt.push_str("; deliberately stale lifecycle baseline");
+                    store.write_config(&fixture.automation_id, &config).map_err(|error| error.to_string())
+                }).unwrap();
+                // No directory watcher is attached. The shipping preparation
+                // reads the changed definition without refreshing this baseline.
+                let run = "fresh-raced-fire";
+                let fire = fixture.revisioned_fire(&owners, run);
+                let before = AdmissionSnapshot::read(&fixture, &owners.workers);
+                let injections = Arc::new(AtomicUsize::new(0));
+                let injected = Arc::new(Mutex::new(None));
+                let hook_count = Arc::clone(&injections);
+                let hook_snapshot = Arc::clone(&injected);
+                let hook_fixture = fixture.clone();
+                let hook_workers = Arc::clone(&owners.workers);
+                owners.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+                    if event.agent_id == hook_fixture.agent_id && event.automation_id == hook_fixture.automation_id
+                        && event.action == AutomationLifecycleAction::Updated
+                    {
+                        assert_eq!(event.source, AutomationLifecycleSource::Agent);
+                        assert_eq!(hook_count.fetch_add(1, Ordering::SeqCst), 0, "exactly one stale-baseline Updated event");
+                        // Runtime still owns its mutex, but its history-precheck
+                        // Session closure has returned. Use Session/FileStore
+                        // only, with no Runtime reentry or nested Session lock.
+                        *hook_snapshot.lock().unwrap() = Some(claim.install(&hook_fixture, &hook_workers, run));
+                    }
+                })));
+                let backend = Backend::start_queued(&fixture, &owners, "fresh-first", vec![fire.clone()], None, None);
+                assert_eq!(backend.refused_attempt(run, AutomationAdmissionStage::FreshHistory, 1, 0),
+                    "automation store io error: automation run identity has already been admitted");
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                let claimed = injected.lock().unwrap().clone().expect("synchronous reporter introduced the competing claim");
+                claimed.assert_history_and_cron(&fixture, &owners.workers);
+                assert_no_attempt_effects(&fixture, &owners);
+                // Only this first late refusal may have performed the existing
+                // authorized guard/notice/lastRunAt bookkeeping.
+                let post_refusal = AdmissionSnapshot::read(&fixture, &owners.workers);
+                post_refusal.preserve(&fixture, "after-fresh-refusal");
+                for _ in 0..2 {
+                    let after = backend.replay();
+                    backend.later_preparation_refusal(run, 1, after);
+                    assert_eq!(AdmissionSnapshot::read(&fixture, &owners.workers), post_refusal);
+                }
+                assert_eq!(injections.load(Ordering::SeqCst), 1);
+                drop(backend);
+                owners.runtime.set_lifecycle_reporter(None);
+                drop(store);
+                drop(sessions);
+                drop(owners);
+
+                let reopened = fixture.open();
+                let backend = Backend::start_queued(&fixture, &reopened, "fresh-reopened", vec![fire], None, None);
+                backend.repeated_refusal(&[run]);
+                assert_eq!(AdmissionSnapshot::read(&fixture, &reopened.workers), post_refusal);
+                assert_no_attempt_effects(&fixture, &reopened);
+                drop(backend);
+                claim.repair(&fixture, &reopened.workers, run, &before);
+                complete_distinct(&fixture, &reopened, "fresh-repaired-distinct", "fresh-new-valid-fire");
+            }
+        });
+    }
+
+    #[test]
+    fn backend_fire_typed_executed_failure_and_settlement_error_keep_completion() {
+        bounded("tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion", |root| {
+            for kind in ["typed-failed", "executor-error", "history-settlement-error"] {
+                let fixture = Fixture::create(root, kind);
+                let owners = fixture.open();
+                fixture.enable(&owners);
+                let run = "executed-failure-control";
+                let admitted = Arc::new(Mutex::new(None));
+                let entered = Arc::clone(&admitted);
+                let execute_fixture = fixture.clone();
+                let execute_workers = Arc::clone(&owners.workers);
+                let execute: ControlledExecution = Arc::new(move |requested| {
+                    assert_eq!(requested, run);
+                    let sessions = SandAgentSessionStore::new(Arc::clone(&execute_workers));
+                    let store = sessions.automation_store_for(&execute_fixture.agent_id).unwrap();
+                    let running = store.read_run_for_delivery(&execute_fixture.automation_id, run).unwrap().unwrap();
+                    assert_eq!(running.id, run);
+                    assert_eq!(running.status, "running");
+                    let snapshot = AdmissionSnapshot::read(&execute_fixture, &execute_workers);
+                    assert_eq!(snapshot.cron.iter().find(|row| row.run_id == run).unwrap().state, "running");
+                    snapshot.preserve(&execute_fixture, "actual-executor-admission");
+                    *entered.lock().unwrap() = Some(snapshot);
+                    match kind {
+                        "typed-failed" => Ok(AutomationExecutionResult::Failed { detail: "controlled executed failure".into() }),
+                        "executor-error" => Err("controlled raw executor error".into()),
+                        _ => {
+                            sessions.with_admitted_filesystem_mutation(&execute_fixture.agent_id, || {
+                                fs::write(&execute_fixture.history, b"{invalid-after-executor-entry")
+                                    .map_err(|error| error.to_string())
+                            }).unwrap();
+                            Ok(AutomationExecutionResult::Completed)
+                        }
+                    }
+                });
+                let backend = Backend::start_queued(&fixture, &owners, "executed-outcome",
+                    vec![fixture.revisioned_fire(&owners, run)], None, Some(execute));
+                backend.wait_dispatches(&[run], 0, true);
+                let attempts = backend.counts.attempts.lock().unwrap().clone();
+                assert_eq!(attempts.len(), 1);
+                let (terminal, outer_errors) = if kind == "history-settlement-error" {
+                    let error = attempts[0].1.as_ref().expect_err("post-entry history settlement error stays an outer error");
+                    assert!(!error.is_empty());
+                    (FireCompletion::failed(error.clone()), 1)
+                } else {
+                    assert_eq!(attempts[0].1, Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Error))));
+                    (FireCompletion::failed("Automation run failed on the Sand box"), 0)
+                };
+                backend.assert_completion_and_ack(&[run], &terminal, 1, 0, outer_errors);
+                assert_eq!(*backend.counts.executions.lock().unwrap(), vec![run.to_string()]);
+                assert!(backend.counts.dropped.lock().unwrap().is_empty());
+                drop(backend);
+                let admitted = admitted.lock().unwrap().clone().expect("actual executor admission receipt");
+                assert!(!owners.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                let cron = owners.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+                let row = cron.iter().find(|row| row.run_id == run).unwrap();
+                assert_eq!(row.state, "terminal");
+                assert_eq!(cron.iter().find(|row| row.run_id == ORIGINAL), fixture.cron.first());
+                if kind == "history-settlement-error" {
+                    assert_eq!(row.terminal_outcome.as_deref(), Some("ok"), "ACK-05 keeps cron settlement before failed file acknowledgement");
+                    assert_eq!(fs::read(&fixture.history).unwrap(), b"{invalid-after-executor-entry");
+                    assert!(owners.observations.lock().unwrap().is_empty());
+                    // Explicitly restore the admitted image and acknowledge the
+                    // known controlled success; a separate UUID then executes.
+                    let sessions = owners.sessions();
+                    let store = sessions.automation_store_for(&fixture.agent_id).unwrap();
+                    sessions.with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                        fs::write(&fixture.history, &admitted.history).map_err(|error| error.to_string())?;
+                        store.finish_run(&fixture.automation_id, run, "ok", 700.0, None)
+                            .map_err(|error| error.to_string())?.ok_or_else(|| "repair did not acknowledge original history".to_string())?;
+                        Ok(())
+                    }).unwrap();
+                    complete_distinct(&fixture, &owners, "settlement-repaired-distinct", "settlement-new-valid-fire");
+                } else {
+                    assert_eq!(row.terminal_outcome.as_deref(), Some("error"));
+                    let history = owners.runtime.read_run_for_delivery(&fixture.agent_id, &fixture.automation_id, run).unwrap().unwrap();
+                    assert_eq!(history.status, "error");
+                    assert_eq!(history.detail.as_deref(), Some(if kind == "typed-failed" {
+                        "controlled executed failure"
+                    } else { "controlled raw executor error" }));
+                    assert_eq!(row.terminal_detail, history.detail);
+                    let observations = owners.observations.lock().unwrap();
+                    assert_eq!(observations.len(), 1);
+                    assert_eq!(observations[0].automation_run_id.as_deref(), Some(run));
+                    assert_eq!(observations[0].outcome, FireAutomationOutcome::Error);
+                }
+            }
         });
     }
 }

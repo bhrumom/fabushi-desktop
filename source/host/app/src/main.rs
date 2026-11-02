@@ -173,7 +173,8 @@ use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     WorkflowCommandError, WorkflowRunNowPlan,
 };
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
-    AutomationExecutionResult, AutomationRunFenceSnapshot, FireAutomationOutcome,
+    AutomationExecutionResult, AutomationRunAttempt, AutomationRunFenceSnapshot,
+    FireAutomationOutcome,
 };
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
     AutomationCommandError, AutomationRuntime, dispatch_automation_command,
@@ -3652,7 +3653,7 @@ impl UnifiedGatewayApi {
                         thread::Builder::new()
                             .name("mahayana-automation-cloud-fire".into())
                             .spawn(move || {
-                                let result = runtime.run_server_scheduled_automation_with(
+                                let result = runtime.run_server_scheduled_automation_attempt_with(
                                     &agent_id,
                                     &automation_id,
                                     run_uuid,
@@ -3711,7 +3712,9 @@ impl UnifiedGatewayApi {
                                     Some(run_uuid),
                                     executor,
                                 );
-                                completion(automation_fire_completion(result));
+                                completion(automation_fire_completion(
+                                    result.map(AutomationRunAttempt::Outcome),
+                                ));
                             })
                             .is_ok()
                     }
@@ -5773,17 +5776,21 @@ fn dispatch_checked_production_backend_fire(
 }
 
 fn automation_fire_completion(
-    result: Result<Option<FireAutomationOutcome>, String>,
+    result: Result<AutomationRunAttempt, String>,
 ) -> Option<FireCompletion> {
     match result {
-        Ok(Some(FireAutomationOutcome::Ok)) => Some(FireCompletion::succeeded()),
-        Ok(Some(FireAutomationOutcome::Error)) => Some(FireCompletion::failed(
+        Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Ok))) => Some(FireCompletion::succeeded()),
+        Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Error))) => Some(FireCompletion::failed(
             "Automation run failed on the Sand box",
         )),
-        Ok(Some(FireAutomationOutcome::Interrupted)) => Some(FireCompletion::failed(
+        Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Interrupted))) => Some(FireCompletion::failed(
             "Automation run was interrupted on the Sand box",
         )),
-        Ok(None) => None,
+        // This invocation never obtained a fresh run identity. The actual
+        // callback must abandon its volatile backend claim without reporting
+        // a terminal receipt for another owner's Running or unknown history.
+        Ok(AutomationRunAttempt::AdmissionRefused { .. })
+        | Ok(AutomationRunAttempt::Outcome(None)) => None,
         Err(error) => Some(FireCompletion::failed(error)),
     }
 }
@@ -17390,7 +17397,7 @@ mod tests {
         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
-        AutomationExecutionResult, automation_fire_completion, automation_terminal_from_event,
+        AutomationExecutionResult, AutomationRunAttempt, automation_fire_completion, automation_terminal_from_event,
         background_revival_admission_args, listener_connect_resume_prompt,
         BackgroundWakes, drain_channel_revival_batches,
         starts_new_local_tool_direction,
@@ -19064,11 +19071,24 @@ mod tests {
 
     #[test]
     fn backend_fire_completion_preserves_retryable_none_and_terminal_outcomes() {
-        assert_eq!(automation_fire_completion(Ok(None)), None);
+        use mahayana_host_runtime::extensions::transcript::automation_run_path::AutomationAdmissionStage;
+        assert_eq!(automation_fire_completion(Ok(AutomationRunAttempt::Outcome(None))), None);
+        for stage in [
+            AutomationAdmissionStage::RuntimeAdmission,
+            AutomationAdmissionStage::HistoryPrecheck,
+            AutomationAdmissionStage::SpendGuard,
+            AutomationAdmissionStage::NoticeBookkeeping,
+            AutomationAdmissionStage::RunBookkeeping,
+            AutomationAdmissionStage::FreshHistory,
+        ] {
+            assert_eq!(automation_fire_completion(Ok(AutomationRunAttempt::AdmissionRefused {
+                stage, detail: "admission refused before a fresh identity".into(),
+            })), None);
+        }
         assert_eq!(
-            automation_fire_completion(Ok(Some(
+            automation_fire_completion(Ok(AutomationRunAttempt::Outcome(Some(
                 mahayana_host_runtime::extensions::transcript::automation_run_path::FireAutomationOutcome::Ok
-            )))
+            ))))
             .expect("success completion")
             .status,
             "succeeded"
@@ -19443,7 +19463,9 @@ mod tests {
                     )
                 },
             );
-            let projected_completion = automation_fire_completion(outcome.clone());
+            let projected_completion = automation_fire_completion(
+                outcome.clone().map(AutomationRunAttempt::Outcome),
+            );
             completed.send((outcome, projected_completion)).expect("completion boundary");
         });
         after_deadline.recv_timeout(Duration::from_secs(10)).expect("waiter continues after deadline");

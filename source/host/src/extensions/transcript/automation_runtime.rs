@@ -14,7 +14,8 @@ use super::automation_event_fires::{
     AutomationEventFires, DroppedFire, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
 };
 use super::automation_run_path::{
-    AutomationExecutionResult, AutomationRunFenceSnapshot, AutomationRunPath,
+    AutomationAdmissionStage, AutomationExecutionResult, AutomationRunAttempt,
+    AutomationRunFenceSnapshot, AutomationRunPath,
     AutomationRunStore, AutomationRunTrigger, CronSessionRetentionPolicy,
     CronSessionSweepThrottle, FireAutomationArgs, FireAutomationOutcome,
     parse_cron_session_retention,
@@ -832,68 +833,106 @@ impl AutomationRuntime {
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
+        self.run_background_automation_attempt_with(
+            agent_id,
+            automation_id,
+            trigger,
+            events,
+            run_uuid,
+            coalesced_run_uuids,
+            fired_at_ms,
+            scheduled_for_ms,
+            execute,
+        )?.into_legacy_outcome()
+    }
+
+    pub fn run_background_automation_attempt_with<Execute>(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        trigger: AutomationRunTrigger,
+        events: Vec<Value>,
+        run_uuid: Option<String>,
+        coalesced_run_uuids: Vec<String>,
+        fired_at_ms: f64,
+        scheduled_for_ms: Option<f64>,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
         if !trigger.is_background() {
             return Err("background automation run requires schedule or event trigger".into());
         }
         if self.wakes_suspended() {
-            return Ok(None);
+            return Ok(AutomationRunAttempt::Outcome(None));
         }
         // Spend Guard owns the Session filesystem/admission boundary. Keep
         // only this Runtime's mutation mutex here so the Session lock is not
         // acquired recursively.
-        let Some((store, automation, reminder)) = self.with_agent_mutation_lock(agent_id, || {
-            let store = self.automation_store(agent_id)?;
-            let Some(automation) = store.get(automation_id) else {
-                return Ok(None);
-            };
-            // Refuse a known claimed identity before Spend Guard, notice, and
-            // last-run writes. The Session-admitted begin_fresh_run below is
-            // the authoritative race fence for concurrent ingress.
-            let claimed_ids = run_uuid.iter().map(String::as_str)
-                .chain(coalesced_run_uuids.iter().map(String::as_str));
-            let checked_ids = claimed_ids.collect::<Vec<_>>();
-            if !checked_ids.is_empty() {
-                let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
-                session.with_admitted_filesystem_mutation(agent_id, || {
-                    for id in &checked_ids {
-                        if store.read_run_for_delivery(automation_id, id)
-                            .map_err(|error| error.to_string())?
-                            .is_some()
-                        {
-                            return Err("automation run identity has already been admitted".to_string());
+        let prepared = self.with_agent_mutation_lock(agent_id, || {
+            // Carry the stage as data through the existing String-error lock
+            // boundary; only these explicit pre-admission operations refuse.
+            Ok((|| {
+                let store = self.automation_store(agent_id)
+                    .map_err(|detail| (AutomationAdmissionStage::RuntimeAdmission, detail))?;
+                let Some(automation) = store.get(automation_id) else {
+                    return Ok(None);
+                };
+                // Refuse a known claimed identity before Spend Guard, notice, and
+                // last-run writes. The Session-admitted begin_fresh_run below is
+                // the authoritative race fence for concurrent ingress.
+                let claimed_ids = run_uuid.iter().map(String::as_str)
+                    .chain(coalesced_run_uuids.iter().map(String::as_str));
+                let checked_ids = claimed_ids.collect::<Vec<_>>();
+                if !checked_ids.is_empty() {
+                    let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
+                    session.with_admitted_filesystem_mutation(agent_id, || {
+                        for id in &checked_ids {
+                            if store.read_run_for_delivery(automation_id, id)
+                                .map_err(|error| error.to_string())?
+                                .is_some()
+                            {
+                                return Err("automation run identity has already been admitted".to_string());
+                            }
                         }
-                    }
-                    Ok(())
-                })?;
+                        Ok(())
+                    }).map_err(|detail| (AutomationAdmissionStage::HistoryPrecheck, detail))?;
+                }
+                let before = store.list_definitions();
+                let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
+                let guard = self.spend_guard.apply_with_store(
+                    agent_id,
+                    &store,
+                    automation_id,
+                    fired_at_ms,
+                ).map_err(|detail| (AutomationAdmissionStage::SpendGuard, detail))?;
+                let after_guard = store.list_definitions();
+                let _ = self.record_changes(
+                    agent_id,
+                    &before,
+                    &after_guard,
+                    AutomationLifecycleSource::SpendGuard,
+                );
+                if guard.paused {
+                    self.event_fires.report_fire_dropped(DroppedFire {
+                        agent_id: agent_id.to_string(),
+                        trigger,
+                        reason: "user_away_paused".into(),
+                        scheduled_for_ms: None,
+                        run_uuid: run_uuid.clone(),
+                    });
+                    return Ok(None);
+                }
+                Ok(Some((store, automation, guard.reminder)))
+            })())
+        })?;
+        let (store, automation, reminder) = match prepared {
+            Ok(Some(prepared)) => prepared,
+            Ok(None) => return Ok(AutomationRunAttempt::Outcome(None)),
+            Err((stage, detail)) => {
+                return Ok(AutomationRunAttempt::AdmissionRefused { stage, detail });
             }
-            let before = store.list_definitions();
-            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
-            let guard = self.spend_guard.apply_with_store(
-                agent_id,
-                &store,
-                automation_id,
-                fired_at_ms,
-            )?;
-            let after_guard = store.list_definitions();
-            let _ = self.record_changes(
-                agent_id,
-                &before,
-                &after_guard,
-                AutomationLifecycleSource::SpendGuard,
-            );
-            if guard.paused {
-                self.event_fires.report_fire_dropped(DroppedFire {
-                    agent_id: agent_id.to_string(),
-                    trigger,
-                    reason: "user_away_paused".into(),
-                    scheduled_for_ms: None,
-                    run_uuid: run_uuid.clone(),
-                });
-                return Ok(None);
-            }
-            Ok(Some((store, automation, guard.reminder)))
-        })? else {
-            return Ok(None);
         };
 
         let args = FireAutomationArgs {
@@ -915,12 +954,17 @@ impl AutomationRuntime {
             agent_id,
             store: &store,
         };
-        let outcome = self.run_path.fire_automation_with_on_duplicate(
+        let outcome = self.run_path.fire_automation_attempt_with_on_duplicate(
             &admitted_store,
             args,
             move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
             execute,
         )?;
+        if matches!(&outcome, AutomationRunAttempt::AdmissionRefused { .. }) {
+            // The legacy error skipped this final lifecycle reconciliation.
+            // Preserve that boundary for both typed and compatibility callers.
+            return Ok(outcome);
+        }
         self.with_agent_mutation_lock(agent_id, || {
             let current = store.list_definitions();
             let _ = self.record_changes(
@@ -1003,6 +1047,30 @@ impl AutomationRuntime {
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
         self.run_background_automation_with(
+            agent_id,
+            automation_id,
+            AutomationRunTrigger::Schedule,
+            Vec::new(),
+            Some(run_uuid),
+            Vec::new(),
+            now_ms(),
+            scheduled_for_ms,
+            execute,
+        )
+    }
+
+    pub fn run_server_scheduled_automation_attempt_with<Execute>(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_uuid: String,
+        scheduled_for_ms: Option<f64>,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
+        self.run_background_automation_attempt_with(
             agent_id,
             automation_id,
             AutomationRunTrigger::Schedule,

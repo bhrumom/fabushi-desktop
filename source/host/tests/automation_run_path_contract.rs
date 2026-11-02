@@ -1,12 +1,15 @@
 use std::fs;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationRun, AutomationSpec};
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
+use mahayana_host_runtime::automations::routine_notices::GITHUB_LISTENER_SCOPE;
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
-    AutomationExecutionResult, AutomationRunObservation, AutomationRunPath, AutomationRunTrigger,
+    AutomationAdmissionStage, AutomationExecutionResult, AutomationRunAttempt,
+    AutomationRunObservation, AutomationRunPath, AutomationRunStore, AutomationRunTrigger,
     CronSessionRetentionPolicy, CronSessionSweepThrottle, FireAutomationArgs,
     FireAutomationOutcome, CRON_SESSION_RETENTION_DEFAULT_MS, CRON_SESSION_SWEEP_THROTTLE_MS,
     build_automation_wake_prompt,
@@ -397,4 +400,358 @@ fn settled_run_reports_real_timing_schedule_and_event_batch() {
     assert!(report.duration_ms >= 0.0);
 
     let _ = fs::remove_dir_all(root);
+}
+
+const ADMISSION_DETAIL: &str = "same operation failure\n  preserve exact detail  ";
+const SETTLEMENT_DETAIL: &str = "history settlement did not commit";
+static ADMISSION_FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+fn admission_fixture(label: &str) -> (std::path::PathBuf, FileAutomationStore, AutomationRecord) {
+    let sequence = ADMISSION_FIXTURE_SEQUENCE.fetch_update(
+        Ordering::Relaxed, Ordering::Relaxed, |value| value.checked_add(1),
+    ).expect("admission fixture sequence");
+    let base = std::env::var_os("FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
+    let root = base.join(format!(
+        "fabushi-automation-run-path-ba-{label}-{}-{sequence}", std::process::id(),
+    ));
+    fs::create_dir(&root).expect("exclusively claim admission fixture");
+    fs::write(root.join("fixture-allocation.json"), json!({
+        "case": label, "processId": std::process::id(), "sequence": sequence,
+    }).to_string()).expect("retain allocation evidence on failure");
+    eprintln!("[automation-run-path] admission fixture {}", root.display());
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    (root, store, automation)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RunPathFault {
+    Notice,
+    Record,
+    Begin,
+    EmptyId,
+    CronAdmission,
+    CronAdmissionAndCleanup,
+    Finish,
+}
+
+// Each selected operation alone refuses; all successful history operations use
+// the actual file owner. Session and backend oracles exercise their real owners
+// in automation_run_production_wiring_contract and the shipping app tests.
+struct RunPathFaultStore<'a> {
+    store: &'a FileAutomationStore,
+    fault: Option<RunPathFault>,
+    calls: Mutex<Vec<&'static str>>,
+}
+
+impl AutomationRunStore for RunPathFaultStore<'_> {
+    fn resolved_user_time_zone(&self) -> Option<String> {
+        self.store.resolved_user_time_zone()
+    }
+
+    fn mark_notice_raised(&self, id: &str, notice: &str) -> Result<Option<AutomationRecord>, String> {
+        self.calls.lock().unwrap().push("notice");
+        if self.fault == Some(RunPathFault::Notice) {
+            return Err(ADMISSION_DETAIL.into());
+        }
+        self.store.mark_notice_raised(id, notice).map_err(|error| error.to_string())
+    }
+
+    fn record_run(&self, id: &str, at: f64) -> Result<Option<AutomationRecord>, String> {
+        self.calls.lock().unwrap().push("record");
+        if self.fault == Some(RunPathFault::Record) {
+            return Err(ADMISSION_DETAIL.into());
+        }
+        self.store.record_run(id, at).map_err(|error| error.to_string())
+    }
+
+    fn begin_run(
+        &self, id: &str, trigger: &str, at: f64, event: Option<&str>,
+        run_id: Option<&str>, aliases: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.calls.lock().unwrap().push("begin");
+        if self.fault == Some(RunPathFault::Begin) {
+            return Err(ADMISSION_DETAIL.into());
+        }
+        if self.fault == Some(RunPathFault::EmptyId) {
+            return Ok(Some(AutomationRun {
+                id: String::new(), trigger: trigger.into(), started_at: at,
+                finished_at: None, status: "running".into(), detail: None,
+                event: None, coalesced_run_ids: None,
+            }));
+        }
+        self.store.begin_fresh_run(id, trigger, at, event, run_id, aliases)
+            .map_err(|error| error.to_string())
+    }
+
+    fn finish_run(
+        &self, id: &str, run_id: &str, status: &str, at: f64, detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.calls.lock().unwrap().push("finish");
+        if matches!(self.fault, Some(RunPathFault::Finish | RunPathFault::CronAdmissionAndCleanup)) {
+            return Err(SETTLEMENT_DETAIL.into());
+        }
+        self.store.finish_run(id, run_id, status, at, detail).map_err(|error| error.to_string())
+    }
+
+    fn begin_cron_session_run(&self, _: &str, _: &str, _: &str, _: f64) -> Result<(), String> {
+        self.calls.lock().unwrap().push("cron_begin");
+        if matches!(self.fault, Some(RunPathFault::CronAdmission | RunPathFault::CronAdmissionAndCleanup)) {
+            return Err(ADMISSION_DETAIL.into());
+        }
+        Ok(())
+    }
+
+    fn finish_cron_session_run(
+        &self, _: &str, _: &str, _: &str, _: &str, _: f64, _: Option<&str>,
+    ) -> Result<(), String> {
+        self.calls.lock().unwrap().push("cron_finish");
+        Ok(())
+    }
+}
+
+#[test]
+fn typed_run_path_refusals_preserve_exact_legacy_errors_and_release_occupancy() {
+    for trigger in [AutomationRunTrigger::Manual, AutomationRunTrigger::Schedule, AutomationRunTrigger::Event] {
+        for fault in [RunPathFault::Notice, RunPathFault::Record, RunPathFault::Begin, RunPathFault::EmptyId] {
+            let (root, store, mut automation) = admission_fixture(&format!("{trigger:?}-{fault:?}"));
+            if fault == RunPathFault::Notice {
+                automation = store.update(&automation.id, &AutomationSpec {
+                    name: automation.name.clone(), prompt: automation.prompt.clone(),
+                    trigger: json!({"type":"github","repo":"org/repo","events":["pr-opened"]}),
+                    is_enabled: Some(true),
+                }).unwrap().expect("actual definition requiring a routine notice");
+            }
+            let config_path = store.config_path(&automation.id);
+            let before_config = fs::read(&config_path).unwrap();
+            let path = AutomationRunPath::default();
+            let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+            let sink = Arc::clone(&observed);
+            path.set_run_reporter(Some(Arc::new(move |report| sink.lock().unwrap().push(report.clone()))));
+            let mut fault_store = RunPathFaultStore { store: &store, fault: Some(fault), calls: Mutex::new(Vec::new()) };
+            let mut args = FireAutomationArgs::manual("agent-1", automation.clone(), 2_500.0);
+            args.trigger = trigger;
+            args.run_uuid = Some("refused-attempt".into());
+            let (stage, detail, expected_calls): (_, _, &[&str]) = match fault {
+                RunPathFault::Notice => (AutomationAdmissionStage::NoticeBookkeeping, ADMISSION_DETAIL, &["notice"]),
+                RunPathFault::Record => (AutomationAdmissionStage::RunBookkeeping, ADMISSION_DETAIL, &["record"]),
+                RunPathFault::Begin => (AutomationAdmissionStage::FreshHistory, ADMISSION_DETAIL, &["record", "begin"]),
+                RunPathFault::EmptyId => (AutomationAdmissionStage::FreshHistory, if trigger.is_background() {
+                    "background automation run did not produce a durable run identity"
+                } else {
+                    "manual automation run did not produce a durable run identity"
+                }, &["record", "begin"]),
+                _ => unreachable!("admission fault cases"),
+            };
+            let mut executions = 0;
+            let typed = path.fire_automation_attempt_with_on_duplicate(
+                &fault_store, args.clone(), |_| panic!("first attempt cannot be a duplicate"), |_| {
+                    executions += 1;
+                    Ok(AutomationExecutionResult::Completed)
+                },
+            );
+            assert_eq!(typed, Ok(AutomationRunAttempt::AdmissionRefused { stage, detail: detail.into() }));
+            assert_eq!(fault_store.calls.lock().unwrap().as_slice(), expected_calls);
+            assert_eq!(executions, 0);
+            assert!(observed.lock().unwrap().is_empty());
+            assert!(!path.is_in_flight("agent-1", &automation.id));
+            assert!(!store.runs_path(&automation.id).exists());
+            if matches!(fault, RunPathFault::Notice | RunPathFault::Record) {
+                assert_eq!(fs::read(&config_path).unwrap(), before_config);
+            } else {
+                assert_eq!(store.get(&automation.id).unwrap().last_run_at, Some(2_500.0));
+            }
+
+            fault_store.calls.lock().unwrap().clear();
+            let legacy = path.fire_automation_with_on_duplicate(
+                &fault_store, args, |_| panic!("refusal must release duplicate occupancy"), |_| {
+                    executions += 1;
+                    Ok(AutomationExecutionResult::Completed)
+                },
+            );
+            assert_eq!(legacy, Err(detail.to_string()));
+            assert_eq!(fault_store.calls.lock().unwrap().as_slice(), expected_calls);
+            assert_eq!(executions, 0);
+            assert!(observed.lock().unwrap().is_empty());
+            assert!(!path.is_in_flight("agent-1", &automation.id));
+            assert!(!store.runs_path(&automation.id).exists());
+
+            fault_store.fault = None;
+            fault_store.calls.lock().unwrap().clear();
+            let mut next = FireAutomationArgs::manual("agent-1", store.get(&automation.id).unwrap(), 3_000.0);
+            next.trigger = trigger;
+            next.run_uuid = Some("independent-after-refusal".into());
+            let completed = path.fire_automation_attempt_with(&fault_store, next, |_| {
+                executions += 1;
+                let admitted = store.read_runs(&automation.id);
+                assert_eq!(admitted.len(), 1);
+                assert_eq!(admitted[0].id, "independent-after-refusal");
+                assert_eq!(admitted[0].status, "running");
+                Ok(AutomationExecutionResult::Completed)
+            });
+            assert_eq!(completed, Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Ok))));
+            assert_eq!(executions, 1);
+            let runs = store.read_runs(&automation.id);
+            assert_eq!(runs.len(), 1);
+            assert_eq!(runs[0].id, "independent-after-refusal");
+            assert_eq!(runs[0].status, "ok");
+            assert_eq!(observed.lock().unwrap().len(), 1);
+            assert!(!path.is_in_flight("agent-1", &automation.id));
+            if fault == RunPathFault::Notice {
+                assert!(store.get(&automation.id).unwrap().raised_notices.iter().any(|notice| notice == GITHUB_LISTENER_SCOPE));
+            }
+            fs::remove_dir_all(root).expect("remove only the successful owned fixture");
+        }
+    }
+}
+
+#[test]
+fn typed_run_path_missing_definition_refuses_without_identity_and_allows_repair() {
+    for trigger in [AutomationRunTrigger::Manual, AutomationRunTrigger::Schedule, AutomationRunTrigger::Event] {
+        let (root, store, automation) = admission_fixture(&format!("missing-{trigger:?}"));
+        let config = store.read_config(&automation.id).unwrap();
+        assert!(store.remove(&automation.id).unwrap());
+        let path = AutomationRunPath::default();
+        let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+        let sink = Arc::clone(&observed);
+        path.set_run_reporter(Some(Arc::new(move |report| sink.lock().unwrap().push(report.clone()))));
+        let mut args = FireAutomationArgs::manual("agent-1", automation.clone(), 2_500.0);
+        args.trigger = trigger;
+        let detail = if trigger.is_background() {
+            "background automation run did not produce a durable run identity"
+        } else {
+            "manual automation run did not produce a durable run identity"
+        };
+        assert_eq!(path.fire_automation_attempt_with(&store, args.clone(), |_| panic!("missing identity cannot execute")),
+            Ok(AutomationRunAttempt::AdmissionRefused { stage: AutomationAdmissionStage::FreshHistory, detail: detail.into() }));
+        assert!(!path.is_in_flight("agent-1", &automation.id));
+        assert_eq!(path.fire_automation_with(&store, args, |_| panic!("legacy missing identity cannot execute")),
+            Err(detail.into()));
+        assert!(!path.is_in_flight("agent-1", &automation.id));
+        assert!(!store.get_location().join(&automation.id).exists());
+        assert!(observed.lock().unwrap().is_empty());
+
+        store.write_config(&automation.id, &config).unwrap();
+        let mut next = FireAutomationArgs::manual("agent-1", automation.clone(), 3_000.0);
+        next.trigger = trigger;
+        next.run_uuid = Some("independent-after-repair".into());
+        let mut executions = 0;
+        assert_eq!(path.fire_automation_attempt_with(&store, next, |_| {
+            executions += 1;
+            Ok(AutomationExecutionResult::Completed)
+        }), Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Ok))));
+        assert_eq!(executions, 1);
+        assert_eq!(store.read_runs(&automation.id)[0].id, "independent-after-repair");
+        assert_eq!(store.read_runs(&automation.id)[0].status, "ok");
+        assert_eq!(observed.lock().unwrap().len(), 1);
+        assert!(!path.is_in_flight("agent-1", &automation.id));
+        fs::remove_dir_all(root).expect("remove only the successful owned fixture");
+    }
+}
+
+#[test]
+fn typed_run_path_preserves_admitted_cron_and_settlement_errors() {
+    for fault in [RunPathFault::CronAdmission, RunPathFault::CronAdmissionAndCleanup, RunPathFault::Finish] {
+        let (root, store, automation) = admission_fixture(&format!("admitted-{fault:?}"));
+        let path = AutomationRunPath::default();
+        let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+        let sink = Arc::clone(&observed);
+        path.set_run_reporter(Some(Arc::new(move |report| sink.lock().unwrap().push(report.clone()))));
+        let fault_store = RunPathFaultStore { store: &store, fault: Some(fault), calls: Mutex::new(Vec::new()) };
+        let mut args = FireAutomationArgs::manual("agent-1", automation.clone(), 2_500.0);
+        args.trigger = AutomationRunTrigger::Schedule;
+        args.run_uuid = Some("admitted-run".into());
+        let mut executions = 0;
+        let result = path.fire_automation_attempt_with(&fault_store, args, |_| {
+            executions += 1;
+            assert_eq!(store.read_runs(&automation.id)[0].id, "admitted-run");
+            Ok(AutomationExecutionResult::Completed)
+        });
+        let expected_error = match fault {
+            RunPathFault::CronAdmission => ADMISSION_DETAIL.to_string(),
+            RunPathFault::CronAdmissionAndCleanup => format!(
+                "{ADMISSION_DETAIL}; failed to settle automation history after cron admission rejection: {SETTLEMENT_DETAIL}"
+            ),
+            RunPathFault::Finish => SETTLEMENT_DETAIL.to_string(),
+            _ => unreachable!("admitted failure cases"),
+        };
+        assert_eq!(result, Err(expected_error), "an accepted history ID must not become AdmissionRefused");
+        assert_eq!(executions, if fault == RunPathFault::Finish { 1 } else { 0 });
+        let expected_calls: &[&str] = if fault == RunPathFault::Finish {
+            &["record", "begin", "cron_begin", "cron_finish", "finish"]
+        } else {
+            &["record", "begin", "cron_begin", "finish"]
+        };
+        assert_eq!(fault_store.calls.lock().unwrap().as_slice(), expected_calls);
+        let runs = store.read_runs(&automation.id);
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].id, "admitted-run");
+        if fault == RunPathFault::CronAdmission {
+            assert_eq!(runs[0].status, "error");
+            assert_eq!(runs[0].detail.as_deref(), Some(ADMISSION_DETAIL.trim()));
+        } else {
+            assert_eq!(runs[0].status, "running");
+            assert_eq!(runs[0].finished_at, None);
+        }
+        assert!(observed.lock().unwrap().is_empty());
+        assert!(!path.is_in_flight("agent-1", &automation.id));
+        fs::remove_dir_all(root).expect("remove only the successful owned fixture");
+    }
+}
+
+#[test]
+fn typed_run_path_preserves_executed_terminal_and_retained_outcomes() {
+    let cases = [
+        ("success", Ok(AutomationExecutionResult::Completed), Some(FireAutomationOutcome::Ok)),
+        ("failure", Ok(AutomationExecutionResult::Failed { detail: ADMISSION_DETAIL.into() }), Some(FireAutomationOutcome::Error)),
+        ("executor-error", Err(ADMISSION_DETAIL.to_string()), Some(FireAutomationOutcome::Error)),
+        ("interrupted", Ok(AutomationExecutionResult::Interrupted { detail: ADMISSION_DETAIL.into(), quiesced_for_upgrade: true }), Some(FireAutomationOutcome::Interrupted)),
+        ("retained", Ok(AutomationExecutionResult::RetainedUnsettled { terminal: Box::new(AutomationExecutionResult::Completed) }), None),
+    ];
+    for (label, execution, expected) in cases {
+        let (root, store, automation) = admission_fixture(label);
+        let path = AutomationRunPath::default();
+        let observed = Arc::new(Mutex::new(Vec::<AutomationRunObservation>::new()));
+        let sink = Arc::clone(&observed);
+        path.set_run_reporter(Some(Arc::new(move |report| sink.lock().unwrap().push(report.clone()))));
+        let owner = RunPathFaultStore { store: &store, fault: None, calls: Mutex::new(Vec::new()) };
+        let mut args = FireAutomationArgs::manual("agent-1", automation.clone(), 2_500.0);
+        args.trigger = AutomationRunTrigger::Schedule;
+        args.run_uuid = Some("executed-run".into());
+        let mut executions = 0;
+        let result = path.fire_automation_attempt_with(&owner, args, |_| {
+            executions += 1;
+            let running = store.read_runs(&automation.id);
+            assert_eq!(running.len(), 1);
+            assert_eq!(running[0].id, "executed-run");
+            assert_eq!(running[0].status, "running");
+            execution
+        });
+        assert_eq!(result, Ok(AutomationRunAttempt::Outcome(expected)));
+        assert_eq!(executions, 1);
+        assert!(!path.is_in_flight("agent-1", &automation.id));
+        let runs = store.read_runs(&automation.id);
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].id, "executed-run");
+        let reports = observed.lock().unwrap();
+        match expected {
+            None => {
+                assert_eq!(runs[0].status, "running");
+                assert_eq!(runs[0].finished_at, None);
+                assert!(reports.is_empty());
+                assert_eq!(owner.calls.lock().unwrap().as_slice(), &["record", "begin", "cron_begin"]);
+            }
+            Some(outcome) => {
+                assert_eq!(runs[0].status, if outcome == FireAutomationOutcome::Ok { "ok" } else { "error" });
+                assert_eq!(runs[0].finished_at, Some(2_500.0));
+                assert_eq!(reports.len(), 1);
+                assert_eq!(reports[0].outcome, outcome);
+                assert_eq!(reports[0].automation_run_id.as_deref(), Some("executed-run"));
+                assert_eq!(owner.calls.lock().unwrap().as_slice(), &["record", "begin", "cron_begin", "cron_finish", "finish"]);
+            }
+        }
+        fs::remove_dir_all(root).expect("remove only the successful owned fixture");
+    }
 }

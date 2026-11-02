@@ -295,6 +295,7 @@ jobs:
               "source/host/src/automations/automation_store.rs",
               "source/host/src/extensions/automations/fire_delivery.rs",
               "source/host/src/extensions/transcript/automation_runtime.rs",
+              "source/host/src/extensions/transcript/automation_run_path.rs",
               "source/host/src/extensions/session/agent_session.rs",
               "source/host/src/extensions/session/production.rs",
               "source/host/app/src/tests/automation_terminal_custody_tests.rs",
@@ -303,6 +304,7 @@ jobs:
               "source/host/tests/automation_run_production_wiring_contract.rs",
               "source/host/tests/automations_backend_contract.rs",
               "source/host/tests/automation_runtime_contract.rs",
+              "source/host/tests/automation_run_path_contract.rs",
               "source/host/tests/agent_session_contract.rs",
               "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
               "source/host/src/extensions/attachments/attachments_service.rs",
@@ -542,6 +544,11 @@ jobs:
               tests::automation_terminal_custody_tests::automation_unknown_tool_terminal_retains_durable_run_and_backend_delivery \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire \
+              tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes \
+              tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair \
+              tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay \
+              tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims \
+              tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen \
               tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen \
               tests::background_deadline_retains_session_custody_until_worker_terminal \
@@ -1041,6 +1048,10 @@ jobs:
               "automation_known_run_redelivery_result": "passed",
               "automation_known_run_redelivery_scope": "Actual reopened Session and FileAutomationStore history plus AutomationFireBackendRuntime controlled poll/completion transport refuse known Running original/coalesced IDs without execution, completion or ACK. Distinct IDs and stored terminal replay retain existing behavior. Missing/corrupt/pruned/ambiguous history, durable claims, unknown effects and real backend-service acceptance remain open.",
               "automation_checked_delivery_contract": "AUTO-BACKEND-HISTORY-v2",
+              "automation_admission_refusal_contract": "AUTO-BACKEND-ADMISSION-v1",
+              "automation_admission_refusal_app_tests": ["tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion"],
+              "automation_admission_refusal_result": "passed",
+              "automation_admission_refusal_scope": "Actual typed pre-fresh-ID refusal reaches the shipping mapper and real backend None callback; no terminal POST/ACK for that attempted launch, with real competing claims, capacity, repair and executed/settlement error controls. Subsequent no-revision legacy covered-slot policy, late accepted-invalid mutation inputs, cross-process atomicity, unknown external effects and real backend acceptance remain open.",
               "automation_checked_delivery_app_tests": ["tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen", "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen"],
               "automation_checked_delivery_wiring_tests": ["shipping_backend_fire_returns_checked_owner_discovery_and_callback_boundary", "checked_backend_fire_wiring_oracle_rejects_bypasses_and_dead_calls"],
               "automation_checked_delivery_result": "passed",
@@ -1608,8 +1619,226 @@ jobs:
           print(json.dumps(receipt, indent=2), flush=True)
           raise SystemExit(0 if accepted else 1)
           PY
-      - name: Preserve failed owned native-path fixtures
-        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure') }}
+      - name: Test typed Automation admission and actual owners on the existing Linux Host cache
+        id: automation_admission
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+          FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT: ${{ env.NATIVE_PATH_FIXTURES }}/automation-admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/sqlite-native-path/automation-admission "$FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT"
+          command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test automation_run_path_contract --test automation_run_production_wiring_contract --test automation_runtime_contract --test automation_event_fires_contract --test automation_spend_guard_runtime_contract --test automation_lifecycle_production_wiring_contract --test automations_fire_delivery_contract --test automations_backend_contract --test host_runner_composition_production_wiring_contract -- --test-threads=1)
+          set +e
+          "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/automation-admission/tests.log
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${command[@]}" <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess, sys
+          root = pathlib.Path(".evidence/sqlite-native-path/automation-admission")
+          log = (root / "tests.log").read_bytes()
+          cargo_exit, capture_exit = map(int, sys.argv[1:3])
+          required = [
+              "typed_run_path_refusals_preserve_exact_legacy_errors_and_release_occupancy",
+              "typed_run_path_missing_definition_refuses_without_identity_and_allows_repair",
+              "typed_run_path_preserves_admitted_cron_and_settlement_errors",
+              "typed_run_path_preserves_executed_terminal_and_retained_outcomes",
+              "real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors",
+              "real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images",
+              "real_typed_spend_guard_refusal_preserves_order_and_recovers",
+              "real_typed_admitted_failures_keep_existing_outcomes_and_outer_errors",
+              "real_full_running_history_refuses_before_cron_or_executor_and_checked_read_obeys_deletion",
+              "shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback",
+              "typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls",
+          ]
+          text = log.decode("utf-8", errors="replace")
+          # A bounded child's inherited stdout can split its parent's test/ok
+          # line. A prefix alone is not a pass: require successful, nonempty
+          # summaries for every Cargo target, no ignored/failed summaries and
+          # both successful process/capture exits. Each bounded case also
+          # asserts its exact child's durable completion receipt internally.
+          invoked = re.findall(r"^test (\S+) \.\.\.(?: |$)", text, re.MULTILINE)
+          summaries = re.findall(r"^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;", text, re.MULTILINE)
+          summaries_pass = len(summaries) >= 9 and all(
+              status == "ok" and int(passed) > 0 and int(failed) == 0 and int(ignored) == 0
+              for status, passed, failed, ignored in summaries
+          )
+          occurrences = {name: invoked.count(name) for name in required}
+          missing = [name for name, count in occurrences.items() if count == 0]
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and head == os.environ["FABUSHI_TARGET_SHA"]
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+              "source/host/src/extensions/transcript/automation_run_path.rs",
+              "source/host/src/extensions/transcript/automation_runtime.rs",
+              "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs",
+              "source/host/src/extensions/transcript/automation_event_fires.rs",
+              "source/host/src/automations/automation_store.rs",
+              "source/host/src/extensions/session/agent_session.rs", "source/host/src/extensions/session/production.rs",
+              "source/host/src/extensions/automations/fire_delivery.rs",
+              "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+              "source/host/app/src/main.rs",
+              "source/host/tests/automation_run_path_contract.rs",
+              "source/host/tests/automation_run_production_wiring_contract.rs",
+              "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+          ]
+          receipt = {
+              "contract": "AUTO-BACKEND-ADMISSION-v1", "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "command": sys.argv[3:], "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+              "required_tests": required, "required_invocation_occurrences": occurrences,
+              "missing_named_invocations": missing, "observed_invoked_test_names": invoked,
+              "target_and_owned_child_summaries": summaries, "summaries_pass": summaries_pass,
+              "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+              "log_sha256": hashlib.sha256(log).hexdigest(),
+              "result": "passed" if accepted else "failed",
+              "scope": "Actual Linux RunPath/Runtime/Session/FileStore admission refusal, legacy/error/retained controls and shipping-source callback wiring. Owned-child receipts remain required by each bounded case. This is not actual App execution, macOS/platform or real backend acceptance; legacy covered-slot and late accepted-invalid mutation inputs remain open.",
+          }
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
+          PY
+      - name: Check and execute the actual Automation App owners on Linux
+        id: automation_app
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+          FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT: ${{ env.NATIVE_PATH_FIXTURES }}/automation-app
+          CARGO_TARGET_DIR: ${{ github.workspace }}/source/host/target
+          CARGO_BUILD_JOBS: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/sqlite-native-path/automation-app "$FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess, sys, traceback
+          root = pathlib.Path(".evidence/sqlite-native-path/automation-app")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+              "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+              "source/host/src/extensions/transcript/automation_run_path.rs",
+              "source/host/src/extensions/transcript/automation_runtime.rs",
+              "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs",
+              "source/host/src/automations/automation_store.rs",
+              "source/host/src/extensions/session/agent_session.rs", "source/host/src/extensions/session/production.rs",
+              "source/host/src/extensions/automations/fire_delivery.rs",
+              "source/host/src/extensions/automations/production.rs",
+              "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+          ]
+          receipt = {
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1",
+              "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "cwd": str(pathlib.Path.cwd()),
+              "environment": {key: os.environ[key] for key in ("TMPDIR", "FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT", "CARGO_TARGET_DIR", "CARGO_BUILD_JOBS")},
+              "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
+              "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+              "commands": [], "cases": [], "result": "failed",
+              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact shipping-helper/mapper/backend callback cases with controlled external transport and executor. Not a linked production package/startup, real external provider/backend, macOS or whole-platform acceptance. Legacy covered-slot and late accepted-invalid mutation inputs remain open.",
+          }
+          def save():
+              (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          def run(command, stem, print_stdout=True):
+              stdout_path, stderr_path = root / (stem + ".stdout.log"), root / (stem + ".stderr.log")
+              with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+                  result = subprocess.run(command, stdout=stdout, stderr=stderr, check=False)
+              out, err = stdout_path.read_bytes(), stderr_path.read_bytes()
+              receipt["commands"].append({
+                  "argv": list(command), "exit": result.returncode,
+                  "stdout": str(stdout_path), "stderr": str(stderr_path),
+                  "stdout_sha256": hashlib.sha256(out).hexdigest(), "stderr_sha256": hashlib.sha256(err).hexdigest(),
+              })
+              save()
+              print(json.dumps({"command": command, "exit": result.returncode}), flush=True)
+              if print_stdout:
+                  print(out.decode("utf-8", errors="replace"), flush=True)
+              elif result.returncode != 0:
+                  # Keep complete Cargo JSON in the artifact and expose the
+                  # compiler's actual diagnostics in the failed job log.
+                  for line in out.decode("utf-8", errors="replace").splitlines():
+                      try:
+                          event = json.loads(line)
+                      except ValueError:
+                          print(line, flush=True)
+                          continue
+                      if event.get("reason") == "compiler-message":
+                          print(event.get("message", {}).get("rendered", line), flush=True)
+              print(err.decode("utf-8", errors="replace"), flush=True)
+              if result.returncode != 0:
+                  raise RuntimeError("command failed: " + stem)
+              return out.decode("utf-8", errors="replace")
+          try:
+              if head != os.environ["FABUSHI_TARGET_SHA"]:
+                  raise RuntimeError("actual App subject HEAD mismatch")
+              save()
+              cargo = ["cargo", "check", "--locked", "--manifest-path", "source/host/app/Cargo.toml", "--bin", "mahayana-app-host"]
+              run(cargo, "shipping-check")
+              cargo[1] = "test"
+              build_output = run(cargo + ["--no-run", "--message-format=json"], "test-build", print_stdout=False)
+              executables = set()
+              for line in build_output.splitlines():
+                  event = json.loads(line)
+                  target = event.get("target", {})
+                  if (event.get("reason") == "compiler-artifact" and target.get("name") == "mahayana-app-host"
+                      and target.get("kind") == ["bin"] and event.get("profile", {}).get("test") is True
+                      and pathlib.Path(target["src_path"]).resolve() == pathlib.Path("source/host/app/src/main.rs").resolve()
+                      and event.get("executable")):
+                      executables.add(str(pathlib.Path(event["executable"]).resolve()))
+              if len(executables) != 1:
+                  raise RuntimeError("expected one actual App test executable: " + repr(executables))
+              executable = pathlib.Path(executables.pop())
+              if not executable.is_file() or not executable.is_relative_to(pathlib.Path(os.environ["CARGO_TARGET_DIR"]).resolve()):
+                  raise RuntimeError("App executable is outside its owned target directory or absent")
+              receipt["executable"] = {"path": str(executable), "sha256": hashlib.sha256(executable.read_bytes()).hexdigest()}
+              prefix = "tests::automation_terminal_custody_tests::checked_backend_delivery::"
+              required = [prefix + name for name in [
+                  "backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen",
+                  "backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen",
+                  "backend_fire_checked_history_refuses_malformed_custody_across_reopen",
+                  "backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
+                  "backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+                  "backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
+                  "backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
+                  "backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
+              ]] + ["tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes"]
+              receipt["required_tests"] = required
+              save()
+              for index, name in enumerate(required):
+                  listing = run([str(executable), "--exact", name, "--list"], f"case-{index}-list")
+                  if re.findall(r"^(.+): test$", listing, re.MULTILINE) != [name]:
+                      raise RuntimeError("exact test selection was absent or ambiguous: " + name)
+                  output = run([str(executable), "--exact", name, "--nocapture", "--test-threads=1"], f"case-{index}-run")
+                  summaries = re.findall(r"^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;", output, re.MULTILINE)
+                  if not summaries or any(summary != ("ok", "1", "0", "0") for summary in summaries):
+                      raise RuntimeError("exact App case lacks one-passed/zero-failed/zero-ignored completion: " + name)
+                  receipt["cases"].append({"name": name, "result": "passed", "outer_and_owned_child_summaries": summaries})
+                  save()
+              if len(receipt["cases"]) != len(required):
+                  raise RuntimeError("missing actual App cases")
+              receipt["result"] = "passed"
+          except Exception:
+              receipt["error"] = traceback.format_exc()
+          finally:
+              save()
+              print(json.dumps(receipt, indent=2), flush=True)
+          sys.exit(0 if receipt["result"] == "passed" else 1)
+          PY
+      - name: Preserve failed owned native-path and Automation fixtures
+        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail

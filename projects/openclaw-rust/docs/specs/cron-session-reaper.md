@@ -1121,3 +1121,125 @@ reader and can reintroduce false completion; disk formats are unchanged. Keep
 all eight completion flags false. Real service compatibility, previously
 normalized/deleted history, lookup-to-begin races, cross-process claims, event
 loss/unknown effects and the full reaper/final OCRM gates remain open.
+
+## Backend admission refusal — AUTO-BACKEND-ADMISSION-v1
+
+Decision **AUTO-BACKEND-ADMISSION-01 — FIX / IMPL_BUG**, before implementation
+against H `4df79ca181c8daa98080dbea0c8e8143c0407e05`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. BH checked preparation is separate
+from Runtime's history precheck and the Session-admitted fresh begin. A refused
+attempt currently returns a String error which the scheduled Host turns into
+failed completion and eventual ACK despite no executor or admitted run for this
+attempt. Twenty retained Running rows with a distinct UUID demonstrate a
+deterministic trigger. Competing claims between the existing boundaries expose
+the same issue. This contract repairs the disposition of refused admission;
+it does not make those boundaries atomic or claim all late input is refused.
+
+- BA-01: Add an in-memory `AutomationRunAttempt` in the existing run-path owner:
+  `Outcome(Option<FireAutomationOutcome>)` or
+  `AdmissionRefused { stage: AutomationAdmissionStage, detail: String }`.
+  Stages are `RuntimeAdmission`, `HistoryPrecheck`, `SpendGuard`,
+  `NoticeBookkeeping`, `RunBookkeeping`, and `FreshHistory`.
+  A refusal means this invocation has not received a nonempty fresh history
+  identity and has not entered its executor. It does not promise zero earlier
+  bookkeeping writes, absent prior ownership, or no write after an IO error.
+  No persisted/wire schema, new state owner, string classification or blanket
+  `From<String>` conversion is permitted.
+- BA-02: Factor the existing run-path body into typed
+  `fire_automation_attempt_with_on_duplicate` and
+  `fire_automation_attempt_with` entry points with one in-flight owner and
+  one execution/settlement body. At the explicit notice, record-run and
+  begin-run operations, return the corresponding refusal on error; missing or
+  empty returned history ID is FreshHistory with the existing exact detail.
+  Existing `fire_automation_with[_on_duplicate]` lower Outcome unchanged and
+  AdmissionRefused to the original String error, preserving manual/UI callers.
+  Duplicate, paused/suspended and RetainedUnsettled results remain Outcome(None).
+  Release volatile occupancy on every normal typed return, including refusal.
+- BA-03: Factor Runtime's background execution into
+  `run_background_automation_attempt_with`; the legacy background wrapper
+  lowers typed refusal to the same String error. Explicit store/Session setup
+  errors use RuntimeAdmission; checked-ID/Session errors or an already claimed
+  primary/alias use HistoryPrecheck; Spend Guard errors use SpendGuard.
+  Preserve current missing-definition/suspended/paused None behavior and
+  bookkeeping/lock order. Feed the typed run-path core through the current
+  AdmittedAutomationRunStore and `begin_fresh_run`; no lock is broadened and
+  no Session public admission call is nested inside its held boundary.
+  Expose the backend scheduled facade
+  `run_server_scheduled_automation_attempt_with` with the same arguments as
+  its legacy counterpart, returning `Result<AutomationRunAttempt, String>`.
+  Keep the legacy scheduled/manual/event interfaces and error details.
+- BA-04: The actual scheduled Host worker uses the typed scheduled facade and
+  its actual completion mapper accepts the typed attempt. Only
+  `Ok(AdmissionRefused { .. })` newly maps to None; existing outcomes and outer
+  errors retain their completion mappings. After an accepted launch, invoke
+  the real callback with None so the existing backend owner abandons volatile
+  Running without POST/ACK. Merely dropping this callback is not sufficient.
+  Event enqueue results are explicitly wrapped as Outcome before that mapper;
+  the event coalescer retains its current inner-error-to-None reduction and
+  outer receiver-error behavior.
+- BA-05: Once a nonempty fresh history ID has been received, preserve cron
+  registration rejection and its history cleanup/error behavior. Preserve all
+  executed Completed, Failed, Interrupted and raw executor Err settlement,
+  reporting and failure accounting; preserve ACK-05's outer post-execution
+  settlement-error completion. Never blanket-map every error to None, infer
+  admission from an executor boolean, or replace fresh begin with legacy
+  idempotent begin.
+- BA-06: Causal oracles cover actual RunPath, Runtime/Session/FileStore, Host
+  mapper and backend callback/POST/ACK. Cover early precheck and later fresh
+  admission refusal, primary and alias claims, terminal claim appearing after
+  preparation, malformed input, deletion admission, full Running capacity and
+  no returned ID. Early precheck refuses before later bookkeeping; later
+  refusal preserves competing history/cron while allowing already-authorized
+  notice/lastRunAt/guard writes. Require typed stage, zero executor/terminal
+  observation, one None callback after accepted launch, no completion POST/ACK,
+  released volatile state, repeated poll/reopen and repair/distinct-run positive
+  controls. Keep exact legacy String errors, real execution failure and ACK-05
+  positives; None alone cannot prove the new typed branch.
+  The existing Host source oracle must bind the scheduled worker's actual
+  returned typed facade result to the real completion callback, with wrong
+  owner, ignored/replaced result and dead-call negative controls.
+
+Use existing deterministic seams, not sleeps or new production phase hooks:
+BH's actual shipping helper launch closure can place a claim after preparation;
+the synchronous existing lifecycle reporter can place a claim after Runtime's
+precheck and before fresh begin. In the latter fixture the Session closure has
+returned but Runtime's mutation mutex remains held: the reporter may call
+Session/FileStore directly, never re-enter Runtime or nest Session locks.
+Seed and deliberately stale the existing definition baseline, do not attach
+the directory watcher, and assert the one-shot event that causes the fault.
+Reuse existing bounded owned-child deadlines, receipts and failure artifacts.
+Repeated-redelivery oracles use the actual current definition revision to isolate
+admission refusal. The old no-revision covered-slot policy remains unchanged:
+a refused attempt's allowed lastRunAt write can cause that later legacy policy
+to complete a subsequent fire. This separate bookkeeping-versus-custody gap
+remains open, and no all-redelivery/no-ACK guarantee may be inferred here.
+
+Implementation remains in `automation_run_path.rs`,
+`automation_runtime.rs` and root-owned Host composition; tests stay in their
+existing run-path, production-wiring and app custody homes. Root serializes the
+spec, composition/wiring oracle, workflow selectors/receipts and additive OCRM
+references. Freeze the integrated source and obtain independent review plus
+exact-H Actions for affected compilation/contracts and causal negatives.
+Reuse the existing Linux Host cache/job for typed RunPath and real Runtime
+production-wiring contracts with nonzero named-result evidence and retained
+owned failure fixtures. Library/source-wiring results do not establish actual
+App/macOS execution or whole-platform acceptance. While macOS remains queued without an
+assigned runner, also use the same Linux job/cache to check the actual App
+binary with cfg(not(test)), compile its actual test harness from the committed
+App manifest/lock, bind the emitted executable to H/tree/source/binary hashes,
+and execute the four BH, four BA and completion-mapper cases by exact names.
+Require one selected outer test with no failed/ignored case, bounded child
+receipts, complete command logs and success-only fixture cleanup. This direct
+Linux App evidence supplements the pending macOS gate; it cannot replace it.
+No new runtime, copied test-module carrier or local native-dependency probe.
+No local or htch-runtime validation.
+No disk migration; rollback restores the
+old false-completion risk. Existing manual behavior is a compatibility gate.
+
+Strict-delivery-invalid history introduced after precheck can still be accepted
+by the intentionally legacy mutation parser. Late nonregular mutation inputs,
+cross-process claims, unknown write/execution effects, already-admitted cron
+cleanup uncertainty, event loss, real external backend compatibility, full
+reaper and all final OCRM gates remain separate open work. This batch earns no
+new upstream reading credit or global flag promotion.
+

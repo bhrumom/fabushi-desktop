@@ -922,7 +922,10 @@
         "source/host/app/src/main.rs",
         "source/host/tests/automations_backend_contract.rs",
         "source/host/tests/automation_runtime_contract.rs",
-        "source/host/tests/agent_session_contract.rs"
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/tests/automation_run_path_contract.rs",
+        "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
@@ -1982,7 +1985,10 @@
         "source/host/app/src/main.rs",
         "source/host/tests/automations_backend_contract.rs",
         "source/host/tests/automation_runtime_contract.rs",
-        "source/host/tests/agent_session_contract.rs"
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/tests/automation_run_path_contract.rs",
+        "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC21",

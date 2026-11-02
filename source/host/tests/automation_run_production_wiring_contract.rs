@@ -11,6 +11,7 @@ use mahayana_host_runtime::automations::automation::{AutomationSpec, AUTOMATION_
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
 use mahayana_host_runtime::automations::automation_trigger::trigger_schedule;
+use mahayana_host_runtime::automations::routine_notices::GITHUB_LISTENER_SCOPE;
 use mahayana_host_runtime::extensions::automations::backend_transport::{
     AutomationsBackendError, AutomationsBackendTransport,
 };
@@ -32,17 +33,23 @@ use mahayana_host_runtime::extensions::notify_bus::extension::{
     start_notify_bus_extension_with_options,
 };
 use mahayana_host_runtime::extensions::notify_bus::notify_bus_client::NotifyBusTiming;
-use mahayana_host_runtime::extensions::session::agent_db::CronSessionRunRecord;
+use mahayana_host_runtime::extensions::session::agent_db::{CronSessionRunRecord, SandAgentDb};
+use mahayana_host_runtime::extensions::session::agent_db_serde::{SpendGuardState, UnreadState};
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::automation_event_fires::{
     AutomationEventFires, EventBatchExecutor, EventFireBatch,
 };
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
-    AutomationExecutionResult, AutomationRunFenceSnapshot, AutomationRunObservation,
-    AutomationRunTrigger, FireAutomationOutcome,
+    AutomationAdmissionStage, AutomationExecutionResult, AutomationRunAttempt,
+    AutomationRunFenceSnapshot, AutomationRunObservation, AutomationRunTrigger, FireAutomationOutcome,
 };
-use mahayana_host_runtime::extensions::transcript::automation_runtime::AutomationRuntime;
+use mahayana_host_runtime::extensions::transcript::automation_runtime::{
+    AutomationLifecycleAction, AutomationLifecycleEvent, AutomationLifecycleSource, AutomationRuntime,
+};
+use mahayana_host_runtime::extensions::transcript::sand_automation_spend_guard::{
+    SPEND_GUARD_IDLE_TTL_MS, SpendGuardDecision,
+};
 use serde_json::{Value, json};
 
 const CHILD_CASE_ENV: &str = "FABUSHI_AUTOMATION_CONTRACT_CASE";
@@ -1634,6 +1641,19 @@ fn real_full_running_history_refuses_before_cron_or_executor_and_checked_read_ob
             let cron = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
             assert!(cron.is_empty());
             let mut refused_executions = 0;
+            let typed_refused = fixture.runtime.run_background_automation_attempt_with(
+                &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                Vec::new(), Some("refused-at-capacity".into()), Vec::new(), 2_000.0, None,
+                |_| {
+                    refused_executions += 1;
+                    Ok(AutomationExecutionResult::Completed)
+                },
+            );
+            let typed_detail = expect_admission_refusal(
+                typed_refused, AutomationAdmissionStage::FreshHistory,
+            );
+            assert_eq!(typed_detail,
+                "automation store io error: automation history has reached its unsettled run capacity");
             let refused = fixture.runtime.run_background_automation_with(
                 &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
                 Vec::new(), Some("refused-at-capacity".into()), Vec::new(), 2_000.0, None,
@@ -1642,7 +1662,9 @@ fn real_full_running_history_refuses_before_cron_or_executor_and_checked_read_ob
                     Ok(AutomationExecutionResult::Completed)
                 },
             );
-            assert!(refused.unwrap_err().contains("unsettled run capacity"));
+            let legacy_detail = refused.unwrap_err();
+            assert!(legacy_detail.contains("unsettled run capacity"));
+            assert_eq!(legacy_detail, typed_detail, "the legacy facade retains the exact admission error");
             assert_eq!(refused_executions, 0);
             assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(), history);
             assert_eq!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), cron);
@@ -1698,6 +1720,624 @@ fn real_full_running_history_refuses_before_cron_or_executor_and_checked_read_ob
                 assert_eq!(fixture.runtime.read_run_for_delivery(
                     &fixture.agent_id, &fixture.automation_id, &run.id,
                 ).unwrap().as_ref(), Some(run));
+            }
+        },
+    );
+}
+
+fn expect_admission_refusal(
+    result: Result<AutomationRunAttempt, String>,
+    expected_stage: AutomationAdmissionStage,
+) -> String {
+    match result {
+        Ok(AutomationRunAttempt::AdmissionRefused { stage, detail }) => {
+            assert_eq!(stage, expected_stage);
+            detail
+        }
+        other => panic!("expected typed {expected_stage:?} refusal, got {other:?}"),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct AdmissionOwnerState {
+    config: Option<Vec<u8>>,
+    history: Option<Vec<u8>>,
+    cron: Vec<CronSessionRunRecord>,
+    guard: SpendGuardState,
+    unread: UnreadState,
+    transcript: Vec<Value>,
+}
+
+impl AdmissionOwnerState {
+    fn capture(store: &FileAutomationStore, automation_id: &str, owner: &SandAgentDb) -> Self {
+        let read_owned_file = |path: PathBuf| match fs::read(&path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => None,
+            Err(error) => panic!("read owned admission fixture {}: {error}", path.display()),
+        };
+        Self {
+            config: read_owned_file(store.config_path(automation_id)),
+            history: read_owned_file(store.runs_path(automation_id)),
+            // Retain the actual DB owner before deletion. These reads must not
+            // reopen Session admission while its deletion fence is raised.
+            cron: owner.list_cron_session_runs().unwrap(),
+            guard: owner.get_automation_spend_guard_state().unwrap(),
+            unread: owner.get_unread_state().unwrap(),
+            transcript: owner.get_transcript_entries().unwrap(),
+        }
+    }
+
+    fn preserve_evidence(&self, root: &Path, phase: &str) {
+        fs::write(root.join(format!("{phase}-admission-state.txt")), format!("{self:#?}")).unwrap();
+    }
+}
+
+fn stale_admission_definition(fixture: &ShippingAutomation) {
+    fixture.runtime.seed_known_automations(&fixture.agent_id).unwrap();
+    // This is an external definition edit through the existing Session/store
+    // owner. No directory watcher is attached. The next Agent/Updated event
+    // therefore occurs synchronously after Runtime's checked history preflight.
+    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+            let mut config = fixture.store.read_config(&fixture.automation_id).unwrap();
+            config.prompt.push_str(" after the external definition edit");
+            config.created_at = 1_000.0;
+            config.last_run_at = None;
+            config.raised_notices.clear();
+            fixture.store.write_config(&fixture.automation_id, &config)
+                .map_err(|error| error.to_string())
+        }).unwrap();
+}
+
+fn prepare_admission_nudge(fixture: &ShippingAutomation, now: f64) {
+    let last_viewed = now - SPEND_GUARD_IDLE_TTL_MS - 10_000.0;
+    fixture.workers.mark_agent_viewed(&fixture.agent_id, last_viewed, false).unwrap();
+    for index in 0..15 {
+        fixture.workers.mark_agent_activity(&fixture.agent_id, last_viewed + index as f64 + 1.0).unwrap();
+    }
+    assert_eq!(fixture.runtime.spend_guard().evaluate_with_store(
+        &fixture.agent_id, &fixture.store, now,
+    ).unwrap().decision, SpendGuardDecision::Nudge, "the unblocked guard has a real write to perform");
+}
+
+fn assert_distinct_admission_control(fixture: &ShippingAutomation, run_id: &str, fired_at_ms: f64) {
+    let mut executions = 0;
+    let result = fixture.runtime.run_background_automation_attempt_with(
+        &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+        Vec::new(), Some(run_id.to_string()), Vec::new(), fired_at_ms, None,
+        |_| {
+            executions += 1;
+            let admitted = fixture.store.read_run_for_delivery(&fixture.automation_id, run_id)
+                .unwrap().expect("fresh control history exists before executor entry");
+            assert_eq!(admitted.status, "running");
+            let rows = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+            assert_eq!(rows.iter().find(|row| row.run_id == run_id).unwrap().state, "running");
+            Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+        },
+    );
+    assert_eq!(result, Ok(AutomationRunAttempt::Outcome(Some(FireAutomationOutcome::Ok))));
+    assert_eq!(executions, 1, "a distinct attempt enters the real executor after repair");
+    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+    let history = fixture.store.read_run_for_delivery(&fixture.automation_id, run_id).unwrap().unwrap();
+    assert_eq!(history.status, "ok");
+    assert_eq!(history.finished_at, Some(fired_at_ms));
+    let rows = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+    let row = rows.iter().find(|row| row.run_id == run_id).unwrap();
+    assert_eq!(row.state, "terminal");
+    assert_eq!(row.terminal_outcome.as_deref(), Some("ok"));
+    assert!(row.fence_state_known);
+    let reports = fixture.observed.lock().unwrap();
+    assert_eq!(reports.len(), 1, "only the distinct admitted control reports terminal execution");
+    assert_eq!(reports[0].automation_run_id.as_deref(), Some(run_id));
+    assert_eq!(reports[0].outcome, FireAutomationOutcome::Ok);
+}
+
+#[test]
+fn real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors() {
+    bounded_automation_case(
+        "real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors",
+        || {
+            for fault in ["primary", "alias", "terminal-primary", "coalesced-terminal-alias", "malformed", "deleting"] {
+                let fixture = ShippingAutomation::new(&format!("typed history precheck/{fault}"));
+                seed_backend_history(&fixture);
+                if matches!(fault, "terminal-primary" | "coalesced-terminal-alias") {
+                    assert!(fixture.workers.finish_cron_session_run(
+                        &fixture.agent_id, &fixture.automation_id, CUSTODY_RUN_UUIDS[0], "ok", 200.0, None,
+                    ).unwrap());
+                    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                            assert!(fixture.store.finish_run(
+                                &fixture.automation_id, CUSTODY_RUN_UUIDS[0], "ok", 200.0, None,
+                            ).map_err(|error| error.to_string())?.is_some());
+                            Ok(())
+                        }).unwrap();
+                }
+                stale_admission_definition(&fixture);
+                let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+                let valid_history = fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap();
+                let requested = match fault {
+                    "primary" | "terminal-primary" => CUSTODY_RUN_UUIDS[0],
+                    "alias" => CUSTODY_RUN_UUIDS[1],
+                    _ => "precheck-request",
+                };
+                let aliases = if fault == "coalesced-terminal-alias" {
+                    vec![CUSTODY_RUN_UUIDS[2].to_string()]
+                } else {
+                    Vec::new()
+                };
+                let trigger = if aliases.is_empty() {
+                    AutomationRunTrigger::Schedule
+                } else {
+                    AutomationRunTrigger::Event
+                };
+                if fault == "malformed" {
+                    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                            fs::write(fixture.store.runs_path(&fixture.automation_id), b"[ malformed")
+                                .map_err(|error| error.to_string())
+                        }).unwrap();
+                }
+                if fault == "deleting" {
+                    fixture.workers.begin_agent_delete(&fixture.agent_id).unwrap();
+                }
+                let expected_detail = match fault {
+                    "malformed" => fixture.store.read_run_for_delivery(&fixture.automation_id, requested)
+                        .unwrap_err().to_string(),
+                    "deleting" => format!(
+                        "agent {} deletion cleanup is pending; new session work is not admitted", fixture.agent_id,
+                    ),
+                    _ => "automation run identity has already been admitted".into(),
+                };
+                let lifecycle = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+                let sink = Arc::clone(&lifecycle);
+                fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+                    sink.lock().unwrap().push(event.clone());
+                })));
+                let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                before.preserve_evidence(&fixture.root, "precheck-before");
+                let executions = AtomicUsize::new(0);
+                let typed = fixture.runtime.run_background_automation_attempt_with(
+                    &fixture.agent_id, &fixture.automation_id, trigger,
+                    Vec::new(), Some(requested.to_string()), aliases.clone(), 2_000.0, None,
+                    |_| {
+                        executions.fetch_add(1, Ordering::SeqCst);
+                        Ok(AutomationExecutionResult::Completed)
+                    },
+                );
+                assert_eq!(expect_admission_refusal(typed, AutomationAdmissionStage::HistoryPrecheck), expected_detail);
+                let legacy = fixture.runtime.run_background_automation_with(
+                    &fixture.agent_id, &fixture.automation_id, trigger,
+                    Vec::new(), Some(requested.to_string()), aliases, 2_000.0, None,
+                    |_| {
+                        executions.fetch_add(1, Ordering::SeqCst);
+                        Ok(AutomationExecutionResult::Completed)
+                    },
+                );
+                assert_eq!(legacy, Err(expected_detail), "legacy precheck keeps its exact String detail");
+                let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                after.preserve_evidence(&fixture.root, "precheck-after");
+                assert_eq!(after, before, "precheck must precede notice, lastRunAt, guard, cron and transcript writes: {fault}");
+                assert!(lifecycle.lock().unwrap().is_empty(), "precheck also precedes lifecycle bookkeeping");
+                assert_eq!(executions.load(Ordering::SeqCst), 0);
+                assert!(fixture.observed.lock().unwrap().is_empty());
+                assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+
+                fixture.runtime.set_lifecycle_reporter(None);
+                if fault == "deleting" {
+                    assert!(owner.read_session_work_admission().unwrap().unwrap().deletion_pending);
+                    fixture.workers.end_agent_delete(&fixture.agent_id).unwrap();
+                }
+                if fault == "malformed" {
+                    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                            fs::write(fixture.store.runs_path(&fixture.automation_id), &valid_history)
+                                .map_err(|error| error.to_string())
+                        }).unwrap();
+                }
+                let original = fixture.store.read_runs(&fixture.automation_id);
+                assert_distinct_admission_control(&fixture, "distinct-after-precheck", 3_000.0);
+                let current = fixture.store.read_runs(&fixture.automation_id);
+                for run in &original {
+                    assert_eq!(current.iter().find(|current| current.id == run.id), Some(run));
+                }
+                let rows = owner.list_cron_session_runs().unwrap();
+                for row in &before.cron {
+                    assert_eq!(rows.iter().find(|current| current.run_id == row.run_id), Some(row));
+                }
+            }
+        },
+    );
+}
+
+#[test]
+fn real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images() {
+    bounded_automation_case(
+        "real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images",
+        || {
+            for fault in ["primary", "alias", "terminal-primary", "malformed"] {
+                for legacy in [false, true] {
+                    let fixture = ShippingAutomation::new(&format!("late history/{fault}/legacy={legacy}"));
+                    seed_backend_history(&fixture);
+                    stale_admission_definition(&fixture);
+                    let fired_at_ms = if fault == "terminal-primary" {
+                        let now = 1_900_000_000_000.0;
+                        prepare_admission_nudge(&fixture, now);
+                        now
+                    } else {
+                        2_000.0
+                    };
+                    let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+                    let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                    let mut expected_config = fixture.store.read_config(&fixture.automation_id).unwrap();
+                    expected_config.last_run_at = Some(fired_at_ms);
+                    expected_config.raised_notices.push(GITHUB_LISTENER_SCOPE.to_string());
+                    before.preserve_evidence(&fixture.root, "fresh-before");
+                    let lifecycle = Arc::new(Mutex::new(Vec::<AutomationLifecycleEvent>::new()));
+                    let published = Arc::new(Mutex::new(None::<(AdmissionOwnerState, String)>));
+                    let callback_count = Arc::new(AtomicUsize::new(0));
+                    let callback_workers = Arc::clone(&fixture.workers);
+                    let callback_store = fixture.store.clone();
+                    let callback_agent = fixture.agent_id.clone();
+                    let callback_automation = fixture.automation_id.clone();
+                    let callback_owner = Arc::clone(&owner);
+                    let callback_events = Arc::clone(&lifecycle);
+                    let callback_published = Arc::clone(&published);
+                    let callback_seen = Arc::clone(&callback_count);
+                    fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+                        assert_eq!(event.source, AutomationLifecycleSource::Agent);
+                        assert_eq!(event.action, AutomationLifecycleAction::Updated);
+                        assert_eq!(event.agent_id, callback_agent);
+                        assert_eq!(event.automation_id, callback_automation);
+                        assert_eq!(callback_seen.fetch_add(1, Ordering::SeqCst), 0,
+                            "only the deliberately stale baseline opens this injection boundary");
+                        callback_events.lock().unwrap().push(event.clone());
+                        let competing_id = if fault == "alias" { "late-competing-primary" } else { "late-request" };
+                        let aliases = (fault == "alias").then(|| vec!["late-request".to_string()]);
+                        // Runtime still owns its mutation mutex, but its prior
+                        // Session closure has returned. Use only Session/store
+                        // here, and let this closure return before cron calls.
+                        SandAgentSessionStore::new(Arc::clone(&callback_workers))
+                            .with_admitted_filesystem_mutation(&callback_agent, || {
+                                assert_eq!(callback_store.read_run_for_delivery(&callback_automation, "late-request")
+                                    .map_err(|error| error.to_string())?, None);
+                                if fault == "malformed" {
+                                    fs::write(callback_store.runs_path(&callback_automation), b"[ malformed")
+                                        .map_err(|error| error.to_string())?;
+                                } else {
+                                    let claimed = callback_store.begin_fresh_run(
+                                        &callback_automation, "event", 150.0, None,
+                                        Some(competing_id), aliases.as_deref(),
+                                    ).map_err(|error| error.to_string())?.expect("competing fresh claim");
+                                    assert_eq!(claimed.id, competing_id);
+                                }
+                                Ok(())
+                            }).unwrap();
+                        if fault != "malformed" {
+                            assert!(callback_workers.begin_cron_session_run(
+                                &callback_agent, &callback_automation, competing_id, 150.0,
+                            ).unwrap());
+                            if fault == "terminal-primary" {
+                                assert!(callback_workers.finish_cron_session_run(
+                                    &callback_agent, &callback_automation, competing_id, "ok", 160.0, None,
+                                ).unwrap());
+                                SandAgentSessionStore::new(Arc::clone(&callback_workers))
+                                    .with_admitted_filesystem_mutation(&callback_agent, || {
+                                        assert!(callback_store.finish_run(
+                                            &callback_automation, competing_id, "ok", 160.0, None,
+                                        ).map_err(|error| error.to_string())?.is_some());
+                                        Ok(())
+                                    }).unwrap();
+                            }
+                        }
+                        let detail = if fault == "malformed" {
+                            callback_store.read_run_for_delivery(&callback_automation, "late-request")
+                                .unwrap_err().to_string()
+                        } else {
+                            "automation store io error: automation run identity has already been admitted".to_string()
+                        };
+                        *callback_published.lock().unwrap() = Some((
+                            AdmissionOwnerState::capture(&callback_store, &callback_automation, &callback_owner),
+                            detail,
+                        ));
+                    })));
+                    let executions = AtomicUsize::new(0);
+                    let result = if legacy {
+                        fixture.runtime.run_background_automation_with(
+                            &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                            Vec::new(), Some("late-request".into()), Vec::new(), fired_at_ms, None,
+                            |_| {
+                                executions.fetch_add(1, Ordering::SeqCst);
+                                Ok(AutomationExecutionResult::Completed)
+                            },
+                        ).map(AutomationRunAttempt::Outcome)
+                    } else {
+                        fixture.runtime.run_background_automation_attempt_with(
+                            &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                            Vec::new(), Some("late-request".into()), Vec::new(), fired_at_ms, None,
+                            |_| {
+                                executions.fetch_add(1, Ordering::SeqCst);
+                                Ok(AutomationExecutionResult::Completed)
+                            },
+                        )
+                    };
+                    let (claimed, expected_detail) = published.lock().unwrap().clone()
+                        .expect("the existing lifecycle event published the competing state");
+                    claimed.preserve_evidence(&fixture.root, "fresh-competing-claim");
+                    if legacy {
+                        assert_eq!(result, Err(expected_detail));
+                    } else {
+                        assert_eq!(expect_admission_refusal(result, AutomationAdmissionStage::FreshHistory), expected_detail);
+                    }
+                    assert_eq!(callback_count.load(Ordering::SeqCst), 1);
+                    assert_eq!(lifecycle.lock().unwrap().len(), 1);
+                    assert_eq!(executions.load(Ordering::SeqCst), 0);
+                    assert!(fixture.observed.lock().unwrap().is_empty());
+                    assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                    let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                    after.preserve_evidence(&fixture.root, "fresh-refused");
+                    assert_eq!(after.history, claimed.history, "refusal cannot rewrite the competing image");
+                    assert_eq!(after.cron, claimed.cron, "refusal cannot register or settle a competing cron row");
+                    if fault == "terminal-primary" {
+                        assert_eq!(claimed.guard, before.guard, "the lifecycle claim precedes Guard's admitted write");
+                        assert_eq!(after.guard.nudged_at_ms, Some(fired_at_ms));
+                        assert_eq!(after.guard.card_entry_ids.len(), 1);
+                        assert_eq!(after.transcript.len(), before.transcript.len() + 1);
+                        assert_eq!(after.unread.unread_count, before.unread.unread_count + 1.0);
+                        assert!(after.transcript.iter().any(|entry|
+                            entry.get("id").and_then(Value::as_str) == Some(after.guard.card_entry_ids[0].as_str())),
+                            "FreshHistory refusal retains the already-committed Guard card");
+                    } else {
+                        assert_eq!(after.guard, before.guard);
+                        assert_eq!(after.unread, before.unread);
+                        assert_eq!(after.transcript, before.transcript);
+                    }
+                    assert_eq!(fixture.store.read_config(&fixture.automation_id), Some(expected_config),
+                        "FreshHistory refusal follows the already-authorized notice and lastRunAt writes");
+
+                    fixture.runtime.set_lifecycle_reporter(None);
+                    if fault == "malformed" {
+                        SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                            .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                                fs::write(fixture.store.runs_path(&fixture.automation_id), before.history.as_ref().unwrap())
+                                    .map_err(|error| error.to_string())
+                            }).unwrap();
+                    }
+                    let original = fixture.store.read_runs(&fixture.automation_id);
+                    assert_distinct_admission_control(&fixture, "distinct-after-late-claim", fired_at_ms + 1_000.0);
+                    let current = fixture.store.read_runs(&fixture.automation_id);
+                    for run in &original {
+                        assert_eq!(current.iter().find(|current| current.id == run.id), Some(run));
+                    }
+                    let rows = owner.list_cron_session_runs().unwrap();
+                    for row in &claimed.cron {
+                        assert_eq!(rows.iter().find(|current| current.run_id == row.run_id), Some(row));
+                    }
+                }
+            }
+        },
+    );
+}
+
+#[test]
+fn real_typed_spend_guard_refusal_preserves_order_and_recovers() {
+    bounded_automation_case(
+        "real_typed_spend_guard_refusal_preserves_order_and_recovers",
+        || {
+            for legacy in [false, true] {
+                let fixture = ShippingAutomation::new(&format!("SpendGuard admission/legacy={legacy}"));
+                seed_backend_history(&fixture);
+                stale_admission_definition(&fixture);
+                let now = 1_900_000_000_000.0;
+                prepare_admission_nudge(&fixture, now);
+                let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+                let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                before.preserve_evidence(&fixture.root, "guard-before");
+                let callback_count = Arc::new(AtomicUsize::new(0));
+                let callback_seen = Arc::clone(&callback_count);
+                let callback_workers = Arc::clone(&fixture.workers);
+                let callback_agent = fixture.agent_id.clone();
+                let callback_automation = fixture.automation_id.clone();
+                fixture.runtime.set_lifecycle_reporter(Some(Arc::new(move |event| {
+                    assert_eq!(event.source, AutomationLifecycleSource::Agent);
+                    assert_eq!(event.action, AutomationLifecycleAction::Updated);
+                    assert_eq!(event.agent_id, callback_agent);
+                    assert_eq!(event.automation_id, callback_automation);
+                    assert_eq!(callback_seen.fetch_add(1, Ordering::SeqCst), 0);
+                    // The history precheck has released Session admission. This
+                    // existing callback raises its deletion fence before Guard.
+                    callback_workers.begin_agent_delete(&callback_agent).unwrap();
+                })));
+                let executions = AtomicUsize::new(0);
+                let result = if legacy {
+                    fixture.runtime.run_background_automation_with(
+                        &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                        Vec::new(), Some("guard-refused".into()), Vec::new(), now, None,
+                        |_| {
+                            executions.fetch_add(1, Ordering::SeqCst);
+                            Ok(AutomationExecutionResult::Completed)
+                        },
+                    ).map(AutomationRunAttempt::Outcome)
+                } else {
+                    fixture.runtime.run_background_automation_attempt_with(
+                        &fixture.agent_id, &fixture.automation_id, AutomationRunTrigger::Schedule,
+                        Vec::new(), Some("guard-refused".into()), Vec::new(), now, None,
+                        |_| {
+                            executions.fetch_add(1, Ordering::SeqCst);
+                            Ok(AutomationExecutionResult::Completed)
+                        },
+                    )
+                };
+                let detail = format!(
+                    "agent {} deletion cleanup is pending; new session work is not admitted", fixture.agent_id,
+                );
+                if legacy {
+                    assert_eq!(result, Err(detail));
+                } else {
+                    assert_eq!(expect_admission_refusal(result, AutomationAdmissionStage::SpendGuard), detail);
+                }
+                assert_eq!(callback_count.load(Ordering::SeqCst), 1);
+                assert!(owner.read_session_work_admission().unwrap().unwrap().deletion_pending);
+                let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                after.preserve_evidence(&fixture.root, "guard-refused");
+                assert_eq!(after, before, "Guard admission refuses before card, notice, lastRunAt and history writes");
+                assert_eq!(executions.load(Ordering::SeqCst), 0);
+                assert!(fixture.observed.lock().unwrap().is_empty());
+                assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+
+                fixture.runtime.set_lifecycle_reporter(None);
+                fixture.workers.end_agent_delete(&fixture.agent_id).unwrap();
+                assert_distinct_admission_control(&fixture, "distinct-after-guard-repair", now);
+                let recovered = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                recovered.preserve_evidence(&fixture.root, "guard-recovered");
+                assert_eq!(recovered.guard.nudged_at_ms, Some(now));
+                assert_eq!(recovered.guard.card_entry_ids.len(), 1);
+                assert_eq!(recovered.transcript.len(), before.transcript.len() + 1);
+                assert!(recovered.transcript.iter().any(|entry|
+                    entry.get("id").and_then(Value::as_str) == Some(recovered.guard.card_entry_ids[0].as_str())));
+                for row in &before.cron {
+                    assert_eq!(recovered.cron.iter().find(|current| current.run_id == row.run_id), Some(row));
+                }
+            }
+        },
+    );
+}
+
+#[test]
+fn real_typed_admitted_failures_keep_existing_outcomes_and_outer_errors() {
+    bounded_automation_case(
+        "real_typed_admitted_failures_keep_existing_outcomes_and_outer_errors",
+        || {
+            for fault in ["failed", "executor-error", "interrupted", "retained", "post-history-error", "cron-rejected"] {
+                let fixture = ShippingAutomation::new(&format!("typed post-admission/{fault}"));
+                let owner = fixture.workers.open_agent_db_owner(&fixture.agent_id).unwrap();
+                if fault == "cron-rejected" {
+                    assert!(fixture.workers.begin_cron_session_run(
+                        &fixture.agent_id, &fixture.automation_id, "typed-admitted", 100.0,
+                    ).unwrap());
+                    assert!(fixture.workers.finish_cron_session_run(
+                        &fixture.agent_id, &fixture.automation_id, "typed-admitted", "ok", 200.0, None,
+                    ).unwrap());
+                    assert_eq!(fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted").unwrap(), None);
+                }
+                let before = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                before.preserve_evidence(&fixture.root, "admitted-before");
+                let mut executions = 0;
+                let mut at_execution = None::<AdmissionOwnerState>;
+                let result = fixture.runtime.run_server_scheduled_automation_attempt_with(
+                    &fixture.agent_id, &fixture.automation_id, "typed-admitted".into(), Some(500.0),
+                    |_| {
+                        executions += 1;
+                        assert_ne!(fault, "cron-rejected", "cron rejection follows fresh history but precedes execution");
+                        assert!(fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                        let history = fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted")
+                            .unwrap().expect("the typed scheduled facade accepted a fresh history identity");
+                        assert_eq!(history.status, "running");
+                        let admitted = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                        assert_eq!(admitted.cron.len(), 1);
+                        assert_eq!(admitted.cron[0].state, "running");
+                        assert_eq!(admitted.cron[0].run_id, "typed-admitted");
+                        admitted.preserve_evidence(&fixture.root, "admitted-executor-entry");
+                        at_execution = Some(admitted);
+                        match fault {
+                            "failed" => Ok(AutomationExecutionResult::FailedWithFences {
+                                detail: "provider failed after admission".into(), fences: clear_fences(),
+                            }),
+                            "executor-error" => Err("executor failed after admission".into()),
+                            "interrupted" => Ok(AutomationExecutionResult::InterruptedWithFences {
+                                detail: "host upgrade after admission".into(), quiesced_for_upgrade: true,
+                                fences: clear_fences(),
+                            }),
+                            "retained" => Ok(AutomationExecutionResult::RetainedUnsettled {
+                                terminal: Box::new(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() }),
+                            }),
+                            "post-history-error" => {
+                                SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                                    .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                                        fs::remove_file(fixture.store.runs_path(&fixture.automation_id))
+                                            .map_err(|error| error.to_string())
+                                    }).unwrap();
+                                Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+                            }
+                            _ => unreachable!("all admitted execution controls are explicit"),
+                        }
+                    },
+                );
+                assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                let after = AdmissionOwnerState::capture(&fixture.store, &fixture.automation_id, &owner);
+                after.preserve_evidence(&fixture.root, "admitted-after");
+                if fault == "cron-rejected" {
+                    assert_eq!(executions, 0);
+                    assert_eq!(result, Err("cron session run registration was not committed".into()),
+                        "a fresh identity was accepted; cron rejection remains an outer error");
+                    assert_eq!(after.cron, before.cron, "the existing terminal owner cannot be reopened");
+                    assert!(fixture.observed.lock().unwrap().is_empty());
+                    let cleanup = fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted")
+                        .unwrap().expect("cron rejection retains history cleanup");
+                    assert_eq!(cleanup.status, "error");
+                    assert!(cleanup.finished_at.is_some());
+                    assert_eq!(cleanup.detail.as_deref(), Some("cron session run registration was not committed"));
+                    assert_distinct_admission_control(&fixture, "distinct-after-cron-rejection", 3_000.0);
+                    assert_eq!(fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted").unwrap(), Some(cleanup));
+                } else if fault == "post-history-error" {
+                    assert_eq!(executions, 1);
+                    assert_eq!(result, Err("automation history run settlement was not committed".into()),
+                        "ACK-05 preserves an outer error after execution and cron settlement");
+                    assert_eq!(after.history, None);
+                    assert_eq!(after.cron[0].state, "terminal");
+                    assert_eq!(after.cron[0].terminal_outcome.as_deref(), Some("ok"));
+                    assert!(after.cron[0].fence_state_known);
+                    assert!(fixture.observed.lock().unwrap().is_empty());
+                    let admitted = at_execution.as_ref().unwrap();
+                    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                            fs::write(fixture.store.runs_path(&fixture.automation_id), admitted.history.as_ref().unwrap())
+                                .map_err(|error| error.to_string())
+                        }).unwrap();
+                    let restored = fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted")
+                        .unwrap().unwrap();
+                    assert_eq!(restored.status, "running", "repair restores the actual pre-fault image; it does not invent history completion");
+                    assert_distinct_admission_control(&fixture, "distinct-after-history-repair", 3_000.0);
+                    assert_eq!(fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted").unwrap(), Some(restored));
+                } else if fault == "retained" {
+                    assert_eq!(executions, 1);
+                    assert_eq!(result, Ok(AutomationRunAttempt::Outcome(None)), "retention is an admitted outcome, not a refusal");
+                    assert_eq!(after, at_execution.unwrap());
+                    assert!(fixture.observed.lock().unwrap().is_empty());
+                    let retained = fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted")
+                        .unwrap().unwrap();
+                    assert_distinct_admission_control(&fixture, "distinct-after-retention", 3_000.0);
+                    assert_eq!(fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted").unwrap(), Some(retained));
+                } else {
+                    assert_eq!(executions, 1);
+                    let (outcome, cron_outcome, detail) = match fault {
+                        "interrupted" => (FireAutomationOutcome::Interrupted, "interrupted", "host upgrade after admission"),
+                        "failed" => (FireAutomationOutcome::Error, "error", "provider failed after admission"),
+                        "executor-error" => (FireAutomationOutcome::Error, "error", "executor failed after admission"),
+                        _ => unreachable!(),
+                    };
+                    assert_eq!(result, Ok(AutomationRunAttempt::Outcome(Some(outcome))));
+                    assert_eq!(after.cron[0].state, "terminal");
+                    assert_eq!(after.cron[0].terminal_outcome.as_deref(), Some(cron_outcome));
+                    assert_eq!(after.cron[0].terminal_detail.as_deref(), Some(detail));
+                    assert_eq!(after.cron[0].fence_state_known, fault != "executor-error");
+                    let history = fixture.store.read_run_for_delivery(&fixture.automation_id, "typed-admitted").unwrap().unwrap();
+                    assert_eq!(history.status, "error");
+                    assert_eq!(history.detail.as_deref(), Some(detail));
+                    assert!(history.finished_at.is_some());
+                    let reports = fixture.observed.lock().unwrap();
+                    assert_eq!(reports.len(), 1);
+                    assert_eq!(reports[0].automation_run_id.as_deref(), Some("typed-admitted"));
+                    assert_eq!(reports[0].outcome, outcome);
+                    assert_eq!(reports[0].quiesced_for_upgrade, fault == "interrupted");
+                    assert_eq!(reports[0].scheduled_for_ms, Some(500.0));
+                }
+                if matches!(fault, "cron-rejected" | "post-history-error" | "retained") {
+                    let rows = owner.list_cron_session_runs().unwrap();
+                    for row in &after.cron {
+                        assert_eq!(rows.iter().find(|current| current.run_id == row.run_id), Some(row),
+                            "distinct work preserves the earlier post-admission cron custody");
+                    }
+                }
             }
         },
     );

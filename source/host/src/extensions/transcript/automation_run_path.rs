@@ -160,6 +160,37 @@ pub enum FireAutomationOutcome {
     Interrupted,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AutomationAdmissionStage {
+    RuntimeAdmission,
+    HistoryPrecheck,
+    SpendGuard,
+    NoticeBookkeeping,
+    RunBookkeeping,
+    FreshHistory,
+}
+
+/// Admission refusal precedes an accepted history identity and executor entry.
+/// Earlier bookkeeping or a failed filesystem write may still have changed
+/// durable state; this result is not proof that the requested identity is absent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AutomationRunAttempt {
+    Outcome(Option<FireAutomationOutcome>),
+    AdmissionRefused {
+        stage: AutomationAdmissionStage,
+        detail: String,
+    },
+}
+
+impl AutomationRunAttempt {
+    pub(crate) fn into_legacy_outcome(self) -> Result<Option<FireAutomationOutcome>, String> {
+        match self {
+            Self::Outcome(outcome) => Ok(outcome),
+            Self::AdmissionRefused { detail, .. } => Err(detail),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FireAutomationArgs {
     pub agent_id: String,
@@ -384,7 +415,8 @@ impl AutomationRunPath {
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
-        self.fire_automation_with_on_duplicate(store, args, |_| {}, execute)
+        self.fire_automation_attempt_with(store, args, execute)?
+            .into_legacy_outcome()
     }
 
     pub fn fire_automation_with_on_duplicate<Execute, OnDuplicate>(
@@ -394,6 +426,33 @@ impl AutomationRunPath {
         on_duplicate: OnDuplicate,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+        OnDuplicate: FnOnce(&FireAutomationArgs),
+    {
+        self.fire_automation_attempt_with_on_duplicate(store, args, on_duplicate, execute)?
+            .into_legacy_outcome()
+    }
+
+    pub fn fire_automation_attempt_with<Execute>(
+        &self,
+        store: &dyn AutomationRunStore,
+        args: FireAutomationArgs,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
+        self.fire_automation_attempt_with_on_duplicate(store, args, |_| {}, execute)
+    }
+
+    pub fn fire_automation_attempt_with_on_duplicate<Execute, OnDuplicate>(
+        &self,
+        store: &dyn AutomationRunStore,
+        args: FireAutomationArgs,
+        on_duplicate: OnDuplicate,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
         OnDuplicate: FnOnce(&FireAutomationArgs),
@@ -408,7 +467,7 @@ impl AutomationRunPath {
             if !in_flight.insert(run_key.clone()) {
                 drop(in_flight);
                 on_duplicate(&args);
-                return Ok(None);
+                return Ok(AutomationRunAttempt::Outcome(None));
             }
         }
 
@@ -427,7 +486,7 @@ impl AutomationRunPath {
         store: &dyn AutomationRunStore,
         args: &FireAutomationArgs,
         execute: Execute,
-    ) -> Result<Option<FireAutomationOutcome>, String>
+    ) -> Result<AutomationRunAttempt, String>
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
@@ -437,34 +496,51 @@ impl AutomationRunPath {
             &args.automation.raised_notices,
         );
         for notice in &notices {
-            store
-                .mark_notice_raised(&args.automation.id, notice)
-                .map_err(|error| error.to_string())?;
+            if let Err(detail) = store.mark_notice_raised(&args.automation.id, notice) {
+                return Ok(AutomationRunAttempt::AdmissionRefused {
+                    stage: AutomationAdmissionStage::NoticeBookkeeping,
+                    detail,
+                });
+            }
         }
 
-        let current = store
-            .record_run(&args.automation.id, args.fired_at_ms)
-            .map_err(|error| error.to_string())?
-            .unwrap_or_else(|| args.automation.clone());
+        let current = match store.record_run(&args.automation.id, args.fired_at_ms) {
+            Ok(current) => current.unwrap_or_else(|| args.automation.clone()),
+            Err(detail) => {
+                return Ok(AutomationRunAttempt::AdmissionRefused {
+                    stage: AutomationAdmissionStage::RunBookkeeping,
+                    detail,
+                });
+            }
+        };
         let event_summary = describe_trigger_event_batch(&args.events);
-        let run = store
-            .begin_run(
-                &args.automation.id,
-                args.trigger.as_str(),
-                args.fired_at_ms,
-                (!event_summary.is_empty()).then_some(event_summary.as_str()),
-                args.run_uuid.as_deref(),
-                (!args.coalesced_run_uuids.is_empty())
-                    .then_some(args.coalesced_run_uuids.as_slice()),
-            )
-            .map_err(|error| error.to_string())?;
+        let run = match store.begin_run(
+            &args.automation.id,
+            args.trigger.as_str(),
+            args.fired_at_ms,
+            (!event_summary.is_empty()).then_some(event_summary.as_str()),
+            args.run_uuid.as_deref(),
+            (!args.coalesced_run_uuids.is_empty())
+                .then_some(args.coalesced_run_uuids.as_slice()),
+        ) {
+            Ok(run) => run,
+            Err(detail) => {
+                return Ok(AutomationRunAttempt::AdmissionRefused {
+                    stage: AutomationAdmissionStage::FreshHistory,
+                    detail,
+                });
+            }
+        };
         let run_id = run.as_ref().map(|run| run.id.clone());
         let Some(admitted_run_id) = run_id.as_deref().filter(|id| !id.is_empty()) else {
-            return Err(if args.trigger.is_background() {
-                "background automation run did not produce a durable run identity"
-            } else {
-                "manual automation run did not produce a durable run identity"
-            }.into());
+            return Ok(AutomationRunAttempt::AdmissionRefused {
+                stage: AutomationAdmissionStage::FreshHistory,
+                detail: if args.trigger.is_background() {
+                    "background automation run did not produce a durable run identity"
+                } else {
+                    "manual automation run did not produce a durable run identity"
+                }.into(),
+            });
         };
 
         if args.trigger.is_background() {
@@ -680,7 +756,7 @@ impl AutomationRunPath {
                 });
             }
         }
-        result
+        result.map(AutomationRunAttempt::Outcome)
     }
 
     pub fn record_automation_failure(
