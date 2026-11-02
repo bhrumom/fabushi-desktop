@@ -165,6 +165,17 @@ struct SendEnvelope {
 #[derive(Debug, Deserialize)]
 struct ListData {
     messages: Vec<FabushiRemoteHumanMessage>,
+    #[serde(default)]
+    history_cursor: Option<HistoryCursorEcho>,
+    #[serde(default)]
+    next_after_id: Option<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HistoryCursorEcho {
+    mode: String,
+    after_id: Value,
 }
 
 #[derive(Debug, Deserialize)]
@@ -442,6 +453,24 @@ impl FabushiNativeMessagingClient {
         resource_id: &str,
         expected_size: u64,
     ) -> Result<Vec<u8>, String> {
+        self.download_direct_message_resource_bound(resource_id, expected_size, None)
+    }
+
+    pub fn download_direct_message_resource_for_user(
+        &self,
+        resource_id: &str,
+        expected_size: u64,
+        expected_user_id: &str,
+    ) -> Result<Vec<u8>, String> {
+        self.download_direct_message_resource_bound(resource_id, expected_size, Some(expected_user_id))
+    }
+
+    fn download_direct_message_resource_bound(
+        &self,
+        resource_id: &str,
+        expected_size: u64,
+        expected_user_id: Option<&str>,
+    ) -> Result<Vec<u8>, String> {
         const MAX_RESOURCE_BYTES: u64 = 32 * 1024 * 1024;
         let resource_id = required_trimmed(resource_id, "resource id")?;
         if resource_id.len() > 128 || resource_id.contains('/') || resource_id.contains('\\') {
@@ -451,6 +480,7 @@ impl FabushiNativeMessagingClient {
             return Err("Fabushi Human attachment size exceeds the backend limit".into());
         }
         let credentials = self.read_bound_credentials()?;
+        Self::ensure_bound_user(&credentials, expected_user_id)?;
         let encoded_resource_id: String =
             url::form_urlencoded::byte_serialize(resource_id.as_bytes()).collect();
         let response = self
@@ -493,6 +523,7 @@ impl FabushiNativeMessagingClient {
                 bytes.len()
             ));
         }
+        self.ensure_request_credential_stable(&credentials)?;
         Ok(bytes)
     }
 
@@ -772,8 +803,28 @@ impl FabushiNativeMessagingClient {
                 envelope.error.unwrap_or_else(|| "unknown backend error".into())
             ));
         }
-        envelope.data.map(|data| data.messages)
-            .ok_or_else(|| "Fabushi Human message sync response omitted the messages envelope".into())
+        self.ensure_request_credential_stable(&credentials)?;
+        let data = envelope.data
+            .ok_or_else(|| "Fabushi Human message sync response omitted the messages envelope".to_string())?;
+        if let Some(requested_after_id) = after_id {
+            // A legacy Worker may ignore afterId=0 and return a descending tail.
+            // Never persist that response as monotonic coverage of all history.
+            let echo = data.history_cursor.as_ref()
+                .ok_or_else(|| "Fabushi Human history response omitted historyCursor".to_string())?;
+            if echo.mode != "after-id" || echo.after_id.as_u64() != Some(requested_after_id) {
+                return Err("Fabushi Human history response echoed a mismatched historyCursor".into());
+            }
+            let next = data.next_after_id.as_ref().and_then(Value::as_u64)
+                .ok_or_else(|| "Fabushi Human history response omitted a valid nextAfterId".to_string())?;
+            let expected_next = data.messages.last().map(|message| {
+                fabushi_identity_text(&message.id)?.parse::<u64>()
+                    .map_err(|_| "Fabushi Human history nextAfterId is not a numeric message id".to_string())
+            }).transpose()?.unwrap_or(requested_after_id);
+            if next != expected_next || next > 9_007_199_254_740_991 {
+                return Err("Fabushi Human history nextAfterId did not match the page boundary".into());
+            }
+        }
+        Ok(data.messages)
     }
 
     pub fn get_human_call_ice_servers(
@@ -1043,6 +1094,17 @@ impl FabushiNativeMessagingClient {
         self.base_url
             .join(path.trim_start_matches('/'))
             .map_err(|error| format!("Fabushi messaging endpoint is invalid: {error}"))
+    }
+
+    fn ensure_request_credential_stable(&self, original: &CredentialFile) -> Result<(), String> {
+        let current = self.read_bound_credentials()?;
+        if current.user_id != original.user_id
+            || current.device_id != original.device_id
+            || current.access_token != original.access_token
+        {
+            return Err("Fabushi native messaging credential changed during Human request".into());
+        }
+        Ok(())
     }
 
     fn ensure_bound_user(

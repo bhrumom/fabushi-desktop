@@ -1939,7 +1939,9 @@ impl ProductionSessionWorkers {
             let client = self
                 .shipping_native_messaging()?
                 .ok_or_else(|| "remote Human attachment requires shipping native messaging".to_string())?;
-            let bytes = client.download_direct_message_resource(resource_id, attachment.size)?;
+            let bytes = client.download_direct_message_resource_for_user(
+                resource_id, attachment.size, self.local_human_id()?,
+            )?;
             let temporary_path = resource_root.join(".download.tmp");
             fs::write(&temporary_path, &bytes).map_err(|error| {
                 format!("remote Human attachment could not be staged: {error}")
@@ -2361,6 +2363,9 @@ impl ProductionSessionWorkers {
         for _ in 0..MAX_GAP_PAGES {
             pages_used += 1;
             let page = client.list_direct_messages_after_for_user(&peer, &local_human_id, after, PAGE_LIMIT)?;
+            if client.identity()?.user_id != local_human_id {
+                return Err("Fabushi native messaging credential changed Human account".into());
+            }
             if page.len() > PAGE_LIMIT {
                 return Err("Fabushi Human history page exceeded the 200-message response budget".into());
             }

@@ -1638,10 +1638,28 @@ fn spawn_human_message_fixture(
             stream.set_write_timeout(Some(std::time::Duration::from_secs(15)))
                 .expect("bound Human fixture response write");
             requests.push(read_fixture_http_request_before(&mut stream, Some(deadline)));
+            let after_id = requests.last().and_then(|request| request.split("afterId=").nth(1))
+                .and_then(|tail| tail.split(|character: char| !character.is_ascii_digit()).next())
+                .and_then(|value| value.parse::<u64>().ok());
             let (status, content_type, body) = match response {
-                HumanMessageFixtureReply::Json(status, body) => (
-                    status, "application/json", body.to_string().into_bytes(),
-                ),
+                HumanMessageFixtureReply::Json(status, mut body) => {
+                    // Existing pre-cursor cases model a compatible backend response.
+                    // Tests that explicitly supply null or a conflicting cursor
+                    // bypass this fixture default and assert fail-closed behavior.
+                    if status == 200 {
+                        if let (Some(after), Some(data)) = (
+                            after_id, body.get_mut("data").and_then(serde_json::Value::as_object_mut)
+                        ) {
+                            if let Some(messages) = data.get("messages").and_then(serde_json::Value::as_array) {
+                                let next = messages.last().and_then(|message| message.get("id"))
+                                    .cloned().unwrap_or(json!(after));
+                                data.entry("historyCursor").or_insert_with(|| json!({"mode":"after-id","afterId":after}));
+                                data.entry("nextAfterId").or_insert(next);
+                            }
+                        }
+                    }
+                    (status, "application/json", body.to_string().into_bytes())
+                },
                 HumanMessageFixtureReply::Bytes(status, bytes) => (
                     status, "application/octet-stream", bytes,
                 ),
@@ -3470,5 +3488,84 @@ fn shipping_human_reaction_missing_summary_does_not_acknowledge_intent() {
     assert_eq!(owner.get_transcript_entries().expect("no false settlement"), vec![original]);
     assert_eq!(server.join().expect("fixture").len(), 1);
     runtime.shutdown(); drop(owner); drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_history_cursor_echo_rejects_legacy_and_conflicting_backend_pages() {
+    for (label, cursor, next_after) in [
+        ("no-cursor", serde_json::Value::Null, json!(1)),
+        ("wrong-cursor", json!({"mode":"after-id","afterId":1}), json!(1)),
+        ("wrong-next", json!({"mode":"after-id","afterId":0}), json!(42)),
+    ] {
+        let root = temp_root(label);
+        let row = fixture_remote_human_message(1, 2, 1, "first", None, json!([]));
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(200, json!({
+                "success":true,"data":{
+                    "messages":[row], "historyCursor":cursor, "nextAfterId":next_after
+                }
+            })),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+            .as_str().expect("id").to_string();
+        let failure = runtime.sync_human_conversation(&id).expect_err("untrusted page rejected");
+        assert!(failure.contains("historyCursor") || failure.contains("nextAfterId"), "{label}: {failure}");
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+        assert!(owner.get_transcript_entries().expect("no materialization").is_empty(), "{label}");
+        assert!(owner.get_metadata("humanHistoryCoverage").expect("no checkpoint").is_none(), "{label}");
+        assert_eq!(server.join().expect("HTTP fixture").len(), 1, "{label}");
+        runtime.shutdown();
+        drop(owner);
+        drop(runtime);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart() {
+    let root = temp_root("human-6400-page-budget");
+    let responses = (0..32_u64).map(|page| {
+        let rows = (page * 200 + 1..=(page + 1) * 200)
+            .map(|id| fixture_remote_human_message(id, 2, 1, &format!("row-{id}"), None, json!([])))
+            .collect::<Vec<_>>();
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":rows}}))
+    }).collect::<Vec<_>>();
+    let (url, first_server) = spawn_human_message_fixture(responses);
+    let first = human_message_fixture_runtime(&root, &url);
+    let id = first.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_string();
+    let rows = first.sync_human_conversation(&id).expect("bounded first sync");
+    assert_eq!(rows.len(), 6400);
+    let owner = first.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("checkpoint"),
+        Some(json!({"afterId":6400,"complete":false})));
+    first.shutdown();
+    drop(owner);
+    drop(first);
+    let requests = first_server.join().expect("32-page fixture");
+    assert_eq!(requests.len(), 32, "no 33rd probe or unbudgeted latest refresh");
+    assert!(requests.first().expect("first").contains("&afterId=0"));
+    assert!(requests.last().expect("last").contains("&afterId=6200"));
+
+    let row = fixture_remote_human_message(6401, 2, 1, "row-6401", None, json!([]));
+    let (resume_url, second_server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[row.clone()]}})),
+        HumanMessageFixtureReply::Json(200, json!({"success":true,"data":{"messages":[row]}})),
+    ]);
+    let resumed = human_message_fixture_runtime(&root, &resume_url);
+    let resumed_rows = resumed.sync_human_conversation(&id).expect("resumed cursor");
+    assert_eq!(resumed_rows.len(), 6401);
+    let owner = resumed.open_human_conversation_db_owner(&id).expect("owner");
+    assert_eq!(owner.get_metadata("humanHistoryCoverage").expect("complete checkpoint"),
+        Some(json!({"afterId":6401,"complete":true})));
+    let requests = second_server.join().expect("resume fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].contains("&afterId=6400"), "resume must not replay first 6400");
+    assert!(!requests[1].contains("&afterId="), "spare request refreshes known latest");
+    resumed.shutdown();
+    drop(owner);
+    drop(resumed);
     let _ = fs::remove_dir_all(root);
 }

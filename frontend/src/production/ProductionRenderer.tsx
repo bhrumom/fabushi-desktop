@@ -2904,6 +2904,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           return next;
         });
         if (activeAgentIdRef.current !== ownerId) return;
+        // A pending first-page response must never repopulate a cleared
+        // transcript after its authoritative clear event.
+        openAgentRequestGenerationRef.current += 1;
         acknowledgementController.reset();
         transcriptPaginationController.reset();
       },
