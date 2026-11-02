@@ -1,0 +1,53 @@
+name: TDRP exact failed protocol evidence
+on:
+  push:
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    paths:
+      - scripts/tdrp-summarize-protocol-artifact.py
+      - .github/workflows/tdrp-protocol-failure-evidence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  read-complete-failed-artifact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Bind exact diagnostic source
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download the exact failed artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/protocol-log-download
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118478143 > artifacts/protocol-log-download/metadata.json
+          gh api --method GET repos/bhrumom/fabushi-desktop/actions/artifacts/13118478143/zip > artifacts/protocol-log-download/artifact.zip
+      - name: Read and hash full logs with bounded diagnostic output
+        run: >-
+          python3 scripts/tdrp-summarize-protocol-artifact.py
+          --metadata artifacts/protocol-log-download/metadata.json
+          --archive artifacts/protocol-log-download/artifact.zip
+          --output-dir artifacts/protocol-log-recovery
+          --repository bhrumom/fabushi-desktop
+          --head-sha 93b5977f99115bd41a9ff30441e0b22696797364
+          --artifact-id 13118478143
+          --run-id 41394020435
+          --expected-digest sha256:2e824d9acf5582db3780ffe5311a8aa4147b13a43d97711b804818a4d07bd080
+      - name: Preserve complete failure evidence and byte inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-protocol-failure-41394020435-${{ github.sha }}
+          path: artifacts/protocol-log-recovery
+          if-no-files-found: error
