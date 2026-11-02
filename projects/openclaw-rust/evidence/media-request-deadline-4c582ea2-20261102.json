@@ -1,0 +1,530 @@
+{
+  "record_kind": "scoped-actions-observation",
+  "observed_utc": "2026-11-02 23:25:37 UTC",
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0",
+    "tree": "6e3dc500b183e04905947a8a7821ba59cd2f85d3",
+    "parent": "4f44a270a08466e9c5292fff4810694aff34d8d9",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  },
+  "carrier_rule": "The commit storing this observation is an evidence carrier. Every execution below belongs only to subject H4c582ea2; a subsequent CAP candidate needs its own exact-H Actions.",
+  "scope": "MHT-v1 request-wide connection/body timeout through the existing AttachmentsService and actual controlled HTTP peer; mandatory shared Linux checks retained. Not whole-media or shipping acceptance.",
+  "runtime": {
+    "run_id": 41543022048,
+    "run_attempt": 1,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41543022048",
+    "linux_job_id": 125611621600,
+    "linux_result": "success",
+    "mac_job_id": 125611621666,
+    "mac_status_at_observation": "queued"
+  },
+  "media": {
+    "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1",
+    "integration_test_targets": [
+      [
+        "attachments_service_contract",
+        5
+      ],
+      [
+        "channel_attachment_contract",
+        4
+      ],
+      [
+        "openclaw_input_files_contract",
+        15
+      ],
+      [
+        "openclaw_media_fetch_contract",
+        25
+      ],
+      [
+        "openclaw_media_reference_contract",
+        11
+      ],
+      [
+        "safe_link_preview_fetch_contract",
+        11
+      ]
+    ],
+    "integration_passed": 71,
+    "projection_passed": 1,
+    "unicode_passed": 2,
+    "all_failed": 0,
+    "all_ignored": 0,
+    "commands": [
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_input_files_contract",
+        "--test",
+        "safe_link_preview_fetch_contract",
+        "--test",
+        "attachments_service_contract",
+        "--test",
+        "openclaw_media_fetch_contract",
+        "--test",
+        "openclaw_media_reference_contract",
+        "--test",
+        "channel_attachment_contract"
+      ],
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+        "--",
+        "--exact"
+      ],
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::cross_user_sharing::production::unicode_tests::"
+      ]
+    ],
+    "exits": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "log_sha256": "055291edb2d3080756fb60f9762ec9eafd57e55761dc1516f816cc1e2ecffbbc",
+    "projection_log_sha256": "930bb24e2553dca3bbc72b3f92cac8654e85a34db31fd3b66fabfc41e5979b34",
+    "unicode_log_sha256": "ea2beac03bb1274842da62f3c1a3b26acf39aa50314aa53012d619f360c19b83",
+    "receipt_sha256": "75f35acae46c263e9db9419becb114dc914d37085534398ae655fff23c6f9c29",
+    "input_count": 26,
+    "input_mismatches": [],
+    "required_positive_count": 39,
+    "required_positive_occurrences": [
+      {
+        "name": "gateway_file_extraction_rejects_every_malformed_explicit_policy",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_file_policy_errors_precede_base64_and_url_processing",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_file_extraction_preserves_omitted_and_null_default_policies",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_file_extraction_preserves_resolved_restrictive_policies",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_partial_file_policy_is_resolved_before_extraction",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_padding_only_sources_preserve_upstream_error_precedence",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_valid_padded_file_and_image_sources_preserve_byte_caps",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mapped_ipv6_addresses_preserve_ipv4_admission_decisions",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mapped_ip_url_literals_reject_private_dotted_and_hex_forms",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mapped_ip_redirects_revalidate_private_and_public_destinations",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "dns_resolution_rejects_mapped_private_answers_in_every_order",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "public_mapped_dns_target_preserves_host_sni_and_https_port",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mapped_ip_literal_targets_never_resolve_dns",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_buffer_gateway_stops_at_prefix_without_eof",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_save_gateway_stops_at_prefix_without_eof",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_supplied_response_normalizes_unicode_and_whitespace",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_supplied_response_prioritizes_status_and_redacts",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_gateway_prioritizes_status_and_redacts",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_gateway_read_failure_preserves_status",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_gateway_empty_and_whitespace_omit_body",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_error_gateway_success_and_default_guard_controls",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_deadline_gateway_trickle_preserves_http_status",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_deadline_gateway_trickle_success_leaves_store_unchanged",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_fetch_hostname_allowlist_matches_normalized_patterns",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_fetch_hostname_allowlist_does_not_override_private_trust",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "media_fetch_url_admission_enforces_http_and_https_requirements",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_media_fetch_checks_relative_and_off_list_redirects",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_media_fetch_applies_explicit_and_default_redirect_caps",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "gateway_input_url_allowlist_never_grants_private_access",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "extensions::cross_user_sharing::production::unicode_tests::mru_production_attachment_callback_preserves_unicode_and_refusal_controls",
+        "actual_complete_log_positive_count": 1
+      },
+      {
+        "name": "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals",
+        "actual_complete_log_positive_count": 1
+      }
+    ],
+    "environment": {
+      "working_directory": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+      "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+      "target": "x86_64-unknown-linux-gnu",
+      "NO_PROXY": "127.0.0.1,localhost,::1",
+      "no_proxy": "127.0.0.1,localhost,::1",
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    }
+  },
+  "actual_named_positives": [
+    "2026-11-02T23:10:27.5935641Z test media_http_deadline_gateway_timely_chunks_preserve_bytes_and_metadata ... ok",
+    "2026-11-02T23:10:30.5199872Z test media_http_deadline_gateway_trickle_preserves_http_status ... ok",
+    "2026-11-02T23:10:30.5369535Z test media_http_deadline_gateway_trickle_success_leaves_store_unchanged ... ok",
+    "2026-11-02T23:19:16.1875414Z test tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker ... ok",
+    "2026-11-02T23:21:16.8168288Z test unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash ... ok"
+  ],
+  "app": {
+    "required_cases": 52,
+    "passed_cases": 52,
+    "command_count": 107,
+    "nonzero_commands": [],
+    "startup_required": 7,
+    "startup_passed": 7,
+    "canonical_case": {
+      "name": "tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+      "result": "passed",
+      "outer_and_owned_child_summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ]
+    },
+    "canonical_commands": [
+      {
+        "argv": [
+          "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d",
+          "--exact",
+          "tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+          "--list"
+        ],
+        "exit": 0,
+        "stdout": ".evidence/sqlite-native-path/automation-app/case-18-list.stdout.log",
+        "stderr": ".evidence/sqlite-native-path/automation-app/case-18-list.stderr.log",
+        "stdout_sha256": "7ad6c3e86ba7066b62149d310bbe48b679bea6fdc8ccd241c45c9b26f84fe470",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv": [
+          "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d",
+          "--exact",
+          "tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exit": 0,
+        "stdout": ".evidence/sqlite-native-path/automation-app/case-18-run.stdout.log",
+        "stderr": ".evidence/sqlite-native-path/automation-app/case-18-run.stderr.log",
+        "stdout_sha256": "fa2bacead504642ad390f769beca05cc8897b843064015d643395bb86c34649e",
+        "stderr_sha256": "cc110fddf64250decf02b61d41ef1652eaa3df054e57c78e219f37039a2445ed"
+      }
+    ],
+    "executable": {
+      "path": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d",
+      "sha256": "09ebef98585f08506a2ce36f43e853f5d0f06c4c1fe757263688ecb0608e1c27"
+    },
+    "input_count": 36,
+    "input_mismatches": []
+  },
+  "lpg": {
+    "target_summary_pass_counts": [
+      9,
+      43,
+      58,
+      1,
+      3
+    ],
+    "aggregate_passed": 114,
+    "aggregate_failed": 0,
+    "aggregate_ignored": 0,
+    "strict_positive_row_counts": {
+      "host": 52,
+      "coordinator": 58,
+      "app": 3,
+      "total": 113
+    },
+    "capture_difference": "One additional coordinator_contract test has stdout/stderr-interleaved text, so 58 contract-summary passes produce 57 standalone strict positive lines. production_protocol adds one. Required positives are unaffected.",
+    "interleaved_raw_line": "2026-11-02T23:21:16.8141660Z CJW SSE /payload/entry/channelSender/nested/1/integral: expected=0xtest gateway_json_wire_fidelity::gateway_http_reply_preserves_finite_json_values ... 408f400000000000ok actual=",
+    "input_count_before": 28,
+    "input_count_after": 28,
+    "input_mismatches": [],
+    "required_positive_counts": {
+      "host": 9,
+      "coordinator": 2,
+      "app": 3,
+      "same_subject_reused_mcp": 2
+    },
+    "reused_mcp_automation_log_sha256": "a5eddd2d017f3c8496ad21ee2be73ce48a5037049981ed3a111ebe774f6a4f62"
+  },
+  "receipt_identity_review": {
+    "receipt_names": [
+      "native",
+      "media",
+      "portable",
+      "palette",
+      "automation",
+      "app",
+      "lpg"
+    ],
+    "result": "All seven exact printed receipts bind the subject H/tree/U and passed selected checks.",
+    "unique_git_paths": 132,
+    "groups": [
+      {
+        "receipt": "native",
+        "field": "fresh_custody_inputs_sha256",
+        "count": 3,
+        "mismatches": []
+      },
+      {
+        "receipt": "media",
+        "field": "inputs_sha256",
+        "count": 26,
+        "mismatches": []
+      },
+      {
+        "receipt": "portable",
+        "field": "inputs_sha256",
+        "count": 60,
+        "mismatches": []
+      },
+      {
+        "receipt": "palette",
+        "field": "inputs_sha256",
+        "count": 18,
+        "mismatches": []
+      },
+      {
+        "receipt": "palette",
+        "field": "inputs_sha256_after",
+        "count": 18,
+        "mismatches": []
+      },
+      {
+        "receipt": "automation",
+        "field": "inputs_sha256",
+        "count": 27,
+        "mismatches": []
+      },
+      {
+        "receipt": "app",
+        "field": "inputs_sha256",
+        "count": 36,
+        "mismatches": []
+      },
+      {
+        "receipt": "lpg",
+        "field": "inputs_before_sha256",
+        "count": 28,
+        "mismatches": []
+      },
+      {
+        "receipt": "lpg",
+        "field": "inputs_after_sha256",
+        "count": 28,
+        "mismatches": []
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "id": 13188301911,
+      "name": "ocrm-sqlite-native-path-4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0-41543022048-1",
+      "size_in_bytes": 293329,
+      "digest": "sha256:601bcd91b2c2b1b7ef9fa720f04b22e206bb894409ee8af51172506a8c1184c2",
+      "subject_commit": "4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0"
+    },
+    {
+      "id": 13188225649,
+      "name": "ocrm-linux-before-automation-4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0-41543022048-1",
+      "size_in_bytes": 103448,
+      "digest": "sha256:8948e4faf4af454199ac110dcc56109a1d40bb019e5ab73c40bded00b33cbaf9",
+      "subject_commit": "4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0"
+    },
+    {
+      "id": 13188085028,
+      "name": "ocrm-config-restore-linux-4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0-41543022048-1",
+      "size_in_bytes": 47513,
+      "digest": "sha256:1b850cf3ace5d1c35b5b99c17e2aac527d567298f0d176ed15f302ed16a5a095",
+      "subject_commit": "4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0"
+    },
+    {
+      "id": 13187401969,
+      "name": "ocrm-plugin-edge-4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0",
+      "size_in_bytes": 8324,
+      "digest": "sha256:13e4dbe6f45088d49ac802e17d799e3c6302a6dd8cb2b667b5cc8de6f7f97ea0",
+      "subject_commit": "4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0"
+    }
+  ],
+  "raw_linux_log": {
+    "job_logs_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125611621600/logs",
+    "bytes": 1704483,
+    "sha256": "51a702f80d53f00795b4d90214619fc4068c6b1752a008824e9edd0c03eedcc4"
+  },
+  "p0": {
+    "run_id": 41543022108,
+    "jobs": [
+      125611621505,
+      125612635100
+    ],
+    "result": "success",
+    "review_tests": 33,
+    "materialization_tests": 21,
+    "paths": 62130,
+    "mapped": 850,
+    "unread_partial": 62093,
+    "pending_forward_links": 0,
+    "scope": "G01 tracked-tree/G02 structural only; full source/dependency closure open",
+    "persist_result": "No new source-derived shard content",
+    "artifacts": [
+      {
+        "id": 13186778354,
+        "name": "ocrm-p0-authority-4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0",
+        "size_in_bytes": 4941043,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13186778354",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13186778354/zip",
+        "expired": false,
+        "created_at": "2026-11-02T23:10:27Z",
+        "expires_at": "2026-12-02T23:10:25Z",
+        "updated_at": "2026-11-02T23:10:27Z",
+        "digest": "sha256:843a86e10054d8d4402fe19d4ca5f66dcd9dae78cd5497e5160e6997d465bfe9",
+        "workflow_run": {
+          "id": 41543022108,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+          "head_sha": "4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0"
+        }
+      }
+    ]
+  },
+  "limits": [
+    "macOS queued; no shipping macOS pass",
+    "No cold internet, real provider/channel/device, desktop UI/timing, platform package, upgrade/rollback or performance/soak acceptance",
+    "MHT controlled AttachmentsService/real HTTP fixtures do not establish outer Host media registration/desktop consumer",
+    "No full DNS/IP/proxy/cancellation/read-idle timing parity",
+    "No OCRM whole-source closure, all-unit verification or full migration acceptance",
+    "Artifact API/log identity and decoded full job logs inspected; ZIP contents not independently extracted",
+    "Receipt result belongs only to H4c582ea2, not a subsequent CAP or evidence-carrier commit"
+  ],
+  "local_executable_validation_performed": false,
+  "global_completion_flags_changed": false
+}

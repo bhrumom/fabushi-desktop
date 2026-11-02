@@ -2,6 +2,7 @@ pub mod anthropic_inline_images;
 pub mod attachments_service;
 pub mod box_staging;
 pub mod channel_inbound_roots;
+mod content_addressed_file;
 pub mod extension;
 pub mod generate_image_resource_accessor;
 pub mod generate_image_service;

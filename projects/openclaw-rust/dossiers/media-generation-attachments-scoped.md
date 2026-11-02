@@ -104,3 +104,59 @@ live provider acceptance evidence remain pending.
 - **Unread / Unclassified Paths**: 58,614
 - **Strict Conservation**: $136 + 58614 = 58750$.
 - **All Global Completion Flags**: `false` strictly preserved.
+
+## 5. Current existing-owner content publication — CAP-v1
+
+The native persistence correction is specified in
+`projects/openclaw-rust/docs/specs/attachment-content-publication.md`.
+Discovery H is `4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0`; implementation
+base `aa5a448e5758bd2b46aed92e699f56861ad0acdc` and first integration base
+`7eb81e20b7dc2eac5a71516a9a0c78795d252e95` preserve the same attachment
+owner. Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+
+The actual registered `uploadAttachment` Host-lane path reaches
+`AttachmentsService::upload` -> `ingest_attachment_bytes`. The actual App's
+Session-admitted generated-image persistence closure reaches
+`persist_image_bytes`. Both share the private content-addressed writer. At
+discovery H it accepts an existing partial/corrupt object without reading its
+bytes. The CAP candidate now stages, syncs and publishes without overwrite,
+and verifies exact existing content before those callers report success.
+Independent review and exact-H Actions remain pending. Text/chunk/image and Box
+consumers remain the existing owners. Direct already-owned-path ingestion,
+desktop composer staging and media-store read-scope authority remain separate.
+
+Relevant target source identities at discovery H are:
+
+| Input | Git blob | Review scope |
+| --- | --- | --- |
+| `attachments_service.rs` | `8fe9cdaf49278b180a66ac5fe2a21a84eb4de5a5` | Writer, upload, image persistence, real read/Box consumers and errors |
+| `host_secret_store.rs` | `7b6b47c6d855f0d8077b0221aa08a13b883002dc` | Existing bounded regular-file validation, owned temporary and non-replacing publication pattern; secret permissions are not copied |
+| `host_lock.rs` | `b034b3db5d6387d5e89a52cdbf84f0d60a693b33` | Physical same-profile Host custody; not per-file integrity |
+| `generate_image_service.rs` | `2420b994b0643fdd1b28b7551493d9a1df889c3e` | Actual persistence failure propagation and generated resource return |
+| `attachments_service_contract.rs` | `04234ede560c1a377d82b0e12197b89c1d8a31fb` | Existing real filesystem upload/read/Box and image controls |
+
+The bounded fixed-U source review preserves the earlier historical table rather
+than relabeling it. `src/media/store.ts` is now blob
+`d4342f8f5a4de1834346f131db70d2c6b6e80426`; the current review covers lines
+1–220 and 280–675, including ordinary/scoped publication and stream staging.
+It does not award full-file reading or complete store parity. The entire small
+`src/infra/sibling-temp-file.ts` wrapper, blob
+`dd082f8fae314e5417f5afad855b4c70ffa9ce1b`, delegates to the existing
+`@openclaw/fs-safe/advanced` dependency with private-directory producer
+isolation; that observation is not a full dependency implementation audit.
+`src/media/store.shared.ts`, blob
+`3e06d13268b774a149cdd657983f82e74ee51772`, was read in full: its explicit
+0644 mode keeps media usable by sandbox UIDs. The Fabushi correction preserves
+its own existing creation permissions rather than applying secret-key modes.
+`src/media/staged-inputs.ts`, blob
+`98e3e0cc8d2fec93d0712cef7901961082d36ab0`, was read in full to distinguish
+sandbox input markers/aliases from desktop composer staging. No responsibility
+or review status is silently reassigned from that distinction.
+
+CAP-v1 reuses existing Rust IO/UUID/libc dependencies and the current owner;
+it introduces no source-derived naming algorithm, second resource store or
+new permission truth. Authoring and source review are not execution evidence.
+Exact-candidate Actions, real platform filesystems, provider/UI behavior,
+source/dependency closure and final acceptance remain required. The canonical
+ledger/RTM identities, literal reading facts, historical figures and eight
+completion flags are unchanged by this addition.

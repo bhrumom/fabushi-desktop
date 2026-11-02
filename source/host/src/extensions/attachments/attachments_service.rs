@@ -22,6 +22,7 @@ use crate::connectors::channel_attachment::{
 use crate::extensions::attachments::box_staging::{
     BoxStagedUpload, BoxStagingBox, stage_attachments_into_box,
 };
+use crate::extensions::attachments::content_addressed_file::write_content_addressed_file;
 use crate::extensions::attachments::generate_image_resource_accessor::SandGenerateImageResourceAccessor;
 use crate::extensions::attachments::generate_image_service::{
     CursorGenerateImageOptions, GenerateImageAuth, GenerateImageRequestIdObserver,
@@ -235,18 +236,6 @@ fn path_is_within(parent: &Path, child: &Path, inclusive: bool) -> bool {
     child_real.strip_prefix(parent_real).ok().is_some_and(|relative| {
         inclusive || !relative.as_os_str().is_empty()
     })
-}
-
-fn write_content_addressed_file(
-    dir: &Path,
-    target_path: &Path,
-    bytes: &[u8],
-) -> Result<(), SandAttachmentError> {
-    fs::create_dir_all(dir)?;
-    if !target_path.exists() {
-        fs::write(target_path, bytes)?;
-    }
-    Ok(())
 }
 
 pub fn ingest_attachment(

@@ -362,6 +362,11 @@ jobs:
               "desktop/package.json", "desktop/package-lock.json", "desktop/tsconfig.json",
               "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
               "source/host/src/extensions/attachments/attachments_service.rs",
+              "projects/openclaw-rust/docs/specs/attachment-content-publication.md",
+              "source/host/src/extensions/attachments/content_addressed_file.rs",
+              "source/host/src/extensions/attachments/mod.rs",
+              "source/host/src/extensions/attachments/generate_image_service.rs",
+              "source/host/src/media_mime.rs",
               "source/host/src/extensions/attachments/input_files.rs",
               "source/host/tests/openclaw_input_files_contract.rs",
               "projects/openclaw-rust/docs/specs/link-preview-mapped-ip-admission.md",
@@ -787,7 +792,7 @@ jobs:
             --test runner_production_bridge_contract \
             --test fabushi_model_identity_production_contract \
             --test fabushi_responses_credential_context_contract
-      - name: Test media input, preview and URL admission, and HTTP failure diagnostics through existing attachment owners
+      - name: Test media admission, HTTP failure diagnostics and content publication through existing attachment owners
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         env:
@@ -799,6 +804,7 @@ jobs:
           run_recovery_check media-input-policy cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract --test openclaw_media_reference_contract --test channel_attachment_contract
           run_recovery_check media-input-url-projection cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact
           run_recovery_check media-reference-unicode cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::cross_user_sharing::production::unicode_tests::
+          run_recovery_check attachment-content-publication cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::content_addressed_file::tests::
           python3 - <<'PY'
           import hashlib, json, os, re, subprocess, sys
           from pathlib import Path
@@ -807,9 +813,10 @@ jobs:
           log = (root / "media-input-policy.log").read_bytes()
           projection_log = (root / "media-input-url-projection.log").read_bytes()
           unicode_log = (root / "media-reference-unicode.log").read_bytes()
+          publication_log = (root / "attachment-content-publication.log").read_bytes()
           command = (root / "media-input-policy.command.txt").read_text().strip()
           exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
-                   if line.split("\t")[0] in ("media-input-policy", "media-input-url-projection", "media-reference-unicode")]
+                   if line.split("\t")[0] in ("media-input-policy", "media-input-url-projection", "media-reference-unicode", "attachment-content-publication")]
           required = [
               "gateway_file_extraction_rejects_every_malformed_explicit_policy",
               "gateway_file_policy_errors_precede_base64_and_url_processing",
@@ -825,6 +832,20 @@ jobs:
               "public_mapped_dns_target_preserves_host_sni_and_https_port",
               "mapped_ip_literal_targets_never_resolve_dns",
               "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+              "gateway_upload_rejects_corrupt_content_addressed_winners_without_mutation",
+              "gateway_upload_rejects_directory_winners_without_mutation",
+              "gateway_upload_rejects_symlink_winners_without_following_them",
+              "gateway_upload_rejects_fifo_winners_without_opening_them",
+              "gateway_upload_refuses_unreadable_objects_and_unwritable_destinations",
+              "valid_legacy_winner_is_reused_without_changing_its_metadata",
+              "publication_preserves_default_file_and_directory_permissions",
+              "restart_ignores_orphan_staging_files_and_preserves_valid_resources",
+              "concurrent_same_content_uploads_return_one_complete_resource",
+              "generated_image_service_rejects_corrupt_winners_and_propagates_persistence_errors",
+              "generated_image_service_returns_persisted_bytes_to_image_consumer",
+              "empty_image_and_attachment_extension_behavior_remain_unchanged",
+              "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+              "image_reads_and_persistence_preserve_content_addressed_dimensions",
               "media_http_error_buffer_gateway_stops_at_prefix_without_eof",
               "media_http_error_save_gateway_stops_at_prefix_without_eof",
               "media_http_error_supplied_response_normalizes_unicode_and_whitespace",
@@ -856,27 +877,43 @@ jobs:
               "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals",
           ]
           unicode_passed = re.findall(r"^test (\S+) \.\.\. ok$", unicode_log.decode("utf-8", errors="replace"), re.MULTILINE)
+          publication_required = [
+              "extensions::attachments::content_addressed_file::tests::staged_bytes_are_complete_before_the_final_name_is_published",
+              "extensions::attachments::content_addressed_file::tests::concurrent_staged_publishers_converge_on_one_complete_file",
+              "extensions::attachments::content_addressed_file::tests::publication_rejects_a_corrupt_winner_created_after_staging",
+              "extensions::attachments::content_addressed_file::tests::failed_publication_cleans_only_its_owned_stage",
+              "extensions::attachments::content_addressed_file::tests::create_new_collision_never_owns_or_removes_the_existing_path",
+              "extensions::attachments::content_addressed_file::tests::retry_after_publication_before_acknowledgement_reuses_the_final_file",
+              "extensions::attachments::content_addressed_file::tests::cleanup_failure_leaves_the_complete_final_file_retryable",
+              "extensions::attachments::content_addressed_file::tests::bounded_comparison_rejects_changes_after_the_first_buffer",
+              "extensions::attachments::content_addressed_file::tests::dropping_an_unpublished_stage_does_not_create_a_final_object",
+          ]
+          publication_passed = re.findall(r"^test (\S+) \.\.\. ok$", publication_log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
           missing += [] if projection_passed.count(projection_name) == 1 else [projection_name]
+          missing += [name for name in publication_required if publication_passed.count(name) != 1]
           missing += [name for name in unicode_required if unicode_passed.count(name) != 1]
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = (exits == [["media-input-policy", "0"], ["media-input-url-projection", "0"], ["media-reference-unicode", "0"]] and not missing
+          accepted = (exits == [["media-input-policy", "0"], ["media-input-url-projection", "0"], ["media-reference-unicode", "0"], ["attachment-content-publication", "0"]] and not missing
                       and head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"])
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({
-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1", "command": command, "command_exit_records": exits,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1/CAP-v1", "command": command, "command_exit_records": exits,
               "required_tests": required, "observed_passed_test_names": passed,
               "projection_command": (root / "media-input-url-projection.command.txt").read_text().strip(),
               "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
               "projection_log_sha256": hashlib.sha256(projection_log).hexdigest(),
+              "publication_command": (root / "attachment-content-publication.command.txt").read_text().strip(),
               "unicode_command": (root / "media-reference-unicode.command.txt").read_text().strip(),
               "unicode_required_tests": unicode_required, "unicode_observed_passed_test_names": unicode_passed,
               "unicode_log_sha256": hashlib.sha256(unicode_log).hexdigest(),
+              "publication_required_tests": publication_required, "publication_observed_passed_test_names": publication_passed,
+              "publication_log_sha256": hashlib.sha256(publication_log).hexdigest(),
               "missing_or_nonunique_positive_results": missing,
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. CAP covers existing attachment/image object publication, exact-content deduplication, real-filesystem collision/cleanup/reopen controls and actual read/image consumers; it does not establish hostile parent-directory, process-crash, power-loss or Windows acceptance. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           })
           (root / "media-input-policy.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
@@ -1979,6 +2016,9 @@ jobs:
               "media_reference_unicode_contract": "MRU-v1",
               "media_reference_unicode_result": "passed",
               "media_reference_unicode_scope": "UTF-8-safe ASCII scheme decisions, unchanged inbound URI refusals, and actual ProductionXuserHost/AttachmentsService plus ordered publisher callbacks with a controlled relay. Fresh desktop producer projection, actual sharing accounts, platforms and full media acceptance remain open.",
+              "attachment_content_publication_contract": "CAP-v1",
+              "attachment_content_publication_result": "passed",
+              "attachment_content_publication_scope": "The existing upload/image content-addressed writer publishes complete no-overwrite objects and verifies reused bytes; actual filesystem stages, corrupt winners, owned cleanup, reopen and read/image consumers are checked. Parent-directory authority, process-crash/power-loss, Windows and complete composer acceptance remain open.",
               "media_request_deadline_contract": "MHT-v1",
               "media_request_deadline_result": "passed",
               "media_request_deadline_scope": "Both existing remote media readers apply the configured timeout as a total connection-through-body budget; controlled trickling error/success responses settle without resetting it, errors retain known HTTP status, and timely payload/store controls remain. Separate read-idle/header budgets, caller cancellation, full network and real-service acceptance stay open.",
@@ -2464,7 +2504,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
           PY
-      - name: Test media input, preview and URL policy, and HTTP failure diagnostics on the existing Linux Host cache
+      - name: Test media admission, HTTP failure diagnostics and content publication on the existing Linux Host cache
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
         env:
@@ -2476,6 +2516,7 @@ jobs:
           command=(cargo test --locked --no-fail-fast --manifest-path source/host/Cargo.toml --test openclaw_input_files_contract --test safe_link_preview_fetch_contract --test attachments_service_contract --test openclaw_media_fetch_contract --test openclaw_media_reference_contract --test channel_attachment_contract)
           projection_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust -- --exact)
           unicode_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::cross_user_sharing::production::unicode_tests::)
+          publication_command=(cargo test --locked --manifest-path source/host/Cargo.toml --lib extensions::attachments::content_addressed_file::tests::)
           set +e
           "${command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/tests.log
           pipeline_status=("${PIPESTATUS[@]}")
@@ -2483,16 +2524,22 @@ jobs:
           projection_status=("${PIPESTATUS[@]}")
           "${unicode_command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/unicode.log
           unicode_status=("${PIPESTATUS[@]}")
+          "${publication_command[@]}" 2>&1 | tee .evidence/sqlite-native-path/media-input-policy/publication.log
+          publication_status=("${PIPESTATUS[@]}")
           set -e
-          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${projection_status[0]}" "${projection_status[1]}" "${unicode_status[0]}" "${unicode_status[1]}" "${command[@]}" --projection-command "${projection_command[@]}" --unicode-command "${unicode_command[@]}" <<'PY'
+          python3 - "${pipeline_status[0]}" "${pipeline_status[1]}" "${projection_status[0]}" "${projection_status[1]}" "${unicode_status[0]}" "${unicode_status[1]}" "${command[@]}" --projection-command "${projection_command[@]}" --unicode-command "${unicode_command[@]}" --publication-exits "${publication_status[0]}" "${publication_status[1]}" --publication-command "${publication_command[@]}" <<'PY'
           import hashlib, json, os, pathlib, re, subprocess, sys
           root = pathlib.Path(".evidence/sqlite-native-path/media-input-policy")
           log = (root / "tests.log").read_bytes()
           projection_log = (root / "projection.log").read_bytes()
           unicode_log = (root / "unicode.log").read_bytes()
+          publication_log = (root / "publication.log").read_bytes()
           cargo_exit, capture_exit, projection_exit, projection_capture_exit, unicode_exit, unicode_capture_exit = map(int, sys.argv[1:7])
           separator = sys.argv.index("--projection-command", 7)
           unicode_separator = sys.argv.index("--unicode-command", separator + 1)
+          publication_exit_separator = sys.argv.index("--publication-exits", unicode_separator + 1)
+          publication_command_separator = sys.argv.index("--publication-command", publication_exit_separator + 1)
+          publication_exit, publication_capture_exit = map(int, sys.argv[publication_exit_separator+1:publication_command_separator])
           required = [
               "gateway_file_extraction_rejects_every_malformed_explicit_policy",
               "gateway_file_policy_errors_precede_base64_and_url_processing",
@@ -2508,6 +2555,20 @@ jobs:
               "public_mapped_dns_target_preserves_host_sni_and_https_port",
               "mapped_ip_literal_targets_never_resolve_dns",
               "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+              "gateway_upload_rejects_corrupt_content_addressed_winners_without_mutation",
+              "gateway_upload_rejects_directory_winners_without_mutation",
+              "gateway_upload_rejects_symlink_winners_without_following_them",
+              "gateway_upload_rejects_fifo_winners_without_opening_them",
+              "gateway_upload_refuses_unreadable_objects_and_unwritable_destinations",
+              "valid_legacy_winner_is_reused_without_changing_its_metadata",
+              "publication_preserves_default_file_and_directory_permissions",
+              "restart_ignores_orphan_staging_files_and_preserves_valid_resources",
+              "concurrent_same_content_uploads_return_one_complete_resource",
+              "generated_image_service_rejects_corrupt_winners_and_propagates_persistence_errors",
+              "generated_image_service_returns_persisted_bytes_to_image_consumer",
+              "empty_image_and_attachment_extension_behavior_remain_unchanged",
+              "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+              "image_reads_and_persistence_preserve_content_addressed_dimensions",
               "media_http_error_buffer_gateway_stops_at_prefix_without_eof",
               "media_http_error_save_gateway_stops_at_prefix_without_eof",
               "media_http_error_supplied_response_normalizes_unicode_and_whitespace",
@@ -2539,17 +2600,35 @@ jobs:
               "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals",
           ]
           unicode_passed = re.findall(r"^test (\S+) \.\.\. ok$", unicode_log.decode("utf-8", errors="replace"), re.MULTILINE)
+          publication_required = [
+              "extensions::attachments::content_addressed_file::tests::staged_bytes_are_complete_before_the_final_name_is_published",
+              "extensions::attachments::content_addressed_file::tests::concurrent_staged_publishers_converge_on_one_complete_file",
+              "extensions::attachments::content_addressed_file::tests::publication_rejects_a_corrupt_winner_created_after_staging",
+              "extensions::attachments::content_addressed_file::tests::failed_publication_cleans_only_its_owned_stage",
+              "extensions::attachments::content_addressed_file::tests::create_new_collision_never_owns_or_removes_the_existing_path",
+              "extensions::attachments::content_addressed_file::tests::retry_after_publication_before_acknowledgement_reuses_the_final_file",
+              "extensions::attachments::content_addressed_file::tests::cleanup_failure_leaves_the_complete_final_file_retryable",
+              "extensions::attachments::content_addressed_file::tests::bounded_comparison_rejects_changes_after_the_first_buffer",
+              "extensions::attachments::content_addressed_file::tests::dropping_an_unpublished_stage_does_not_create_a_final_object",
+          ]
+          publication_passed = re.findall(r"^test (\S+) \.\.\. ok$", publication_log.decode("utf-8", errors="replace"), re.MULTILINE)
           missing = [name for name in required if passed.count(name) != 1]
           missing += [] if projection_passed.count(projection_name) == 1 else [projection_name]
+          missing += [name for name in publication_required if publication_passed.count(name) != 1]
           missing += [name for name in unicode_required if unicode_passed.count(name) != 1]
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-          accepted = cargo_exit == capture_exit == projection_exit == projection_capture_exit == unicode_exit == unicode_capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
+          accepted = cargo_exit == capture_exit == projection_exit == projection_capture_exit == unicode_exit == unicode_capture_exit == publication_exit == publication_capture_exit == 0 and not missing and head == os.environ["FABUSHI_TARGET_SHA"]
           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
           inputs = [
               ".github/workflows/rust-desktop-runtime.yml",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
               "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
               "source/host/src/extensions/attachments/attachments_service.rs",
+              "projects/openclaw-rust/docs/specs/attachment-content-publication.md",
+              "source/host/src/extensions/attachments/content_addressed_file.rs",
+              "source/host/src/extensions/attachments/mod.rs",
+              "source/host/src/extensions/attachments/generate_image_service.rs",
+              "source/host/src/media_mime.rs",
               "source/host/src/extensions/attachments/input_files.rs",
               "source/host/tests/openclaw_input_files_contract.rs",
               "projects/openclaw-rust/docs/specs/link-preview-mapped-ip-admission.md",
@@ -2573,7 +2652,7 @@ jobs:
               "source/host/tests/channel_attachment_contract.rs",
           ]
           receipt = {
-              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1", "subject_commit": head,
+              "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1/MHT-v1/CAP-v1", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
@@ -2582,19 +2661,22 @@ jobs:
               "projection_command": sys.argv[separator+1:unicode_separator], "projection_exit": projection_exit, "projection_capture_exit": projection_capture_exit,
               "projection_required_test": projection_name, "projection_observed_passed_test_names": projection_passed,
               "projection_log_sha256": hashlib.sha256(projection_log).hexdigest(),
-              "unicode_command": sys.argv[unicode_separator+1:], "unicode_exit": unicode_exit, "unicode_capture_exit": unicode_capture_exit,
+              "publication_command": sys.argv[publication_command_separator+1:], "publication_exit": publication_exit, "publication_capture_exit": publication_capture_exit,
+              "unicode_command": sys.argv[unicode_separator+1:publication_exit_separator], "unicode_exit": unicode_exit, "unicode_capture_exit": unicode_capture_exit,
               "unicode_required_tests": unicode_required, "unicode_observed_passed_test_names": unicode_passed,
               "unicode_log_sha256": hashlib.sha256(unicode_log).hexdigest(),
+              "publication_required_tests": publication_required, "publication_observed_passed_test_names": publication_passed,
+              "publication_log_sha256": hashlib.sha256(publication_log).hexdigest(),
               "required_tests": required, "missing_or_nonunique_positive_results": missing,
               "observed_passed_test_names": passed,
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "log_sha256": hashlib.sha256(log).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+              "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MHT covers total-request deadlines with real trickled/timely response controls. CAP covers existing attachment/image object publication, exact-content deduplication, real-filesystem collision/cleanup/reopen controls and actual read/image consumers; it does not establish hostile parent-directory, process-crash, power-loss or Windows acceptance. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
           }
           (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
-          sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
+          sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or publication_exit or publication_capture_exit or 1)
           PY
       - name: Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache
         id: channel_pending_recovery
