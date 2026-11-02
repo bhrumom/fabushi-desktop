@@ -75,6 +75,16 @@ impl ConversationActor {
         state.sequence = state.sequence.saturating_add(1);
         Ok(Some(state.sequence))
     }
+
+    #[cfg(test)]
+    pub(crate) fn poison_state_for_admission_test(&self) {
+        let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _state = self.state.lock().expect("unpoisoned actor before injection");
+            panic!("poison actual actor state for dispatch admission test");
+        }));
+        assert!(poisoned.is_err());
+        assert!(self.state.is_poisoned());
+    }
 }
 
 #[derive(Default)]

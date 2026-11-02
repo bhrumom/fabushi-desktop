@@ -289,6 +289,10 @@ jobs:
           fi
           cargo test --locked --manifest-path source/host/app/Cargo.toml --test startup_admission_contract || admission_status=1
           exit "$admission_status"
+      - name: Test native Runtime provider dispatch admission
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib
       - name: Test affected Session Transcript and Runner integration recovery
         id: ocrm_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
@@ -608,6 +612,10 @@ jobs:
               "shipping_host_startup_admission_target": "source/host/app:startup_admission_contract",
               "shipping_host_startup_admission_result": "passed",
               "shipping_host_startup_admission_scope": "Actual normal Host binary, shared profile guard, absent app root and persisted waiting-user/settings refusal, admitted recovery positive, constructor exits and helper role entry. Different profile roots sharing app data, full worker retirement and unknown-effect restart reconciliation remain open.",
+              "native_runtime_dispatch_admission_contract": "RDA-v1",
+              "native_runtime_dispatch_admission_target": "mahayana-runtime library",
+              "native_runtime_dispatch_admission_result": "passed",
+              "native_runtime_dispatch_admission_scope": "Actual Runtime and actor gate with real SQLite refusal and missing-row controls, counted provider entry, exact operation failure and own-resource cleanup, later and unrelated conversation positives. Durable original-turn restart, legacy accepted-row safety and unknown-effect reconciliation remain open.",
               "shipping_listener_resume_test": "tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce",
               "shipping_listener_resume_result": "passed",
               "channel_idle_handoff_contract": "OCRM-CHANNEL-IDLE-HANDOFF-v1",

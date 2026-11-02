@@ -2,6 +2,8 @@
 
 mod capability_broker;
 mod conversation_actor;
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod dispatch_admission_tests;
 mod kernel_conversation;
 mod runtime_store;
 
@@ -1482,16 +1484,24 @@ impl MahayanaRuntime {
         let task_operation_id = operation_id.clone();
         self.async_runtime.spawn(async move {
             let _gate = actor.gate.lock().await;
-            if actor
-                .start(&turn_id, run_id.clone())
-                .map_err(RuntimeError::Synchronization)
-                .is_ok()
-            {
-                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Preparing);
-                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Thinking);
-            }
-
-            let result = provider.send_message(request, sink).await;
+            let admission = (|| -> Result<(), RuntimeError> {
+                actor
+                    .start(&turn_id, run_id.clone())
+                    .map_err(RuntimeError::Synchronization)?;
+                transition_turn_state(&event_tx, &store, &context, TurnState::Preparing)?;
+                transition_turn_state(&event_tx, &store, &context, TurnState::Thinking)
+            })();
+            let result = match admission {
+                Ok(()) => provider.send_message(request, sink).await.map_err(|error| {
+                    let code = if matches!(error, ConversationError::UsageLimitExceeded(_)) {
+                        "usage_limit_exceeded"
+                    } else {
+                        "provider_error"
+                    };
+                    (code, error.to_string())
+                }),
+                Err(error) => Err(("runtime_admission_failed", error.to_string())),
+            };
             let terminal_state = if result.is_ok() {
                 TurnState::Completed
             } else {
@@ -1505,15 +1515,10 @@ impl MahayanaRuntime {
                 Ok(()) => RuntimeEvent::OperationCompleted {
                     operation_id: task_operation_id.clone(),
                 },
-                Err(error) => RuntimeEvent::OperationFailed {
+                Err((code, message)) => RuntimeEvent::OperationFailed {
                     operation_id: task_operation_id.clone(),
-                    code: if matches!(error, ConversationError::UsageLimitExceeded(_)) {
-                        "usage_limit_exceeded"
-                    } else {
-                        "provider_error"
-                    }
-                    .to_string(),
-                    message: error.to_string(),
+                    code: code.to_string(),
+                    message,
                 },
             };
             let _ = event_tx.send(event);

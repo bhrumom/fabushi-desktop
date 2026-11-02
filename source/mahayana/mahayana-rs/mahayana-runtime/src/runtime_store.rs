@@ -441,7 +441,7 @@ impl RuntimeStore {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(connection) = &self.connection else { return Ok(()); };
-            connection
+            let updated = connection
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
                 .execute(
@@ -449,6 +449,11 @@ impl RuntimeStore {
                     params![turn_id.as_str(), state.as_str(), active_run_id.map(|id| id.as_str())],
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            if updated != 1 {
+                return Err(RuntimeStoreError::Sqlite(format!(
+                    "turn state update for {turn_id} affected {updated} rows; expected 1"
+                )));
+            }
             Ok(())
         }
     }
@@ -467,7 +472,7 @@ impl RuntimeStore {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(connection) = &self.connection else { return Ok(()); };
-            connection
+            let updated = connection
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
                 .execute(
@@ -475,6 +480,11 @@ impl RuntimeStore {
                     params![run_id.as_str(), state.as_str(), finished_at_ms],
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            if updated != 1 {
+                return Err(RuntimeStoreError::Sqlite(format!(
+                    "run state update for {run_id} affected {updated} rows; expected 1"
+                )));
+            }
             Ok(())
         }
     }
