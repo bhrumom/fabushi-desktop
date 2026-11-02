@@ -66,6 +66,20 @@ a fresh snapshot. This changes no wire schema, persisted format or scheduler.
 
 ## Verification and integration
 
+Decision **MEMORY-CANONICAL-ORACLE-01 — FIX / TEST_ORACLE_BUG**: the newly
+selected shared `bound_synthesis_gate_rejects_a_noncanonical_store_path` control
+failed on exact H `32a9a391199b03d8b8df76380701c14d56f84834` and
+`c6be0cbc7bd47ac3392d02bec5b3ee8aa75a61bb`: its supposed healthy agent had never
+been created. The existing Session admission gate correctly returned Invalid
+before Store apply. Materialize the positive Session through its actual owner,
+use its issued ID, and preserve both original Committed and noncanonical Invalid
+assertions. Keep missing-agent refusal as an explicit negative; use a nonempty
+proposal to show foreign bytes remain unchanged and a valid canonical write
+still succeeds after refusal. No production admission rule changes. These
+failed subjects remain failed; only the repaired exact-H Actions can establish
+the corrected control. The downstream preview MCP receipt absence caused by
+the skipped Automation step is not an independent preview implementation bug.
+
 Production changes use `source/host/src/extensions/memory/memory_service.rs`,
 the existing Session synthesis gate, and MemorySynthesisService's apply-result
 consumer. Independent review identified the temporal marker side effect in

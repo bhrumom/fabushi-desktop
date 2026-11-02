@@ -1,0 +1,254 @@
+{
+  "format_version": 1,
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "MGA-v1",
+  "evidence_kind": "bounded source and native production contract record; not an acceptance ledger",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "discovery_subject": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+  "implementation_base": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+  "integration_parent": "32a9a391199b03d8b8df76380701c14d56f84834",
+  "source_observations": [
+    {
+      "path": "src/gateway/server-methods/method-authorization.ts",
+      "sha": "ac99d03f94f35de81ff15cfb70bb84bb5fbc911a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 125
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/gateway-protocol/src/index.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/gateway/cron-creator-authority-grant.ts",
+        "src/gateway/in-process-session-run.ts",
+        "src/gateway/method-scopes.ts",
+        "src/gateway/methods/descriptor.ts",
+        "src/gateway/operator-approval-authorization.ts",
+        "src/gateway/operator-role-policy.ts",
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/role-policy.ts",
+        "src/gateway/server-methods/shared-types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/method-scopes.ts",
+      "sha": "a0bd7baa2384890202a25ed146aaa227d2fc11cb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 343
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/normalization-core/src/record-coerce.ts",
+        "packages/normalization-core/src/string-coerce.ts",
+        "src/infra/node-commands.ts",
+        "src/plugins/runtime/gateway-request-scope.ts",
+        "src/shared/gateway-method-policy.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/shared/session-method-scopes.ts",
+        "src/gateway/agent-command-policy.ts",
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/node-browser-proxy-policy.ts",
+        "src/gateway/operator-scopes.ts"
+      ]
+    },
+    {
+      "path": "src/shared/operator-scope-compat.ts",
+      "sha": "a265fb895a8535378e9bb9626c19a030df463e1f",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 119
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/role-policy.ts",
+      "sha": "09247fd9cfeb26a2bf5642d325d41f3d397a709a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 24
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/role-policy.types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/operator-scopes.ts",
+      "sha": "46213c1aeb779f618139cf2824d2b6274ee74bdb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 49
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/methods/core-method-policy.ts",
+      "sha": "2b64d1738783b5261d091ef40e7f34606fd1f0f3",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 124
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/methods/core-descriptor-types.ts",
+        "src/gateway/methods/core-descriptors.ts",
+        "src/gateway/methods/core-profile-access.ts",
+        "src/gateway/methods/descriptor.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/methods/core-descriptors.ts",
+      "sha": "852432d87eecbd5d68bb73b5435f23daa8862377",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 44,
+          "end_line": 51
+        },
+        {
+          "start_line": 229,
+          "end_line": 235
+        },
+        {
+          "start_line": 242,
+          "end_line": 248
+        },
+        {
+          "start_line": 257,
+          "end_line": 263
+        },
+        {
+          "start_line": 291,
+          "end_line": 301
+        },
+        {
+          "start_line": 367,
+          "end_line": 373
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    }
+  ],
+  "observation_provenance": {
+    "readers": [
+      "/root",
+      "/root/memory_consumer_gap"
+    ],
+    "acquisition": "GitHub connector fetch_file at fixed U; exact returned blobs and full text for the first six files. core-descriptors.ts was acquired but only the listed ranges were read; whole-text name search does not grant full reading.",
+    "accounting": "Append literal observations through the existing inventory/read-observations.json input. Preserve every historical range and evidence; the Actions materializer alone updates canonical shards. No category, applicability, disposition, reviewed state, responsibility mapping, verification, acceptance, lock or global completion flag is upgraded here.",
+    "dependency_edges": "Listed edges are literal imports resolved to fixed-tree paths. The partial descriptor row has no new edge observation. An acquired dependency identity is not a claim to have read its implementation."
+  },
+  "scoped_contract_review": [
+    {
+      "source": "src/shared/operator-scope-compat.ts",
+      "finding": "The pure implication owner makes admin satisfy operator scopes and write satisfy read. Narrow session grants do not satisfy general read/write; a request ceiling cannot create authority.",
+      "application": "Memory get accepts read/write/admin, Memory mutations accept write/admin. Only these three native methods consume this implication supplement."
+    },
+    {
+      "source": "src/gateway/role-policy.ts",
+      "finding": "Only operator and node role names parse; non-node methods require operator role before method-scope admission.",
+      "application": "Reject any authenticated non-operator Memory caller before payload or owner dispatch."
+    },
+    {
+      "source": "src/gateway/server-methods/method-authorization.ts",
+      "finding": "Role admission and current grant authority precede owner execution. Admin has an explicit implication path; specialized cron, session and plugin decisions have independent authority.",
+      "application": "Pairing owner is the credential truth. Header ceilings never expand its returned Memory role/scopes. Native no-token requests with a supplied unrecognized credential cannot become ambient authorization."
+    },
+    {
+      "source": "src/gateway/method-scopes.ts",
+      "finding": "Method scope resolution also has parameter, plugin, reserved-method and dynamic-session branches. Their imported policies remain separate high-risk migration work.",
+      "application": "Use one exact native Memory method classification in the existing Rust Gateway. Do not claim this supplement migrates every resolver branch."
+    },
+    {
+      "source": "src/gateway/operator-scopes.ts",
+      "finding": "Known operator scopes form a closed set, including narrower session/cron capabilities.",
+      "application": "Only explicit read/write/admin ceilings satisfy Memory; empty, unknown or session-only ceilings fail."
+    },
+    {
+      "source": "src/gateway/methods/core-method-policy.ts",
+      "finding": "Core descriptors select role/scope policy and missing handler descriptors are rejected.",
+      "application": "Keep the existing Fabushi registry admission and unknown-method refusal."
+    },
+    {
+      "source": "src/gateway/methods/core-descriptors.ts",
+      "finding": "Listed ranges distinguish read/write/admin and node methods. The existing Fabushi camelCase Memory names are not an upstream RPC equivalence claim.",
+      "application": "Native supplement, not an invented fixed-U Memory RPC registration."
+    }
+  ],
+  "production_contract": {
+    "spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "entry": "source/host/src/gateway_server.rs::handle_connection",
+    "registry": "source/host/src/host_gateway_api.rs",
+    "credential_owner": "source/host/src/device_pairing_owner.rs::DevicePairingOwner",
+    "data_owner": "source/host/src/extensions/transcript/transcript_manager.rs::dispatch_memory_gateway_call",
+    "mutation_owner": "source/host/src/extensions/session/production.rs::{remove_agent_memory,clear_agent_memories}",
+    "storage": "Existing file-backed MemoryService/FileMemoryStore and Session memory mutation journal/snapshot",
+    "consumer": "Existing /api responses used through the unchanged Coordinator/MainData gateway path",
+    "methods": [
+      "getAgentMemories",
+      "deleteAgentMemory",
+      "clearAgentMemories"
+    ],
+    "oracle": "Actual HTTP Gateway, actually issued/revoked pairing credentials, actual TranscriptManager/Session/file-backed memory, zero-dispatch denials, unchanged file/snapshot/journal/notifications, positive mutations and reopen. Controlled transport/fixture data is not real remote-device or packaged acceptance."
+  },
+  "necessary_review_limits": [
+    "Full Gateway dynamic session, plugin registry, profile/cron and approval authorization are not closed by these seven literal reads.",
+    "Full core descriptor consumption and recursive policy dependencies remain separate high-risk work; only the explicitly read descriptor ranges are credited.",
+    "Cross-account/tenant semantics, symlink resistance, all provider/Memory tool consumers, real remote-device access, rendered UI, supported platform packaging and final G01-G12/AC01-AC24 remain open.",
+    "Native read/write/admin implications are a three-method compatibility/security supplement; existing unrelated method policy is intentionally unchanged."
+  ],
+  "execution": {
+    "local_validation": "not run; prohibited",
+    "exact_subject_actions": "pending frozen commit; authored source and tests do not count as runtime evidence",
+    "source_materialization": "pending this input's exact-subject Actions; prior structural results are not relabeled",
+    "independent_frozen_review": "pending"
+  },
+  "integration_history": [
+    {
+      "parent": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "preserved": "Router Host acknowledgement and existing Node receipt controls."
+    },
+    {
+      "parent": "32a9a391199b03d8b8df76380701c14d56f84834",
+      "preserved": "All eleven Memory append-read-integrity paths, actual FileMemoryStore/Session synthesis error propagation and Linux/macOS controls. MGA production and test blobs unchanged; workflow and RTM retain the union."
+    }
+  ]
+}

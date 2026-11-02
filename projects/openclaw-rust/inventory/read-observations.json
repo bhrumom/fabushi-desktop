@@ -8,7 +8,8 @@
   "reviewer": "ChatGPT fixed-U source readers; per-read attribution/history in dossier",
   "evidence_refs": [
     "projects/openclaw-rust/dossiers/model-picker-scoped.md",
-    "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md"
+    "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+    "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
   ],
   "entries": [
     {
@@ -514,6 +515,159 @@
       ],
       "language_kind": "typescript",
       "module_id": "OCRM-M02",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/server-methods/method-authorization.ts",
+      "sha": "ac99d03f94f35de81ff15cfb70bb84bb5fbc911a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 125
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/gateway-protocol/src/index.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/gateway/cron-creator-authority-grant.ts",
+        "src/gateway/in-process-session-run.ts",
+        "src/gateway/method-scopes.ts",
+        "src/gateway/methods/descriptor.ts",
+        "src/gateway/operator-approval-authorization.ts",
+        "src/gateway/operator-role-policy.ts",
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/role-policy.ts",
+        "src/gateway/server-methods/shared-types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/method-scopes.ts",
+      "sha": "a0bd7baa2384890202a25ed146aaa227d2fc11cb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 343
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/normalization-core/src/record-coerce.ts",
+        "packages/normalization-core/src/string-coerce.ts",
+        "src/infra/node-commands.ts",
+        "src/plugins/runtime/gateway-request-scope.ts",
+        "src/shared/gateway-method-policy.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/shared/session-method-scopes.ts",
+        "src/gateway/agent-command-policy.ts",
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/node-browser-proxy-policy.ts",
+        "src/gateway/operator-scopes.ts"
+      ]
+    },
+    {
+      "path": "src/shared/operator-scope-compat.ts",
+      "sha": "a265fb895a8535378e9bb9626c19a030df463e1f",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 119
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/role-policy.ts",
+      "sha": "09247fd9cfeb26a2bf5642d325d41f3d397a709a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 24
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/role-policy.types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/operator-scopes.ts",
+      "sha": "46213c1aeb779f618139cf2824d2b6274ee74bdb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 49
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/methods/core-method-policy.ts",
+      "sha": "2b64d1738783b5261d091ef40e7f34606fd1f0f3",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 124
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/methods/core-descriptor-types.ts",
+        "src/gateway/methods/core-descriptors.ts",
+        "src/gateway/methods/core-profile-access.ts",
+        "src/gateway/methods/descriptor.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/methods/core-descriptors.ts",
+      "sha": "852432d87eecbd5d68bb73b5435f23daa8862377",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 44,
+          "end_line": 51
+        },
+        {
+          "start_line": 229,
+          "end_line": 235
+        },
+        {
+          "start_line": 242,
+          "end_line": 248
+        },
+        {
+          "start_line": 257,
+          "end_line": 263
+        },
+        {
+          "start_line": 291,
+          "end_line": 301
+        },
+        {
+          "start_line": 367,
+          "end_line": 373
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
       "dependency_edges": []
     }
   ]

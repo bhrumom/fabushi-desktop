@@ -74,3 +74,63 @@ dispatch; `memory/memory_service.rs::MemoryService::{list,store_for_agent}`;
 the existing `manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation`
 contract. Applicable authority is OCRM §10.1/§17 and the existing
 `session-work-admission.md`; historical Memory dossiers remain historical.
+
+## HTTP Memory role and scope boundary — MGA-v1
+
+Discovery H: `8e5545b61ad916bb9781539dfe0f28543ffc68dd`; fixed U is unchanged.
+This supplements MGS with the actual HTTP entry. It does not replace its selector
+or mutation/recovery controls, and does not claim complete Memory or Gateway parity.
+
+The three existing camelCase Memory methods are in `host_gateway_api.rs`, so
+`gateway_protocol::is_grok_gateway_command` admits them to `/api`. The current
+HTTP role/scope classifiers omit them. A valid paired node or read-only operator
+can therefore reach the Memory owner, including deletion, according to inspected
+source. **MGA-01 — FIX / IMPL_BUG**: enforce their authorization in the existing
+`gateway_server.rs` admission boundary before JSON decoding or owner dispatch.
+Pairing credentials remain owned by `DevicePairingOwner`; data and mutation
+journals remain owned by TranscriptManager / ProductionSessionWorkers / MemoryService.
+No new permission store, runtime, public RPC or execution owner is introduced.
+
+| ID | Required behavior |
+| --- | --- |
+| MGA-01 | The exact methods `getAgentMemories`, `deleteAgentMemory`, and `clearAgentMemories` require operator role for paired credentials. Node and other roles cannot reach their owner. Unknown/suffixed methods retain ordinary registry refusal. |
+| MGA-02 | A paired operator needs `operator.read`, `operator.write`, or `operator.admin` for get; delete/clear need `operator.write` or `operator.admin`. Empty or unrelated approved scopes do not grant access. Authority comes from the actual pairing owner, never request headers. Admin satisfies both operations and write satisfies read for these three methods. |
+| MGA-03 | Preserve configured native-token and existing trusted-loopback access without restrictive headers. An explicitly non-operator role or an unrecognized/empty scope ceiling fails closed for Memory. A recognized read ceiling denies mutations; write/admin ceilings cannot expand a paired credential. In no-configured-token mode, native Memory access requires loopback and no Authorization header: a present unrecognized, malformed or revoked credential must not fall back to ambient native access. Valid paired credentials still use their own role/scopes. Reuse ordinary Origin/Host checks, error status and request dispatch. |
+| MGA-04 | Every denied request reaches the Memory data owner zero times, reveals no private fact, and leaves Memory file contents, prompt snapshot and mutation notifications unchanged. Include valid data and malformed bodies so payload validation cannot masquerade as permission refusal. A valid request after refusal still reaches the same owner exactly once. |
+| MGA-05 | Admitted reads retain the existing projection/order/bound. Admitted delete and clear call the actual Session mutation journal, return the existing bool/null results and invalidate the frozen memory prompt. Reopen the actual Session storage and confirm the acknowledged fact removal remains durable. |
+| MGA-06 | Retain existing native/paired behavior for unrelated methods and all MGS, RSU, preview, MCP, config and Automation assertions. Missing/wrong/revoked credentials fail in configured-token mode; present unrecognized/revoked credentials also fail the Memory-specific no-ambient-fallback rule in no-configured-token mode. Full account/tenant policy, symlink defense, all Gateway methods and real remote-device acceptance remain required separately. |
+
+Use a small exact-method classification inside the current Gateway authorization
+owner; do not broaden unrelated method grants or simply classify Memory as
+native-only. The current general mutating-method rule recognizes only write,
+so it cannot be reused blindly for an admin-only Memory grant. Keep one Memory
+classification and one scope-implication decision, consumed at that same existing
+boundary, with native headers acting only as explicit ceilings.
+
+The independent HTTP target `memory_gateway_authorization_contract.rs` must use
+an actual `GatewayServer`, issued/revoked credentials from `DevicePairingOwner`,
+and a thin `GatewayApi` adapter delegating to actual `TranscriptManager`,
+`ProductionSessionWorkers` and file-backed Memory. Test-only dispatch counters
+observe the real owner boundary; they do not replace Memory execution. Record
+paired node, read/write/admin, unrelated/empty scope, header escalation/narrowing,
+missing/wrong/revoked bearer, native positives and meaningful persistence controls.
+Reuse the existing Linux Host recovery command/cache and macOS recovery suite,
+with exact-H/tree/U input/log identities and named positive checks. Freeze and
+independently review the complete scope before the Actions-only run. No local or
+htch-runtime executable validation is allowed.
+
+No stored format changes or new asynchronous custody are needed. Request failures
+remain owned by existing HTTP admission; successful mutations retain the existing
+Session journal and recovery semantics. Rollback requires no data conversion and
+must not knowingly restore this authorization omission. Network accounts/devices,
+full UI and all applicable final OCRM gates remain open.
+
+Fixed-U references for the scope implication and role contract are the current
+`src/gateway/method-scopes.ts`, `src/gateway/role-policy.ts`,
+`src/shared/operator-scope-compat.ts`, `src/gateway/operator-scopes.ts` and
+`src/gateway/server-methods/method-authorization.ts`, with exact paths/blobs and actual
+read ranges recorded in the accompanying scoped evidence. The camelCase Memory
+methods are existing Fabushi RPCs; their classification is this native supplement,
+not a claim that OpenClaw exposes identically named methods. Historical source
+facts and all global completion flags stay unchanged.
+

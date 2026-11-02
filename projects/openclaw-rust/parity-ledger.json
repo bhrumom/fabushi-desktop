@@ -9483,7 +9483,9 @@
         "mahayana_host_runtime::gateway_server"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_server_contract.rs"
+        "source/host/tests/gateway_server_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9594,11 +9596,13 @@
       },
       "tests": [
         "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_timestamp_skew_and_nonce_replay",
-        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_pairing_handshake_allows_unauthenticated"
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_pairing_handshake_allows_unauthenticated",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access"
       ],
       "typed_contracts": [
         "check_device_timestamp_skew(ts: &str) -> Result<(), &'static str>",
-        "check_and_record_nonce(nonce: &str) -> Result<(), &'static str>"
+        "check_and_record_nonce(nonce: &str) -> Result<(), &'static str>",
+        "MGA-v1 (native three-method supplement; full Gateway acceptance pending)"
       ],
       "unit_id": "OCRM-UNIT-GW-INGRESS-001"
     },
@@ -9613,7 +9617,9 @@
         "mahayana_host_runtime::gateway_server"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_server_contract.rs"
+        "source/host/tests/gateway_server_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9695,10 +9701,12 @@
         "symbol": "handle_connection"
       },
       "tests": [
-        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_timestamp_skew_and_nonce_replay"
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_device_timestamp_skew_and_nonce_replay",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access"
       ],
       "typed_contracts": [
-        "x-sand-pairing-revision header validation in handle_connection"
+        "x-sand-pairing-revision header validation in handle_connection",
+        "MGA-v1 (native three-method supplement; full Gateway acceptance pending)"
       ],
       "unit_id": "OCRM-UNIT-GW-INGRESS-001"
     },
@@ -9990,7 +9998,9 @@
         "mahayana_host_runtime::gateway_server"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_server_contract.rs"
+        "source/host/tests/gateway_server_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
       ],
       "existing_owner_candidates": [
         {
@@ -10063,10 +10073,16 @@
         "symbol": "is_mutating_openclaw_command"
       },
       "tests": [
-        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_role_and_scope_enforcement"
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_role_and_scope_enforcement",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_preserves_projection_selectors_and_unrelated_routes"
       ],
       "typed_contracts": [
-        "is_mutating_openclaw_command(method: &str) -> bool"
+        "is_mutating_openclaw_command(method: &str) -> bool",
+        "MGA-v1 (native three-method supplement; full Gateway acceptance pending)"
       ],
       "unit_id": "OCRM-UNIT-GW-INGRESS-001"
     },
@@ -10081,7 +10097,9 @@
         "mahayana_host_runtime::gateway_server"
       ],
       "evidence_refs": [
-        "source/host/tests/gateway_server_contract.rs"
+        "source/host/tests/gateway_server_contract.rs",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json"
       ],
       "existing_owner_candidates": [
         {
@@ -10162,11 +10180,14 @@
         "symbol": "is_operator_only_openclaw_command"
       },
       "tests": [
-        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_role_and_scope_enforcement"
+        "source/host/tests/gateway_server_contract.rs::openclaw_gateway_role_and_scope_enforcement",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+        "source/host/tests/memory_gateway_authorization_contract.rs::memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility"
       ],
       "typed_contracts": [
         "is_operator_only_openclaw_command(method: &str) -> bool",
-        "handle_connection role check"
+        "handle_connection role check",
+        "MGA-v1 (native three-method supplement; full Gateway acceptance pending)"
       ],
       "unit_id": "OCRM-UNIT-GW-INGRESS-001"
     },

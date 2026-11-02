@@ -15,7 +15,7 @@ use mahayana_host_runtime::extensions::session::session_mutations::{
 use mahayana_host_runtime::extensions::memory::memory_service::{
     FileMemoryStore, MemoryKind, MemoryOrigin, MemoryRecoveryRecord, MemoryService,
     MemorySynthesisBridge,
-    SynthesisApplyResult,
+    SynthesisApplyResult, SynthesisChange,
     agent_memory_has_content, get_agent_memory_dir, get_project_memory_shard_dir,
     get_user_memory_shard_dir, memory_id_for, normalize_memory_content, parse_facts,
 };
@@ -516,6 +516,10 @@ fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
         Arc::clone(&memory),
     ));
     workers.bind_memory_synthesis_gate();
+    let changes = [SynthesisChange::Create {
+        content: "admitted canonical synthesis fact".into(),
+        kind: MemoryKind::Profile,
+    }];
 
     let missing = memory.store_for_agent("agent-gated");
     assert_eq!(
@@ -526,12 +530,24 @@ fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
         "a canonical path does not authorize a missing Agent",
     );
 
+    assert_eq!(
+        memory.apply_synthesis_with_gate("agent-gated", &missing, &missing.prepare_synthesis(), &changes, 1),
+        SynthesisApplyResult::Invalid,
+        "an uncreated Session cannot authorize a nonempty Memory write",
+    );
+    assert!(!root.join("agent-gated").exists());
+
     let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
     let agent = sessions.create_session(None, "user", None)
         .expect("create a real admitted Agent for the store-path comparison");
     workers.assert_agent_work_admission(&agent.id).expect("live Agent admission");
+    assert!(workers.read_session_work_admission(&agent.id).expect("read admission").is_some());
     let canonical = memory.store_for_agent(&agent.id);
     let foreign = FileMemoryStore::new(root.join("foreign-memory"));
+    fs::create_dir_all(foreign.get_location()).expect("foreign store fixture");
+    let foreign_profile = foreign.get_location().join("profile.md");
+    let foreign_bytes = b"# About the user\n\n- (2026-09-24) Foreign sentinel\n";
+    fs::write(&foreign_profile, foreign_bytes).expect("foreign sentinel");
     let canonical_snapshot = canonical.prepare_synthesis();
     let foreign_snapshot = foreign.prepare_synthesis();
     assert_eq!(
@@ -556,12 +572,30 @@ fn bound_synthesis_gate_rejects_a_noncanonical_store_path() {
     );
 
     assert_eq!(
+        memory.apply_synthesis_with_gate(&agent.id, &foreign, &foreign_snapshot, &changes, 2),
+        SynthesisApplyResult::Invalid,
+        "foreign admission refusal also precedes a nonempty Store write",
+    );
+    assert_eq!(fs::read(&foreign_profile).expect("unchanged foreign bytes"), foreign_bytes);
+    assert!(canonical.list_memories(100).is_empty());
+
+    assert_eq!(
         memory.apply_synthesis_with_gate(
             &agent.id, &canonical, &canonical.prepare_synthesis(), &[], 3,
         ),
         SynthesisApplyResult::Committed,
         "foreign-store refusal leaves the same admitted owner usable",
     );
+
+    assert_eq!(
+        memory.apply_synthesis_with_gate(&agent.id, &canonical, &canonical.prepare_synthesis(), &changes, 4),
+        SynthesisApplyResult::Committed,
+        "the same admitted canonical owner still accepts a nonempty write after refusal",
+    );
+    let committed = canonical.list_memories(100);
+    assert_eq!(committed.len(), 1);
+    assert_eq!(committed[0].content, "admitted canonical synthesis fact");
+    assert_eq!(fs::read(&foreign_profile).expect("foreign bytes after valid control"), foreign_bytes);
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

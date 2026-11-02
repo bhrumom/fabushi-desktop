@@ -646,6 +646,30 @@ fn check_and_record_nonce(nonce: &str) -> Result<(), &'static str> {
     Ok(())
 }
 
+#[derive(Clone, Copy)]
+enum MemoryGatewayAccess {
+    Read,
+    Write,
+}
+
+impl MemoryGatewayAccess {
+    fn for_method(method: &str) -> Option<Self> {
+        match method {
+            "getAgentMemories" => Some(Self::Read),
+            "deleteAgentMemory" | "clearAgentMemories" => Some(Self::Write),
+            _ => None,
+        }
+    }
+
+    fn satisfied_by(self, scope: &str) -> bool {
+        match scope {
+            "operator.admin" | "operator.write" => true,
+            "operator.read" => matches!(self, Self::Read),
+            _ => false,
+        }
+    }
+}
+
 fn is_mutating_openclaw_command(method: &str) -> bool {
     matches!(
         method,
@@ -1334,6 +1358,43 @@ fn handle_connection(
     }
 
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
+    if let Some(access) = MemoryGatewayAccess::for_method(method) {
+        // Memory uses the existing pairing grant, or the native gateway's
+        // authority. An explicit failed credential must not regain ambient
+        // access on a listener without a configured token.
+        if device_authorization.is_none()
+            && deps.config.auth_token.is_none()
+            && (request.headers.contains_key("authorization")
+                || !is_loopback_host(&deps.config.host))
+        {
+            return respond_error(&mut stream, 401, "unauthorized");
+        }
+        if requested_role.is_some_and(|role| role != "operator")
+            || device_authorization
+                .as_ref()
+                .is_some_and(|authorization| authorization.role != "operator")
+        {
+            return respond_error(
+                &mut stream,
+                403,
+                "ROLE_MISMATCH: Memory methods require operator role",
+            );
+        }
+        let grant_allows = device_authorization.as_ref().is_none_or(|authorization| {
+            authorization.scopes.iter().any(|scope| access.satisfied_by(scope))
+        });
+        // The singular scope header is only a ceiling, including for native
+        // callers; it never supplies a missing paired-device permission.
+        let ceiling_allows = request.headers.get("x-sand-scope")
+            .is_none_or(|scope| access.satisfied_by(scope));
+        if !grant_allows || !ceiling_allows {
+            return respond_error(
+                &mut stream,
+                403,
+                format!("INSUFFICIENT_SCOPE: Memory access is not granted for method: {method}"),
+            );
+        }
+    }
     // Reuse Box's native authority for both MCP receipt routes and their SSE
     // requests. Common authentication above already checks a configured secret;
     // without one, retain the existing trusted-loopback bearer behavior.
