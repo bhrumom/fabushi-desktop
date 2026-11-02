@@ -21,11 +21,16 @@ tree `81f60c54ccf1c88698db3df41e3071445aa5b63b`, preserving its typed
 Automation admission and actual app checks. Its WIP publication is not
 runtime approval. Reuse that Linux app target/cache and the already selected
 MCP composition target; do not duplicate their owner or test executions.
-The delivery parent is H `e96c39ebe5b1c3fc318b20579bc38595d4d588a3`, tree
+The prior delivery parent is H `e96c39ebe5b1c3fc318b20579bc38595d4d588a3`, tree
 `2b49afdaa8d83e9b3503e9f33d71ac91ed5f68c1`. Preserve its provider-bound
 desktop bridge and source-observation materializer, including their strict
 pending reverse-link and historical-reading gates. No source count or
 global flag is manually promoted by this preview batch.
+Recovery resumes the frozen 17-path tree
+`e228994ed0ad2c0d2068cbf30d067c93cc1c4a10` on H
+`0375dfa54378b97fb4b9ca01ae77f04d7643b817`. That parent's eight source-inventory
+and ledger paths do not overlap this candidate; preserve them unchanged.
+The two-file Automation error-oracle correction is included exactly once.
 
 ## Current user path and missing connection
 
@@ -179,3 +184,13 @@ Actual f890 Actions then identified a separate pre-admission fixture error;
 its narrow correction and retained failed evidence are recorded as
 `AUTO-ADMISSION-ERROR-ORACLE-01` in the existing cron/session spec. Neither
 source approval nor the incoming media positives establish a new-H pass.
+
+**LPG-APP-ORACLE-01 — FIX / TEST_FLAW.** Recovery review of tree
+`6992f0a6275250851ec7635e073accd84266a1dd` found that the new app source anchor
+rejects every `call_host_lane` before `GatewayApi::health`, including the
+pre-existing Automation and Workflow provider fallbacks. Restrict that anchor
+to the final Gateway fallback expression. Preserve those production branches,
+the exact shared-service call count, the existing qualified MCP tail oracle,
+and all actual cached-preview, refusal and ordinary-lane controls. The broad
+negative was an invalid instrument; no production behavior is changed by its
+repair. Fresh focused review and the new exact-H app executions remain required.

@@ -213,10 +213,14 @@ fn assert_native_preview_source_wiring() {
     let api_call = source.split_once("impl GatewayApi for UnifiedGatewayApi {")
         .expect("production Gateway implementation").1
         .split_once("\n    fn health(").expect("Gateway call boundary").0;
-    assert_eq!(api_call.matches(
-        "call_native_attachments_or_host_lane(&self.host_tx, &self.attachments, method, args)",
-    ).count(), 1, "the actual API fallback must use the tested helper and shared service");
-    assert!(!api_call.contains("call_host_lane("), "ordinary fallback stays inside the helper");
+    let preview_fallback =
+        "call_native_attachments_or_host_lane(&self.host_tx, &self.attachments, method, args)";
+    assert_eq!(api_call.matches(preview_fallback).count(), 1,
+        "the actual API fallback must use the tested helper and shared service");
+    // Earlier Automation/Workflow branches intentionally retain their Host
+    // lane returns. Only this final fallback belongs to preview dispatch.
+    assert!(api_call.trim_end().ends_with(&format!("{preview_fallback}\n    }}")),
+        "the final Gateway fallback must use the preview-or-lane helper");
 }
 
 #[test]
