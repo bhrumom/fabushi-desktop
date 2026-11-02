@@ -28,7 +28,7 @@ jobs:
           import jsonschema
           path = 'projects/telegram-desktop-rust/parity-ledger.json'
           schema_path = 'projects/telegram-desktop-rust/contracts/parity-ledger.schema.json'
-          expected = 'a73e18e1d1e44dfa28cb28755ce13812be9534cc'
+          expected = '82cf93f16e7b4c5f7bc8482822977c92ad6ee18a'
           expected_schema = 'e52b2ba92c8cf966bb506cc8b9f81320462474ae'
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           assert head == os.environ['GITHUB_SHA'], 'checkout must equal this run'
