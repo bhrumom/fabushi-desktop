@@ -21,9 +21,10 @@
       "gitmodules_blob": "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3"
     },
     "nested": {
-      "repository": "https://github.com/nonstd-lite/expected-lite.git",
+      "repository": "https://github.com/martinmoene/expected-lite.git",
       "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
-      "tree": "5f38901998c76e9c3dcc52bfbbe26877820cbbda"
+      "tree": "5f38901998c76e9c3dcc52bfbbe26877820cbbda",
+      "declared_repository_url": "https://github.com/martinmoene/expected-lite.git"
     }
   },
   "reviewed_blob": {
@@ -36,7 +37,8 @@
     "observed_text_title": "Boost Software License - Version 1.0 - August 17th, 2003",
     "obligations_observed": "The source license grants use and redistribution conditioned on retaining the copyright notices and the full license statement in covered source/derivative copies, except solely machine-executable object code.",
     "primary_read": "https://github.com/nonstd-lite/expected-lite/blob/95b9cb015fa17baa749c2b396b335906e1596a9e/LICENSE.txt",
-    "review_scope": "Exact pinned license text only; not complete source header attribution, dependency license compliance, binaries, or release clearance."
+    "review_scope": "Exact pinned license text only; not complete source header attribution, dependency license compliance, binaries, or release clearance.",
+    "mirror_read_note": "License text was read at the nonstd-lite GitHub mirror using its pinned Git blob; cppgir .gitmodules declares martinmoene/expected-lite. The Git tree acquisition binds the original declaration to exactly the same commit/tree; mirror name alone is not source provenance."
   },
   "acquisition_evidence": {
     "run_id": 41395923342,
@@ -60,7 +62,9 @@
     "all_generated_inputs_reviewed": false,
     "full_legal_clearance": false,
     "product_accepted": false,
-    "independent_acceptance": false
+    "independent_acceptance": false,
+    "original_host_license_bytes_retained_in_artifact": false,
+    "note": "Earlier original-host Actions artifact contained trees and .gitmodules but omitted both license files. NMR-08b acquisition repair is authored and requires exact-H GitHub Actions before this flag can change."
   },
   "blocked_on": [
     "Complete original-host cppgir LICENSE and source-embedded notices review; this receipt does not substitute for that license's separately acquired bytes.",

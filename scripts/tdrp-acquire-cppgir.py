@@ -32,6 +32,13 @@ CHILD_GITMODULES = "e0c91502bcb2798a8a57bd85e49c76e0ef7275a3"
 CHILD_ENTRY_DIGEST = "ca7b93baea47c96a852166ecd5a35dcfa4c4d882a4e5ba240d2f103af63ab453"
 EXPECTED_LITE_PATH = "expected-lite"
 EXPECTED_LITE_COMMIT = "95b9cb015fa17baa749c2b396b335906e1596a9e"
+EXPECTED_LITE_DECLARED_URL = "https://github.com/martinmoene/expected-lite.git"
+PINNED_LICENSES = {
+    (CHILD_URL, CHILD_COMMIT): ("LICENSE", "d113221e5489255cc4c27d8d4015f23aed0bf472", 1073),
+    (EXPECTED_LITE_DECLARED_URL, EXPECTED_LITE_COMMIT): (
+        "LICENSE.txt", "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2", 1338,
+    ),
+}
 OID = re.compile(r"[0-9a-f]{40}\Z")
 PREFIX = "TDRP_CPPGIR "
 COMMAND_TIMEOUT = 30
@@ -39,6 +46,7 @@ FETCH_TIMEOUT = 120
 TOTAL_TIMEOUT = 300
 MAX_TREE_BYTES = 64 * 1024 * 1024
 MAX_GITMODULES_BYTES = 1024 * 1024
+MAX_PINNED_LICENSE_BYTES = 64 * 1024
 MAX_DEPTH = 8  # cppgir is depth zero; the fixed cmake parent is an edge proof.
 MAX_REPOSITORIES = 16
 MAX_ENTRIES = 20_000
@@ -318,7 +326,46 @@ def submodule_declarations(git, repo, entries, repository_id, is_cppgir):
         except AcquisitionError as error:
             raise AcquisitionError(error.kind, str(error) + "; gitlink path bytes=" + link["path_bytes_base64"]) from error
         declarations.append({"gitlink": link, "declared_url": url})
+    if is_cppgir and declarations[0]["declared_url"] != EXPECTED_LITE_DECLARED_URL:
+        raise AcquisitionError("source-url",
+                               "The original cppgir expected-lite URL differs from its pinned .gitmodules")
     return metadata, declarations
+
+
+
+def capture_pinned_license(git, repo, entries, repository_id, url, commit):
+    """Retain exact source license bytes, without declaring legal acceptance."""
+    expected = PINNED_LICENSES.get((url, commit))
+    if expected is None:
+        return None
+    path, object_id, expected_size = expected
+    matches = [entry for entry in entries if entry["path"] == path]
+    if (len(matches) != 1 or matches[0]["mode"] != "100644"
+            or matches[0]["type"] != "blob" or matches[0]["object"] != object_id
+            or matches[0]["size"] != expected_size
+            or not 0 < expected_size <= MAX_PINNED_LICENSE_BYTES):
+        raise AcquisitionError("license-identity-mismatch",
+                               "Exact required license is not the pinned regular blob in " + repository_id)
+    content = git.run("cat-file", "blob", object_id, repo=repo)
+    observed_oid = hashlib.sha1(
+        b"blob " + str(len(content)).encode("ascii") + b"\0" + content
+    ).hexdigest()
+    if observed_oid != object_id or len(content) != expected_size:
+        raise AcquisitionError("license-byte-mismatch",
+                               "Exact required license bytes disagree with the pinned tree in " + repository_id)
+    artifact = repository_id + "." + path
+    save(artifact, content)
+    metadata = {
+        "path": path, "blob": object_id, "size": len(content),
+        "sha256": hashlib.sha256(content).hexdigest(), "artifact": artifact,
+        "declared_repository_url": url, "commit": commit,
+        "license_text_acquired": True, "legal_review_performed": False,
+    }
+    emit({"record": "license-header", "repository_id": repository_id, **metadata})
+    for offset in range(0, len(content), 3072):
+        emit({"record": "license-content", "repository_id": repository_id,
+              "offset": offset, "base64": base64.b64encode(content[offset:offset + 3072]).decode("ascii")})
+    return metadata
 
 
 class RecursiveAcquisition:
@@ -441,6 +488,10 @@ class RecursiveAcquisition:
                     "non_utf8_path_count": result["non_utf8_path_count"],
                     "nested_gitlinks": [entry for entry in entries if entry["type"] == "commit"],
                 })
+            self.stage = "pinned-license:" + repository_id
+            result["license"] = capture_pinned_license(
+                self.git, repo, entries, repository_id, url, commit,
+            )
             self.stage = "submodule-declarations:" + repository_id
             modules, declarations = submodule_declarations(self.git, repo, entries, repository_id, is_cppgir)
             result["gitmodules"] = modules
@@ -476,7 +527,7 @@ def main():
     ):
         (OUTPUT / name).unlink(missing_ok=True)
     for path in OUTPUT.iterdir():
-        if re.fullmatch(r"repo-[0-9]{3}\.(json|gitmodules|tree\.ls-tree-z|entries\.jsonl)", path.name):
+        if re.fullmatch(r"repo-[0-9]{3}\.(json|gitmodules|tree\.ls-tree-z|entries\.jsonl|LICENSE(?:\.txt)?)", path.name):
             path.unlink()
     target = {key: os.environ.get(key) for key in (
         "GITHUB_SHA", "GITHUB_REPOSITORY", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT",
@@ -496,6 +547,7 @@ def main():
         "recursive_git_trees_enumerated_completely": False,
         "recursive_dependency_closure_accepted": False,
         "nested_gitlinks_fetched": False,
+        "required_source_license_blobs_acquired": False,
         "semantic_review_performed": False, "legal_review_performed": False,
         "product_accepted": False,
         "independent_acceptance": False,
@@ -546,6 +598,16 @@ def main():
             )
             child = recursive.acquire(CHILD_URL, CHILD_COMMIT, 0)
             recursive.attest_edge(edge, child)
+            required = set(PINNED_LICENSES)
+            acquired = {
+                (item["repository_url"], item["commit"])
+                for item in recursive.repositories
+                if (item.get("license") or {}).get("license_text_acquired") is True
+            }
+            if not required.issubset(acquired):
+                raise AcquisitionError("license-acquisition-incomplete",
+                                       "The exact cppgir and expected-lite license blobs were not both saved")
+            report["required_source_license_blobs_acquired"] = True
             report["status"] = "success"
             report["recursive_git_trees_enumerated_completely"] = True
             report["nested_gitlinks_fetched"] = True
