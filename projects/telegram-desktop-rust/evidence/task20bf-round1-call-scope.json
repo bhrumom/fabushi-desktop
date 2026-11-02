@@ -3,9 +3,9 @@
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 1,
   "batch": "FBCP-CALL-SCOPE-001",
-  "status": "authored-and-source-reviewed; exact-H implementation execution pending",
+  "status": "guard, five contracts, canonical responsibility row and owner/RTM published on isolated migration-line branch; exact-H Actions pending",
   "repository": "bhrumom/fabushi-desktop",
-  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "branch": "checkpoint/tdrp-native-call-scope-20bf9475-r1",
   "upstream": {
     "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
     "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
@@ -24,7 +24,20 @@
       "NMR51 upload bounds",
       "CLI/package delivery",
       "auxiliary runtime dependency locks"
-    ]
+    ],
+    "integration_parent": "81024616de4ddd503020aff423305f76c22bcacf",
+    "concurrent_reconciliation": "Reapplied only approved call guard/workflow additions onto 2d03120fe107b94f389409ac4f6890947940af4e, preserving new forward ownership recovery and Human53/Chromium22 gates. Publication payloads are constructed from exact fetched contents, without the extra final newline present only in scratch review copies. A later expected-head publication did not land after a GitHub GraphQL error; remote reread proved concurrent branch advance. The unreferenced67e483 commit is not claimed delivered. Current publication rebases to 63c59566aae7fa9b424a364df1429176c792d249 and preserves the newer canonical ledger. Current810246 advance adds only atomic-creation preparation files; exact code/workflow/ledger inputs remain unchanged and are reused by immutable blob.",
+    "publication_retries": [
+      {
+        "commit": "67e48310256b1cc19f765cec659584f00c6279e3",
+        "delivered": false
+      },
+      {
+        "commit": "86c999e589c7b394223753855599dc80262cdafe",
+        "delivered": false
+      }
+    ],
+    "isolation_reason": "Three expected-head attempts observed concurrent target advancement; all rejected mutations were read back. Created a child branch at the reviewed integration commit rather than retrying shared writes."
   },
   "authority": [
     {
@@ -82,7 +95,7 @@
   ],
   "verification": {
     "policy": "GitHub Actions only; no local executable validation or htch-runtime",
-    "implementation_head": null,
+    "implementation_head": "249675ae30502e72e495a4c6aee53e8214f82bd1",
     "workflow_run": null,
     "jobs": [],
     "artifacts": [],
@@ -97,7 +110,39 @@
       1
     ],
     "execution_status": "not-run",
-    "source_schema_execution": "pending exact Actions preparation and containing-H source contract"
+    "source_schema_execution": "success during exact ledger object preparation; containing-H source workflow remains required",
+    "ledger_preparation": {
+      "head": "19f631c5d74f342109859f8f1d509173b86305cc",
+      "run": 41520347187,
+      "job": 125534453080,
+      "result": "success",
+      "input_blob": "82cf93f16e7b4c5f7bc8482822977c92ad6ee18a",
+      "prepared_blob": "a0b3d7f0c1c043f5197375c25d47214841d7dee4",
+      "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+      "artifact_id": 13176958250,
+      "artifact_digest": "sha256:f1713c6c92f5de24238e0442124ecd5824821531b40177e85b72a15dc0fd99ce",
+      "remote_full_blob_readback": true,
+      "prior_184_rows_preserved": true,
+      "source_reviews_preserved": true,
+      "acceptance_changed": false
+    },
+    "ledger_preparation_history": [
+      {
+        "head": "9e959272d40c0dbceb396fb894151114575b1512",
+        "run": 41519581382,
+        "job": 125531833715,
+        "result": "success",
+        "input_blob": "a73e18e1d1e44dfa28cb28755ce13812be9534cc",
+        "prepared_blob": "2ce3f0f2d9bf2a4439ba1443666e036eb9f5abf3",
+        "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+        "artifact_id": 13177396459,
+        "artifact_digest": "sha256:4bb27253f26ccf5fcb313634f3216837a9bac88039aca0b726b928abef80fa8c",
+        "remote_full_blob_readback": true,
+        "prior_184_rows_preserved": true,
+        "source_reviews_preserved": true,
+        "acceptance_changed": false
+      }
+    ]
   },
   "original_requirement_check": [
     {
@@ -163,7 +208,7 @@
     {
       "id": "delivery",
       "condition": "Current-round result committed/pushed and remote readback verifies exact SHA and files before final",
-      "evidence": "Pending publication/readback for this call-scope batch; prior unrelated commits are not used as this delivery.",
+      "evidence": "Current production commit249675ae30502e72e495a4c6aee53e8214f82bd1 is published on the derived migration branch; final current-H file readback, Actions and PR are still required.",
       "complete": false
     }
   ],
@@ -180,6 +225,12 @@
     "Real call service credentials, account/device cases, deployed authorization, media/ICE/TURN, credential rotation, supported platform packages, UI/a11y, performance/soak and complete Bot regression remain required.",
     "Complete source review dispositions and generated/build/external/LFS/legal closure remain unaccepted."
   ],
-  "next_action": "Publish exact ledger object preparation, then integrate the guarded call creation and five tests with canonical ledger/RTM on a fresh branch parent, and read exact-H Actions results.",
-  "github_delivery": null
+  "next_action": "Read exact containing implementation-H Native service and source candidate Actions, repair only a demonstrated failure, and record actual job/artifact evidence.",
+  "github_delivery": {
+    "preparation_commit": "9e959272d40c0dbceb396fb894151114575b1512",
+    "preparation_full_sha_and_five_files_readback": true,
+    "implementation_commit": "249675ae30502e72e495a4c6aee53e8214f82bd1",
+    "integration_into_shared_checkpoint": false
+  },
+  "integration_target": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1"
 }

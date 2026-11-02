@@ -1,5 +1,12 @@
 # FBCP Native Communication Absorption — Status
 
+## 2026-11-02 — CALL-SCOPE-001 bounded production batch
+
+The existing Native call-creation owner binds the requested participant pair to the selected canonical Human conversation before remote creation. This closes the A↔B-scope / A↔C-call mismatch for newly admitted calls without adding an owner or changing public schemas. Five actual gateway/HTTP/SQLite cases cover rejection, corrupted metadata, lifecycle/discovery/reopen, backend refusal/retry and no-Native compatibility; existing 3+1 call regressions remain selected. Exact implementation H, execution status and artifacts are in `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; source review is recorded separately. Do not infer passing execution from test authorship.
+
+U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The existing Git inventory remains 6895 root / 16381 recursive identities; the single ledger adds only `FBCP-CALL-SCOPE-001` (185 responsibility rows). Its six source review records, unknown/unread nulls and unaccepted source/product state are preserved. Full source/build/generated/external/LFS/legal disposition, historical mismatched-call data recovery, real call service/media/device/platform/UI/security/soak/upgrade/Bot and independent ACCEPT remain open. No user data is deleted and no release is authorized.
+
+
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Date: 2026-11-02

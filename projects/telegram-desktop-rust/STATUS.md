@@ -1,5 +1,12 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
+## 2026-11-02 — CALL-SCOPE-001 bounded production batch
+
+The existing Native call-creation owner binds the requested participant pair to the selected canonical Human conversation before remote creation. This closes the A↔B-scope / A↔C-call mismatch for newly admitted calls without adding an owner or changing public schemas. Five actual gateway/HTTP/SQLite cases cover rejection, corrupted metadata, lifecycle/discovery/reopen, backend refusal/retry and no-Native compatibility; existing 3+1 call regressions remain selected. Exact implementation H, execution status and artifacts are in `projects/telegram-desktop-rust/evidence/task20bf-round1-call-scope.json`; source review is recorded separately. Do not infer passing execution from test authorship.
+
+U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`. The existing Git inventory remains 6895 root / 16381 recursive identities; the single ledger adds only `FBCP-CALL-SCOPE-001` (185 responsibility rows). Its six source review records, unknown/unread nulls and unaccepted source/product state are preserved. Full source/build/generated/external/LFS/legal disposition, historical mismatched-call data recovery, real call service/media/device/platform/UI/security/soak/upgrade/Bot and independent ACCEPT remain open. No user data is deleted and no release is authorized.
+
+
 Date: 2026-11-02  
 Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Parent: FBCP-001 Revision 8  

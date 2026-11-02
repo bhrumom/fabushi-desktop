@@ -665,7 +665,26 @@ impl ProductionSessionWorkers {
         let Some(client) = self.shipping_native_messaging()? else {
             return self.call_sessions()?.create(scope_id, creator_id, participant_ids);
         };
-        let peer = self.local_call_peer(participant_ids)?;
+        let metadata = self
+            .open_human_conversation_db_owner(scope_id)?
+            .read_metadata()
+            .map_err(|error| error.to_string())?;
+        let stored_participants = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .filter(|participants| participants.len() == 2)
+            .ok_or_else(|| "shipping Human call scope requires exactly two canonical participants".to_string())?;
+        let stored_participants = stored_participants
+            .iter()
+            .map(|participant| match participant.as_str() {
+                Some(id) if !id.is_empty() && id.trim() == id => Ok(id.to_string()),
+                _ => Err("shipping Human call scope contains an invalid participant identity".to_string()),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let peer = self.local_call_peer(&stored_participants)?;
+        if self.local_call_peer(participant_ids)? != peer {
+            return Err("shipping Human call participants do not match the canonical conversation scope".into());
+        }
         let identity = client.identity()?;
         if identity.user_id != creator_id {
             return Err("Fabushi call credential identity does not match CallSession creator".into());
