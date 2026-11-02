@@ -1,9 +1,10 @@
 name: TDRP source review contract
 on:
   push:
-    branches: [codex/tdrp-risk-based-source-review-20261102]
+    branches: [codex/tdrp-risk-based-source-review-20261102, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
     paths:
       - scripts/tdrp-source-review*.mjs
+      - scripts/tdrp-nested-pin-identity*.mjs
       - scripts/validate-tdrp-revision9-authority.mjs
       - .github/workflows/tdrp-source-review-contract.yml
   workflow_dispatch:
@@ -17,5 +18,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test scripts/tdrp-source-review.test.mjs
+      - run: node --test scripts/tdrp-source-review.test.mjs scripts/tdrp-nested-pin-identity.test.mjs
       - run: node --check scripts/validate-tdrp-revision9-authority.mjs

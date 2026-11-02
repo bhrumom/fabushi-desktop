@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { validateSourceReviews } from './tdrp-source-review.mjs';
+import { canonicalNestedRepository, assertNestedGitlinkPins } from './tdrp-nested-pin-identity.mjs';
 
 const root = process.cwd();
 const requireAccepted = process.argv.includes('--require-accepted');
@@ -638,13 +639,17 @@ for (const g of links) {
   recursiveInventory.push(...componentEntries.map(e=>({
     repository:repo,commit:g.sha,scope:'direct-gitlink',mount:g.path,path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
   })));
-  for (const e of td.tree||[]) if (e.mode==='160000') nested.push({parent:`${repo}@${g.sha}`,path:e.path,commit:e.sha});
+  const nestedLinks = (td.tree||[]).filter(e => e.mode === '160000');
+  if (nestedLinks.length) {
+    const nestedModules = parseGitmodules(await get(`https://raw.githubusercontent.com/${repo}/${g.sha}/.gitmodules`, false));
+    for (const e of nestedLinks) {
+      const repository = canonicalNestedRepository(nestedModules.get(e.path));
+      fail(repository !== null, 'unresolved nested gitlink repository ' + repo + ':' + e.path);
+      nested.push({ parent: `${repo}@${g.sha}`, path: e.path, repository, commit: e.sha });
+    }
+  }
 }
-for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
-  fail(nested.some(n=>n.parent===k.parent&&n.path===k.path&&n.commit===k.commit),'missing known nested gitlink '+k.parent+':'+k.path);
-}
-const unexpected=nested.filter(n=>!lock.known_nested_gitlinks.some(k=>k.parent===n.parent&&k.path===n.path&&k.commit===n.commit));
-fail(unexpected.length===0,'unexpected nested gitlinks '+JSON.stringify(unexpected));
+assertNestedGitlinkPins(lock.known_nested_gitlinks, nested);
 
 const githubNestedCounts=[];
 for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
