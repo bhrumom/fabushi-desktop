@@ -1,0 +1,296 @@
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index 8e900ba95f563cce1d44c4918ff5997c80254d43..f1c21e82c97ffc75a0432e6368c8584ce7a5609c 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -6906,7 +6906,7 @@ fn handoff_channel_failure_followup(
+     work: &ChannelFailureWork<serde_json::Value>,
+     failures: Vec<serde_json::Value>,
+     run: impl FnOnce(&[serde_json::Value]) -> Result<RevivalExecution, String>,
+-    complete: impl FnOnce(&[serde_json::Value]),
++    complete: impl FnOnce(&[serde_json::Value]) -> Result<(), String>,
+     failed: impl FnOnce(&str),
+ ) -> ChannelFailureAction<serde_json::Value> {
+     if !wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+@@ -6927,14 +6927,21 @@ fn handoff_channel_failure_followup(
+         Ok(execution) if !execution.aborted
+             && !execution.quiesced_for_upgrade && execution.sent_message_count > 0 =>
+         {
+-            complete(&failures);
+-            return if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+-                .finish_channel_failure_work(agent_id, work)
+-            {
+-                ChannelFailureAction::Finished
+-            } else {
+-                ChannelFailureAction::Stale
+-            };
++            match complete(&failures) {
++                Ok(()) => {
++                    return if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
++                        .finish_channel_failure_work(agent_id, work)
++                    {
++                        ChannelFailureAction::Finished
++                    } else {
++                        ChannelFailureAction::Stale
++                    };
++                }
++                // A real notification receipt does not prove its durable wake
++                // was settled. Keep all entered custody on any checked refusal,
++                // including a partially cleared batch, without replaying it.
++                Err(error) => failed(&format!("channel failure marker settlement failed: {error}")),
++            }
+         }
+         Ok(_) => {}
+         Err(error) => failed(&error),
+@@ -7266,28 +7273,81 @@ fn channel_failure_from_marker(marker: &DurablePendingWakeMarker) -> Result<serd
+     }))
+ }
+ 
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++enum ChannelFailureSettlementPoint {
++    PreflightAdmitted,
++    RunAdmitted,
++    MarkerDisposed { index: usize, removed: bool },
++}
++
++#[cfg(test)]
+ fn clear_durable_channel_failure_markers(
+     deps: &LocalRoutedRunnerDeps,
+     agent_id: &str,
+     failures: &[serde_json::Value],
+-) {
++) -> Result<(), String> {
++    clear_durable_channel_failure_markers_observed(deps, agent_id, failures, &mut |_| {})
++}
++
++/// Observe only admitted cleanup and completed checked I/O. Production uses
++/// the same path with a no-op observer; an observer never supplies an outcome.
++fn clear_durable_channel_failure_markers_observed(
++    deps: &LocalRoutedRunnerDeps,
++    agent_id: &str,
++    failures: &[serde_json::Value],
++    observe: &mut impl FnMut(ChannelFailureSettlementPoint),
++) -> Result<(), String> {
+     let Some(store) = deps.transcript_runtime.pending_wake_store() else {
+-        return;
++        return if failures.iter().any(|failure| failure.get("pendingWakeMarker").is_some()) {
++            Err("channel failure pending-wake owner is unavailable".into())
++        } else {
++            Ok(())
++        };
+     };
+-    for failure in failures {
++    for (index, failure) in failures.iter().enumerate() {
+         let Some(marker) = channel_failure_marker_from_failure(agent_id, failure) else {
+-            eprintln!(
+-                "mahayana-host channel_failure_marker_identity_incomplete agent={agent_id}"
+-            );
++            if failure.get("pendingWakeMarker").is_some() {
++                return Err("channel failure marker identity is invalid at settlement".into());
++            }
++            // A live failure without durable identity remains volatile; a
++            // successful follow-up must not manufacture a recovery marker.
+             continue;
+         };
+-        if !store.clear_if_matches(&marker) {
++        let removed = store.clear_if_matches_checked(&marker).map_err(|error| error.to_string())?;
++        if !removed {
+             eprintln!(
+-                "mahayana-host channel_failure_marker_settlement_missed agent={} operation={}",
++                "mahayana-host channel_failure_marker_already_not_current agent={} operation={}",
+                 agent_id, marker.work_id
+             );
+         }
++        observe(ChannelFailureSettlementPoint::MarkerDisposed { index, removed });
++    }
++    Ok(())
++}
++
++fn settle_preflight_channel_failure_markers(
++    deps: &LocalRoutedRunnerDeps,
++    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
++    agent_id: &str,
++    work: &ChannelFailureWork<serde_json::Value>,
++    failures: &[serde_json::Value],
++    observe: &mut impl FnMut(ChannelFailureSettlementPoint),
++) -> Result<bool, String> {
++    {
++        let state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
++        if !state.owns_channel_failure_work(agent_id, work)
++            || state.channel_failure_state(agent_id) != Some(ChannelFailureState::ActiveBeforeDispatch)
++        {
++            return Ok(false);
++        }
++    }
++    if !failures.is_empty() {
++        // This matching I/O is admitted before releasing the queue lock. A
++        // later close cannot retract it; the store never runs under that lock.
++        observe(ChannelFailureSettlementPoint::PreflightAdmitted);
++        clear_durable_channel_failure_markers_observed(deps, agent_id, failures, observe)?;
+     }
++    Ok(true)
+ }
+ 
+ fn channel_failure_marker_from_failure(
+@@ -7371,22 +7431,11 @@ fn filter_current_channel_failure_provenance(
+     deps: &LocalRoutedRunnerDeps,
+     agent_id: &str,
+     failures: &mut Vec<serde_json::Value>,
+-) -> Result<(), String> {
+-    let current_session_key = deps
+-        .session_workers
+-        .read_session_work_admission(agent_id)?
+-        .map(|record| record.session_key)
+-        .filter(|value| !value.trim().is_empty());
+-    if current_session_key.is_none()
+-        && failures.iter().any(|failure| {
+-            failure
+-                .get("sessionKey")
+-                .and_then(serde_json::Value::as_str)
+-                .is_some_and(|value| !value.trim().is_empty())
+-        })
+-    {
+-        return Err("channel failure session provenance is unavailable".into());
+-    }
++) -> Result<((String, String), Vec<serde_json::Value>), String> {
++    let admission = deps.session_workers.read_session_work_admission(agent_id)?
++        .filter(|record| !record.session_key.trim().is_empty()
++            && !record.lifecycle_revision.trim().is_empty())
++        .ok_or_else(|| "channel failure session provenance is unavailable".to_string())?;
+     let mut stale = Vec::new();
+     failures.retain(|failure| {
+         let Some(session_key) = failure
+@@ -7397,17 +7446,16 @@ fn filter_current_channel_failure_provenance(
+         else {
+             return true;
+         };
+-        match current_session_key.as_deref() {
+-            Some(current) if current == session_key => true,
+-            Some(_) => {
+-                stale.push(failure.clone());
+-                false
+-            }
+-            None => true,
++        if admission.session_key == session_key {
++            true
++        } else {
++            stale.push(failure.clone());
++            false
+         }
+     });
+-    clear_durable_channel_failure_markers(deps, agent_id, &stale);
+-    Ok(())
++    // Both filtering and actual Session admission use this same generation.
++    // Do not re-read a newer revision and silently bind prepared old work to it.
++    Ok(((admission.session_key, admission.lifecycle_revision), stale))
+ }
+ 
+ fn process_channel_failure_work(
+@@ -7416,7 +7464,19 @@ fn process_channel_failure_work(
+     wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
+     agent_id: &str,
+     work: &ChannelFailureWork<serde_json::Value>,
+-    run: impl FnOnce(RoutedProvider, &[serde_json::Value]) -> Result<RevivalExecution, String>,
++    run: impl FnOnce(RoutedProvider, &[serde_json::Value], (String, String)) -> Result<RevivalExecution, String>,
++) -> ChannelFailureAction<serde_json::Value> {
++    process_channel_failure_work_observed(deps, roster, wakes, agent_id, work, run, |_| {})
++}
++
++fn process_channel_failure_work_observed(
++    deps: &LocalRoutedRunnerDeps,
++    roster: &ProductionRosterEmit,
++    wakes: &Mutex<BackgroundWakes<serde_json::Value>>,
++    agent_id: &str,
++    work: &ChannelFailureWork<serde_json::Value>,
++    run: impl FnOnce(RoutedProvider, &[serde_json::Value], (String, String)) -> Result<RevivalExecution, String>,
++    mut observe: impl FnMut(ChannelFailureSettlementPoint),
+ ) -> ChannelFailureAction<serde_json::Value> {
+     {
+         let state = wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+@@ -7450,8 +7510,16 @@ fn process_channel_failure_work(
+     let summary = match deps.session_workers.summarize_agent_by_id(agent_id, None) {
+         Ok(Some(summary)) => summary,
+         Ok(None) => {
+-            clear_durable_channel_failure_markers(deps, agent_id, &failures);
+-            return finish();
++            return match settle_preflight_channel_failure_markers(
++                deps, wakes, agent_id, work, &failures, &mut observe,
++            ) {
++                Ok(true) => finish(),
++                Ok(false) => ChannelFailureAction::Stale,
++                Err(error) => {
++                    eprintln!("mahayana-host channel_failure_preflight_settlement_held agent={agent_id} error={error}");
++                    pause(work.failures.clone())
++                }
++            };
+         }
+         Err(error) => {
+             eprintln!("mahayana-host channel_failure_resolve_failed agent={agent_id} error={error}");
+@@ -7459,12 +7527,31 @@ fn process_channel_failure_work(
+         }
+     };
+     if summary.is_group {
+-        clear_durable_channel_failure_markers(deps, agent_id, &failures);
+-        return finish();
++        return match settle_preflight_channel_failure_markers(
++            deps, wakes, agent_id, work, &failures, &mut observe,
++        ) {
++            Ok(true) => finish(),
++            Ok(false) => ChannelFailureAction::Stale,
++            Err(error) => {
++                eprintln!("mahayana-host channel_failure_preflight_settlement_held agent={agent_id} error={error}");
++                pause(work.failures.clone())
++            }
++        };
+     }
+-    if let Err(error) = filter_current_channel_failure_provenance(deps, agent_id, &mut failures) {
+-        eprintln!("mahayana-host channel_failure_provenance_resolve_failed agent={agent_id} error={error}");
+-        return pause(failures);
++    let (expected_session_generation, stale) = match filter_current_channel_failure_provenance(deps, agent_id, &mut failures) {
++        Ok(filtered) => filtered,
++        Err(error) => {
++            eprintln!("mahayana-host channel_failure_provenance_resolve_failed agent={agent_id} error={error}");
++            return pause(failures);
++        }
++    };
++    match settle_preflight_channel_failure_markers(deps, wakes, agent_id, work, &stale, &mut observe) {
++        Ok(true) => {}
++        Ok(false) => return ChannelFailureAction::Stale,
++        Err(error) => {
++            eprintln!("mahayana-host channel_failure_preflight_settlement_held agent={agent_id} error={error}");
++            return pause(work.failures.clone());
++        }
+     }
+     if failures.is_empty() {
+         return finish();
+@@ -7481,10 +7568,12 @@ fn process_channel_failure_work(
+         agent_id,
+         work,
+         failures,
+-        |failures| run(provider, failures),
++        |failures| run(provider, failures, expected_session_generation),
+         |failures| {
+-            clear_durable_channel_failure_markers(deps, agent_id, failures);
++            observe(ChannelFailureSettlementPoint::RunAdmitted);
++            clear_durable_channel_failure_markers_observed(deps, agent_id, failures, &mut observe)?;
+             let _ = roster.emit_agent_update(agent_id);
++            Ok(())
+         },
+         |error| {
+             let classified_error = ProviderSessionError::Tool(error.to_string());
+@@ -7524,7 +7613,7 @@ fn run_channel_failure_revival_worker(
+         |work| drive_channel_failure_work(work, |work| {
+             process_channel_failure_work(
+                 &deps, roster.as_ref(), wakes.as_ref(), &agent_id, work,
+-                |provider, failures| {
++                |provider, failures, expected_session_generation| {
+                     let prompt = build_channel_delivery_failure_wake_prompt(failures);
+                     let widget_prompts = deps.transcript_manager.widget_responses()
+                         .collect_unanswered_question_prompts(&agent_id)
+@@ -7541,6 +7630,7 @@ fn run_channel_failure_revival_worker(
+                             selected_images: Vec::new(),
+                             skipped_question_prompts: widget_prompts.skipped_question_prompts,
+                             dismissed_question_prompts: widget_prompts.dismissed_question_prompts,
++                            expected_session_generation: Some(expected_session_generation),
+                             ..BackgroundRevivalContext::default()
+                         },
+                     )
