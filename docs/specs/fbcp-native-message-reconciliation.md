@@ -1035,9 +1035,28 @@ batch with a deleted/protected source currently aborts unrelated ordinary sync.
 The data format, command/service schema, unique Session/Transcript owner,
 Backend PR #137 read-only boundary and all final acceptance blockers remain.
 
+### Auxiliary packaged executable source locks (FMEP-SOURCE-01)
 
+The four-file desktop resource boundary also depends on the independent
+Coordinator and box-exec-daemon Cargo roots and the Go network-worker module.
+At `59308cf3cee48213278c52e4ad60bfd9250fb545`, the two Rust roots have no
+tracked Cargo.lock, the Go root has no tracked go.sum, and the release build
+runs go mod tidy. The existing fixed Telegram U is unchanged; this batch binds
+currently unresolved Fabushi package inputs without claiming source ACCEPT.
 
-
-
-
-
+1. Capture missing dependency locks/checksums only in exact-H GitHub Actions,
+   using the existing Rust 1.97.1 / Go 1.27.1 and the unchanged direct manifests.
+   Preserve the original Go manifest and its fixed Tailscale v1.104.1 selection.
+   A capture-mode result is review evidence, not a locked-input acceptance.
+2. Review the captured inputs, commit them with expected-head CAS, and make the
+   existing desktop/release build commands require Cargo --locked and Go
+   -mod=readonly. Normal builds must not regenerate or tidy dependency inputs.
+3. At the containing pinned H, build the three actual macOS auxiliary binaries,
+   retain source/toolchain/normal-build dependency/module, file/hash/symbol/library
+   evidence, and reject legacy Telegram or generic FFI runtime dependencies.
+   Run the existing owner-focused lifecycle tests; missing inputs or changes to
+   tracked locks/checksums must fail. Preserve prior full regression requirements.
+4. Do not alter command/service schemas, process lifecycle owners, executable
+   override policy, user data, legacy readers, signing or deployment. Registry/Go
+   source/legal review, supported-platform signed packages and independent
+   acceptance remain separate open gates.
