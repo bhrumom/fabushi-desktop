@@ -14,3 +14,7 @@
 10. 独立 ACCEPT、0 open P0/P1/blocker、全部 required evidence 后才交付发布。缺配置明确 blocked，继续无依赖任务，不改假结果。每轮更新既有 owner matrix/STATUS/ledger 相关项，报告实际用户行为、H/U、检查选择与结果、缺口、云端位置和下一批。
 
 现在按 FMEP-001 §12 继续现有生产批次；不要再次只扩充治理报告。政策文档合并不代表功能完成。
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.

@@ -250,3 +250,7 @@ TDRP-001 只有以下同时成立才能 accepted：
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
 References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 8 ; current canonical Fabushi/Bot specifications.
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.

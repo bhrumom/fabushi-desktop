@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { validateSourceReviews } from './tdrp-source-review.mjs';
 
 const root = process.cwd();
 const requireAccepted = process.argv.includes('--require-accepted');
@@ -714,8 +715,7 @@ if (requireAccepted) {
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
-  fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
+  validateSourceReviews(recursiveInventory, ledger.source_reviews, ledger.rows);
   fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
   fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
   fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');

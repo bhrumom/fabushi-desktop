@@ -104,3 +104,7 @@ Execution addendum: FMEP-001 Revision 2 (2026-11-02)
 ## 2026-11-02 执行纠偏
 
 遵循 `docs/specs/fabushi-deferred-ci-migration.md` §12：以当前生产 owner 和依赖驱动批次，先明确消息权威与旧运行路径退出，再推进完整产品能力。上游开发工具单独核算，不机械导入治理规则，不混入产品进度。历史 STATUS/owner 清单必须按当前批次增量刷新；本次规范修订不代表产品实现或验收完成。
+
+### Source-review amendment — 2026-11-02
+
+FMEP-SOURCE-01 (`docs/specs/fabushi-deferred-ci-migration.md` §13) supersedes blanket per-file deep-reading/unread=0 requirements: enumerate and disposition every exact source identity; review product/mixed/high-risk logic deeply, generated and dependency contracts at their owning inputs/interfaces, and resources/docs/tooling by evidenced disposition. Preserve full product scope. Unknown or ambiguous responsibilities escalate to deep review. Historical unread counts are not rewritten as completed reads. Final acceptance requires complete identity coverage, required review depth, responsibility mapping and all original product/evidence gates.
