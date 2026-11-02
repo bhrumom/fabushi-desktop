@@ -1193,6 +1193,7 @@ fn run_wire_child(root: PathBuf) {
         RoutedProviderRun {
             provider: RoutedProvider::Fabushi,
             fabushi_model: Some(MODEL.into()),
+            fabushi_request_binding: None,
             data_dir: &root,
             messages: &messages,
             typed_replay: None,

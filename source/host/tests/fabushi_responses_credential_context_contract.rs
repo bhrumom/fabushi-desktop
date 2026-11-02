@@ -497,7 +497,8 @@ fn exercise_provider(root: &Path, explicit_cancel: bool) -> Value {
         RoutedProvider::Fabushi,
         &[ProviderMessage { role: "user".into(), content: "Keep exact body and model.".into() }],
         &mut RoutedProviderOptions {
-            data_dir: root, typed_replay: None, fabushi_model: Some(MODEL), cursor_auth: None,
+            data_dir: root, typed_replay: None, fabushi_model: Some(MODEL),
+            fabushi_request_binding: None, cursor_auth: None,
             tools: &[], mcp_server_url: None,
             execute_tool: &mut |_, _, _| { tools += 1; Ok(json!({})) },
             on_text_delta: &mut |delta, _| deltas.push(delta.to_string()),
@@ -583,7 +584,8 @@ impl RoutedProviderAttemptExecutor for RoutedRefusalExecutor<'_> {
         run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
             RoutedProvider::Fabushi, &[],
             &mut RoutedProviderOptions {
-                data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL), cursor_auth: None,
+                data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL),
+                fabushi_request_binding: None, cursor_auth: None,
                 tools: &[], mcp_server_url: None,
                 execute_tool: &mut |_, _, _| panic!("refused tool execution"),
                 on_text_delta, on_partial_tool_call: None, should_cancel: &controlled_cancel,
@@ -659,7 +661,8 @@ impl RoutedProviderAttemptExecutor for RoutedHttpErrorExecutor<'_> {
             RoutedProvider::Fabushi,
             &[ProviderMessage { role: "user".into(), content: "Keep exact body and model.".into() }],
             &mut RoutedProviderOptions {
-                data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL), cursor_auth: None,
+                data_dir: self.root, typed_replay: None, fabushi_model: Some(MODEL),
+                fabushi_request_binding: None, cursor_auth: None,
                 tools: &[], mcp_server_url: None,
                 execute_tool: &mut |_, _, _| { *tools += 1; Ok(json!({})) },
                 on_text_delta, on_partial_tool_call: None, should_cancel,

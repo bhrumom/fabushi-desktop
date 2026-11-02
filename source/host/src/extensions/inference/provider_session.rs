@@ -20,7 +20,7 @@ use tokio::time::timeout;
 use uuid::Uuid;
 
 use crate::extensions::auth::auth_service::{
-    FabushiCoreCredential, parse_fabushi_core_credential,
+    FabushiCoreCredential, FabushiCredentialContext, parse_fabushi_core_credential,
 };
 use crate::extensions::auth::credential_renewer::system_now_ms;
 use crate::host_paths::get_sand_root_dir;
@@ -1009,6 +1009,78 @@ fn configured_fabushi_responses_credentials() -> Result<ResponsesHttpCredentials
     read_fabushi_responses_credentials(&endpoint, &credential_path)
 }
 
+/// Identity shared by the requests belonging to one admitted Native turn.
+/// Credentials remain transport-owned and are never cached in this binding.
+#[derive(Clone)]
+pub struct FabushiResponsesRequestBinding {
+    identity: Arc<OnceLock<FabushiResponsesRequestIdentity>>,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct FabushiResponsesRequestIdentity {
+    context: FabushiCredentialContext,
+    endpoint: String,
+    credential_path: PathBuf,
+}
+
+impl FabushiResponsesRequestBinding {
+    /// Direct Runner callers bind on their first valid transport, after
+    /// checkpoint/model validation. Allocation itself performs no I/O.
+    pub(crate) fn for_runner_invocation() -> Self {
+        Self { identity: Arc::new(OnceLock::new()) }
+    }
+
+    fn accept_credentials(
+        &self,
+        credentials: &ResponsesHttpCredentials,
+    ) -> Result<(), ProviderSessionError> {
+        let ResponsesHttpCredentials::Fabushi {
+            credential, endpoint, credential_path,
+        } = credentials else {
+            return Err(ProviderSessionError::Configuration(
+                "Native request binding received a different provider.".into(),
+            ));
+        };
+        let candidate = FabushiResponsesRequestIdentity {
+            context: credential.context(),
+            endpoint: endpoint.clone(),
+            credential_path: credential_path.clone(),
+        };
+        // A racing first reader may lose initialization, but may never adopt
+        // or replace another reader's context, endpoint or credential source.
+        if let Err(candidate) = self.identity.set(candidate) {
+            if self.identity.get() != Some(&candidate) {
+                return Err(ProviderSessionError::Authentication(
+                    "Fabushi account context changed during this turn.".into(),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn credentials_for_transport(
+        &self,
+    ) -> Result<ResponsesHttpCredentials, ProviderSessionError> {
+        let credentials = match self.identity.get() {
+            Some(identity) => read_fabushi_responses_credentials(
+                &identity.endpoint, &identity.credential_path,
+            )?,
+            None => configured_fabushi_responses_credentials()?,
+        };
+        self.accept_credentials(&credentials)?;
+        Ok(credentials)
+    }
+}
+
+pub fn capture_fabushi_responses_request_binding(
+) -> Result<FabushiResponsesRequestBinding, ProviderSessionError> {
+    let binding = FabushiResponsesRequestBinding::for_runner_invocation();
+    // Validate the actual image now, then discard its token/expiry. Each
+    // transport rereads current credentials from this immutable identity.
+    let _ = binding.credentials_for_transport()?;
+    Ok(binding)
+}
+
 struct CodexHttpTransport {
     client: AsyncClient,
     credentials: ResponsesHttpCredentials,
@@ -1028,6 +1100,15 @@ impl CodexHttpTransport {
 
     fn new_fabushi() -> Result<Self, ProviderSessionError> {
         Self::with_credentials(configured_fabushi_responses_credentials()?)
+    }
+
+    fn new_fabushi_with_binding(
+        binding: Option<&FabushiResponsesRequestBinding>,
+    ) -> Result<Self, ProviderSessionError> {
+        match binding {
+            Some(binding) => Self::with_credentials(binding.credentials_for_transport()?),
+            None => Self::new_fabushi(),
+        }
     }
 }
 
@@ -1455,6 +1536,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         messages,
         None,
         None,
+        None,
         tools,
         execute_tool,
         on_text_delta,
@@ -1471,6 +1553,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_r
     messages: &[ProviderMessage],
     typed_replay: Option<&[TypedReplayEntry]>,
     requested_model: Option<&str>,
+    request_binding: Option<&FabushiResponsesRequestBinding>,
     tools: &[RoutedToolDefinition],
     execute_tool: &mut dyn FnMut(
         &RoutedToolDefinition,
@@ -1488,7 +1571,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_r
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let model = resolve_fabushi_request_model(requested_model, resume_from)?;
-    let mut transport = CodexHttpTransport::new_fabushi()?;
+    let mut transport = CodexHttpTransport::new_fabushi_with_binding(request_binding)?;
     let system_prompt = format!(
         "{}\n\nRuntime inference metadata: provider=Fabushi first-party Responses API; model={model}. If the user asks which provider or model is active, answer from this runtime metadata and do not infer a different vendor identity.",
         assembled_provider_system_prompt(messages),
@@ -1540,6 +1623,7 @@ pub struct RoutedProviderOptions<'a> {
     pub data_dir: &'a Path,
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub fabushi_model: Option<&'a str>,
+    pub fabushi_request_binding: Option<&'a FabushiResponsesRequestBinding>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub tools: &'a [RoutedToolDefinition],
     pub mcp_server_url: Option<&'a str>,
@@ -1689,6 +1773,7 @@ fn run_routed_provider_text_with_lifecycle_impl(
                 messages,
                 options.typed_replay,
                 options.fabushi_model,
+                options.fabushi_request_binding,
                 options.tools,
                 options.execute_tool,
                 options.on_text_delta,
@@ -3198,5 +3283,420 @@ mod fabushi_credential_context_tests {
             assert!(authorization == &format!("Bearer {}", match index { 0 => TOKEN_A, 4 => TOKEN_B, _ => ROTATED }), "request must use its bound credential");
             assert!(body == &requests[0].3, "request/model bytes remain unchanged");
         }
+    }
+
+    const TURN_BINDING_TEST: &str = "extensions::inference::provider_session::fabushi_credential_context_tests::turn_binding_retains_captured_configuration_across_transports";
+    const TURN_BINDING_CHILD_ROOT: &str = "FABUSHI_TURN_BINDING_CHILD_ROOT";
+    const TURN_BINDING_CAPTURE_ENDPOINT: &str = "FABUSHI_TURN_BINDING_CAPTURE_ENDPOINT";
+    const TURN_BINDING_CAPTURE_PATH: &str = "FABUSHI_TURN_BINDING_CAPTURE_PATH";
+    const TURN_BINDING_NONCE: &str = "FABUSHI_TURN_BINDING_NONCE";
+    const TURN_BINDING_ROTATED_AGAIN: &str = "private-turn-binding-token-rotated-again";
+    const TURN_BINDING_COMPLETE: &str = "initial-refusals-captured-a-two-transports-fresh-b-complete";
+
+    fn turn_binding_fixture(label: &str) -> Fixture {
+        let root = env::temp_dir().join(format!("fabushi-turn-binding-{label}-{}", Uuid::new_v4()));
+        fs::create_dir_all(&root).expect("create private turn-binding fixture");
+        Fixture { root, stop: Arc::new(AtomicBool::new(false)), server: None, child: None }
+    }
+
+    fn assert_turn_binding_authentication<T>(
+        result: Result<T, ProviderSessionError>,
+        phase: &str,
+    ) {
+        let error = match result {
+            Err(error) => error,
+            Ok(_) => panic!("{phase}: expected permanent Authentication refusal"),
+        };
+        assert!(matches!(&error, ProviderSessionError::Authentication(_)),
+            "{phase}: refusal lost its Authentication type");
+        let rendered = format!("{error} {error:?}");
+        for token in [TOKEN_A, ROTATED, TOKEN_B, TURN_BINDING_ROTATED_AGAIN] {
+            assert!(!rendered.contains(token), "{phase}: refusal exposed a credential");
+        }
+        let direct = codex_provider_error(error);
+        assert!(matches!(&direct, CodexDirectError::Authentication(_)),
+            "{phase}: Responses conversion lost its permanent error type");
+        assert!(matches!(ProviderSessionError::from(direct), ProviderSessionError::Authentication(_)),
+            "{phase}: routed conversion lost its permanent error type");
+    }
+
+    fn turn_binding_matches_credentials(
+        binding: &FabushiResponsesRequestBinding,
+        credentials: &ResponsesHttpCredentials,
+    ) -> bool {
+        match (binding.identity.get(), credentials) {
+            (Some(identity), ResponsesHttpCredentials::Fabushi { credential, endpoint, credential_path }) =>
+                identity.context == credential.context()
+                    && identity.endpoint == *endpoint
+                    && identity.credential_path == *credential_path,
+            _ => false,
+        }
+    }
+
+    fn assert_turn_binding_repair(
+        binding: &FabushiResponsesRequestBinding,
+        original: &FabushiResponsesRequestIdentity,
+        path: &Path,
+        issuer: &str,
+        phase: &str,
+    ) {
+        assert!(binding.identity.get() == Some(original), "{phase}: refusal replaced the admitted identity");
+        // The existing private writer also restores permissions after the
+        // missing/non-regular/non-private file controls.
+        write_credential(path, issuer, "user-a", ROTATED);
+        let mut rotated: Value = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        rotated["expiresAtMs"] = json!(4_102_444_900_000_u64);
+        fs::write(path, rotated.to_string()).unwrap();
+        let credentials = binding.credentials_for_transport().expect("repaired original context remains usable");
+        assert!(turn_binding_matches_credentials(binding, &credentials), "{phase}: repair changed the binding");
+        assert!(binding.identity.get() == Some(original), "{phase}: rotation replaced the admitted identity");
+        assert!(matches!(&credentials, ResponsesHttpCredentials::Fabushi { credential, .. }
+            if credential.access_token() == ROTATED && credential.expires_at_ms == 4_102_444_900_000_u64),
+            "{phase}: transport did not reread the repaired token and expiry");
+    }
+
+    #[test]
+    fn turn_binding_refusals_preserve_complete_identity() {
+        let fixture = turn_binding_fixture("refusals");
+        let path = fixture.root.join("credential-a.json");
+        let issuer = "http://127.0.0.1:1";
+        let endpoint = validate_fabushi_responses_url(&format!("{issuer}/captured/v1/responses")).unwrap();
+        write_credential(&path, issuer, "user-a", TOKEN_A);
+        let original_image: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let binding = FabushiResponsesRequestBinding::for_runner_invocation();
+        assert!(binding.identity.get().is_none(), "allocation must not acquire credentials");
+        let captured = read_fabushi_responses_credentials(&endpoint, &path).unwrap();
+        binding.accept_credentials(&captured).unwrap();
+        let original = binding.identity.get().unwrap().clone();
+        drop(captured);
+
+        let mut invalid_images = Vec::new();
+        for (phase, field, value) in [
+            ("changed valid user", "userId", json!("user-b")),
+            ("changed valid device", "deviceId", json!("other-device")),
+            ("changed valid session", "sessionId", json!("other-session")),
+            ("unsupported version", "version", json!(2)),
+            ("empty token", "accessToken", json!("")),
+            ("invalid user type", "userId", json!(false)),
+            ("blank user", "userId", json!(" ")),
+            ("blank device", "deviceId", json!(" ")),
+            ("blank session", "sessionId", json!(" ")),
+            ("expired image", "expiresAtMs", json!(0)),
+            ("mismatched issuer origin", "issuer", json!("http://127.0.0.1:2")),
+            ("unapproved issuer", "issuer", json!("https://unapproved.invalid")),
+            ("malformed issuer", "issuer", json!("malformed issuer")),
+            ("invalid issuer type", "issuer", json!(7)),
+        ] {
+            let mut image = original_image.clone();
+            image[field] = value;
+            invalid_images.push((phase.to_string(), image));
+        }
+        for field in ["accessToken", "expiresAtMs", "userId", "deviceId", "sessionId", "issuer"] {
+            let mut image = original_image.clone();
+            image.as_object_mut().unwrap().remove(field);
+            invalid_images.push((format!("missing {field}"), image));
+        }
+        invalid_images.push(("non-object document".into(), json!([])));
+        for (phase, image) in invalid_images {
+            fs::write(&path, image.to_string()).unwrap();
+            assert_turn_binding_authentication(binding.credentials_for_transport(), &phase);
+            assert_turn_binding_repair(&binding, &original, &path, issuer, &phase);
+        }
+
+        fs::write(&path, b"{malformed credential image").unwrap();
+        assert_turn_binding_authentication(binding.credentials_for_transport(), "malformed JSON");
+        assert_turn_binding_repair(&binding, &original, &path, issuer, "malformed JSON");
+        fs::remove_file(&path).unwrap();
+        assert_turn_binding_authentication(binding.credentials_for_transport(), "unavailable file");
+        assert_turn_binding_repair(&binding, &original, &path, issuer, "unavailable file");
+        fs::remove_file(&path).unwrap();
+        fs::create_dir(&path).unwrap();
+        assert_turn_binding_authentication(binding.credentials_for_transport(), "directory instead of private file");
+        assert!(binding.identity.get() == Some(&original), "directory refusal changed identity");
+        fs::remove_dir(&path).unwrap();
+        assert_turn_binding_repair(&binding, &original, &path, issuer, "directory instead of private file");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+            assert_turn_binding_authentication(binding.credentials_for_transport(), "non-private file");
+            assert_turn_binding_repair(&binding, &original, &path, issuer, "non-private file");
+            let target = fixture.root.join("symlink-target.json");
+            write_credential(&target, issuer, "user-a", TOKEN_A);
+            fs::remove_file(&path).unwrap();
+            std::os::unix::fs::symlink(&target, &path).unwrap();
+            assert_turn_binding_authentication(binding.credentials_for_transport(), "symlink instead of private file");
+            assert!(binding.identity.get() == Some(&original), "symlink refusal changed identity");
+            fs::remove_file(&path).unwrap();
+            assert_turn_binding_repair(&binding, &original, &path, issuer, "symlink instead of private file");
+        }
+
+        // Both candidates come from the real guarded reader and contain the
+        // same Auth context. Each independent configuration identity member
+        // must still refuse adoption through the production initializer.
+        let other_endpoint = validate_fabushi_responses_url(&format!("{issuer}/changed/v2/responses")).unwrap();
+        let endpoint_candidate = read_fabushi_responses_credentials(&other_endpoint, &path).unwrap();
+        assert_turn_binding_authentication(binding.accept_credentials(&endpoint_candidate), "complete endpoint mismatch");
+        assert_turn_binding_repair(&binding, &original, &path, issuer, "complete endpoint mismatch");
+        let other_path = fixture.root.join("credential-b.json");
+        write_credential(&other_path, issuer, "user-a", TOKEN_B);
+        let path_candidate = read_fabushi_responses_credentials(&endpoint, &other_path).unwrap();
+        assert_turn_binding_authentication(binding.accept_credentials(&path_candidate), "credential path mismatch");
+        assert_turn_binding_repair(&binding, &original, &path, issuer, "credential path mismatch");
+    }
+
+    fn race_turn_binding_images(
+        binding: &FabushiResponsesRequestBinding,
+        left: (&str, &Path),
+        right: (&str, &Path),
+    ) -> [(ResponsesHttpCredentials, Result<(), ProviderSessionError>); 2] {
+        let barrier = std::sync::Barrier::new(3);
+        thread::scope(|scope| {
+            let read_and_accept = |(endpoint, path)| {
+                // Even a failed read reaches the barrier, so a fixture error
+                // cannot strand the other contender before joining it.
+                let credentials = read_fabushi_responses_credentials(endpoint, path);
+                barrier.wait();
+                let credentials = credentials.expect("real private race candidate");
+                let outcome = binding.accept_credentials(&credentials);
+                (credentials, outcome)
+            };
+            let first = scope.spawn(move || read_and_accept(left));
+            let second = scope.spawn(move || read_and_accept(right));
+            barrier.wait();
+            let first = first.join();
+            let second = second.join();
+            [first.expect("first binding contender completed"), second.expect("second binding contender completed")]
+        })
+    }
+
+    #[test]
+    fn turn_binding_first_valid_images_have_one_immutable_winner() {
+        let fixture = turn_binding_fixture("race");
+        let a = fixture.root.join("credential-a.json");
+        let b = fixture.root.join("credential-b.json");
+        let issuer = "http://127.0.0.1:1";
+        let endpoint = validate_fabushi_responses_url(&format!("{issuer}/race/v1/responses")).unwrap();
+        write_credential(&a, issuer, "user-a", TOKEN_A);
+        write_credential(&b, issuer, "user-b", TOKEN_B);
+        let binding = FabushiResponsesRequestBinding::for_runner_invocation();
+        let [(first, first_result), (second, second_result)] =
+            race_turn_binding_images(&binding, (&endpoint, &a), (&endpoint, &b));
+        assert_eq!(usize::from(first_result.is_ok()) + usize::from(second_result.is_ok()), 1,
+            "different first images must have exactly one successful initializer");
+        let (winner, loser, losing_result) = if first_result.is_ok() {
+            (first, second, second_result)
+        } else {
+            (second, first, first_result)
+        };
+        assert_turn_binding_authentication(losing_result, "first-image race loser");
+        assert!(turn_binding_matches_credentials(&binding, &winner), "binding did not retain the race winner");
+        let original = binding.identity.get().unwrap().clone();
+        assert_turn_binding_authentication(binding.accept_credentials(&loser), "repeated race loser");
+        assert!(binding.identity.get() == Some(&original), "loser replaced the winning identity");
+        let reread = binding.credentials_for_transport().unwrap();
+        assert!(turn_binding_matches_credentials(&binding, &reread), "transport did not reread the winning source");
+        assert!(binding.identity.get() == Some(&original), "transport replaced the winning identity");
+
+        let winner_path = match &winner {
+            ResponsesHttpCredentials::Fabushi { credential_path, .. } => credential_path,
+            _ => panic!("race winner must be Native"),
+        };
+        let same = FabushiResponsesRequestBinding::for_runner_invocation();
+        let [(left, left_result), (right, right_result)] =
+            race_turn_binding_images(&same, (&endpoint, winner_path), (&endpoint, winner_path));
+        assert!(left_result.is_ok() && right_result.is_ok(), "same-identity initialization must allow both contenders");
+        assert!(turn_binding_matches_credentials(&same, &left) && turn_binding_matches_credentials(&same, &right),
+            "same-identity initialization lost complete identity equality");
+    }
+
+    fn turn_binding_http_request() -> Value {
+        json!({"model":"Vendor/Case@TurnBinding", "input":[{"role":"user","content":"captured turn request"}], "stream":true})
+    }
+
+    fn turn_binding_http_child(root: &Path) {
+        let endpoint_b = env::var(FABUSHI_RESPONSES_URL_ENV).unwrap();
+        let path_b = PathBuf::from(env::var_os(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV).unwrap());
+        let issuer_b = url::Url::parse(&endpoint_b).unwrap().origin().ascii_serialization();
+        let initial = FabushiResponsesRequestBinding::for_runner_invocation();
+        assert!(initial.identity.get().is_none());
+        assert_turn_binding_authentication(initial.credentials_for_transport(), "initial unavailable credential");
+        assert!(initial.identity.get().is_none(), "unavailable credential admitted an identity");
+        write_credential(&path_b, &issuer_b, "user-b", TOKEN_B);
+        fs::write(&path_b, b"{malformed initial credential").unwrap();
+        assert_turn_binding_authentication(initial.credentials_for_transport(), "initial malformed credential");
+        assert!(initial.identity.get().is_none(), "malformed credential admitted an identity");
+        write_credential(&path_b, &issuer_b, "user-b", TOKEN_B);
+        let repaired_initial = initial.credentials_for_transport().unwrap();
+        assert!(turn_binding_matches_credentials(&initial, &repaired_initial), "valid image after initial refusal must bind");
+
+        let endpoint_a = env::var(TURN_BINDING_CAPTURE_ENDPOINT).unwrap();
+        let path_a = PathBuf::from(env::var_os(TURN_BINDING_CAPTURE_PATH).unwrap());
+        let issuer_a = url::Url::parse(&endpoint_a).unwrap().origin().ascii_serialization();
+        // Narrow private fixture: use one real validated image and the very
+        // initializer used by credentials_for_transport. The public eager
+        // capture factory is exercised by the external production tests.
+        // Environment B is fixed at process launch and never mutated here.
+        let captured = read_fabushi_responses_credentials(&endpoint_a, &path_a).unwrap();
+        let binding = FabushiResponsesRequestBinding::for_runner_invocation();
+        binding.accept_credentials(&captured).unwrap();
+        assert!(turn_binding_matches_credentials(&binding, &captured));
+        drop(captured);
+        for token in [ROTATED, TURN_BINDING_ROTATED_AGAIN] {
+            write_credential(&path_a, &issuer_a, "user-a", token);
+            let shared = binding.clone();
+            let mut transport = CodexHttpTransport::new_fabushi_with_binding(Some(&shared)).unwrap();
+            let mut events = 0;
+            transport.stream_response(&turn_binding_http_request(), &mut |_| { events += 1; Ok(()) }, &|| false).unwrap();
+            assert_eq!(events, 1, "each bound transport must consume the real completed SSE event");
+            assert!(turn_binding_matches_credentials(&binding, &transport.credentials));
+            assert!(matches!(&transport.credentials, ResponsesHttpCredentials::Fabushi { credential, .. }
+                if credential.access_token() == token), "a new transport reused a stale token");
+        }
+        let mut fresh = CodexHttpTransport::new_fabushi().unwrap();
+        let mut events = 0;
+        fresh.stream_response(&turn_binding_http_request(), &mut |_| { events += 1; Ok(()) }, &|| false).unwrap();
+        assert_eq!(events, 1, "fresh unbound operation must reach endpoint B");
+        assert!(turn_binding_matches_credentials(&initial, &fresh.credentials), "fresh operation did not use configuration B");
+        assert!(env::var(FABUSHI_RESPONSES_URL_ENV).unwrap() == endpoint_b);
+        assert!(PathBuf::from(env::var_os(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV).unwrap()) == path_b);
+        let receipt = format!("{}\n{}\n{TURN_BINDING_COMPLETE}\n", env::var(TURN_BINDING_NONCE).unwrap(), std::process::id());
+        fs::write(root.join("turn-binding-receipt"), receipt).unwrap();
+    }
+
+    // Only nonsecret observations may enter the parent diagnostic. Raw HTTP
+    // headers/bodies and raw child stdout/stderr are never rendered by this
+    // new control, including on deadline, wait error or worker panic.
+    #[derive(Debug, Default)]
+    struct TurnBindingHttpObservation {
+        accepted: usize,
+        parsed: usize,
+        responded: usize,
+        phase: &'static str,
+        failed: bool,
+        requests: Vec<(bool, bool, bool, bool)>,
+    }
+
+    #[test]
+    fn turn_binding_retains_captured_configuration_across_transports() {
+        if let Some(root) = env::var_os(TURN_BINDING_CHILD_ROOT) {
+            turn_binding_http_child(&PathBuf::from(root));
+            return;
+        }
+        let mut fixture = turn_binding_fixture("http");
+        let a = TcpListener::bind("127.0.0.1:0").unwrap();
+        let b = TcpListener::bind("127.0.0.1:0").unwrap();
+        a.set_nonblocking(true).unwrap();
+        b.set_nonblocking(true).unwrap();
+        let issuer_a = format!("http://{}", a.local_addr().unwrap());
+        let endpoint_a = validate_fabushi_responses_url(&format!("{issuer_a}/turn-bound/v1/responses")).unwrap();
+        let endpoint_b = validate_fabushi_responses_url(&format!("http://{}/turn-current/v2/responses", b.local_addr().unwrap())).unwrap();
+        let path_a = fixture.root.join("captured-credential.json");
+        let path_b = fixture.root.join("configured-credential.json");
+        write_credential(&path_a, &issuer_a, "user-a", TOKEN_A);
+        let observation = Arc::new(Mutex::new(TurnBindingHttpObservation::default()));
+        let server_observation = Arc::clone(&observation);
+        let stop = Arc::clone(&fixture.stop);
+        fixture.server = Some(thread::spawn(move || {
+            let deadline = Instant::now() + BOUND * 2;
+            let expected_body = serde_json::to_vec(&turn_binding_http_request()).unwrap();
+            'serve: while !stop.load(Ordering::Acquire) {
+                if Instant::now() >= deadline {
+                    let mut observed = server_observation.lock().unwrap();
+                    observed.phase = "listener deadline";
+                    observed.failed = true;
+                    break;
+                }
+                for (next, listener) in [(false, &a), (true, &b)] {
+                    let mut stream = match listener.accept() {
+                        Ok((stream, _)) => stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => continue,
+                        Err(_) => {
+                            let mut observed = server_observation.lock().unwrap();
+                            observed.phase = "listener accept";
+                            observed.failed = true;
+                            break 'serve;
+                        }
+                    };
+                    {
+                        let mut observed = server_observation.lock().unwrap();
+                        observed.accepted += 1;
+                        observed.phase = "bounded blocking request read";
+                    }
+                    // The established reader resets accepted sockets to
+                    // blocking before its bounded read/write timeouts.
+                    let (_, line, authorization, body) = read_request(&mut stream, next);
+                    {
+                        let mut observed = server_observation.lock().unwrap();
+                        let expected_token = match observed.parsed {
+                            0 => ROTATED,
+                            1 => TURN_BINDING_ROTATED_AGAIN,
+                            _ => TOKEN_B,
+                        };
+                        observed.requests.push((
+                            next,
+                            line == if next { "POST /turn-current/v2/responses HTTP/1.1" } else { "POST /turn-bound/v1/responses HTTP/1.1" },
+                            authorization == format!("Bearer {expected_token}"),
+                            body == expected_body,
+                        ));
+                        observed.parsed += 1;
+                        observed.phase = "bounded response write";
+                    }
+                    let body = "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"turn-binding-response\",\"output\":[]}}\n\n";
+                    let response = format!("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+                    if stream.write_all(response.as_bytes()).is_err() {
+                        server_observation.lock().unwrap().failed = true;
+                        break 'serve;
+                    }
+                    let mut observed = server_observation.lock().unwrap();
+                    observed.responded += 1;
+                    observed.phase = "observing both endpoints";
+                }
+                thread::sleep(Duration::from_millis(2));
+            }
+        }));
+        let nonce = Uuid::new_v4().to_string();
+        fixture.child = Some(Command::new(env::current_exe().unwrap())
+            .args(["--exact", TURN_BINDING_TEST, "--nocapture", "--test-threads=1"])
+            .env(TURN_BINDING_CHILD_ROOT, &fixture.root).env(TURN_BINDING_NONCE, &nonce)
+            .env(TURN_BINDING_CAPTURE_ENDPOINT, endpoint_a).env(TURN_BINDING_CAPTURE_PATH, path_a)
+            .env(FABUSHI_RESPONSES_URL_ENV, endpoint_b).env(FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, path_b)
+            .env("NO_PROXY", "*").env("no_proxy", "*")
+            .stdout(Stdio::null()).stderr(Stdio::null())
+            .spawn().expect("spawn owned turn-binding child"));
+        let child_pid = fixture.child.as_ref().unwrap().id();
+        let deadline = Instant::now() + BOUND;
+        let outcome = loop {
+            match fixture.child.as_mut().unwrap().try_wait() {
+                Ok(Some(status)) => break Ok(status),
+                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(5)),
+                Ok(None) => break Err("owned child deadline"),
+                Err(_) => break Err("owned child wait failed"),
+            }
+        };
+        let cleanup = if outcome.is_err() {
+            // This exact Child remains owned and unreaped. No process-name
+            // search or unrelated process cleanup is part of the fixture.
+            let child = fixture.child.as_mut().unwrap();
+            let killed = child.kill().is_ok();
+            let reaped = child.wait().is_ok();
+            Some((killed, reaped))
+        } else {
+            None
+        };
+        fixture.stop.store(true, Ordering::Release);
+        let server_panicked = fixture.server.take().unwrap().join().is_err();
+        let observed = observation.lock().unwrap_or_else(|error| error.into_inner());
+        // Retain the safe server outcome before adjudicating any child error.
+        eprintln!("turn-binding HTTP control pid={child_pid} cleanup={cleanup:?} server_panicked={server_panicked} outcome={observed:?}");
+        assert!(!server_panicked && !observed.failed, "turn-binding HTTP fixture failed: {observed:?}");
+        assert!(matches!(&outcome, Ok(status) if status.success()), "turn-binding child failed: {outcome:?}; server={observed:?}");
+        let expected_receipt = format!("{nonce}\n{child_pid}\n{TURN_BINDING_COMPLETE}\n");
+        assert!(fs::read_to_string(fixture.root.join("turn-binding-receipt")).ok().as_deref() == Some(expected_receipt.as_str()),
+            "owned child lacks the nonce/PID/completion-bound receipt; server={observed:?}");
+        assert_eq!((observed.accepted, observed.parsed, observed.responded), (3, 3, 3), "both bound transports and the fresh positive must complete");
+        assert_eq!(observed.requests, vec![(false, true, true, true), (false, true, true, true), (true, true, true, true)],
+            "bound requests must use captured A with fresh tokens and unchanged model/body; B observes only the later unbound positive");
     }
 }

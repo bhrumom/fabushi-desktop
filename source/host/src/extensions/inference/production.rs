@@ -27,9 +27,10 @@ use super::inference_service::{
     HostInferenceService, InferenceRoute, InferenceSettings, InferenceUsage,
 };
 use super::provider_session::{
-    ProviderMessage, ProviderSessionError, ProviderTokenUsage, RoutedProvider,
+    FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError,
+    ProviderTokenUsage, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
-    resolve_fabushi_request_model,
+    resolve_fabushi_request_model, run_routed_provider_text,
     run_routed_provider_text_with_lifecycle_reporting_usage,
 };
 
@@ -500,6 +501,58 @@ impl ProductionInferenceExtension {
         self.attached_media.clone()
     }
 
+    /// Turn-memory follows the already-admitted route, model and account
+    /// binding. It must not resolve a later default or create a new turn.
+    pub fn run_turn_memory_prompt(
+        &self,
+        data_dir: &Path,
+        provider: RoutedProvider,
+        fabushi_model: Option<&str>,
+        fabushi_request_binding: Option<&FabushiResponsesRequestBinding>,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled(
+                "Runner cancelled before provider dispatch".into(),
+            ));
+        }
+        if provider == RoutedProvider::Fabushi && fabushi_request_binding.is_none() {
+            return Err(ProviderSessionError::Configuration(
+                "Native turn-memory inference requires its admitted request binding.".into(),
+            ));
+        }
+        let messages = vec![
+            ProviderMessage { role: "system".into(), content: system_prompt.to_string() },
+            ProviderMessage { role: "user".into(), content: user_prompt.to_string() },
+        ];
+        let mut reject_tool = |
+            _tool: &RoutedToolDefinition,
+            _args: serde_json::Value,
+            _tool_call_id: &str,
+        | -> Result<serde_json::Value, ProviderSessionError> {
+            Err(ProviderSessionError::Tool(
+                "turn-memory inference exposes no tools".into(),
+            ))
+        };
+        let mut ignore_delta = |_delta: &str, _accumulated: &str| {};
+        let mut options = RoutedProviderOptions {
+            data_dir,
+            typed_replay: None,
+            fabushi_model,
+            fabushi_request_binding,
+            cursor_auth: Some(self.auth.clone()),
+            tools: &[],
+            mcp_server_url: None,
+            execute_tool: &mut reject_tool,
+            on_text_delta: &mut ignore_delta,
+            on_partial_tool_call: None,
+            should_cancel,
+        };
+        run_routed_provider_text(provider, &messages, &mut options)
+    }
+
     pub fn run_summarization_prompt(
         &self,
         data_dir: &Path,
@@ -545,6 +598,7 @@ impl ProductionInferenceExtension {
             data_dir,
             typed_replay: None,
             fabushi_model: fabushi_model.as_deref(),
+            fabushi_request_binding: None,
             cursor_auth: Some(cursor_auth),
             tools: &[],
             mcp_server_url: None,

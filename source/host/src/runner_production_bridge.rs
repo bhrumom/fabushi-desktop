@@ -2,7 +2,9 @@ use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
-use crate::extensions::inference::provider_session::{ProviderTokenUsage, RoutedProvider};
+use crate::extensions::inference::provider_session::{
+    FabushiResponsesRequestBinding, ProviderTokenUsage, RoutedProvider,
+};
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
 use crate::runner::box_tool_access::{BoxShellAutoReviewCallback, RunnerBoxResourcePort};
 use crate::runner::production_agent_checkpoint::AgentStateCheckpointSink;
@@ -79,6 +81,7 @@ pub struct ProductionRunnerCompositionHooks {
 pub struct ProductionRunnerCompositionInput {
     pub provider: RoutedProvider,
     pub fabushi_model: Option<String>,
+    pub fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     pub bridge: Arc<dyn RoutedToolBridge>,
     pub cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     pub request_context: RunnerRequestContextSnapshot,
@@ -120,6 +123,9 @@ pub fn create_production_runner_composition(
     );
     if let Some(model) = input.fabushi_model {
         composition = composition.with_fabushi_model(model);
+    }
+    if let Some(binding) = input.fabushi_request_binding {
+        composition = composition.with_fabushi_request_binding(binding);
     }
     if let Some(cursor_auth) = input.cursor_auth {
         composition = composition.with_cursor_auth(cursor_auth);

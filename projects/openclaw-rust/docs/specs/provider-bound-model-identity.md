@@ -657,6 +657,95 @@ together without deleting persisted checkpoints. Durable original-run claims,
 Automation retention and backend dedupe/ACK, original-turn restart, unknown
 effect reconciliation, real ecosystems and all full-acceptance gates stay open.
 
+### Native active-turn request identity — OCRM-FABUSHI-TURN-BINDING-v1
+
+Decision **FTB-01 — FIX / IMPL_BUG**, specified before implementation on
+`a514b70ab7901e9c8b4d87a8d29bf8e7d52be507`; fixed U is unchanged. FC-02
+correctly fences one transport's 401 retry. A later Runner attempt currently
+constructs a fresh transport from current environment and credentials, so a
+transient retry can silently continue an admitted turn as a different account.
+The same gap affects separately invoked reply/closing nudges and turn-memory.
+Keep the existing Native account producer, Auth decoder, Inference transport,
+Host admission and Runner composition as their sole owners.
+
+- FTB-01: add cloneable `FabushiResponsesRequestBinding` in `provider_session`,
+  holding only an `Arc<OnceLock<...>>` of the validated Auth context (canonical
+  issuer/user/device/session), complete endpoint and credential path. It has
+  no Debug/serialization, credential/token/expiry cache, public reset/default,
+  or public unbound constructor. Public
+  `capture_fabushi_responses_request_binding()` eagerly validates one actual
+  credential image, captures its nonsecret identity and discards that image.
+  Reuse the existing guarded file reader and typed decoder without another
+  auth authority or dependency.
+- FTB-02: before each new bound transport, reread the captured path with the
+  captured endpoint and require the same context. Same-context token/expiry
+  rotation is allowed; unavailable, malformed, expired or changed context
+  returns the existing typed permanent error before HTTP. A mismatch never
+  mutates the binding. Do not consult changed endpoint/path environment after
+  capture. Preserve FC-02's existing single 401 refresh and all current file,
+  issuer, endpoint, redaction and cancellation constraints. This does not
+  revoke an already in-flight request or poll credentials after each tool.
+- FTB-03: shipping admission captures for Fabushi only, after accepted-lease
+  guard, checked Session state and model resolution, before permission
+  `begin_turn` and subsequent effects. Map Authentication to Unauthorized,
+  Configuration to BadRequest and other errors to Internal. A refusal drops
+  the existing lease without advancing direction. Non-Native routes perform
+  no Native credential read. Carry the owned optional binding alongside the
+  frozen model through `ProductionRunnerCompositionInput`,
+  `TurnAgentComposition`, `RoutedProviderRun` and its actual attempt executor;
+  borrowed `RoutedProviderOptions` carries `Option<&...>`. Composition defaults
+  to None and exposes `with_fabushi_request_binding(binding)`. Host supplies
+  Some, shared by main execution and every same-worker reply/closing nudge.
+- FTB-04: a direct Fabushi Runner invocation with None allocates one empty
+  binding at executor construction, without I/O; all attempts reuse it. The
+  first valid Native transport binds once. Race losers compare the complete
+  identity and refuse disagreement. Use stable OnceLock get/set with all I/O
+  outside synchronization. Preserve cancellation, checkpoint-provider and
+  model/checkpoint checks before credential acquisition. Another independent
+  invocation with None gets a fresh binding. Direct provider calls with None
+  retain fresh-operation behavior, including the FC-02 new-account control.
+- FTB-05: move Host's existing no-tools turn-memory prompt body into
+  `ProductionInferenceExtension::run_turn_memory_prompt(data_dir, provider,
+  fabushi_model, fabushi_request_binding, system_prompt, user_prompt,
+  should_cancel)`. The real Host memory closure passes its admitted values;
+  extraction and episode synthesis use that same binding. Preserve two-message
+  construction, existing Cursor auth, cancellation, no-tools and RecordEvidence
+  behavior; do not reselect current route/model or capture a new identity.
+  Native turn-memory without its admitted binding refuses as Configuration
+  before transport; explicit cancellation retains precedence.
+  Standalone and post-turn compaction summarization keep current route/default
+  and None. A separately admitted later turn may capture the new account.
+
+Scope is the six existing provider/runtime/composition/bridge/Host/Inference
+production paths and their current constructor callers and selected contract
+tests. Session/checkpoint schemas, terminal custody, channel and Automation
+owners, Electron account producer and source locks are unchanged. Required
+review is the actual producer/decoder, request and retry paths, Host admission,
+generated composition cloning, memory consumer and failure/cancellation order;
+this target-owner correction adds no upstream whole-file reading claim.
+
+Actions-only oracles use actual private credential files, loopback HTTP,
+generated production Runner and real accepted checkpoint/effect owners. Cover
+pre-effect 503 retry and post-tool accepted-checkpoint retry with account swap
+(one dispatch/no replay), same-context rotation (successful continuation),
+main-to-nudge and actual turn-memory identity reuse, and a separately admitted
+new-account positive. Preserve durable checkpoint bytes, model/history, effect
+counts, no output on refusal and all existing unknown/cancellation controls.
+Also cover captured endpoint/path despite changed configuration, checkpoint
+error precedence, initial malformed/unavailable credentials, and non-Native
+isolation. Extend the existing shipping admission test with a nonce-bound owned
+child, real private credentials and an exact completion receipt, retaining the
+valid-after-refusal case and lease/direction assertions. No process-global
+environment mutation or mock substitute for the real consumer is accepted.
+
+Reuse existing scoped Settings/Inference, shipping Host, model/credential,
+Runner/composition/custody and memory selections. Freeze the complete scope,
+independently review it, then obtain resulting exact-H Actions evidence before
+verification. Rollback reverts this ephemeral binding and all callers together;
+no data migration or credential persistence is introduced. Original-turn disk
+load/claim/settle, identity after process loss, summary identity policy, remote
+revocation, real service compatibility and all full OCRM acceptance stay open.
+
 ## Actions oracles and limits
 
 Use the existing scoped GitHub Actions workflow, on one frozen H. No local or

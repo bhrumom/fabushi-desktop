@@ -17,7 +17,8 @@ use uuid::Uuid;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderPartialToolCall, ProviderSessionError, ProviderTokenUsage,
+    FabushiResponsesRequestBinding, ProviderMessage, ProviderPartialToolCall,
+    ProviderSessionError, ProviderTokenUsage,
     ProviderToolStepReminderHook, RoutedMcpMetaToolDefinition, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
     run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps,
@@ -335,6 +336,7 @@ impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
 struct ProductionRoutedProviderAttemptExecutor<'a> {
     provider: RoutedProvider,
     fabushi_model: Option<String>,
+    fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     data_dir: &'a Path,
     messages: &'a [ProviderMessage],
     typed_replay: Option<&'a [TypedReplayEntry]>,
@@ -398,6 +400,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
                 data_dir: self.data_dir,
                 typed_replay: self.typed_replay,
                 fabushi_model: self.fabushi_model.as_deref(),
+                fabushi_request_binding: self.fabushi_request_binding.as_ref(),
                 cursor_auth: self.cursor_auth.clone(),
                 tools: self.tools,
                 mcp_server_url: mcp_server.as_ref().map(RoutedMcpServer::url),
@@ -429,6 +432,7 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
 pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
     pub fabushi_model: Option<String>,
+    pub fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
@@ -499,6 +503,13 @@ pub fn run_routed_provider_in_runner(
     let mut executor = ProductionRoutedProviderAttemptExecutor {
         provider: run.provider,
         fabushi_model: run.fabushi_model.clone(),
+        fabushi_request_binding: if run.provider == RoutedProvider::Fabushi {
+            Some(run.fabushi_request_binding.clone().unwrap_or_else(
+                FabushiResponsesRequestBinding::for_runner_invocation,
+            ))
+        } else {
+            None
+        },
         data_dir: run.data_dir,
         messages: &provider_messages,
         typed_replay: run.typed_replay,

@@ -205,9 +205,9 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     request_disk_saver_audit, run_created_agent_kickstart,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
+    FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError, RoutedProvider,
     RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
-    run_routed_provider_text,
+    capture_fabushi_responses_request_binding,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
     ChannelInboundAppendAttempt, ChannelInboundAppendFailure,
@@ -1388,6 +1388,7 @@ struct RoutedTurnModelAdmission {
     lease_guard: RoutedTurnLeaseGuard,
     persisted_session_model: SessionModelEntryState,
     fabushi_model: Option<String>,
+    fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     direction_epoch: u64,
 }
 
@@ -1423,6 +1424,15 @@ fn prepare_routed_turn_model_admission(
     } else {
         None
     };
+    let fabushi_request_binding = if provider == RoutedProvider::Fabushi {
+        Some(capture_fabushi_responses_request_binding().map_err(|error| match &error {
+            ProviderSessionError::Authentication(_) => GatewayCommandError::Unauthorized(error.to_string()),
+            ProviderSessionError::Configuration(_) => GatewayCommandError::BadRequest(error.to_string()),
+            _ => GatewayCommandError::Internal(error.to_string()),
+        })?)
+    } else {
+        None
+    };
     if starts_new_user_direction {
         permission.begin_turn(agent_id);
     }
@@ -1430,6 +1440,7 @@ fn prepare_routed_turn_model_admission(
         lease_guard,
         persisted_session_model,
         fabushi_model,
+        fabushi_request_binding,
         direction_epoch: permission.direction_epoch(agent_id),
     })
 }
@@ -8596,6 +8607,7 @@ fn start_routed_provider_task(
         lease_guard: routed_turn_lease_guard,
         persisted_session_model,
         fabushi_model,
+        fabushi_request_binding,
         direction_epoch: turn_local_tool_direction_epoch,
     } = prepare_routed_turn_model_admission(
         &transcript_runtime,
@@ -11521,6 +11533,7 @@ fn start_routed_provider_task(
                 ProductionRunnerCompositionInput {
                     provider,
                     fabushi_model: fabushi_model.clone(),
+                    fabushi_request_binding: fabushi_request_binding.clone(),
                     bridge,
                     cursor_auth: Some(cursor_auth),
                     request_context: resolved_request_context,
@@ -12023,41 +12036,12 @@ fn start_routed_provider_task(
                             let memory_cancellation = worker_cancellation.clone();
                             let mut execute_memory_prompt =
                                 |system_prompt: &str, user_prompt: &str| -> Result<String, String> {
-                                    let messages = vec![
-                                        ProviderMessage {
-                                            role: "system".into(),
-                                            content: system_prompt.to_string(),
-                                        },
-                                        ProviderMessage {
-                                            role: "user".into(),
-                                            content: user_prompt.to_string(),
-                                        },
-                                    ];
-                                    let mut reject_tool = |
-                                        _tool: &RoutedToolDefinition,
-                                        _args: serde_json::Value,
-                                        _tool_call_id: &str,
-                                    | -> Result<serde_json::Value, ProviderSessionError> {
-                                        Err(ProviderSessionError::Tool(
-                                            "turn-memory inference exposes no tools".into(),
-                                        ))
-                                    };
-                                    let mut ignore_delta = |_delta: &str, _accumulated: &str| {};
                                     let should_cancel = || memory_cancellation.is_cancelled();
-                                    let mut options = RoutedProviderOptions {
-                                        data_dir: &data_dir,
-                                        typed_replay: None,
-                                        fabushi_model: fabushi_model.as_deref(),
-                                        cursor_auth: Some(auth.clone()),
-                                        tools: &[],
-                                        mcp_server_url: None,
-                                        execute_tool: &mut reject_tool,
-                                        on_text_delta: &mut ignore_delta,
-                                        on_partial_tool_call: None,
-                                        should_cancel: &should_cancel,
-                                    };
-                                    run_routed_provider_text(provider, &messages, &mut options)
-                                        .map_err(|error| error.to_string())
+                                    inference.run_turn_memory_prompt(
+                                        &data_dir, provider, fabushi_model.as_deref(),
+                                        fabushi_request_binding.as_ref(), system_prompt,
+                                        user_prompt, &should_cancel,
+                                    ).map_err(|error| error.to_string())
                                 };
                             let remembered_agent_messages = turn_agent_messages
                                 .lock()
@@ -17881,6 +17865,80 @@ mod tests {
 
     #[test]
     fn model_admission_refusals_release_the_accepted_lease_before_permission_effects() {
+        const CHILD_ROOT: &str = "FABUSHI_MODEL_ADMISSION_CHILD_ROOT";
+        const NONCE: &str = "FABUSHI_MODEL_ADMISSION_CHILD_NONCE";
+        const RECEIPT: &str = "admission-completed.json";
+        if let Some(root) = std::env::var_os(CHILD_ROOT) {
+            let root = std::path::PathBuf::from(root);
+            let nonce = std::env::var(NONCE).expect("owned admission child nonce");
+            run_model_admission_refusal_child(&root);
+            fs::write(root.join(RECEIPT), serde_json::json!({
+                "nonce": nonce, "pid": std::process::id(), "phase": "valid-lease-released",
+            }).to_string()).expect("admission child completion receipt");
+            return;
+        }
+
+        struct OwnedChild(std::process::Child);
+        impl Drop for OwnedChild {
+            fn drop(&mut self) {
+                if !matches!(self.0.try_wait(), Ok(Some(_))) {
+                    let _ = self.0.kill();
+                    let _ = self.0.wait();
+                }
+            }
+        }
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-model-admission-{}", uuid::Uuid::new_v4(),
+        ));
+        fs::create_dir(&root).expect("exclusive admission fixture");
+        let nonce = uuid::Uuid::new_v4().to_string();
+        let mut child = OwnedChild(std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects", "--nocapture", "--test-threads=1"])
+            .env(CHILD_ROOT, &root).env(NONCE, &nonce)
+            .env("FABUSHI_RESPONSES_URL", "http://127.0.0.1:9/v1/responses")
+            .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", root.join("credential.json"))
+            .env_remove("SAND_AGENT_MOCK_RESPONSE")
+            .env_remove("SAND_PACKAGED_RUNTIME")
+            .stdout(fs::File::create(root.join("stdout")).unwrap())
+            .stderr(fs::File::create(root.join("stderr")).unwrap())
+            .spawn().expect("owned admission child"));
+        let pid = child.0.id();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        let status = loop {
+            if let Some(status) = child.0.try_wait().expect("admission child wait") {
+                break status;
+            }
+            assert!(std::time::Instant::now() < deadline, "owned admission child deadline");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        };
+        // Keep failed fixtures and never copy raw child output/credentials into
+        // diagnostics. A successful exit alone cannot prove the exact test ran.
+        let phase = fs::read_to_string(root.join("phase")).ok()
+            .filter(|value| value.len() <= 64 && value.bytes().all(|byte|
+                byte.is_ascii_alphanumeric() || byte == b'-'))
+            .unwrap_or_else(|| "unknown".into());
+        let panic_location = fs::read_to_string(root.join("stderr")).ok().and_then(|output|
+            output.lines().find_map(|line| {
+                let (_, suffix) = line.split_once("main.rs:")?;
+                let location = suffix.chars().take_while(|value|
+                    value.is_ascii_digit() || *value == ':').take(32).collect::<String>();
+                (!location.is_empty()).then(|| format!("main.rs:{location}"))
+            })
+        ).unwrap_or_else(|| "unavailable".into());
+        assert!(status.success(),
+            "admission child failed: {status}; phase={phase}; panic={panic_location}; fixture={}",
+            root.display());
+        let receipt: serde_json::Value = serde_json::from_slice(
+            &fs::read(root.join(RECEIPT)).expect("actual admission completion receipt"),
+        ).unwrap();
+        assert_eq!(receipt, serde_json::json!({
+            "nonce": nonce, "pid": pid, "phase": "valid-lease-released",
+        }));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    fn run_model_admission_refusal_child(root: &std::path::Path) {
+        use std::io::Write;
         use std::sync::Arc;
         use mahayana_host_runtime::extensions::auth::auth_service::{
             HostAuthEnvironment, HostAuthServiceOptions,
@@ -17894,8 +17952,8 @@ mod tests {
         use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
         use serde_json::json;
 
-        let root = std::env::temp_dir().join(format!("fabushi-model-admission-{}", uuid::Uuid::new_v4()));
-        fs::create_dir_all(&root).unwrap();
+        let phase = |value: &str| fs::write(root.join("phase"), value).unwrap();
+        phase("setup");
         let settings_path = root.join("settings.json");
         let settings = Arc::new(SettingsService::new(&settings_path));
         assert!(settings.set_agent_default_model(Some(&json!({
@@ -17923,7 +17981,7 @@ mod tests {
         );
         let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root.join("agents"), 500));
         let record = sessions.materialize_new_session(None, "user", None).unwrap();
-        let runtime = Arc::new(super::ProductionTranscriptRuntime::new(Some(&root)));
+        let runtime = Arc::new(super::ProductionTranscriptRuntime::new(Some(root)));
         let events = super::GatewayEventHub::default();
         let permission = SandLocalToolPermissionController::production(settings);
         permission.begin_turn(&record.id);
@@ -17936,6 +17994,7 @@ mod tests {
             assert!(runtime.has_routed_turn_lease(&record.id, stream_id));
         };
         for (index, raw) in [json!(false), json!(17), json!("  "), json!("\nmodel")].iter().enumerate() {
+            phase(&format!("invalid-model-{index}"));
             let stream = format!("invalid-model-{index}");
             accept(&stream);
             assert!(matches!(super::prepare_routed_turn_model_admission(
@@ -17948,17 +18007,21 @@ mod tests {
             assert_eq!(permission.direction_epoch(&record.id), prior_direction);
         }
 
+        phase("invalid-settings");
         fs::write(&settings_path, "{").unwrap();
         accept("invalid-settings");
-        assert!(super::prepare_routed_turn_model_admission(
+        assert!(matches!(super::prepare_routed_turn_model_admission(
             &runtime, &events, &sessions, &inference, &permission,
             RoutedProvider::Fabushi, &record.id, "invalid-settings", None, true,
-        ).is_err());
+        ), Err(super::GatewayCommandError::BadRequest(_))));
         assert!(!runtime.has_routed_turn_lease(&record.id, "invalid-settings"));
+        assert_eq!(runtime.in_flight_run_count(&record.id), 0);
+        assert!(runtime.is_turn_dispatch_idle(&record.id));
         assert_eq!(permission.direction_epoch(&record.id), prior_direction);
         assert_eq!(fs::read_to_string(&settings_path).unwrap(), "{");
         fs::write(&settings_path, good_settings).unwrap();
 
+        phase("invalid-session-model");
         let db = sessions.open_agent_db_owner(&record.id).unwrap();
         assert!(db.write_kv("sessionModelSelection", "{").unwrap());
         accept("invalid-session-model");
@@ -17967,9 +18030,50 @@ mod tests {
             RoutedProvider::Fabushi, &record.id, "invalid-session-model", None, true,
         ), Err(super::GatewayCommandError::Internal(_))));
         assert!(!runtime.has_routed_turn_lease(&record.id, "invalid-session-model"));
+        assert_eq!(runtime.in_flight_run_count(&record.id), 0);
+        assert!(runtime.is_turn_dispatch_idle(&record.id));
         assert_eq!(permission.direction_epoch(&record.id), prior_direction);
         assert!(db.delete_kv("sessionModelSelection").unwrap());
 
+        phase("missing-native-credential");
+        accept("missing-native-credential");
+        assert!(matches!(super::prepare_routed_turn_model_admission(
+            &runtime, &events, &sessions, &inference, &permission,
+            RoutedProvider::Fabushi, &record.id, "missing-native-credential", None, true,
+        ), Err(super::GatewayCommandError::Unauthorized(_))));
+        assert!(!runtime.has_routed_turn_lease(&record.id, "missing-native-credential"));
+        assert_eq!(runtime.in_flight_run_count(&record.id), 0);
+        assert!(runtime.is_turn_dispatch_idle(&record.id));
+        assert_eq!(permission.direction_epoch(&record.id), prior_direction);
+
+        phase("non-native-isolated");
+        accept("non-native-isolated");
+        let other = super::prepare_routed_turn_model_admission(
+            &runtime, &events, &sessions, &inference, &permission,
+            RoutedProvider::OpenRouter, &record.id, "non-native-isolated", None, false,
+        ).expect("a non-Native route must not read missing Native credentials");
+        assert!(other.fabushi_model.is_none());
+        assert!(other.fabushi_request_binding.is_none());
+        assert_eq!(other.direction_epoch, prior_direction);
+        drop(other);
+        assert_eq!(runtime.in_flight_run_count(&record.id), 0);
+        assert!(runtime.is_turn_dispatch_idle(&record.id));
+
+        phase("valid-after-refusal");
+        let mut credential = fs::OpenOptions::new();
+        credential.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            credential.mode(0o600);
+        }
+        credential.open(root.join("credential.json")).unwrap().write_all(json!({
+            "version": 1, "issuer": "http://127.0.0.1:9",
+            "accessToken": "private-admission-fixture-token",
+            "expiresAtMs": 4_102_444_800_000_u64,
+            "userId": "admission-user", "deviceId": "admission-device",
+            "sessionId": "admission-session",
+        }).to_string().as_bytes()).unwrap();
         accept("valid-after-refusal");
         let admitted = super::prepare_routed_turn_model_admission(
             &runtime, &events, &sessions, &inference, &permission,
@@ -17977,6 +18081,7 @@ mod tests {
             Some(&json!("  Vendor/Next@Case  ")), true,
         ).expect("later turn remains admissible");
         assert_eq!(admitted.fabushi_model.as_deref(), Some("Vendor/Next@Case"));
+        assert!(admitted.fabushi_request_binding.is_some());
         assert_eq!(admitted.direction_epoch, prior_direction + 1);
         assert!(runtime.has_routed_turn_lease(&record.id, "valid-after-refusal"));
         drop(admitted);
@@ -17984,7 +18089,7 @@ mod tests {
         assert!(runtime.is_turn_dispatch_idle(&record.id));
         drop(db);
         drop(sessions);
-        fs::remove_dir_all(root).unwrap();
+        phase("valid-lease-released");
     }
 
     #[test]

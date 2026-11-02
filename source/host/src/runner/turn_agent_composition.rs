@@ -8,7 +8,8 @@ use serde_json::Value;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, ProviderTokenUsage, ProviderToolStepReminderHook,
+    FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError,
+    ProviderTokenUsage, ProviderToolStepReminderHook,
     RoutedMcpMetaToolDefinition, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use crate::cloud_agents::cloud_agent_tool::CloudAgentToolDependencies;
@@ -319,6 +320,7 @@ pub fn build_turn_subagent_types(
 pub struct TurnAgentComposition {
     provider: RoutedProvider,
     fabushi_model: Option<String>,
+    fabushi_request_binding: Option<FabushiResponsesRequestBinding>,
     bridge: Arc<dyn RoutedToolBridge>,
     cursor_auth: Option<Arc<dyn CursorInferenceAuth>>,
     request_context: RunnerRequestContextSnapshot,
@@ -388,6 +390,7 @@ impl TurnAgentComposition {
         Self {
             provider,
             fabushi_model: None,
+            fabushi_request_binding: None,
             bridge,
             cursor_auth: None,
             request_context,
@@ -443,6 +446,14 @@ impl TurnAgentComposition {
 
     pub fn with_fabushi_model(mut self, model: impl Into<String>) -> Self {
         self.fabushi_model = Some(model.into());
+        self
+    }
+
+    pub fn with_fabushi_request_binding(
+        mut self,
+        binding: FabushiResponsesRequestBinding,
+    ) -> Self {
+        self.fabushi_request_binding = Some(binding);
         self
     }
 
@@ -1073,6 +1084,7 @@ impl TurnAgentComposition {
             RoutedProviderRun {
                 provider: self.provider,
                 fabushi_model: self.fabushi_model.clone(),
+                fabushi_request_binding: self.fabushi_request_binding.clone(),
                 data_dir,
                 messages,
                 typed_replay,
