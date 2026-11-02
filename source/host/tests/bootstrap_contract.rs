@@ -467,6 +467,7 @@ mod physical_custody {
             // Another lock path has independent custody even while this one is busy.
             let other = acquire_host_lock(&root.join("other.lock"), std::process::id()).unwrap();
             other.lock.release().unwrap();
+            fs2::FileExt::unlock(&physical_guard).unwrap();
             drop(physical_guard);
 
             let admitted = acquire().unwrap();

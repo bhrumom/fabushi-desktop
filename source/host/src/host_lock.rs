@@ -22,7 +22,39 @@ pub enum HostLockOutcome {
 pub struct HostLockHandle {
     path: PathBuf,
     pid: u32,
-    guard: Mutex<Option<File>>,
+    guard: Mutex<Option<PhysicalGuard>>,
+}
+
+// This is the resource retained by the existing Host lock owner. Closing its
+// descriptor alone is insufficient when a concurrent fork has inherited the
+// same open file description; release the native lock explicitly on every exit.
+#[derive(Debug)]
+struct PhysicalGuard {
+    file: File,
+    held: bool,
+}
+
+impl PhysicalGuard {
+    fn try_acquire(&mut self) -> io::Result<bool> {
+        if !self.held {
+            self.held = try_acquire_guard(&self.file)?;
+        }
+        Ok(self.held)
+    }
+
+    fn unlock(&mut self) -> io::Result<()> {
+        if self.held {
+            fs2::FileExt::unlock(&self.file)?;
+            self.held = false;
+        }
+        Ok(())
+    }
+}
+
+impl Drop for PhysicalGuard {
+    fn drop(&mut self) {
+        let _ = self.unlock();
+    }
 }
 
 impl HostLockHandle {
@@ -39,9 +71,9 @@ impl HostLockHandle {
             .guard
             .lock()
             .map_err(|_| io::Error::other("Host lock release state is poisoned"))?;
-        if guard.is_none() {
+        let Some(physical_guard) = guard.as_mut() else {
             return Ok(());
-        }
+        };
         if read_lock_pid(&self.path) == Some(self.pid) {
             match fs::remove_file(&self.path) {
                 Ok(()) => {}
@@ -49,8 +81,9 @@ impl HostLockHandle {
                 Err(error) => return Err(error),
             }
         }
-        // Remove the projection before closing physical custody. Taking the
+        // Remove the projection before releasing physical custody. Taking the
         // resource also makes later release/Drop harmless to a same-PID owner.
+        physical_guard.unlock()?;
         drop(guard.take());
         Ok(())
     }
@@ -78,7 +111,7 @@ pub fn read_lock_pid(path: &Path) -> Option<u32> {
         .filter(|pid| *pid > 0)
 }
 
-fn open_guard(path: &Path) -> io::Result<File> {
+fn open_guard(path: &Path) -> io::Result<PhysicalGuard> {
     let mut guard_path = path.as_os_str().to_os_string();
     guard_path.push(".guard");
     let mut options = OpenOptions::new();
@@ -89,7 +122,10 @@ fn open_guard(path: &Path) -> io::Result<File> {
         options.mode(0o600);
     }
     // Never unlink this file: a waiter must keep referring to the same inode.
-    options.open(PathBuf::from(guard_path))
+    Ok(PhysicalGuard {
+        file: options.open(PathBuf::from(guard_path))?,
+        held: false,
+    })
 }
 
 fn try_acquire_guard(guard: &File) -> io::Result<bool> {
@@ -237,13 +273,13 @@ where
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let guard = open_guard(path)?;
-    let mut guard_held = try_acquire_guard(&guard)?;
+    let mut guard = open_guard(path)?;
+    guard.try_acquire()?;
     let mut outcome = HostLockOutcome::Created;
     let mut previous_pid = None;
 
     for _ in 0..MAX_ACQUIRE_ATTEMPTS {
-        if guard_held && try_create_lock(path, pid)? {
+        if guard.held && try_create_lock(path, pid)? {
             return Ok(HostLockAcquisition {
                 outcome,
                 lock: HostLockHandle {
@@ -257,7 +293,7 @@ where
 
         let holder = read_lock_pid(path);
         let Some(holder) = holder else {
-            if !guard_held {
+            if !guard.held {
                 return Err(guard_contention(path));
             }
             outcome = HostLockOutcome::ReclaimedDead;
@@ -265,14 +301,14 @@ where
             continue;
         };
         if holder == pid {
-            if !guard_held {
+            if !guard.held {
                 return Err(guard_contention(path));
             }
             remove_lock_if_pid_matches(path, Some(holder))?;
             continue;
         }
         if !is_alive(holder) {
-            if !guard_held {
+            if !guard.held {
                 return Err(guard_contention(path));
             }
             outcome = HostLockOutcome::ReclaimedDead;
@@ -281,7 +317,7 @@ where
             continue;
         }
         if !is_host_process(holder) {
-            if !guard_held {
+            if !guard.held {
                 return Err(guard_contention(path));
             }
             outcome = HostLockOutcome::ReclaimedForeign;
@@ -318,11 +354,10 @@ where
                 ),
             ));
         }
-        if !guard_held {
+        if !guard.held {
             // A liveness observation does not release another process's file
             // lock. No PID removal or publication may precede this acquisition.
-            guard_held = try_acquire_guard(&guard)?;
-            if !guard_held {
+            if !guard.try_acquire()? {
                 return Err(guard_contention(path));
             }
         }
@@ -346,4 +381,126 @@ pub fn acquire_host_lock(path: &Path, pid: u32) -> io::Result<HostLockAcquisitio
         DEFAULT_TAKEOVER_TIMEOUT_MS,
         DEFAULT_POLL_INTERVAL_MS,
     )
+}
+
+#[cfg(test)]
+mod physical_guard_tests {
+    use super::*;
+    use uuid::Uuid;
+
+    fn root(name: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-host-guard-{name}-{}", Uuid::new_v4(),
+        ));
+        fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    // A retained duplicate makes the close-only defect deterministic without
+    // relying on scheduling another test's fork between release and reacquire.
+    #[cfg(unix)]
+    #[test]
+    fn native_close_only_control_keeps_lock_until_the_duplicate_is_unlocked() {
+        let root = root("native-close");
+        let path = root.join("guard");
+        let file = OpenOptions::new().read(true).write(true).create_new(true)
+            .open(&path).unwrap();
+        fs2::FileExt::try_lock_exclusive(&file).unwrap();
+        let duplicate = file.try_clone().unwrap();
+        drop(file);
+        let probe = OpenOptions::new().read(true).write(true).open(&path).unwrap();
+        assert!(!try_acquire_guard(&probe).unwrap(), "the native prerequisite must hold");
+        fs2::FileExt::unlock(&duplicate).unwrap();
+        assert!(try_acquire_guard(&probe).unwrap());
+        fs2::FileExt::unlock(&probe).unwrap();
+        drop(probe);
+        drop(duplicate);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn public_release_and_drop_unlock_even_with_a_retained_duplicate() {
+        for explicit_release in [true, false] {
+            let root = root("public-release");
+            let path = root.join("host.lock");
+            let owner = acquire_host_lock(&path, 41).unwrap();
+            let duplicate = owner.lock.guard.lock().unwrap().as_ref().unwrap()
+                .file.try_clone().unwrap();
+            let mut probe = open_guard(&path).unwrap();
+            assert!(!probe.try_acquire().unwrap());
+            if explicit_release {
+                owner.lock.release().unwrap();
+                owner.lock.release().unwrap();
+            }
+            drop(owner);
+            assert!(!path.exists());
+
+            // The duplicate deliberately remains open through successor entry.
+            let successor = acquire_host_lock(&path, 99).unwrap();
+            assert_eq!(read_lock_pid(&path), Some(99));
+            drop(duplicate);
+            assert!(!probe.try_acquire().unwrap(), "old cleanup must preserve the successor");
+            assert_eq!(read_lock_pid(&path), Some(99));
+            successor.lock.release().unwrap();
+            assert!(probe.try_acquire().unwrap());
+            drop(probe);
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn unacquired_guard_cleanup_preserves_the_current_holder() {
+        let root = root("unacquired");
+        let path = root.join("host.lock");
+        let owner = acquire_host_lock(&path, 41).unwrap();
+        let mut contender = open_guard(&path).unwrap();
+        assert!(!contender.try_acquire().unwrap());
+        contender.unlock().unwrap();
+        drop(contender);
+        let mut probe = open_guard(&path).unwrap();
+        assert!(!probe.try_acquire().unwrap());
+        assert_eq!(read_lock_pid(&path), Some(41));
+        owner.lock.release().unwrap();
+        assert!(probe.try_acquire().unwrap());
+        drop(probe);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn acquired_guard_cleanup_unlocks_with_a_retained_duplicate() {
+        let root = root("acquired-cleanup");
+        let path = root.join("host.lock");
+        let mut acquired = open_guard(&path).unwrap();
+        assert!(acquired.try_acquire().unwrap());
+        let duplicate = acquired.file.try_clone().unwrap();
+        let mut probe = open_guard(&path).unwrap();
+        assert!(!probe.try_acquire().unwrap());
+        // The same resource Drop runs when any admission step returns an error.
+        drop(acquired);
+        assert!(probe.try_acquire().unwrap());
+        drop(duplicate);
+        let mut third = open_guard(&path).unwrap();
+        assert!(!third.try_acquire().unwrap());
+        drop(probe);
+        assert!(third.try_acquire().unwrap());
+        drop(third);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn failed_admission_leaves_the_guard_available_without_removing_bad_projection() {
+        let root = root("failed-admission");
+        let path = root.join("host.lock");
+        fs::create_dir(&path).unwrap();
+        let error = acquire_host_lock(&path, 41).unwrap_err();
+        assert_ne!(error.kind(), io::ErrorKind::WouldBlock);
+        assert!(path.is_dir(), "failed PID removal must preserve the invalid projection");
+        let mut probe = open_guard(&path).unwrap();
+        assert!(probe.try_acquire().unwrap(), "failed admission must release its acquired guard");
+        drop(probe);
+        fs::remove_dir(&path).unwrap();
+        let successor = acquire_host_lock(&path, 99).unwrap();
+        successor.lock.release().unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
 }

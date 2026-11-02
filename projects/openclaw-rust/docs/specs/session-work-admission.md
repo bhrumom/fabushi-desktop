@@ -1041,11 +1041,17 @@ Extend this existing owner, retaining HTR-01–04 and the shipping caller.
   policy. Keep bounded acquisition and termination budgets and all old refusal
   assertions. A guard/open/lock/write error must propagate before admission.
 - HPG-04: release removes only this handle's matching PID projection while
-  still holding custody, then closes its retained guard exactly once. Repeated
-  release or Drop after release cannot affect a same-PID successor. A failed
+  still holding custody, then explicitly unlocks and closes its retained guard
+  exactly once. Closing a single descriptor does not prove a native lock was
+  released if another descriptor refers to the same open file description.
+  Repeated release or Drop after release cannot affect a same-PID successor. A failed
   explicit projection removal retains the handle for retry; ordinary handle
   destruction still releases its OS resource. Persisting the guard file is
   deliberate; do not make an unlocked replacement inode while contenders exist.
+  Explicit unlock failure is an error and retains this handle for retry.
+  Every unsuccessful admission path and ordinary destruction explicitly unlocks
+  an acquired guard before closing it; a contended, unacquired file must not
+  release someone else's lock. Internal RAII is part of this existing owner.
 - HPG-05: keep acquisition at the existing shipping startup boundary before
   managed daemon/extensions, and release after their existing shutdown. Earlier
   layout and platform-lane construction are outside this boundary. Do not
@@ -1058,6 +1064,30 @@ Extend this existing owner, retaining HTR-01–04 and the shipping caller.
   a contender is refused until that exact child exits, then fresh acquisition
   succeeds. Bind child readiness to its PID and nonce, retain an owned Child
   for cleanup, and preserve every existing HTR assertion. No local execution.
+  Retain a duplicate descriptor in causal controls: release and Drop must permit
+  an independent successor while the duplicate remains open; dropping the
+  duplicate later must not disturb the successor. Prove failed admission and
+  failed PID-removal cleanup retain the same physical-custody rules.
+
+HPG-RELEASE-01 evidence: at `be07ae46b199d712f689fb0b0a67594f327efcad`, Actions
+`41456741305` / job `125320096231` passed shipping, configuration, application
+entry and the three unchanged Session JSON precision controls. The complete
+recovery group failed at `bootstrap_contract.rs:524`: immediate reacquisition
+returned `WouldBlock` after the previous handle's successful `release`.
+The log does not identify the exact concurrent descriptor/fork interleaving.
+Source review establishes an implementation defect independently: fs2 0.4.3
+uses `flock(LOCK_UN)` for explicit Unix unlock, while close releases a lock only
+after all references close. Use the existing BoxStore owners' explicit-unlock
+precedent, not sleeps, serial test execution or relaxed contention assertions.
+The causal duplicate-descriptor tests and original failed assertion require new
+exact-H Actions execution; no previous failure is retroactively declared green.
+The separate raw-lock busy-metadata fixture must also explicitly unlock its
+intentionally released File before immediate reacquisition. Retain its refusal,
+byte-preservation and successful-retry assertions and the parallel child test;
+this fixture correction is not evidence about the recorded line-524 failure.
+Primary contract sources are fs2 0.4.3 `src/fs2/unix.rs.html` on docs.rs and the
+Apple `flock(2)` / `close(2)` manual pages. This correction changes no lock wire
+format, dependency, source U, recovery claim or final acceptance requirement.
 
 Scope is this spec, `source/host/src/host_lock.rs` and the existing bootstrap
 contract; shared workflow/ledger edits, if needed, remain with root. No dependency
