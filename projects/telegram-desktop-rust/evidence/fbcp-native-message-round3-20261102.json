@@ -119,7 +119,7 @@
     "Run required protocol/TCP cases plus four proxy-boundary cases and existing credential storage-key schema behavior through the existing Actions job; nonempty result checks reject zero-test/ignored acceptance."
   ],
   "validation": {
-    "status": "pending-unit-import-and-canonical-ledger-actions",
+    "status": "pending-correct-six-case-selection-and-complete-message-gates",
     "local_executable_validation": "not-run",
     "dependent_message_batches": "blocked-until-all-NMR-required-jobs-and-tests-pass",
     "full_product_acceptance": false,
@@ -4973,7 +4973,7 @@
     "workflow": ".github/workflows/native-service-contracts.yml",
     "selected_filter": "response_normalization::tests::",
     "required_cases": 6,
-    "execution_status": "selected-tests-not-executed-lib-test-compilation-failed",
+    "execution_status": "606ee four DNS/special-config cases passed; two HTTP-date cases were not selected",
     "commit": "6cf9d2e5979f236ba75e49a3b1a85e935b62bf70"
   },
   "ledger_contract_reconciliation": {
@@ -4996,7 +4996,7 @@
       "Require both authored case kinds for high/critical implemented/verified while allowing explicit early-stage gaps; full verified/ADR/release gates unchanged."
     ],
     "local_executable_validation": false,
-    "actions_status": "pending-new-exact-H-source-review-contract",
+    "actions_status": "completed-success",
     "source_acceptance": false,
     "product_acceptance": false,
     "independent_static_review": {
@@ -5005,6 +5005,46 @@
       "no_phase_promotions": true,
       "original_production_and_test_evidence_retained": true,
       "local_executable_validation": false
+    },
+    "commit": "38271235aa5bcb1f2f6bd2c51926f745af342287",
+    "execution": {
+      "head_sha": "38271235aa5bcb1f2f6bd2c51926f745af342287",
+      "run_id": 41399820681,
+      "job_id": 125129006174,
+      "run_attempt": 1,
+      "conclusion": "success",
+      "javascript_tests": {
+        "passed": 63,
+        "failed": 0
+      },
+      "python_schema_tests": {
+        "ran": 31,
+        "result": "OK"
+      },
+      "canonical_ledger_schema_errors": 0,
+      "full_log_read": true,
+      "full_log_characters": 53029,
+      "artifact": {
+        "id": 13119934562,
+        "name": "tdrp-source-review-contract-38271235aa5bcb1f2f6bd2c51926f745af342287",
+        "size_in_bytes": 3802,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13119934562",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13119934562/zip",
+        "expired": false,
+        "created_at": "2026-11-02T06:25:48Z",
+        "expires_at": "2027-01-31T06:25:36Z",
+        "updated_at": "2026-11-02T06:25:48Z",
+        "digest": "sha256:8d7ecf5b2752f5a7f845fab8409726602a48f3012157ea31620dda202704d4aa",
+        "workflow_run": {
+          "id": 41399820681,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "38271235aa5bcb1f2f6bd2c51926f745af342287"
+        }
+      },
+      "source_acceptance": false,
+      "product_acceptance": false
     }
   },
   "fixed_upstream_build_input_review": {
@@ -5026,9 +5066,32 @@
     "production_code_changed": false,
     "old_assertions_unchanged": true,
     "diagnostic_lock_adopted": false,
-    "execution": "pending-new-H-Actions",
+    "execution": "606ee lib-test target compiled; selected normalization four cases passed; fixed workflow filter still required",
     "effective_commit": "606ee80daf10743b79c6c1c43541584a8af2260d",
     "effective_blob": "d772c4cf01b7019b1dde6a5154401e4eef5ba0cc",
     "integrator_action": "Concurrent session delivered the same two required imports before root publication; root read the complete diff/content and preserved it unchanged, dropping its redundant local hunk."
+  },
+  "response_normalization_filter_repair": {
+    "base": "38271235aa5bcb1f2f6bd2c51926f745af342287",
+    "classification": "TEST_SELECTION_BUG",
+    "failed_head": "606ee80daf10743b79c6c1c43541584a8af2260d",
+    "run_id": 41399722398,
+    "job_id": 125128702575,
+    "shipping_status": "completed",
+    "shipping_conclusion": "failure",
+    "app_host_compile": "success",
+    "actual_selected_tests": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 62
+    },
+    "cause": "response_normalization::tests:: selected the four tests in one submodule but excluded the two response_normalization::http_date_tests cases, then the six-case count guard correctly failed.",
+    "fix": "Select response_normalization:: at the existing module scope; keep the six-passed/zero-failed/zero-ignored guard and all six original test bodies.",
+    "full_failure_log_read": true,
+    "full_failure_log_characters": 183463,
+    "protocol_tcp_proxy_credentials": "skipped",
+    "new_execution_status": "pending",
+    "gate_lowered": false
   }
 }
