@@ -1902,7 +1902,7 @@ fn shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send() {
         "remoteMessageId":"11","remoteCreatedAt":"2026-10-05T01:00:11Z",
         "remoteReactions":[],"reactions":[]
     })).expect("legacy peer"));
-    let changed = runtime.react_human_message(&id,"human-server-message:11","👍")
+    let changed = runtime.toggle_human_message_reaction(&id,"human-server-message:11","👍")
         .expect("authorized reaction");
     assert_eq!(changed["content"], "historical peer text");
     assert_eq!(changed["remoteClientRequestId"], "old-peer-nonce");
