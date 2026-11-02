@@ -992,3 +992,88 @@ case and the thirty-three channel cases that were not reached, with their actual
 App executable/input binding; retain the separately bound earlier positives.
 The existing exact-H workflow owns this verification. This correction does not
 establish real channel/provider compatibility or any final acceptance gate.
+
+### Checked failure completion and Session generation — `CFL-CHECKED-v1`
+
+Starting integration base `5728181593dd168a9b7d3ec2ba1092b252d3a8ee` includes the
+published `OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1` implementation at
+`74484facdac03260af2b5ca1bd7963dc2ce5c1c2`. Continue that implementation and
+its four states, targeted recovery, raw-take compatibility and all existing
+valid assertions. Preserve the incoming Memory, Automation, Session and link
+preview changes. Fixed U and historical source-review extents above do not
+change. The separately frozen readiness draft is retained as review input,
+not installed as a competing state machine.
+The current integration base also preserves descendant
+`a50e4222776ce1e3a422d405d40fba26c0ae0594`, including its Memory authorization
+and Rust-search-to-palette production checks; shared workflow changes retain
+all incoming selectors, inputs and receipt contracts.
+
+Decisions before implementation: **CFL-CHECKED-01 — FIX / IMPL_BUG**:
+the void completion callback calls `clear_if_matches`, which collapses real
+pending-store I/O refusal to `false`, then finishes the entered head anyway.
+**CFL-CHECKED-02 — FIX / IMPL_BUG**: provenance retains only the Session key;
+the actual background context therefore defaults its lifecycle-generation
+fence to `None`. **CFL-CHECKED-03 — FIX / TEST_FLAW**: the existing controlled
+`sent_message_count = 1` outcomes prove queue ordering but cannot establish an
+actual Session result receipt or completion after partial marker I/O.
+**CFL-CHECKED-04 — FIX / IMPL_BUG**: preflight stale/missing/group cleanup
+needs a fresh matching active-ticket check before its destructive I/O, and
+must not discard the original batch when checked cleanup is refused.
+
+**CFL-CI-01 — FIX / TEST_FLAW** refers to the independently classified
+`CFL-SETTINGS-FIXTURE-01` recovery above. Preserve its published version-1
+fixture and the explicit validity/unconfigured-provider assertions. This
+checked-completion batch adds no alternative Settings fixture or weaker gate.
+
+- Completion returns `Result<(), String>` through the existing handoff.
+  `clear_if_matches_checked` success with either `true` or `false` means the
+  exact old marker is settled or already absent/replaced. Any checked read,
+  write or identity refusal after Runner success retains the complete entered
+  head through `retain_channel_failure_after_dispatch`. Partial cleanup does
+  not release the tail or make that head eligible for automatic replay.
+- Preflight filtering computes the retained subset, stale markers and the
+  exact `(session_key, lifecycle_revision)` from one actual admission read.
+  Missing or empty generation is a preflight refusal. Only confirmed stale
+  cleanup permits dropping those members; cleanup refusal pauses the original
+  batch and later supported signals re-read all existing gates. Do not infer
+  successful deletion from an error or change a checked error into `false`.
+- Destructive preflight cleanup checks the current active claim/token under
+  the existing wakes mutex immediately before admitting the matching I/O.
+  Post-Runner cleanup keeps its existing entered-ticket admission check.
+  Store I/O and observers remain outside the queue lock. Close before that
+  admission refuses cleanup; close after it cannot retract already admitted
+  matching I/O. Completion still cannot finish a stale/closed ticket.
+- Pass the captured generation through the production-used processing
+  delegate into `BackgroundRevivalContext.expected_session_generation` and the
+  existing Session admission owner. A lifecycle change between filtering and
+  real admission must refuse execution rather than silently capture a newer
+  generation. No new Session owner or generation store is introduced.
+- Keep the existing single readiness latch: every retry re-reads the real
+  gates, so no concrete bypass or lost-admission route currently requires a
+  second hint type or a fifth state. Generic payload-subset restrictions are
+  also outside this fix without a demonstrated shipping misuse. These are
+  explicit scope decisions, not claims that the earlier draft was executed.
+
+Use the shipping processing/settlement functions with a no-op observer in
+production; tests may observe admitted preflight/entered cleanup and completed
+checked marker operations to place deterministic real filesystem faults.
+Observers cannot replace a store result. Retain all fourteen incoming readiness
+cases, both handoff cases, Host-lane/CWR controls and the original marker-before-
+roster-before-head-finish ordering. Add actual Session admission, generated
+message and terminal/result-receipt controls; success plus full/partial marker
+I/O refusal; replacement identity and volatile input; generation drift;
+preflight cleanup refusal; and both close/settlement orderings. Controlled final
+provider I/O remains explicitly distinct from real provider/channel acceptance.
+
+Production edits stay in existing Host `main.rs`; no BackgroundWakes schema or
+state rewrite is needed. Adapt its private App tests and source-wiring
+supplement, and add exact positive names to the existing Actions scopes and
+receipts. Only exact-H GitHub Actions may establish build or behavior evidence.
+Reuse the existing temporary immutable-object carrier if transport requires it.
+When another batch occupies its shared paths, use the same bounded workflow at
+`.github/workflows/ocrm-stage-channel-checked-object.yml` with this batch's
+`.github/ocrm-channel-checked-objects/{manifest.json,object.patch}`. Preserve
+the other batch's carrier unchanged; the formal channel commit removes only
+its own three transport files. This is immutable Git-object delivery on the
+same branch, with no runtime or acceptance authority. Existing OCRM
+responsibility anchors and all final acceptance blockers remain unchanged.

@@ -2188,7 +2188,9 @@ fn channel_failure_shipping_worker(source: &str) -> Option<syn::ItemFn> {
 }
 
 fn channel_failure_unconditional(attributes: &[syn::Attribute]) -> bool {
-    !attributes.iter().any(|attr| attr.path().is_ident("cfg") || attr.path().is_ident("cfg_attr"))
+    !attributes.iter().any(|attr| {
+        attr.path().is_ident("cfg") || attr.path().is_ident("cfg_attr") || attr.path().is_ident("test")
+    })
 }
 
 fn channel_failure_named_expression(expression: &syn::Expr, name: &str) -> bool {
@@ -2294,11 +2296,34 @@ fn channel_failure_worker_has_terminal_drain(worker: &syn::ItemFn) -> bool {
     let syn::Expr::Closure(run) = &process_work.args[5] else { return false; };
     let syn::Expr::Block(run_body) = run.body.as_ref() else { return false; };
     let Some(syn::Stmt::Expr(runner_expression, None)) = run_body.block.stmts.last() else { return false; };
-    if !channel_failure_unconditional(&run.attrs) || run.inputs.len() != 2
+    if !channel_failure_unconditional(&run.attrs) || run.inputs.len() != 3
         || !channel_failure_named_pattern(&run.inputs[0], "provider")
         || !channel_failure_named_pattern(&run.inputs[1], "failures")
+        || !channel_failure_named_pattern(&run.inputs[2], "expected_session_generation")
         || !channel_failure_unconditional(&run_body.attrs)
-        || channel_failure_call(runner_expression, "run_local_background_revival_turn_with_context").is_none()
+    {
+        return false;
+    }
+    let Some(runner) = channel_failure_call(runner_expression, "run_local_background_revival_turn_with_context") else {
+        return false;
+    };
+    if runner.args.len() != 8 || !channel_failure_named_expression(&runner.args[1], "provider") {
+        return false;
+    }
+    let syn::Expr::Struct(context) = &runner.args[7] else { return false; };
+    if !channel_failure_unconditional(&context.attrs) || context.qself.is_some()
+        || !context.path.is_ident("BackgroundRevivalContext")
+    {
+        return false;
+    }
+    let mut generations = context.fields.iter().filter(|field| {
+        matches!(&field.member, syn::Member::Named(name) if name == "expected_session_generation")
+    });
+    let Some(generation) = generations.next() else { return false; };
+    let Some(captured) = channel_failure_call(&generation.expr, "Some") else { return false; };
+    if generations.next().is_some() || !channel_failure_unconditional(&generation.attrs)
+        || captured.args.len() != 1
+        || !channel_failure_named_expression(&captured.args[0], "expected_session_generation")
     {
         return false;
     }
@@ -2312,7 +2337,53 @@ fn channel_failure_worker_has_terminal_drain(worker: &syn::ItemFn) -> bool {
 // The actual Runner callback above must be forwarded through the shipping
 // process owner's terminal handoff and admitted before that handoff calls it.
 // This is deliberately a bounded placement check, not a general dataflow proof.
+fn channel_failure_process_uses_observed_owner(process: &syn::ItemFn) -> bool {
+    let [syn::Stmt::Expr(expression, None)] = process.block.stmts.as_slice() else { return false; };
+    let Some(observed) = channel_failure_call(expression, "process_channel_failure_work_observed") else { return false; };
+    if !channel_failure_unconditional(&process.attrs) || observed.args.len() != 7 {
+        return false;
+    }
+    if !["deps", "roster", "wakes", "agent_id", "work", "run"].iter().enumerate()
+        .all(|(index, name)| channel_failure_named_expression(&observed.args[index], name))
+    {
+        return false;
+    }
+    let syn::Expr::Closure(observer) = &observed.args[6] else { return false; };
+    let syn::Expr::Block(body) = observer.body.as_ref() else { return false; };
+    channel_failure_unconditional(&observer.attrs) && observer.inputs.len() == 1
+        && matches!(&observer.inputs[0], syn::Pat::Wild(wild) if channel_failure_unconditional(&wild.attrs))
+        && channel_failure_unconditional(&body.attrs) && body.block.stmts.is_empty()
+}
+
 fn channel_failure_process_delegates_handoff(process: &syn::ItemFn) -> bool {
+    let mut captures = process.block.stmts.iter().filter_map(|statement| {
+        let syn::Stmt::Local(local) = statement else { return None; };
+        let syn::Pat::Tuple(bindings) = &local.pat else { return None; };
+        (bindings.elems.len() == 2 && channel_failure_named_pattern(&bindings.elems[0], "expected_session_generation"))
+            .then_some((local, bindings))
+    });
+    let Some((capture, bindings)) = captures.next() else { return false; };
+    if captures.next().is_some() || !channel_failure_unconditional(&capture.attrs)
+        || !channel_failure_unconditional(&bindings.attrs) || !channel_failure_named_pattern(&bindings.elems[1], "stale")
+    {
+        return false;
+    }
+    let Some(initializer) = capture.init.as_ref().filter(|init| init.diverge.is_none()) else { return false; };
+    let syn::Expr::Match(filtered) = initializer.expr.as_ref() else { return false; };
+    let Some(provenance) = channel_failure_call(&filtered.expr, "filter_current_channel_failure_provenance") else { return false; };
+    if !channel_failure_unconditional(&filtered.attrs) || provenance.args.len() != 3
+        || !channel_failure_named_expression(&provenance.args[0], "deps")
+        || !channel_failure_named_expression(&provenance.args[1], "agent_id")
+        || !matches!(&provenance.args[2], syn::Expr::Reference(reference)
+            if channel_failure_unconditional(&reference.attrs) && reference.mutability.is_some()
+                && channel_failure_named_expression(&reference.expr, "failures"))
+        || filtered.arms.len() != 2 || !channel_failure_unconditional(&filtered.arms[0].attrs)
+        || filtered.arms[0].guard.is_some()
+        || !channel_failure_result_pattern(&filtered.arms[0].pat, "Ok", Some("filtered"))
+        || !channel_failure_named_expression(&filtered.arms[0].body, "filtered")
+    {
+        return false;
+    }
     let Some(syn::Stmt::Expr(expression, None)) = process.block.stmts.last() else { return false; };
     let Some(handoff) = channel_failure_call(expression, "handoff_channel_failure_followup") else { return false; };
     if !channel_failure_unconditional(&process.attrs) || handoff.args.len() != 7 {
@@ -2321,9 +2392,207 @@ fn channel_failure_process_delegates_handoff(process: &syn::ItemFn) -> bool {
     let syn::Expr::Closure(run) = &handoff.args[4] else { return false; };
     let Some(call) = channel_failure_call(&run.body, "run") else { return false; };
     channel_failure_unconditional(&run.attrs) && run.inputs.len() == 1
-        && channel_failure_named_pattern(&run.inputs[0], "failures") && call.args.len() == 2
+        && channel_failure_named_pattern(&run.inputs[0], "failures") && call.args.len() == 3
         && channel_failure_named_expression(&call.args[0], "provider")
         && channel_failure_named_expression(&call.args[1], "failures")
+        && channel_failure_named_expression(&call.args[2], "expected_session_generation")
+}
+
+fn channel_failure_named_field(expression: &syn::Expr, base: &str, field: &str) -> bool {
+    matches!(expression, syn::Expr::Field(value)
+        if channel_failure_unconditional(&value.attrs)
+            && channel_failure_named_expression(&value.base, base)
+            && matches!(&value.member, syn::Member::Named(name) if name == field))
+}
+
+fn channel_failure_variant(expression: &syn::Expr, owner: &str, variant: &str) -> bool {
+    matches!(expression, syn::Expr::Path(path)
+        if channel_failure_unconditional(&path.attrs) && path.qself.is_none()
+            && path.path.segments.len() == 2 && path.path.segments[0].ident == owner
+            && path.path.segments[1].ident == variant)
+}
+
+fn channel_failure_ok_unit(expression: &syn::Expr) -> bool {
+    let Some(ok) = channel_failure_call(expression, "Ok") else { return false; };
+    ok.args.len() == 1 && matches!(&ok.args[0], syn::Expr::Tuple(unit)
+        if channel_failure_unconditional(&unit.attrs) && unit.elems.is_empty())
+}
+
+fn channel_failure_result_pattern(pattern: &syn::Pat, variant: &str, binding: Option<&str>) -> bool {
+    let syn::Pat::TupleStruct(result) = pattern else { return false; };
+    if !channel_failure_unconditional(&result.attrs) || result.qself.is_some()
+        || !result.path.is_ident(variant) || result.elems.len() != 1
+    {
+        return false;
+    }
+    match binding {
+        Some(name) => channel_failure_named_pattern(&result.elems[0], name),
+        None => matches!(&result.elems[0], syn::Pat::Tuple(unit)
+            if channel_failure_unconditional(&unit.attrs) && unit.elems.is_empty()),
+    }
+}
+
+fn channel_failure_transition_returns(transition: &syn::ExprIf, method: &str, action: &str) -> bool {
+    let syn::Expr::MethodCall(call) = transition.cond.as_ref() else { return false; };
+    let [syn::Stmt::Expr(accepted, None)] = transition.then_branch.stmts.as_slice() else { return false; };
+    let Some((_, alternative)) = &transition.else_branch else { return false; };
+    let syn::Expr::Block(alternative) = alternative.as_ref() else { return false; };
+    let [syn::Stmt::Expr(stale, None)] = alternative.block.stmts.as_slice() else { return false; };
+    channel_failure_unconditional(&transition.attrs) && channel_failure_unconditional(&call.attrs)
+        && call.method == method && call.args.len() == 2
+        && channel_failure_named_expression(&call.args[0], "agent_id")
+        && channel_failure_named_expression(&call.args[1], "work")
+        && channel_failure_variant(accepted, "ChannelFailureAction", action)
+        && channel_failure_unconditional(&alternative.attrs)
+        && channel_failure_variant(stale, "ChannelFailureAction", "Stale")
+}
+
+// Supplement the real marker-fault tests with the exact shipping control path:
+// only checked completion success may finish; completion refusal falls through
+// to the same entered-head retention as an unknown Runner outcome.
+fn channel_failure_handoff_checks_completion(handoff: &syn::ItemFn) -> bool {
+    let [_, _, _, syn::Stmt::Expr(syn::Expr::Match(outcome), _),
+        syn::Stmt::Expr(syn::Expr::If(retain), None)] = handoff.block.stmts.as_slice() else { return false; };
+    if !channel_failure_unconditional(&handoff.attrs) || !channel_failure_unconditional(&outcome.attrs)
+        || !channel_failure_named_expression(&outcome.expr, "outcome") || outcome.arms.len() != 3
+        || !channel_failure_transition_returns(retain, "retain_channel_failure_after_dispatch", "Held")
+    {
+        return false;
+    }
+    let unresolved = &outcome.arms[1];
+    let syn::Pat::TupleStruct(no_receipt) = &unresolved.pat else { return false; };
+    let syn::Expr::Block(held) = unresolved.body.as_ref() else { return false; };
+    let failed_outcome = &outcome.arms[2];
+    let Some(failed_run) = channel_failure_call(&failed_outcome.body, "failed") else { return false; };
+    if !channel_failure_unconditional(&unresolved.attrs) || unresolved.guard.is_some()
+        || !channel_failure_unconditional(&no_receipt.attrs) || no_receipt.qself.is_some()
+        || !no_receipt.path.is_ident("Ok") || no_receipt.elems.len() != 1
+        || !matches!(&no_receipt.elems[0], syn::Pat::Wild(wild) if channel_failure_unconditional(&wild.attrs))
+        || !channel_failure_unconditional(&held.attrs) || !held.block.stmts.is_empty()
+        || !channel_failure_unconditional(&failed_outcome.attrs) || failed_outcome.guard.is_some()
+        || !channel_failure_result_pattern(&failed_outcome.pat, "Err", Some("error"))
+        || failed_run.args.len() != 1 || !channel_failure_named_expression(&failed_run.args[0], "error")
+    {
+        return false;
+    }
+    let success = &outcome.arms[0];
+    let syn::Expr::Block(body) = success.body.as_ref() else { return false; };
+    let [syn::Stmt::Expr(syn::Expr::Match(completion), _)] = body.block.stmts.as_slice() else { return false; };
+    let Some(call) = channel_failure_call(&completion.expr, "complete") else { return false; };
+    if !channel_failure_unconditional(&success.attrs) || success.guard.is_none()
+        || !channel_failure_result_pattern(&success.pat, "Ok", Some("execution"))
+        || !channel_failure_unconditional(&body.attrs) || !channel_failure_unconditional(&completion.attrs)
+        || call.args.len() != 1 || !channel_failure_named_expression(&call.args[0], "failures")
+        || completion.arms.len() != 2
+    {
+        return false;
+    }
+    let accepted = &completion.arms[0];
+    let refused = &completion.arms[1];
+    let syn::Expr::Block(accepted_body) = accepted.body.as_ref() else { return false; };
+    let [syn::Stmt::Expr(syn::Expr::Return(returned), _)] = accepted_body.block.stmts.as_slice() else { return false; };
+    let Some(syn::Expr::If(finish)) = returned.expr.as_deref() else { return false; };
+    let Some(failed) = channel_failure_call(&refused.body, "failed") else { return false; };
+    channel_failure_unconditional(&accepted.attrs) && accepted.guard.is_none()
+        && channel_failure_result_pattern(&accepted.pat, "Ok", None)
+        && channel_failure_unconditional(&accepted_body.attrs) && channel_failure_unconditional(&returned.attrs)
+        && channel_failure_transition_returns(finish, "finish_channel_failure_work", "Finished")
+        && channel_failure_unconditional(&refused.attrs) && refused.guard.is_none()
+        && channel_failure_result_pattern(&refused.pat, "Err", Some("error")) && failed.args.len() == 1
+}
+
+fn channel_failure_process_has_checked_completion(process: &syn::ItemFn) -> bool {
+    let Some(syn::Stmt::Expr(expression, None)) = process.block.stmts.last() else { return false; };
+    let Some(handoff) = channel_failure_call(expression, "handoff_channel_failure_followup") else { return false; };
+    if !channel_failure_unconditional(&process.attrs) || handoff.args.len() != 7 { return false; }
+    let syn::Expr::Closure(complete) = &handoff.args[5] else { return false; };
+    let syn::Expr::Block(body) = complete.body.as_ref() else { return false; };
+    let [syn::Stmt::Expr(observation, Some(_)), syn::Stmt::Expr(syn::Expr::Try(checked), Some(_)),
+        syn::Stmt::Local(notification), syn::Stmt::Expr(result, None)] = body.block.stmts.as_slice() else { return false; };
+    let Some(observe) = channel_failure_call(observation, "observe") else { return false; };
+    let Some(clear) = channel_failure_call(&checked.expr, "clear_durable_channel_failure_markers_observed") else { return false; };
+    let Some(initializer) = notification.init.as_ref().filter(|init| init.diverge.is_none()) else { return false; };
+    let syn::Expr::MethodCall(emit) = initializer.expr.as_ref() else { return false; };
+    channel_failure_unconditional(&complete.attrs) && complete.inputs.len() == 1
+        && channel_failure_named_pattern(&complete.inputs[0], "failures")
+        && channel_failure_unconditional(&body.attrs) && observe.args.len() == 1
+        && channel_failure_variant(&observe.args[0], "ChannelFailureSettlementPoint", "RunAdmitted")
+        && channel_failure_unconditional(&checked.attrs) && clear.args.len() == 4
+        && channel_failure_named_expression(&clear.args[0], "deps")
+        && channel_failure_named_expression(&clear.args[1], "agent_id")
+        && channel_failure_named_expression(&clear.args[2], "failures")
+        && matches!(&clear.args[3], syn::Expr::Reference(reference)
+            if channel_failure_unconditional(&reference.attrs) && reference.mutability.is_some()
+                && channel_failure_named_expression(&reference.expr, "observe"))
+        && channel_failure_unconditional(&notification.attrs)
+        && matches!(&notification.pat, syn::Pat::Wild(wild) if channel_failure_unconditional(&wild.attrs))
+        && channel_failure_unconditional(&emit.attrs) && emit.method == "emit_agent_update" && emit.args.len() == 1
+        && channel_failure_named_expression(&emit.receiver, "roster")
+        && channel_failure_named_expression(&emit.args[0], "agent_id") && channel_failure_ok_unit(result)
+}
+
+fn channel_failure_clear_propagates_checked_io(clear: &syn::ItemFn) -> bool {
+    let [_, syn::Stmt::Expr(syn::Expr::ForLoop(markers), _), syn::Stmt::Expr(result, None)] =
+        clear.block.stmts.as_slice() else { return false; };
+    let [_, syn::Stmt::Local(removed), _, syn::Stmt::Expr(observation, Some(_))] =
+        markers.body.stmts.as_slice() else { return false; };
+    let Some(initializer) = removed.init.as_ref().filter(|init| init.diverge.is_none()) else { return false; };
+    let syn::Expr::Try(propagated) = initializer.expr.as_ref() else { return false; };
+    let syn::Expr::MethodCall(mapped) = propagated.expr.as_ref() else { return false; };
+    let syn::Expr::MethodCall(checked) = mapped.receiver.as_ref() else { return false; };
+    let Some(observe) = channel_failure_call(observation, "observe") else { return false; };
+    if !channel_failure_unconditional(&clear.attrs) || !channel_failure_unconditional(&markers.attrs)
+        || !channel_failure_unconditional(&removed.attrs) || !channel_failure_named_pattern(&removed.pat, "removed")
+        || !channel_failure_unconditional(&propagated.attrs) || !channel_failure_unconditional(&mapped.attrs)
+        || mapped.method != "map_err" || mapped.args.len() != 1 || !channel_failure_unconditional(&checked.attrs)
+        || checked.method != "clear_if_matches_checked" || checked.args.len() != 1
+        || !channel_failure_named_expression(&checked.receiver, "store")
+        || !channel_failure_named_expression(&checked.args[0], "marker") || observe.args.len() != 1
+        || !channel_failure_ok_unit(result)
+    {
+        return false;
+    }
+    let syn::Expr::Struct(disposed) = &observe.args[0] else { return false; };
+    channel_failure_unconditional(&disposed.attrs) && disposed.qself.is_none()
+        && disposed.path.segments.len() == 2 && disposed.path.segments[0].ident == "ChannelFailureSettlementPoint"
+        && disposed.path.segments[1].ident == "MarkerDisposed" && disposed.fields.len() == 2
+        && disposed.fields.iter().all(|field| channel_failure_unconditional(&field.attrs)
+            && matches!(&field.member, syn::Member::Named(name)
+                if (name == "index" && channel_failure_named_expression(&field.expr, "index"))
+                    || (name == "removed" && channel_failure_named_expression(&field.expr, "removed"))))
+}
+
+fn channel_failure_provenance_returns_captured_generation(provenance: &syn::ItemFn) -> bool {
+    let [syn::Stmt::Local(admission), _, _, syn::Stmt::Expr(result, None)] =
+        provenance.block.stmts.as_slice() else { return false; };
+    let Some(initializer) = admission.init.as_ref().filter(|init| init.diverge.is_none()) else { return false; };
+    let syn::Expr::Try(required) = initializer.expr.as_ref() else { return false; };
+    let syn::Expr::MethodCall(available) = required.expr.as_ref() else { return false; };
+    let syn::Expr::MethodCall(nonempty) = available.receiver.as_ref() else { return false; };
+    let syn::Expr::Try(checked) = nonempty.receiver.as_ref() else { return false; };
+    let syn::Expr::MethodCall(read) = checked.expr.as_ref() else { return false; };
+    let Some(ok) = channel_failure_call(result, "Ok") else { return false; };
+    if !channel_failure_unconditional(&provenance.attrs) || !channel_failure_unconditional(&admission.attrs)
+        || !channel_failure_named_pattern(&admission.pat, "admission") || !channel_failure_unconditional(&required.attrs)
+        || !channel_failure_unconditional(&available.attrs) || available.method != "ok_or_else" || available.args.len() != 1
+        || !channel_failure_unconditional(&nonempty.attrs) || nonempty.method != "filter" || nonempty.args.len() != 1
+        || !channel_failure_unconditional(&checked.attrs) || !channel_failure_unconditional(&read.attrs)
+        || read.method != "read_session_work_admission" || read.args.len() != 1
+        || !channel_failure_named_expression(&read.args[0], "agent_id")
+        || !channel_failure_named_field(&read.receiver, "deps", "session_workers") || ok.args.len() != 1
+    {
+        return false;
+    }
+    let syn::Expr::Tuple(filtered) = &ok.args[0] else { return false; };
+    if !channel_failure_unconditional(&filtered.attrs) || filtered.elems.len() != 2
+        || !channel_failure_named_expression(&filtered.elems[1], "stale")
+    {
+        return false;
+    }
+    let syn::Expr::Tuple(generation) = &filtered.elems[0] else { return false; };
+    channel_failure_unconditional(&generation.attrs) && generation.elems.len() == 2
+        && channel_failure_named_field(&generation.elems[0], "admission", "session_key")
+        && channel_failure_named_field(&generation.elems[1], "admission", "lifecycle_revision")
 }
 
 fn channel_failure_handoff_admits_before_runner(handoff: &syn::ItemFn) -> bool {
@@ -2412,7 +2681,9 @@ fn channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission()
     drive.func = Box::new(syn::parse_str("process_without_failure_tokens").unwrap());
     assert!(!channel_failure_worker_has_terminal_drain(&worker), "processing must use the token action driver");
 
-    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work").unwrap();
+    let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work").unwrap();
+    assert!(channel_failure_process_uses_observed_owner(&process));
+    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
     assert!(channel_failure_process_delegates_handoff(&process));
     let Some(syn::Stmt::Expr(syn::Expr::Call(handoff), None)) = process.block.stmts.last_mut() else { panic!("actual handoff"); };
     handoff.func = Box::new(syn::parse_str("run_without_channel_failure_admission").unwrap());
@@ -2441,6 +2712,142 @@ fn channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission()
 }
 
 #[test]
+fn channel_failure_wiring_oracle_requires_checked_completion_before_finish() {
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    let handoff = channel_failure_shipping_function(SHIPPING_HOST, "handoff_channel_failure_followup").unwrap();
+    assert!(channel_failure_handoff_checks_completion(&handoff));
+    let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
+    assert!(channel_failure_process_has_checked_completion(&process));
+    let clear = channel_failure_shipping_function(SHIPPING_HOST, "clear_durable_channel_failure_markers_observed").unwrap();
+    assert!(channel_failure_clear_propagates_checked_io(&clear));
+    assert!(!channel_failure_clear_propagates_checked_io(
+        &channel_failure_shipping_function(SHIPPING_HOST, "clear_durable_channel_failure_markers").unwrap()),
+        "the test-only compatibility wrapper is not the shipping settlement consumer");
+
+    for mutation in ["ignore completion refusal", "finish on completion refusal"] {
+        let mut handoff = channel_failure_shipping_function(SHIPPING_HOST, "handoff_channel_failure_followup").unwrap();
+        let syn::Stmt::Expr(syn::Expr::Match(outcome), _) = &mut handoff.block.stmts[3] else { panic!("actual outcome"); };
+        let syn::Expr::Block(success) = outcome.arms[0].body.as_mut() else { panic!("actual success arm"); };
+        match mutation {
+            "ignore completion refusal" => {
+                success.block = syn::parse_str(r#"{
+                    let _ = complete(&failures);
+                    return if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .finish_channel_failure_work(agent_id, work)
+                    { ChannelFailureAction::Finished } else { ChannelFailureAction::Stale };
+                }"#).unwrap();
+            }
+            "finish on completion refusal" => {
+                let syn::Stmt::Expr(syn::Expr::Match(completion), _) = &mut success.block.stmts[0] else { panic!("actual checked completion"); };
+                completion.arms[1].body = Box::new(syn::parse_str(r#"{
+                    return if wakes.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .finish_channel_failure_work(agent_id, work)
+                    { ChannelFailureAction::Finished } else { ChannelFailureAction::Stale };
+                }"#).unwrap());
+            }
+            _ => unreachable!(),
+        }
+        assert!(!channel_failure_handoff_checks_completion(&handoff), "unsafe completion control: {mutation}");
+    }
+
+    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
+    let Some(syn::Stmt::Expr(syn::Expr::Call(handoff), None)) = process.block.stmts.last_mut() else { panic!("actual handoff"); };
+    let syn::Expr::Closure(complete) = &mut handoff.args[5] else { panic!("actual completion callback"); };
+    complete.body = Box::new(syn::parse_str(r#"{
+        observe(ChannelFailureSettlementPoint::RunAdmitted);
+        let _ = clear_durable_channel_failure_markers_observed(deps, agent_id, failures, &mut observe);
+        let _ = roster.emit_agent_update(agent_id);
+        Ok(())
+    }"#).unwrap());
+    assert!(!channel_failure_process_has_checked_completion(&process),
+        "a successful receipt cannot discard the marker error before roster and head settlement");
+
+    for initializer in [
+        "store.clear_if_matches(&marker)",
+        "store.clear_if_matches_checked(&marker).unwrap_or(false)",
+    ] {
+        let mut clear = channel_failure_shipping_function(SHIPPING_HOST, "clear_durable_channel_failure_markers_observed").unwrap();
+        let syn::Stmt::Expr(syn::Expr::ForLoop(markers), _) = &mut clear.block.stmts[1] else { panic!("actual marker loop"); };
+        let syn::Stmt::Local(removed) = &mut markers.body.stmts[1] else { panic!("actual checked removal"); };
+        removed.init.as_mut().unwrap().expr = Box::new(syn::parse_str(initializer).unwrap());
+        assert!(!channel_failure_clear_propagates_checked_io(&clear),
+            "an I/O error cannot become an already-settled marker: {initializer}");
+    }
+}
+
+#[test]
+fn channel_failure_wiring_oracle_requires_captured_generation_and_shipping_observer() {
+    use syn::parse::Parser;
+
+    const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
+    let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work").unwrap();
+    assert!(channel_failure_process_uses_observed_owner(&process));
+    let provenance = channel_failure_shipping_function(SHIPPING_HOST, "filter_current_channel_failure_provenance").unwrap();
+    assert!(channel_failure_provenance_returns_captured_generation(&provenance));
+    let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
+    assert!(channel_failure_process_delegates_handoff(&process));
+    assert!(channel_failure_process_has_checked_completion(&process));
+    let worker = channel_failure_shipping_worker(SHIPPING_HOST).unwrap();
+    assert!(channel_failure_worker_has_terminal_drain(&worker));
+
+    let mut wrapper = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work").unwrap();
+    let syn::Stmt::Expr(syn::Expr::Call(observed), None) = &mut wrapper.block.stmts[0] else { panic!("actual observed process"); };
+    observed.func = Box::new(syn::parse_str("process_channel_failure_work_unobserved").unwrap());
+    assert!(!channel_failure_process_uses_observed_owner(&wrapper),
+        "an isolated observer fixture is not evidence for the shipping path");
+
+    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
+    process.attrs = syn::Attribute::parse_outer.parse_str("#[cfg(test)]").unwrap();
+    assert!(!channel_failure_process_delegates_handoff(&process));
+    assert!(!channel_failure_process_has_checked_completion(&process));
+
+    let mut provenance = channel_failure_shipping_function(SHIPPING_HOST, "filter_current_channel_failure_provenance").unwrap();
+    let Some(syn::Stmt::Expr(result, None)) = provenance.block.stmts.last_mut() else { panic!("actual generation result"); };
+    *result = syn::parse_str("Ok(((admission.lifecycle_revision, admission.session_key), stale))").unwrap();
+    assert!(!channel_failure_provenance_returns_captured_generation(&provenance),
+        "the exact Session key and lifecycle revision must retain their admission meaning");
+
+    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
+    let capture = process.block.stmts.iter_mut().find_map(|statement| {
+        let syn::Stmt::Local(local) = statement else { return None; };
+        matches!(&local.pat, syn::Pat::Tuple(bindings)
+            if bindings.elems.len() == 2 && channel_failure_named_pattern(&bindings.elems[0], "expected_session_generation"))
+            .then_some(local)
+    }).expect("actual provenance capture");
+    capture.init.as_mut().unwrap().expr = Box::new(syn::parse_str("((String::new(), String::new()), Vec::new())").unwrap());
+    assert!(!channel_failure_process_delegates_handoff(&process),
+        "a similarly named local value cannot replace the actual provenance reader's generation");
+
+    let mut process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed").unwrap();
+    let Some(syn::Stmt::Expr(syn::Expr::Call(handoff), None)) = process.block.stmts.last_mut() else { panic!("actual handoff"); };
+    let syn::Expr::Closure(run) = &mut handoff.args[4] else { panic!("actual run delegate"); };
+    let syn::Expr::Call(run) = run.body.as_mut() else { panic!("actual Runner delegate"); };
+    run.args[2] = syn::parse_str("(String::new(), String::new())").unwrap();
+    assert!(!channel_failure_process_delegates_handoff(&process),
+        "the processing owner must forward the captured generation into its actual Runner callback");
+
+    for replacement in ["None", "Some((String::new(), String::new()))"] {
+        let mut worker = channel_failure_shipping_worker(SHIPPING_HOST).unwrap();
+        let syn::Stmt::Expr(syn::Expr::Call(drain), _) = &mut worker.block.stmts[1] else { panic!("actual drain"); };
+        let syn::Expr::Closure(process) = &mut drain.args[1] else { panic!("actual processing callback"); };
+        let syn::Expr::Call(drive) = process.body.as_mut() else { panic!("actual token driver"); };
+        let syn::Expr::Closure(attempt) = &mut drive.args[1] else { panic!("actual processing attempt"); };
+        let syn::Expr::Block(attempt) = attempt.body.as_mut() else { panic!("actual attempt body"); };
+        let syn::Stmt::Expr(syn::Expr::Call(process), None) = &mut attempt.block.stmts[0] else { panic!("actual process call"); };
+        let syn::Expr::Closure(run) = &mut process.args[5] else { panic!("actual Runner callback"); };
+        let syn::Expr::Block(run) = run.body.as_mut() else { panic!("actual Runner body"); };
+        let Some(syn::Stmt::Expr(syn::Expr::Call(runner), None)) = run.block.stmts.last_mut() else { panic!("actual Runner call"); };
+        let syn::Expr::Struct(context) = &mut runner.args[7] else { panic!("actual background context"); };
+        let generation = context.fields.iter_mut().find(|field| {
+            matches!(&field.member, syn::Member::Named(name) if name == "expected_session_generation")
+        }).expect("actual generation field");
+        generation.expr = syn::parse_str(replacement).unwrap();
+        assert!(!channel_failure_worker_has_terminal_drain(&worker),
+            "the real Session consumer cannot use a fresh or absent generation: {replacement}");
+    }
+}
+
+#[test]
 fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths() {
     const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
@@ -2449,10 +2856,21 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
         "the common drain must be terminal and delegate all cleanup to matching token transitions");
     let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work")
         .expect("one shipping failure process owner");
+    assert!(channel_failure_process_uses_observed_owner(&process));
+    let process = channel_failure_shipping_function(SHIPPING_HOST, "process_channel_failure_work_observed")
+        .expect("one shipping observed failure process owner");
     assert!(channel_failure_process_delegates_handoff(&process));
+    assert!(channel_failure_process_has_checked_completion(&process));
     let handoff = channel_failure_shipping_function(SHIPPING_HOST, "handoff_channel_failure_followup")
         .expect("one shipping failure admission boundary");
     assert!(channel_failure_handoff_admits_before_runner(&handoff));
+    assert!(channel_failure_handoff_checks_completion(&handoff));
+    let clear = channel_failure_shipping_function(SHIPPING_HOST, "clear_durable_channel_failure_markers_observed")
+        .expect("one shipping checked marker settlement consumer");
+    assert!(channel_failure_clear_propagates_checked_io(&clear));
+    let provenance = channel_failure_shipping_function(SHIPPING_HOST, "filter_current_channel_failure_provenance")
+        .expect("one shipping Session provenance reader");
+    assert!(channel_failure_provenance_returns_captured_generation(&provenance));
 
     // A bounded wiring supplement; the actual shared drain's idle and pause
     // behavior is exercised by shipping app tests with the real queue owner.
@@ -2478,8 +2896,12 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert_eq!(failure_worker.matches("::end_revival(").count(), 0,
         "token transitions own settlement; no generic cleanup can clear a successor");
     let failure_process = SHIPPING_HOST
-        .split_once("fn process_channel_failure_work(").expect("shipping failure process").1
+        .split_once("fn process_channel_failure_work_observed(").expect("shipping failure process").1
         .split_once("\nfn run_channel_failure_revival_worker(").expect("failure process boundary").0
+        .split_whitespace().collect::<String>();
+    let failure_provenance = SHIPPING_HOST
+        .split_once("fn filter_current_channel_failure_provenance(").expect("shipping failure provenance").1
+        .split_once("\nfn process_channel_failure_work(").expect("failure provenance boundary").0
         .split_whitespace().collect::<String>();
     let failure_handoff = SHIPPING_HOST
         .split_once("fn handoff_channel_failure_followup(").expect("shipping failure handoff").1
@@ -2516,18 +2938,24 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(SHIPPING_HOST.contains("\"markedAtMs\": marked_at_ms"));
     assert!(SHIPPING_HOST.contains("fn channel_failure_marker_from_failure("));
     assert!(SHIPPING_HOST.contains("run_channel_failure_revival_worker"));
-    assert!(SHIPPING_HOST.contains("clear_durable_channel_failure_markers"));
-    assert!(SHIPPING_HOST.contains("store.clear_if_matches(&marker)"));
-    assert!(SHIPPING_HOST.contains("channel_failure_marker_identity_incomplete"));
-    assert!(SHIPPING_HOST.contains(
-        "Some(_) => {\n                stale.push(failure.clone());\n                false\n            }\n            None => true"
+    assert!(SHIPPING_HOST.contains("channel failure marker identity is invalid at settlement"));
+    assert!(failure_provenance.contains(
+        "ifadmission.session_key==session_key{true}else{stale.push(failure.clone());false}"
     ));
-    assert!(SHIPPING_HOST.contains(
-        "return Err(\"channel failure session provenance is unavailable\".into());"
+    assert!(failure_provenance.contains(".filter(|value|!value.is_empty())else{returntrue;};"));
+    assert!(failure_provenance.contains(
+        ".filter(|record|!record.session_key.trim().is_empty()&&!record.lifecycle_revision.trim().is_empty())"
+    ));
+    assert!(failure_provenance.contains(
+        ".ok_or_else(||\"channelfailuresessionprovenanceisunavailable\".to_string())?"
     ));
     assert!(failure_process.contains(
-        "Ok(None)=>{clear_durable_channel_failure_markers(deps,agent_id,&failures);returnfinish();}"
+        "Ok(None)=>{returnmatchsettle_preflight_channel_failure_markers(deps,wakes,agent_id,work,&failures,&mutobserve,)"
     ));
+    assert_eq!(failure_process.matches("settle_preflight_channel_failure_markers(").count(), 3,
+        "missing Session, excluded group and stale provenance all use the matching-ticket checked boundary");
+    assert_eq!(failure_process.matches("pause(work.failures.clone())").count(), 3,
+        "each refused preflight cleanup retains the original head, including its stale members");
     assert!(failure_handoff.contains(
         "!execution.aborted&&!execution.quiesced_for_upgrade&&execution.sent_message_count>0"
     ));
@@ -2535,8 +2963,8 @@ fn shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_conte
     assert!(failure_process.contains("tray.title=\"Delivery-failurefollow-upfailed\".into();deps.trays.push_error(tray);"));
     assert!(failure_handoff.contains("Err(error)=>failed(&error)"));
     assert!(failure_handoff.contains(".retain_channel_failure_after_dispatch(agent_id,work)"));
-    assert!(failure_process.contains("clear_durable_channel_failure_markers(deps,agent_id,failures);let_=roster.emit_agent_update(agent_id);"));
-    let completion = failure_handoff.find("complete(&failures);").expect("success notification completion");
+    assert!(failure_process.contains("clear_durable_channel_failure_markers_observed(deps,agent_id,failures,&mutobserve)?;let_=roster.emit_agent_update(agent_id);Ok(())"));
+    let completion = failure_handoff.find("matchcomplete(&failures){Ok(())=>").expect("checked success notification completion");
     let finish = failure_handoff.find(".finish_channel_failure_work(agent_id,work)").expect("matching successful head finish");
     assert!(completion < finish, "precise marker/roster completion precedes queue settlement");
     assert!(!failure_process.contains("requeue_channel_failures("));

@@ -1513,7 +1513,7 @@ fn channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata() 
 
     // Exercise the real settlement owner directly; this is not a fabricated
     // provider completion or a claim that a follow-up turn sent a message.
-    clear_durable_channel_failure_markers(fixture.deps(), &fixture.agent_id, &original_failures);
+    clear_durable_channel_failure_markers(fixture.deps(), &fixture.agent_id, &original_failures).unwrap();
     assert_eq!(fs::read(store.file_path()).expect("old settlement cannot touch replacement"), bytes);
     assert_eq!(store.list_pending_checked().expect("replacement survived"), vec![replacement.clone()]);
     fixture.queue_recovered_failure(&replacement).expect("queue replacement's exact metadata");
@@ -1521,7 +1521,7 @@ fn channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata() 
     filter_current_channel_failure_markers(fixture.deps(), &fixture.agent_id, &mut current_failures)
         .expect("select the still-current queued identity");
     assert_eq!(current_failures, vec![expected_recovered_failure(&replacement)]);
-    clear_durable_channel_failure_markers(fixture.deps(), &fixture.agent_id, &current_failures);
+    clear_durable_channel_failure_markers(fixture.deps(), &fixture.agent_id, &current_failures).unwrap();
     assert!(SandPendingWakeStore::new(&fixture.root).list_pending_checked()
         .expect("fresh reader after exact settlement").is_empty(),
         "settlement must preserve optional metadata instead of reconstructing defaults");
