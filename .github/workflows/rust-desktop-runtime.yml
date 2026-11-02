@@ -1415,8 +1415,125 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or 1)
           PY
+      - name: Test portable pending-failure recovery on the existing Linux Host cache
+        id: channel_pending_recovery
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        timeout-minutes: 15
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          root = pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery")
+          root.mkdir(parents=True, exist_ok=True)
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["FABUSHI_TARGET_SHA"], "Exact CWR execution subject mismatch"
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+              "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+              "source/host/src/extensions/transcript/production_runtime.rs",
+              "source/host/src/extensions/transcript/transcript_manager.rs",
+              "source/host/src/extensions/transcript/background_wakes.rs",
+              "source/host/src/gateway_server.rs", "source/host/app/src/main.rs",
+              "source/host/tests/durable_recovery_stores_contract.rs",
+              "source/host/tests/pending_wake_rearm_contract.rs",
+              "source/host/tests/transcript_manager_contract.rs",
+              "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs",
+          ]
+          base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
+          integration = base + ["--no-fail-fast"]
+          for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
+                         "transcript_manager_contract", "cloud_agent_pending_wake_rearm_production_contract"):
+              integration += ["--test", target]
+          required_integration = [
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run",
+          ]
+          store_filter = "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests"
+          required_store = [store_filter + "::" + name for name in (
+              "failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "poisoned_pending_owner_refuses_reads_admission_and_all_mutations",
+              "matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes",
+          )]
+          sse_filter = "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+          cases = [
+              ("integration", integration + ["--", "--test-threads=1"], required_integration),
+              ("checked-store", base + ["--lib", store_filter, "--", "--test-threads=1"], required_store),
+              ("paired-device-sse", base + ["--lib", sse_filter, "--", "--exact", "--test-threads=1"], [sse_filter]),
+          ]
+          receipt = {
+              "contract": "CWR-v1-portable", "subject_commit": head,
+              "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
+              "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
+              "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+              "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
+              "executions": [], "result": "failed-or-incomplete",
+              "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. The cloud-agent target is source-wiring assertions only; controlled runtime-port outcomes are not shipping app/provider/quiescence execution. Existing macOS app, real transport/provider, unknown-effect reconciliation and platform acceptance gates remain open.",
+          }
+          for label, command, required in cases:
+              receipt["active_case"] = label
+              (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+              log_path = root / (label + ".log")
+              cargo_exit, capture_exit, execution_error = None, 0, None
+              raw = b""
+              try:
+                  with log_path.open("wb") as output:
+                      completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)
+                  cargo_exit = completed.returncode
+                  raw = log_path.read_bytes()
+              except OSError as error:
+                  capture_exit, execution_error = 1, str(error)
+              text = raw.decode("utf-8", errors="replace")
+              print(text, flush=True)
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+              missing = [name for name in required if passed.count(name) != 1]
+              counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
+              accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
+              receipt["executions"].append({
+                  "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
+                  "execution_error": execution_error, "required_positive_names": required,
+                  "missing_or_nonunique_positive_results": missing, "observed_passed_test_names": passed,
+                  "summaries_passed_failed_ignored": counts, "oracle_accepted": accepted,
+                  "log": log_path.name, "log_sha256": hashlib.sha256(raw).hexdigest(),
+              })
+              (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          receipt.pop("active_case", None)
+          accepted = len(receipt["executions"]) == len(cases) and all(case["oracle_accepted"] for case in receipt["executions"])
+          receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+          (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2), flush=True)
+          raise SystemExit(0 if accepted else 1)
+          PY
       - name: Preserve failed owned native-path fixtures
-        if: ${{ failure() && steps.native_paths.outcome == 'failure' }}
+        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail

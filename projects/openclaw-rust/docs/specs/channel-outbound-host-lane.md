@@ -273,6 +273,26 @@ control: prior Runtime selected its library compilation but omitted its test
 filter; adding that selection repairs evidence coverage without changing the
 permission oracle. Source §17.2 gates and all eight false flags are preserved.
 
+The exact-H macOS Host jobs for CWR publication `3c4bf6963cb30ecf01eb34b905315074886e1972`
+and subsequent integration parents remained queued without executed steps at
+the 2026-11-02 recovery check. This is missing execution evidence, not a failed
+behavioral oracle. Continue the portable part of CWR in the existing Linux
+`sqlite-native-path` job/cache: complete `durable_recovery_stores_contract`,
+`pending_wake_rearm_contract`, `transcript_manager_contract` and the existing
+`cloud_agent_pending_wake_rearm_production_contract` source-wiring supplement;
+then the three `checked_pending_wake_tests` library controls and the exact
+paired-device SSE filter. Preserve the macOS app selectors and shipping compile
+gate. The Linux receipt must bind the new H/tree/U and source hashes, retain
+each command's complete log and exit outcome, require each declared positive
+name exactly once, and remain failed/incomplete if any selected check is
+missing or fails. Preserve owned failed fixtures through the existing artifact
+path. A passing Linux receipt covers real store/rearm/manager/locking controls;
+controlled runtime-port outcomes do not execute the shipping provider or
+quiescence branches. The source-wiring target does not execute the app. Shipping
+app and real channel acceptance remain open; Linux app execution is unverified,
+not declared unsupported. This is an evidence-carrier amendment with no change
+to the CWR product contract, assertions, source-review states or completion flags.
+
 This target integration correction reuses the CH source/owner contract above;
 it does not relabel historical source reads or establish scoped source closure.
 Real channel credentials/provider compatibility, original-turn unknown-effect
