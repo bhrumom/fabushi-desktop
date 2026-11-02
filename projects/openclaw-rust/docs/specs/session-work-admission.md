@@ -1012,6 +1012,22 @@ marker preservation and original-stream/provider/model/generation recovery
 remain required. There is no state migration; rollback must not erase a
 pending recovery marker or assert that an unknown tool result is settled.
 
+## Shipping composition source oracle — 2026-11-02
+
+`SWA-COMPOSITION-ORACLE-v1`: the recovery gate at H
+`4fe16f4689e23da2f027d09b2e8d39f56755c6ec` (Actions `41414234389`, job
+`125174410868`) misclassified a `cfg(test)` compaction fixture as shipping
+Runner construction. This is a test-oracle defect; the real Host still calls
+the existing `HostRunnerComposition` owner. Preserve every ownership positive,
+negative and ordering assertion. Source probes must inspect the production
+prefix before the explicit `cfg(test)` tests module, require the real main
+entrypoint and fail closed if that boundary is absent or invalid. Controls
+must keep a forbidden production occurrence visible and exclude fixture-only
+occurrences from both positive and negative evidence. Retain the existing
+Actions target and all gates. Independent review and exact-H Actions are
+required; no production behavior, source authority or completion flag changes.
+Rollback restores the test-only scope defect and requires no data migration.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

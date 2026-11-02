@@ -4,6 +4,36 @@ const GENERATED_STREAM: &str = include_str!("../src/runner/generated_agent_turn_
 const TURN_OWNER: &str = include_str!("../src/runner/production_turn_agent_owner.rs");
 const MULTITASK_STATE: &str = include_str!("../src/runner/tools/sand_multitask_todo_tool.rs");
 
+fn production_host_source(source: &str) -> Option<&str> {
+    let (production, _) = source.split_once("\n#[cfg(test)]\nmod tests {")?;
+    production.contains("\nfn main(").then_some(production)
+}
+
+fn shipping_host() -> &'static str {
+    production_host_source(SHIPPING_HOST)
+        .expect("shipping Host source must have main before its explicit cfg(test) tests module")
+}
+
+#[test]
+fn shipping_source_oracle_requires_boundary_and_retains_production_violations() {
+    let forbidden = "ProductionTurnAgentOwner::new(composition)";
+    let fixture_only = format!(
+        "\nfn main() {{ production_entry(); }}\n#[cfg(test)]\nmod tests {{ {forbidden}; fixture_only_entry(); }}"
+    );
+    let production = production_host_source(&fixture_only).expect("bounded fixture source");
+    assert!(production.contains("production_entry()"));
+    assert!(!production.contains(forbidden));
+    assert!(!production.contains("fixture_only_entry()"));
+
+    let production_violation = format!(
+        "\nfn main() {{ {forbidden}; }}\n#[cfg(test)]\nmod tests {{}}"
+    );
+    assert!(production_host_source(&production_violation).unwrap().contains(forbidden));
+    assert!(production_host_source("\nfn main() {}").is_none());
+    assert!(production_host_source("\n#[cfg(test)]\nmod tests { fn main() {} }").is_none());
+    assert!(production_host_source("\nfn main() {}\nmod tests {}").is_none());
+}
+
 #[test]
 fn host_runner_composition_owns_turn_decoration_order() {
     for needle in [
@@ -21,17 +51,17 @@ fn host_runner_composition_owns_turn_decoration_order() {
 #[test]
 fn shipping_host_has_one_runner_composition_entrypoint() {
     assert!(
-        SHIPPING_HOST.contains(
+        shipping_host().contains(
             "let worker_host_runner_composition = Arc::clone(&host_runner_composition);"
         ),
         "shipping Runner worker must use the same HostRunnerComposition owner via Arc::clone",
     );
     assert!(
-        SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_turn("),
+        shipping_host().contains("worker_host_runner_composition.compose_production_turn("),
         "shipping Host must delegate turn assembly to HostRunnerComposition",
     );
     assert!(
-        !SHIPPING_HOST.contains("create_production_runner_composition("),
+        !shipping_host().contains("create_production_runner_composition("),
         "shipping Host must not construct a parallel Runner composition",
     );
     for needle in [
@@ -45,7 +75,7 @@ fn shipping_host_has_one_runner_composition_entrypoint() {
         "composition.with_multitask_todo_state(",
     ] {
         assert!(
-            !SHIPPING_HOST.contains(needle),
+            !shipping_host().contains(needle),
             "shipping Host still owns Runner decoration outside HostRunnerComposition: {needle}",
         );
     }
@@ -74,7 +104,7 @@ fn host_runner_composition_owns_transcript_checkpoint_wiring() {
         );
     }
     assert!(
-        SHIPPING_HOST.contains(".compose_production_checkpoint_sink("),
+        shipping_host().contains(".compose_production_checkpoint_sink("),
         "shipping Host must delegate transcript/checkpoint composition",
     );
     for needle in [
@@ -85,7 +115,7 @@ fn host_runner_composition_owns_transcript_checkpoint_wiring() {
         ".create_agent_blob_store(&agent_id)",
     ] {
         assert!(
-            !SHIPPING_HOST.contains(needle),
+            !shipping_host().contains(needle),
             "shipping Host still owns transcript/checkpoint wiring: {needle}",
         );
     }
@@ -134,15 +164,15 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "turn state must not retain a raw DB handle outside Session admission",
     );
     assert!(
-        SHIPPING_HOST.contains(".compose_turn_state_surfaces(")
-            && SHIPPING_HOST.contains("Arc::clone(&session_workers),")
-            && SHIPPING_HOST.contains("&agent_id,")
-            && SHIPPING_HOST.contains("is_group_member_turn,")
-            && SHIPPING_HOST.contains("multitask_enabled,")
-            && SHIPPING_HOST.contains("let avatar_box_file_reader: AvatarBoxFileReader")
-            && SHIPPING_HOST.contains("forever_box")
-            && SHIPPING_HOST.contains(".download_file(&(), &avatar_agent_id, path)")
-            && SHIPPING_HOST.contains("Some(avatar_box_file_reader),"),
+        shipping_host().contains(".compose_turn_state_surfaces(")
+            && shipping_host().contains("Arc::clone(&session_workers),")
+            && shipping_host().contains("&agent_id,")
+            && shipping_host().contains("is_group_member_turn,")
+            && shipping_host().contains("multitask_enabled,")
+            && shipping_host().contains("let avatar_box_file_reader: AvatarBoxFileReader")
+            && shipping_host().contains("forever_box")
+            && shipping_host().contains(".download_file(&(), &avatar_agent_id, path)")
+            && shipping_host().contains("Some(avatar_box_file_reader),"),
         "shipping Host must consume HostRunnerComposition state surfaces",
     );
     for needle in [
@@ -151,7 +181,7 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "production memory agents root has no sand root parent",
     ] {
         assert!(
-            !SHIPPING_HOST.contains(needle),
+            !shipping_host().contains(needle),
             "shipping Host still owns turn state-surface composition: {needle}",
         );
     }
@@ -173,7 +203,7 @@ fn host_runner_composition_owns_shipping_runner_construction() {
         );
     }
     assert!(
-        SHIPPING_HOST.contains("worker_host_runner_composition.compose_production_runner("),
+        shipping_host().contains("worker_host_runner_composition.compose_production_runner("),
         "shipping Host must delegate Runner facade construction",
     );
     for needle in [
@@ -181,7 +211,7 @@ fn host_runner_composition_owns_shipping_runner_construction() {
         "SandAgentRunner::new(owner)",
     ] {
         assert!(
-            !SHIPPING_HOST.contains(needle),
+            !shipping_host().contains(needle),
             "shipping Host still constructs the Runner owner path directly: {needle}",
         );
     }
@@ -221,27 +251,27 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
         ".free_window(&agent_id)",
     ] {
         assert!(
-            !SHIPPING_HOST.contains(needle),
+            !shipping_host().contains(needle),
             "shipping Host still owns computer-use session composition: {needle}"
         );
     }
     assert_eq!(
-        SHIPPING_HOST.matches("computer_use_coordination()").count(),
+        shipping_host().matches("computer_use_coordination()").count(),
         1,
         "shipping Host may only read the canonical HostRunnerComposition computer-use owner to inject that same service into SandAgentRunner",
     );
     assert!(
-        SHIPPING_HOST.contains(
+        shipping_host().contains(
             "Some(worker_host_runner_composition.computer_use_coordination()),"
         ),
         "shipping Runner must receive the canonical HostRunnerComposition computer-use coordination rather than a second owner",
     );
     assert!(
-        SHIPPING_HOST.contains("host_runner_composition.begin_computer_use_preparation(&agent_id)"),
+        shipping_host().contains("host_runner_composition.begin_computer_use_preparation(&agent_id)"),
         "shipping Host must delegate computer-use preparation",
     );
     assert!(
-        SHIPPING_HOST.contains("worker_host_runner_composition.finish_computer_use_turn("),
+        shipping_host().contains("worker_host_runner_composition.finish_computer_use_turn("),
         "shipping Host must delegate computer-use turn settlement",
     );
     for needle in [
@@ -252,11 +282,11 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
         "navigation_owner.complete_computer_navigation_probe(",
     ] {
         assert!(
-            SHIPPING_HOST.contains(needle),
+            shipping_host().contains(needle),
             "shipping Host missing frozen computer-use navigation-probe wiring: {needle}",
         );
     }
-    let normalized_shipping_host = SHIPPING_HOST
+    let normalized_shipping_host = shipping_host()
         .split_whitespace()
         .collect::<Vec<_>>()
         .join(" ");
@@ -270,10 +300,10 @@ fn host_runner_composition_owns_computer_use_session_lifecycle() {
 
 #[test]
 fn group_member_turn_keeps_generated_lifecycle_without_private_state() {
-    let group_flag = SHIPPING_HOST
+    let group_flag = shipping_host()
         .find("let is_group_member_turn = args")
         .expect("shipping Host must resolve group-member identity");
-    let private_memory = SHIPPING_HOST
+    let private_memory = shipping_host()
         .find("let memory_store = if is_group_member_turn")
         .expect("private memory must be explicitly gated for group-member turns");
     assert!(
@@ -287,9 +317,9 @@ fn group_member_turn_keeps_generated_lifecycle_without_private_state() {
         "HostRunnerComposition must omit private checkpoint/state surfaces for group-member turns",
     );
     assert!(
-        SHIPPING_HOST.contains("if !is_group_member_turn")
-            && SHIPPING_HOST.contains("with_persist_image_callback(browser_persist_image)")
-            && SHIPPING_HOST.contains("with_persist_image_callback(computer_persist_image)"),
+        shipping_host().contains("if !is_group_member_turn")
+            && shipping_host().contains("with_persist_image_callback(browser_persist_image)")
+            && shipping_host().contains("with_persist_image_callback(computer_persist_image)"),
         "group-member turns must not bind private image persistence callbacks",
     );
     assert!(
@@ -315,10 +345,10 @@ fn host_runner_composition_settles_only_its_owned_shutdown_surfaces() {
             && OWNER.contains(".clear();"),
         "HostRunnerComposition must dispose its live permission subscriptions",
     );
-    let cancel = SHIPPING_HOST
+    let cancel = shipping_host()
         .find("runner_registry.cancel_all(\"Mahayana Host shutting down\")")
         .expect("shipping shutdown must interrupt canonical Runner registry");
-    let dispose = SHIPPING_HOST
+    let dispose = shipping_host()
         .find("host_runner_composition.dispose();")
         .expect("shipping shutdown must settle HostRunnerComposition");
     assert!(
@@ -338,6 +368,8 @@ fn shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_wa
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("app/src/main.rs"),
     )
     .expect("shipping host");
+    let host = production_host_source(&host)
+        .expect("shipping Host source must have main before its explicit cfg(test) tests module");
     let composition = std::fs::read_to_string(
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/host_runner_composition.rs"),
     )
