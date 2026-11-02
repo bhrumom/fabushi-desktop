@@ -87,7 +87,18 @@
     "extraResources": [
       {
         "from": "resources/bin",
-        "to": "bin"
+        "to": "bin",
+        "filter": [
+          "mahayana-app-host",
+          "mahayana-app-host.exe",
+          "mahayana-node-agent-coordinator",
+          "mahayana-node-agent-coordinator.exe",
+          "box-exec-daemon",
+          "box-exec-daemon.exe",
+          "fabushi-network-worker",
+          "fabushi-network-worker.exe",
+          "!**/*/*"
+        ]
       },
       {
         "from": "resources/asr",

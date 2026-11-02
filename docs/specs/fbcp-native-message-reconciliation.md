@@ -4,7 +4,7 @@ Status: active
 Spec ID: FBCP-NMR-001  
 Updated: 2026-11-02  
 Project: FBCP-001 / TDRP-001  
-Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–15
+Task: 20bf9475-a885-4314-b509-bea53ef8849f, rounds 1–16
 
 ## Context and goal
 
@@ -554,6 +554,76 @@ continue accepting the single candidate ledger without promoting source or
 product acceptance. Record unchanged old data and a normal reviewed code
 revert as the rollback boundary; real platform/package and deployment evidence
 remain separate final gates.
+
+### Round 16 AppHost production dependency and package boundary (NMR-38–39)
+
+Prerequisite `adf15caadac5775fdd8582227cad3bbf9c93cf0f`, run
+`41447812811`, finished successfully. Complete logs prove Human33, Agent4,
+private credential3, composition11, Native6, FeatureHost7, Host6, C ABI7,
+normalization6, future-salts2, protocol122, TCP9 including the live case,
+proxy4, Native credential1, UI16 and Electron carrier10/auth8. The generic
+Host direct-dependency negative also passed. These are bounded execution
+results, not source completeness, backend production or release acceptance.
+
+At that base AppHost's private Telegram lease is always absent, but unreachable
+authentication/proxy forwards still require a normal `mahayana-telegram`
+dependency. Electron stages four executables, while `extraResources` copies
+all of `resources/bin`, including any stale compatibility shared library.
+The separate CLI really consumes the generic `mahayana-ffi` ABI, so deleting
+that crate or its exports is not part of this batch.
+
+- NMR-38: Remove the impossible AppHost lease state and unreachable Telegram
+  calls from production composition. Preserve the twelve recognized legacy
+  auth methods as explicit refusals with their existing Operation error.
+  Preserve `telegramRegistration`'s prior `firstName` validation precedence;
+  unknown methods must retain InvalidRequest. Return the original request ID,
+  no result and no new event. Keep Native auth/Agent behavior unchanged.
+  ProductSettingsOwner still persists before returning the exact existing
+  unavailable proxy-publication envelope; do not claim Native proxy support.
+  Keep old proxy projection types and their compatibility tests only under
+  `cfg(test)` with a dev dependency. Normal/build dependency paths from the
+  actual desktop root must exclude the old Telegram adapter/core/runtime.
+  Retain the original storage dev reader and all old data, keys and formats.
+- NMR-39: The existing Electron package owner copies only its four declared
+  host/coordinator/box-executor/network-worker executable names (including
+  the corresponding `.exe` forms for Windows) from `resources/bin`. A stale
+  FFI library, another executable or a nested file must not enter that package
+  resource slot. Do not delete or rewrite the source staging directory or user
+  data. Keep all four ordinary executables and their bytes/permissions. The
+  generic CLI ABI and direct Telegram exports stay available to their explicit
+  non-Electron consumers until separately qualified retirement.
+
+NMR-AC-28: Expand the real Production AppHost account/issuer/restart fixture
+with all twelve legacy routes and malformed parameter envelopes. Check exact
+response IDs, no result, original errors, unknown-method refusal, unchanged
+retained SQLite/sidecar bytes, and original encrypted-reader rollback control.
+Exercise Settings persistence and the unavailable publication envelope before
+and after restart. Keep the existing six process scenarios and all prerequisite
+gates. The eleven pure composition/proxy cases remain compatibility tests and
+are not evidence of an active legacy network carrier.
+
+NMR-AC-29: In the existing Actions shipping job, inspect normal/build dependency
+edges from `source/host/app/Cargo.toml`, build its actual executable with the
+locked inputs, and save its hash, symbol inventory and dynamic-library list.
+Reject direct legacy Telegram C entry symbols and old runtime shared-library
+loads. The dev/test dependency graph is deliberately separate. A lockfile may
+retain the same package edge for dev use; do not regenerate unrelated versions.
+
+NMR-AC-30: In Actions, exercise electron-builder's actual locked resource-copy
+implementation with the production FileSet and synthetic staging directories.
+Prove the four ordinary files are copied byte-for-byte and excluded FFI,
+unrelated and nested files remain absent at the destination and unchanged at
+the source. Test Unix and Windows filenames. Retain the normal Electron compile
+and carrier/auth cases. This is package-copy boundary evidence, not a signed
+installer, all-platform runtime or production deployment claim.
+
+Rollback uses an ordinary reviewed code/config revert. There is no data schema
+change, conversion, cleanup, new owner or automatic legacy fallback. The old
+reader may modify SQLite setup when opened, so rollback controls use synthetic
+or explicitly authorized copies only; this audit never opens real user stores.
+Full supported-platform packaged execution, external ABI consumers, Native
+proxy support, complete source/legal closure, backend authenticated pagination,
+Bot regression, upgrade/rollback, soak and independent ACCEPT remain open.
 
 
 

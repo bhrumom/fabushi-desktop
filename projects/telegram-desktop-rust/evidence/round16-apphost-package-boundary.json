@@ -1,0 +1,1119 @@
+{
+  "schema": "fbcp-native-boundary-evidence-v1",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 16,
+  "observed_at_utc": "2026-11-02T13:03:52Z",
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "accepted": false,
+    "refresh_performed": false
+  },
+  "repository": {
+    "name": "bhrumom/fabushi-desktop",
+    "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "base": "adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+    "base_tree": "016b7d6abe5794cce1968ea5973d7bfb9241e3f7",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "local_start": "No repository checkout or task files existed in the task scratch. Exact source files were materialized through GitHub; no claim of inspecting another session's uncommitted checkout."
+  },
+  "governance": {
+    "current_branch_agents_blob": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89",
+    "main_agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "fmep_blob": "0d1e9555075599fe65f95872b37722198f8c06cd",
+    "main_fmep_blob": "359659cc3125d29ecb626cc74c5de40a9a1081a9",
+    "rules": "User's current batch validation authorization plus FMEP Revision2 supersede historical zero-CI prose; only Actions executes validation.",
+    "local_executable_validation": "not-run"
+  },
+  "prerequisite": {
+    "id": 41447812811,
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41447812811",
+    "head_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+    "run_attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "complete_logs_retrieved": [
+      125285188884,
+      125285189146,
+      125285189166,
+      125285189226
+    ],
+    "actual_test_counts": {
+      "human": 33,
+      "agent_nonce": 4,
+      "private_credential_settlement": 3,
+      "apphost_composition": 11,
+      "native_startup_retention": 6,
+      "featurehost_boundary": 7,
+      "host_legacy_handoff": 6,
+      "c_abi": 7,
+      "dns_special_config": 6,
+      "future_salts": 2,
+      "protocol": 122,
+      "tcp_including_live": 9,
+      "proxy": 4,
+      "native_credential": 1,
+      "ui": 16,
+      "electron_carrier": 10,
+      "electron_auth": 8
+    },
+    "host_direct_dependency_negative": "passed; cargo tree --locked -p mahayana-host --edges normal --depth 1",
+    "unselected_job": "native-auth-and-journal skipped by message-batch condition; not counted as passing coverage",
+    "jobs": [
+      {
+        "id": 125285188884,
+        "name": "native-message-reconciliation",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 9
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          }
+        ]
+      },
+      {
+        "id": 125285189146,
+        "name": "native-message-shipping-compile",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact shipping source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Compile actual desktop AppHost entry",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Native startup, desktop messaging boundary and account restart",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Retained messaging stores and Agent automation boundaries",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Direct Host and C ABI reject legacy handoff before storage",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Verify generic Host has no direct Telegram adapter dependency",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Verify DNS and special-config response normalization",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Verify bare future-salts parser against fixed-U wire",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Verify protocol and TCP compatibility behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Verify proxy rejection and Native credential boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Diagnose locked AppHost dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 15
+          },
+          {
+            "name": "Preserve shipping compile evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 31
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 32
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33
+          }
+        ]
+      },
+      {
+        "id": 125285189166,
+        "name": "native-message-ui",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact renderer source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Transcript pagination and refresh behaviors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Compile actual production renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Preserve exact renderer evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          }
+        ]
+      },
+      {
+        "id": 125285189226,
+        "name": "native-message-electron",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact Electron carrier source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install locked desktop dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Native carrier command, event and disposal contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Native auth lifecycle and retained legacy secret behavior",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Compile actual Electron main, preload and carrier",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Preserve exact Electron evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Post Run actions/setup-node@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          }
+        ]
+      },
+      {
+        "id": 125285191392,
+        "name": "native-auth-and-journal",
+        "status": "completed",
+        "conclusion": "skipped",
+        "steps": null
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13144185816,
+        "name": "native-message-shipping-compile-adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+        "size_in_bytes": 44690,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13144185816",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13144185816/zip",
+        "expired": false,
+        "created_at": "2026-11-02T12:57:01Z",
+        "expires_at": "2027-01-31T12:49:21Z",
+        "updated_at": "2026-11-02T12:57:01Z",
+        "digest": "sha256:e06b3ace5faeeec78dbe8929f5b07b9daf8f1376bdbdaaefc6eb15a556f41a20",
+        "workflow_run": {
+          "id": 41447812811,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f"
+        }
+      },
+      {
+        "id": 13142972660,
+        "name": "native-message-ui-adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+        "size_in_bytes": 3025,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13142972660",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13142972660/zip",
+        "expired": false,
+        "created_at": "2026-11-02T12:49:59Z",
+        "expires_at": "2027-01-31T12:49:21Z",
+        "updated_at": "2026-11-02T12:49:59Z",
+        "digest": "sha256:312d6c9d982e0bb341e1f08fcecc9c965794e28e6df3c3d9a79d443862f9f8e6",
+        "workflow_run": {
+          "id": 41447812811,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f"
+        }
+      },
+      {
+        "id": 13142868481,
+        "name": "native-message-reconciliation-adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+        "size_in_bytes": 15157,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13142868481",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13142868481/zip",
+        "expired": false,
+        "created_at": "2026-11-02T12:53:39Z",
+        "expires_at": "2027-01-31T12:49:21Z",
+        "updated_at": "2026-11-02T12:53:39Z",
+        "digest": "sha256:f2445912172f9db0462a7d04eb789248bffca0688115a21d21777fa9b2d5e676",
+        "workflow_run": {
+          "id": 41447812811,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f"
+        }
+      },
+      {
+        "id": 13142689221,
+        "name": "native-message-electron-adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+        "size_in_bytes": 2701,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13142689221",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13142689221/zip",
+        "expired": false,
+        "created_at": "2026-11-02T12:49:45Z",
+        "expires_at": "2027-01-31T12:49:21Z",
+        "updated_at": "2026-11-02T12:49:45Z",
+        "digest": "sha256:afc37d043349013228bafe27d7f569a33cd4c31e091cd4f0e692cdcd109e29a0",
+        "workflow_run": {
+          "id": 41447812811,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f"
+        }
+      }
+    ]
+  },
+  "current_batch": {
+    "requirements": [
+      "NMR-38",
+      "NMR-39",
+      "NMR-AC-28",
+      "NMR-AC-29",
+      "NMR-AC-30"
+    ],
+    "implementation": "authored for containing commit",
+    "execution": "pending exact containing-H Actions at preparation; prerequisite is not new-code execution",
+    "changes": [
+      "Remove impossible AppHost lease and unreachable old calls; preserve twelve explicit refusals, firstName validation precedence, request ID/result/event semantics and Settings persistence/publication.",
+      "Move old proxy projection to test-only compilation/dev dependency; preserve original storage reader. Prune only eight newly unreachable packages from independent source/host/app lock, retaining all other locked versions.",
+      "Limit Electron bin FileSet to four executable names plus Windows forms and explicitly exclude nested paths; preserve all staging files and the real CLI ABI consumer.",
+      "Extend existing six Production AppHost subprocess cases; add three actual locked electron-builder copy tests with unrestricted controls.",
+      "Reuse existing Actions jobs for actual locked shipping executable, normal/build graph, symbols, dynamic libraries and hash; preserve all existing gates."
+    ],
+    "new_owner": false,
+    "schema_changed": false,
+    "user_data_touched": false,
+    "backend_modified": false
+  },
+  "dependency_edit": {
+    "manifest": "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+    "shipping_lock": "source/host/app/Cargo.lock",
+    "pruned_packages": [
+      "fabushi-telegram-core@0.1.0",
+      "fabushi-telegram-network@0.1.0",
+      "fabushi-telegram-protocol@0.1.0",
+      "fabushi-telegram-runtime@0.1.0",
+      "fabushi-telegram-storage@0.1.0",
+      "libm@0.2.16",
+      "mahayana-telegram@0.1.0",
+      "num-bigint-dig@0.9.1"
+    ],
+    "method": "Remove the one normal edge then retain the existing package graph reachable from the independent shipping root; no resolver/generator was run locally. Workspace lock retains dev and CLI edges.",
+    "locked_execution": "pending Actions"
+  },
+  "findings": [
+    {
+      "id": "R16-PACKAGE-01",
+      "classification": "source-proven packaging inclusion gap; no claim about an already-published artifact",
+      "scenario": "stage-host overwrites four executable files but preserves other contents; previous unrestricted extraResources copies retained FFI/unknown files",
+      "decision": "FIX",
+      "resolution": "Exact-name resource filter with explicit nested exclusion and tests against real locked copy implementation."
+    },
+    {
+      "id": "R16-PACKAGE-02",
+      "classification": "packager contract detail",
+      "scenario": "electron-builder expands literal no-dot file names to recursive directory patterns; an allowed executable name used as directory can admit nested payload",
+      "decision": "FIX",
+      "resolution": "!**/*/* exclusion and allowed-name-directory causal negative test."
+    }
+  ],
+  "packager_provenance": {
+    "repository": "electron-userland/electron-builder",
+    "commit": "512a57ec9bcda593d3e0970bd2b9a33a63beeb57",
+    "version": "26.15.3",
+    "files": {
+      "packages/app-builder-lib/src/fileMatcher.ts": "e1703c0b33497943adcb05f5f6c209fe9517de32",
+      "packages/app-builder-lib/src/platformPackager.ts": "cefb93166a54ee3260c1707123500eb2cfc769f8",
+      "packages/builder-util/src/fs.ts": "40c4498fe2f414539e1120c52b560b0b5cb256d7"
+    },
+    "claim": "Actual resource-copy API/consumer reviewed; tests emit installed implementation SHA256 and lock integrity. No new dependency or license change."
+  },
+  "source_acceptance": {
+    "accepted": false,
+    "source_reviews_changed": false,
+    "inventory_changed": false,
+    "unknown_unread_reclassified": false,
+    "schema": "existing FMEP-SOURCE-01 categories/requirements reused; containing ledger change triggers the existing source-review/schema Actions gate"
+  },
+  "acceptance": {
+    "full_product": false,
+    "independent_accept": false,
+    "remaining": [
+      "Complete applicable functionality and source/legal closure",
+      "Actual all-platform signed packages and runtime lifecycle",
+      "External/mobile and direct old FFI consumers",
+      "Native service proxy support",
+      "Backend formal authorization, current Worker source and real authenticated pagination/recovery",
+      "Full Bot regression, UI/visual/a11y, temporal, performance/soak, upgrade/rollback and independent ACCEPT"
+    ]
+  },
+  "apphost_readonly_audit": {
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 16,
+    "scope": "Read-only AppHost production Telegram dependency and Native authority audit",
+    "base_repository": "bhrumom/fabushi-desktop",
+    "base_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+    "effort": {
+      "classification": "xhigh",
+      "reason": "Identity, lifecycle, retained storage and production dependency boundary",
+      "applied": "Inherited model and effort; no runtime override"
+    },
+    "execution": {
+      "local_builds_tests_validators": 0,
+      "github_mutations": 0,
+      "source_mutations": 0
+    },
+    "governing_rules": [
+      "Root AGENTS spec-first and targeted current-source discovery; §Stage 5 criterion-by-criterion review.",
+      "FBCP/TDRP all executable verification only GitHub Actions. FMEP-001 r2 supersedes historical Stage-A zero-CI prose.",
+      "FMEP OWNER-01/02/03: existing owners, one logical authority, retire old entry/default dependencies only with caller/data/rollback evidence.",
+      "FMEP SOURCE-01: exact identity and risk-based reading; no blanket read-complete or source acceptance from this targeted review.",
+      "Freeze scope, preserve other work, non-force expected-SHA CAS and exact remote readback remain integrating-agent obligations."
+    ],
+    "files": [
+      {
+        "path": "source/host/app/Cargo.toml",
+        "blob_sha": "8ea5854eed44651d4692f4e97e69102a3bb00726",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/host/app/Cargo.toml"
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob_sha": "8e19361b3b278d085927a84ea4c8ce8c3fe3de80",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/host/app/src/main.rs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml",
+        "blob_sha": "4c3aaad130be4a5c8e1439da9cbca71b9cfdd902",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs",
+        "blob_sha": "4f0b2d72fc07817de401bb5d378bf5312554e731",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+        "blob_sha": "7e8eabd0e72d0ff659352a8f19d534dfbdafbc13",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "blob_sha": "c4671c5899d959227be1f69dfcc568fd0df31626",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs",
+        "blob_sha": "4bc095d2879714b2c6c7175b5b09f488eda43f72",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml",
+        "blob_sha": "f43109356f1f486a82a2d0120f6e78808c431c40",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-telegram/Cargo.toml"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs",
+        "blob_sha": "8df8e7286f161452336727d7e5750e45b67c413f",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/mahayana-telegram/src/lib.rs"
+      },
+      {
+        "path": "source/mahayana/mahayana-rs/Cargo.toml",
+        "blob_sha": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/source/mahayana/mahayana-rs/Cargo.toml"
+      },
+      {
+        "path": "docs/specs/fbcp-native-message-reconciliation.md",
+        "blob_sha": "aa99fce722a4e4d87a657a325df86401575b124f",
+        "url": "https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/docs/specs/fbcp-native-message-reconciliation.md"
+      }
+    ],
+    "source_read_scope": "Complete manifests and applicable NMR spec; exact AppHost imports/types/settings projection/constructors/dispatch/legacy auth/feature configuration/tests, UnifiedAppHost construction and delegation, shipping main construction and Session wiring. Other main.rs and adapter business methods were not fully audited.",
+    "findings": [
+      {
+        "id": "R16-APPHOST-01",
+        "claim": "Actual shipping construction",
+        "evidence": "source/host/app/src/main.rs::main calls UnifiedAppHost::new(app_data_dir); unified constructor calls AppHost::new; AppHost::new_with_feature_mode_and_storage_passphrase creates FeatureHost with both Telegram handoff fields None and private telegram_client None. Platform cfg changes feature sets, not this refusal."
+      },
+      {
+        "id": "R16-APPHOST-02",
+        "claim": "No legal constructor or setter can populate private AppHost.telegram_client at this base",
+        "evidence": "Only field initialization is None; all current constructors delegate to that initializer. The retained helper and twelve auth methods have a typed unreachable success branch, forcing a normal mahayana-telegram dependency."
+      },
+      {
+        "id": "R16-APPHOST-03",
+        "claim": "Normal dependency reaches old runtime",
+        "evidence": "mahayana-app-host/Cargo.toml normal dependencies include mahayana-telegram, whose manifest normal dependencies include fabushi-telegram-core and fabushi-telegram-runtime. This proves source dependency reachability; exact built/package symbols still require Actions evidence."
+      },
+      {
+        "id": "R16-APPHOST-04",
+        "claim": "Proxy normal publication is already unavailable",
+        "evidence": "settings mutations persist through ProductSettingsOwner before publish_network_proxy; the private None field selects {available:false,reason:telegramClientUnavailable}. publish_product_network_proxy is the only production caller of carrier_projection; the remaining caller is an existing unit test."
+      },
+      {
+        "id": "R16-APPHOST-05",
+        "claim": "Legacy error precedence must be preserved",
+        "evidence": "11 legacy auth routes look up the unavailable client before any required parameter validation. telegramRegistration validates firstName first, so null/empty/wrong-type firstName must remain InvalidRequest(firstName is required). Known route rejection must not broaden into all feature.auth.*; native account/login remains delegated."
+      },
+      {
+        "id": "R16-APPHOST-06",
+        "claim": "Native message owner stays separate and active",
+        "evidence": "Shipping main constructs ProductionSessionWorkers::production_with_identity_and_dependencies using FABUSHI_LOCAL_HUMAN_ID and existing settings/memory dependencies. Native Human messaging remains Session/Transcript; UnifiedAppHost's feature/control/Agent roles remain intact."
+      },
+      {
+        "id": "R16-APPHOST-07",
+        "claim": "Existing tests supply real retention controls",
+        "evidence": "native_desktop_account_handoff.rs helper exercises all twelve valid auth refusals, missing Provider and no startup event; child cases cover Native account/issuer switch and restart. Retention cases seed original EncryptedSqliteStore, preserve opaque files/sidecars/other-account bytes, and reopen original encrypted reader only after child shutdown."
+      }
+    ],
+    "recommended_minimum_change": [
+      "Spec-first append a bounded AppHost normal-dependency retirement requirement and exact-H gates without claiming package/final acceptance.",
+      "Remove private TelegramClientLease field/None initialization and unreachable client/proxy forwarding helper. Keep known legacy route names and existing error envelope; preserve Registration's firstName validation order.",
+      "Keep publish_network_proxy returning the existing unavailable JSON; ProductSettingsOwner remains authoritative and persists before this return.",
+      "Move mahayana-telegram from normal to dev dependencies; cfg(test)-gate only NetworkProxy* imports and carrier_projection, preserving historical conversion tests without a shipping edge, type duplication, or new owner.",
+      "Retain fabushi-telegram-storage dev dependency, original readers and all stored formats/paths. This is a code-only reversible dependency transition.",
+      "If complete removal of the development dependency is later required, review source-neutral type placement separately rather than expanding this batch's public schema."
+    ],
+    "required_actions_evidence": [
+      "Actual source/host/app locked compile plus current Host6/CABI7/Human33/Agent4/settlement3/composition11/Native6/FeatureHost7/protocol122/TCP9 and existing UI/Electron gates at frozen H.",
+      "Cargo tree for actual shipping root using normal/build edges and relevant target configuration; reject mahayana-telegram and fabushi-telegram-runtime normal reachability, retain outputs as evidence. Do not call an all-edge dev graph a shipping dependency graph.",
+      "Extend assert_legacy_unavailable with null/empty/wrong-type inputs, exact error precedence, preserved response IDs and result None, plus unknown method control.",
+      "Require exact unavailable Settings publication envelope and persistence after restart; preserve byte-identity and original-reader controls.",
+      "Packaged native-symbol inventory remains separately required; absence from selected Cargo edges cannot prove all supported packages."
+    ],
+    "unresolved": [
+      "This review does not prove every external C ABI/mobile/third-party consumer absent.",
+      "Supported-platform linked package inventories, real Native proxy behavior, data migration, full Bot regressions and independent ACCEPT remain open.",
+      "No actual compile/test/validator execution was performed by this audit; integrating agent owns exact-H Actions evidence."
+    ]
+  },
+  "backend_readonly_audit": {
+    "schema": "fabushi-backend-readonly-audit-v1",
+    "observed_at_utc": "2026-11-02 12:54:03 UTC",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "round": 16,
+    "repository": "bhrumom/fabushi-backend",
+    "scope": "Read-only; no backend files, refs, comments, reviews, merges, workflows or deployments modified.",
+    "pull_request": {
+      "number": 137,
+      "url": "https://github.com/bhrumom/fabushi-backend/pull/137",
+      "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "base_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "merged_at": null,
+      "auto_merge": null,
+      "reviews": [],
+      "issue_comments": [],
+      "review_comments": [],
+      "formal_merge_deployment_authorization": "not found in retrieved PR body/reviews/comments; explicit task prohibits unapproved merge/deployment"
+    },
+    "exact_head_ci": {
+      "runs": [
+        {
+          "id": 41427242843,
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843",
+          "event": "pull_request",
+          "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 41427235133,
+          "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427235133",
+          "event": "push",
+          "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "checks": [
+        {
+          "id": 125216707135,
+          "name": "human-messaging-contracts",
+          "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "status": "completed",
+          "conclusion": "success",
+          "details_url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843/job/125216707135"
+        },
+        {
+          "id": 125216681052,
+          "name": "human-messaging-contracts",
+          "head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+          "status": "completed",
+          "conclusion": "success",
+          "details_url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427235133/job/125216681052"
+        }
+      ],
+      "combined_status": {
+        "state": "pending",
+        "total_count": 0,
+        "statuses": [],
+        "note": "No commit-status contexts; do not confuse with the two successful check-runs."
+      },
+      "log_job": 125216707135,
+      "log_url": "https://github.com/bhrumom/fabushi-backend/actions/runs/41427242843/job/125216707135",
+      "complete_log_chars": 35243,
+      "actual_test_counts": {
+        "handler_contracts": {
+          "tests": 29,
+          "pass": 29,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "sqlite_mutation_recovery": {
+          "tests": 10,
+          "pass": 10,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        }
+      },
+      "actual_count_evidence": [
+        "2026-11-02T10:14:59.0358618Z # tests 29",
+        "2026-11-02T10:14:59.0359851Z # pass 29",
+        "2026-11-02T10:14:59.0360319Z # fail 0",
+        "2026-11-02T10:14:59.0360718Z # cancelled 0",
+        "2026-11-02T10:14:59.0361126Z # skipped 0",
+        "2026-11-02T10:15:00.3204084Z # tests 10",
+        "2026-11-02T10:15:00.3205108Z # pass 10",
+        "2026-11-02T10:15:00.3205519Z # fail 0",
+        "2026-11-02T10:15:00.3206419Z # cancelled 0",
+        "2026-11-02T10:15:00.3207227Z # skipped 0"
+      ],
+      "scope": "Mock D1/R2 handler tests plus real runner-local SQLite behavior; not deployed D1 or authenticated production service acceptance."
+    },
+    "production": {
+      "last_observed_canonical_delivery": {
+        "run_id": 40047409890,
+        "job_id": 120732189309,
+        "url": "https://github.com/bhrumom/fabushi-backend/actions/runs/40047409890",
+        "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+        "conclusion": "success",
+        "created_at": "2026-10-24T00:56:05Z",
+        "worker": "fabushi-flutter-web-prod",
+        "observed_worker_version": "3ad1a889-4c28-4344-8472-8c8adc225a3c",
+        "complete_log_chars": 30368,
+        "evidence": [
+          "2026-10-24T00:56:37.2318693Z ✅ No migrations to apply!",
+          "2026-10-24T00:56:42.3713687Z Uploaded fabushi-flutter-web-prod (2.48 sec)",
+          "2026-10-24T00:56:43.3368472Z Deployed fabushi-flutter-web-prod triggers (0.97 sec)",
+          "2026-10-24T00:56:43.3371948Z Current Version ID: 3ad1a889-4c28-4344-8472-8c8adc225a3c"
+        ]
+      },
+      "artifacts": [
+        {
+          "id": 12542105783,
+          "name": "gateway-account-recovery-33a26692ce2f74e3fdca3940dfc4cbfb3ede151b-40047409890",
+          "digest": "sha256:9b6e7cf63c49d7db8aed6120df9ee0cc3dcfdec33c5d03ae063a4861538799fb",
+          "size_in_bytes": 244,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/12542105783",
+          "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b"
+        },
+        {
+          "id": 12542026010,
+          "name": "production-worker-delivery-33a26692ce2f74e3fdca3940dfc4cbfb3ede151b",
+          "digest": "sha256:ba90289cbeae90d7bacca69050147717d3256a7574b1289632cfdd3bf8edae18",
+          "size_in_bytes": 1062,
+          "expired": false,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-backend/actions/artifacts/12542026010",
+          "head_sha": "33a26692ce2f74e3fdca3940dfc4cbfb3ede151b"
+        }
+      ],
+      "artifact_contents_verified": false,
+      "artifact_content_limitation": "GitHub connector returned ZIP file reference; scratch urllib extraction was blocked by the network sandbox. Artifact metadata/digests and complete job log were read; archive contents are not claimed verified.",
+      "current_live_worker_sha": "unverified",
+      "live_worker_version": "unverified",
+      "delivery_observation_limit": "Recent 100 repository Actions runs contain no newer Production Worker Delivery run. Later Official MCP platform delivery workflow targets mahayana-platform, a distinct worker; neither history proves current live fabushi-flutter-web-prod version.",
+      "production_route_and_scope": "Existing account/social-message owner fabushi/web/src/handlers/friends.js; no current authenticated afterId=0 production evidence found in PR, CI artifacts metadata or inspected delivery workflow/log.",
+      "formal_authorization": "missing",
+      "authenticated_after_id_0_multipage": "missing",
+      "authenticated_empty_cursor": "missing",
+      "cross_account_authorization_denial": "missing",
+      "production_recovery_and_rollback": "missing",
+      "accepted": false
+    },
+    "source_comparison": {
+      "main_sha": "687718ce9e0083aa124d29005bcce4051d357919",
+      "main_friends_blob": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+      "main_behavior": "Explicit afterId=0 rejected by afterId <= 0 check; ascending path enters only afterId > 0.",
+      "pr_head_sha": "06047d3ea69313ec4cfec58bbee36a7afc9cf007",
+      "pr_friends_blob": "fca0ed323b34fe767cad262af57cedcf0e71a79f",
+      "pr_behavior": "Explicit nonnegative integer afterId accepted, historyCursor echoed, empty cursor retained; remains unmerged/undeployed.",
+      "production_workflow_blob": "54870db11c4e4d854fafe66c11d007ca5d0a2f5d",
+      "production_workflow_ref": "687718ce9e0083aa124d29005bcce4051d357919",
+      "production_workflow_constraints": "workflow_dispatch only; requires refs/heads/main; production environment; exact github.sha checkout; security preflight; D1 recovery bookmark before migrations; deployment, public health and enrollment unauthenticated denial only. No real afterId=0 acceptance step.",
+      "later_distinct_worker_workflow_blob": "ce0cc91debced670a10171a2bda5b647912fa648",
+      "later_distinct_worker": "mahayana-platform"
+    },
+    "unblock_conditions": [
+      "Reviewed backend PR and explicit authorization under repository rules.",
+      "Approved exact main deployment with Cloudflare Worker version mapped to source SHA and recovery bookmark.",
+      "Authenticated production afterId=0 multi-page, empty-page, cross-account denial and recovery/rollback evidence bound to deployed SHA/version."
+    ],
+    "read_urls": [
+      "https://api.github.com/repos/bhrumom/fabushi-backend/pulls/137",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/pulls/137/reviews",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/issues/137/comments",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/pulls/137/comments",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/branches/main",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?head_sha=06047d3ea69313ec4cfec58bbee36a7afc9cf007&per_page=100",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/commits/06047d3ea69313ec4cfec58bbee36a7afc9cf007/check-runs?per_page=100",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/commits/06047d3ea69313ec4cfec58bbee36a7afc9cf007/status",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/git/trees/06047d3ea69313ec4cfec58bbee36a7afc9cf007?recursive=1",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs?per_page=100",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs/41427242843/jobs?per_page=100",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs/40047409890",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs/40047409890/jobs?per_page=100",
+      "https://api.github.com/repos/bhrumom/fabushi-backend/actions/runs/40047409890/artifacts?per_page=100"
+    ],
+    "source_urls": [
+      "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/fabushi/web/src/handlers/friends.js",
+      "https://github.com/bhrumom/fabushi-backend/blob/06047d3ea69313ec4cfec58bbee36a7afc9cf007/fabushi/web/src/handlers/friends.js",
+      "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/.github/workflows/production-worker-delivery.yml",
+      "https://github.com/bhrumom/fabushi-backend/blob/687718ce9e0083aa124d29005bcce4051d357919/.github/workflows/official-mcp-platform-delivery.yml"
+    ]
+  },
+  "ffi_package_readonly_audit": "# Round 16 FFI and Electron package boundary audit\n\nTask: `20bf9475-a885-4314-b509-bea53ef8849f`, round 16.\nExact source base: `bhrumom/fabushi-desktop@adf15caadac5775fdd8582227cad3bbf9c93cf0f`.\nFixed research U: `f985723b552b30fe1c17d377d57f44e61a15a8c4`.\nScope: read-only source, caller, manifest and packaging review. No GitHub mutation, local validation, Cargo execution, package build, release, deployment, account access or user-data access was performed by this audit.\nAssessment complexity: xhigh (ABI lifetime, persisted data and package boundary); actual model/effort inherited from the parent session.\n\n## Confirmed execution and artifact paths\n\n1. `source/electron-main/entry.ts` composes the production coordinator binding. `coordinator/production-root-provider.ts` combines the existing account, IPC, native and auxiliary ports. `coordinator-launcher.ts` forks the configured utility-process artifact and passes three MessagePorts. `desktop/scripts/build-electron-runtime.mjs` builds that artifact from `coordinator/rust-coordinator-carrier.ts`.\n2. The carrier explicitly spawns `mahayana-node-agent-coordinator[.exe]`, supplies `MAHAYANA_APP_HOST_BIN`, and communicates through JSON lines. For packaged mode both executable paths resolve under `process.resourcesPath/bin`; existing explicit environment overrides remain. `source/node-agent-coordinator/src/main.rs::spawn_host` starts the configured Host executable and passes account data-root/local-human-id inputs through environment. This positively observed path is process IPC, not a Runtime shared-library loader.\n3. `desktop/package.json` builds the actual `source/host/app` binary plus the Coordinator and box executor. `desktop/scripts/stage-host.mjs` copies exactly those three executables and the separately built network worker to `desktop/resources/bin`. It does not build or copy `mahayana-ffi` by name. The actual AppHost consumes `UnifiedAppHost`, then `AppHost`, with the already-disabled legacy client composition.\n4. `mahayana-app-host-mobile` exports its own native C/JNI handle adapter around `UnifiedAppHost`. It does not call `mahayana_runtime_*`. Its constructors accept an app-data path and optionally a passphrase; they inherit AppHost's empty Telegram handoff. These source facts do not qualify any iOS/Android application bundle.\n5. All 68 non-codex `Cargo.toml` files present in the exact recursive tree were fetched. The workspace lists `mahayana-ffi`; `mahayana-cli/Cargo.toml` is a concrete direct dependent. The inspected AppHost, unified, mobile, shipping `source/host/app`, and Coordinator manifests do not declare that FFI dependency. Codex manifests and external native applications were not exhaustively audited; no repository-wide or external zero-caller claim is made.\n\n## Active compatibility consumers and exports\n\n`mahayana-cli/src/main.rs::RuntimeHandle` really uses the FFI create/execute/receive/resolve-approval/interrupt/close/free-string functions. Creation errors use the last-error envelope. Dropping the handle closes it and frees the returned string. This prevents treating `mahayana-ffi` as wholly dead code. This CLI caller does not pass Telegram handoff fields in the inspected constructor and does not call the legacy Telegram symbols directly.\n\n`mahayana-ffi/Cargo.toml` still unconditionally depends on `fabushi-telegram-runtime`. `mahayana_runtime_force_link` explicitly anchors five Telegram symbols: `fabushi_telegram_create_client`, `fabushi_telegram_create_persistent_client`, `fabushi_telegram_execute`, `fabushi_telegram_close_client`, and `fabushi_telegram_free_string`. The separate runtime also exports `fabushi_telegram_force_link`. The direct ABI remains capable of constructing a legacy client independently of the now-rejected `HostCreateConfig` injection. A Host admission refusal therefore does not prove direct FFI retirement.\n\nThe source FFI crate defaults to `rlib`; its comment says platform scripts explicitly request static/shared library output. Those external platform scripts and installed consumers are not identified in this desktop tree. Removing or renaming exported symbols is not justified by the inspected Electron path.\n\n## Concrete package gap\n\n`stage-host.mjs` creates the destination directory and overwrites its four canonical outputs, but does not enumerate, reject or remove other existing files. `desktop/package.json::build.extraResources` copies `resources/bin` as an entire directory without a file filter. The current macOS release workflow invokes this same `npm run build:host`, then `electron-builder --mac --arm64 --publish never`; its post-package rejection checks only the three named dandelion leftovers.\n\nConsequently, a previous `libmahayana_runtime.dylib`, `libmahayana_runtime.so`, `mahayana_runtime.dll`, a separately named Telegram FFI library, or an unknown file left in the staging directory can be included by this configuration even though `stage-host` did not produce it. This is a source-proven inclusion path, not a claim that any observed released package contains one.\n\nNo exact-H installed/signed package was opened by this audit. Current `native-message-shipping-compile` uses `cargo check` for `mahayana-app-host`; it produces compile evidence, not a final executable symbol inventory. C ABI tests prove behavior in their test binary, not packaged exports. A package or symbol-absence statement remains unverified until actual outputs are collected in Actions.\n\n## Smallest recommended follow-up scopes\n\n### AppHost dependency scope\n\nRemove the unreachable AppHost legacy lease/publication/auth forwarding while preserving the current explicit unavailable response, the Native path and settings persistence. Move any necessary proxy projection conversion to its existing Settings owner, avoiding a second networking owner. Retain old storage/runtime crates and exact readers for rollback. Before changing auth dispatch, preserve or explicitly specify `telegramRegistration`'s existing `firstName` validation precedence: that method parses firstName before checking the absent client, unlike most other legacy auth methods.\n\n### Package inclusion scope\n\nUse an explicit `extraResources` filter for the four canonical executable names (and their platform suffixes), or equally bounded per-file mappings. Exclude stale FFI/unknown payload from the package without deleting it from staging or touching user storage. Keep ASR and Computer Use resources in their existing separate resource entries. Add an Actions behavior check against the actual electron-builder copy/package path: inject named legacy-library and unrelated sentinels, verify the four approved executables are retained byte-for-byte, and verify sentinels remain in staging but are absent from the package. A handwritten glob evaluator or JSON string assertion is insufficient evidence of electron-builder semantics. Preserve missing-required-executable failure.\n\nAfter AppHost dependency removal, record exact-H `cargo tree` for the actual selected target and build the actual shipping binary in Actions for an inspectable symbol inventory. Inspect exported/defined old C ABI symbols and native linked-library references with the target platform's tool. An Ubuntu binary result does not qualify macOS, Windows, iOS or Android packages. Do not strip/repackage a different SHA and attach its evidence to the frozen candidate.\n\n### Separate FFI retirement scope\n\nDo not delete the C ABI or default exports until explicit consumers and supported static/shared package configurations are accounted for. If a future feature flag separates native Host ABI from the Telegram compatibility export, exercise both configurations, the real CLI consumer and retained original-reader fixtures. Preserve zero-handle/thread-local-error/string-ownership behavior and previously created native handle lifetime. This audit does not authorize a format migration or account import.\n\n## Retained data and original readers\n\nThe direct persistent-client API calls `EncryptedSqliteStore::open`, loads the encrypted snapshot plus authorization and transport metadata, and reconstructs its old domain state. The original store opens SQLite, sets WAL/foreign-key/synchronous pragmas and runs schema migration; it is not a read-only forensic open. Any rollback-reader exercise must use an authorized copied/synthetic fixture, not real user files merely to prove availability. The old source APIs and schema remain available for a reviewed code revert. AppHost's ordinary Native startup must continue leaving old database, WAL/SHM, secure-store credentials, corrupt/unknown data and account separation untouched.\n\n## Exact source anchors\n\n| Path | Blob SHA |\n| --- | --- |\n| `docs/specs/fbcp-native-message-reconciliation.md` | `aa99fce722a4e4d87a657a325df86401575b124f` |\n| `source/mahayana/mahayana-rs/mahayana-ffi/Cargo.toml` | `8b0d6b7671cacbb52760057d15edd72349716bf0` |\n| `source/mahayana/mahayana-rs/mahayana-ffi/src/lib.rs` | `1fd7fa7d8881477de368172af73f7210e09c060c` |\n| `source/mahayana/mahayana-rs/mahayana-ffi/src/legacy_handoff_tests.rs` | `9c9fd7da789bc84450653bc9e207e721d1f4246b` |\n| `source/mahayana/mahayana-rs/mahayana-cli/Cargo.toml` | `5896c0ed152f71bb06cb55d24d213446b86d13ca` |\n| `source/mahayana/mahayana-rs/mahayana-cli/src/main.rs` | `a0e0a98f20e7f24eb75dc13ae9bffdf5c4846b6e` |\n| `source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml` | `7e8eabd0e72d0ff659352a8f19d534dfbdafbc13` |\n| `source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs` | `c4671c5899d959227be1f69dfcc568fd0df31626` |\n| `source/mahayana/mahayana-rs/mahayana-unified-app-host/src/lib.rs` | `4f0b2d72fc07817de401bb5d378bf5312554e731` |\n| `source/mahayana/mahayana-rs/mahayana-app-host-mobile/src/lib.rs` | `03b52043164e6039f929e4c5c02cd261e57a06b7` |\n| `source/mahayana/mahayana-rs/providers/telegram-runtime/src/lib.rs` | `9acba52c16de3085a3dbfa61dc3e9f6ba5cdb689` |\n| `source/mahayana/mahayana-rs/providers/telegram-runtime/src/runtime.rs` | `5771a5ee104612ec844d65f4298d037454527361` |\n| `source/mahayana/mahayana-rs/providers/telegram-storage/src/lib.rs` | `13378d686b9ea45ac57f165a95052ef559545fc5` |\n| `source/mahayana/mahayana-rs/providers/telegram-storage/src/sqlite.rs` | `e6cc314ec749f8a258bfe0125a25beb3613eb2ca` |\n| `desktop/package.json` | `ea259cb0e4c2b7110f8255f1e2789c023cae1969` |\n| `desktop/scripts/stage-host.mjs` | `83c1f868d3df62683a216e1523e2a9ef5cc01ae2` |\n| `desktop/scripts/build-electron-runtime.mjs` | `da8187a7da30fc4770988adfd3b44407028d3a53` |\n| `.github/workflows/release-macos-main.yml` | `802e9ffd24bc3d6bb6d55451b269a2bb729cbbb8` |\n| `source/electron-main/entry.ts` | `3c877893f5f6478251587a1130e08328c9cf15f7` |\n| `source/electron-main/coordinator/production-root-provider.ts` | `24e924f3d52d41a0900314aa7c21d98804a9dc19` |\n| `source/electron-main/coordinator/coordinator-launcher.ts` | `1b6192d01594e691171c36397a63dda154b41565` |\n| `source/electron-main/coordinator/rust-coordinator-carrier.ts` | `89865fc448dc715225953c811cba11c7a3c33572` |\n| `source/node-agent-coordinator/src/main.rs` | `279dc93569effbba8f49918d9293325dbb0c4ac8` |\n\nEach canonical source URL is `https://github.com/bhrumom/fabushi-desktop/blob/adf15caadac5775fdd8582227cad3bbf9c93cf0f/<path>`. Whole files were downloaded for exact reference; semantic reading of the large runtime/coordinator files was limited to the named construction, persistence, dispatch and spawning boundaries. No whole-file deep-review or complete-source claim is made for them.\n",
+  "local_complete_log_captures": [
+    {
+      "path": "logs/electronLog-41447812811.log",
+      "bytes": 37963,
+      "sha256": "8262d4f18bdb5587e4b426046ac2904eb42e91630305ee835280b2625d24e1ad",
+      "note": "Local capture hash; Actions job API remains canonical."
+    },
+    {
+      "path": "logs/shippingLog-41447812811.log",
+      "bytes": 440690,
+      "sha256": "037a83f67cb3d33a6b973a49c53d826f77f7ca9d2f5a5bc2549bec5ecac62307",
+      "note": "Local capture hash; Actions job API remains canonical."
+    },
+    {
+      "path": "logs/uiLog-41447812811.log",
+      "bytes": 37499,
+      "sha256": "37bbb088db9af3bee69565ef9cd56898eedddf61130c27b0f3d46c6fc3b1ba90",
+      "note": "Local capture hash; Actions job API remains canonical."
+    },
+    {
+      "path": "logs/job-125285188884.log",
+      "bytes": 157401,
+      "sha256": "4891b87845173e27ff40c9f86bae4d56438dd46494c30866a9c42441a88b3d17",
+      "note": "Local capture hash; Actions job API remains canonical."
+    }
+  ],
+  "independent_review": {
+    "schema": "fabushi-independent-review-v1",
+    "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+    "task_round": 16,
+    "reviewer": "independent general correctness / security / lifecycle",
+    "verdict": "APPROVE_STATIC_SCOPE",
+    "blocking_findings": [],
+    "nonblocking_findings": [],
+    "source_acceptance": false,
+    "release_acceptance": false,
+    "base_sha": "adf15caadac5775fdd8582227cad3bbf9c93cf0f",
+    "snapshot": {
+      "root": "review-round16",
+      "manifest_sha256": "fc064cc4cf7b040fd47289fa5ac629d983635fafc217a6bafeb26fd66ec30817",
+      "patch_sha256": "11dfde53bc196e0ec5a8d16ef40388f8f25baa7a76a4cd027335d1c023710b5d",
+      "file_hashes_match_manifest": true,
+      "changed_paths": [
+        "source/mahayana/mahayana-rs/mahayana-app-host/Cargo.toml",
+        "source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs",
+        "source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs",
+        "source/host/app/Cargo.lock",
+        "desktop/package.json",
+        ".github/workflows/native-service-contracts.yml",
+        "desktop/scripts/native-package-resources.contract.test.mjs",
+        "docs/specs/fbcp-native-message-reconciliation.md"
+      ]
+    },
+    "effort": {
+      "requested": "xhigh",
+      "reason": "The complete scope changes production dependency reachability, auth refusal compatibility, retained-storage recovery and package copy evidence.",
+      "actual": "Inherited model and effort retained; this resumed worker did not expose a model/effort mutation and does not claim prompt text changed the real setting."
+    },
+    "isolation": {
+      "reviewed_source_mutated": false,
+      "other_review_reports_read": false,
+      "local_builds_tests_or_validators_executed": false,
+      "github_writes": false,
+      "only_output_written": "round16_review.json",
+      "inspection_methods": [
+        "read-only file reads and text search",
+        "sha256sum of frozen scope files"
+      ]
+    },
+    "authority": [
+      "desktop/AGENTS.md: repository scope, independent-review contract, frozen scope and effort inheritance",
+      "docs/specs/fbcp-native-message-reconciliation.md: NMR-38, NMR-39, NMR-AC-28, NMR-AC-29 and NMR-AC-30"
+    ],
+    "scope_conclusions": [
+      {
+        "requirement": "NMR-38 / NMR-AC-28",
+        "conclusion": "No concrete changed-code defect found.",
+        "evidence": [
+          "Base AppHost telegram_client field is private and constructed only as None; base source search found no setter or other assignment. Removing its unreachable lease forwarding does not remove a reachable auth/proxy success path.",
+          "The exact twelve legacy routes remain explicit match arms. telegramRegistration still calls string_param(firstName) first; all other legacy routes return the same Operation error before argument validation. Unknown methods preserve the existing InvalidRequest fallback.",
+          "HostRequest dispatch clones the original id into both success/error responses; the new refusal returns no Value, publishes no event and accesses no retained store.",
+          "Settings methods still persist through ProductSettingsOwner before publication; publication now directly returns the same available=false, reason=telegramClientUnavailable envelope formerly selected by None.",
+          "The updated public-dispatch fixture checks 12 routes x 7 parameter shapes, exact IDs/errors/no result, empty post-call event queue, unknown methods, Settings persistence and same-value retry across process restart.",
+          "The unchanged retention fixture compares old SQLite/sidecar/unknown bytes across both Native processes and uses the original encrypted reader only on a synthetic fixture after process shutdown."
+        ]
+      },
+      {
+        "requirement": "NMR-38 / NMR-AC-29",
+        "conclusion": "No concrete changed-code defect found.",
+        "evidence": [
+          "mahayana-telegram moved to dev-dependencies; its projection imports and carrier_projection are cfg(test). Production source has no remaining lease type or old adapter call.",
+          "source/host/app/Cargo.lock diff removes the AppHost old-adapter edge and exactly eight no-longer-reachable package records; it does not alter remaining versions or checksums.",
+          "Actual shipping root source/host/app/Cargo.toml defines binary mahayana-app-host and profile ci. Existing UnifiedAppHost calls the unchanged AppHost constructor/public API.",
+          "The workflow inspects normal/build dependency edges before building that actual binary with --locked; then retains SHA256, file identification, defined symbols and linked libraries, and rejects old Telegram C entry symbols/shared-library names.",
+          "Original generic CLI Cargo manifest and RuntimeHandle methods still consume mahayana-ffi; its exports and force-link function are outside this diff and retained."
+        ]
+      },
+      {
+        "requirement": "NMR-39 / NMR-AC-30",
+        "conclusion": "No concrete changed-code defect found.",
+        "evidence": [
+          "The production resources/bin FileSet retains the four stage-host executable basenames plus corresponding .exe forms and adds a nested-path exclusion; other resource slots are unchanged.",
+          "Read stage-host.mjs: it stages those four names and marks Unix output 0755; no other file was identified as an intended member of this resource slot.",
+          "Read electron-builder source getFileMatchers/copyFiles, createFilter/minimatchAll, PlatformPackager getExtraFileMatchers/doPack, and builder-util copyDir/copyOrLinkFile.",
+          "The new contract uses the npm-ci-installed app-builder-lib 26.15.3 copy implementation and production FileSet, not a custom glob evaluator. Unrestricted-copy positive controls prove excluded sentinels are otherwise copied.",
+          "Unix/Windows filename fixtures verify allowed bytes/modes and unchanged source inventory; the allowed-name-as-directory negative addresses FileMatcher literal-directory recursion, while copyDir does not create empty directories.",
+          "The workflow installs locked desktop dependencies, runs this actual copy contract, asserts 3 executed/pass and zero failures/cancellations/skips, and retains existing Electron carrier/auth/compile checks."
+        ]
+      }
+    ],
+    "evidence_limits": [
+      "This is a static source review of the immutable snapshot, not a test-execution result.",
+      "The new locked shipping binary build, dependency/symbol/library checks, expanded Native dispatch scenarios and actual electron-builder copy tests still require exact-new-H GitHub Actions terminal evidence.",
+      "The reviewed workflow builds and inspects a macOS ci-profile AppHost and exercises Windows-style filenames on the Ubuntu copy-test runner; it does not prove signed installers or native Windows/Linux runtime acceptance.",
+      "No production service, external ABI consumer, real user store, OS credential store, deployment or independent release ACCEPT was exercised.",
+      "Native startup test target remains six top-level process scenarios; twelve refers to legacy auth route coverage, not twelve independently counted top-level tests."
+    ]
+  },
+  "review_adjudication": {
+    "decision": "ACCEPT_STATIC_SCOPE",
+    "blocking_findings": 0,
+    "fixes_after_review": [],
+    "release_acceptance": false,
+    "reason": "All frozen production/test/workflow changes reviewed; exact-H Actions remains mandatory."
+  },
+  "requirement_accounting": [
+    {
+      "id": "immediate-run-41447812811",
+      "state": "verified",
+      "evidence": "prerequisite contains exact head, terminal result, full job reads, counts and artifact digests"
+    },
+    {
+      "id": "1-fixed-upstream-and-complete-source",
+      "state": "partial",
+      "evidence": "U and original source lock retained; complete recursive/legal disposition and unread closure remain open"
+    },
+    {
+      "id": "2-risk-based-source-depth",
+      "state": "partial",
+      "evidence": "Current AppHost production/retained-store and package/FFI callers inspected; no unread source reclassified"
+    },
+    {
+      "id": "3-existing-owner-and-production-chain",
+      "state": "bounded-scope-implemented",
+      "evidence": "Existing Session/Transcript and Native/Messaging/Provider ownership recorded; AppHost unreachable legacy runtime removed in actual shipping dependency graph subject to Actions"
+    },
+    {
+      "id": "4-behavior-batch-lifecycle",
+      "state": "authored-pending-actions",
+      "evidence": "Exact refusal/Settings persistence/event/restart plus package copy/retention scenarios; full product behavior set remains open"
+    },
+    {
+      "id": "5-preserve-existing-capabilities-and-data",
+      "state": "bounded-scope-implemented",
+      "evidence": "No new owner; all original data/readers and CLI FFI retained; original regression gates preserved"
+    },
+    {
+      "id": "6-contracts-and-parallel-ownership",
+      "state": "bounded-scope-complete",
+      "evidence": "No public schema or composition change; disjoint test/audit scopes, root-owned lock/ledger integration and independent frozen review"
+    },
+    {
+      "id": "7-exact-h-actions-only",
+      "state": "pending-current-h",
+      "evidence": "No local build/test/validator; prerequisite exact-H passed and existing jobs extended for current production batch"
+    },
+    {
+      "id": "8-failure-triage-and-independent-work",
+      "state": "in-progress",
+      "evidence": "Read-only Backend/FFI/AppHost work completed independently; no repeated failed run or new-code pass claim"
+    },
+    {
+      "id": "9-single-inventory-ledger-rtm",
+      "state": "authored-pending-actions",
+      "evidence": "Only existing NMR responsibility row/RTM extended; source_reviews, original inventory, schema vocabulary and ACCEPT unchanged"
+    },
+    {
+      "id": "10-final-shipping-acceptance",
+      "state": "blocked",
+      "evidence": "See acceptance.remaining; this batch is not a release candidate or independent ACCEPT"
+    },
+    {
+      "id": "backend-pr137-readonly",
+      "state": "verified-readonly",
+      "evidence": "Embedded backend_readonly_audit; no write, merge or deploy performed"
+    },
+    {
+      "id": "cas-cloud-delivery-and-remote-readback",
+      "state": "pending-containing-commit",
+      "evidence": "Branch and main reread before Git-object upload; force=false and expected_sha required for ref movement"
+    }
+  ]
+}

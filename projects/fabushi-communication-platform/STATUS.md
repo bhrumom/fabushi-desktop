@@ -6,47 +6,42 @@ Date: 2026-11-02
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Current bounded batch: desktop messaging and direct Host boundary
+## Current bounded batch (round 16): AppHost dependency and package boundary
 
-Inspected checkpoint base `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07` and
-live main `5528062177e3865eef60a073a066cca144f9e3e8`. Fixed upstream remains
-`f985723b552b30fe1c17d377d57f44e61a15a8c4`; no upstream refresh is authorized.
-NMR-31–33 already remove automatic legacy secret/client/provider creation.
-NMR-34–35 now refuse FeatureHost's separate messaging execution, blob reads and
-access issuance in Production+Electron, including generic typed dispatch.
-Session/Transcript remains the Human owner. Retained snapshots/blobs/access
-files are not migrated or deleted. The existing Automation owner also excludes
-the reserved `_messaging` namespace from loading, owner overrides, writes and
-cleanup, preserving unknown/corrupt files during account changes. Test mode and
-selected non-Electron surfaces retain existing behavior; their acceptance and
-legacy FFI/default dependencies remain open.
+Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected base
+`adf15caadac5775fdd8582227cad3bbf9c93cf0f` and live main
+`5528062177e3865eef60a073a066cca144f9e3e8`. Main and backend are unchanged.
+Run `41447812811` finished success: complete logs confirm Human33, Agent4,
+private credential3, AppHost composition11, Native6, FeatureHost7, Host6,
+C ABI7, Host direct-dependency negative, normalization6, future-salts2,
+protocol122, TCP9 including live, proxy4, Native credential1, UI16 and
+Electron carrier10/auth8. These qualify that exact base only.
 
-Recovery confirmed the containing commit `98e51b31b5a296065190f665696b2ffe11a3efe1`
-and successful run `41443460672`: Human33/Agent4/private3, composition11,
-AppHost6/FeatureHost7, protocol122/TCP9, UI16 and Electron10+8 actually passed.
-Run `41443460908` also passed the source checker, while all source/product
-acceptance flags remain false. These results supersede the pending preparation
-statement below only for that exact H.
+NMR-38 removes the impossible AppHost Telegram lease and unreachable forwards,
+retaining all twelve explicit refusal routes, registration validation order,
+Native auth/Agent state and Settings persistence/publication semantics. The
+legacy proxy projection dependency is test-only; the independent shipping lock
+prunes only the eight packages made unreachable, with no version upgrades.
+NMR-39 restricts Electron `resources/bin` to its four canonical executable
+names and Windows forms, with nested-file exclusion. Staging files, original
+SQLite/sidecars/keys, retained FeatureHost files and rollback readers are kept.
+The CLI is a real generic C ABI consumer; FFI/direct Telegram exports are not
+deleted or declared globally retired.
 
-NMR-36 extends the existing Host admission boundary: either explicit legacy
-client or self-id is rejected before origin/credential/storage/runtime access,
-and this Host no longer registers the old Telegram provider. The C ABI retains
-zero-handle/last-error behavior and native host lifecycle. Six direct Host and
-four new C ABI cases are authored; the full ABI target retains three existing
-controls. This extension requires its own containing-H Actions; default Cargo
-dependencies, direct legacy-client exports and platform packages remain open.
+Expanded Native6 behavior tests, three actual locked packager-copy cases and
+the shipping dependency/build/symbol gates are authored. Execution at the
+containing commit is pending at preparation; no local executable validation
+was performed. The single ledger row, owner inventory and RTM retain separate
+implementation, execution and final acceptance states. Preparation and prior-H
+results are in `projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
 
-Preparation/audit evidence is in
-`projects/telegram-desktop-rust/evidence/round15-desktop-messaging-boundary.json`.
-Predecessor run 41438907013 binds c15 and ended failure: Electron carrier10/auth8
-and UI16 passed; both Rust jobs were cancelled before runner assignment, with
-no steps and no downloadable log. No Rust result/count is accepted. New
-owner7/AppHost6 and all retained gates require this candidate's exact-H Actions;
-authorship/static review is not execution acceptance. Backend Draft PR #137 has no
-approval or deployment authorization; current Worker provenance and production
-authenticated `afterId=0` pagination are not accepted. Full source/legal,
-platform/package/UI/accessibility, Bot regression, upgrade/rollback, soak and
-independent ACCEPT remain open.
+Backend Draft PR #137 remains open/draft at
+`06047d3ea69313ec4cfec58bbee36a7afc9cf007`, without review or formal deployment
+authorization. Its handler29/SQLite10 CI passed, but current production Worker
+SHA/version and real authenticated afterId=0 pagination/empty/denial/recovery
+are unverified. Full source/legal, product scope, supported-platform packages,
+UI/a11y, Native proxy support, complete Bot regression, upgrade/rollback, soak
+and independent ACCEPT remain open. Complete remains false.
 
 ## Historical planning snapshot (2026-10-02)
 

@@ -1176,81 +1176,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fabushi-telegram-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "fabushi-telegram-network"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-protocol",
- "getrandom 0.2.17",
- "rustls",
- "serde_json",
- "sha1 0.10.7",
- "thiserror 1.0.69",
- "webpki-roots 0.26.11",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-protocol"
-version = "0.1.0"
-dependencies = [
- "aes 0.8.4",
- "crc32fast",
- "fabushi-telegram-core",
- "getrandom 0.2.17",
- "hex",
- "hmac 0.12.1",
- "num-bigint-dig",
- "pbkdf2 0.12.2",
- "serde",
- "serde_json",
- "sha1 0.10.7",
- "sha2 0.10.9",
- "subtle",
- "thiserror 1.0.69",
- "x25519-dalek",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-runtime"
-version = "0.1.0"
-dependencies = [
- "fabushi-telegram-core",
- "fabushi-telegram-network",
- "fabushi-telegram-protocol",
- "fabushi-telegram-storage",
- "once_cell",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "fabushi-telegram-storage"
-version = "0.1.0"
-dependencies = [
- "chacha20poly1305",
- "fabushi-telegram-core",
- "hmac 0.12.1",
- "rand_core 0.6.4",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
 name = "fallible-iterator"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2263,12 +2188,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libm"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
-
-[[package]]
 name = "libspa"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2433,7 +2352,6 @@ dependencies = [
  "mahayana-native-engine",
  "mahayana-platform-client",
  "mahayana-plugin-runtime",
- "mahayana-telegram",
  "rusqlite",
  "serde",
  "serde_json",
@@ -2874,18 +2792,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mahayana-telegram"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "fabushi-telegram-core",
- "fabushi-telegram-runtime",
- "mahayana-conversation",
- "mahayana-core",
- "serde_json",
-]
-
-[[package]]
 name = "mahayana-tool-host"
 version = "0.1.0"
 dependencies = [
@@ -3106,23 +3012,6 @@ checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
 dependencies = [
  "num-integer",
  "num-traits",
-]
-
-[[package]]
-name = "num-bigint-dig"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f9a86e097b0d187ad0e65667c2f58b9254671e86e7dbb78036b16692eae099"
-dependencies = [
- "libm",
- "num-integer",
- "num-iter",
- "num-traits",
- "once_cell",
- "rand 0.9.5",
- "serde",
- "smallvec",
- "zeroize",
 ]
 
 [[package]]

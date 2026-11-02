@@ -3,7 +3,7 @@
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
 Status: evidence snapshot; P0 not yet passed
-Current bounded refresh: round 15, inspected base `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older capture below is historical.
+Current bounded refresh: round 16, inspected base `adf15caadac5775fdd8582227cad3bbf9c93cf0f`; FBCP-001 r8 / TDRP-001 r10 / FMEP-001 r2. The older capture below is historical.
 Project: FBCP-001 Revision 2
 Captured: 2026-10-03
 Main input: `d9ae2773f2c517a0cb911e7b7bc996905cf3ada4`
@@ -44,17 +44,25 @@ NMR-36 removes Host's explicit legacy provider injection: direct Rust and
 `mahayana-ffi::mahayana_runtime_create` reject either legacy client or self-id
 before product configuration, storage or runtime construction. Compatibility
 fields remain decodable; the C ABI returns its existing zero/error result.
-Legacy `mahayana-ffi` still force-links the direct Telegram C client APIs,
-and unconditional Host/AppHost/default dependencies remain unretired.
-Current Electron `build:host`/stage-host selects `source/host/app`, not that FFI
-crate; external/mobile callers are unqualified, not presumed absent. NMR-34–35 /
-AC-25–26 require owner7 and actual AppHost6 Actions cases at the containing H.
-Source review, execution and final acceptance remain separate.
+The Host no longer directly depends on the Telegram adapter (NMR-37).
+NMR-38 removes the absent AppHost lease and unreachable forwards; old proxy
+projection types are only test inputs. Production Normal/Build graph and actual
+executable symbols must be qualified at the containing commit. The twelve
+legacy auth routes retain explicit errors and do not become another writer.
 
-The containing H `98e51b31b5a296065190f665696b2ffe11a3efe1` passed NMR-34/35 in
-run `41443460672`. The subsequent NMR-36 Host6/ABI7 cases must execute on their
-own H. Inspected mobile AppHost and CLI constructors supply no legacy handoff;
-external caller coverage and supported-platform package evidence remain open.
+`mahayana-ffi` still force-links direct Telegram C APIs, and `mahayana-cli`
+actually consumes its generic RuntimeHandle ABI. Electron's positive launch
+path selects the `source/host/app` executable through process IPC. NMR-39
+limits its resources/bin copy to the four staged executable names/Windows
+forms and excludes nested files. It retains original staging contents and
+all data/readers; no external ABI/mobile or signed-package absence is inferred.
+
+Base `adf15caadac5775fdd8582227cad3bbf9c93cf0f` passed run `41447812811`,
+including Host6/C ABI7 and the direct dependency negative. NMR-38/39 tests and
+binary/copy gates require their own exact-H Actions. Original storage open is
+not a forensic read-only operation; rollback checks use synthetic/authorized
+copies. See `evidence/round16-apphost-package-boundary.json` for source identities
+and the unqualified backend/whole-product boundaries.
 
 The inventory was built from the exact PR #20 HEAD, starting at shipping entrypoints and following the production composition paths. Directory/name similarity by itself is not evidence. The paths below are the current owners or production seams that are actually composed by the renderer, Electron main, Coordinator, Host, and Runner.
 

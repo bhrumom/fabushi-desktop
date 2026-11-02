@@ -15,9 +15,9 @@ use mahayana_plugin_runtime::{
     PluginState,
 };
 use mahayana_product::MahayanaProductClient;
+#[cfg(test)]
 use mahayana_telegram::{
     NetworkProxyEndpointProjection, NetworkProxyKind, NetworkProxyProjection,
-    TelegramClientLease,
 };
 use serde::{Deserialize, Serialize};
 use rusqlite::{params, Connection, OptionalExtension};
@@ -168,6 +168,7 @@ impl ProductProxySettings {
         self.mode == ProductProxyMode::Enabled
     }
 
+    #[cfg(test)]
     fn carrier_projection(&self) -> NetworkProxyProjection {
         let selected = self.selected.as_ref().map(|proxy| NetworkProxyEndpointProjection {
             kind: match proxy.proxy_type {
@@ -568,9 +569,6 @@ pub struct AppHost {
     js: Mutex<DeepSeekJsHost>,
     feature: Arc<FeatureHostController>,
     settings: ProductSettingsOwner,
-    // Retained only for the legacy command error surface. Native AppHost
-    // composition never opens a client or hands one to the FeatureHost.
-    telegram_client: Option<TelegramClientLease>,
     // One-shot desktop-shell handoff prepared only when a restored Web carrier needs browser adoption.
     startup_native_shell_event: Mutex<Option<Value>>,
 }
@@ -693,33 +691,6 @@ fn startup_native_shell_event_for_carrier(carrier: &Value) -> Option<Value> {
     }))
 }
 
-fn publish_product_network_proxy(
-    client: &TelegramClientLease,
-    proxy: &ProductProxySettings,
-) -> Result<Value, AppHostError> {
-    // ProductSettingsOwner has already persisted the authoritative state before
-    // this transient publication is attempted.
-    let carrier = client
-        .apply_network_proxy(&proxy.carrier_projection())
-        .map_err(|error| {
-            AppHostError::Operation(format!(
-                "publish product network proxy carrier projection: {error}"
-            ))
-        })?;
-    let special_config = client
-        .refresh_special_config(proxy.proxy_enabled())
-        .map_err(|error| {
-            AppHostError::Operation(format!(
-                "publish product network proxy special-config projection: {error}"
-            ))
-        })?;
-    Ok(json!({
-        "available": true,
-        "carrier": carrier,
-        "report": special_config,
-    }))
-}
-
 impl AppHost {
     pub fn mini_app_account_port(&self) -> MiniAppAccountPort {
         self.feature.mini_app_account_port()
@@ -794,7 +765,6 @@ impl AppHost {
             ),
             feature,
             settings,
-            telegram_client: None,
             startup_native_shell_event: Mutex::new(None),
         })
     }
@@ -928,15 +898,13 @@ impl AppHost {
         }))
     }
 
-    fn publish_network_proxy(&self, proxy: &ProductProxySettings) -> Result<Value, AppHostError> {
-        if let Some(client) = self.telegram_client.as_ref() {
-            publish_product_network_proxy(client, proxy)
-        } else {
-            Ok(json!({
-                "available": false,
-                "reason": "telegramClientUnavailable",
-            }))
-        }
+    fn publish_network_proxy(&self, _proxy: &ProductProxySettings) -> Result<Value, AppHostError> {
+        // Persisted ProductSettings are canonical. This Native AppHost no longer
+        // owns a legacy carrier; do not load it solely to publish a proxy.
+        Ok(json!({
+            "available": false,
+            "reason": "telegramClientUnavailable",
+        }))
     }
 
     fn handle_feature(&self, method: &str, params: Value) -> Result<Value, AppHostError> {
@@ -965,18 +933,18 @@ impl AppHost {
                 .feature
                 .auth_providers()
                 .map_err(|error| AppHostError::Operation(error.to_string())),
-            "feature.auth.telegramStatus" => self.feature_telegram_auth_status(),
-            "feature.auth.telegramSendCode" => self.feature_telegram_send_code(params),
-            "feature.auth.telegramSignIn" => self.feature_telegram_sign_in(params),
-            "feature.auth.telegramPassword" => self.feature_telegram_password(params),
+            "feature.auth.telegramStatus" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramSendCode" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramSignIn" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramPassword" => Self::legacy_telegram_unavailable(),
             "feature.auth.telegramRegistration" => self.feature_telegram_registration(params),
-            "feature.auth.telegramResendCode" => self.feature_telegram_resend_code(params),
-            "feature.auth.telegramCancelCode" => self.feature_telegram_cancel_code(),
-            "feature.auth.telegramRequestPasswordRecovery" => self.feature_telegram_request_password_recovery(),
-            "feature.auth.telegramCheckRecoveryPassword" => self.feature_telegram_check_recovery_password(params),
-            "feature.auth.telegramSendVerifyEmailCode" => self.feature_telegram_send_verify_email_code(params),
-            "feature.auth.telegramVerifyEmail" => self.feature_telegram_verify_email(params),
-            "feature.auth.telegramRefreshPasswordChallenge" => self.feature_telegram_refresh_password_challenge(),
+            "feature.auth.telegramResendCode" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramCancelCode" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramRequestPasswordRecovery" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramCheckRecoveryPassword" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramSendVerifyEmailCode" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramVerifyEmail" => Self::legacy_telegram_unavailable(),
+            "feature.auth.telegramRefreshPasswordChallenge" => Self::legacy_telegram_unavailable(),
             "feature.auth.passwordLogin" => self.feature_password_login(params),
             "feature.auth.browserStart" => self
                 .feature
@@ -1209,87 +1177,17 @@ impl AppHost {
             .map_err(|error| AppHostError::Operation(error.to_string()))
     }
 
-    fn telegram_client(&self) -> Result<&TelegramClientLease, AppHostError> {
-        self.telegram_client.as_ref().ok_or_else(|| {
-            AppHostError::Operation(
-                "embedded Telegram client is unavailable for the current platform account".into(),
-            )
-        })
-    }
-
-    fn feature_telegram_auth_status(&self) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .authorization_status()
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_send_code(&self, params: Value) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .send_authentication_code(string_param(&params, "phoneNumber")?)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_sign_in(&self, params: Value) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .submit_authentication_code(string_param(&params, "code")?)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_password(&self, params: Value) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .submit_authentication_password(string_param(&params, "password")?)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
+    fn legacy_telegram_unavailable() -> Result<Value, AppHostError> {
+        Err(AppHostError::Operation(
+            "embedded Telegram client is unavailable for the current platform account".into(),
+        ))
     }
 
     fn feature_telegram_registration(&self, params: Value) -> Result<Value, AppHostError> {
-        let first_name = string_param(&params, "firstName")?;
-        let last_name = params.get("lastName").and_then(Value::as_str);
-        self.telegram_client()?
-            .submit_registration(first_name, last_name)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_resend_code(&self, params: Value) -> Result<Value, AppHostError> {
-        let reason = params.get("reason").and_then(Value::as_str);
-        self.telegram_client()?
-            .resend_authentication_code(reason)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_cancel_code(&self) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .cancel_authentication_code()
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_request_password_recovery(&self) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .request_password_recovery()
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_check_recovery_password(&self, params: Value) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .check_recovery_password(string_param(&params, "code")?)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_send_verify_email_code(&self, params: Value) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .send_verify_email_code(string_param(&params, "email")?)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_verify_email(&self, params: Value) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .verify_email(string_param(&params, "code")?)
-            .map_err(|error| AppHostError::Operation(error.to_string()))
-    }
-
-    fn feature_telegram_refresh_password_challenge(&self) -> Result<Value, AppHostError> {
-        self.telegram_client()?
-            .refresh_password_challenge()
-            .map_err(|error| AppHostError::Operation(error.to_string()))
+        // Preserve the original validation precedence for registration; all
+        // other compatibility routes rejected before inspecting parameters.
+        let _ = string_param(&params, "firstName")?;
+        Self::legacy_telegram_unavailable()
     }
 
     fn feature_password_login(&self, params: Value) -> Result<Value, AppHostError> {

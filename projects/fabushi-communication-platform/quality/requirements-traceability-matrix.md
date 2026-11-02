@@ -139,6 +139,24 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 
 ### FBCP-NMR-001 native Human admission and settlement
 
+#### Round16 current extension — AppHost and executable resource boundary
+
+Base `adf15caadac5775fdd8582227cad3bbf9c93cf0f` / run41447812811 is terminal
+success, including Host6/C ABI7, Native6/FeatureHost7 and all retained message,
+protocol/TCP/UI/Electron gates. It resolves prior NMR-36/37 execution gaps at
+that H only. New NMR-38/39 execution is pending at commit preparation.
+
+| Requirement / oracle | Actual owner and case | Evidence boundary |
+| --- | --- | --- |
+| NMR-38 / NMR-AC-28 | Existing AppHost public dispatch in `native_desktop_account_handoff.rs`: all12 routes × 7 parameter envelopes, exact ID/result/error/event refusal, registration precedence, unknown-method control; complete Settings snapshot/publication/restart and original encrypted-reader controls | Same six real subprocess scenarios; preserved Native accounts, Agent and retained-data positives. No new store or schema. |
+| NMR-38 / NMR-AC-29 | `source/host/app` normal/build Cargo graph, locked actual executable build, SHA256, macOS symbol and dynamic-library inventory; old Telegram production graph/exports/loads fail | `native-message-shipping-compile`; original compatibility projection remains test-only and full platform/package acceptance remains open. |
+| NMR-39 / NMR-AC-30 | `desktop/package.json` production FileSet consumed by installed electron-builder26.15.3 `getFileMatchers/copyFiles`; Unix/Windows-named bytes/modes, excluded FFI/unknown/nested entries, same-name directories and unrestricted controls | Three tests in `native-package-resources.contract.test.mjs` under existing Electron job. Source bytes remain intact. This is real copy-boundary evidence, not signed installer/Windows ACL acceptance. |
+
+The existing ledger row carries current target paths and preparation state;
+`evidence/round16-apphost-package-boundary.json` binds prior-H logs/artifacts,
+caller/data audits and new gate selection. No source-review counters or
+independent acceptance flags are promoted.
+
 #### Round 15 extension — desktop messaging boundary and retained data
 
 Base H is `c15dfbd9631f8b9fb6920cb5f80b9aea35210d07`. Run 41438907013

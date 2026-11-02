@@ -18,6 +18,7 @@ on:
       - 'desktop/package.json'
       - 'desktop/package-lock.json'
       - 'desktop/scripts/build-electron-runtime.mjs'
+      - 'desktop/scripts/native-package-resources.contract.test.mjs'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-feature-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-ffi/**'
@@ -190,11 +191,31 @@ jobs:
             source/host/app -> target
             source/mahayana/mahayana-rs -> target
           shared-key: desktop-restored-rust-1.97.1
-      - name: Compile actual desktop AppHost entry
+      - name: Build actual desktop AppHost entry and inspect its legacy boundary
         shell: bash
         run: |
           set -euo pipefail
-          cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-check.log
+          cargo tree --locked --manifest-path source/host/app/Cargo.toml --edges normal,build 2>&1 | tee artifacts/native-message-shipping/app-host-production-dependencies.log
+          if grep -Eq '(mahayana-telegram|fabushi-telegram-(core|network|protocol|runtime|storage)) v' artifacts/native-message-shipping/app-host-production-dependencies.log; then
+            echo 'desktop AppHost still has a production dependency on a legacy Telegram owner' >&2
+            exit 1
+          fi
+          cargo build --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml 2>&1 | tee artifacts/native-message-shipping/app-host-build.log
+          binary=source/host/app/target/ci/mahayana-app-host
+          test -x "$binary"
+          shasum -a 256 "$binary" > artifacts/native-message-shipping/app-host-sha256.txt
+          file "$binary" > artifacts/native-message-shipping/app-host-file.txt
+          nm -gUj "$binary" > artifacts/native-message-shipping/app-host-defined-symbols.txt
+          otool -L "$binary" > artifacts/native-message-shipping/app-host-linked-libraries.txt
+          if grep -Eq '^_?fabushi_telegram_(create_client|create_persistent_client|execute|close_client|free_string|force_link)$' artifacts/native-message-shipping/app-host-defined-symbols.txt; then
+            echo 'desktop AppHost exports a legacy direct Telegram C entry' >&2
+            exit 1
+          fi
+          if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' artifacts/native-message-shipping/app-host-linked-libraries.txt; then
+            echo 'desktop AppHost loads a legacy runtime shared library' >&2
+            exit 1
+          fi
+          cp "$binary" artifacts/native-message-shipping/mahayana-app-host
       - name: Native startup, desktop messaging boundary and account restart
         shell: bash
         run: |
@@ -360,6 +381,16 @@ jobs:
           grep -Fx '# fail 0' artifacts/native-message-electron/native-auth-retention.log
           grep -Fx '# cancelled 0' artifacts/native-message-electron/native-auth-retention.log
           grep -Fx '# skipped 0' artifacts/native-message-electron/native-auth-retention.log
+      - name: Native package resources exclude retained FFI libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap desktop/scripts/native-package-resources.contract.test.mjs 2>&1 | tee artifacts/native-message-electron/package-resources.log
+          grep -Fx '# tests 3' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# pass 3' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# fail 0' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# cancelled 0' artifacts/native-message-electron/package-resources.log
+          grep -Fx '# skipped 0' artifacts/native-message-electron/package-resources.log
       - name: Compile actual Electron main, preload and carrier
         shell: bash
         working-directory: desktop

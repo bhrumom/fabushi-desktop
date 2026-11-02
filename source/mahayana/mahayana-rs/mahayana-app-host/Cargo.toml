@@ -17,7 +17,6 @@ mahayana-model.workspace = true
 mahayana-native-engine.workspace = true
 mahayana-plugin-runtime.workspace = true
 mahayana-product.workspace = true
-mahayana-telegram.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
@@ -25,6 +24,8 @@ rusqlite.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+# Retained for the original proxy projection compatibility contract only.
+mahayana-telegram.workspace = true
 # Exercise retention with the original encrypted storage reader in Actions.
 fabushi-telegram-storage = { path = "../providers/telegram-storage" }
 
