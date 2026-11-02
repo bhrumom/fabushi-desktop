@@ -1,7 +1,7 @@
 name: Round17 reviewed object transfer
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-round17-auth-settings-20bf9475]
     paths:
       - .github/workflows/round17-reviewed-objects.yml
       - .github/round17-reviewed-objects.json
@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   store-reviewed-objects:
-    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/tdrp-round17-auth-settings-20bf9475'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     permissions:
@@ -31,21 +31,23 @@ jobs:
           import urllib.error, urllib.request
 
           REPOSITORY = 'bhrumom/fabushi-desktop'
-          BRANCH = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
+          BRANCH = 'checkpoint/tdrp-round17-auth-settings-20bf9475'
+          SHARED_BRANCH = 'checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1'
           TEST = 'source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs'
           WORKFLOW = '.github/workflows/native-service-contracts.yml'
+          SOURCE_REVIEW = '.github/workflows/tdrp-source-review-contract.yml'
           SPEC = 'docs/specs/fbcp-native-message-reconciliation.md'
           LEDGER = 'projects/telegram-desktop-rust/parity-ledger.json'
           RTM = 'projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md'
           PROOF = 'projects/telegram-desktop-rust/evidence/round17-resumed-account-matrix.json'
           CONTROL = '.github/workflows/round17-reviewed-objects.yml'
           PAYLOAD = '.github/round17-reviewed-objects.json'
-          OLD_TEST = 'cf689cbd8b62b8b3f538de64b8bb948b669a62f8'
-          NEW_TEST = '44b162170ad991af97fee935b71843ab803644cb'
-          REVIEW_BASE = '59f5fa24827812f78336c464995d161f403dedfb'
-          REVIEW_PATCH = '139f004cc3b02c389158452c3891f0b97e9d80a97c16c3b766e93c5707631db8'
+          OLD_TEST = 'd823755139870901162e334bca9c6c3db2d762d8'
+          NEW_TEST = '67abca73aa9ab342fc4599e81ade6bd66df175a4'
+          REVIEW_BASE = '3949d54a79c9e22710ce8f66abea0aaf05908174'
+          REVIEW_PATCH = 'b77ea08fdf93307fb8a3ee55b8f2b1e5f67855ef6bd86435d40d28aa98173e0b'
           WORKFLOW_ADDITION_SHA256 = '0077c558d8a12e6d640e6048a4a6ae84c24086aedd394a2b2d982191050312b9'
-          SPEC_ADDITION_SHA256 = 'bd8538eef2390d4ab4234154aa39c645b4fb6abbf858b6d9aae0d6f08f89afc8'
+          SPEC_ADDITION_SHA256 = '3f16e58c762f9f4b4bc6906328a8c97db39fee62e9f3f6c953526347814fcbf4'
           RTM_OLD_LINE_SHA256 = '298502f3b2a0d27c14a3d5a25462e0cc6f05c35a9ef78d2754452923174f59fb'
           RTM_NEW_LINE_SHA256 = '970ca4b6d09dfd8943bf4a521fc490d27f5d932a20f0e322d8f904a1aca2c926'
           RTM_PREFIX = b'| NMR-38 / NMR-AC-28 | `assert_settings_restart_matrix`:'
@@ -55,8 +57,12 @@ jobs:
           NOTE_TAG = '\n\nRound17 resumed account-matrix authored supplement:'
           NATIVE_ANCHOR = "          grep -Eq 'test result: ok\\. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log\n"
           SPEC_ANCHOR = '### Round 17 account matrix and actual AppHost resource-copy evidence\n\n'
-          SPEC_TAG = 'Current-head supplement after resuming at\n'
-          PATHS = [TEST, WORKFLOW, SPEC, LEDGER, RTM, PROOF]
+          SPEC_TAG = 'Current-head supplement at frozen batch base\n'
+          NATIVE_PUSH = '    branches: [' + SHARED_BRANCH + ']\n'
+          SOURCE_PUSH = '    branches: [codex/tdrp-risk-based-source-review-20261102, ' + SHARED_BRANCH + ']\n'
+          SOURCE_IF = "    if: github.ref == 'refs/heads/" + SHARED_BRANCH + "'\n"
+          ISOLATED_IF = "    if: (github.ref == 'refs/heads/" + SHARED_BRANCH + "' || github.ref == 'refs/heads/" + BRANCH + "')\n"
+          PATHS = [TEST, WORKFLOW, SOURCE_REVIEW, SPEC, LEDGER, RTM, PROOF]
           MAX_CONTENT = 8_000_000
           destination = pathlib.Path(os.environ['ARTIFACT_DIR'])
           destination.mkdir(parents=True, exist_ok=False)
@@ -144,6 +150,26 @@ jobs:
               require(tag not in text, label + ' has a partial or conflicting authored block')
               return (text[:location] + addition + text[location:]).encode('utf-8')
 
+          def replace_owned_line(data, context, old, new, label):
+              context, old, new = (value.encode('utf-8') for value in (context, old, new))
+              require(old != new and old.endswith(b'\n') and new.endswith(b'\n')
+                      and old.count(b'\n') == new.count(b'\n') == 1, label + ' requires complete distinct lines')
+              lines = data.splitlines(keepends=True)
+              if lines.count(new) == 1 and lines.count(old) == 0:
+                  require(data.count(context + new) == 1, label + ' existing line has a different owner')
+                  return data
+              require(lines.count(old) == 1 and lines.count(new) == 0 and data.count(context + old) == 1,
+                      label + ' original line changed, duplicated or moved')
+              index = lines.index(old)
+              lines[index] = new
+              result = b''.join(lines)
+              restored = result.splitlines(keepends=True)
+              require(len(restored) == len(lines) and restored.count(new) == 1 and restored[index] == new,
+                      label + ' output line differs')
+              restored[index] = old
+              require(b''.join(restored) == data, label + ' changed bytes outside the reviewed line')
+              return result
+
           class NoRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self, req, fp, code, msg, headers, newurl):
                   raise RuntimeError('Blob endpoint redirected; no redirected request is allowed')
@@ -154,6 +180,8 @@ jobs:
                       and os.environ['GITHUB_REF'] == 'refs/heads/' + BRANCH,
                       'Unexpected repository or branch')
               require(os.environ['GITHUB_EVENT_NAME'] in {'push', 'workflow_dispatch'}, 'Unexpected event')
+              require(re.fullmatch('[0-9a-f]{40}', OLD_TEST) and re.fullmatch('[0-9a-f]{40}', NEW_TEST)
+                      and re.fullmatch('[0-9a-f]{64}', REVIEW_PATCH), 'Isolated test/review slots are not finalized')
               head = git('rev-parse', 'HEAD').decode('ascii').strip()
               manifest['source_checkout_H'] = head
               require(head == os.environ['GITHUB_SHA'] and re.fullmatch('[0-9a-f]{40}', head),
@@ -226,6 +254,12 @@ jobs:
               require(all(existing_lines) or not any(existing_lines), 'Partial Native7 marker append')
               output[WORKFLOW] = append_block(original[WORKFLOW], NATIVE_ANCHOR, ''.join(lines),
                                               'NMR-AC-28 legacy auth matrix: 12 routes,', 'Native7', True)
+              output[WORKFLOW] = replace_owned_line(output[WORKFLOW], '  push:\n', NATIVE_PUSH,
+                  NATIVE_PUSH[:-2] + ', ' + BRANCH + ']\n', 'Native push branch admission')
+              output[SOURCE_REVIEW] = replace_owned_line(original[SOURCE_REVIEW], '  push:\n', SOURCE_PUSH,
+                  SOURCE_PUSH[:-2] + ', ' + BRANCH + ']\n', 'Source-review push branch admission')
+              output[SOURCE_REVIEW] = replace_owned_line(output[SOURCE_REVIEW], '  fixed-source-candidate:\n    needs: contract\n',
+                  SOURCE_IF, ISOLATED_IF, 'Existing source-candidate job branch admission')
 
               spec_op = payload['spec_append']
               require(set(spec_op) == {'path', 'anchor', 'addition'} and spec_op['path'] == SPEC
@@ -314,9 +348,14 @@ jobs:
               require(b''.join(encoded_lines) == original[RTM], 'RTM bytes outside the target row changed')
 
               proof_op = payload['evidence']
-              require(set(proof_op) == {'path', 'content_utf8', 'content_sha256', 'blob'} and proof_op['path'] == PROOF
-                      and isinstance(proof_op['content_utf8'], str), 'Evidence content slot has not been finalized')
-              proof_data = proof_op['content_utf8'].encode('utf-8')
+              require(set(proof_op) == {'path', 'gzip_base64', 'gzip_sha256', 'content_sha256', 'blob'}
+                      and proof_op['path'] == PROOF and isinstance(proof_op['gzip_base64'], str),
+                      'Evidence content slot has not been finalized')
+              proof_compressed = base64.b64decode(proof_op['gzip_base64'], validate=True)
+              require(0 < len(proof_compressed) <= 20_000, 'Compressed evidence outside byte budget')
+              check_digest(proof_compressed, proof_op['gzip_sha256'], 'Compressed evidence')
+              with gzip.GzipFile(fileobj=io.BytesIO(proof_compressed), mode='rb') as stream:
+                  proof_data = stream.read(20_001)
               require(0 < len(proof_data) <= 20_000 and isinstance(parse_json(proof_data), dict),
                       'Evidence must be a bounded complete JSON object')
               check_digest(proof_data, proof_op['content_sha256'], 'Evidence')
@@ -388,5 +427,3 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
-
-# Refresh exact source objects after concurrent specification changes; product checks are unchanged.
