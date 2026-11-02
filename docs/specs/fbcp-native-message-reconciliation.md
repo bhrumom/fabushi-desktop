@@ -1647,3 +1647,67 @@ pass/ignored counts for the non-live target. This qualifies the C wrappers and
 rollback fixture, not a final staticlib/cdylib producer, export table or external
 installed consumer. Preserve all original data, readers, public ABI signatures,
 the generic Host C ABI7 gate and complete release/independent-ACCEPT blockers.
+
+## NMR-UI-01 — Existing renderer author and asynchronous settlement
+
+Integration authority is the live checkpoint, including
+`afb34b49c5964524a887088f1095070b75cfdf8b` and later concurrent work.
+The earlier unpublished round8 files are a candidate delta, never a replacement
+for newer opaque history walks, pending reply recovery, current reaction
+settlement, source reviews, Host gates or other product capabilities.
+The original exact5d/run41413368942 and exact59f/run41508537631 message gates
+succeeded; they do not execute this UI extension.
+
+- **NMR-UI-01a:** Preserve explicit Human author identity from canonical Host
+  rows through the existing renderer model, cache, page/event merge and
+  acknowledgement/queue/cancel/retry paths. Distinct Human message IDs may
+  correlate by nonce only for the same explicit Human author and user role.
+  Peer, assistant and unscoped Human rows cannot settle a local intent.
+  Bind optimistic Human rows to the authenticated native identity. Preserve
+  the existing Agent fragment, attachment echo and tool-turn behavior.
+- **NMR-UI-01b:** Reuse the current account/conversation generation and mutation
+  fences. Keep per-operation read/receipt overlays where needed so a delayed
+  successful send/reaction result cannot undo a newer canonical feed update.
+  A late semantic error after canonical send remains an error without
+  demoting sent delivery or restoring an unsent draft. Clear only the original
+  submitted draft identity. Logout, A-to-B-to-A, transcript clear and root
+  disposal cannot permit an old callback to change cache, delivery, draft,
+  roster or a new lifetime's busy state. Switching conversations in one valid
+  account settles the originating cache; its pending send must not disable
+  another conversation or release that conversation's non-send busy operation.
+- **NMR-UI-01c:** Apply canonical Human empty text, resources, rich text and
+  reactions as authoritative values through initial/older/full snapshots and
+  mutation overlays. Retain existing opaque cursor/current-payload behavior,
+  failed-page retry overlays and commit-time viewport anchoring. Do not use
+  Agent attachment-fragment fallback to restore removed Human content.
+- **NMR-AC-UI-01:** Preserve every current projection/Host/cursor/RPC/Forward/
+  Electron/shipping gate and extend only the missing behavior tests. Execute
+  the actual ProductionRenderer with controlled external coordinator/Desktop
+  boundaries in Chromium: source-author negatives, late success/refusal,
+  canonical empty fields, overlapping reads, inactive cached rows, account
+  replacement/return, clear/disposal, Bob composer/draft positive control
+  while Alice waits, and retained Agent tools/attachment controls. Capture
+  complete logs, request/error diagnostics, DOM and screenshots at frozen H.
+  Authored counts are not execution evidence. No local executable validation.
+
+Use the existing Session/Transcript durable owner and renderer projection.
+No new message database, command schema, native edit/delete service, user-data
+deletion, backend PR mutation or deployment is introduced. Full source/legal,
+real-service/current-active deployment, signed packages, full visual/a11y/Bot/
+performance/soak and independent ACCEPT remain open.
+
+### Round8 ledger object transport
+
+Large full-ledger connector writes were interrupted and the proposed object
+was not available by its Git SHA. Reuse the repository's exact-checkout
+unattached-blob transport pattern for this batch's single existing
+`FBCP-NMR-001` row. A temporary Actions job may append only the explicit
+reviewed arrays and note from a frozen manifest, while proving all old array
+items, scalar/source/legal/acceptance fields, other rows and top-level source
+review data are unchanged. It records the exact input, operations and output
+blob identities. It cannot create commits or move refs, and grants no test,
+source or product acceptance. Root independently reads the complete input and
+output, reconciles the latest canonical ledger and publishes with
+`force=false` plus `expected_sha` CAS. Remove only this batch's temporary
+job/manifest after integration. This transport does not replace the sole ledger
+or alter the product validation requirements above.

@@ -1,0 +1,103 @@
+{
+  "format_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "reviewed_base": "afb34b49c5964524a887088f1095070b75cfdf8b",
+  "operations": [
+    {
+      "id": "FBCP-NMR-001",
+      "source_identity": {
+        "source_repository": "telegramdesktop/tdesktop",
+        "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_path": "Telegram/SourceFiles/api/api_updates.cpp",
+        "source_blob_sha": "71c929cfe3c779c94719efef32a47a4d029e2c67"
+      },
+      "append": {
+        "requirement_ids": [
+          "NMR-UI-01a",
+          "NMR-UI-01b",
+          "NMR-UI-01c",
+          "NMR-AC-UI-01"
+        ],
+        "oracle_ids": [
+          "NMR-AC-UI-01"
+        ],
+        "invariant_ids": [
+          "NMR-UI-01a",
+          "NMR-UI-01b",
+          "NMR-UI-01c"
+        ],
+        "fabushi_target_paths": [
+          "frontend/src/production/ProductionRenderer.tsx",
+          "frontend/src/production/model.ts",
+          "frontend/src/production/transcript-projection.ts",
+          "frontend/src/production/transcript-projection.contract.test.ts",
+          "frontend/src/recovered/features/conversation/workspace/model.ts",
+          "frontend/src/recovered/features/conversation/workspace/pagination.ts",
+          "desktop/e2e/native-message-projection.spec.ts",
+          "desktop/e2e/fixtures/native-message-projection.tsx"
+        ],
+        "fabushi_target_symbols": [
+          "projectTranscriptEntry",
+          "coalesceProjectedUserAttachmentTurns",
+          "transcriptEntriesCorrelate",
+          "localTranscriptClientNonce",
+          "reconcileTranscriptMutation",
+          "recordTranscriptReadUpdate",
+          "observeTranscriptSettlement"
+        ],
+        "command_event_contracts": [
+          "NMR-UI-01: retain explicit Human author identity through canonical projection, same-author nonce correlation, queue phases, feed acknowledgement and send receipt. Peer, assistant and unscoped Human rows cannot acknowledge the local submission.",
+          "NMR-UI-01: reuse existing opaque-page/current-reaction generations and add missing send/queue lifetime and draft-identity fences. Old account, clear and disposal callbacks cannot refill new cache or draft. Send pending state belongs to its originating conversation and cannot alter unrelated busy operations."
+        ],
+        "production_entrypoints": [
+          "NMR-UI-01 existing ProductionRenderer Human Composer -> existing coordinator sendHumanMessage/Session owner -> canonical feed or direct receipt -> same root transcript cache and original draft identity; no second message database or service writer."
+        ],
+        "production_evidence": [
+          "NMR-UI-01 final containing-commit production/test blobs and reviewed current-owner integration are recorded in projects/telegram-desktop-rust/evidence/round8-renderer-author-receipt-20261102.json. The original unpublished candidate is not a replacement for later checkpoint code."
+        ],
+        "test_evidence": [
+          "NMR-AC-UI-01: existing frontend/src/production/transcript-projection.contract.test.ts and actual ProductionRenderer desktop/e2e/native-message-projection.spec.ts; required executed counts are pinned in the containing native-service-contracts.yml. Authored cases/transport object creation do not prove execution."
+        ],
+        "ui_functional_case_ids": [
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (dark)",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 an initial tail cannot overwrite mutations received before any row was cached",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 overlapping older and full reads preserve newer feed changes (page-first)",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 overlapping older and full reads preserve newer feed changes (refresh-first)",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 peer nonce and late successful receipt preserve the originating conversation canonical row",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 logout and account replacement fence old send and page replies",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 old-page reaction settlement cannot overwrite a later empty Human message",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 retained peer nonce, assistant and unscoped Human rows never consume a local send or its recoverable failure",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 late semantic refusal remains an error without demoting sent content or restoring an unsent draft",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 clear invalidates old pages, send failure and reaction receipt before the same row ID is reused",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 A to B to A cannot reuse the old callback lifetime even when conversation and row IDs match",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 root disposal releases its port and old work cannot enter a new renderer instance",
+          "desktop/e2e/native-message-projection.spec.ts#NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment staging controls"
+        ],
+        "ui_acceptance_scenarios": [
+          "NMR-UI-01: late successful receipt and semantic refusal preserve canonical send and unrelated drafts; Human empties clear; all original/current cursor and reaction behavior remains.",
+          "NMR-UI-01: actual Bob composer and Send remain available while Alice RPC waits; account ABA/clear/disposal cannot create draft or delivery effects; Agent tool expansion and actual attachment staging controls remain."
+        ],
+        "test_fixture_ids": [
+          "desktop/e2e/fixtures/native-message-projection.tsx: real ProductionRenderer/coordinator client/feed/queue/cache with controlled external port/DesktopBridge. Replies freeze at request time; unknown RPC is a failure. Client draft observations do not qualify Host/SQLite restart or packaged Electron."
+        ],
+        "test_environment_ids": [
+          "NMR-UI-01 GitHub Actions Ubuntu24.04/Node24/locked desktop/actual Vite and Chromium; retries0/workers1; preserve current Human/journal/resource/Agent/credential/cursor/Forward/Electron/Windows/shipping gates, including all later additions."
+        ],
+        "fault_recovery_case_ids": [
+          "NMR-UI-01 actual root disposal: after unmount plus same-task delayed refusal, complete client draft boundary is unchanged before mounting a replacement root.",
+          "NMR-UI-01 unsettled send failure remains recoverable, while a late error after canonical send cannot restore that message as unsent."
+        ],
+        "security_case_ids": [
+          "NMR-UI-01 retained legacy peer nonce, assistant nonce and missing Human author do not consume local optimistic state; account/clear/disposal lifetime fences apply to callbacks and deferred React updaters."
+        ],
+        "blockers": [
+          "NMR-UI-01 actual renderer integration requires its own containing-H GitHub Actions logs/counts, compiled renderer and screenshot/DOM evidence; partial helper/old-H results do not qualify the new production wiring.",
+          "This renderer projection repair does not establish native revision/edit/delete/old-history mutation discovery, active compatible backend afterId=0 deployment, full source/legal or signed platform/UI/a11y/Bot/performance/soak/independent ACCEPT."
+        ]
+      },
+      "note": "\nNMR-UI-01 / task20bf round8: reuse the current renderer and Session owners; reconcile the earlier unpublished candidate with current opaque walks, pending reply recovery and reaction settlement instead of restoring old whole files. Add only the still-missing author/nonce, send/queue/draft, Human empty-value and originating busy/lifetime behavior. Existing source/legal identities, all source review records, scalar execution pointers, historical evidence and acceptance flags remain unchanged. Exact current input and final frozen blobs, independent scoped static review and executed Actions belong to round8-renderer-author-receipt-20261102.json. Temporary object transport is not product verification or ACCEPT; root must match its input to the current canonical ledger before force=false expected-head CAS."
+    }
+  ]
+}
