@@ -245,12 +245,15 @@ impl ProductProxySettings {
             ProductProxyMutation::Remove { proxy } => {
                 if let Some(index) = self.list.iter().position(|existing| existing == &proxy) {
                     self.list.remove(index);
+                    // Remove the endpoint's old preference index *before* rebasing
+                    // survivors. Otherwise the next preferred endpoint shifts to
+                    // this index and is accidentally discarded with the removed one.
+                    self.rotation.preferred_indices.retain(|existing| *existing != index);
                     for existing in &mut self.rotation.preferred_indices {
                         if *existing > index {
                             *existing -= 1;
                         }
                     }
-                    self.rotation.preferred_indices.retain(|existing| *existing != index);
                     changed = true;
                 }
             }
@@ -2172,6 +2175,45 @@ mod telegram_composition_contract_tests {
             })
             .expect("replace whole list");
         assert!(proxy.rotation.preferred_indices.is_empty());
+    }
+
+    #[test]
+    fn product_proxy_remove_preserves_surviving_preference_identity_and_order() {
+        // Exhaust first/middle/last removals for full and partial priority
+        // lists. Assert endpoint identity, not just numeric index validity.
+        let preference_orders: &[&[usize]] = &[
+            &[], &[0], &[1], &[2], &[0, 1], &[1, 0],
+            &[1, 2], &[2, 1], &[0, 1, 2], &[2, 1, 0],
+        ];
+        for order in preference_orders {
+            for removal in 0..3 {
+                let mut proxy = ProductProxySettings::default();
+                proxy.list = vec![
+                    proxy_endpoint("a"), proxy_endpoint("b"), proxy_endpoint("c"),
+                ];
+                proxy.selected = Some(proxy_endpoint("b"));
+                proxy.mode = ProductProxyMode::Enabled;
+                proxy.rotation.preferred_indices = order.to_vec();
+                let removed = proxy.list[removal].clone();
+                let expected = order.iter().filter_map(|&index| {
+                    (index != removal).then(|| proxy.list[index].clone())
+                }).collect::<Vec<_>>();
+                assert!(proxy.apply(ProductProxyMutation::Remove {
+                    proxy: removed.clone(),
+                }).expect("remove existing endpoint"));
+                let actual = proxy.rotation.preferred_indices.iter()
+                    .map(|&index| proxy.list[index].clone())
+                    .collect::<Vec<_>>();
+                assert_eq!(actual, expected, "order={order:?} remove={removal}");
+                assert_eq!(proxy.selected, Some(proxy_endpoint("b")));
+                assert_eq!(proxy.mode, ProductProxyMode::Enabled);
+                let stable = proxy.clone();
+                assert!(!proxy.apply(ProductProxyMutation::Remove {
+                    proxy: removed,
+                }).expect("repeat remove is a no-op"));
+                assert_eq!(proxy, stable, "repeat remove must not change state");
+            }
+        }
     }
 
     #[test]

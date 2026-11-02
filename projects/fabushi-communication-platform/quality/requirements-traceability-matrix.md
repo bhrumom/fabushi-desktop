@@ -81,7 +81,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
-| FBCP-NMR-001 | critical | NMR-AC-01; NMR-AC-02; NMR-AC-03; NMR-AC-04; NMR-AC-12 | NMR-01; NMR-02; NMR-03; NMR-04; NMR-05; NMR-09; NMR-18; NMR-19; NMR-20 | State/reopen, immutable rejection and exact reaction identity in thirteen named cases below | source/host/tests/session_gateway_contract.rs: thirteen shipping_human cases; existing native-message-reconciliation job | Real HTTP/Host/SQLite shutdown/reopen, resource isolation and event-safe recovery; packaged E2E pending | Existing Composer/transcript/reaction projection; UI/visual/a11y acceptance pending | Participant/nonce/ack/reaction negatives below; performance/soak pending | Existing ten send/reply/resource/reaction/history cases retained plus three new reaction cases | docs/specs/fbcp-native-message-reconciliation.md; projects/telegram-desktop-rust/evidence/fbcp-native-message-round3-20261102.json; original exact68 and reaction extension exact95 gates passed | independent static review only; independent acceptance pending | IMPLEMENTED; bounded Host message gate PASSED at exact95; full product/independent ACCEPT PENDING |
+| FBCP-NMR-001 | critical | NMR-AC-01–05,12,22–32 | NMR-01–06,09,18–20,31–41 | Existing Session/Transcript Human admission, Native auth/refusal, Settings durability and resource-copy boundary | Existing Human33/Agent4/private3; composition12/Native6; FeatureHost7/Host6/ABI7; actual-copy4 | Real HTTP/Host/SQLite and subprocess restart; signed full packages remain open | Existing Composer/Settings UI; full visual/a11y acceptance pending | Permission/nonce/reaction/legacy refusal and persistence-failure negatives; performance/soak pending | REG-NMR-PROXY-REMOVE-ADJACENT-001 and all retained message/ABI controls | Round17 evidence; exact23/run41451598911 passed; containing-H new matrices/fix/copy execution pending at preparation | Independent static review required; final independent ACCEPT pending | IMPLEMENTED / TESTS-AUTHORED; exact-base bounded gates PASSED; full product acceptance PENDING |
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
 
@@ -139,23 +139,29 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 
 ### FBCP-NMR-001 native Human admission and settlement
 
-#### Round16 current extension — AppHost and executable resource boundary
+#### Round17 current extension — auth parameters, Settings recovery and actual AppHost copy
 
-Base `adf15caadac5775fdd8582227cad3bbf9c93cf0f` / run41447812811 is terminal
-success, including Host6/C ABI7, Native6/FeatureHost7 and all retained message,
-protocol/TCP/UI/Electron gates. It resolves prior NMR-36/37 execution gaps at
-that H only. New NMR-38/39 execution is pending at commit preparation.
+Base `23f737faba69b4f60eecb6ec1a031602f87f60dc` / run41451598911 is terminal
+success. Full logs qualify Human33/Agent4/private3, composition11/Native6,
+FeatureHost7/Host6/C ABI7, protocol122/TCP9 (including live), UI16 and Electron
+10/8/3 at that base. The former round16 parameter-matrix claim was authored
+intent, not the file contents: this batch supplies those missing assertions.
 
 | Requirement / oracle | Actual owner and case | Evidence boundary |
 | --- | --- | --- |
-| NMR-38 / NMR-AC-28 | Existing AppHost public dispatch in `native_desktop_account_handoff.rs`: all12 routes × 7 parameter envelopes, exact ID/result/error/event refusal, registration precedence, unknown-method control; complete Settings snapshot/publication/restart and original encrypted-reader controls | Same six real subprocess scenarios; preserved Native accounts, Agent and retained-data positives. No new store or schema. |
-| NMR-38 / NMR-AC-29 | `source/host/app` normal/build Cargo graph, locked actual executable build, SHA256, macOS symbol and dynamic-library inventory; old Telegram production graph/exports/loads fail | `native-message-shipping-compile`; original compatibility projection remains test-only and full platform/package acceptance remains open. |
-| NMR-39 / NMR-AC-30 | `desktop/package.json` production FileSet consumed by installed electron-builder26.15.3 `getFileMatchers/copyFiles`; Unix/Windows-named bytes/modes, excluded FFI/unknown/nested entries, same-name directories and unrestricted controls | Three tests in `native-package-resources.contract.test.mjs` under existing Electron job. Source bytes remain intact. This is real copy-boundary evidence, not signed installer/Windows ACL acceptance. |
+| NMR-38 / NMR-AC-28 | `native_desktop_account_handoff.rs::assert_legacy_auth_matrix`: 12 routes × 9 parameter forms, 11 extra registration cases, 6 unknown-method controls; exact ID/result/error and immediate event refusal | 125 requests per invocation through actual Production AppHost; same six subprocess scenarios and Native/Agent/retained-data positives. |
+| NMR-38 / NMR-AC-28 | `assert_settings_restart_matrix`: 29 typed rows cover all15 mutations; 6 compatibility retries, 8 invalid and 6 malformed mutations, 2 persistence failures and 2 recoveries; complete snapshots/disk/restart | Four publication variants require unavailable; others require null. No Native transport or full Settings UI acceptance is claimed. |
+| NMR-38 / NMR-AC-29 | Actual shipping AppHost normal/build graph, locked executable, SHA256, defined C symbols and dynamic libraries | Base23 artifact13145291819 already inspected; repeat affected gates at containing H. |
+| NMR-39 / NMR-AC-30 | Installed locked app-builder-lib FileSet/copy implementation, Unix/Windows-named fixture bytes and modes, sentinel/same-name directory/unrestricted controls | Three original copy cases passed base23; original staging and rollback readers remain intact. |
+| NMR-40 / NMR-AC-31 | `native-package-resources.contract.test.mjs` actual-built-AppHost case; source/build/destination hash, executable mode, exact inventory; Actions missing-input/hash expected failures and copied Mach-O/symbol/library checks | New fourth macOS case uses real built bytes and uploads them under resources/bin. This is a bounded package resource, not a signed/installed full application. |
+| NMR-41 / NMR-AC-32 | `product_proxy_remove_preserves_surviving_preference_identity_and_order`: 10 preference orders × 3 removal positions, plus absent no-op; dispatch matrix removes first/middle/inserted/last and reopens Settings | REG-NMR-PROXY-REMOVE-ADJACENT-001. Deliberate correction of fixed-U inherited defect. Composition11 becomes12; expanded Native top-level count stays6. |
 
-The existing ledger row carries current target paths and preparation state;
-`evidence/round16-apphost-package-boundary.json` binds prior-H logs/artifacts,
-caller/data audits and new gate selection. No source-review counters or
-independent acceptance flags are promoted.
+The same canonical ledger rows `FBCP-NMR-001` and
+`TDRP-R9-PROXY-SETTINGS-STATE-PERSISTENCE-001` carry current wiring, base-H
+execution and new authored scope separately. `evidence/round17-auth-settings-actual-package.json`
+binds full-log hashes, actual artifacts, source identities, backend read-only
+findings and the defect. Source review counters and final acceptance stay
+unchanged. Containing-commit execution is pending at preparation.
 
 #### Round 15 extension — desktop messaging boundary and retained data
 

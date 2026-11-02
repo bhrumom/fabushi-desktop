@@ -189,3 +189,17 @@ The source-neutral mutation contract is settings.mutateNetworkProxy with a typed
 Mutation invariants are the fixed-U SettingsProxy invariants: non-positive rotation timeout normalizes to 10; preferred indices drop negative/out-of-range/duplicate values preserving first occurrence; setList clears preferred indices; insert clamps to [0,list.len] and increments preferred indices at/after insertion; remove decrements indices after the removed element and drops the removed index; replace preserves index ordering; promotion is invalid/no-op out of range, idempotent when already first, otherwise moves/inserts the index to the front.
 
 Stage-A contracts must be authored for v1 migration, defaults, all list/preferred/timeout invariants, mode-derived proxyEnabled publication, same-value retry, and fail-closed malformed/unsupported state. They are not executed in Stage A.
+
+## 13. Current Native publication and preference preservation (2026-11-02)
+
+FMEP-001 Revision 2 supersedes the historical zero-CI paragraphs above. The
+current AppHost preserves this Settings owner and durable v2 document while
+NMR-38 removes the unreachable Telegram lease; publication reports the existing
+unavailable envelope after persistence. No Native proxy transport is implied.
+NMR-41 / NMR-AC-32 in `fbcp-native-message-reconciliation.md` intentionally fix
+the inherited rebasing-before-removal defect: only the removed endpoint loses
+its preference, while surviving endpoint identity and priority are preserved.
+The fixed-U implementation has that defect too; this correction is explicit
+rather than claimed as literal upstream parity. Existing lost preferences are
+not reconstructed or guessed. The same Actions batch exercises public dispatch,
+complete snapshots, write-failure recovery and process restart.

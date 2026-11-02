@@ -221,7 +221,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --lib telegram_composition_contract_tests -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-composition.log
-          grep -Eq 'test result: ok\. 11 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/native-composition.log
+          grep -Eq 'test result: ok\. 12 passed; 0 failed; 0 ignored; 0 measured;' artifacts/native-message-shipping/native-composition.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff -- --nocapture --test-threads=1 2>&1 | tee artifacts/native-message-shipping/native-startup-retention.log
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' artifacts/native-message-shipping/native-startup-retention.log
       - name: Retained messaging stores and Agent automation boundaries
@@ -275,6 +275,55 @@ jobs:
           grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/telegram-proxy-boundary.log
           cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib native_schema_is_not_ci_export_and_has_no_ci_ttl_cap -- --nocapture 2>&1 | tee artifacts/native-message-shipping/native-credential-schema.log
           grep -Eq 'test result: ok\. 1 passed; 0 failed; 0 ignored;' artifacts/native-message-shipping/native-credential-schema.log
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked resource-copy implementation
+        working-directory: desktop
+        run: npm ci
+      - name: Copy the actual AppHost into its package resource slot
+        shell: bash
+        env:
+          FABUSHI_PACKAGE_REAL_APP_HOST: '1'
+          FABUSHI_PACKAGE_APP_HOST_BINARY: ${{ github.workspace }}/source/host/app/target/ci/mahayana-app-host
+          FABUSHI_PACKAGE_TARGET_SHA: ${{ github.sha }}
+          FABUSHI_PACKAGE_EVIDENCE_DIR: ${{ github.workspace }}/artifacts/native-message-shipping/actual-package-resource
+        run: |
+          set -euo pipefail
+          export FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256="$(awk 'NR == 1 { print $1 }' artifacts/native-message-shipping/app-host-sha256.txt)"
+          if env -u FABUSHI_PACKAGE_APP_HOST_BINARY node --test --test-reporter=tap --test-name-pattern='NMR-40 actual' desktop/scripts/native-package-resources.contract.test.mjs > artifacts/native-message-shipping/package-missing-input-negative.log 2>&1; then
+            echo 'actual package-copy invocation accepted a missing binary input' >&2
+            exit 1
+          fi
+          grep -F 'FABUSHI_PACKAGE_APP_HOST_BINARY is required' artifacts/native-message-shipping/package-missing-input-negative.log
+          if env FABUSHI_PACKAGE_APP_HOST_BUILD_SHA256=invalid node --test --test-reporter=tap --test-name-pattern='NMR-40 actual' desktop/scripts/native-package-resources.contract.test.mjs > artifacts/native-message-shipping/package-invalid-hash-negative.log 2>&1; then
+            echo 'actual package-copy invocation accepted an invalid build hash' >&2
+            exit 1
+          fi
+          grep -F 'bind the hash recorded by the actual AppHost build step' artifacts/native-message-shipping/package-invalid-hash-negative.log
+          node --test --test-reporter=tap desktop/scripts/native-package-resources.contract.test.mjs 2>&1 | tee artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# tests 4' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# pass 4' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# fail 0' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# cancelled 0' artifacts/native-message-shipping/actual-package-resource.log
+          grep -Fx '# skipped 0' artifacts/native-message-shipping/actual-package-resource.log
+          copied="$FABUSHI_PACKAGE_EVIDENCE_DIR/resources/bin/mahayana-app-host"
+          cmp "$FABUSHI_PACKAGE_APP_HOST_BINARY" "$copied"
+          file "$copied" > artifacts/native-message-shipping/copied-app-host-file.txt
+          shasum -a 256 "$copied" > artifacts/native-message-shipping/copied-app-host-sha256.txt
+          nm -gUj "$copied" > artifacts/native-message-shipping/copied-app-host-defined-symbols.txt
+          otool -L "$copied" > artifacts/native-message-shipping/copied-app-host-linked-libraries.txt
+          if grep -Eq '^_?fabushi_telegram_(create_client|create_persistent_client|execute|close_client|free_string|force_link)$' artifacts/native-message-shipping/copied-app-host-defined-symbols.txt; then
+            echo 'copied AppHost exports a legacy direct Telegram C entry' >&2
+            exit 1
+          fi
+          if grep -Eqi '(mahayana_runtime|fabushi[_-]telegram)' artifacts/native-message-shipping/copied-app-host-linked-libraries.txt; then
+            echo 'copied AppHost loads a legacy runtime shared library' >&2
+            exit 1
+          fi
+          printf '%s\n' 'Actual AppHost resource-copy evidence only; complete signed application/package acceptance remains open.' > "$FABUSHI_PACKAGE_EVIDENCE_DIR/scope.txt"
       - name: Diagnose locked AppHost dependency drift (no acceptance)
         if: failure()
         shell: bash

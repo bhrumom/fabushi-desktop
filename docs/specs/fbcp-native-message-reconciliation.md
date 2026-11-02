@@ -625,6 +625,71 @@ Full supported-platform packaged execution, external ABI consumers, Native
 proxy support, complete source/legal closure, backend authenticated pagination,
 Bot regression, upgrade/rollback, soak and independent ACCEPT remain open.
 
+### Round 17 account matrix and actual AppHost resource-copy evidence
+
+NMR-AC-28 remains required in full: extend the existing six process scenarios,
+not a parallel account harness. Exercise each of the twelve legacy methods
+with its valid historical parameters and malformed JSON parameter envelopes;
+preserve registration's first-name validation priority, exact response IDs,
+error types/messages, no result and no new events. Cover every existing proxy
+Settings mutation, compatibility toggles and invalid input, persistence before
+unavailable publication, failed persistence, and complete state after restart.
+Original encrypted SQLite/sidecar bytes and the rollback reader remain controls.
+
+- NMR-40: Reuse the locked production electron-builder FileSet and copy
+  implementation with the actual AppHost executable built in the same Actions
+  job. Use an isolated temporary staging directory containing that binary and
+  explicit obsolete FFI, unrelated and nested-file controls. Prove that the
+  copied package resource slot contains only that real executable, preserves
+  its bytes and executable mode, and leaves every staging input unchanged.
+  Never create substitute coordinator/box/network executables or label this
+  single-resource experiment a complete application package.
+- NMR-AC-31: The ordinary resource-copy test target retains its three fixture
+  cases. A separate, explicit actual-binary invocation requires the binary,
+  exact target SHA and evidence destination; missing or malformed inputs fail
+  instead of silently skipping. Save a manifest of source/destination SHA256,
+  size/mode and excluded controls, the copied real binary and the complete log
+  in the existing shipping artifact. Bind the source hash to the AppHost build
+  hash already produced by that job, then inspect the copied file's symbols
+  and linked libraries against the same legacy-export/load negatives. Execute
+  these checks only in Actions with locked dependencies. No signing, release,
+  publication, source staging cleanup or user-data mutation is authorized by
+  this bounded verification extension.
+
+The retained generic C ABI has two observed in-tree executable consumers:
+`mahayana-cli/src/main.rs` and `mahayana-cli/src/bin/mahayana-gateway.rs`.
+Keep their create/execute/receive/interrupt/approval/close/string-free routes
+and the existing direct-Telegram export retention until the complete caller
+and data-retirement conditions are separately proved. External ABI consumers
+and complete signed supported-platform packages remain unverified.
+
+#### Settings removal regression: NMR-41 / NMR-AC-32
+
+The account matrix source review found an inherited data-loss defect in
+`ProductProxySettings::apply(Remove)`: decrementing preference indices before
+removing the deleted index also discards a surviving adjacent endpoint's
+preference. With list `[A,B,C]` and preferences `[0,1,2]`, removing A currently
+returns `[1]` instead of `[0,1]`. The complete fixed-U
+`core/core_settings_proxy.cpp` blob `18e7ab8ce60865409dbaff267ee192e272622d26`
+has the same order in `SettingsProxy::removeFromList`; this is a deliberate
+Fabushi correctness repair to that inherited behavior, not a claim that the
+fixed-U implementation already preserves the intended identity invariant.
+
+- NMR-41: In the existing Settings owner, discard only the removed endpoint's
+  old preference index, then rebase indices after it. Preserve the identity
+  and relative priority of every remaining preferred endpoint, selected proxy,
+  mode, publication policy and transactional persistence. No schema/data
+  conversion or new state owner is introduced. Already-lost preferences cannot
+  be reconstructed automatically and must not be invented on reload.
+- NMR-AC-32: Add one owner-level table case covering all complete three-endpoint permutations plus empty/singleton orders and
+  each first/middle/last removal, plus repeated removal/no-op. The real AppHost
+  dispatch matrix must compare the entire snapshot and persisted document
+  through adjacent-removal cases and process restart. Retain all prior eleven
+  composition cases; the exact-H expected composition count becomes twelve.
+  Classify the finding as an implementation defect found by source review;
+  do not claim a pre-fix execution failure. The existing earlier insertion/
+  removal case missed this because its removed slot had no preferred neighbor.
+
 
 
 

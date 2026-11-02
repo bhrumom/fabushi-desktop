@@ -115,27 +115,137 @@ fn assert_legacy_unavailable(host: &AppHost) {
         response.error.as_deref().unwrap_or("").contains("provider is unavailable: telegram"),
         "must reject at the missing provider boundary: {:?}", response.error
     );
-    for method in [
-        "telegramStatus", "telegramSendCode", "telegramSignIn", "telegramPassword",
-        "telegramRegistration", "telegramResendCode", "telegramCancelCode",
-        "telegramRequestPasswordRecovery", "telegramCheckRecoveryPassword",
-        "telegramSendVerifyEmailCode", "telegramVerifyEmail", "telegramRefreshPasswordChallenge",
-    ] {
-        let response = host.dispatch(HostRequest {
-            id: None,
-            method: format!("feature.auth.{method}"),
-            params: json!({
-                "phoneNumber": "+10000000000", "code": "public-fixture-code",
-                "password": "public-fixture-password", "firstName": "Public",
-                "email": "public-fixture@example.invalid"
-            }),
-        });
-        assert!(!response.ok, "legacy command cannot activate a client: {method}");
-        assert_eq!(response.error.as_deref(), Some(
-            "host operation failed: embedded Telegram client is unavailable for the current platform account"
-        ));
-    }
+    assert_legacy_auth_matrix(host);
     assert!(host.take_startup_native_shell_event().expect("startup event").is_none());
+}
+
+
+const LEGACY_UNAVAILABLE: &str =
+    "host operation failed: embedded Telegram client is unavailable for the current platform account";
+
+fn identified_request(
+    host: &AppHost,
+    id: &str,
+    method: &str,
+    params: Value,
+) -> mahayana_app_host::HostResponse {
+    let id_value = json!(id);
+    let response = host.dispatch(HostRequest {
+        id: Some(id_value.clone()),
+        method: method.into(),
+        params,
+    });
+    assert_eq!(response.id, Some(id_value), "request identity must survive {method}");
+    response
+}
+
+fn assert_legacy_auth_matrix(host: &AppHost) {
+    // Real public AppHost dispatch; the twelve retired routes retain their
+    // historical names/argument shapes, but must never restart a provider.
+    let methods = [
+        ("telegramStatus", json!({})),
+        ("telegramSendCode", json!({"phoneNumber": "+10000000000"})),
+        ("telegramSignIn", json!({"code": "public-code"})),
+        ("telegramPassword", json!({"password": "public-password"})),
+        ("telegramRegistration", json!({"firstName": "Public", "lastName": "Fixture"})),
+        ("telegramResendCode", json!({})),
+        ("telegramCancelCode", json!({})),
+        ("telegramRequestPasswordRecovery", json!({})),
+        ("telegramCheckRecoveryPassword", json!({"code": "public-recovery"})),
+        ("telegramSendVerifyEmailCode", json!({"email": "public@example.invalid"})),
+        ("telegramVerifyEmail", json!({"code": "public-email-code"})),
+        ("telegramRefreshPasswordChallenge", json!({})),
+    ];
+    let mut checked = 0;
+    for (method, valid) in methods {
+        let malformed = [
+            valid,
+            json!({}),
+            Value::Null,
+            json!(false),
+            json!(7),
+            json!("not-an-object"),
+            json!([]),
+            json!({"firstName": 7, "code": {"untrusted": true}}),
+            json!({"firstName": "  ", "telegramApiHash": "must-not-activate"}),
+        ];
+        for (variant, params) in malformed.into_iter().enumerate() {
+            let registration_has_name = params.get("firstName")
+                .and_then(Value::as_str)
+                .map(|name| !name.trim().is_empty())
+                .unwrap_or(false);
+            let response = identified_request(
+                host,
+                &format!("legacy-{method}-{variant}"),
+                &format!("feature.auth.{method}"),
+                params,
+            );
+            assert!(!response.ok, "legacy method unexpectedly succeeded: {method}/{variant}");
+            assert!(response.result.is_none(), "legacy method emitted a result");
+            let expected = if method == "telegramRegistration" && !registration_has_name {
+                "invalid request: firstName is required"
+            } else {
+                LEGACY_UNAVAILABLE
+            };
+            assert_eq!(response.error.as_deref(), Some(expected), "legacy {method}/{variant}");
+            checked += 1;
+        }
+    }
+
+    // Registration uniquely validates firstName first, including whitespace,
+    // type confusion and non-object values. Other twelve-route refusals are
+    // deliberately parameter-independent and must not parse legacy secrets.
+    let extra_registration = [
+        json!({"firstName": " Public "}),
+        json!({"firstName": ""}),
+        json!({"firstName": " \t "}),
+        json!({"firstName": null}),
+        json!({"firstName": 0}),
+        json!({"firstName": false}),
+        json!({"firstName": []}),
+        json!({"firstName": {}}),
+        json!({"firstName": "Public", "lastName": 999}),
+        json!({"firstName": "Public", "phoneNumber": false}),
+        json!({"firstName": "Public", "password": {"unexpected": true}}),
+    ];
+    for (variant, params) in extra_registration.into_iter().enumerate() {
+        let has_name = params.get("firstName")
+            .and_then(Value::as_str)
+            .map(|name| !name.trim().is_empty())
+            .unwrap_or(false);
+        let response = identified_request(
+            host, &format!("registration-extra-{variant}"),
+            "feature.auth.telegramRegistration", params,
+        );
+        assert!(!response.ok);
+        assert!(response.result.is_none());
+        assert_eq!(
+            response.error.as_deref(),
+            Some(if has_name { LEGACY_UNAVAILABLE } else {
+                "invalid request: firstName is required"
+            }),
+        );
+        checked += 1;
+    }
+    for (variant, method) in [
+        "feature.auth.telegramStatusOld",
+        "feature.auth.telegramSendCodeLegacy",
+        "feature.auth.telegramPasswordV2",
+        "feature.auth.telegramUnknown",
+        "feature.auth.TELEGRAMSTATUS",
+        "feature.auth.telegramVerifyEmailLegacy",
+    ].into_iter().enumerate() {
+        let response = identified_request(host, &format!("legacy-unknown-{variant}"), method, json!({}));
+        assert!(!response.ok);
+        assert!(response.result.is_none());
+        assert_eq!(
+            response.error.as_deref(),
+            Some(format!("invalid request: unknown feature method {method}").as_str()),
+        );
+        checked += 1;
+    }
+    assert_eq!(checked, 125, "twelve historical methods, eleven registration variants and six unknown negatives");
+    assert_no_messaging_event(host);
 }
 
 fn assert_no_messaging_event(host: &AppHost) {
@@ -540,6 +650,184 @@ fn child_case(root: &Path, mode: &str) {
     );
 }
 
+
+fn settings_disk_path(root: &Path) -> PathBuf {
+    root.join("app-host/feature-host/product-settings.json")
+}
+
+fn settings_snapshot(host: &AppHost) -> Value {
+    let response = identified_request(host, "settings-snapshot", "settings.snapshot", json!({}));
+    assert!(response.ok, "Settings snapshot failed: {:?}", response.error);
+    assert!(response.error.is_none());
+    response.result.expect("canonical Settings snapshot")
+}
+
+fn assert_settings_disk(host: &AppHost, root: &Path) -> Value {
+    let snapshot = settings_snapshot(host);
+    let bytes = fs::read(settings_disk_path(root)).expect("authoritative Settings file exists");
+    let disk: Value = serde_json::from_slice(&bytes).expect("typed persisted Settings");
+    assert_eq!(snapshot, disk, "public Settings and the single durable owner diverged");
+    snapshot
+}
+
+fn settings_mutation(
+    host: &AppHost, root: &Path, label: &str, mutation: Value, publication: bool,
+) -> Value {
+    let response = identified_request(
+        host, label, "settings.mutateNetworkProxy", json!({"mutation": mutation}),
+    );
+    assert!(response.ok, "Settings mutation {label} failed: {:?}", response.error);
+    assert!(response.error.is_none());
+    let result = response.result.expect("Settings mutation response");
+    let snapshot = assert_settings_disk(host, root);
+    assert_eq!(result["settings"], snapshot);
+    if publication {
+        assert_eq!(result["publication"], json!({
+            "available": false, "reason": "telegramClientUnavailable"
+        }), "Settings cannot activate an absent legacy proxy carrier");
+    } else {
+        assert!(result["publication"].is_null(), "unrelated Settings changes cannot publish");
+    }
+    assert_no_messaging_event(host);
+    snapshot
+}
+
+fn settings_enabled(host: &AppHost, root: &Path, label: &str, enabled: bool) -> Value {
+    let response = identified_request(
+        host, label, "settings.setNetworkProxyEnabled", json!({"proxyEnabled": enabled}),
+    );
+    assert!(response.ok, "Settings compatibility toggle failed: {:?}", response.error);
+    let result = response.result.expect("Settings toggle result");
+    let snapshot = assert_settings_disk(host, root);
+    assert_eq!(result["settings"], snapshot);
+    assert_eq!(result["publication"], json!({
+        "available": false, "reason": "telegramClientUnavailable"
+    }), "same-value retries must republish the unavailability envelope");
+    assert_no_messaging_event(host);
+    snapshot
+}
+
+fn assert_settings_restart_matrix(host: &AppHost, root: &Path, restart: bool) {
+    let path = settings_disk_path(root);
+    let a = json!({"type":"socks5","host":"a.example.invalid","port":1080,"user":"","password":""});
+    let b = json!({"type":"http","host":"b.example.invalid","port":8080,"user":"public-b","password":"public-fixture-b"});
+    let c = json!({"type":"mtproto","host":"c.example.invalid","port":443,"user":"","password":"public-fixture-c"});
+    let d = json!({"type":"web","host":"d.example.invalid","port":8443,"user":"","password":"public-fixture-d"});
+    let e = json!({"type":"socks5","host":"e.example.invalid","port":1081,"user":"","password":""});
+    if !restart {
+        let initial = settings_snapshot(host);
+        assert_eq!(initial["version"], 2);
+        assert_eq!(initial["network"]["proxy"]["mode"], "system");
+        assert!(!path.exists(), "new owner must not create Settings until a real mutation");
+
+        // Every one of the existing fifteen mutation variants uses the
+        // production AppHost dispatch and canonical product-settings.json.
+        let cases = [
+            ("list", json!({"type":"setList","list":[a.clone(),b.clone(),c.clone()]}), false),
+            ("selected-and-mode", json!({"type":"setSelectedAndMode","proxy":b.clone(),"mode":"enabled"}), true),
+            ("preference", json!({"type":"setRotationPreferredIndices","indices":[0,1,2,1,-1,7]}), false),
+            ("remove-first", json!({"type":"remove","proxy":a.clone()}), false),
+            ("insert", json!({"type":"insert","index":1,"proxy":d.clone()}), false),
+            ("replace", json!({"type":"replace","was":d.clone(),"proxy":c.clone()}), false),
+            ("add", json!({"type":"add","proxy":e.clone()}), false),
+            ("promote", json!({"type":"promoteRotationPreferredIndex","index":3}), false),
+            ("selected", json!({"type":"setSelected","proxy":e.clone()}), true),
+            ("ipv6", json!({"type":"setTryIpv6","enabled":false}), true),
+            ("calls", json!({"type":"setUseProxyForCalls","enabled":true}), false),
+            ("warning", json!({"type":"setCheckIpWarningShown","shown":true}), false),
+            ("rotate", json!({"type":"setRotationEnabled","enabled":true}), false),
+            ("timeout-default", json!({"type":"setRotationTimeout","seconds":-1}), false),
+            ("mode-disabled", json!({"type":"setMode","mode":"disabled"}), true),
+            ("timeout-42", json!({"type":"setRotationTimeout","seconds":42}), false),
+            ("mode-enabled", json!({"type":"setMode","mode":"enabled"}), true),
+        ];
+        for (label, mutation, publication) in cases {
+            let snapshot = settings_mutation(host, root, label, mutation, publication);
+            if label == "remove-first" {
+                assert_eq!(snapshot["network"]["proxy"]["rotation"]["preferredIndices"], json!([0,1]),
+                    "removing A must retain B/C preference identity and relative priority");
+                assert_eq!(snapshot["network"]["proxy"]["list"], json!([b.clone(),c.clone()]));
+            }
+        }
+
+        for (variant, enabled) in [true,true,false,false,true,true].into_iter().enumerate() {
+            settings_enabled(host, root, &format!("compatibility-{variant}"), enabled);
+        }
+
+        // Invalid JSON/enum/typed values fail without persistence or mutation.
+        let invalid = [
+            (json!({}), "invalid request: settings.mutateNetworkProxy requires mutation"),
+            (json!({"mutation": null}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
+            (json!({"mutation": {"type":"setMode","mode":"bogus"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
+            (json!({"mutation": {"type":"setList","list":"not-an-array"}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
+            (json!({"mutation": {"type":"insert","index":"bad","proxy":b.clone()}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
+            (json!({"mutation": {"type":"setSelected","proxy":false}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
+            (json!({"mutation": {"type":"setRotationPreferredIndices","indices":[{}]}}), "invalid request: settings.mutateNetworkProxy mutation is invalid:"),
+            (json!({"mutation": {"type":"setRotationTimeout","seconds":4294967296_i64}}), "invalid request: settings.mutateNetworkProxy rotation timeout is out of range"),
+        ];
+        for (variant, (params, prefix)) in invalid.into_iter().enumerate() {
+            let before = assert_settings_disk(host, root);
+            let raw = fs::read(&path).expect("retained valid Settings document");
+            let response = identified_request(host, &format!("settings-invalid-{variant}"), "settings.mutateNetworkProxy", params);
+            assert!(!response.ok);
+            assert!(response.result.is_none());
+            assert!(response.error.as_deref().unwrap_or("").starts_with(prefix), "unexpected invalid Settings envelope: {:?}", response.error);
+            assert_eq!(assert_settings_disk(host, root), before);
+            assert_eq!(fs::read(&path).expect("unchanged Settings bytes"), raw);
+        }
+        for (variant, value) in [Value::Null, json!("false"), json!(0), json!([]), json!({}), json!({"proxyEnabled":42})].into_iter().enumerate() {
+            let params = if value.is_object() { value } else { json!({"proxyEnabled": value}) };
+            let before = assert_settings_disk(host, root);
+            let response = identified_request(host, &format!("compatibility-invalid-{variant}"), "settings.setNetworkProxyEnabled", params);
+            assert!(!response.ok);
+            assert!(response.result.is_none());
+            assert_eq!(response.error.as_deref(), Some("invalid request: settings.setNetworkProxyEnabled requires boolean proxyEnabled"));
+            assert_eq!(assert_settings_disk(host, root), before);
+        }
+
+        // A deterministic filesystem fault blocks both mutation types before
+        // they can publish or change the in-memory canonical state.
+        let temp = path.with_extension("json.tmp");
+        fs::create_dir(&temp).expect("reserve the Settings atomic replacement path");
+        let before = assert_settings_disk(host, root);
+        let raw = fs::read(&path).expect("original Settings bytes");
+        for (label, method, params) in [
+            ("typed-write-fault", "settings.mutateNetworkProxy",
+                json!({"mutation":{"type":"setMode","mode":"disabled"}})),
+            ("compat-write-fault", "settings.setNetworkProxyEnabled",
+                json!({"proxyEnabled":false})),
+        ] {
+            let response = identified_request(host, label, method, params);
+            assert!(!response.ok);
+            assert!(response.result.is_none());
+            assert!(response.error.as_deref().unwrap_or("").contains("write product Settings temporary file:"));
+            assert_eq!(settings_snapshot(host), before, "failed persistence cannot update memory");
+            assert_eq!(fs::read(&path).expect("read unmodified Settings"), raw);
+        }
+        fs::remove_dir(&temp).expect("clear only synthetic fault fixture");
+        settings_mutation(host, root, "typed-write-recovery",
+            json!({"type":"setMode","mode":"disabled"}), true);
+        settings_enabled(host, root, "compat-write-recovery", true);
+    }
+
+    // The same complete oracle is applied after a brand new process has
+    // reconstructed the canonical owner, not a cached state or old test seam.
+    let expected = json!({
+        "version":2,
+        "network":{"proxy":{
+            "mode":"enabled", "selected":e,
+            "list":[b,c.clone(),c,e],
+            "tryIpv6":false, "useProxyForCalls":true, "checkIpWarningShown":true,
+            "rotation":{"enabled":true,"timeoutSeconds":42,"preferredIndices":[3,0,2]}
+        }}
+    });
+    let restored = assert_settings_disk(host, root);
+    assert_eq!(restored, expected, "all typed Settings and surviving preference order must survive restart");
+    let repeated = settings_enabled(host, root, "restart-idempotent-publication", true);
+    assert_eq!(repeated, expected, "restart same-value publication cannot rewrite authoritative state");
+    assert_no_messaging_event(host);
+}
+
 fn legacy_child_case(root: &Path, restart: bool) {
     let credential = root.join("native-credential.json");
     let expected_credential = replace_native_credential(&credential, PRODUCTION, "123");
@@ -549,21 +837,11 @@ fn legacy_child_case(root: &Path, restart: bool) {
     assert_legacy_unavailable(&host);
     if restart {
         assert!(contains_bot(&host, BOT_RETAINED), "Native Agent must survive process restart");
-        let settings = host.dispatch(HostRequest {
-            id: None, method: "settings.snapshot".into(), params: json!({}),
-        });
-        assert!(settings.ok);
-        assert_eq!(settings.result.expect("retained settings")["network"]["proxy"]["mode"], "enabled");
     } else {
         assert!(!contains_bot(&host, BOT_RETAINED));
         create(&host, BOT_RETAINED);
-        let changed = host.dispatch(HostRequest {
-            id: None, method: "settings.setNetworkProxyEnabled".into(),
-            params: json!({"proxyEnabled": true}),
-        });
-        assert!(changed.ok, "existing Settings owner must remain usable");
-        assert_eq!(changed.result.expect("settings result")["publication"]["available"], false);
     }
+    assert_settings_restart_matrix(&host, root, restart);
     assert_eq!(fs::read(credential).expect("retained Native credential"), expected_credential);
     assert!(!root.join("app-host/feature-host/account-session.json").exists());
     drop(host);
