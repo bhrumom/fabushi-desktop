@@ -6333,6 +6333,121 @@ fn shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_af
 }
 
 
+#[test]
+fn shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair() {
+    let root = temp_root("forward-privacy-corrupt-recovery");
+    let files = forward_attachment_files(&root, 1);
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_attachment_process(&root, &server.url, &files);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let first = args["destinationConversationIds"][0].as_str().unwrap();
+    let second = args["destinationConversationIds"][1].as_str().unwrap();
+    server.observe_snapshot_staging(&root, source);
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    assert_forward_staged_bytes(&root, &args, &files, &server);
+    child.terminate(); server.release_first_post(); drop(child);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let mut first_only = args.clone(); first_only["destinationConversationIds"] = json!([first]);
+    assert_eq!(forward_gateway_result(&runtime, &first_only).unwrap()["destinations"][0]["status"], "sent");
+    let completed_first = runtime.read_human_conversation_transcript(first).unwrap();
+    assert!(runtime.read_human_conversation_transcript(second).unwrap().is_empty());
+    assert_eq!(server.post_count(), 2);
+    assert_eq!(server.resource_post_count(), 1, "first-only settlement reuses its uploaded resource");
+    assert_eq!(server.history_count(), 0);
+    runtime.shutdown(); drop(runtime);
+    let original = read_forward_metadata_from_disk(&root, source);
+    assert_eq!(original["humanForwardBatches"][0]["destinations"][0]["completed"], true);
+    assert_eq!(original["humanForwardBatches"][0]["destinations"][1]["completed"], false);
+    let db = rusqlite::Connection::open(forward_db_path(&root, source)).unwrap();
+    let original_hex: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+    for cached_owner in [false, true] {
+        for fault in ["not-normalized", "hidden-origin", "retained-caption"] {
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+            let resumed = human_message_fixture_runtime(&root, &server.url);
+            if cached_owner {
+                resumed.open_human_conversation_db_owner(source).expect("cache the valid source before semantic damage");
+            }
+            let mut damaged = original.clone();
+            let batch = &mut damaged["humanForwardBatches"][0];
+            match fault {
+                "not-normalized" => {
+                    batch["context"]["privacy"] = json!({"dropSenderNames":false,"dropCaptions":true});
+                    batch["context"].as_object_mut().unwrap().remove("origin");
+                    batch["text"] = json!("");
+                }
+                "hidden-origin" => {
+                    batch["context"]["privacy"] = json!({"dropSenderNames":true,"dropCaptions":false});
+                    assert!(batch["context"]["origin"]["authorId"].is_string());
+                }
+                _ => {
+                    batch["context"]["privacy"] = json!({"dropSenderNames":true,"dropCaptions":true});
+                    batch["context"].as_object_mut().unwrap().remove("origin");
+                    assert_eq!(batch["text"], "immutable forwarded snapshot");
+                }
+            }
+            let damaged_hex = damaged.to_string().as_bytes().iter()
+                .map(|byte| format!("{byte:02x}")).collect::<String>();
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&damaged_hex]).unwrap();
+            let error = resumed.sync_human_conversation(second)
+                .expect_err("semantic privacy corruption must stop ordinary recovery");
+            assert!(error.contains("privacy"), "{fault}: {error}");
+            assert!(forward_gateway_result(&resumed, &args).is_err(), "retry cannot rewrite {fault}");
+            assert_eq!(server.post_count(), 2, "no message POST for {fault}");
+            assert_eq!(server.resource_post_count(), 1, "no resource POST for {fault}");
+            assert_eq!(server.history_count(), 0, "corruption cannot be treated as an absent journal");
+            assert_eq!(resumed.read_human_conversation_transcript(first).unwrap(), completed_first);
+            assert!(resumed.read_human_conversation_transcript(second).unwrap().is_empty());
+            let stored: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+            assert_eq!(stored, damaged_hex, "failed recovery cannot scrub {fault}");
+            resumed.shutdown(); drop(resumed);
+            let retained: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+            assert_eq!(retained, damaged_hex, "shutdown preserves the contradictory original bytes");
+        }
+    }
+    db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&original_hex]).unwrap();
+    drop(db);
+    let restored = human_message_fixture_runtime(&root, &server.url);
+    restored.sync_human_conversation(second).expect("resume the exact original intent after repair");
+    assert_forward_settled(&restored, &args);
+    assert_forward_uploaded_bytes(&server, &files);
+    assert_eq!(restored.read_human_conversation_transcript(first).unwrap(), completed_first);
+    let replay = forward_gateway_result(&restored, &args).expect("same request remains idempotent after repair");
+    assert_eq!(replay["requestId"], args["clientNonce"]);
+    assert_eq!(replay["destinations"][1]["clientNonce"], original["humanForwardBatches"][0]["destinations"][1]["clientNonce"]);
+    assert_eq!(server.post_count(), 3, "only the unfinished second target was newly sent");
+    restored.shutdown(); drop(restored);
+    server.finish(); fs::remove_dir_all(root).unwrap();
+
+    // Positive control: hide-caption applies only to media. The same persisted
+    // validator must admit and recover a text-only batch with both flags true.
+    let root = temp_root("forward-text-only-hidden-caption");
+    let server = ForwardHttpFixture::start(false);
+    let mut args = prepare_forward_process(&root, &server.url);
+    args["dropSenderNames"] = json!(true);
+    args["dropCaptions"] = json!(true);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let sent = forward_gateway_result(&runtime, &args).expect("text-only forwarding retains its body");
+    assert_eq!(sent["privacy"], json!({"dropSenderNames":true,"dropCaptions":true}));
+    assert_forward_settled(&runtime, &args);
+    runtime.shutdown(); drop(runtime);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    reopened.sync_human_conversation(args["destinationConversationIds"][1].as_str().unwrap())
+        .expect("text-only hidden-caption journal remains recoverable");
+    assert_forward_settled(&reopened, &args);
+    for destination in args["destinationConversationIds"].as_array().unwrap() {
+        let rows = reopened.read_human_conversation_transcript(destination.as_str().unwrap()).unwrap();
+        assert!(rows[0]["forwardContext"].get("origin").is_none());
+    }
+    assert_eq!(forward_gateway_result(&reopened, &args).unwrap(), sent);
+    assert_eq!(server.post_count(), 2);
+    assert_eq!(server.resource_post_count(), 0);
+    reopened.shutdown(); drop(reopened);
+    server.finish(); fs::remove_dir_all(root).unwrap();
+}
+
+
+
 // NMR-PAGING-01: the existing Human SQLite owner fixes walk membership,
 // while each page reads current canonical payloads after real mutations.
 fn fixture_saved_human_message(id: u64, peer: &str, text: &str) -> serde_json::Value {
@@ -6911,6 +7026,177 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
     legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
     legacy_server.finish(); fs::remove_dir_all(legacy_root).expect("remove genuine legacy fixture");
+}
+
+#[test]
+fn shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch() {
+    let root = temp_root("forward-ordinary-send-provenance");
+    let files = forward_attachment_files(&root, 1);
+    let mut server = ForwardHttpFixture::start(true);
+    let args = prepare_forward_attachment_process(&root, &server.url, &files);
+    let source = args["sourceConversationId"].as_str().unwrap();
+    let source_entry_id = args["sourceEntryId"].as_str().unwrap();
+    let target = args["destinationConversationIds"][0].as_str().unwrap();
+    let other = args["destinationConversationIds"][1].as_str().unwrap();
+    let mut child = ForwardProcess::start(&root, &server.url);
+    server.wait_for_first_post();
+    child.terminate(); server.release_first_post(); drop(child);
+
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let source_owner = runtime.open_human_conversation_db_owner(source).unwrap();
+    let target_owner = runtime.open_human_conversation_db_owner(target).unwrap();
+    let original = target_owner.get_transcript_entries().unwrap().remove(0);
+    assert_eq!(original["delivery"], "dispatching");
+    assert_eq!(original["forwardBatchOwned"], true);
+    assert_eq!(original["remoteDispatchAttachments"].as_array().unwrap().len(), 1);
+    let original_id = original["id"].as_str().unwrap();
+    let source_metadata = source_owner.read_kv("metadata").unwrap().unwrap();
+    let original_source = source_owner.get_transcript_entry_by_id(source_entry_id).unwrap().unwrap();
+    let mut protected_source = original_source.clone();
+    protected_source["protectedContent"] = json!(true);
+    source_owner.update_transcript_entry(source_entry_id, &protected_source).unwrap().unwrap();
+    runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime);
+    assert_eq!(server.post_count(), 1);
+    assert_eq!(server.resource_post_count(), 1);
+    assert_eq!(server.history_count(), 0);
+
+    let source_path = forward_db_path(&root, source);
+    let target_path = forward_db_path(&root, target);
+    for cached_owner in [false, true] {
+        for fault in ["marker", "false-marker", "null-marker", "journal-membership",
+            "corrupt-journal", "missing-source"] {
+            let source_db = rusqlite::Connection::open(&source_path).unwrap();
+            let target_db = rusqlite::Connection::open(&target_path).unwrap();
+            source_db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&source_metadata]).unwrap();
+            target_db.execute("UPDATE transcript_entries SET entry=?1 WHERE id=?2",
+                rusqlite::params![original.to_string(), original_id]).unwrap();
+            let resumed = human_message_fixture_runtime(&root, &server.url);
+            if cached_owner {
+                resumed.open_human_conversation_db_owner(source).unwrap();
+                resumed.open_human_conversation_db_owner(target).unwrap();
+            }
+            let mut damaged = original.clone();
+            damaged.as_object_mut().unwrap().remove("forwardContext");
+            match fault {
+                "marker" => {}
+                "false-marker" => damaged["forwardBatchOwned"] = json!(false),
+                "null-marker" => damaged["forwardBatchOwned"] = serde_json::Value::Null,
+                _ => { damaged.as_object_mut().unwrap().remove("forwardBatchOwned"); }
+            }
+            // Also remove the marker case's resource receipt to prove refusal
+            // precedes a possible reupload, not only the message POST.
+            if fault == "marker" {
+                damaged.as_object_mut().unwrap().remove("remoteDispatchAttachments");
+            }
+            let damaged_raw = damaged.to_string();
+            target_db.execute("UPDATE transcript_entries SET entry=?1 WHERE id=?2",
+                rusqlite::params![damaged_raw, original_id]).unwrap();
+            if fault == "corrupt-journal" {
+                let mut metadata = read_forward_metadata_from_disk(&root, source);
+                metadata["humanForwardBatches"] = json!({"invalid":"not a journal array"});
+                let raw = metadata.to_string().as_bytes().iter()
+                    .map(|byte| format!("{byte:02x}")).collect::<String>();
+                source_db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&raw]).unwrap();
+            }
+            let saved_source_metadata: String = source_db.query_row(
+                "SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+            let saved_source_entry: String = source_db.query_row(
+                "SELECT entry FROM transcript_entries WHERE id=?1", [source_entry_id], |row| row.get(0)).unwrap();
+            let saved_target_metadata: String = target_db.query_row(
+                "SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0)).unwrap();
+            let unavailable = source_path.with_extension("temporarily-unavailable");
+            if fault == "missing-source" {
+                fs::rename(&source_path, &unavailable).unwrap();
+            }
+            let direct = dispatch_production_session_gateway_call(&resumed, "sendHumanMessage", &json!({
+                "conversationId":target, "clientNonce":damaged["clientNonce"],
+                "text":damaged["content"], "attachments":damaged["attachments"]
+            })).expect("ordinary send gateway");
+            if fault == "missing-source" {
+                fs::rename(&unavailable, &source_path).unwrap();
+            }
+            let error = direct.expect_err("ordinary send must not adopt lost forwarding provenance");
+            assert!(error.to_string().contains("forward"), "{fault}: {error}");
+            assert_eq!(server.post_count(), 1, "{fault}: no second message POST");
+            assert_eq!(server.resource_post_count(), 1, "{fault}: no resource upload");
+            assert_eq!(server.history_count(), 0, "target refusal cannot trigger unrelated history");
+            assert_eq!(target_db.query_row("SELECT entry FROM transcript_entries WHERE id=?1",
+                [original_id], |row| row.get::<_, String>(0)).unwrap(), damaged_raw);
+            assert_eq!(target_db.query_row("SELECT COUNT(*) FROM transcript_entries", [],
+                |row| row.get::<_, i64>(0)).unwrap(), 1);
+            assert_eq!(target_db.query_row("SELECT value FROM kv WHERE key='metadata'", [],
+                |row| row.get::<_, String>(0)).unwrap(), saved_target_metadata);
+            assert_eq!(source_db.query_row("SELECT value FROM kv WHERE key='metadata'", [],
+                |row| row.get::<_, String>(0)).unwrap(), saved_source_metadata);
+            assert_eq!(source_db.query_row("SELECT entry FROM transcript_entries WHERE id=?1",
+                [source_entry_id], |row| row.get::<_, String>(0)).unwrap(), saved_source_entry);
+            resumed.shutdown(); drop(resumed);
+            let reopened = human_message_fixture_runtime(&root, &server.url);
+            assert_eq!(reopened.read_human_conversation_transcript(target).unwrap(), vec![damaged]);
+            assert!(reopened.read_human_conversation_transcript(other).unwrap().is_empty());
+            reopened.shutdown(); drop(reopened);
+            drop(target_db); drop(source_db);
+        }
+    }
+
+    // Only restore the exact accepted intent; generic send cannot reconstruct
+    // its source context or replace the immutable byte/resource identities.
+    let source_db = rusqlite::Connection::open(&source_path).unwrap();
+    source_db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", [&source_metadata]).unwrap();
+    let target_db = rusqlite::Connection::open(&target_path).unwrap();
+    target_db.execute("UPDATE transcript_entries SET entry=?1 WHERE id=?2",
+        rusqlite::params![original.to_string(), original_id]).unwrap();
+    drop(target_db); drop(source_db);
+    let recovered = human_message_fixture_runtime(&root, &server.url);
+    let mut first_only = args.clone(); first_only["destinationConversationIds"] = json!([target]);
+    let denied = forward_gateway_result(&recovered, &first_only).unwrap();
+    assert_eq!(denied["destinations"][0]["status"], "failed");
+    assert!(denied["destinations"][0]["error"].as_str().unwrap().contains("protected"));
+    assert_eq!(server.post_count(), 1);
+    assert_eq!(server.resource_post_count(), 1);
+    assert_eq!(recovered.read_human_conversation_transcript(target).unwrap(), vec![original.clone()]);
+    let owner = recovered.open_human_conversation_db_owner(source).unwrap();
+    owner.update_transcript_entry(source_entry_id, &original_source).unwrap().unwrap();
+    let sent = forward_gateway_result(&recovered, &first_only).unwrap();
+    assert_eq!(sent["destinations"][0]["status"], "sent");
+    assert_eq!(sent["destinations"][0]["clientNonce"], original["clientNonce"]);
+    let settled = recovered.read_human_conversation_transcript(target).unwrap();
+    assert_eq!(settled.len(), 1);
+    assert_eq!(settled[0]["delivery"], "sent");
+    assert_eq!(settled[0]["clientNonce"], original["clientNonce"]);
+    assert_eq!(settled[0]["forwardContext"], original["forwardContext"]);
+    assert_eq!(settled[0]["attachments"][0]["resourceId"], original["remoteDispatchAttachments"][0]["resourceId"]);
+    assert!(recovered.read_human_conversation_transcript(other).unwrap().is_empty());
+    assert_eq!(server.post_count(), 2, "source-authorized recovery reuses the accepted nonce");
+    assert_eq!(server.resource_post_count(), 1, "saved resource receipt is reused");
+    let journal = owner.get_metadata("humanForwardBatches").unwrap().unwrap();
+    assert_eq!(journal[0]["destinations"][0]["completed"], true);
+    assert_eq!(journal[0]["destinations"][1]["completed"], false);
+
+    let ordinary_args = json!({
+        "conversationId":other, "clientNonce":"ordinary-after-provenance-fence",
+        "text":"ordinary send still works"
+    });
+    let ordinary = dispatch_production_session_gateway_call(&recovered, "sendHumanMessage", &ordinary_args)
+        .unwrap().expect("ordinary unmarked message remains sendable");
+    assert_eq!(ordinary["delivery"], "sent");
+    assert_eq!(ordinary["clientNonce"], ordinary_args["clientNonce"]);
+    assert_eq!(server.post_count(), 3);
+    let replay = dispatch_production_session_gateway_call(&recovered, "sendHumanMessage", &ordinary_args)
+        .unwrap().expect("ordinary same-nonce settlement stays idempotent");
+    assert_eq!(replay, ordinary);
+    assert_eq!(server.post_count(), 3);
+    recovered.shutdown(); drop(owner); drop(recovered);
+    let reopened = human_message_fixture_runtime(&root, &server.url);
+    assert_eq!(dispatch_production_session_gateway_call(&reopened, "sendHumanMessage", &ordinary_args)
+        .unwrap().unwrap(), ordinary);
+    assert_eq!(reopened.read_human_conversation_transcript(target).unwrap(), settled);
+    assert_eq!(forward_gateway_result(&reopened, &first_only).unwrap(), sent);
+    assert_eq!(server.post_count(), 3);
+    assert_eq!(server.resource_post_count(), 1);
+    assert_eq!(server.history_count(), 0);
+    reopened.shutdown(); drop(reopened);
+    server.finish(); fs::remove_dir_all(root).unwrap();
 }
 
 fn human_history_message(id: u64) -> serde_json::Value {

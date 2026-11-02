@@ -179,7 +179,18 @@ export function recordTranscriptReadUpdate(
 ): void {
   const matches = (entry: ConversationTranscriptEntry) => transcriptEntriesCorrelate(entry, incoming)
     || (entry.id === previousId && previousIdentityMatches(entry, incoming));
-  const current = updates.get(incoming.id) ?? (previousId == null ? undefined : updates.get(previousId));
+  let current = updates.get(incoming.id) ?? (previousId == null ? undefined : updates.get(previousId));
+  if (current == null || !matches(current)) {
+    current = undefined;
+    // Appended settlement can carry the original nonce without a before-ID.
+    // Preserve earlier clears/optional fields from that same author's overlay.
+    for (const candidate of updates.values()) {
+      if (matches(candidate)) {
+        current = candidate;
+        break;
+      }
+    }
+  }
   const merged = current != null && matches(current) && current.kind === "message" && incoming.kind === "message"
     ? mergeAuthoritativeTranscriptMessage(current, incoming)
     : incoming;

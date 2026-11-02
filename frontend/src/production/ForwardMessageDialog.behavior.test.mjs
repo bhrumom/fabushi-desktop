@@ -349,3 +349,67 @@ test("late searches preserve send failure and retry destinations even when selec
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
 });
 
+
+for (const retirement of ["close", "source", "account-aba", "logout", "unmount"]) {
+  test(`Coordinator readiness refuses a forward after ${retirement} retires its original dialog`, async (t) => {
+    const f = await fixture(t);
+    await f.settleSearch(); await f.select();
+    await f.call("enableCoordinator");
+    await f.submit();
+    await f.page.waitForFunction(() => window.__forwardHarness.coordinatorState().attempts === 1);
+    assert.equal((await f.call("requests")).filter((request) => request.kind === "forward").length, 0);
+    if (retirement === "close") await f.page.getByRole("button", { name: "Close", exact: true }).click();
+    else if (retirement === "source") await f.call("replaceSource", "message-replacement");
+    else if (retirement === "account-aba") {
+      await f.call("switchAccount", "B");
+      await f.call("switchAccount", "A");
+      await f.call("reopen");
+    } else if (retirement === "logout") await f.call("switchAccount", null);
+    else await f.call("unmount");
+    // Source/visibility changes must commit their layout cleanup before the
+    // external port becomes ready. Account/unmount also invalidate synchronously.
+    await f.page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    const eventsBeforeReady = await f.call("events");
+    await f.call("readyCoordinator");
+    await f.page.waitForFunction(() => window.__forwardHarness.coordinatorState().completions === 1);
+    assert.equal((await f.call("requests")).filter((request) => request.kind === "forward").length, 0);
+    assert.deepEqual(await f.call("events"), eventsBeforeReady);
+    assert.deepEqual(await f.call("pending"), (await f.call("pending")).filter((id) => id.startsWith("search-")));
+  });
+}
+
+test("current dialog forwards only after actual Coordinator readiness and settles once", async (t) => {
+  const f = await fixture(t);
+  await f.settleSearch(); await f.select();
+  await f.call("enableCoordinator"); await f.submit();
+  await f.page.waitForFunction(() => window.__forwardHarness.coordinatorState().attempts === 1);
+  assert.equal((await f.call("requests")).filter((request) => request.kind === "forward").length, 0);
+  await f.call("readyCoordinator");
+  const request = await f.request("forward");
+  assert.deepEqual(Object.keys(request.args).sort(), ["clientNonce", "destinationConversationIds", "dropCaptions", "dropSenderNames", "sourceConversationId", "sourceEntryId"]);
+  assert.deepEqual(request.args.destinationConversationIds, ["human:b"]);
+  await f.call("resolve", request.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor({ state: "hidden" });
+  const events = await f.call("events");
+  assert.equal(events.filter((event) => event.kind === "settled").length, 1);
+  assert.equal(events.filter((event) => event.kind === "closed").length, 1);
+  assert.equal((await f.call("requests")).filter((request) => request.kind === "forward").length, 1);
+});
+
+test("closing after the actual Coordinator frame preserves admitted work without settling a new dialog", async (t) => {
+  const f = await fixture(t);
+  await f.settleSearch(); await f.select();
+  await f.call("enableCoordinator"); await f.call("readyCoordinator");
+  await f.submit();
+  const request = await f.request("forward");
+  await f.page.getByRole("button", { name: "Close", exact: true }).click();
+  await f.call("reopen");
+  await f.page.getByRole("dialog", { name: "Forward message" }).waitFor();
+  const eventsBeforeReply = await f.call("events");
+  await f.call("resolve", request.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.coordinatorState().completions === 1);
+  assert.deepEqual(await f.call("events"), eventsBeforeReply);
+  assert.equal(await f.page.getByRole("dialog", { name: "Forward message" }).count(), 1);
+  assert.equal((await f.call("requests")).filter((item) => item.kind === "forward").length, 1);
+  assert.equal((await f.call("pending")).includes(request.id), false);
+});

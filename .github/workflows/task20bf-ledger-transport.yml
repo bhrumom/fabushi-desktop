@@ -4,6 +4,7 @@ on:
     branches: [checkpoint/task20bf-ledger-transport-r1]
 permissions:
   contents: write
+  actions: read
 jobs:
   save-ledger-object:
     if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/task20bf-ledger-transport-r1'
@@ -22,9 +23,9 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)" = ad5e0b28add4e6bd99b3ec6036f0984595de2568
+          test "$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)" = e40360856922fae6246e1e8ac93ff9ec9c592f19
           git apply --index .github/task20bf-ledger-transport.patch
-          test "$(git rev-parse :projects/telegram-desktop-rust/parity-ledger.json)" = e40360856922fae6246e1e8ac93ff9ec9c592f19
+          test "$(git rev-parse :projects/telegram-desktop-rust/parity-ledger.json)" = 0860ab72f0714f1e09a5a98d2f67f8ef052f8058
           python - <<'PY'
           import json, os
           from pathlib import Path
@@ -34,9 +35,61 @@ jobs:
           PY
           mkdir -p artifacts/ledger-transport
           gh api --method POST repos/bhrumom/fabushi-desktop/git/blobs --input "$RUNNER_TEMP/task20bf-ledger-object.json" --jq .sha > artifacts/ledger-transport/blob-sha.txt
-          test "$(cat artifacts/ledger-transport/blob-sha.txt)" = e40360856922fae6246e1e8ac93ff9ec9c592f19
+          test "$(cat artifacts/ledger-transport/blob-sha.txt)" = 0860ab72f0714f1e09a5a98d2f67f8ef052f8058
           git rev-parse HEAD > artifacts/ledger-transport/transport-sha.txt
           printf '%s\n' 'Object transport only; no source/product acceptance or branch promotion.' > artifacts/ledger-transport/scope.txt
+      - name: Read the frozen failed UI artifact without rerunning its tests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13182506705 > "$RUNNER_TEMP/ui-artifact-metadata.json"
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/13182506705/zip > "$RUNNER_TEMP/ui-artifact.zip"
+          python - <<'PY'
+          import base64, hashlib, json, os, pathlib, zipfile
+          temporary = pathlib.Path(os.environ['RUNNER_TEMP'])
+          metadata = json.loads((temporary / 'ui-artifact-metadata.json').read_text())
+          expected = '02639d5054c501f9dcb7a94bd451d65f3fbce4dd7ef780e4f7f55d6360a0a24a'
+          assert metadata['id'] == 13182506705 and not metadata['expired']
+          assert metadata['workflow_run']['head_sha'] == '7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18'
+          assert metadata['size_in_bytes'] == 22171403 and metadata['digest'] == f'sha256:{expected}'
+          archive_path = temporary / 'ui-artifact.zip'
+          assert archive_path.stat().st_size == metadata['size_in_bytes']
+          assert hashlib.sha256(archive_path.read_bytes()).hexdigest() == expected
+          records = []
+          with zipfile.ZipFile(archive_path) as archive:
+              names = [name for name in archive.namelist() if name.endswith('/production-renderer.json') or name == 'production-renderer.json']
+              assert len(names) == 1, names
+              assert archive.getinfo(names[0]).file_size < 4000000
+              report = json.loads(archive.read(names[0]))
+              def visit(suites):
+                  for suite in suites:
+                      visit(suite.get('suites', []))
+                      for spec in suite.get('specs', []):
+                          for case in spec.get('tests', []):
+                              for result in case.get('results', []):
+                                  item = {'title': spec['title'], 'status': result.get('status')}
+                                  if not records or 'initial tail cannot' in spec['title']:
+                                      attachments = {}
+                                      for attachment in result.get('attachments', []):
+                                          if attachment.get('name') not in ('coordinator-requests', 'renderer-errors', 'approval-clears'):
+                                              continue
+                                          if 'body' not in attachment:
+                                              attachments[attachment['name']] = {'unread_path': attachment.get('path')}
+                                              continue
+                                          value = json.loads(base64.b64decode(attachment['body']))
+                                          if attachment['name'] == 'coordinator-requests':
+                                              value = [request for request in value if request.get('method') in ('getHumanConversationTranscriptTail', 'getAgentTranscriptTail', 'syncHumanConversation', 'syncHumanConversations', 'listHumanConversations')]
+                                          attachments[attachment['name']] = value
+                                      item['attachments'] = attachments
+                                  records.append(item)
+              visit(report.get('suites', []))
+          output = {'input_head': metadata['workflow_run']['head_sha'], 'input_artifact': metadata['id'], 'input_digest': metadata['digest'], 'results': records, 'scope': 'Read-only extraction of prior Actions evidence; no test rerun or acceptance.'}
+          body = json.dumps(output, indent=2)
+          pathlib.Path('artifacts/ledger-transport/prior-ui-observations.json').write_text(body + '\n')
+          print(body)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: task20bf-ledger-object-${{ github.sha }}

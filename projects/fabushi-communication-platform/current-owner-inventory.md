@@ -42,8 +42,10 @@ preserved; no message or account authority moves into the CLI or renderer.
 
 ### 2026-11-02 immutable forward picker intent (task20bf round1 resumed)
 
-Current inspected input is `59f5fa24827812f78336c464995d161f403dedfb` on the
-existing migration branch; main remains `5528062177e3865eef60a073a066cca144f9e3e8`.
+Original inspected input was `59f5fa24827812f78336c464995d161f403dedfb`.
+The current task integration freezes shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`
+with task parent `db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23`; main was reread as
+`5528062177e3865eef60a073a066cca144f9e3e8`.
 The existing transcript action opens `ForwardMessageDialog`; its callback goes
 through the Coordinator Session gateway to `ProductionSessionWorkers::forward_human_message`.
 The existing source-conversation `HumanForwardBatch` journal binds account,
@@ -61,9 +63,30 @@ current owners. The historical statement that desktop Telegram/FeatureHost
 writers remain reachable is superseded by the current Native guards below and
 their later changes; no old registration or database is deleted here.
 
+Current prerequisite repairs preserve this authority: NMR-50d passes the original
+dialog/account predicate through the real Coordinator call after ready and before
+its request frame; retirement after posting does not cancel Host intent. The
+ordinary send staging lane now uses the complete forward-ownership classifier
+before reusing an existing row without context, preserving source-authorized batch
+recovery and retained bytes. Pagination coalesces failed-read updates by identity
+and keeps explicit author-checked alias candidates through the same root cache.
+The full two-identity Human message Retry contract remains unimplemented.
+Settings still uses SettingsDesktopSurface → DesktopBridge → Main RPC → Coordinator
+MainData → Native ProductSettingsOwner; no proxy routing or second settings store
+is inferred from its canonical mutation/publication UI. See the existing task receipt
+for separately bound authored, executed and open acceptance evidence.
+
 Oracle: ORA-TDRP-FORWARD-INTENT-UI-001. Exact-H execution is recorded by the
 existing native-service-contracts Actions artifacts; source reviews and final
 service/package/Bot/independent acceptance remain separate.
+
+Follow-up at `73cc6e1cc9fa871e5f80931979606ac9ee810551`: ordinary sync and
+same-nonce retry already call `load_forward_batches` → `decode_forward_batches`
+→ `HumanForwardBatch::validate`. NMR-48d extends that existing admission gate to
+reject contradictory persisted privacy before target I/O, without changing the
+journal or introducing a writer. `store_forward_batch` consumes the same check.
+Snapshot resource bytes, completed targets and exact original metadata remain
+available for recovery; text-only hide-caption state stays valid.
 
 ### 2026-11-03 Windows updater publisher authority (round 22; narrow owner)
 

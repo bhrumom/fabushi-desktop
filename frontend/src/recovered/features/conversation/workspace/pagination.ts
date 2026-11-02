@@ -1,5 +1,5 @@
 import type { ConversationTranscriptEntry } from "./model";
-import { mergeOlderTranscriptEntries, reconcileTranscriptMutation } from "../../../../production/transcript-projection.ts";
+import { mergeOlderTranscriptEntries, recordTranscriptReadUpdate, reconcileTranscriptMutation } from "../../../../production/transcript-projection.ts";
 export { mergeOlderTranscriptEntries } from "../../../../production/transcript-projection.ts";
 
 /**
@@ -127,7 +127,10 @@ export function createTranscriptPaginationController(
   let pageGeneration = 0;
   let requestGeneration = 0;
   let inFlight: Promise<void> | null = null;
-  const updatesDuringRequest: { entry: ConversationTranscriptEntry; previousId?: string }[] = [];
+  const updatesDuringRequest = new Map<string, ConversationTranscriptEntry>();
+  // The returned row decides which author may use a before-ID. Retain all
+  // distinct candidate identities when different authors name the same alias.
+  const aliasTargetsDuringRequest = new Map<string, Set<string>>();
   let viewport: TranscriptViewport | null = null;
   let pendingAnchor: { generation: number; pageGeneration: number; scrollTop: number; scrollHeight: number; ready: boolean } | null = null;
   let disposed = false;
@@ -168,7 +171,8 @@ export function createTranscriptPaginationController(
     cursor = EMPTY_CURSOR;
     olderFailure = null;
     pendingAnchor = null;
-    updatesDuringRequest.length = 0;
+    updatesDuringRequest.clear();
+    aliasTargetsDuringRequest.clear();
   };
 
   return {
@@ -197,7 +201,8 @@ export function createTranscriptPaginationController(
       pageGeneration += 1;
       requestGeneration += 1;
       inFlight = null;
-      updatesDuringRequest.length = 0;
+      updatesDuringRequest.clear();
+      aliasTargetsDuringRequest.clear();
       entries = uniqueEntries(page.entries);
       cursor = cursorFromPage(page);
       olderFailure = null;
@@ -209,8 +214,16 @@ export function createTranscriptPaginationController(
     ingestEntryUpdate(updateAccountSlot, ownerId, entry, previousId) {
       if (disposed || updateAccountSlot !== accountSlot || ownerId !== agentId) return;
       // A failed page can be retried with an older snapshot. Keep the latest
-      // committed overlay for that read until a successful page consumes it.
-      if (inFlight != null || updatesDuringRequest.length > 0) updatesDuringRequest.push({ entry, previousId });
+      // committed overlay for each identity/alias, not its unbounded event log.
+      // This includes the first unloaded-row update arriving after a failure.
+      if (inFlight != null || olderFailure != null || updatesDuringRequest.size > 0) {
+        recordTranscriptReadUpdate(updatesDuringRequest, entry, previousId);
+        if (previousId != null) {
+          const targets = aliasTargetsDuringRequest.get(previousId) ?? new Set<string>();
+          targets.add(entry.id);
+          aliasTargetsDuringRequest.set(previousId, targets);
+        }
+      }
       const next = reconcileTranscriptMutation(entries, entry, { previousId });
       if (next === entries) return;
       entries = next;
@@ -252,8 +265,16 @@ export function createTranscriptPaginationController(
           });
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           let refreshedPage = page.entries;
-          for (const update of updatesDuringRequest) {
-            refreshedPage = reconcileTranscriptMutation(refreshedPage, update.entry, { previousId: update.previousId });
+          for (const [previousId, entry] of updatesDuringRequest) {
+            // Reconcile aliases and author-qualified nonces as well as IDs:
+            // an appended canonical settlement may not name its placeholder.
+            refreshedPage = reconcileTranscriptMutation(refreshedPage, entry, { previousId });
+          }
+          for (const [previousId, targets] of aliasTargetsDuringRequest) {
+            for (const targetId of targets) {
+              const entry = updatesDuringRequest.get(targetId);
+              if (entry != null) refreshedPage = reconcileTranscriptMutation(refreshedPage, entry, { previousId });
+            }
           }
           entries = mergeOlderTranscriptEntries(entries, refreshedPage);
           if (pendingAnchor != null) pendingAnchor.ready = true;
@@ -264,14 +285,16 @@ export function createTranscriptPaginationController(
             nextBeforeSeq: page.nextBeforeSeq,
             ...(page.nextBeforeCursor === undefined ? {} : { nextBeforeCursor: page.nextBeforeCursor }),
           });
-          updatesDuringRequest.length = 0;
+          updatesDuringRequest.clear();
+          aliasTargetsDuringRequest.clear();
           emit();
         } catch (error) {
           if (!isCurrentRequest(requestId, requestPageGeneration, requestAccountSlot, requestAgentId)) return;
           if (isCapabilityUnavailableFailure(error)) {
             cursor = { kind: "unavailable" };
             olderFailure = null;
-            updatesDuringRequest.length = 0;
+            updatesDuringRequest.clear();
+            aliasTargetsDuringRequest.clear();
           } else olderFailure = error;
           pendingAnchor = null;
           emit();

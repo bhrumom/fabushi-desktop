@@ -1,7 +1,7 @@
 name: Native service contracts
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - 'source/host/src/extensions/session/**'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
@@ -30,7 +30,7 @@ on:
       - 'frontend/src/production/model.ts'
       - 'frontend/src/recovered/features/conversation/workspace/model.ts'
       - 'frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts'
-      - 'frontend/src/production/coordinator-client.ts'
+      - 'frontend/src/production/coordinator-client*'
       - 'frontend/src/production/transcript-projection*'
       - 'frontend/src/recovered/features/conversation/workspace/pagination*'
       - 'frontend/src/recovered/features/conversation/workspace/submission.ts'
@@ -41,6 +41,11 @@ on:
       - 'source/shared/node/fabushi-service-origin.ts'
       - 'frontend/src/recovered/contracts/desktop-bridge.ts'
       - 'frontend/src/recovered/features/settings/overlay/updates.ts'
+      - 'frontend/src/recovered/features/settings/overlay/desktop.ts'
+      - 'frontend/src/recovered/features/settings/overlay/desktop-surface.tsx'
+      - 'frontend/src/recovered/features/settings/overlay/panels.tsx'
+      - 'frontend/src/recovered/features/settings/overlay/network-proxy*'
+      - 'desktop/network-proxy-settings-test.*'
       - 'desktop/package.json'
       - 'desktop/package-lock.json'
       - 'desktop/scripts/build-electron-runtime.mjs'
@@ -240,17 +245,19 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 63 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 65 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch ... ok' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib native_message_resource_upload_tests -- --nocapture 2>&1 | tee artifacts/native-message/resource-upload-bounds.log
           grep -Eq 'test result: ok\. 3 passed; 0 failed; 0 ignored;' artifacts/native-message/resource-upload-bounds.log
-          grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
-          grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
-          grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
-          grep -F 'shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok' artifacts/native-message/session-gateway.log
       - name: Concurrent Human creation and non-destructive initialization recovery
         shell: bash
         run: |
@@ -270,9 +277,10 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --lib forward_batch_journal::tests -- --nocapture 2>&1 | tee artifacts/native-message/forward-batches.log
-          grep -Eq 'test result: ok\. 12 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-batches.log
+          grep -Eq 'test result: ok\. 13 passed; 0 failed; 0 ignored;' artifacts/native-message/forward-batches.log
           grep -F 'stale_same_batch_snapshot_cannot_regress_completed_destination ... ok' artifacts/native-message/forward-batches.log
           grep -F 'concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok' artifacts/native-message/forward-batches.log
+          grep -F 'forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent ... ok' artifacts/native-message/forward-batches.log
       - name: Preserve Agent send nonce boundary
         shell: bash
         run: |
@@ -732,8 +740,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 33' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 33' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 38' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 38' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -753,6 +761,18 @@ jobs:
           grep -Fx '# cancelled 0' artifacts/native-message-ui/human-cursors.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/human-cursors.log
           grep -Fx '# todo 0' artifacts/native-message-ui/human-cursors.log
+      - name: Actual Coordinator before-frame account and lifetime admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./desktop/node_modules/.bin/esbuild frontend/src/production/coordinator-client.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/coordinator-admission.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-admission-bundle.log
+          node --test --test-reporter=tap artifacts/native-message-ui/coordinator-admission.test.mjs 2>&1 | tee artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# tests 13' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# pass 13' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/coordinator-admission.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/coordinator-admission.log
       - name: Compile actual production renderer
         shell: bash
         working-directory: desktop
@@ -768,7 +788,7 @@ jobs:
           grep -Fx '# pass 5' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log
-      - name: Install locked Chromium for actual forward dialog
+      - name: Install locked Chromium for actual forward dialog and Settings
         working-directory: desktop
         run: npx --no-install playwright install --with-deps chromium
       - name: Actual forward dialog account and lifetime behaviors
@@ -776,11 +796,22 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# tests 16' artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# pass 16' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# tests 23' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# pass 23' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
+      - name: Actual Settings proxy settlement and lifetime behaviors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap frontend/src/recovered/features/settings/overlay/network-proxy.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/network-proxy-settings.log
+          grep -Fx '# tests 18' artifacts/native-message-ui/network-proxy-settings.log
+          grep -Fx '# pass 18' artifacts/native-message-ui/network-proxy-settings.log
+          grep -Fx '# fail 0' artifacts/native-message-ui/network-proxy-settings.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/network-proxy-settings.log
+          grep -Fx '# skipped 0' artifacts/native-message-ui/network-proxy-settings.log
+          grep -Fx '# todo 0' artifacts/native-message-ui/network-proxy-settings.log
       - name: Actual ProductionRenderer history, account and restart projection behaviors
         shell: bash
         working-directory: desktop

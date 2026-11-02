@@ -10,7 +10,7 @@ on:
       - "source/host/tests/network_worker_process_contract.rs"
       - ".github/workflows/fdn-tsnet-worker.yml"
   push:
-    branches: [main, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [main, checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - "docs/specs/fdn-001-tsnet-network-worker.md"
       - "source/fabushi-network-worker/**"

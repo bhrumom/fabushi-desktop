@@ -3538,6 +3538,15 @@ impl ProductionSessionWorkers {
             entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
                 && entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
         }) {
+            // Ordinary send cannot adopt a source-owned row after its context
+            // was lost. Classify the current durable intent in the same staging
+            // lane before any mutation or resource/message dispatch. Validated
+            // batch delivery retains its original context and recovery owner.
+            if forward_context.is_none()
+                && self.pending_human_forward_is_batch_owned(conversation_id, entry)?
+            {
+                return Err("sendHumanMessage cannot resend a source-owned Human forward; recover its original batch".into());
+            }
             let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
             let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
             let persisted_reply = Self::normalize_human_reply_identity(

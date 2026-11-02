@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopCallMediaPreferences, DesktopTimeZoneState, DesktopUiPreferences, ProductNetworkProxyMutation, ProductNetworkProxySettings } from "../../../contracts/desktop-bridge";
+import type { CursorUsageSummary, CursorUsageUpgradeAction, DesktopCallMediaPreferences, DesktopTimeZoneState, DesktopUiPreferences } from "../../../contracts/desktop-bridge";
 import { egressTunnelStatusDescription, type EgressTunnelStatus, type UpdateStatus, type UpdateTrack } from "./updates";
 // @evidence src/app/dist/renderer/assets/index-BlqerJhg.js#L1
 import { INTERNAL_RELEASE_TRACK_CONFIG_URL, UPDATE_TRACK_LABELS, updateStatusMessage } from "./updates";
@@ -39,7 +39,7 @@ export interface GeneralSettingsPanelProps {
     onRequestPermissions(): Promise<unknown>;
   };
   privacyModeEnabled?: boolean | null;
-  networkProxy?: { state: ProductNetworkProxySettings; onMutate(mutation: ProductNetworkProxyMutation): void | Promise<unknown> };
+  networkProxy?: Parameters<typeof NetworkProxySettingsPanel>[0];
   platform?: SandIconPlatform;
 }
 

@@ -2,7 +2,7 @@ name: Staged runtime source contracts
 
 on:
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - '.github/workflows/staged-runtime-source-contracts.yml'
       - 'source/node-agent-coordinator/**'

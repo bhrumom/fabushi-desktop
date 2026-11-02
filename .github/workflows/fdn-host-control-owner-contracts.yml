@@ -14,7 +14,7 @@ on:
       - "source/host/tests/remote_computer_target_native_wiring_contract.rs"
       - ".github/workflows/fdn-host-control-owner-contracts.yml"
   push:
-    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1]
+    branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - "source/host/src/network_enrollment_owner.rs"
       - "source/host/src/network_worker_process.rs"

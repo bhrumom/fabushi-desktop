@@ -80,6 +80,38 @@ Evidence: `projects/telegram-desktop-rust/evidence/round12-pending-parent-reply-
 
 ## Retained concurrent batch — task20bf round1 resumed, immutable forward intent
 
+Current task20bf update: exact `db27ec9c4b36f6bc47e04bee46d8f53b5ec45e23`
+passed renderer132 (including the repaired original test loader), both2002-module
+architecture gates and source170/Python37/candidate checks. Exact `2ac00f9` UI76
+includes all18 actual Settings proxy settlement/lifetime cases; its reconciliation80,
+Electron89 and Windows11 passed while shipping remained queued at21:20:15 UTC.
+The new integration freezes shared `217d1499dbd541274ba11f8f1fdb092a85e8bc7b`,
+preserves all existing owners and adds no second state truth. Its union gates
+Human65/journal13/Transcript38/cursor17/Coordinator13/Forward5+23/Settings18/Renderer11/Transcript8
+are authored and require containing-H Actions. The same existing owners now reject
+ordinary resend of unresolved source-owned forwarding, fence Forward after ready
+before its frame, and coalesce failed-page updates without losing alias/clear semantics. Human message Retry remains the
+explicit HRR-01..06 consumer gap; older-page Retry does not close it. Source/legal,
+service/package/Bot/quality/upgrade/rollback and independent ACCEPT remain open.
+
+The following paragraphs retain the original H73/H531 authoring history.
+
+Product H=`73cc6e1cc9fa871e5f80931979606ac9ee810551` was pushed and its commit,
+tree and changed file contents were reread through GitHub. Source run41514576605
+passed Node157/schema37/current-ledger shape/fixed candidate. Native run41514576570
+passed Chromium16/Transcript16/settlement5, Electron83 and Windows11. Six actual
+light/dark/wide/narrow/retry screenshots were viewed without visible clipping.
+H73 reconciliation subsequently passed Human44/sharebox1/journal12/Agent4/
+credential3/Gateway1, 65 selected checks in total. Shipping remained queued at
+that readback and is not credited as a pass. Full acceptance remains open.
+
+Continued work found and repaired NMR-48d: the existing journal load/store
+validator now rejects three valid-JSON privacy contradictions before recovery,
+preserves original intent, and admits text-only bodies with both hide options.
+The new cold/cached/repaired-intent integration and journal tests require
+Human49/journal13 after preserving the concurrent NMR-49 cases. These new
+tests are not-run at authoring; H73 does not execute the new extension.
+
 Inspected migration H=`94dcf7a2213808a8ded6baddaf069562d365c6d7` and main
 `5528062177e3865eef60a073a066cca144f9e3e8`; fixed U remains
 `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Production predecessor
@@ -89,16 +121,16 @@ account lifetime, Native/legacy isolation, source acquisition and checker work
 is preserved, including the later accepted acquisition-closure and recursive
 responsibility-membership guards, subsequent immutable attachment snapshots,
 stale-completion fences, complete journal scans and runtime source acquisition.
-This concurrent base authors Human44 and journal12; the combined reply batch
-requires Human47 and retains journal12. The interrupted old local snapshot was
-not published over it.
+The concurrent reply batch retains Human44 and adds three cases. With the
+privacy recovery extension and native upload case, the containing H requires Human49 and journal13.
+The interrupted old local snapshot was not published over this current work.
 
 The existing shipping ForwardMessageDialog now freezes original nonce/targets/
 normalized privacy, retries only unconfirmed targets, rejects ambiguous
 settlement success, bounds selection to32, restores captions when showing the
 sender, and allows presentation-only close during a durable send. Existing12
-Chromium cases are retained and expanded to16; same-H Actions execution is
-pending at authoring. No local validation or independent ACCEPT.
+Chromium cases are retained and expanded to16; execution is bound to H73 above.
+No local validation or independent ACCEPT.
 
 The unique source ledger now has two complete option-source mappings and four
 explicitly pending panel/phrase decompositions, despite all six bodies having

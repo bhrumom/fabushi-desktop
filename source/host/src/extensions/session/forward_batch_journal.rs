@@ -346,10 +346,23 @@ impl HumanForwardBatch {
             || self.context.get("requestId").and_then(Value::as_str) != Some(self.request_id.as_str())
             || self.context.get("sourceConversationId").and_then(Value::as_str) != Some(self.source_conversation_id.as_str())
             || self.context.get("sourceEntryId").and_then(Value::as_str) != Some(self.source_entry_id.as_str())
-            || self.context.pointer("/privacy/dropSenderNames").and_then(Value::as_bool).is_none()
-            || self.context.pointer("/privacy/dropCaptions").and_then(Value::as_bool).is_none()
         {
             return Err("persisted Human forward batch is invalid or has an unsupported version".into());
+        }
+        let (Some(drop_sender_names), Some(drop_captions)) = (
+            self.context.pointer("/privacy/dropSenderNames").and_then(Value::as_bool),
+            self.context.pointer("/privacy/dropCaptions").and_then(Value::as_bool),
+        ) else {
+            return Err("persisted Human forward batch has invalid privacy fields".into());
+        };
+        let privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions };
+        // A recovered intent must already satisfy the new-request contract.
+        // Repairing it here would silently change an accepted immutable batch.
+        if privacy != privacy.normalized()
+            || (privacy.drop_sender_names && self.context.get("origin").is_some())
+            || (privacy.drop_captions && !self.attachments.is_empty() && !self.text.is_empty())
+        {
+            return Err("persisted Human forward batch contradicts its privacy snapshot".into());
         }
         for target in &self.destinations {
             if target.conversation_id.is_empty()
@@ -803,6 +816,50 @@ mod tests {
         invalid.destinations[1].conversation_id = "b".into();
         assert!(invalid.validate("s").is_err());
     }
+
+    #[test]
+    fn forward_journal_privacy_rejects_contradictions_without_replacing_valid_intent() {
+        let fixture = SnapshotFixture::new();
+        let original = HumanForwardBatch::new(
+            "account".into(), "issuer".into(), "original".into(), "source".into(), "entry".into(),
+            "retained body".into(), vec![], snapshot_context("original"), &["target".into()],
+        );
+        store_forward_batch(&fixture.owner, &original).expect("preserve the valid original intent");
+        let original_journal = fixture.owner.get_metadata(FORWARD_BATCHES_KEY).unwrap();
+        for fault in ["not-normalized", "hidden-origin", "null-origin", "retained-caption"] {
+            let mut context = snapshot_context(fault);
+            context["privacy"] = serde_json::json!({
+                "dropSenderNames": fault != "not-normalized",
+                "dropCaptions": matches!(fault, "not-normalized" | "retained-caption"),
+            });
+            if fault == "hidden-origin" {
+                context["origin"] = serde_json::json!({"authorId": "private-author"});
+            } else if fault == "null-origin" {
+                context["origin"] = Value::Null;
+            }
+            let invalid = HumanForwardBatch::new(
+                "account".into(), "issuer".into(), fault.into(), "source".into(), "entry".into(),
+                if fault == "not-normalized" { String::new() } else { "retained caption".into() },
+                vec![serde_json::json!({"name": "retained.bin", "path": "retained-legacy-path"})],
+                context, &["target".into()],
+            );
+            assert!(invalid.validate("source").unwrap_err().contains("privacy"), "{fault}");
+            // Each invalid request is new: without admission checks it would
+            // append to the journal instead of hitting immutable-replay refusal.
+            assert!(store_forward_batch(&fixture.owner, &invalid).is_err(), "{fault}");
+            assert_eq!(fixture.owner.get_metadata(FORWARD_BATCHES_KEY).unwrap(), original_journal);
+            assert_eq!(load_forward_batches(&fixture.owner, "source").unwrap(), vec![original.clone()]);
+        }
+        let mut context = snapshot_context("text-only");
+        context["privacy"] = serde_json::json!({"dropSenderNames": true, "dropCaptions": true});
+        let text_only = HumanForwardBatch::new(
+            "account".into(), "issuer".into(), "text-only".into(), "source".into(), "entry".into(),
+            "plain text is not a media caption".into(), vec![], context, &["target".into()],
+        );
+        store_forward_batch(&fixture.owner, &text_only).expect("both hide options preserve a text-only body");
+        assert_eq!(load_forward_batches(&fixture.owner, "source").unwrap(), vec![original, text_only]);
+    }
+
     #[test]
     fn stale_same_batch_snapshot_cannot_regress_completed_destination() {
         let dir = std::env::temp_dir().join(format!("forward-stale-progress-{}", uuid::Uuid::new_v4()));

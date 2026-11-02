@@ -54,7 +54,8 @@ function validateReply(method: string, value: unknown): unknown {
 
 export interface ProductionCoordinatorClient {
   readonly ready: Promise<void>;
-  call(method: string, args?: unknown): Promise<unknown>;
+  /** Local admission after readiness; never serialized or used to cancel posted work. */
+  call(method: string, args?: unknown, isCurrent?: () => boolean): Promise<unknown>;
   telegramAuthStatus(): Promise<TelegramAuthorizationProjection>;
   telegramSendCode(phoneNumber: string): Promise<TelegramAuthorizationProjection>;
   telegramSignIn(code: string): Promise<TelegramAuthorizationProjection>;
@@ -170,11 +171,15 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   if (claim == null) return null;
   claim.request();
 
-  const call = async (method: string, args: unknown = {}) => {
+  const call = async (method: string, args: unknown = {}, isCurrent?: () => boolean) => {
     if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageRequest(args) == null) {
       throw new Error("getHumanConversationTranscriptTail requires a valid Human transcript cursor");
     }
     await currentReady;
+    // Waiting for the port is not Host admission. The original presentation
+    // and account may have retired during that wait, including an A-B-A return.
+    // Once this frame is posted, its durable Host work and reply are preserved.
+    if (isCurrent != null && isCurrent() !== true) throw new Error("Coordinator request scope expired before admission");
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
     const requestId = `r-${++nextRequestId}`;
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
