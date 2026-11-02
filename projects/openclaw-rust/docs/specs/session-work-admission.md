@@ -439,8 +439,29 @@ Pending-card maintenance fallback updates use the same owner update
 transaction and are likewise rejected during deletion custody.
 Hidden-entry repair cleanup now delegates deletion to the same owner
 transaction and reports no deletion while custody is active.
+An admitted transcript deletion returns committed success even when the row
+is already absent; closed, busy or fenced attempts remain non-success. An
+already-absent replay does not advance the write generation or publish a new
+mutation. The boolean acknowledges the admitted delete operation, not a new
+row removal, so maintenance does not misclassify an idempotent replay as an
+owner refusal.
 Transcript identity settlement used by Human handoff/replay also uses the
 same transaction-edge fence.
+For a Human-conversation projection, `sessionKey` is the source Agent's
+provenance, not the Human transcript's admission identity. The Session owner
+must validate that exact key against the source Agent admission while holding
+the existing per-agent lifecycle boundary through append or provenance
+enrichment. The Human conversation keeps its own existing transcript owner
+and must not acquire an Agent admission record. Missing, mismatched,
+archived or deletion-fenced source admission rejects a bound projection
+without changing the Human transcript. Legacy unbound Host-internal results
+retain their existing path. Replay preserves stream/content/source identity;
+concurrent duplicates do not append twice. Oracles use a real source Agent
+and Human owner, test new bound results and legacy provenance enrichment,
+then assert refusal and unchanged rows after source archive/deletion or
+identity mismatch. This repairs the cross-owner regression found by Actions
+`41397585774` on `5f0d548c325998ce4dcbedd1f1f04f91489df323`; it does not
+grant renderer access or claim external message delivery.
 Conversation clear now uses the same owner transaction and is rejected during
 deletion custody. Its external blob cleanup now also runs under the shared
 per-agent filesystem/deletion serialization boundary, so it cannot interleave
@@ -783,6 +804,24 @@ writes when the owner-local admission record is archived. This is incomplete
 evidence, not acceptance.
 
 ## Release and rollback
+
+Cloud-agent wake rearming does not settle background work. The existing
+pending-wake owner retains the exact durable CloudAgent marker while its
+watch is armed, including a repeated startup/rearm pass. Only matching
+completion settlement or the existing explicit lifecycle/stale disposition
+may clear it; an older rearm must preserve a replacement marker. Failure to
+arm retains recovery custody. Rearm consumes an already persisted marker and
+must not reinsert it after a concurrent terminal or lifecycle owner removes
+it; startup/carry/watch admission remains the persistence producer. Tests
+must cover settlement after the durable snapshot but before the first armed
+check. Recovery watch registration uses an atomic exact-marker replacement
+in the existing pending store and skips the fresh-work pending callback;
+absence or replacement rejects registration before the completion worker or
+pending notifications start. Normal new-work watch admission is unchanged.
+Tests cover a second rearm of an already-armed watch, reopening the pending store,
+arm failure, replacement races and completion during watch registration. This
+is the OCRM-C04/R14 recovery correction for run `41397585774`, not proof of
+real cloud service or cross-process Runner acceptance.
 
 The schema must be backward-compatible with existing agent DBs and written
 through the existing migration/transaction owner. Rollback removes the new

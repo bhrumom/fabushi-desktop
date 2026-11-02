@@ -704,6 +704,7 @@ mod tests {
                 on_text_delta("working", "working");
                 on_checkpoint(&RoutedProviderCheckpoint::Fabushi(
                     CodexDirectCheckpoint {
+                        model: Some("test-model".into()),
                         input: vec![json!({"role":"user","content":"inspect"})],
                         text: "working".into(),
                         response_id: "response-1".into(),

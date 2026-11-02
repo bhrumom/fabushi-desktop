@@ -291,6 +291,33 @@ impl SandPendingWakeStore {
         self.write_unlocked(&next).is_ok()
     }
 
+    /// Transfer an existing recovery marker to an admitted watch without
+    /// recreating settled work or overwriting a newer same-key marker.
+    pub fn replace_if_matches(
+        &self,
+        expected: &DurablePendingWakeMarker,
+        replacement: DurablePendingWakeMarker,
+    ) -> bool {
+        if !marker_key_matches(
+            &replacement,
+            &expected.agent_id,
+            expected.kind,
+            &expected.work_id,
+        ) {
+            return false;
+        }
+        let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut pending = self.read_pending_unlocked();
+        let Some(index) = pending.iter().position(|entry| entry == expected) else {
+            return false;
+        };
+        if pending[index] == replacement {
+            return true;
+        }
+        pending[index] = replacement;
+        self.write_unlocked(&pending).is_ok()
+    }
+
     pub fn clear_agent(&self, agent_id: &str) {
         let _guard = self.lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         let existing = self.read_pending_unlocked();

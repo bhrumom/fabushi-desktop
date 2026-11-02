@@ -7,7 +7,8 @@ use mahayana_host_runtime::agent_isolation::{
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
     hidden_entry_repair_version, read_persisted_latest_root_blob_id,
-    read_persisted_transcript_entries, stale_root_cleanup_version,
+    read_persisted_transcript_entries, stale_root_cleanup_version, SandAgentDb,
+    SessionWorkAdmissionRecord, SessionWorkResultCommitOutcome,
 };
 use mahayana_host_runtime::extensions::session::agent_db_schema::AGENT_DB_SCHEMA;
 use mahayana_host_runtime::extensions::session::conversation_recovery::OutlineItem;
@@ -62,7 +63,7 @@ fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn create_store_db(path: &std::path::Path, agent_id: &str) {
+fn create_store_db(path: &std::path::Path, agent_id: &str) -> SandAgentDb {
     let db = rusqlite::Connection::open(path).expect("store db");
     db.execute_batch(AGENT_DB_SCHEMA).expect("schema");
     let metadata = serde_json::to_vec(&serde_json::json!({
@@ -79,6 +80,8 @@ fn create_store_db(path: &std::path::Path, agent_id: &str) {
         params![to_hex(&metadata)],
     )
     .expect("metadata row");
+    drop(db);
+    SandAgentDb::open(path, 500).expect("session database owner")
 }
 
 #[test]
@@ -88,7 +91,7 @@ fn production_missing_root_recovery_requires_all_structural_refs_and_cas_persist
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
     let blob_path = agent_dir.join("conversation-blobs.db");
-    create_store_db(&db_path, "agent-a");
+    let owner = create_store_db(&db_path, "agent-a");
 
     let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
     let store = WorkerBlobStore::new(
@@ -113,6 +116,7 @@ fn production_missing_root_recovery_requires_all_structural_refs_and_cas_persist
         &db_path,
         &blob_path,
         500,
+        &owner,
     )
     .expect("recovery"));
     assert_eq!(
@@ -125,10 +129,12 @@ fn production_missing_root_recovery_requires_all_structural_refs_and_cas_persist
         &db_path,
         &blob_path,
         500,
+        &owner,
     )
     .expect("second recovery"));
 
     futures::executor::block_on(pool.close_all());
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -139,7 +145,7 @@ fn stale_root_cleanup_is_feature_gated_and_records_one_time_version() {
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
     let blob_path = agent_dir.join("conversation-blobs.db");
-    create_store_db(&db_path, "agent-b");
+    let owner = create_store_db(&db_path, "agent-b");
 
     let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
     let store = WorkerBlobStore::new(
@@ -164,12 +170,12 @@ fn stale_root_cleanup_is_feature_gated_and_records_one_time_version() {
 
     pin_stale_root_gc(false);
     assert!(!clear_stale_checkpoint_roots_once(
-        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500,
+        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500, &owner,
     ).expect("disabled cleanup"));
 
     pin_stale_root_gc(true);
     assert!(clear_stale_checkpoint_roots_once(
-        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500,
+        Arc::clone(&pool), "agent-b", &db_path, &blob_path, 500, &owner,
     ).expect("enabled cleanup"));
     assert_eq!(
         stale_root_cleanup_version(&db_path, 500).expect("cleanup version"),
@@ -186,6 +192,7 @@ fn stale_root_cleanup_is_feature_gated_and_records_one_time_version() {
     pin_stale_root_gc(false);
 
     futures::executor::block_on(pool.close_all());
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -195,7 +202,7 @@ fn transcript_backfill_only_appends_a_matching_recovered_tail() {
     let agent_dir = root.join("agent-c");
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
-    create_store_db(&db_path, "agent-c");
+    let owner = create_store_db(&db_path, "agent-c");
     let db = rusqlite::Connection::open(&db_path).expect("db");
     db.execute(
         "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
@@ -211,10 +218,154 @@ fn transcript_backfill_only_appends_a_matching_recovered_tail() {
         serde_json::json!({"id":"recovered-one","kind":"message","role":"user","content":"one"}),
         serde_json::json!({"id":"recovered-two","kind":"message","role":"user","content":"two"}),
     ];
-    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt).expect("backfill"), 1);
-    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt).expect("idempotent"), 0);
+    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt, &owner).expect("backfill"), 1);
+    assert_eq!(backfill_transcript(&db_path, 500, &rebuilt, &owner).expect("idempotent"), 0);
 
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn transcript_backfill_ignores_durable_control_rows_and_preserves_them_after_reopen() {
+    let controls = [
+        serde_json::json!({
+            "id": "background-result:result-1",
+            "kind": "background-result-receipt",
+            "sessionKey": "agent:agent-control:main",
+            "lifecycleRevision": "revision-1",
+            "workId": "work-1",
+            "idempotencyKey": "result-1",
+            "content": "settled background result",
+            "sentMessageCount": 1
+        }),
+        serde_json::json!({
+            "id": "outgoing-media-settlement:media-1",
+            "kind": "outgoing-media-settlement",
+            "sessionKey": "agent:agent-control",
+            "mediaWorkId": "media-1",
+            "lifecycleRevision": "revision-1",
+            "mediaPaths": ["/media/result.png"],
+            "transcriptEntryIds": ["send-1"]
+        }),
+        serde_json::json!({
+            "id": "compaction-1",
+            "kind": "compaction",
+            "firstKeptEntryId": "one",
+            "summary": "prior history",
+            "tokensBefore": 100,
+            "sourceTurnId": "turn-1",
+            "sourceLifecycleRevision": "revision-1",
+            "lifecycleRevision": "revision-2"
+        }),
+    ];
+
+    for control in controls {
+        let kind = control["kind"].as_str().expect("control kind");
+        let root = temp_root(kind);
+        let agent_dir = root.join("agent-control");
+        fs::create_dir_all(&agent_dir).expect("agent dir");
+        let db_path = agent_dir.join("store.db");
+        let owner = create_store_db(&db_path, "agent-control");
+        let one = serde_json::json!({
+            "id": "one", "kind": "message", "role": "user", "content": "one"
+        });
+        if kind == "background-result-receipt" {
+            let admission = SessionWorkAdmissionRecord {
+                session_key: "agent:agent-control:main".into(),
+                session_id: "agent-control".into(),
+                lifecycle_revision: "revision-1".into(),
+                deletion_pending: false,
+                archived_at_ms: None,
+                archived_by: None,
+                archive_reason: None,
+                admitted_work_id: Some("work-1".into()),
+                admitted_media_work_id: None,
+                admitted_media_paths: Vec::new(),
+                terminal_result_idempotency_key: None,
+                provider_review_id: None,
+                provider_review_phase: None,
+                provider_review_continuation_run_id: None,
+                provider_review: None,
+            };
+            assert!(owner
+                .compare_and_set_session_work_admission(None, &admission)
+                .expect("admit background work"));
+            assert!(owner.append_transcript_entry(&one).expect("seed visible row"));
+            assert!(matches!(
+                owner
+                    .commit_session_work_result(
+                        &admission.session_key,
+                        &admission.lifecycle_revision,
+                        "work-1",
+                        "result-1",
+                        "settled background result",
+                        1,
+                    )
+                    .expect("commit background result and its durable receipt"),
+                SessionWorkResultCommitOutcome::Committed(_)
+            ));
+            assert_eq!(
+                owner
+                    .get_transcript_entry_by_id("background-result:result-1")
+                    .expect("read committed receipt"),
+                Some(control.clone())
+            );
+        } else {
+            assert_eq!(
+                owner
+                    .append_transcript_entries(&[one.clone(), control.clone()])
+                    .expect("seed visible row and durable control"),
+                2
+            );
+        }
+        assert_eq!(owner.get_transcript_entries().expect("owner rows").len(), 2);
+
+        let rebuilt = vec![
+            serde_json::json!({"id":"recovered-one","kind":"message","role":"user","content":"one"}),
+            serde_json::json!({"id":"recovered-two","kind":"message","role":"user","content":"two"}),
+            serde_json::json!({"id":"recovered-three","kind":"message","role":"user","content":"three"}),
+            serde_json::json!({"id":"recovered-four","kind":"message","role":"user","content":"four"}),
+        ];
+        assert_eq!(
+            backfill_transcript(&db_path, 500, &rebuilt[..2], &owner)
+                .expect("backfill with equal raw row counts"),
+            1,
+            "{kind} must not hide the missing visible tail"
+        );
+        assert_eq!(
+            owner.get_transcript_entries().expect("first recovered tail"),
+            vec![one.clone(), control.clone(), rebuilt[1].clone()]
+        );
+        assert_eq!(
+            backfill_transcript(&db_path, 500, &rebuilt, &owner)
+                .expect("backfill past an interleaved control"),
+            2,
+            "{kind} must not shift prefix comparisons or the append offset"
+        );
+        let expected = vec![
+            one,
+            control,
+            rebuilt[1].clone(),
+            rebuilt[2].clone(),
+            rebuilt[3].clone(),
+        ];
+        assert_eq!(
+            backfill_transcript(&db_path, 500, &rebuilt, &owner).expect("idempotent backfill"),
+            0
+        );
+        assert_eq!(owner.get_transcript_entries().expect("durable rows"), expected);
+
+        owner.close(false);
+        let reopened = SandAgentDb::open(&db_path, 500).expect("reopen owner");
+        assert_eq!(
+            backfill_transcript(&db_path, 500, &rebuilt, &reopened)
+                .expect("idempotent backfill after reopen"),
+            0
+        );
+        assert_eq!(reopened.get_transcript_entries().expect("reopened rows"), expected);
+        reopened.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
 }
 
 
@@ -224,7 +375,7 @@ fn outline_backfill_and_hidden_repair_match_frozen_maintenance_contract() {
     let agent_dir = root.join("agent-d");
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
-    create_store_db(&db_path, "agent-d");
+    let owner = create_store_db(&db_path, "agent-d");
     let db = rusqlite::Connection::open(&db_path).expect("db");
     db.execute(
         "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
@@ -263,13 +414,13 @@ fn outline_backfill_and_hidden_repair_match_frozen_maintenance_contract() {
     ]];
 
     assert_eq!(
-        backfill_transcript_from_outline(&db_path, 500, &turns).expect("outline backfill"),
+        backfill_transcript_from_outline(&db_path, 500, &turns, &owner).expect("outline backfill"),
         0,
         "a mismatched persisted prefix must not append a tail"
     );
     let outline = turns.iter().flatten().cloned().collect::<Vec<_>>();
     assert_eq!(
-        repair_hidden_transcript_entries_once(&db_path, 500, &outline)
+        repair_hidden_transcript_entries_once(&db_path, 500, &outline, &owner)
             .expect("hidden repair"),
         1
     );
@@ -283,11 +434,12 @@ fn outline_backfill_and_hidden_repair_match_frozen_maintenance_contract() {
             .is_empty()
     );
     assert_eq!(
-        repair_hidden_transcript_entries_once(&db_path, 500, &[])
+        repair_hidden_transcript_entries_once(&db_path, 500, &[], &owner)
             .expect("idempotent hidden repair"),
         0
     );
 
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -297,7 +449,7 @@ fn outline_backfill_serializes_visible_user_send_and_tool_items() {
     let agent_dir = root.join("agent-e");
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
-    create_store_db(&db_path, "agent-e");
+    let owner = create_store_db(&db_path, "agent-e");
 
     let turns = vec![vec![
         OutlineItem::User {
@@ -321,7 +473,7 @@ fn outline_backfill_serializes_visible_user_send_and_tool_items() {
     ]];
 
     assert_eq!(
-        backfill_transcript_from_outline(&db_path, 500, &turns).expect("backfill"),
+        backfill_transcript_from_outline(&db_path, 500, &turns, &owner).expect("backfill"),
         3
     );
     let entries = read_persisted_transcript_entries(&db_path, 500).expect("entries");
@@ -330,6 +482,7 @@ fn outline_backfill_serializes_visible_user_send_and_tool_items() {
     assert_eq!(entries[1]["kind"], "send-message");
     assert_eq!(entries[2]["name"], "Task");
 
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -339,13 +492,13 @@ fn recovered_profile_name_sync_matches_frozen_recovery_contract() {
     let agent_dir = root.join("agent-profile");
     fs::create_dir_all(&agent_dir).expect("agent dir");
     let db_path = agent_dir.join("store.db");
-    create_store_db(&db_path, "agent-profile");
+    let owner = create_store_db(&db_path, "agent-profile");
 
-    assert!(sync_recovered_profile_name(&db_path, 500, "  Profile Wins  ")
+    assert!(sync_recovered_profile_name(&db_path, 500, "  Profile Wins  ", &owner)
         .expect("sync profile name"));
-    assert!(!sync_recovered_profile_name(&db_path, 500, "Profile Wins")
+    assert!(!sync_recovered_profile_name(&db_path, 500, "Profile Wins", &owner)
         .expect("idempotent sync"));
-    assert!(!sync_recovered_profile_name(&db_path, 500, "   ")
+    assert!(!sync_recovered_profile_name(&db_path, 500, "   ", &owner)
         .expect("blank profile ignored"));
 
     use mahayana_host_runtime::extensions::session::agent_db::read_persisted_agent_name;
@@ -355,6 +508,7 @@ fn recovered_profile_name_sync_matches_frozen_recovery_contract() {
             .as_deref(),
         Some("Profile Wins")
     );
+    owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
 

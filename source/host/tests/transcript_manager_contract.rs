@@ -537,9 +537,7 @@ impl PendingWakeRuntimePort for ManagerPendingWakeRuntime {
 
     fn watch_cloud_agent(
         &self,
-        _agent_id: &str,
-        _work_id: &str,
-        _quiet_origin: Option<&QuietWakeOrigin>,
+        _marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
         Ok(())
     }

@@ -897,11 +897,22 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
         "getHumanConversationTranscript",
         json!({"conversationId": conversation_id}),
     );
-    assert_eq!(transcript.as_array().map(Vec::len), Some(4));
+    assert_eq!(transcript.as_array().map(Vec::len), Some(5));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
     assert_eq!(transcript[1], reply);
     assert_eq!(transcript[2], attachment_only);
     assert_eq!(transcript[3], agent_result);
+    assert_eq!(transcript[4], bound_agent_result);
+    assert_eq!(
+        human_db.get_metadata("agentId").expect("Human identity remains distinct"),
+        None
+    );
+    assert_eq!(
+        human_db
+            .read_session_work_admission()
+            .expect("Human admission remains absent"),
+        None
+    );
 
     let human_tail = dispatch(
         &runtime,
@@ -911,7 +922,10 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
             "limit": 2
         }),
     );
-    assert_eq!(human_tail["entries"], json!([attachment_only.clone(), agent_result.clone()]));
+    assert_eq!(
+        human_tail["entries"],
+        json!([agent_result.clone(), bound_agent_result.clone()])
+    );
     let older_cursor = human_tail["nextBeforeSeq"]
         .as_i64()
         .expect("Human transcript tail should expose an older-page cursor");
@@ -924,8 +938,24 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
             "beforeSeq": older_cursor
         }),
     );
-    assert_eq!(human_older["entries"], json!([first.clone(), reply.clone()]));
-    assert!(human_older["nextBeforeSeq"].is_null());
+    assert_eq!(
+        human_older["entries"],
+        json!([reply.clone(), attachment_only.clone()])
+    );
+    let oldest_cursor = human_older["nextBeforeSeq"]
+        .as_i64()
+        .expect("five entries require one final older page");
+    let human_oldest = dispatch(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        json!({
+            "conversationId": conversation_id,
+            "limit": 2,
+            "beforeSeq": oldest_cursor
+        }),
+    );
+    assert_eq!(human_oldest["entries"], json!([first.clone()]));
+    assert!(human_oldest["nextBeforeSeq"].is_null());
 
     let attachment_search = dispatch(
         &runtime,
@@ -961,7 +991,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert!(matches!(empty_search, SessionGatewayError::BadRequest(_)));
 
     let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
-    assert_eq!(conversations_after_send[0]["updatedAt"], 2345.0);
+    assert_eq!(conversations_after_send[0]["updatedAt"], 2346.0);
 
     let conflicting = dispatch_production_session_gateway_call(
         &runtime,
@@ -1031,6 +1061,232 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert!(matches!(foreign_search, SessionGatewayError::Internal(_)));
     foreign.shutdown();
     restarted.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn human_agent_handoff_checks_source_admission_before_destination_mutation() {
+    let root = temp_root("human-handoff-admission");
+    let agents = root.join("agents");
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        &agents,
+        500,
+        Some("human-local".into()),
+        Arc::new(|| None),
+        memory,
+    ));
+    let agent = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("source Agent");
+    let source_admission = runtime
+        .read_session_work_admission(&agent.id)
+        .expect("source admission")
+        .expect("admitted source");
+    let created = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-peer",
+            "title": "Handoff destination"
+        }),
+    );
+    let conversation_id = created["id"].as_str().expect("conversation id");
+    let human_db = runtime
+        .open_human_conversation_db_owner(conversation_id)
+        .expect("Human transcript owner");
+    let legacy = runtime
+        .append_human_agent_message(
+            conversation_id,
+            &agent.id,
+            "runner-legacy",
+            None,
+            "legacy result",
+            10.0,
+        )
+        .expect("legacy unbound result");
+    assert!(legacy.get("sessionKey").is_none());
+
+    let barrier = std::sync::Barrier::new(2);
+    let duplicates = thread::scope(|scope| {
+        let calls = (0..2)
+            .map(|_| {
+                scope.spawn(|| {
+                    barrier.wait();
+                    runtime
+                        .append_human_agent_message(
+                            conversation_id,
+                            &agent.id,
+                            "runner-bound",
+                            Some(&source_admission.session_key),
+                            "bound result",
+                            11.0,
+                        )
+                        .expect("concurrent bound result")
+                })
+            })
+            .collect::<Vec<_>>();
+        calls
+            .into_iter()
+            .map(|call| call.join().expect("handoff worker"))
+            .collect::<Vec<_>>()
+    });
+    assert_eq!(duplicates[0], duplicates[1]);
+    let bound = &duplicates[0];
+    assert_eq!(bound["sessionKey"], source_admission.session_key);
+    let rows_before = human_db.get_transcript_entries().expect("initial Human rows");
+    assert_eq!(rows_before, vec![legacy.clone(), bound.clone()]);
+    let metadata_before = human_db.read_metadata().expect("initial Human metadata");
+    let assert_destination_unchanged = || {
+        assert_eq!(
+            human_db
+                .get_transcript_entries()
+                .expect("Human rows after rejection"),
+            rows_before
+        );
+        assert_eq!(
+            human_db.read_metadata().expect("Human metadata after rejection"),
+            metadata_before
+        );
+    };
+    // Exercise a new row, provenance enrichment, and an existing bound replay
+    // at every refusal boundary. None may bypass source admission.
+    let rejected_cases = [
+        ("runner-rejected", "new result"),
+        ("runner-legacy", "legacy result"),
+        ("runner-bound", "bound result"),
+    ];
+    let assert_rejected = |session_key: &str, expected_error: &str| {
+        for (stream_id, content) in rejected_cases {
+            let error = runtime
+                .append_human_agent_message(
+                    conversation_id,
+                    &agent.id,
+                    stream_id,
+                    Some(session_key),
+                    content,
+                    999.0,
+                )
+                .expect_err("source gate must reject append, enrichment, and replay");
+            assert!(error.contains(expected_error), "unexpected refusal: {error}");
+            assert_destination_unchanged();
+        }
+    };
+    assert_rejected("agent:other:main", "source session key mismatch");
+
+    runtime
+        .transition_session_work_archive(
+            &agent.id,
+            &source_admission.session_key,
+            &source_admission.session_id,
+            Some(&source_admission.lifecycle_revision),
+            true,
+            Some("human-local"),
+            Some("handoff archive contract"),
+            30.0,
+        )
+        .expect("archive source");
+    assert_rejected(&source_admission.session_key, "session is archived");
+    let archived = runtime
+        .read_session_work_admission(&agent.id)
+        .expect("archived source admission")
+        .expect("source admission remains");
+    runtime
+        .transition_session_work_archive(
+            &agent.id,
+            &archived.session_key,
+            &archived.session_id,
+            Some(&archived.lifecycle_revision),
+            false,
+            Some("human-local"),
+            None,
+            32.0,
+        )
+        .expect("restore source");
+
+    runtime
+        .begin_agent_delete(&agent.id)
+        .expect("fence source deletion");
+    assert_rejected(&source_admission.session_key, "new session work is not admitted");
+    runtime.clear_agent_delete_fast_path(&agent.id);
+    assert_rejected(&source_admission.session_key, "durable deletion cleanup is pending");
+    runtime
+        .end_agent_delete(&agent.id)
+        .expect("clear source deletion fence");
+
+    // A legacy Agent database can exist without an admission record. A bound
+    // projection must reject that state instead of manufacturing authority.
+    let legacy_agent =
+        mahayana_host_runtime::extensions::session::session_materialization::materialize_new_session(
+            &agents, 500, None, "user", None,
+        )
+        .expect("legacy Agent without admission");
+    let missing_error = runtime
+        .append_human_agent_message(
+            conversation_id,
+            &legacy_agent.id,
+            "runner-missing-admission",
+            Some(&format!("agent:{}:main", legacy_agent.id)),
+            "missing source admission",
+            50.0,
+        )
+        .expect_err("missing source admission must reject");
+    assert!(missing_error.contains("requires source session admission"));
+    assert_eq!(
+        runtime
+            .read_session_work_admission(&legacy_agent.id)
+            .expect("legacy admission"),
+        None
+    );
+    assert_destination_unchanged();
+
+    let enriched = runtime
+        .append_human_agent_message(
+            conversation_id,
+            &agent.id,
+            "runner-legacy",
+            Some(&source_admission.session_key),
+            "legacy result",
+            60.0,
+        )
+        .expect("enrich legacy result after source admission resumes");
+    let mut expected_enriched = legacy;
+    expected_enriched["sessionKey"] = json!(source_admission.session_key);
+    assert_eq!(enriched, expected_enriched);
+    assert_eq!(
+        runtime
+            .append_human_agent_message(
+                conversation_id,
+                &agent.id,
+                "runner-legacy",
+                Some(&source_admission.session_key),
+                "legacy result",
+                61.0,
+            )
+            .expect("enriched result replay"),
+        enriched
+    );
+    assert_eq!(
+        human_db.get_transcript_entries().expect("final Human rows"),
+        vec![enriched, bound.clone()]
+    );
+    assert_eq!(
+        human_db.get_metadata("agentId").expect("Human remains non-Agent"),
+        None
+    );
+    assert_eq!(
+        human_db
+            .read_session_work_admission()
+            .expect("Human admission remains absent"),
+        None
+    );
+
+    runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
 

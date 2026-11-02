@@ -20,7 +20,10 @@ use mahayana_host_runtime::extensions::session::agent_db_serde::{
 use mahayana_host_runtime::extensions::memory::memory_service::{
     MemoryKind, MemoryRecoveryRecord, MemoryRecord,
 };
-use mahayana_host_runtime::storage::store_db::live_db_handle_count;
+use mahayana_host_runtime::storage::store_db::{
+    get_sand_agent_db_write_generation, live_db_handle_count,
+};
+use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -1363,7 +1366,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         "id": "send-1",
         "kind": "send-message",
         "sessionKey": admission.session_key.clone(),
-        "content": "owned media"
+        "message": {"type": "text", "content": "owned media"}
     });
 
     let stale_identity = owner
@@ -1391,6 +1394,30 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
     assert!(malformed_entry
         .to_string()
         .contains("requires transcript entry identities"));
+    for malformed_payload in [
+        serde_json::json!({"content": "wrong envelope"}),
+        serde_json::json!({"message": {"type": "text"}}),
+    ] {
+        let mut unreadable_entry = malformed_payload;
+        unreadable_entry["id"] = serde_json::json!("send-malformed");
+        unreadable_entry["kind"] = serde_json::json!("send-message");
+        unreadable_entry["sessionKey"] = serde_json::json!(admission.session_key.clone());
+        assert!(matches!(
+            owner.append_transcript_entries_and_release_media(
+                &[sent_entry.clone(), unreadable_entry],
+                &admission.session_key,
+                &admission.lifecycle_revision,
+                "send-media:tool-1",
+            ),
+            Err(AgentDbProjectionError::WorkAdmissionInvalid(message))
+                if message == "media settlement requires valid transcript entry payloads"
+        ));
+        assert!(owner.get_transcript_entries().expect("rolled-back entries").is_empty());
+        assert_eq!(
+            owner.read_session_work_admission().expect("retained media custody"),
+            Some(admission.clone())
+        );
+    }
     let mut unbound_entry = sent_entry.clone();
     unbound_entry.as_object_mut().unwrap().remove("sessionKey");
     assert!(matches!(
@@ -1458,6 +1485,13 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         receipt.get("sessionKey").and_then(serde_json::Value::as_str),
         Some("agent:agent-media-settlement:main")
     );
+    owner.close(false);
+    let owner = SandAgentDb::open(&db_path, 50).expect("reopened media owner");
+    assert_eq!(owner.get_transcript_entry_by_id("send-1").unwrap(), Some(sent_entry.clone()));
+    assert_eq!(
+        owner.get_transcript_entry_by_id("outgoing-media-settlement:send-media:tool-1").unwrap(),
+        Some(receipt.clone())
+    );
     assert_eq!(
         owner
             .append_transcript_entries_and_release_media(
@@ -1483,7 +1517,7 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
             if message == "media settlement replay is stale or session is not admitted"
     ));
     let mut conflicting_entry = sent_entry.clone();
-    conflicting_entry["content"] = serde_json::json!("different content");
+    conflicting_entry["message"]["content"] = serde_json::json!("different content");
     let conflicting_replay = owner
         .append_transcript_entries_and_release_media(
             &[conflicting_entry],
@@ -1497,6 +1531,37 @@ fn media_settlement_appends_and_releases_in_one_owner_transaction() {
         AgentDbProjectionError::WorkAdmissionInvalid(message)
             if message == "outgoing media settlement replay conflicts with transcript content"
     ));
+
+    for (field, invalid) in [
+        ("id", serde_json::json!("outgoing-media-settlement:other")),
+        ("kind", serde_json::json!("unknown-receipt")),
+    ] {
+        let mut malformed_receipt = receipt.clone();
+        malformed_receipt[field] = invalid;
+        owner
+            .update_transcript_entry(
+                "outgoing-media-settlement:send-media:tool-1",
+                &malformed_receipt,
+            )
+            .expect("persist malformed receipt");
+        assert!(matches!(
+            owner.get_transcript_entry_by_id("outgoing-media-settlement:send-media:tool-1"),
+            Err(AgentDbProjectionError::WorkAdmissionInvalid(_))
+        ));
+        assert!(matches!(
+            owner.append_transcript_entries_and_release_media(
+                &[sent_entry.clone()],
+                &admission.session_key,
+                &admission.lifecycle_revision,
+                "send-media:tool-1",
+            ),
+            Err(AgentDbProjectionError::WorkAdmissionInvalid(_))
+        ));
+        assert_eq!(owner.get_transcript_entry_by_id("send-1").unwrap(), Some(sent_entry.clone()));
+    }
+    owner
+        .update_transcript_entry("outgoing-media-settlement:send-media:tool-1", &receipt)
+        .expect("restore valid receipt");
 
     let mut fenced = owner
         .read_session_work_admission()
@@ -1569,6 +1634,17 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         .expect("commit receipt");
     assert!(matches!(committed, SessionWorkResultCommitOutcome::Committed(_)));
 
+    owner.close(false);
+    let owner = SandAgentDb::open(&db_path, 50).expect("reopened background-result owner");
+    let receipt_id = "background-result:idem-1";
+    let receipt = owner
+        .get_transcript_entry_by_id(receipt_id)
+        .expect("read durable background receipt")
+        .expect("durable background receipt");
+    let settled = owner.read_session_work_admission().unwrap().unwrap();
+    assert_eq!(settled.admitted_work_id, None);
+    assert_eq!(settled.terminal_result_idempotency_key.as_deref(), Some("idem-1"));
+
     let duplicate = owner
         .commit_session_work_result(
             &admission.session_key,
@@ -1595,6 +1671,49 @@ fn background_result_receipt_is_idempotent_and_conflicts_fail_closed() {
         )
         .expect("conflicting receipt");
     assert_eq!(conflict, SessionWorkResultCommitOutcome::ConflictingResult);
+
+    for (field, value) in [
+        ("id", "background-result:other"),
+        ("lifecycleRevision", "revision-other"),
+        ("idempotencyKey", "idem-other"),
+    ] {
+        let mut rebound_receipt = receipt.clone();
+        rebound_receipt[field] = serde_json::json!(value);
+        owner
+            .update_transcript_entry(receipt_id, &rebound_receipt)
+            .expect("persist rebound receipt");
+        assert_eq!(
+            owner
+                .commit_session_work_result(
+                    &admission.session_key,
+                    &admission.lifecycle_revision,
+                    "work-1",
+                    "idem-1",
+                    "background output",
+                    2,
+                )
+                .expect("rebound receipt must not replay as committed"),
+            SessionWorkResultCommitOutcome::ConflictingResult
+        );
+        assert_eq!(owner.read_session_work_admission().unwrap(), Some(settled.clone()));
+    }
+    let mut malformed_receipt = receipt.clone();
+    malformed_receipt.as_object_mut().unwrap().remove("workId");
+    owner.update_transcript_entry(receipt_id, &malformed_receipt).unwrap();
+    assert!(matches!(
+        owner.commit_session_work_result(
+            &admission.session_key,
+            &admission.lifecycle_revision,
+            "work-1",
+            "idem-1",
+            "background output",
+            2,
+        ),
+        Err(AgentDbProjectionError::WorkAdmissionInvalid(message))
+            if message == "background result receipt is missing required identity"
+    ));
+    owner.update_transcript_entry(receipt_id, &receipt).unwrap();
+    assert_eq!(owner.get_transcript_entries().unwrap(), vec![receipt]);
 
     let mut fenced = owner
         .read_session_work_admission()
@@ -2074,6 +2193,80 @@ fn owner_routes_partner_origin_purpose_and_transcript_mutations() {
 }
 
 #[test]
+fn transcript_delete_replay_commits_without_new_events_or_write_generation() {
+    let root = temp_root("delete-idempotency");
+    let agent_dir = root.join("agent-delete-idempotency");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    owner
+        .append_transcript_entry(&serde_json::json!({
+            "id": "delete-1",
+            "kind": "message",
+            "role": "user",
+            "content": "delete once"
+        }))
+        .expect("seed entry");
+
+    let deletion_events = Arc::new(AtomicUsize::new(0));
+    let _subscription = subscribe_transcript_mutations({
+        let deletion_events = Arc::clone(&deletion_events);
+        move |mutation| {
+            if mutation.get("kind").and_then(serde_json::Value::as_str) == Some("entry-deleted")
+                && mutation.get("agentId").and_then(serde_json::Value::as_str)
+                    == Some("agent-delete-idempotency")
+                && mutation.get("entryId").and_then(serde_json::Value::as_str) == Some("delete-1")
+            {
+                deletion_events.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+    });
+    let before_delete = get_sand_agent_db_write_generation(&db_path);
+    assert!(owner.delete_transcript_entry("delete-1").expect("first delete"));
+    let committed_generation = get_sand_agent_db_write_generation(&db_path);
+    assert!(committed_generation > before_delete);
+    assert_eq!(deletion_events.load(Ordering::SeqCst), 1);
+
+    owner.close(false);
+    let owner = SandAgentDb::open(&db_path, 50).expect("reopened deletion owner");
+    assert!(owner.delete_transcript_entry("delete-1").expect("committed delete replay"));
+    assert_eq!(get_sand_agent_db_write_generation(&db_path), committed_generation);
+    assert_eq!(deletion_events.load(Ordering::SeqCst), 1);
+
+    let blocked = rusqlite::Connection::open(&db_path).expect("busy connection");
+    blocked.execute_batch("BEGIN IMMEDIATE").expect("hold write lock");
+    assert!(!owner.delete_transcript_entry("delete-1").expect("busy delete is uncommitted"));
+    blocked.execute_batch("ROLLBACK").expect("release write lock");
+
+    let admission = SessionWorkAdmissionRecord {
+        session_key: "agent:agent-delete-idempotency:main".into(),
+        session_id: "agent-delete-idempotency".into(),
+        lifecycle_revision: "revision-1".into(),
+        deletion_pending: true,
+        archived_at_ms: None,
+        archived_by: None,
+        archive_reason: None,
+        admitted_work_id: None,
+        admitted_media_work_id: None,
+        admitted_media_paths: Vec::new(),
+        terminal_result_idempotency_key: None,
+        provider_review_id: None,
+        provider_review_phase: None,
+        provider_review_continuation_run_id: None,
+        provider_review: None,
+    };
+    assert!(owner.compare_and_set_session_work_admission(None, &admission).unwrap());
+    let fenced_generation = get_sand_agent_db_write_generation(&db_path);
+    assert!(!owner.delete_transcript_entry("delete-1").expect("fenced delete replay"));
+    assert_eq!(get_sand_agent_db_write_generation(&db_path), fenced_generation);
+    assert_eq!(deletion_events.load(Ordering::SeqCst), 1);
+    owner.close(false);
+    assert!(!owner.delete_transcript_entry("delete-1").expect("closed delete replay"));
+    drop(blocked);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
     let root = temp_root("compaction");
     let agent_dir = root.join("agent-compaction");
@@ -2116,6 +2309,8 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
             .and_then(|value| value.as_str().map(ToOwned::to_owned)),
         Some(expected_revision.clone())
     );
+    owner.close(false);
+    let owner = SandAgentDb::open(&db_path, 50).expect("reopened compaction owner");
     let replay = owner
         .get_compacted_transcript_entries()
         .expect("replay projection");
@@ -2144,6 +2339,12 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
     assert!(matches!(
         owner.commit_compaction(&conflict),
         Err(mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError::CompactionConflict(_))
+    ));
+    let mut rebound = commit.clone();
+    rebound.expected_lifecycle_revision = "different-source-generation".into();
+    assert!(matches!(
+        owner.commit_compaction(&rebound),
+        Err(AgentDbProjectionError::CompactionConflict(_))
     ));
 
     let mut stale = commit.clone();
@@ -2232,6 +2433,83 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
 }
 
 #[test]
+fn compaction_without_retained_history_replays_new_rows_and_rejects_malformed_boundaries() {
+    let root = temp_root("compaction-no-retained-history");
+    let agent_dir = root.join("agent-compaction-no-retained-history");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+    owner
+        .append_transcript_entry(&serde_json::json!({
+            "id": "old", "kind": "message", "role": "user", "content": "summarized"
+        }))
+        .expect("history");
+    let commit = CompactionCommit {
+        entry_id: "compaction-all".into(),
+        expected_transcript_tail_id: "old".into(),
+        first_kept_entry_id: None,
+        summary: "summary of all prior history".into(),
+        tokens_before: 123,
+        details: None,
+        source_turn_id: "turn-1".into(),
+        expected_lifecycle_revision: owner
+            .get_metadata("lifecycleRevision")
+            .unwrap()
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string(),
+    };
+    let compaction = match owner.commit_compaction(&commit).expect("compact all history") {
+        CompactionCommitOutcome::Committed(entry) => entry,
+        other => panic!("expected committed compaction, got {other:?}"),
+    };
+    let newer = serde_json::json!({
+        "id": "newer", "kind": "message", "role": "user", "content": "next request"
+    });
+    assert!(owner.append_transcript_entry(&newer).expect("new turn"));
+    owner.close(false);
+    let owner = SandAgentDb::open(&db_path, 50).expect("reopened replay owner");
+    assert_eq!(
+        owner.get_compacted_transcript_entries().expect("replay after compaction"),
+        vec![compaction.clone(), newer.clone()]
+    );
+
+    for (field, invalid) in [
+        ("firstKeptEntryId", serde_json::json!("")),
+        ("firstKeptEntryId", serde_json::json!(7)),
+        ("firstKeptEntryId", serde_json::json!("missing")),
+        ("firstKeptEntryId", serde_json::json!("newer")),
+        ("summary", serde_json::json!(" ")),
+        ("tokensBefore", serde_json::json!("123")),
+    ] {
+        let mut malformed = compaction.clone();
+        malformed[field] = invalid;
+        owner.update_transcript_entry(&commit.entry_id, &malformed).unwrap();
+        assert!(matches!(
+            owner.get_compacted_transcript_entries(),
+            Err(AgentDbProjectionError::CompactionInvalid(_))
+        ));
+        assert_eq!(owner.get_transcript_entries().unwrap().len(), 3);
+    }
+    let mut missing_boundary = compaction.clone();
+    missing_boundary.as_object_mut().unwrap().remove("firstKeptEntryId");
+    owner.update_transcript_entry(&commit.entry_id, &missing_boundary).unwrap();
+    assert!(matches!(
+        owner.get_compacted_transcript_entries(),
+        Err(AgentDbProjectionError::CompactionInvalid(_))
+    ));
+    assert!(matches!(
+        owner.commit_compaction(&commit),
+        Err(AgentDbProjectionError::CompactionInvalid(_))
+    ));
+    owner.update_transcript_entry(&commit.entry_id, &compaction).unwrap();
+    assert_eq!(owner.get_compacted_transcript_entries().unwrap(), vec![compaction, newer]);
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn owner_rejects_compaction_when_transcript_tail_changes_after_planning() {
     let root = temp_root("compaction-tail-fence");
     let agent_dir = root.join("agent-compaction-tail-fence");
@@ -2278,6 +2556,69 @@ fn owner_rejects_compaction_when_transcript_tail_changes_after_planning() {
 
     owner.close(true);
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn compaction_rejects_unsupported_retained_rows_before_mutating_the_owner() {
+    for (label, retained) in [
+        ("notice", serde_json::json!({
+            "id": "retained", "kind": "notice", "text": "system notice"
+        })),
+        ("legacy-tool", serde_json::json!({
+            "id": "retained", "kind": "tool-call", "name": "Shell",
+            "status": "completed", "summary": "legacy tool presentation"
+        })),
+        ("media", serde_json::json!({
+            "id": "retained", "kind": "send-message",
+            "message": {"type": "attachment", "file_path": "/tmp/output.png"}
+        })),
+        ("unsettled-tool", serde_json::json!({
+            "id": "retained", "kind": "message", "role": "assistant",
+            "content": "working", "toolCalls": [{
+                "id": "call-1", "name": "Shell", "arguments": {"command": "pwd"}
+            }]
+        })),
+    ] {
+        let root = temp_root(&format!("compaction-unsupported-{label}"));
+        let agent_dir = root.join("agent-compaction-unsupported");
+        fs::create_dir_all(&agent_dir).expect("agent directory");
+        let db_path = agent_dir.join("store.db");
+        let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+        owner.append_transcript_entries(&[
+            serde_json::json!({
+                "id": "old", "kind": "message", "role": "user", "content": "earlier"
+            }),
+            retained,
+        ]).expect("seed canonical transcript");
+        let before = owner.get_transcript_entries().expect("transcript before");
+        let metadata = owner.read_metadata().expect("metadata before");
+        let revision = metadata["lifecycleRevision"].as_str().expect("revision").to_string();
+        let generation = get_sand_agent_db_write_generation(&db_path);
+        let commit = CompactionCommit {
+            entry_id: "compaction-rejected".into(),
+            expected_transcript_tail_id: "retained".into(),
+            first_kept_entry_id: Some("retained".into()),
+            summary: "prior context".into(),
+            tokens_before: 123,
+            details: None,
+            source_turn_id: "turn-1".into(),
+            expected_lifecycle_revision: revision,
+        };
+        assert!(matches!(
+            owner.commit_compaction(&commit),
+            Err(AgentDbProjectionError::CompactionInvalid(message))
+                if message.contains("retained transcript cannot be replayed")
+        ), "unsupported {label} must not publish a replay boundary");
+        assert_eq!(owner.get_transcript_entries().unwrap(), before);
+        assert_eq!(owner.read_metadata().unwrap(), metadata);
+        assert_eq!(get_sand_agent_db_write_generation(&db_path), generation);
+        assert_eq!(owner.get_transcript_entry_by_id("compaction-rejected").unwrap(), None);
+        owner.close(false);
+        let reopened = SandAgentDb::open(&db_path, 50).expect("reopen rejected candidate");
+        assert_eq!(reopened.get_compacted_transcript_entries().unwrap(), before);
+        reopened.close(false);
+        let _ = fs::remove_dir_all(root);
+    }
 }
 
 #[test]

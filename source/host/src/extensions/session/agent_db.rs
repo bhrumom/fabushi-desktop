@@ -29,7 +29,8 @@ use super::agent_db_serde::{
     AwaitingUserResponse, EPISODE_PENDING_MAX, EPISODE_TURN_TEXT_CAP, EpisodeTurn,
     MemoryPromptSnapshot, REQUEST_ID_HISTORY_MAX, REQUEST_ID_PROMPT_MAX, RequestRecord,
     SandProfile, SpendGuardState, UnreadState, parse_awaiting_state,
-    parse_memory_prompt_snapshot, parse_pending_episode_turns, parse_profile,
+    is_valid_transcript_entry, parse_memory_prompt_snapshot, parse_owner_transcript_entry,
+    parse_pending_episode_turns, parse_profile,
     parse_request_records, parse_transcript_entry, parse_unread_state,
     resolve_spend_guard_state, serialize_spend_guard_state,
 };
@@ -1277,7 +1278,7 @@ impl SandAgentDb {
                 })
                 .optional()?
             {
-                let Some(entry) = parse_transcript_entry(&raw) else {
+                let Some(entry) = parse_owner_transcript_entry(&raw) else {
                     return Err(AgentDbProjectionError::WorkAdmissionInvalid(
                         "background result receipt contains malformed JSON".into(),
                     ));
@@ -1287,8 +1288,11 @@ impl SandAgentDb {
                         "background result receipt is missing required identity".into(),
                     )
                 })?;
-                if receipt.session_key == session_key
+                if entry.get("id").and_then(serde_json::Value::as_str) == Some(receipt_id.as_str())
+                    && receipt.session_key == session_key
+                    && receipt.lifecycle_revision == expected_lifecycle_revision
                     && receipt.work_id == work_id
+                    && receipt.idempotency_key == idempotency_key
                     && receipt.content == content
                     && receipt.sent_message_count == sent_message_count
                 {
@@ -3626,7 +3630,7 @@ impl SandAgentDb {
                         "media settlement replay is stale or session is not admitted".into(),
                     ));
                 }
-                let receipt = parse_transcript_entry(&raw_receipt).ok_or_else(|| {
+                let receipt = parse_owner_transcript_entry(&raw_receipt).ok_or_else(|| {
                     AgentDbProjectionError::WorkAdmissionInvalid(
                         "outgoing media settlement receipt is malformed".into(),
                     )
@@ -3635,6 +3639,8 @@ impl SandAgentDb {
                     .get("kind")
                     .and_then(serde_json::Value::as_str)
                     == Some("outgoing-media-settlement")
+                    && receipt.get("id").and_then(serde_json::Value::as_str)
+                        == Some(receipt_id.as_str())
                     && receipt
                         .get("sessionKey")
                         .and_then(serde_json::Value::as_str)
@@ -3756,6 +3762,11 @@ impl SandAgentDb {
                             "media settlement requires matching entry provenance".into(),
                         ));
                     }
+                    if !is_valid_transcript_entry(entry) {
+                        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+                            "media settlement requires valid transcript entry payloads".into(),
+                        ));
+                    }
                     if statement.execute(params![id, entry.to_string()])? > 0 {
                         inserted.push(entry.clone());
                     }
@@ -3875,11 +3886,14 @@ impl SandAgentDb {
                 })
                 .optional()?;
             if let Some(raw) = existing {
-                let Some(existing) = parse_transcript_entry(&raw) else {
+                let Some(existing) = parse_owner_transcript_entry(&raw) else {
                     return Err(AgentDbProjectionError::CompactionInvalid(
                         "existing compaction identity contains malformed JSON".into(),
                     ));
                 };
+                if existing.get("kind").and_then(serde_json::Value::as_str) == Some("compaction") {
+                    compaction_first_kept_entry_id(&existing)?;
+                }
                 if compaction_payload_matches(&existing, commit) {
                     return Ok(CompactionCommitOutcome::AlreadyCommitted(existing));
                 }
@@ -3926,7 +3940,7 @@ impl SandAgentDb {
 
             if let Some(first_kept_entry_id) = commit.first_kept_entry_id.as_deref() {
                 let present = db
-                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![first_kept_entry_id], |row| {
+                    .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![first_kept_entry_id.trim()], |row| {
                         row.get::<_, String>(0)
                     })
                     .optional()?
@@ -3971,6 +3985,7 @@ impl SandAgentDb {
                 serde_json::Value::String(next_revision.clone()),
             );
             let entry = serde_json::Value::Object(entry);
+            validate_compaction_retained_replay(db, &entry)?;
             db.execute(
                 INSERT_TRANSCRIPT_ENTRY_SQL,
                 params![entry_id, entry.to_string()],
@@ -4035,19 +4050,9 @@ impl SandAgentDb {
             return Ok(entries);
         };
         let compaction = entries[compaction_index].clone();
-        if compaction.get("firstKeptEntryId").is_none()
-            || compaction.get("summary").and_then(serde_json::Value::as_str).is_none()
-            || compaction.get("tokensBefore").and_then(serde_json::Value::as_u64).is_none()
-        {
-            return Err(AgentDbProjectionError::CompactionInvalid(
-                "compaction entry is missing replay fields".into(),
-            ));
-        }
-        let first_kept = compaction
-            .get("firstKeptEntryId")
-            .and_then(serde_json::Value::as_str);
+        let first_kept = compaction_first_kept_entry_id(&compaction)?;
         let start = match first_kept {
-            Some(first_kept) if !first_kept.is_empty() => entries
+            Some(first_kept) => entries[..compaction_index]
                 .iter()
                 .position(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(first_kept))
                 .ok_or_else(|| {
@@ -4055,7 +4060,7 @@ impl SandAgentDb {
                         "compaction boundary {first_kept} is missing"
                     ))
                 })?,
-            Some(_) | None => entries.len(),
+            None => compaction_index + 1,
         };
         let mut replay = vec![compaction];
         replay.extend(
@@ -4403,25 +4408,29 @@ impl SandAgentDb {
         }
     }
 
+    /// Return committed success for an admitted delete, including an already
+    /// absent row. Only an actual row removal advances write generation or
+    /// publishes a transcript mutation.
     pub fn delete_transcript_entry(
         &self,
         entry_id: &str,
     ) -> Result<bool, AgentDbProjectionError> {
-        let committed = self.run_write("deleteTranscriptEntry", |db| {
+        let (committed, changed) = self.run_write_value("deleteTranscriptEntry", |db| {
             db.execute_batch("BEGIN IMMEDIATE")?;
-            let result = (|| -> Result<bool, rusqlite::Error> {
+            let result = (|| -> Result<(bool, bool), rusqlite::Error> {
                 if !session_work_write_is_admitted(db)? {
-                    return Ok(false);
+                    return Ok((false, false));
                 }
-                Ok(db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])? > 0)
+                let changed = db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])? > 0;
+                Ok((true, changed))
             })();
             match result {
-                Ok(changed) => {
+                Ok(outcome) => {
                     if let Err(error) = db.execute_batch("COMMIT") {
                         let _ = db.execute_batch("ROLLBACK");
                         return Err(error);
                     }
-                    Ok(changed)
+                    Ok((outcome, outcome.1))
                 }
                 Err(error) => {
                     let _ = db.execute_batch("ROLLBACK");
@@ -4429,7 +4438,7 @@ impl SandAgentDb {
                 }
             }
         })?;
-        if committed {
+        if changed {
             let mut mutation = serde_json::Map::new();
             mutation.insert(
                 "kind".into(),
@@ -5979,11 +5988,80 @@ fn read_transcript_entries_from_db(
     let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
     let mut entries = Vec::new();
     for row in rows {
-        if let Some(entry) = parse_transcript_entry(&row?) {
+        if let Some(entry) = parse_owner_transcript_entry(&row?) {
             entries.push(entry);
         }
     }
     Ok(entries)
+}
+
+fn validate_compaction_retained_replay(
+    db: &rusqlite::Connection,
+    compaction: &serde_json::Value,
+) -> Result<(), AgentDbProjectionError> {
+    let mut replay = vec![compaction.clone()];
+    if let Some(first_kept) = compaction_first_kept_entry_id(compaction)? {
+        let mut statement = db.prepare(
+            "SELECT entry FROM transcript_entries WHERE seq >= \
+             (SELECT seq FROM transcript_entries WHERE id = ?1) ORDER BY seq ASC",
+        )?;
+        let rows = statement.query_map(params![first_kept], |row| row.get::<_, String>(0))?;
+        for row in rows {
+            // Read the retained rows directly: a presentation decoder must not
+            // hide an unsupported or malformed candidate before this guard.
+            let entry: serde_json::Value = serde_json::from_str(&row?).map_err(|error| {
+                AgentDbProjectionError::CompactionInvalid(format!(
+                    "retained transcript is not valid JSON: {error}"
+                ))
+            })?;
+            if matches!(
+                entry.get("kind").and_then(serde_json::Value::as_str),
+                Some("compaction" | "background-result-receipt" | "outgoing-media-settlement")
+            ) {
+                continue;
+            }
+            replay.push(entry);
+        }
+    }
+    super::typed_replay::project_typed_replay_entries(&replay)
+        .map(|_| ())
+        .map_err(|error| AgentDbProjectionError::CompactionInvalid(format!(
+            "retained transcript cannot be replayed: {error}"
+        )))
+}
+
+fn compaction_first_kept_entry_id(
+    entry: &serde_json::Value,
+) -> Result<Option<&str>, AgentDbProjectionError> {
+    let has_identity = ["id", "sourceTurnId", "sourceLifecycleRevision", "lifecycleRevision"]
+        .iter()
+        .all(|key| {
+            entry
+                .get(*key)
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|value| !value.trim().is_empty())
+        });
+    let valid_summary = entry
+        .get("summary")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|summary| {
+            !summary.trim().is_empty() && summary.chars().count() <= MAX_COMPACTION_SUMMARY_CHARS
+        });
+    if !has_identity
+        || !valid_summary
+        || entry.get("tokensBefore").and_then(serde_json::Value::as_u64).is_none()
+    {
+        return Err(AgentDbProjectionError::CompactionInvalid(
+            "compaction entry is missing or has invalid replay fields".into(),
+        ));
+    }
+    match entry.get("firstKeptEntryId") {
+        Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::String(id)) if !id.trim().is_empty() => Ok(Some(id)),
+        _ => Err(AgentDbProjectionError::CompactionInvalid(
+            "compaction entry has an invalid retained-entry boundary".into(),
+        )),
+    }
 }
 
 fn compaction_payload_matches(
@@ -6005,18 +6083,38 @@ fn compaction_payload_matches(
         && existing.get("details") == commit.details.as_ref()
         && existing.get("sourceTurnId").and_then(serde_json::Value::as_str)
             == Some(commit.source_turn_id.trim())
+        && existing.get("sourceLifecycleRevision").and_then(serde_json::Value::as_str)
+            == Some(commit.expected_lifecycle_revision.trim())
 }
 
 fn read_transcript_entry_from_db(
     db: &rusqlite::Connection,
     entry_id: &str,
-) -> Result<Option<serde_json::Value>, rusqlite::Error> {
+) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
     let raw = db
         .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
             row.get::<_, String>(0)
         })
         .optional()?;
-    Ok(raw.as_deref().and_then(parse_transcript_entry))
+    let Some(raw) = raw else {
+        return Ok(None);
+    };
+    let entry = parse_owner_transcript_entry(&raw);
+    // A malformed receipt is an unknown recovery outcome, not evidence that
+    // the associated transcript/media work never committed.
+    if (entry_id.starts_with("background-result:")
+        || entry_id.starts_with("outgoing-media-settlement:"))
+        && entry
+            .as_ref()
+            .and_then(|entry| entry.get("id"))
+            .and_then(serde_json::Value::as_str)
+            != Some(entry_id)
+    {
+        return Err(AgentDbProjectionError::WorkAdmissionInvalid(
+            "stored session receipt is malformed or has a mismatched identity".into(),
+        ));
+    }
+    Ok(entry)
 }
 
 fn read_branched_entries_from_db(

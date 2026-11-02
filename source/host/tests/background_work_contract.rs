@@ -4,8 +4,8 @@ use std::time::Duration;
 use mahayana_host_runtime::runner::background_work::{
     BackgroundWakeup, BackgroundWakeupPayload, BackgroundWorkRecord,
     BackgroundShellBackgroundCompletion, BackgroundShellWatchOptions,
-    BackgroundShellWatchOutcome, CloudAgentBackgroundCompletion, CloudAgentWatchOptions,
-    CloudAgentWatchOutcome, RevivingBackgroundWorkRegistry, RunnerBackgroundShellWatches,
+    BackgroundShellWatchOutcome, CloudAgentBackgroundCompletion, CloudAgentPendingWatch,
+    CloudAgentWatchOptions, CloudAgentWatchOutcome, RevivingBackgroundWorkRegistry, RunnerBackgroundShellWatches,
     RunnerCloudAgentWatches, SHELL_REWATCH_POLL_DEFAULT_MS,
     derive_background_subagent_title, format_steer_prompt, parse_shell_terminal_footer,
     shell_rewatch_poll_ms,
@@ -249,6 +249,149 @@ fn runner_cloud_agent_watches_match_frozen_ownership_and_settlement_contract() {
         vec!["changed", "settled", "changed"],
         "completion must settle the durable/live owner before publishing the terminal task-set change",
     );
+}
+
+#[test]
+fn runner_cloud_agent_rejected_recovery_admission_has_no_pending_notification_or_worker() {
+    let (worker_tx, worker_rx) = mpsc::channel::<()>();
+    let pending = Arc::new(Mutex::new(0usize));
+    let changed = Arc::new(Mutex::new(0usize));
+    let settled = Arc::new(Mutex::new(0usize));
+    let watches = RunnerCloudAgentWatches::new(
+        Arc::new(move |_, _| {
+            worker_tx.send(()).expect("unexpected worker started");
+            CloudAgentWatchOutcome {
+                status: "completed".into(),
+                text: "unexpected recovery".into(),
+            }
+        }),
+        Some({
+            let pending = Arc::clone(&pending);
+            Arc::new(move |_| *pending.lock().expect("pending") += 1)
+        }),
+        Some({
+            let settled = Arc::clone(&settled);
+            Arc::new(move |_| *settled.lock().expect("settled") += 1)
+        }),
+        Some({
+            let changed = Arc::clone(&changed);
+            Arc::new(move |_| *changed.lock().expect("changed") += 1)
+        }),
+    );
+    let candidates = Mutex::new(Vec::<CloudAgentPendingWatch>::new());
+    let quiet_origin = json!({"automation":{"id":"routine-1","name":"Daily"}});
+
+    assert!(!watches.watch_cloud_agent_if_admitted(
+        " agent-a ",
+        " bc-1 ",
+        CloudAgentWatchOptions::new(Some(quiet_origin.clone()), false),
+        &|pending| {
+            candidates.lock().expect("candidates").push(pending.clone());
+            false
+        },
+    ));
+
+    let candidates = candidates.lock().expect("candidates");
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(candidates[0].parent_agent_id, "agent-a");
+    assert_eq!(candidates[0].work_id, "bc-1");
+    assert_eq!(candidates[0].title, "Cloud agent bc-1");
+    assert!(candidates[0].marked_at_ms > 0.0);
+    assert_eq!(candidates[0].quiet_origin, Some(quiet_origin));
+    assert!(!watches.is_cloud_watch_armed("agent-a", "bc-1"));
+    assert!(watches.async_task_snapshots("agent-a").is_empty());
+    assert_eq!(*pending.lock().expect("pending"), 0);
+    assert_eq!(*changed.lock().expect("changed"), 0);
+    drop(watches);
+    assert_eq!(
+        worker_rx.recv_timeout(Duration::from_secs(2)),
+        Err(mpsc::RecvTimeoutError::Disconnected),
+        "a rejected admission must not leave a worker holding the await callback",
+    );
+    assert_eq!(*settled.lock().expect("settled"), 0);
+}
+
+#[test]
+fn runner_cloud_agent_admitted_recovery_skips_fresh_pending_and_notifies_outside_watch_lock() {
+    let (started_tx, started_rx) = mpsc::channel::<(String, bool)>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let release_rx = Mutex::new(release_rx);
+    let (settled_tx, settled_rx) = mpsc::channel::<CloudAgentBackgroundCompletion>();
+    let (changed_tx, changed_rx) = mpsc::channel();
+    let pending = Arc::new(Mutex::new(0usize));
+    let owner = Arc::new(Mutex::new(None::<std::sync::Weak<RunnerCloudAgentWatches>>));
+    let watches = Arc::new(RunnerCloudAgentWatches::new(
+        Arc::new(move |work_id, after_followup| {
+            started_tx.send((work_id.into(), after_followup)).expect("started");
+            release_rx.lock().expect("release rx")
+                .recv_timeout(Duration::from_secs(2)).expect("release");
+            CloudAgentWatchOutcome { status: "completed".into(), text: "recovered".into() }
+        }),
+        Some({
+            let pending = Arc::clone(&pending);
+            Arc::new(move |_| *pending.lock().expect("pending") += 1)
+        }),
+        Some(Arc::new(move |completion| settled_tx.send(completion).expect("settled"))),
+        Some({
+            let owner = Arc::clone(&owner);
+            Arc::new(move |agent_id| {
+                let watches = owner.lock().expect("owner").as_ref()
+                    .and_then(std::sync::Weak::upgrade).expect("live owner");
+                // Production task projection also reads this owner from its callback.
+                changed_tx.send(watches.async_task_snapshots(agent_id)).expect("changed");
+            })
+        }),
+    ));
+    *owner.lock().expect("owner") = Some(Arc::downgrade(&watches));
+    let admitted = Arc::new(Mutex::new(Vec::<CloudAgentPendingWatch>::new()));
+    let quiet_origin = json!({"automation":{"id":"routine-1","name":"Daily"}});
+    let (registered_tx, registered_rx) = mpsc::channel();
+    let registration = std::thread::spawn({
+        let watches = Arc::clone(&watches);
+        let admitted = Arc::clone(&admitted);
+        let quiet_origin = quiet_origin.clone();
+        move || {
+            let registered = watches.watch_cloud_agent_if_admitted(
+                "agent-a",
+                "bc-1",
+                CloudAgentWatchOptions::new(Some(quiet_origin), true),
+                &|pending| {
+                    admitted.lock().expect("admitted").push(pending.clone());
+                    true
+                },
+            );
+            registered_tx.send(registered).expect("registered");
+        }
+    });
+
+    assert!(registered_rx.recv_timeout(Duration::from_secs(2)).expect("registration must not deadlock"));
+    registration.join().expect("registration");
+    assert_eq!(started_rx.recv_timeout(Duration::from_secs(2)).expect("started"), ("bc-1".into(), true));
+    let tasks = changed_rx.recv_timeout(Duration::from_secs(2)).expect("admitted task projection");
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(tasks[0].id, "bc-1");
+    assert!(!watches.watch_cloud_agent_if_admitted(
+        "agent-a", "bc-1", CloudAgentWatchOptions::new(None, false),
+        &|_| panic!("already-armed watches must not repeat durable admission"),
+    ));
+    let candidate = admitted.lock().expect("admitted")[0].clone();
+    assert_eq!(admitted.lock().expect("admitted").len(), 1);
+    assert_eq!(candidate.marked_at_ms, tasks[0].started_at_ms as f64);
+    assert_eq!(candidate.title, tasks[0].label);
+    assert_eq!(candidate.quiet_origin, Some(quiet_origin));
+    assert_eq!(*pending.lock().expect("pending"), 0);
+
+    release_tx.send(()).expect("release watch");
+    let completion = settled_rx.recv_timeout(Duration::from_secs(2)).expect("settled");
+    assert_eq!(completion.parent_agent_id, candidate.parent_agent_id);
+    assert_eq!(completion.work_id, candidate.work_id);
+    assert_eq!(completion.title, candidate.title);
+    assert_eq!(completion.marked_at_ms, candidate.marked_at_ms);
+    assert_eq!(completion.quiet_origin, candidate.quiet_origin);
+    assert_eq!(completion.result, "recovered");
+    assert!(changed_rx.recv_timeout(Duration::from_secs(2)).expect("settled task projection").is_empty());
+    assert!(!watches.is_cloud_watch_armed("agent-a", "bc-1"));
+    assert_eq!(*pending.lock().expect("pending"), 0);
 }
 
 #[test]

@@ -252,7 +252,9 @@ jobs:
           echo "Committed source-derived shard snapshot; new commit requires its own exact-head Actions receipt"
 
       - name: Dispatch scoped checks for the resulting exact branch head
-        if: ${{ (github.event.pull_request.head.ref || github.ref_name) == 'codex/openclaw-rust-fusion-chat-20261101-writer' }}
+        # The ordinary push already starts Rust checks for an unchanged H.
+        # GITHUB_TOKEN-derived commits need their own explicit dispatch.
+        if: ${{ steps.persist.outputs.materialized == 'true' && (github.event.pull_request.head.ref || github.ref_name) == 'codex/openclaw-rust-fusion-chat-20261101-writer' }}
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}

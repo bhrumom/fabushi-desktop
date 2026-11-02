@@ -165,7 +165,14 @@ fn hosted_room_materializes_filters_members_persists_notice_and_restamps_content
     let archived_error = rooms
         .restamp_room_entry("room-hosted", "t1u", 44.0)
         .expect_err("archived bound restamp must reject");
-    assert!(archived_error.contains("session is not admitted"));
+    assert!(archived_error.contains("session is archived"));
+    let after_rejection = sessions
+        .read_agent_transcript_entries(&room_agent)
+        .expect("entries after rejected restamp")
+        .into_iter()
+        .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some("t1u"))
+        .expect("original stamped entry remains");
+    assert_eq!(after_rejection, stamped);
 
     let _ = fs::remove_dir_all(root);
 }

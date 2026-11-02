@@ -2,6 +2,7 @@ const OWNER: &str = include_str!("../src/host_runner_composition.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 const GENERATED_STREAM: &str = include_str!("../src/runner/generated_agent_turn_stream.rs");
 const TURN_OWNER: &str = include_str!("../src/runner/production_turn_agent_owner.rs");
+const MULTITASK_STATE: &str = include_str!("../src/runner/tools/sand_multitask_todo_tool.rs");
 
 #[test]
 fn host_runner_composition_owns_turn_decoration_order() {
@@ -106,13 +107,32 @@ fn host_runner_composition_owns_turn_state_surface_wiring() {
         "memory_sessions.remove_agent_memory(&memory_agent_id, memory_id)",
         "state = state.with_agent_profile_writer(Arc::new(move |name, description|",
         "profile_sessions.update_agent_profile_fields(",
-        "sessions.open_agent_db_owner(agent_id)?",
+        "ProductionMultitaskTodoState::new(",
+        "Arc::clone(&sessions),",
     ] {
         assert!(
             OWNER.contains(needle),
             "HostRunnerComposition missing state-surface responsibility: {needle}"
         );
     }
+    // Session admission owns every todo mutation. The production adapter must
+    // retain that facade, rather than opening a raw DB for the turn lifetime.
+    for needle in [
+        "sessions: Arc<ProductionSessionWorkers>",
+        ".read_agent_kv_projection(&self.agent_id, SAND_MULTITASK_TODOS_KV)?",
+        "self.sessions.write_agent_kv_projection(",
+        "multitask todo write was rejected by session admission",
+    ] {
+        assert!(
+            MULTITASK_STATE.contains(needle),
+            "multitask state bypasses the canonical Session boundary: {needle}"
+        );
+    }
+    assert!(
+        !OWNER.contains("sessions.open_agent_db_owner(agent_id)?")
+            && !MULTITASK_STATE.contains("SandAgentDb"),
+        "turn state must not retain a raw DB handle outside Session admission",
+    );
     assert!(
         SHIPPING_HOST.contains(".compose_turn_state_surfaces(")
             && SHIPPING_HOST.contains("Arc::clone(&session_workers),")

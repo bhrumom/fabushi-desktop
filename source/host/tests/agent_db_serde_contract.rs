@@ -1,7 +1,8 @@
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, RequestRecord, SandProfile,
     SpendGuardState, UnreadState, is_valid_transcript_entry, parse_awaiting_state,
-    parse_memory_prompt_snapshot, parse_pending_episode_turns, parse_profile,
+    parse_memory_prompt_snapshot, parse_owner_transcript_entry, parse_pending_episode_turns,
+    parse_profile,
     parse_request_records, parse_transcript_entry, parse_unread_state,
     resolve_spend_guard_state, serialize_spend_guard_state,
 };
@@ -36,6 +37,65 @@ fn transcript_entry_validation_matches_frozen_grok_contract() {
         r#"{"id":"entry-5","kind":"user-attachment","file_path":"/tmp/a"}"#
     )
     .is_some());
+}
+
+#[test]
+fn owner_decoder_retains_control_records_without_widening_presentation_shapes() {
+    let records = [
+        json!({
+            "id": "background-result:idem-1",
+            "kind": "background-result-receipt",
+            "sessionKey": "agent:a:main",
+            "lifecycleRevision": "revision-1",
+            "workId": "work-1",
+            "idempotencyKey": "idem-1",
+            "content": "background output",
+            "sentMessageCount": 2
+        }),
+        json!({
+            "id": "outgoing-media-settlement:media-1",
+            "kind": "outgoing-media-settlement",
+            "sessionKey": "agent:a:main",
+            "lifecycleRevision": "revision-1",
+            "mediaWorkId": "media-1",
+            "mediaPaths": ["/tmp/media-1"],
+            "transcriptEntryIds": ["send-1"]
+        }),
+        json!({
+            "id": "compaction-1",
+            "kind": "compaction",
+            "firstKeptEntryId": "kept",
+            "summary": "summary",
+            "tokensBefore": 123,
+            "sourceTurnId": "turn-1",
+            "sourceLifecycleRevision": "revision-1",
+            "lifecycleRevision": "revision-2"
+        }),
+    ];
+    for record in records {
+        assert!(!is_valid_transcript_entry(&record));
+        assert_eq!(parse_transcript_entry(&record.to_string()), None);
+        assert_eq!(parse_owner_transcript_entry(&record.to_string()), Some(record));
+    }
+
+    for raw in [
+        "not-json",
+        "[]",
+        r#"{"id":"unknown","kind":"unknown"}"#,
+        r#"{"id":"error","kind":"error"}"#,
+        r#"{"id":"bad-send","kind":"send-message","content":"wrong envelope"}"#,
+        r#"{"id":"bad-text","kind":"send-message","message":{"type":"text"}}"#,
+    ] {
+        assert!(parse_transcript_entry(raw).is_none());
+        assert!(parse_owner_transcript_entry(raw).is_none());
+    }
+
+    let malformed_control = json!({"id": "compaction-bad", "kind": "compaction"});
+    assert_eq!(
+        parse_owner_transcript_entry(&malformed_control.to_string()),
+        Some(malformed_control),
+        "owner validation must see a malformed control row instead of treating it as absent"
+    );
 }
 
 #[test]

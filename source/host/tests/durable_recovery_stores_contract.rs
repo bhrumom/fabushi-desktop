@@ -221,3 +221,29 @@ fn production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_de
     assert!(upgrade_store.list_pending().is_empty());
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn recovery_watch_admission_replaces_only_the_exact_existing_marker() {
+    let root = temp_root("watch-admission");
+    let store = SandPendingWakeStore::new(&root);
+    let observed = pending("agent-a", PendingWakeKind::CloudAgent, "work", 1.0);
+    let admitted = DurablePendingWakeMarker {
+        marked_at_ms: 2.0,
+        title: Some("Cloud agent work".into()),
+        ..observed.clone()
+    };
+    assert!(!store.replace_if_matches(&observed, admitted.clone()));
+    assert!(!store.file_path().exists(), "settled absence cannot become new work");
+    assert!(store.mark_pending(observed.clone()));
+    let foreign = pending("agent-b", PendingWakeKind::CloudAgent, "work", 2.0);
+    assert!(!store.replace_if_matches(&observed, foreign));
+    assert_eq!(store.list_pending(), vec![observed.clone()]);
+    assert!(store.replace_if_matches(&observed, admitted.clone()));
+    assert_eq!(SandPendingWakeStore::new(&root).list_pending(), vec![admitted.clone()]);
+    assert!(!store.replace_if_matches(&observed, observed.clone()));
+    assert_eq!(store.list_pending(), vec![admitted.clone()]);
+    assert!(store.clear_if_matches(&admitted));
+    assert!(!store.replace_if_matches(&admitted, observed));
+    assert!(SandPendingWakeStore::new(&root).list_pending().is_empty());
+    let _ = fs::remove_dir_all(root);
+}

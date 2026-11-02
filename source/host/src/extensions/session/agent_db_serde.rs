@@ -166,6 +166,21 @@ pub fn parse_transcript_entry(raw: &str) -> Option<Value> {
     is_valid_transcript_entry(&entry).then_some(entry)
 }
 
+/// Decode rows owned by the session database, including its durable control
+/// records. Their owners validate receipt identity and compaction boundaries
+/// after decoding: dropping a malformed control record here would make it
+/// look absent and could incorrectly authorize recovery or full-history replay.
+/// Presentation readers continue to use `parse_transcript_entry`.
+pub fn parse_owner_transcript_entry(raw: &str) -> Option<Value> {
+    let entry = serde_json::from_str::<Value>(raw).ok()?;
+    match entry.get("kind").and_then(Value::as_str) {
+        Some("compaction" | "background-result-receipt" | "outgoing-media-settlement") => {
+            Some(entry)
+        }
+        _ => is_valid_transcript_entry(&entry).then_some(entry),
+    }
+}
+
 pub fn parse_profile(raw: Option<&str>) -> SandProfile {
     let Some(value) = parse_json(raw).and_then(|value| value.as_object().cloned()) else {
         return SandProfile::default();

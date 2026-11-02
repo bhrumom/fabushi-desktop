@@ -30,16 +30,44 @@ fn startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals()
     assert!(!SHIPPING_HOST.contains("production lost-subagent pending-wake revival is not wired yet"));
 }
 
+#[test]
+fn shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker() {
+    let runtime = SHIPPING_HOST
+        .split_once("impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {")
+        .expect("shipping pending-wake runtime")
+        .1;
+    let cloud_recovery = runtime
+        .split_once("    fn watch_cloud_agent(")
+        .expect("cloud recovery adapter")
+        .1
+        .split_once("    fn watch_background_shell(")
+        .expect("background shell adapter follows cloud recovery")
+        .0;
+    assert!(cloud_recovery.contains("marker: &DurablePendingWakeMarker"));
+    assert!(cloud_recovery.contains(".pending_wake_store()"));
+    assert!(cloud_recovery.contains(".watch_cloud_agent_if_admitted("));
+    assert!(cloud_recovery.contains("&marker.agent_id,"));
+    assert!(cloud_recovery.contains("&marker.work_id,"));
+    assert!(cloud_recovery.contains(
+        "store.replace_if_matches(marker, cloud_agent_pending_wake_marker(pending))"
+    ));
+    assert!(!cloud_recovery.contains(".watch_cloud_agent("));
+    assert!(!cloud_recovery.contains(".mark_pending("));
+    assert!(SHIPPING_HOST.contains("store.mark_pending(cloud_agent_pending_wake_marker(pending))"));
+    assert!(PENDING_WAKE_REARM.contains("self.runtime.watch_cloud_agent(marker)?"));
+}
+
 
 #[test]
 fn shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run() {
     let dispatch = SHIPPING_HOST
-        .find("if let Ok(Some(pending)) = runner.begin_generated_subagent(")
+        .find("if let Ok(Some(pending)) = runner.begin_generated_subagent_with_lifecycle(")
         .expect("shipping generated subagent dispatch must expose its pending wake");
     let provider_run = SHIPPING_HOST
-        .find("runner.run_routed_provider_with_projected_messages(")
+        .find("runner.run_routed_provider_with_projected_turn_input(")
         .expect("shipping generated subagent must execute through the Runner");
     assert!(dispatch < provider_run);
+    assert!(SHIPPING_HOST[dispatch..provider_run].contains("&generated_lifecycle_revision,"));
     assert!(SHIPPING_HOST.contains("kind: PendingWakeKind::Subagent"));
     assert!(SHIPPING_HOST.contains("work_id: pending.work_id.clone()"));
     assert!(SHIPPING_HOST.contains("marked_at_ms: pending.marked_at_ms"));

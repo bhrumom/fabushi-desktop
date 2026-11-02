@@ -44,9 +44,7 @@ pub trait PendingWakeRuntimePort: Send + Sync {
     fn cloud_watch_is_armed(&self, agent_id: &str, work_id: &str) -> bool;
     fn watch_cloud_agent(
         &self,
-        agent_id: &str,
-        work_id: &str,
-        quiet_origin: Option<&QuietWakeOrigin>,
+        marker: &DurablePendingWakeMarker,
     ) -> Result<(), String>;
 
     fn watch_background_shell(
@@ -251,6 +249,8 @@ impl PendingWakeRearm {
         }
     }
 
+    /// Rearm a marker already persisted by startup or recreate-carry admission.
+    /// Recovery must not reinsert it after a concurrent settlement removes it.
     pub fn rearm_pending_wake(
         &self,
         marker: DurablePendingWakeMarker,
@@ -258,11 +258,6 @@ impl PendingWakeRearm {
         success_reason: Option<&str>,
     ) {
         let report = |service: &Self, outcome: &str, reason: Option<&str>| {
-            if outcome == "rearm_failed" {
-                if let Some(store) = &service.store {
-                    store.mark_if_absent_or_matches(&marker);
-                }
-            }
             let effective_reason = reason.or_else(|| {
                 (outcome == "rearmed")
                     .then_some(success_reason)
@@ -316,7 +311,13 @@ impl PendingWakeRearm {
 
         match result {
             Ok(()) => {
-                let clear_after_success = marker.kind != PendingWakeKind::Subagent
+                // An armed cloud watch still needs its durable recovery marker.
+                // A repeated rearm observes that same marker without writing a
+                // replacement. Rearming is not completion settlement.
+                let clear_after_success = !matches!(
+                    marker.kind,
+                    PendingWakeKind::CloudAgent | PendingWakeKind::Subagent
+                )
                     && !(marker.kind == PendingWakeKind::Shell
                         && marker.interrupted_by_recreate);
                 if clear_after_success {
@@ -343,19 +344,10 @@ impl PendingWakeRearm {
             .runtime
             .cloud_watch_is_armed(&marker.agent_id, &marker.work_id)
         {
-            if let Some(store) = &self.store {
-                if !store.mark_if_absent_or_matches(marker) {
-                    return Err("pending cloud wake was replaced during rearm".into());
-                }
-            }
             return Ok(());
         }
 
-        self.runtime.watch_cloud_agent(
-            &marker.agent_id,
-            &marker.work_id,
-            marker.quiet_origin.as_ref(),
-        )?;
+        self.runtime.watch_cloud_agent(marker)?;
         if self
             .runtime
             .cloud_watch_is_armed(&marker.agent_id, &marker.work_id)
@@ -370,9 +362,6 @@ impl PendingWakeRearm {
         &self,
         marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
-        if let Some(store) = &self.store {
-            store.mark_if_absent_or_matches(marker);
-        }
         self.runtime.revive_lost_subagent(LostSubagentWake {
             parent_agent_id: marker.agent_id.clone(),
             subagent_agent_id: marker.work_id.clone(),

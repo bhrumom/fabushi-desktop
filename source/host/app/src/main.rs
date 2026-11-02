@@ -1759,6 +1759,25 @@ fn publish_generated_subagents(
     }));
 }
 
+fn cloud_agent_pending_wake_marker(
+    pending: &mahayana_host_runtime::runner::background_work::CloudAgentPendingWatch,
+) -> DurablePendingWakeMarker {
+    DurablePendingWakeMarker {
+        agent_id: pending.parent_agent_id.clone(),
+        kind: PendingWakeKind::CloudAgent,
+        work_id: pending.work_id.clone(),
+        marked_at_ms: pending.marked_at_ms,
+        quiet_origin: pending.quiet_origin.as_ref().and_then(coerce_quiet_origin),
+        title: Some(pending.title.clone()),
+        subagent_type: Some("cursor-agent".into()),
+        interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
+    }
+}
+
 #[derive(Clone)]
 struct ProductionPendingWakeRuntime {
     gateway: Arc<Mutex<Weak<UnifiedGatewayApi>>>,
@@ -1807,18 +1826,22 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
 
     fn watch_cloud_agent(
         &self,
-        agent_id: &str,
-        work_id: &str,
-        quiet_origin: Option<&QuietWakeOrigin>,
+        marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
-        let quiet_origin = quiet_origin
+        let gateway = self
+            .gateway()
+            .ok_or_else(|| "Host gateway is not ready for pending-wake rearm".to_string())?;
+        let store = gateway.transcript_runtime.pending_wake_store()
+            .ok_or_else(|| "pending cloud wake recovery requires its durable owner".to_string())?;
+        let quiet_origin = marker.quiet_origin.as_ref()
             .map(serde_json::to_value)
             .transpose()
             .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
-        let _ = self.cloud_agent_watches.watch_cloud_agent(
-            agent_id,
-            work_id,
+        let _ = self.cloud_agent_watches.watch_cloud_agent_if_admitted(
+            &marker.agent_id,
+            &marker.work_id,
             CloudAgentWatchOptions::new(quiet_origin, false),
+            &|pending| store.replace_if_matches(marker, cloud_agent_pending_wake_marker(pending)),
         );
         Ok(())
     }
@@ -15632,24 +15655,7 @@ fn main() {
         }),
         cloud_watch_pending_store.map(|store| {
             Arc::new(move |pending: &mahayana_host_runtime::runner::background_work::CloudAgentPendingWatch| {
-                let quiet_origin = pending
-                    .quiet_origin
-                    .as_ref()
-                    .and_then(coerce_quiet_origin);
-                let written = store.mark_pending(DurablePendingWakeMarker {
-                    agent_id: pending.parent_agent_id.clone(),
-                    kind: PendingWakeKind::CloudAgent,
-                    work_id: pending.work_id.clone(),
-                    marked_at_ms: pending.marked_at_ms,
-                    quiet_origin,
-                    title: Some(pending.title.clone()),
-                    subagent_type: Some("cursor-agent".into()),
-                    interrupted_by_recreate: false,
-                    delivery_operation_id: None,
-                    address_token: None,
-                    failure_reason: None,
-                    session_key: None,
-                });
+                let written = store.mark_pending(cloud_agent_pending_wake_marker(pending));
                 if !written {
                     eprintln!(
                         "mahayana-host pending_cloud_agent_wake_persist_failed agent={} work={}",

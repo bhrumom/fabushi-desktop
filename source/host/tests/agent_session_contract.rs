@@ -11,6 +11,7 @@ use mahayana_host_runtime::extensions::inference::model_picker_service::{
     ApplySessionModelSelectionParams, ModelCatalogEntry, SessionModelSelectionRequest,
     SessionModelSelectionRuntime,
 };
+use mahayana_host_runtime::extensions::inference::typed_replay_serialization::serialize_responses_replay;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
 use mahayana_host_runtime::automations::automation::AutomationSpec;
@@ -21,8 +22,17 @@ use mahayana_host_runtime::extensions::session::agent_db_serde::{
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
-use mahayana_host_runtime::extensions::session::agent_db::SessionWorkAdmissionRecord;
+use mahayana_host_runtime::extensions::session::agent_db::{
+    CompactionCommit, CompactionCommitOutcome, SessionWorkAdmissionRecord,
+};
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::typed_replay::{
+    ReplayContentPart, ReplayRole, TypedReplayEntry,
+};
+use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
+    UserMessageOptions, create_send_message_entry, create_user_message,
+};
+use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
 use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -34,6 +44,204 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-agent-session-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+#[test]
+fn production_compaction_preserves_text_send_messages_for_current_and_later_replay() {
+    let root = temp_root("compacted-send-message");
+    let agents = root.join("agents");
+    let production = ProductionSessionWorkers::with_agents_root(&agents, 500);
+    let record = production
+        .materialize_new_session(None, "user", None)
+        .expect("materialized production session");
+    let retained_text = "  Original answer\n\twith spacing  ";
+    let entries = vec![
+        create_user_message("old", "old request", UserMessageOptions::default(), 1.0),
+        create_user_message("kept", "retained request", UserMessageOptions::default(), 2.0),
+        create_send_message_entry(
+            "sent-1",
+            serde_json::json!({"type": "text", "content": retained_text}),
+            3.0,
+        ),
+    ];
+    assert_eq!(
+        production.append_agent_transcript_entries(&record.id, &entries).expect("history"),
+        3
+    );
+    assert!(production
+        .read_agent_typed_compacted_transcript_entries(&record.id)
+        .expect("no active compaction")
+        .is_empty());
+    // The guarded compaction owner compares metadata lifecycle identity, not
+    // the distinct Session work-admission revision.
+    let revision = production
+        .open_agent_db_owner(&record.id)
+        .expect("metadata owner")
+        .get_metadata("lifecycleRevision")
+        .expect("metadata lifecycle")
+        .and_then(|value| value.as_str().map(ToOwned::to_owned))
+        .expect("metadata lifecycle identity");
+    let commit = CompactionCommit {
+        entry_id: "compaction-1".into(),
+        expected_transcript_tail_id: "sent-1".into(),
+        first_kept_entry_id: Some("kept".into()),
+        summary: "earlier request summarized".into(),
+        tokens_before: 123,
+        details: None,
+        source_turn_id: "turn-1".into(),
+        expected_lifecycle_revision: revision,
+    };
+    assert!(matches!(
+        production.commit_agent_compaction(&record.id, &commit).expect("compaction"),
+        CompactionCommitOutcome::Committed(_)
+    ));
+    let durable = production.read_agent_transcript_entries(&record.id).expect("durable history");
+    assert_eq!(durable.len(), 4);
+    assert_eq!(&durable[..3], entries.as_slice());
+    let replay = production
+        .read_agent_typed_compacted_transcript_entries(&record.id)
+        .expect("typed compacted replay with SendMessage");
+    assert_eq!(replay.len(), 3);
+    assert!(matches!(
+        &replay[0],
+        TypedReplayEntry::CompactionSummary(summary)
+            if summary.summary == "earlier request summarized" && summary.tokens_before == 123
+    ));
+    let TypedReplayEntry::Message(user) = &replay[1] else {
+        panic!("retained user must remain a message");
+    };
+    assert_eq!(user.id.as_deref(), Some("kept"));
+    assert_eq!(user.role, ReplayRole::User);
+    let TypedReplayEntry::Message(assistant) = &replay[2] else {
+        panic!("canonical SendMessage must become an assistant message");
+    };
+    assert_eq!(assistant.id.as_deref(), Some("sent-1"));
+    assert_eq!(assistant.role, ReplayRole::Assistant);
+    assert_eq!(assistant.content, vec![ReplayContentPart::Text(retained_text.into())]);
+    let wire = serialize_responses_replay(&replay).expect("Responses replay");
+    assert_eq!(wire.len(), 3);
+    assert_eq!(wire[1], serde_json::json!({
+        "role": "user", "content": [{"type": "input_text", "text": "retained request"}]
+    }));
+    assert_eq!(wire[2], serde_json::json!({
+        "role": "assistant", "content": [{"type": "input_text", "text": retained_text}]
+    }));
+
+    let later_text = "\n  Follow-up answer\t ";
+    assert_eq!(
+        production.append_agent_transcript_entries(&record.id, &[
+            create_user_message("next-user", "continue", UserMessageOptions::default(), 4.0),
+            create_send_message_entry(
+                "sent-2",
+                serde_json::json!({"type": "text", "content": later_text}),
+                5.0,
+            ),
+        ]).expect("subsequent turn history"),
+        2
+    );
+    let later_replay = production
+        .read_agent_typed_compacted_transcript_entries(&record.id)
+        .expect("subsequent text SendMessage replay");
+    assert_eq!(later_replay.len(), 5);
+    assert_eq!(&later_replay[..3], replay.as_slice());
+    let TypedReplayEntry::Message(later_assistant) = &later_replay[4] else {
+        panic!("subsequent SendMessage must remain a message");
+    };
+    assert_eq!(later_assistant.id.as_deref(), Some("sent-2"));
+    assert_eq!(later_assistant.role, ReplayRole::Assistant);
+    assert_eq!(later_assistant.content, vec![ReplayContentPart::Text(later_text.into())]);
+    let later_wire = serialize_responses_replay(&later_replay).expect("subsequent Responses replay");
+    assert_eq!(later_wire.len(), 5);
+    assert_eq!(&later_wire[..3], wire.as_slice());
+    assert_eq!(later_wire[4], serde_json::json!({
+        "role": "assistant", "content": [{"type": "input_text", "text": later_text}]
+    }));
+
+    production.shutdown();
+    let reopened = ProductionSessionWorkers::with_agents_root(&agents, 500);
+    let reopened_replay = reopened
+        .read_agent_typed_compacted_transcript_entries(&record.id)
+        .expect("reopened production replay");
+    assert_eq!(reopened_replay, later_replay);
+    assert_eq!(serialize_responses_replay(&reopened_replay).expect("reopened Responses replay"), later_wire);
+    reopened.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_compaction_rejects_invalid_send_message_without_publishing_boundary() {
+    let root = temp_root("compaction-invalid-send-message");
+    let production = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    for message in [
+        serde_json::json!({"type": "text", "content": {"text": "malformed text"}}),
+        serde_json::json!({"type": "attachment", "url": "https://example.com/file.pdf"}),
+        serde_json::json!({"type": "text", "content": "caption", "images": [
+            {"url": "https://example.com/image.png"}
+        ]}),
+    ] {
+        let record = production
+            .materialize_new_session(None, "user", None)
+            .expect("materialized production session");
+        assert_eq!(
+            production.append_agent_transcript_entries(&record.id, &[
+                create_user_message("old", "old request", UserMessageOptions::default(), 1.0),
+                create_user_message("kept", "retained request", UserMessageOptions::default(), 2.0),
+                create_send_message_entry("unsupported", message, 3.0),
+            ]).expect("durable candidate history"),
+            3
+        );
+        let owner = production.open_agent_db_owner(&record.id).expect("owner");
+        let metadata_before = owner.read_metadata().expect("metadata before");
+        let generation_before = get_sand_agent_db_write_generation(owner.db_path());
+        // A malformed text row is intentionally invisible to presentation
+        // decoding. Observe raw durable rows so a decoder drop cannot satisfy
+        // the no-write oracle or hide the unsupported retained tail.
+        let observation = rusqlite::Connection::open_with_flags(
+            owner.db_path(),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        ).expect("read-only durable observation");
+        let raw_rows = || {
+            let mut statement = observation
+                .prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq ASC")
+                .expect("raw transcript query");
+            let rows = statement
+                .query_map([], |row| Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                )))
+                .expect("raw transcript rows");
+            rows
+                .collect::<Result<Vec<_>, _>>()
+                .expect("raw transcript values")
+        };
+        let rows_before = raw_rows();
+        assert_eq!(rows_before.len(), 3);
+        let commit = CompactionCommit {
+            entry_id: "rejected-compaction".into(),
+            expected_transcript_tail_id: "unsupported".into(),
+            first_kept_entry_id: Some("kept".into()),
+            summary: "must not be published".into(),
+            tokens_before: 123,
+            details: None,
+            source_turn_id: "turn-1".into(),
+            expected_lifecycle_revision: metadata_before["lifecycleRevision"]
+                .as_str().expect("metadata lifecycle identity").into(),
+        };
+        let error = production.commit_agent_compaction(&record.id, &commit)
+            .expect_err("unsupported SendMessage must reject compaction");
+        assert!(error.contains("retained transcript cannot be replayed"), "{error}");
+        assert!(error.contains("send-message"), "{error}");
+        assert_eq!(raw_rows(), rows_before);
+        assert_eq!(owner.read_metadata().expect("metadata after rejection"), metadata_before);
+        assert_eq!(get_sand_agent_db_write_generation(owner.db_path()), generation_before);
+        assert!(production
+            .read_agent_typed_compacted_transcript_entries(&record.id)
+            .expect("rejected boundary remains inactive")
+            .is_empty());
+    }
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
@@ -127,6 +335,15 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .expect("read session admission")
         .expect("main session admission")
         .session_key;
+    // Retain an observation handle before custody starts. Public owner opens
+    // are deliberately rejected while the deletion fast path is active.
+    let owner = production
+        .open_agent_db_owner(&record.id)
+        .expect("owner before deletion");
+    let entries_before = owner.get_transcript_entries().expect("initial transcript");
+    let awaiting_before = owner
+        .get_awaiting_user_response()
+        .expect("initial awaiting state");
 
     production
         .begin_agent_delete(&record.id)
@@ -164,12 +381,12 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
                 "id": "blocked-session-entry",
                 "kind": "message",
                 "role": "user",
-                "content": "durable deletion fence must be checked in owner transaction",
+                "content": "session-bound work must not be persisted during deletion",
                 "sessionKey": session_key.clone(),
             })],
         )
-        .expect_err("durable deletion-pending session append must be rejected");
-    assert!(session_admitted_error.contains("session is not admitted"));
+        .expect_err("deletion-pending session append must be rejected");
+    assert!(session_admitted_error.contains("new session work is not admitted"));
     let introduction_error = production
         .set_agent_introduction_pending(&record.id, false)
         .expect_err("deletion-pending introduction state must be rejected");
@@ -232,6 +449,20 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
         .mark_agent_activity(&record.id, 42.0)
         .expect_err("deletion-pending activity must be rejected");
     assert!(activity_error.contains("new session work is not admitted"));
+    assert_eq!(
+        owner
+            .get_transcript_entries()
+            .expect("transcript under deletion fence"),
+        entries_before,
+        "neither generic nor session-bound rejected work may append a row"
+    );
+    assert_eq!(
+        owner
+            .get_awaiting_user_response()
+            .expect("awaiting state under deletion fence"),
+        awaiting_before,
+        "rejected awaiting state mutations must leave the durable value intact"
+    );
     production
         .end_agent_delete(&record.id)
         .expect("clear deletion fence");
@@ -255,6 +486,14 @@ fn deletion_fence_rejects_new_transcript_work_before_durable_write() {
             })],
         )
         .expect("work is admitted after deletion fence clears");
+    let entries = owner
+        .get_transcript_entries()
+        .expect("transcript after admission resumes");
+    assert_eq!(entries.len(), entries_before.len() + 1);
+    assert!(entries.iter().any(|entry| entry["id"] == "admitted-entry"));
+    assert!(!entries.iter().any(|entry| {
+        entry["id"] == "blocked-entry" || entry["id"] == "blocked-session-entry"
+    }));
 
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
@@ -269,6 +508,15 @@ fn model_selection_does_not_report_applied_when_owner_rejects_persistence() {
     let record = store
         .create_session(None, "user", None)
         .expect("session");
+    let selection_before = store
+        .read_session_model_entry(&record.id)
+        .expect("selection before deletion");
+    let owner = production
+        .open_agent_db_owner(&record.id)
+        .expect("owner before deletion");
+    let persisted_before = owner
+        .read_kv("sessionModelSelection")
+        .expect("persisted selection before deletion");
 
     production
         .begin_agent_delete(&record.id)
@@ -313,11 +561,26 @@ fn model_selection_does_not_report_applied_when_owner_rejects_persistence() {
         100,
     )
     .expect_err("rejected persistence must not report Applied");
-    assert_eq!(result, "SESSION_MODEL_SELECTION_NOT_COMMITTED");
+    // Deletion now rejects at owner admission, before the model policy or
+    // commit edge can report an outcome.
+    assert!(result.contains("new session work is not admitted"));
+    assert_eq!(
+        owner
+            .read_kv("sessionModelSelection")
+            .expect("selection under deletion fence"),
+        persisted_before,
+        "a rejected selection must not write the owner-local override"
+    );
 
     production
         .end_agent_delete(&record.id)
         .expect("clear deletion fence");
+    assert_eq!(
+        store
+            .read_session_model_entry(&record.id)
+            .expect("selection after deletion fence"),
+        selection_before
+    );
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
@@ -395,15 +658,28 @@ fn session_delete_publishes_and_clears_owner_local_deletion_fence() {
     let record = store
         .create_session(None, "user", None)
         .expect("agent");
+    let owner = production
+        .open_agent_db_owner(&record.id)
+        .expect("owner before deletion");
+    let initial = owner
+        .read_session_work_admission()
+        .expect("initial admission")
+        .expect("admission");
 
     production
         .begin_agent_delete(&record.id)
         .expect("publish deletion fence");
-    assert!(production
+    let read_error = production
         .read_session_work_admission(&record.id)
-        .expect("read fenced admission")
-        .expect("admission")
-        .deletion_pending);
+        .expect_err("ordinary owner opens must remain fenced");
+    assert!(read_error.contains("owner open is not admitted"));
+    let fenced = owner
+        .read_session_work_admission()
+        .expect("observe durable admission through retained handle")
+        .expect("admission");
+    assert!(fenced.deletion_pending);
+    assert_eq!(fenced.session_key, initial.session_key);
+    assert_eq!(fenced.session_id, initial.session_id);
     production
         .end_agent_delete(&record.id)
         .expect("clear deletion fence");
@@ -413,6 +689,7 @@ fn session_delete_publishes_and_clears_owner_local_deletion_fence() {
         .expect("admission")
         .deletion_pending);
 
+    store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
 

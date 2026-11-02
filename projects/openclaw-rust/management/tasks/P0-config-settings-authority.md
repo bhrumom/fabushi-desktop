@@ -203,3 +203,123 @@ precondition: the missing-cut compaction case inherited the pre-compaction
 tail, so the existing stale-tail fence would run before the missing-cut check.
 `FIX` its expected tail to the preceding successful `compaction-1` entry while
 retaining the typed `CompactionInvalid` assertion. No production fence changes.
+
+### H7 recovery settlement (task d56b3d1d, round 2)
+
+The exact starting H is `5f0d548c325998ce4dcbedd1f1f04f91489df323`;
+live main remains `5528062177e3865eef60a073a066cca144f9e3e8`. Fixed U is
+`1440bb1771372334bea23d7642bb52deb7db1845`, with no source-lock change.
+Actions source run `41397585766` passed its 27 source-review checks and
+62,130 tracked rows. Artifact `13120510178` has digest
+`sha256:130062d75840a6033ad070f2551c5a634900a367fb14bf84a3cb641e9d6d36b4`.
+This is structural source evidence, not recursive dependency, semantic,
+compatibility or final acceptance closure. No inventory delta was produced.
+
+Runtime `41397585774`, job `125122153232`, passed the shipping Host compile
+and the nine configuration/inference targets (95 tests). The recovery target
+group failed 13 tests across seven binaries; later library and integrity
+checks were skipped. Logs identify implementation and oracle defects, with
+no evidence of an environment failure. Previous positives remain bound to
+that H and do not certify this repair.
+
+Failure dispositions and retained behavior:
+
+- `IMPL_BUG`: owner reads discarded durable background-result/media receipts
+  and compaction records; decode the three explicit control kinds for their
+  existing owners, retain the presentation parser, and reject malformed or
+  rebound receipt identities. Reopen/replay, malformed payload rollback and
+  compaction-cut negatives accompany the correction. Null compaction cuts
+  retain messages appended after the summary.
+- `IMPL_BUG`: an admitted no-op transcript deletion reported owner refusal;
+  acknowledge the committed operation while preserving busy/closed/fenced
+  non-success, no extra write generation and no duplicate mutation event.
+- `IMPL_BUG`: Human handoff checked the source Agent key in the destination
+  Human DB. Hold the existing source lifecycle boundary through destination
+  append/enrichment and validate exact source admission. Preserve the Human
+  owner, no Agent admission in its DB, stream/content idempotency and legacy
+  unbound calls. Test mismatched, absent, archived and both fast/durable
+  deletion fences with unchanged destination rows and metadata.
+- `IMPL_BUG`: repeated cloud-watch rearm cleared its sole durable marker.
+  Keep custody until matching completion; rearm must not resurrect a marker
+  removed concurrently by settlement. Test repeated rearm, reopen, failed
+  arming, same-key replacement and completion during registration.
+- `TEST_FLAW`: use the production send-message envelope in media fixtures;
+  require lifecycle revisions in generated-subagent positive fixtures;
+  expect the established early Session facade refusal and prove no write;
+  inspect the admitted multitask facade rather than a prohibited raw DB
+  handle; update the cloud wiring oracle to the current typed-turn API.
+  The fake cloud watch now models its actual pending-marker producer.
+  Valid atomicity, replay, isolation and rejection assertions remain.
+
+Diagnosis and the three disjoint implementation workers ran at actual
+`xhigh` effort with the configured model. The next causal instrument is the
+existing exact-H shipping check and the complete affected contract group,
+including DB serde/pages/recovery and cloud-wake production wiring. No local
+build, test, formatter, generator, schema check or runtime was executed.
+Source persistence dispatches another runtime run only when it actually
+materializes a new commit; the ordinary push already checks an unchanged H.
+
+Open production gaps remain explicit: compaction currently captures the
+Session admission lifecycle revision but compares/advances metadata revision;
+these can diverge and require the existing owner's reconciliation. The
+watch port can also report failed arming when a watch completed before its
+armed-state recheck, although settled custody must stay absent. This batch
+does not establish real provider/channel/plugin/node/device compatibility,
+cross-process Runner recovery, scoped semantic authority or any global
+completion flag. Provider-bound model identity remains the next production
+batch after shared contracts pass. Independent frozen-scope assessment and
+new exact-H Actions evidence are still required before this batch is called
+verified.
+
+Independent read-only assessment of frozen recovery tree
+`d117615b7f9fb8a84a6dae68f09d125c26c64cce` (base H above; 17 changed paths)
+identified two concrete integration defects. Decisions before editing:
+
+- `FIX` R1: a cloud completion after the durable snapshot but before the first
+  armed check still reached the fresh-watch unconditional pending producer.
+  Admit a recovery watch by atomically replacing only its exact observed
+  marker through the existing pending store; absent/replaced markers must not
+  arm a watch, publish pending state, or start another completion worker.
+  Retain normal new-work admission and add the missing deterministic race.
+- `FIX` R2: exposing internal control rows to full owner reads changed the
+  length/offset assumptions in `session_maintenance::backfill_transcript`.
+  Compare only the existing presentation projection when filling a missing
+  checkpoint tail, preserving all durable receipts and compaction records.
+  Add a real-owner recovery case containing an interleaved control row.
+- `FIX` R3: making compaction records readable activates the strict typed
+  consumer, which did not represent canonical outgoing text SendMessage rows.
+  Preserve those messages as assistant replay, and validate the retained
+  projection before committing a new boundary. Keep unpaired/unsupported
+  rows as explicit failures rather than dropping or stringifying them; an
+  invalid candidate must leave prior transcript and metadata unchanged.
+
+Read-only preparation also found two pre-existing `CodexDirectCheckpoint`
+literals in cfg(test) library code without the already-added `model` field
+(`production_turn_run_shell_adapter`, `turn_shape`). `FIX` as fixture schema
+drift before the previously skipped library compilation; preserve their
+watchdog/tool-boundary assertions and provide explicit model identity. This
+is source evidence, not an observed compiler result.
+The newly selected maintenance target also contained obsolete calls without
+its required `SandAgentDb` owner; update those fixtures to use the same real
+owner while retaining their recovery, prefix, cleanup and idempotency oracles.
+
+The independent assessment completed the full frozen scope and adjacent
+callers at actual xhigh effort. It confirms the environment reached the
+shipping and contract subjects; this is not an environment blocker or a
+campaign-budget reset. The follow-up is justified by the concrete changed
+invariants above, not by a new SHA alone. Do not repeat unchanged failed
+fixtures, restore receipt-dropping, weaken typed replay or remove durable
+custody to obtain green. The existing integrated target command remains the
+practical shared-owner instrument; it now also selects watch-owner, pending
+store, manager, maintenance and accepted-checkpoint/turn-shape consumers whose
+contracts were changed or previously skipped. Source authority and full
+compatibility/final acceptance remain separate unmet claims.
+
+Focused immutable review of tree `22546cb46ece9cf9ec6409502cb2addc822aefff`
+found R4, a test fixture requesting `Deserialize` for the intentionally
+Serialize-only quiet-origin type. `FIX` before compiling: use the existing
+`coerce_quiet_origin` at the fixture's Value boundary, matching production;
+do not widen the durable/public schema or alter the concurrency assertions.
+That reviewer completed all 29 frozen paths and the 21-path fix delta, with
+no additional blocking findings. The R4 correction requires a fresh focused
+snapshot review; no executable result is inferred from this source verdict.

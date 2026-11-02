@@ -79,6 +79,30 @@ pairing, tool-name equality, and settlement before exposing a typed replay to
 provider owners. Provider serializers retain the same checks as a second
 defense for directly constructed typed input.
 
+### 2026-11-02 durable-control decoder consumer repair
+
+Owner recovery must retain durable compaction and settlement control records.
+Checkpoint transcript backfill still compares only its existing presentation
+projection; internal records cannot count as recovered user/SendMessage rows.
+For active compacted replay, the canonical `send-message` envelope with
+`message.type = text` and string `message.content` is an assistant message.
+Preserve its ID and content bytes, including whitespace. Malformed text,
+media/structured SendMessage variants and legacy tool rows without pairing
+identity remain explicit unsupported outcomes; do not drop them or convert
+them to plain text to admit a compaction.
+
+Before publishing a new compaction, the existing DB owner validates the
+proposed retained projection inside the same transaction as its lifecycle and
+tail guards. Internal settlement receipts are excluded from inference by
+their explicit control responsibility, while remaining durable and readable
+to their recovery owners. Any unsupported retained row rejects the new
+boundary with transcript, metadata and write generation unchanged. The direct
+oracle materializes a production session with a retained user/text SendMessage
+tail, commits through the existing facade and obtains typed/provider replay;
+negative candidates prove there is no durable summary on refusal. This is a
+consumer correction for the previously unreadable control records, not a
+claim that unsupported tool/media/provider or restart scopes are accepted.
+
 ## 5. Current state
 
 The current implementation subject for this project round is

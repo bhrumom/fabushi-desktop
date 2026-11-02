@@ -5260,7 +5260,6 @@ impl ProductionSessionWorkers {
         content: &str,
         completed_at_ms: f64,
     ) -> Result<serde_json::Value, String> {
-        let local_human_id = self.local_human_id()?;
         let conversation_id = conversation_id.trim();
         let agent_id = agent_id.trim();
         let stream_id = stream_id.trim();
@@ -5285,6 +5284,49 @@ impl ProductionSessionWorkers {
                     .into(),
             );
         }
+
+        let append = || {
+            self.append_human_agent_message_to_conversation(
+                conversation_id,
+                agent_id,
+                stream_id,
+                session_key,
+                content,
+                completed_at_ms,
+            )
+        };
+        if let Some(session_key) = session_key {
+            // The session key belongs to the source Agent. Keep its lifecycle
+            // boundary through the destination commit; the Human transcript
+            // must never acquire the Agent's admission record.
+            self.with_agent_filesystem_mutation(agent_id, || {
+                self.assert_agent_transcript_write_admission_locked(agent_id)?;
+                let admission = self
+                    .read_session_work_admission_locked(agent_id)?
+                    .ok_or_else(|| {
+                        "Human handoff Agent result requires source session admission"
+                            .to_string()
+                    })?;
+                if admission.session_key != session_key {
+                    return Err("Human handoff Agent result source session key mismatch".into());
+                }
+                append()
+            })
+        } else {
+            append()
+        }
+    }
+
+    fn append_human_agent_message_to_conversation(
+        &self,
+        conversation_id: &str,
+        agent_id: &str,
+        stream_id: &str,
+        session_key: Option<&str>,
+        content: &str,
+        completed_at_ms: f64,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -5326,11 +5368,7 @@ impl ProductionSessionWorkers {
                             expected_session_key.to_string(),
                         );
                         return owner
-                            .update_transcript_entry_if_session_admitted(
-                                expected_session_key,
-                                &entry_id,
-                                &enriched,
-                            )
+                            .update_transcript_entry(&entry_id, &enriched)
                             .map_err(|error| error.to_string())?
                             .ok_or_else(|| {
                                 "Human handoff Agent result disappeared during provenance settlement"
@@ -5358,16 +5396,9 @@ impl ProductionSessionWorkers {
         if let Some(session_key) = session_key {
             entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
         }
-        let inserted = if let Some(session_key) = session_key {
-            owner
-                .append_transcript_entries_if_session_admitted(session_key, &[entry.clone()])
-                .map_err(|error| error.to_string())?
-                == 1
-        } else {
-            owner
-                .append_transcript_entry(&entry)
-                .map_err(|error| error.to_string())?
-        };
+        let inserted = owner
+            .append_transcript_entry(&entry)
+            .map_err(|error| error.to_string())?;
         if !inserted {
             let replay = owner
                 .get_transcript_entries()
@@ -5399,11 +5430,7 @@ impl ProductionSessionWorkers {
                             expected_session_key.to_string(),
                         );
                         return owner
-                            .update_transcript_entry_if_session_admitted(
-                                expected_session_key,
-                                &entry_id,
-                                &enriched,
-                            )
+                            .update_transcript_entry(&entry_id, &enriched)
                             .map_err(|error| error.to_string())?
                             .ok_or_else(|| {
                                 "Human handoff Agent result disappeared during replay provenance settlement"

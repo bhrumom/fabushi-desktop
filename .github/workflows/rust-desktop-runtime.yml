@@ -193,6 +193,10 @@ jobs:
             --test production_turn_agent_owner_contract \
             --test host_runner_composition_production_wiring_contract \
             --test pending_wake_rearm_contract \
+            --test cloud_agent_pending_wake_rearm_production_contract \
+            --test background_work_contract \
+            --test durable_recovery_stores_contract \
+            --test transcript_manager_contract \
             --test completion_revivals_contract \
             --test automation_runtime_contract \
             --test automation_run_path_contract \
@@ -202,10 +206,16 @@ jobs:
             --test shared_rooms_production_contract \
             --test agent_session_contract \
             --test agent_db_owner_contract \
+            --test agent_db_serde_contract \
+            --test agent_db_transcript_pages_contract \
+            --test agent_db_recovery_contract \
+            --test session_maintenance_contract \
             --test session_gateway_contract
           cargo test --manifest-path source/host/Cargo.toml --lib extensions::session::typed_replay::tests
           cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::typed_replay_serialization::tests
           cargo test --manifest-path source/host/Cargo.toml --lib runner::compaction_planning::tests
+          cargo test --manifest-path source/host/Cargo.toml --lib runner::production_turn_run_shell_adapter::tests
+          cargo test --manifest-path source/host/Cargo.toml --lib runner::turn_shape::tests
           cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::production::tests
           cargo test --manifest-path source/host/Cargo.toml --lib extensions::inference::provider_session::tests
       - name: Verify OpenClaw migration audit integrity
@@ -259,8 +269,8 @@ jobs:
               "owner_contract_targets": ["settings_service_contract", "openclaw_sessions_and_config_contract", "inference_extension_composition_contract", "settings_extension_contract", "production_settings_single_owner_contract", "gateway_command_error_contract", "openclaw_agent_roster_contract", "inference_codex_direct_contract", "inference_provider_session_contract"],
               "owner_contract_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "host_upgrade_production_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "session_gateway_contract"],
-              "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "host_upgrade_production_contract", "cloud_workers_extension_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract"],
+              "integration_recovery_lib_filters": ["extensions::session::typed_replay::tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests"],
               "integration_recovery_result": "passed",
               "committed_source_integrity": "passed",
               "scope": "Shared Settings owner CAS/snapshot and existing consumers; not cross-process, provider compatibility, platform packaging or final acceptance",

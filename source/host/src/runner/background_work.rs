@@ -417,6 +417,35 @@ impl RunnerCloudAgentWatches {
         bc_id: &str,
         options: CloudAgentWatchOptions,
     ) -> bool {
+        self.watch_cloud_agent_with_admission(parent_agent_id, bc_id, options, None)
+    }
+
+    /// Admit recovery only while its durable pending marker is still owned.
+    /// The admission callback runs under the watch-map lock and must not call
+    /// back into this owner. Pending/task notifications run after that lock is
+    /// released, and recovery skips the ordinary fresh-work pending callback.
+    pub fn watch_cloud_agent_if_admitted(
+        &self,
+        parent_agent_id: &str,
+        bc_id: &str,
+        options: CloudAgentWatchOptions,
+        admit_pending: &dyn Fn(&CloudAgentPendingWatch) -> bool,
+    ) -> bool {
+        self.watch_cloud_agent_with_admission(
+            parent_agent_id,
+            bc_id,
+            options,
+            Some(admit_pending),
+        )
+    }
+
+    fn watch_cloud_agent_with_admission(
+        &self,
+        parent_agent_id: &str,
+        bc_id: &str,
+        options: CloudAgentWatchOptions,
+        admit_pending: Option<&dyn Fn(&CloudAgentPendingWatch) -> bool>,
+    ) -> bool {
         let parent_agent_id = parent_agent_id.trim();
         let bc_id = bc_id.trim();
         if parent_agent_id.is_empty() || bc_id.is_empty() {
@@ -424,7 +453,7 @@ impl RunnerCloudAgentWatches {
         }
 
         let key = cloud_agent_watch_key(parent_agent_id, bc_id);
-        let armed = {
+        let (armed, pending) = {
             let mut state = self
                 .state
                 .lock()
@@ -432,27 +461,35 @@ impl RunnerCloudAgentWatches {
             if state.armed.contains_key(&key) {
                 return false;
             }
-            state.next_generation = state.next_generation.saturating_add(1);
             let armed = ArmedCloudAgentWatch {
-                generation: state.next_generation,
+                generation: state.next_generation.saturating_add(1),
                 parent_agent_id: parent_agent_id.to_string(),
                 work_id: bc_id.to_string(),
                 title: format!("Cloud agent {bc_id}"),
                 started_at_ms: background_task_started_at_ms(),
                 quiet_origin: options.quiet_origin.clone(),
             };
-            state.armed.insert(key.clone(), armed.clone());
-            armed
-        };
-
-        if let Some(callback) = self.on_pending.as_ref() {
-            callback(&CloudAgentPendingWatch {
+            let pending = CloudAgentPendingWatch {
                 parent_agent_id: armed.parent_agent_id.clone(),
                 work_id: armed.work_id.clone(),
                 title: armed.title.clone(),
                 marked_at_ms: armed.started_at_ms as f64,
                 quiet_origin: armed.quiet_origin.clone(),
-            });
+            };
+            if let Some(admit_pending) = admit_pending {
+                if !admit_pending(&pending) {
+                    return false;
+                }
+            }
+            state.next_generation = armed.generation;
+            state.armed.insert(key.clone(), armed.clone());
+            (armed, pending)
+        };
+
+        if admit_pending.is_none() {
+            if let Some(callback) = self.on_pending.as_ref() {
+                callback(&pending);
+            }
         }
         self.emit_async_tasks_changed(parent_agent_id);
 

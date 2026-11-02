@@ -159,6 +159,9 @@ fn project_entry(index: usize, entry: &Value) -> Result<TypedReplayEntry, TypedR
     match kind {
         Some("compaction") => project_compaction(index, object),
         Some("message") => project_message(index, object).map(TypedReplayEntry::Message),
+        Some("send-message") => {
+            project_send_message(index, object).map(TypedReplayEntry::Message)
+        }
         Some("user-attachment") => {
             required_string(index, object, "file_path")?;
             Ok(TypedReplayEntry::UserAttachment(ReplayAttachment {
@@ -187,6 +190,45 @@ fn project_compaction(
         tokens_before,
         details: object.get("details").cloned(),
     }))
+}
+
+fn project_send_message(
+    index: usize,
+    object: &serde_json::Map<String, Value>,
+) -> Result<ReplayMessage, TypedReplayError> {
+    let message = object
+        .get("message")
+        .and_then(Value::as_object)
+        .ok_or_else(|| malformed(index, "send-message message must be an object"))?;
+    if message.get("type").and_then(Value::as_str) != Some("text") {
+        return Err(malformed(
+            index,
+            "send-message replay requires message.type text",
+        ));
+    }
+    let content = message
+        .get("content")
+        .and_then(Value::as_str)
+        .ok_or_else(|| malformed(index, "send-message text content must be a string"))?;
+    if message
+        .get("images")
+        .is_some_and(|images| !images.as_array().is_some_and(Vec::is_empty))
+    {
+        return Err(malformed(
+            index,
+            "send-message images are not supported in typed replay",
+        ));
+    }
+    Ok(ReplayMessage {
+        id: object.get("id").and_then(Value::as_str).map(ToOwned::to_owned),
+        role: ReplayRole::Assistant,
+        // This is already canonical transcript content. Do not normalize it
+        // with required_string or discard an empty/whitespace-only message.
+        content: vec![ReplayContentPart::Text(content.to_string())],
+        attachments: Vec::new(),
+        tool_calls: Vec::new(),
+        tool_result: None,
+    })
 }
 
 fn project_message(
@@ -336,6 +378,57 @@ fn malformed(index: usize, detail: impl Into<String>) -> TypedReplayError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn preserves_canonical_text_send_message_as_assistant_without_normalization() {
+        for content in ["  Original text\n\twith spacing  ", "", " \t\n"] {
+            let projected = project_typed_replay_entries(&[serde_json::json!({
+                "kind": "send-message",
+                "id": "outgoing-text",
+                "timestampMs": 12,
+                "message": {"type": "text", "content": content}
+            })])
+            .expect("canonical text SendMessage replay");
+            assert_eq!(
+                projected,
+                vec![TypedReplayEntry::Message(ReplayMessage {
+                    id: Some("outgoing-text".into()),
+                    role: ReplayRole::Assistant,
+                    content: vec![ReplayContentPart::Text(content.into())],
+                    attachments: Vec::new(),
+                    tool_calls: Vec::new(),
+                    tool_result: None,
+                })]
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_structured_and_media_send_messages_instead_of_flattening_them() {
+        for message in [
+            Value::Null,
+            serde_json::json!([]),
+            serde_json::json!({"content": "missing type"}),
+            serde_json::json!({"type": "text"}),
+            serde_json::json!({"type": "text", "content": null}),
+            serde_json::json!({"type": "text", "content": 42}),
+            serde_json::json!({"type": "text", "content": {"text": "structured"}}),
+            serde_json::json!({"type": "text", "content": ["structured"]}),
+            serde_json::json!({"type": "text", "content": "caption", "images": [
+                {"url": "https://example.com/image.png"}
+            ]}),
+            serde_json::json!({"type": "text", "content": "caption", "images": null}),
+            serde_json::json!({"type": "attachment", "content": "not a text fallback", "url": "https://example.com/file.pdf"}),
+            serde_json::json!({"type": "widget", "content": "not a text fallback", "widget": {"prompt": "Choose"}}),
+        ] {
+            let error = project_typed_replay_entries(&[
+                serde_json::json!({"kind": "message", "role": "user", "content": "keep me"}),
+                serde_json::json!({"kind": "send-message", "id": "unsupported", "message": message}),
+            ])
+            .expect_err("unsupported SendMessage must reject the complete replay");
+            assert!(matches!(error, TypedReplayError::Malformed { index: 1, .. }));
+        }
+    }
 
     #[test]
     fn preserves_summary_roles_tool_pair_and_attachments() {
