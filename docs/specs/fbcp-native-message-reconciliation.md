@@ -1362,3 +1362,42 @@ mismatch, not a fabricated release failure.
 
 This batch performs no release dispatch, publication, backend mutation, merge
 or deployment.
+
+### Native resource upload service limit (NMR-51 / NMR-AC-42)
+
+The original product prerequisite remains exact59f5fa/run41508537631, whose five
+applicable message jobs and actual suites succeeded. Resume at exact3c9995a
+preserves all later forwarding, byte-snapshot, reply-recovery and source work.
+Current `bhrumom/fabushi-backend@687718ce9e0083aa124d29005bcce4051d357919`,
+`fabushi/web/src/handlers/friends.js` blob
+`6179f3ce8e223f4e0bd9664885871e134f4488a8` permits only nonempty resources of
+at most 25 * 1024 * 1024 bytes. Shared Agent videos may be 200 MiB. The current
+Native path/buffer upload and forwarding snapshot limits incorrectly permit
+32 MiB; the shared download32MiB budget has a different responsibility.
+
+- NMR-51: Use one 25 MiB service upload bound for Native file and byte-buffer
+  entrypoints and the existing forward snapshot reader/validator. This corrects
+  NMR-48's upload32MiB and six-times32MiB wording to 25MiB and six-times25MiB.
+  Preserve nonregular/symlink refusal, path and opened-handle checks, digest
+  validation, atomic snapshots, complete-target prevalidation, credential
+  fencing and all durable journal/error state. Bound file reads to limit+1.
+  Reject empty/oversized inputs before multipart/HTTP, without changing the
+  shared Agent video or downloaded-resource budgets, schema, stores or owners.
+- NMR-AC-42: Execute a real Human gateway/SQLite recovery case: oversized
+  video fails twice with zero HTTP, including after restart, retaining the
+  original pending/error/nonce; corrected same input recovers once with the
+  same nonce and exactly resourcePOST/messagePOST/resourceGET. Execute reader
+  cases with the literal service25MiB boundary, empty/partial-read failures and
+  actual limit+1 consumption. Prove the buffer entrypoint rejects before auth
+  and HTTP; preserve the existing exact-limit and oversized forwarding oracles.
+  All current Human/forward-journal/Agent/credential/shipping/protocol/TCP/UI/
+  Electron/Windows gates must succeed at containing H in GitHub Actions.
+
+This is a bounded service contract correction, not full UI retry acceptance.
+Current UI retry creates a fresh nonce, omits reply and cannot recommit an
+already committed attachment through the staging-only bridge; that dependent
+consumer needs its own verified Host-authoritative recovery batch. Existing
+UI failure notice/draft restoration was traced, not visually accepted.
+Fixed-U source review is limited to `PrepareMediaList` and `Uploader::readDocPart`
+sections; no complete upstream-file review, source/legal closure, deployed
+service/package/platform/Bot or independent ACCEPT is claimed.

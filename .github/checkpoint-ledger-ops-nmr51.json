@@ -1,0 +1,60 @@
+{
+  "format_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "responsibility_id": "FBCP-NMR-001",
+  "expected_input_blob": "eddd11c7db0e8be8cfa26a58fb177901ce09b55e",
+  "expected_output_blob": "a95d76c46119474e36134456442aebe39f4e9760",
+  "append": {
+    "fabushi_target_symbols": [
+      "read_human_resource_upload_file",
+      "read_human_resource_upload_bytes",
+      "validate_human_resource_upload_size"
+    ],
+    "production_evidence": [
+      "NMR-51 authored: existing sendHumanMessage -> ProductionSessionWorkers -> FabushiNativeMessagingClient::upload_direct_message_resource_bound -> read_human_resource_upload_file; 25MiB metadata/open-file/actual-read boundary before multipart and HTTP; projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json"
+    ],
+    "test_evidence": [
+      "NMR-AC-42 authored-not-run: source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce; three private resource-bound contracts; containing-H GitHub Actions required; projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json"
+    ],
+    "requirement_ids": [
+      "NMR-51",
+      "NMR-AC-42"
+    ],
+    "oracle_ids": [
+      "NMR-AC-42"
+    ],
+    "invariant_ids": [
+      "NMR-51"
+    ],
+    "unit_case_ids": [
+      "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected",
+      "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one",
+      "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http"
+    ],
+    "integration_case_ids": [
+      "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce"
+    ],
+    "fault_recovery_case_ids": [
+      "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce"
+    ],
+    "security_case_ids": [
+      "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce",
+      "source/host/src/extensions/session/native_messaging.rs#native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one"
+    ],
+    "regression_ids": [
+      "source/host/tests/session_gateway_contract.rs#shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce"
+    ],
+    "test_fixture_ids": [
+      "NMR-51: sparse 25MiB+1 video, bounded HTTP accept/release channel, corrected attachment bytes, actual Session gateway and SQLite shutdown/reopen"
+    ],
+    "test_execution_evidence": [
+      "Prerequisite exact:59f5fa24827812f78336c464995d161f403dedfb:run41508537631:attempt1 all five applicable message jobs terminal success; Human38/Agent4/private3/sharebox1/journal3/HTTP1; shipping locked AppHost/protocol122/TCP9 including live/proxy4/credential1/actual package-copy4 plus three required rejecting controls; UI transcript16/settlement5/browser12; Electron10/8/3/16/28/18; Windows11. Counts and artifact digests scoped in projects/telegram-desktop-rust/evidence/round3-native-resource-upload-20261102.json. This historical result does not execute the new NMR-51 implementation/tests."
+    ],
+    "fabushi_target_paths": [
+      "source/host/src/extensions/session/forward_batch_journal.rs"
+    ]
+  },
+  "note": "\nNMR-51 / NMR-AC-42: same existing Native Human resource owner now enforces the backend 25MiB limit before multipart/HTTP, with metadata and opened-file checks plus limit+1 bounded reading. The actual Human composer admits shared Agent videos larger than the service limit, so this repairs a reachable production boundary. Single-invalid-attachment gateway recovery and reader limits are authored, not executed at freeze. Same nonce, durable pending/error and restart/correction are required; multi-attachment atomic upload, immutable forward bytes, full UI visual/a11y and real-service acceptance are not claimed. Shared Agent200MiB and download32MiB budgets are unchanged. Selected fixed-U PrepareMediaList and Uploader::readDocPart sections were read only; no whole-file source_reviews/read-complete, inventory or acceptance promotion. Historical target_commit/workflow fields remain scoped to their earlier evidence; new execution is recorded only when exact containing-H Actions finish. release_gate_status stays blocked. After the interrupted full-file upload, integrate on3c9995a with all later forward snapshots/validators/source_reviews retained. NMR-48 now belongs to concurrent immutable forwarding work; this boundary correction is NMR-51/AC-42. The existing32MiB Native/forward upload bound differs from the current Backend25MiB contract; only the upload bound is corrected. Download32MiB remains. Required Human count is48 and private resource-bound count3, preserving journal12 and Chromium16 current gates. Known UI fresh-nonce/reply/committed-path retry remains an explicit next consumer gap."
+}
