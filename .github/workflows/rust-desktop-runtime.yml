@@ -285,6 +285,7 @@ jobs:
           else
             admission_status=1
           fi
+          cargo test --locked --manifest-path source/host/app/Cargo.toml --test startup_admission_contract || admission_status=1
           exit "$admission_status"
       - name: Test affected Session Transcript and Runner integration recovery
         id: ocrm_recovery
@@ -592,6 +593,10 @@ jobs:
               "fabushi_credential_context_scope": "One Responses transport permits token/expiry rotation only within its captured issuer/user/device/session and complete endpoint. Real loopback file-swap refusals and shipping Runner classification preserve typed permanent failures through advisory watchdog cancellation. Explicit user cancellation and unknown-effect custody retain their precedence. This does not pin unrelated new attempts or processes, revoke in-flight successful requests, or prove real account/provider compatibility.",
               "shipping_model_admission_test": "tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects",
               "shipping_model_admission_result": "passed",
+              "shipping_host_startup_admission_contract": "HSA-v1",
+              "shipping_host_startup_admission_target": "source/host/app:startup_admission_contract",
+              "shipping_host_startup_admission_result": "passed",
+              "shipping_host_startup_admission_scope": "Actual normal Host binary, shared profile guard, absent app root and persisted waiting-user/settings refusal, admitted recovery positive, constructor exits and helper role entry. Different profile roots sharing app data, full worker retirement and unknown-effect restart reconciliation remain open.",
               "shipping_listener_resume_test": "tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce",
               "shipping_listener_resume_result": "passed",
               "channel_idle_handoff_contract": "OCRM-CHANNEL-IDLE-HANDOFF-v1",
