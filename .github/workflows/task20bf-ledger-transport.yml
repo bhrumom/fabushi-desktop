@@ -1,0 +1,45 @@
+name: Task20bf exact ledger blob transport
+on:
+  push:
+    branches: [checkpoint/task20bf-ledger-transport-r1]
+permissions:
+  contents: write
+jobs:
+  save-ledger-object:
+    if: github.repository == 'bhrumom/fabushi-desktop' && github.ref == 'refs/heads/checkpoint/task20bf-ledger-transport-r1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Apply the reviewed ledger delta and save only its exact Git object
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD:projects/telegram-desktop-rust/parity-ledger.json)" = a35e51575a9786c1e89694c170f7eb1e6c5f2467
+          git apply --index .github/task20bf-ledger-transport.patch
+          test "$(git rev-parse :projects/telegram-desktop-rust/parity-ledger.json)" = 81e9d4009231b07d78a851cbdff3a4cc0ef29796
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          body = Path('projects/telegram-desktop-rust/parity-ledger.json').read_text()
+          Path(os.environ['RUNNER_TEMP'], 'task20bf-ledger-object.json').write_text(
+              json.dumps({'encoding': 'utf-8', 'content': body}))
+          PY
+          mkdir -p artifacts/ledger-transport
+          gh api --method POST repos/bhrumom/fabushi-desktop/git/blobs --input "$RUNNER_TEMP/task20bf-ledger-object.json" --jq .sha > artifacts/ledger-transport/blob-sha.txt
+          test "$(cat artifacts/ledger-transport/blob-sha.txt)" = 81e9d4009231b07d78a851cbdff3a4cc0ef29796
+          git rev-parse HEAD > artifacts/ledger-transport/transport-sha.txt
+          printf '%s\n' 'Object transport only; no source/product acceptance or branch promotion.' > artifacts/ledger-transport/scope.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: task20bf-ledger-object-${{ github.sha }}
+          path: artifacts/ledger-transport
+          if-no-files-found: error
+          retention-days: 30
