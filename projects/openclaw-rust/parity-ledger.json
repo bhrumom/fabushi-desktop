@@ -6939,7 +6939,13 @@
         "source/host/src/extensions/transcript/automation_runtime.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/agent_db.rs",
-        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md"
+        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md",
+        "source/host/app/src/main.rs",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+        "source/host/tests/automation_run_production_wiring_contract.rs",
+        "source/host/tests/automation_event_fires_contract.rs",
+        "source/host/tests/automations_backend_contract.rs",
+        "source/host/tests/automations_fire_delivery_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -6971,7 +6977,8 @@
       },
       "invariants": [
         "Sessions with pending media tasks are exempt from pruning",
-        "Retention duration of 0 disables session deletion"
+        "Retention duration of 0 disables session deletion",
+        "Automation local terminal with unresolved frozen tool custody preserves admitted Running history and cron projection; original and coalesced UUIDs remain unexecuted and unacknowledged on known-running redelivery"
       ],
       "migration_rollback": "Retain all cron sessions indefinitely",
       "oracle_ids": [],
@@ -7013,13 +7020,17 @@
         "symbol": "AutomationRunPath::fire_automation_inner and ProductionSessionWorkers::list_expired_cron_session_runs; cleanup consumer not wired"
       },
       "tests": [
-        "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+        "source/host/tests/automation_run_production_wiring_contract.rs"
       ],
       "typed_contracts": [
         "cron_session_runs",
         "AutomationRunFenceSnapshot",
         "AutomationRuntime::list_expired_cron_session_candidates",
-        "CRON-REAPER-D01..D05 architecture decisions"
+        "CRON-REAPER-D01..D05 architecture decisions",
+        "OCRM-AUTOMATION-TERMINAL-CUSTODY-v1",
+        "OCRM-AUTOMATION-KNOWN-RUN-REDELIVERY-v1"
       ],
       "unit_id": "OCRM-UNIT-AUTOMATION-001"
     },

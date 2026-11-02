@@ -662,3 +662,112 @@ while the precision baseline waits in Actions, keep it out of that frozen
 baseline commit, and do not infer permission to settle unknown tool outcomes.
 The separate frozen terminal-custody consumer and original-turn recovery remain
 required; this slice alone does not close Automation settlement.
+
+## Automation settlement from frozen Runner custody — AUTO-CUSTODY-01
+
+Contract: `OCRM-AUTOMATION-TERMINAL-CUSTODY-v1`, together with
+`OCRM-AUTOMATION-KNOWN-RUN-REDELIVERY-v1`. Decision
+**AUTO-CUSTODY-01 — FIX / IMPL_BUG**, assessed initially against
+`800f166b8e30aa79e55435804dd514f915728332` and revalidated on
+`4a2e43e6ce4e6948bccd25bce5eb7d9612a3f826` before implementation. Fixed U
+remains `1440bb1771372334bea23d7642bb52deb7db1845`. Bind implementation and
+execution evidence to the final immutable subject after the shared gate.
+
+REC-11/12/13 publishes the actual Runner invocation observations in the existing
+terminal's `toolEffectCustody` companion. The Automation-specific waiter drops
+that event and the run owner treats every local terminal as settlement. A
+cancelled or failed local Runner can therefore finish the history and cron row
+and authorize backend completion/ACK while a tool outcome remains unknown.
+The companion Running redelivery interpretation is already implemented at
+`2c8a19cf6c036e799d92e50b979af414b7a43701` and retained in this base. Reuse
+that existing guard; the missing boundary is the initial terminal consumer.
+Current source authority is the actual Host finalizer/waiter, typed Runner
+custody, AutomationRuntime/run path, Session/DB/file owners and backend callback.
+This target-owner correction adds no upstream full-file reading claim.
+
+- ACU01: Interpret the existing typed companion only in
+  `wait_for_automation_terminal`. Keep shared terminal recognition and the
+  background-revival waiter behavior intact. Deserialize
+  `ToolEffectCustodyReport`, bind it to the expected stream with its existing
+  `for_terminal`, and use `requires_retention`. Missing, malformed, empty,
+  foreign/blank-stream, zero-generation, Unavailable, pending or unknown
+  evidence requires retention. Earlier uncertainty cannot be erased by a
+  later clear observation. Do not infer custody from an error string or from
+  a local cancelled/completed tag.
+- ACU02: Carry a distinct internal retained-unsettled execution result through
+  the existing `AutomationRunPath`, preserving its original local terminal
+  value. This is a non-serialized Rust result extension, not a new wire or
+  storage format. Before any cron finish/fence publication, history finish,
+  failure-counter change or run observation, return `Ok(None)` for retention.
+  Do not return an error or fabricate a failed outcome: those paths currently
+  permit terminal settlement and backend completion. Preserve ordinary
+  Completed/Interrupted/Failed and their fence semantics when evidence is safe.
+- ACU03: The existing Runtime, event coalescer and production callback carry
+  None to backend abandon. Preserve that path: no completion POST or poll ACK
+  for the retained original or any coalesced alias. Release only the existing
+  volatile execution key after the actual local terminal, as the current
+  outer run owner already does. Keep the admitted Running history and cron row
+  unchanged from their post-admission baseline; no new retention registry,
+  scheduler, durable claim or store is introduced.
+- ACU04: Apply the companion known-running redelivery contract before enabled,
+  revision, legacy-slot, event or trigger checks. Positively present Running
+  history for the original/coalesced UUID returns
+  `Abandon { reason: "existing_run_unsettled" }`, without executing, writing,
+  observing or completing. Existing terminal-history replay and a distinct
+  eligible UUID retain their behavior. A mere missing/corrupt history is not
+  a durable admission guarantee.
+- ACU05: Known uncheckpointed work with no pending or unknown result remains
+  settlement-eligible; retry eligibility is a different policy. A genuine
+  pre-entry NotStarted observation may settle its existing refusal. An entered
+  uninstrumented invocation remains Unavailable. Keep visible terminal content,
+  cancellation/waiting precedence, delivery facts, upgrade annotation and
+  once-only publication. The shared mapper cannot create the Automation-only
+  retention result; any necessary defensive exhaustive arm in background
+  settlement must not commit or release admission from that marker.
+
+Actions oracles must combine the actual finalizer, Automation waiter, Runtime,
+Session/file/DB owners, counted guarded tool and controlled backend transport.
+Hold or lose an actual tool result, publish the real terminal, require unchanged
+Running rows, no observation/completion/ACK and one effect; a late external
+return must not settle or repeat it. Cover the typed evidence matrix and safe
+success/failure/cancellation, genuine NotStarted, and the existing real guarded
+uncheckpointed positive. Keep the original deadline and queued-terminal
+assertions, providing qualified clear observations to their positive fixtures;
+add missing/empty evidence as retention negatives. Preserve history-write and
+completion-POST failure assertions.
+
+Reopen actual Session/Automation owners and reconstruct the volatile backend;
+repeated original and coalesced deliveries must remain unexecuted and unacked
+with unchanged files and cron rows. Exercise the real event coalescer's None
+broadcast and every actual production backend completion callback for the admitted
+original and aliases. Assert the inner Runtime result is exactly `Ok(None)`
+before the coalescer broadcasts; an error or disposal also becoming None is not
+a valid retention oracle. Use the real in-flight coalescer batch as the causal
+enqueue gate, without timing sleeps as an ordering oracle. A distinct UUID and stored terminal success/failure are positive controls.
+The existing scoped workflow selects all affected targets and retains the
+Runner custody and shared recovery controls; final exact-H Actions and frozen
+independent review are mandatory.
+
+Production scope is the existing Host Automation-specific waiter and
+`extensions/transcript/automation_run_path.rs`. The already implemented
+`extensions/automations/fire_delivery.rs` remains unchanged. Existing Host
+app (`tests/automation_terminal_custody_tests.rs`, following its existing child-test
+module placement) and `automation_run_production_wiring_contract.rs` test homes supply the
+producer and real coalescer/backend/owner-reopen oracles. Root integrates Host, specification and
+workflow changes serially. No dependency or persisted schema change is needed.
+
+This slice begins with a matching actual terminal and positively present run
+history. Event loss/disconnection, earlier dispatch errors, pruning/corruption,
+cross-process/concurrent durable claims, physical remote termination, original
+turn restoration and external-effect reconciliation remain open. Manual and
+distinct-UUID invocations remain independent under current policy; this is not
+an automation-wide uncertainty fence. Existing legacy terminal rows are not
+rewritten or certified. Real backend/service/account acceptance, all remaining
+product responsibilities and final OCRM gates remain required.
+
+Rollback removes this interpretation and restores premature settlement/ACK of
+unknown effects; there is no persisted format migration. Retained work remains
+visible through the existing Running history/cron projection and the unchanged
+local Runner terminal. It is not automatically retried or silently resolved.
+The pre-existing reaper, event-loss, external reconciliation, real-service and
+final acceptance requirements above remain mandatory.

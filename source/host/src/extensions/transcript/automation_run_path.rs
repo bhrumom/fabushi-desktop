@@ -125,6 +125,12 @@ impl AutomationRunTrigger {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AutomationExecutionResult {
+    /// A genuine local terminal whose external-effect custody is unresolved.
+    /// Preserve the original outcome for diagnostics without settling history,
+    /// publishing cleanup fences, or acknowledging backend delivery.
+    RetainedUnsettled {
+        terminal: Box<AutomationExecutionResult>,
+    },
     Completed,
     CompletedWithFences {
         fences: AutomationRunFenceSnapshot,
@@ -523,6 +529,10 @@ impl AutomationRunPath {
             })
         );
         let result = match execution {
+            // Admission has already persisted Running. Leave those exact bytes
+            // and failure counters intact; the outer call releases only its
+            // volatile in-flight key, and backend None abandons without ACK.
+            Ok(AutomationExecutionResult::RetainedUnsettled { .. }) => Ok(None),
             Ok(completed @ (AutomationExecutionResult::Completed
             | AutomationExecutionResult::CompletedWithFences { .. })) => {
                 let fences = match completed {

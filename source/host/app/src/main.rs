@@ -6001,7 +6001,7 @@ fn wait_for_automation_terminal(
     deadline: Instant,
     now: impl FnMut() -> Instant,
 ) -> Result<AutomationExecutionResult, String> {
-    let (_, mut result) = wait_for_runner_terminal(
+    let (event, mut result) = wait_for_runner_terminal(
         receiver,
         runner_registry,
         stream_id,
@@ -6017,6 +6017,20 @@ fn wait_for_automation_terminal(
     } = &mut result
     {
         *quiesced_for_upgrade = runner_registry.is_quiescing_for_upgrade();
+    }
+    // A local Runner terminal retires its lease; it does not prove that an
+    // external tool finished. Keep the frozen, stream-bound custody report as
+    // the settlement authority, including uncertainty from earlier invocations.
+    let retain = event
+        .get("payload")
+        .and_then(|payload| payload.get("toolEffectCustody"))
+        .and_then(|value| serde_json::from_value::<ToolEffectCustodyReport>(value.clone()).ok())
+        .map(|report| report.for_terminal(stream_id).requires_retention())
+        .unwrap_or(true);
+    if retain {
+        return Ok(AutomationExecutionResult::RetainedUnsettled {
+            terminal: Box::new(result),
+        });
     }
     Ok(result)
 }
@@ -6177,6 +6191,9 @@ fn attach_automation_run_fences(
     stream_id: &str,
     result: AutomationExecutionResult,
 ) -> AutomationExecutionResult {
+    if matches!(&result, AutomationExecutionResult::RetainedUnsettled { .. }) {
+        return result;
+    }
     let Some(fences) = read_automation_run_fences(deps, agent_id, stream_id) else {
         return result;
     };
@@ -6705,6 +6722,12 @@ fn wait_and_settle_background_revival(
         observe,
     );
     match terminal {
+        // The shared waiter currently returns only local outcomes. If a future
+        // caller introduces this Automation-only marker here, it cannot commit
+        // or release the original background admission as a side effect.
+        Ok((_, AutomationExecutionResult::RetainedUnsettled { .. })) => {
+            Err("background revival terminal retains unsettled tool custody".into())
+        }
         Ok((event, AutomationExecutionResult::Completed))
         | Ok((event, AutomationExecutionResult::CompletedWithFences { .. })) => {
             session_workers.assert_session_work_admission_generation(
@@ -17180,6 +17203,8 @@ fn main() {
 mod tests {
     #[path = "channel_host_lane_tests.rs"]
     mod channel_host_lane_tests;
+    #[path = "automation_terminal_custody_tests.rs"]
+    mod automation_terminal_custody_tests;
 
     use super::{
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,
@@ -19201,7 +19226,7 @@ mod tests {
             let terminal = super::RoutedProviderTerminal::capture(
                 stream_id, false, &worker_cancellation,
                 Ok("provider returned after deadline cancellation".into()), 2, true,
-                super::ToolEffectCustodyReport::new(stream_id),
+                completed_guard_custody_report(stream_id),
             );
             worker_runtime.end_provider_run_with_kind(&worker_agent, false);
             worker_registry.finish_routed_provider(stream_id);
@@ -19357,7 +19382,7 @@ mod tests {
         let (cancellation, mut lease) = fixture.admit_with_source("queued-agent", "queued-stream", "automation");
         let terminal = super::RoutedProviderTerminal::capture(
             "queued-stream", false, &cancellation, Ok("completed at the deadline".into()), 1, false,
-            super::ToolEffectCustodyReport::new("queued-stream"),
+            completed_guard_custody_report("queued-stream"),
         );
         fixture.runtime.end_provider_run_with_kind("queued-agent", false);
         fixture.registry.finish_routed_provider("queued-stream");
@@ -20307,6 +20332,12 @@ mod tests {
         assert_eq!(snapshot.unknown_result, None);
         assert!(snapshot.retry_block_reason().is_some(), "known does not imply safe checkpoint replay");
         ToolEffectCustodyObservation::Known { run_generation, snapshot }
+    }
+
+    fn completed_guard_custody_report(stream_id: &str) -> super::ToolEffectCustodyReport {
+        let mut report = super::ToolEffectCustodyReport::new(stream_id);
+        report.record(Some(&completed_guard_custody_observation(1)));
+        report
     }
 
     #[test]

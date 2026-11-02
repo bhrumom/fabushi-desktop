@@ -2,20 +2,45 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
+use mahayana_host_runtime::automations::automation_trigger::trigger_schedule;
+use mahayana_host_runtime::extensions::automations::backend_transport::{
+    AutomationsBackendError, AutomationsBackendTransport,
+};
+use mahayana_host_runtime::extensions::automations::fire_delivery::{
+    PreparedBackendFire, prepare_backend_fire,
+};
+use mahayana_host_runtime::extensions::automations::production::{
+    FireDispatch, ProductionAutomationsBackendRuntime,
+};
+use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::{
+    ScheduledCloudAutomation, sand_cloud_definition,
+};
+use mahayana_host_runtime::extensions::browser_ua::extension::StopSubscription;
+use mahayana_host_runtime::extensions::notify_bus::extension::{
+    HostNotifyBusExtension, NotifyBusExperimentsApi, NotifyBusExtensionOptions,
+    start_notify_bus_extension_with_options,
+};
+use mahayana_host_runtime::extensions::notify_bus::notify_bus_client::NotifyBusTiming;
+use mahayana_host_runtime::extensions::session::agent_db::CronSessionRunRecord;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::automation_event_fires::{
+    AutomationEventFires, EventBatchExecutor, EventFireBatch,
+};
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, AutomationRunFenceSnapshot, AutomationRunObservation,
     AutomationRunTrigger, FireAutomationOutcome,
 };
 use mahayana_host_runtime::extensions::transcript::automation_runtime::AutomationRuntime;
-use serde_json::json;
+use serde_json::{Value, json};
 
 const CHILD_CASE_ENV: &str = "FABUSHI_AUTOMATION_CONTRACT_CASE";
 const CHILD_ROOT_ENV: &str = "FABUSHI_AUTOMATION_CONTRACT_ROOT";
@@ -842,4 +867,668 @@ fn real_cron_database_lifecycle_preserves_identity_terminal_and_admission_fences
         assert_eq!(owner.list_cron_session_runs().unwrap(), before_deletion);
         workers.end_agent_delete(agent).expect("release only this fixture's deletion custody");
     });
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct CustodyPersistedState {
+    config: Vec<u8>,
+    history: Vec<u8>,
+    cron: Vec<CronSessionRunRecord>,
+}
+
+impl CustodyPersistedState {
+    fn capture(
+        workers: &ProductionSessionWorkers,
+        store: &FileAutomationStore,
+        agent_id: &str,
+        automation_id: &str,
+    ) -> Self {
+        Self {
+            config: fs::read(store.config_path(automation_id)).expect("custody definition bytes"),
+            history: fs::read(store.runs_path(automation_id)).expect("custody history bytes"),
+            cron: workers.list_cron_session_runs(agent_id).expect("actual custody cron owner"),
+        }
+    }
+
+    fn preserve_evidence(&self, root: &Path, phase: &str) {
+        fs::write(root.join(format!("{phase}-config.json")), &self.config).unwrap();
+        fs::write(root.join(format!("{phase}-history.json")), &self.history).unwrap();
+        fs::write(root.join(format!("{phase}-cron.txt")), format!("{:#?}", self.cron)).unwrap();
+    }
+}
+
+#[test]
+fn real_retained_terminal_preserves_post_admission_state_and_volatile_release() {
+    bounded_automation_case(
+        "real_retained_terminal_preserves_post_admission_state_and_volatile_release",
+        || {
+            for trigger in [AutomationRunTrigger::Manual, AutomationRunTrigger::Schedule] {
+                for terminal in [
+                    AutomationExecutionResult::CompletedWithFences { fences: clear_fences() },
+                    AutomationExecutionResult::FailedWithFences {
+                        detail: "provider failed".into(), fences: clear_fences(),
+                    },
+                    AutomationExecutionResult::InterruptedWithFences {
+                        detail: "host upgrade".into(), quiesced_for_upgrade: true,
+                        fences: clear_fences(),
+                    },
+                ] {
+                    let fixture = ShippingAutomation::new(&format!("retained/{trigger:?}/{terminal:?}"));
+                    let path = fixture.runtime.run_path();
+                    assert_eq!(path.record_automation_failure(
+                        &fixture.agent_id, &fixture.automation_id, "provider failed",
+                        AutomationRunTrigger::Manual,
+                    ), Some(1));
+                    let mut entered = 0;
+                    let mut admitted = None;
+                    let result = fixture.run(trigger, "retained-run", |_| {
+                        entered += 1;
+                        assert!(path.is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                        let runs = fixture.store.read_runs(&fixture.automation_id);
+                        assert_eq!(runs.len(), 1, "actual history admission precedes the executor");
+                        assert!(!runs[0].id.is_empty());
+                        assert_eq!(runs[0].status, "running");
+                        assert!(runs[0].finished_at.is_none());
+                        let state = CustodyPersistedState::capture(
+                            &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+                        );
+                        if trigger.is_background() {
+                            assert_eq!(runs[0].id, "retained-run");
+                            assert_eq!(state.cron.len(), 1);
+                            assert_eq!(state.cron[0].run_id, runs[0].id);
+                            assert_eq!(state.cron[0].state, "running");
+                            assert!(!state.cron[0].fence_state_known);
+                            assert!(state.cron[0].terminal_outcome.is_none());
+                        } else {
+                            assert!(state.cron.is_empty(), "manual runs have no cron owner");
+                        }
+                        assert!(fixture.observed.lock().unwrap().is_empty());
+                        state.preserve_evidence(&fixture.root, "post-admission");
+                        admitted = Some(state);
+                        // The actual guarded-tool producer and typed waiter are
+                        // exercised by the Host app tests; this pins their consumer.
+                        Ok(AutomationExecutionResult::RetainedUnsettled {
+                            terminal: Box::new(terminal),
+                        })
+                    });
+                    fs::write(fixture.root.join("retained-result.txt"), format!("{result:?}")).unwrap();
+                    assert_eq!(result, Ok(None));
+                    assert_eq!(entered, 1, "an early suspended/duplicate refusal is not this oracle");
+                    assert!(!path.is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                    let admitted = admitted.expect("real post-admission baseline");
+                    assert_eq!(CustodyPersistedState::capture(
+                        &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+                    ), admitted);
+                    assert!(fixture.observed.lock().unwrap().is_empty());
+                    // Resetting gives Some(1); incrementing gives the suppressed
+                    // third occurrence. Only an unchanged count gives Some(2).
+                    assert_eq!(path.record_automation_failure(
+                        &fixture.agent_id, &fixture.automation_id, "provider failed",
+                        AutomationRunTrigger::Manual,
+                    ), Some(2));
+
+                    let original = fixture.store.read_runs(&fixture.automation_id)[0].clone();
+                    let next = fixture.run(trigger, "independent-run", |_| {
+                        entered += 1;
+                        Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+                    });
+                    assert_eq!(next, Ok(Some(FireAutomationOutcome::Ok)));
+                    assert_eq!(entered, 2, "the retained run is not an automation-wide fence");
+                    let runs = fixture.store.read_runs(&fixture.automation_id);
+                    assert_eq!(runs.len(), 2);
+                    assert_eq!(runs.iter().find(|run| run.id == original.id), Some(&original));
+                    let observed = fixture.observed.lock().unwrap().clone();
+                    assert_eq!(observed.len(), 1);
+                    assert_eq!(observed[0].outcome, FireAutomationOutcome::Ok);
+                    let next_id = observed[0].automation_run_id.as_deref().unwrap();
+                    assert_ne!(next_id, original.id);
+                    assert_eq!(runs.iter().find(|run| run.id == next_id).unwrap().status, "ok");
+                    let rows = fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+                    if trigger.is_background() {
+                        assert_eq!(rows.len(), 2);
+                        assert_eq!(rows.iter().find(|row| row.run_id == original.id), admitted.cron.first());
+                        let next_row = rows.iter().find(|row| row.run_id == next_id).unwrap();
+                        assert_eq!(next_row.state, "terminal");
+                        assert!(next_row.fence_state_known);
+                    } else {
+                        assert!(rows.is_empty());
+                    }
+                    assert!(!path.is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                }
+            }
+        },
+    );
+}
+
+const CUSTODY_WAIT: Duration = Duration::from_secs(10);
+const CUSTODY_RUN_UUIDS: [&str; 3] = [
+    "00000000-0000-4000-8000-000000000101",
+    "00000000-0000-4000-8000-000000000102",
+    "00000000-0000-4000-8000-000000000103",
+];
+
+fn custody_receive<T>(receiver: &mpsc::Receiver<T>, phase: &str) -> T {
+    receiver.recv_timeout(CUSTODY_WAIT)
+        .unwrap_or_else(|error| panic!("custody {phase} receipt: {error}"))
+}
+
+struct CustodyRelease(Option<mpsc::Sender<()>>);
+
+impl CustodyRelease {
+    fn release(&mut self) {
+        self.0.take().expect("owned custody gate").send(()).expect("live custody gate waiter");
+    }
+}
+
+impl Drop for CustodyRelease {
+    fn drop(&mut self) {
+        if let Some(release) = self.0.take() {
+            let _ = release.send(());
+        }
+    }
+}
+
+fn custody_trace(trace: &Mutex<Vec<String>>, path: &Path, entry: String) {
+    let mut trace = trace.lock().unwrap();
+    trace.push(entry);
+    fs::write(path, trace.join("\n")).expect("preserve custody callback evidence");
+}
+
+struct CustodyBackendTransport {
+    delivery: Value,
+    calls: Mutex<Vec<(String, Value)>>,
+    polls: AtomicUsize,
+    evidence_path: PathBuf,
+}
+
+impl AutomationsBackendTransport for CustodyBackendTransport {
+    fn post_json(&self, path: &str, body: &Value) -> Result<Value, AutomationsBackendError> {
+        {
+            let mut calls = self.calls.lock().unwrap();
+            calls.push((path.to_string(), body.clone()));
+            fs::write(&self.evidence_path, serde_json::to_vec_pretty(&*calls).unwrap()).unwrap();
+        }
+        match path {
+            "/sand/listener-subscriptions" => Ok(json!({})),
+            "/sand/listener-events/poll" => Ok(json!({"events":[]})),
+            "/sand/automation-events/poll" => {
+                self.polls.fetch_add(1, Ordering::SeqCst);
+                Ok(self.delivery.clone())
+            }
+            _ => Err(AutomationsBackendError::Transport(format!(
+                "unexpected custody backend request: {path}"
+            ))),
+        }
+    }
+}
+
+impl CustodyBackendTransport {
+    fn assert_no_completion_or_ack(&self) {
+        let calls = self.calls.lock().unwrap();
+        assert!(calls.iter().any(|(path, _)| path == "/sand/automation-events/poll"));
+        for (path, body) in calls.iter() {
+            match path.as_str() {
+                "/sand/listener-subscriptions" | "/sand/listener-events/poll" => {}
+                "/sand/automation-events/poll" => assert_eq!(body, &json!({"ackRunUuids":[]})),
+                _ => panic!("retained original/alias must not POST completion: {path}: {body}"),
+            }
+        }
+    }
+}
+
+struct CustodyNotifyExperiments;
+
+impl NotifyBusExperimentsApi for CustodyNotifyExperiments {
+    fn check_feature_gate(&self, _: &str) -> bool { false }
+    fn subscribe(&self, _: Arc<dyn Fn() + Send + Sync>) -> StopSubscription { Box::new(|| {}) }
+}
+
+#[derive(Debug)]
+struct CustodyDispatchReceipt {
+    poll: usize,
+    run_uuid: String,
+    prepared: PreparedBackendFire,
+}
+
+struct CustodyBackend {
+    runtime: Arc<ProductionAutomationsBackendRuntime>,
+    notify: HostNotifyBusExtension,
+    transport: Arc<CustodyBackendTransport>,
+    dispatches: mpsc::Receiver<CustodyDispatchReceipt>,
+    callbacks: mpsc::Receiver<(String, Result<(), String>)>,
+    callback_threads: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    errors: Arc<Mutex<Vec<String>>>,
+}
+
+impl CustodyBackend {
+    fn start(
+        root: &Path,
+        phase: &str,
+        automation_runtime: &AutomationRuntime,
+        delivery: Value,
+        executor: Option<EventBatchExecutor>,
+    ) -> Self {
+        let errors = Arc::new(Mutex::new(Vec::new()));
+        let auth_errors = Arc::clone(&errors);
+        let url_errors = Arc::clone(&errors);
+        let notify_errors = Arc::clone(&errors);
+        let notify = start_notify_bus_extension_with_options(
+            Arc::new(CustodyNotifyExperiments),
+            NotifyBusExtensionOptions {
+                get_backend_url: Arc::new(move || {
+                    url_errors.lock().unwrap().push("unexpected notify URL lookup".into());
+                    Err("custody fixture must not start an external notify stream".into())
+                }),
+                get_access_token: Arc::new(move |_| {
+                    auth_errors.lock().unwrap().push("unexpected notify credential lookup".into());
+                    Err("custody fixture must not read external credentials".into())
+                }),
+                now_ms: Arc::new(|| 0),
+                timing: NotifyBusTiming::default(),
+                log: Arc::new(move |message| notify_errors.lock().unwrap().push(message.into())),
+            },
+        ).expect("actual notify owner without an external stream");
+        notify.mark_background_work_ready();
+        assert!(!notify.is_connected());
+        assert!(!notify.is_safety_poll_enabled());
+
+        let transport = Arc::new(CustodyBackendTransport {
+            delivery,
+            calls: Mutex::new(Vec::new()),
+            polls: AtomicUsize::new(0),
+            evidence_path: root.join(format!("{phase}-requests.json")),
+        });
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let trace_path = root.join(format!("{phase}-callbacks.txt"));
+        let callback_threads = Arc::new(Mutex::new(Vec::new()));
+        let (dispatch_tx, dispatches) = mpsc::channel();
+        let (callback_tx, callbacks) = mpsc::channel();
+        let dispatch_runtime = automation_runtime.clone();
+        let coalescer = automation_runtime.event_fires();
+        let dispatch_transport = Arc::clone(&transport);
+        let dispatch_threads = Arc::clone(&callback_threads);
+        let dispatch_errors = Arc::clone(&errors);
+        let dispatch: FireDispatch = Arc::new(move |fire, completion| {
+            let entries = dispatch_runtime.list_all_automations().expect("actual delivery history owner");
+            let prepared = prepare_backend_fire(&entries, &fire, |entry| {
+                sand_cloud_definition(&entry.agent_id, &ScheduledCloudAutomation {
+                    id: entry.automation.id.clone(), name: entry.automation.name.clone(),
+                    prompt: entry.automation.prompt.clone(), is_enabled: entry.automation.is_enabled,
+                    trigger: entry.automation.trigger.clone(),
+                }, None).map(|definition| definition.hash)
+            });
+            let accepted = match &prepared {
+                PreparedBackendFire::Event { agent_id, automation_id, run_uuid, event } => {
+                    if let Some(executor) = executor.as_ref() {
+                        let automation = entries.iter().find(|entry|
+                            entry.agent_id == *agent_id && entry.automation.id == *automation_id
+                        ).expect("prepared actual event definition").automation.clone();
+                        let receiver = coalescer.enqueue_event_automation_fire(
+                            agent_id.clone(), automation, event.clone(), Some(run_uuid.clone()),
+                            Arc::clone(executor),
+                        );
+                        let run_uuid = run_uuid.clone();
+                        let callback_tx = callback_tx.clone();
+                        let errors = Arc::clone(&dispatch_errors);
+                        let trace = Arc::clone(&trace);
+                        let trace_path = trace_path.clone();
+                        let waiter = std::thread::spawn(move || {
+                            let result = (|| -> Result<(), String> {
+                                let received = receiver.recv_timeout(CUSTODY_WAIT)
+                                    .map_err(|error| format!("actual batch receiver: {error}"))?;
+                                if received.is_some() {
+                                    return Err(format!("expected retained None, received {received:?}"));
+                                }
+                                // This is the callback supplied by the actual
+                                // ProductionAutomationsBackendRuntime. The test
+                                // does not implement completion/abandon policy.
+                                completion(None);
+                                match receiver.recv_timeout(CUSTODY_WAIT) {
+                                    Err(mpsc::RecvTimeoutError::Disconnected) => Ok(()),
+                                    other => Err(format!("batch receiver did not settle once: {other:?}")),
+                                }
+                            })();
+                            custody_trace(&trace, &trace_path, format!("callback {run_uuid}: {result:?}"));
+                            if let Err(error) = &result {
+                                errors.lock().unwrap().push(error.clone());
+                            }
+                            callback_tx.send((run_uuid, result)).expect("owned callback observer");
+                        });
+                        dispatch_threads.lock().unwrap().push(waiter);
+                        true
+                    } else {
+                        dispatch_errors.lock().unwrap().push(format!("reopen attempted execution: {prepared:?}"));
+                        false
+                    }
+                }
+                PreparedBackendFire::Abandon { .. } => false,
+                _ => {
+                    dispatch_errors.lock().unwrap().push(format!("unexpected custody preparation: {prepared:?}"));
+                    false
+                }
+            };
+            let receipt = CustodyDispatchReceipt {
+                poll: dispatch_transport.polls.load(Ordering::SeqCst),
+                run_uuid: fire.id,
+                prepared,
+            };
+            custody_trace(&trace, &trace_path, format!("dispatch {receipt:?}; accepted={accepted}"));
+            dispatch_tx.send(receipt).expect("owned dispatch observer");
+            accepted
+        });
+        let state_runtime = automation_runtime.clone();
+        let relay_errors = Arc::clone(&errors);
+        let poll_errors = Arc::clone(&errors);
+        let log_errors = Arc::clone(&errors);
+        let runtime = ProductionAutomationsBackendRuntime::start(
+            transport.clone(), notify.clone(), Arc::new(|| (Vec::new(), Vec::new())),
+            Arc::new(move |_| {
+                relay_errors.lock().unwrap().push("unexpected listener event".into());
+                false
+            }),
+            dispatch,
+            Arc::new(move || {
+                let schedulable = state_runtime.list_all_automation_definitions()
+                    .expect("actual poll eligibility definitions").iter()
+                    .any(|entry| entry.automation.is_enabled && trigger_schedule(&entry.automation.trigger).is_some());
+                (!state_runtime.wakes_suspended(), schedulable)
+            }),
+            Arc::new(move |error| poll_errors.lock().unwrap().push(error.to_string())),
+            Arc::new(move |message| log_errors.lock().unwrap().push(message.into())),
+        );
+        Self { runtime, notify, transport, dispatches, callbacks, callback_threads, errors }
+    }
+
+    fn assert_abandoned_after(&self, earlier_poll: usize) {
+        let deadline = Instant::now() + CUSTODY_WAIT;
+        let mut seen = std::collections::BTreeSet::new();
+        while seen.len() < CUSTODY_RUN_UUIDS.len() {
+            let receipt = self.dispatches.recv_timeout(deadline.saturating_duration_since(Instant::now()))
+                .expect("each actual backend UUID must redeliver after its None callback");
+            assert!(CUSTODY_RUN_UUIDS.contains(&receipt.run_uuid.as_str()));
+            assert_eq!(receipt.prepared, PreparedBackendFire::Abandon { reason: "existing_run_unsettled" });
+            if receipt.poll > earlier_poll {
+                seen.insert(receipt.run_uuid);
+            }
+        }
+        assert_eq!(seen, CUSTODY_RUN_UUIDS.map(str::to_owned).into_iter().collect());
+        self.transport.assert_no_completion_or_ack();
+        let errors = self.errors.lock().unwrap().clone();
+        assert!(errors.is_empty(), "{errors:?}");
+    }
+
+    fn join_callbacks(&self) {
+        let threads = std::mem::take(&mut *self.callback_threads.lock().unwrap());
+        for thread in threads {
+            thread.join().expect("actual per-fire callback waiter");
+        }
+    }
+}
+
+impl Drop for CustodyBackend {
+    fn drop(&mut self) {
+        self.runtime.stop();
+        self.notify.stop();
+        let threads = std::mem::take(&mut *self.callback_threads.lock().unwrap());
+        for thread in threads {
+            let _ = thread.join();
+        }
+    }
+}
+
+struct ReopenedCustodyOwners {
+    workers: Arc<ProductionSessionWorkers>,
+    runtime: AutomationRuntime,
+    store: FileAutomationStore,
+    observed: Arc<Mutex<Vec<AutomationRunObservation>>>,
+}
+
+impl ReopenedCustodyOwners {
+    fn open(root: &Path, agent_id: &str) -> Self {
+        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let store = SandAgentSessionStore::new(Arc::clone(&workers))
+            .automation_store_for(agent_id).expect("reopened existing admitted file owner");
+        let runtime = AutomationRuntime::new(Arc::clone(&workers));
+        let observed = Arc::new(Mutex::new(Vec::new()));
+        let sink = Arc::clone(&observed);
+        runtime.run_path().set_run_reporter(Some(Arc::new(move |report| {
+            sink.lock().unwrap().push(report.clone());
+        })));
+        Self { workers, runtime, store, observed }
+    }
+}
+
+impl Drop for ReopenedCustodyOwners {
+    fn drop(&mut self) {
+        self.runtime.dispose();
+        self.workers.shutdown();
+    }
+}
+
+fn wait_for_custody_batch_to_drain(coalescer: &AutomationEventFires) {
+    let deadline = Instant::now() + CUSTODY_WAIT;
+    while coalescer.pending_batch_count() != 0 {
+        assert!(Instant::now() < deadline, "actual coalescer did not retire its completed batch");
+        // Result delivery precedes removing the drained key. This observes
+        // cleanup only; enqueue ordering is proved by the held executor below.
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+#[test]
+fn real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reopen() {
+    bounded_automation_case(
+        "real_coalesced_retained_event_reaches_each_backend_callback_and_survives_reopen",
+        || {
+            let fixture = ShippingAutomation::new("retained coalesced backend delivery");
+            let automation = fixture.store.get(&fixture.automation_id).expect("actual event definition");
+            assert!(automation.runs.is_empty());
+            assert!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap().is_empty());
+            let coalescer = fixture.runtime.event_fires();
+
+            let (primer_entered_tx, primer_entered) = mpsc::channel();
+            let (primer_release_tx, primer_release_rx) = mpsc::channel();
+            let primer_release_rx = Mutex::new(primer_release_rx);
+            let primer = coalescer.enqueue_event_automation_fire(
+                fixture.agent_id.clone(), automation, json!({"fixture":"held scheduling batch"}),
+                None,
+                Arc::new(move |batch| {
+                    assert_eq!(batch.events, vec![json!({"fixture":"held scheduling batch"})]);
+                    assert!(batch.run_uuid.is_none() && batch.coalesced_run_uuids.is_empty());
+                    primer_entered_tx.send(()).unwrap();
+                    primer_release_rx.lock().unwrap().recv_timeout(CUSTODY_WAIT)
+                        .expect("release the owned scheduling batch");
+                    // No Runtime, durable admission or tool runs for this
+                    // scheduling control; its Some result is not custody proof.
+                    Ok(Some(FireAutomationOutcome::Ok))
+                }),
+            );
+            custody_receive(&primer_entered, "real coalescer flushing gate");
+
+            let executions = Arc::new(AtomicUsize::new(0));
+            let (batch_tx, batches) = mpsc::channel();
+            let (admitted_tx, admission) = mpsc::channel();
+            let (result_tx, results) = mpsc::channel();
+            let (terminal_release_tx, terminal_release_rx) = mpsc::channel();
+            let terminal_release_rx = Mutex::new(terminal_release_rx);
+            let run_runtime = fixture.runtime.clone();
+            let run_workers = Arc::clone(&fixture.workers);
+            let run_store = fixture.store.clone();
+            let run_agent = fixture.agent_id.clone();
+            let run_automation = fixture.automation_id.clone();
+            let run_root = fixture.root.clone();
+            let run_executions = Arc::clone(&executions);
+            let executor: EventBatchExecutor = Arc::new(move |batch: EventFireBatch| {
+                fs::write(run_root.join("actual-event-batch.txt"), format!("{batch:#?}")).unwrap();
+                batch_tx.send(batch.clone()).expect("actual batch observer");
+                let result = run_runtime.run_background_automation_with(
+                    &batch.agent_id, &batch.automation.id, AutomationRunTrigger::Event,
+                    batch.events, batch.run_uuid, batch.coalesced_run_uuids, 2_000.0, None,
+                    |prompt| {
+                        assert_eq!(run_executions.fetch_add(1, Ordering::SeqCst), 0);
+                        assert!(prompt.contains("3 events"));
+                        let runs = run_store.read_runs(&run_automation);
+                        assert_eq!(runs.len(), 1, "real admitted alias batch has one history row");
+                        assert_eq!(runs[0].id, CUSTODY_RUN_UUIDS[0]);
+                        assert_eq!(runs[0].coalesced_run_ids, Some(
+                            CUSTODY_RUN_UUIDS[1..].iter().map(|id| (*id).to_string()).collect::<Vec<_>>()
+                        ));
+                        assert_eq!(runs[0].status, "running");
+                        assert!(runs[0].finished_at.is_none());
+                        let state = CustodyPersistedState::capture(
+                            &run_workers, &run_store, &run_agent, &run_automation,
+                        );
+                        assert_eq!(state.cron.len(), 1);
+                        assert_eq!(state.cron[0].run_id, CUSTODY_RUN_UUIDS[0]);
+                        assert_eq!(state.cron[0].state, "running");
+                        assert!(!state.cron[0].fence_state_known);
+                        assert!(state.cron[0].terminal_outcome.is_none());
+                        state.preserve_evidence(&run_root, "coalesced-post-admission");
+                        admitted_tx.send(state).expect("post-admission observer");
+                        terminal_release_rx.lock().unwrap().recv_timeout(CUSTODY_WAIT)
+                            .expect("release this actual executor's local terminal");
+                        Ok(AutomationExecutionResult::RetainedUnsettled {
+                            terminal: Box::new(AutomationExecutionResult::InterruptedWithFences {
+                                detail: "tool outcome remains unknown".into(),
+                                quiesced_for_upgrade: true,
+                                fences: clear_fences(),
+                            }),
+                        })
+                    },
+                );
+                // The coalescer also converts Err to None. Preserve and inspect
+                // the full real Runtime result before returning it unchanged.
+                fs::write(run_root.join("inner-runtime-result.txt"), format!("{result:?}")).unwrap();
+                result_tx.send(result.clone()).expect("inner Runtime result observer");
+                assert_eq!(result, Ok(None), "assert the actual result before the coalescer can fold an error");
+                result
+            });
+            let delivery = json!({"events": CUSTODY_RUN_UUIDS.iter().enumerate().map(|(index, id)| {
+                json!({
+                    "id": id,
+                    "sandAgentId": fixture.agent_id,
+                    "automationId": stable_automation_id(&fixture.agent_id, &fixture.automation_id),
+                    "timestampMs": 100,
+                    "event": {"source":"github", "repo":"org/repo", "kind":"pr-opened",
+                        "actor":"reviewer", "title":format!("Event {index}"), "timestampMs":100},
+                })
+            }).collect::<Vec<_>>()});
+            let backend = CustodyBackend::start(
+                &fixture.root, "initial-backend", &fixture.runtime, delivery.clone(), Some(executor),
+            );
+            // These drop before the backend owner on failure, releasing only
+            // our held workers before its bounded-child cleanup joins them.
+            let mut primer_release = CustodyRelease(Some(primer_release_tx));
+            let mut terminal_release = CustodyRelease(Some(terminal_release_tx));
+            let mut prepared_events = Vec::new();
+            for expected_id in CUSTODY_RUN_UUIDS {
+                let receipt = custody_receive(&backend.dispatches, "actual event enqueue");
+                assert_eq!(receipt.run_uuid, expected_id);
+                match receipt.prepared {
+                    PreparedBackendFire::Event { agent_id, automation_id, run_uuid, event } => {
+                        assert_eq!(agent_id, fixture.agent_id);
+                        assert_eq!(automation_id, fixture.automation_id);
+                        assert_eq!(run_uuid, expected_id);
+                        prepared_events.push(event);
+                    }
+                    other => panic!("fresh actual backend delivery was not admitted: {other:?}"),
+                }
+            }
+            assert_eq!(executions.load(Ordering::SeqCst), 0, "all target items queued behind the held batch");
+            assert!(matches!(backend.callbacks.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            primer_release.release();
+            assert_eq!(custody_receive(&primer, "scheduling control result"), Some(FireAutomationOutcome::Ok));
+            assert!(matches!(primer.recv_timeout(CUSTODY_WAIT), Err(mpsc::RecvTimeoutError::Disconnected)));
+
+            let batch = custody_receive(&batches, "actual coalesced batch");
+            assert_eq!(batch.agent_id, fixture.agent_id);
+            assert_eq!(batch.automation.id, fixture.automation_id);
+            assert_eq!(batch.events, prepared_events);
+            assert_eq!(batch.run_uuid.as_deref(), Some(CUSTODY_RUN_UUIDS[0]));
+            assert_eq!(batch.coalesced_run_uuids,
+                CUSTODY_RUN_UUIDS[1..].iter().map(|id| (*id).to_string()).collect::<Vec<_>>());
+            let admitted = custody_receive(&admission, "actual history and cron admission");
+            assert_eq!(executions.load(Ordering::SeqCst), 1);
+            assert_eq!(CustodyPersistedState::capture(
+                &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+            ), admitted);
+            assert!(fixture.observed.lock().unwrap().is_empty());
+            assert!(matches!(results.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(matches!(backend.callbacks.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            backend.transport.assert_no_completion_or_ack();
+            // Events use coalescer serialization, not the manual/schedule key.
+            assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+
+            terminal_release.release();
+            assert_eq!(custody_receive(&results, "unmodified inner Runtime result"), Ok(None));
+            let mut callbacks = std::collections::BTreeSet::new();
+            for _ in CUSTODY_RUN_UUIDS {
+                let (id, result) = custody_receive(&backend.callbacks, "actual None callback return");
+                assert_eq!(result, Ok(()), "{id}");
+                assert!(callbacks.insert(id), "each backend callback runs once");
+            }
+            assert_eq!(callbacks, CUSTODY_RUN_UUIDS.map(str::to_owned).into_iter().collect());
+            backend.join_callbacks();
+            wait_for_custody_batch_to_drain(&coalescer);
+            assert!(!fixture.runtime.wakes_suspended(), "dispose/suspend must not supply None");
+            assert!(matches!(backend.callbacks.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(matches!(batches.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(matches!(results.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert_eq!(executions.load(Ordering::SeqCst), 1);
+            let retained = CustodyPersistedState::capture(
+                &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+            );
+            retained.preserve_evidence(&fixture.root, "coalesced-after-retention");
+            assert_eq!(retained, admitted);
+            assert!(fixture.observed.lock().unwrap().is_empty());
+            for _ in 0..3 {
+                let earlier_poll = backend.transport.polls.load(Ordering::SeqCst);
+                backend.runtime.request_reconcile();
+                backend.assert_abandoned_after(earlier_poll);
+                assert_eq!(CustodyPersistedState::capture(
+                    &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+                ), admitted);
+                assert!(fixture.observed.lock().unwrap().is_empty());
+                assert_eq!(executions.load(Ordering::SeqCst), 1);
+            }
+            backend.runtime.stop();
+            backend.transport.assert_no_completion_or_ack();
+            drop(backend);
+            fixture.runtime.dispose();
+            fixture.workers.shutdown();
+            assert_eq!(fixture.workers.active_worker_count(), 0);
+
+            // The original fixture retains only cleanup custody of the root.
+            // Its actual Session DB/store workers are closed. Reopen existing
+            // data without create_session, upsert, begin_run, or cron seeding.
+            for generation in 0..2 {
+                let owners = ReopenedCustodyOwners::open(&fixture.root, &fixture.agent_id);
+                assert_eq!(CustodyPersistedState::capture(
+                    &owners.workers, &owners.store, &fixture.agent_id, &fixture.automation_id,
+                ), admitted);
+                let reopened_backend = CustodyBackend::start(
+                    &fixture.root, &format!("reopened-backend-{generation}"),
+                    &owners.runtime, delivery.clone(), None,
+                );
+                reopened_backend.assert_abandoned_after(0);
+                for _ in 0..2 {
+                    let earlier_poll = reopened_backend.transport.polls.load(Ordering::SeqCst);
+                    reopened_backend.runtime.request_reconcile();
+                    reopened_backend.assert_abandoned_after(earlier_poll);
+                    assert_eq!(CustodyPersistedState::capture(
+                        &owners.workers, &owners.store, &fixture.agent_id, &fixture.automation_id,
+                    ), admitted);
+                    assert!(owners.observed.lock().unwrap().is_empty());
+                    assert!(!owners.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+                    assert_eq!(executions.load(Ordering::SeqCst), 1);
+                }
+                reopened_backend.runtime.stop();
+                reopened_backend.transport.assert_no_completion_or_ack();
+                assert!(matches!(reopened_backend.callbacks.try_recv(), Err(mpsc::TryRecvError::Disconnected)));
+                drop(reopened_backend);
+                drop(owners);
+            }
+            assert_eq!(executions.load(Ordering::SeqCst), 1);
+        },
+    );
 }
