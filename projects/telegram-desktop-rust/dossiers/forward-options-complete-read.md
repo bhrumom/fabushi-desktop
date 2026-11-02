@@ -1,5 +1,73 @@
 # Forward options authority read — source completeness evidence
 
+## Fixed-U forward intent review — 2026-11-02
+
+U stays `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`, tree
+`91f2b083ab2877c0a17d07868eabec362a5cfca6`. Current integration input is
+`94dcf7a2213808a8ded6baddaf069562d365c6d7`; the unchanged picker and shared
+review contracts were reviewed against `59f5fa24827812f78336c464995d161f403dedfb`
+and `43d70a62d6fd47785f15b85a70e9e3350a17cef4` respectively. New Host attachment
+snapshots and journal recovery are preserved. Historical counters, upstream and
+owner statements below are retained as history, not current acceptance.
+
+All six complete file bodies below were read at fixed U. The unique ledger
+records two complete source reviews with an existing exact responsibility
+mapping and four pending reviews whose additional business obligations have
+not been fully decomposed/mapped. Complete reading is not complete product
+implementation, legal review, source closure or independent acceptance.
+
+| Path relative to `Telegram/SourceFiles/` | Exact blob | Current review record |
+| --- | --- | --- |
+| `ui/chat/forward_options_box.h` | `65db5fbe067e340e0259a23ae57cda59096ccda0` | complete: `ForwardOptions` state/callback contract maps to FORWARD-PRIVACY-001 |
+| `ui/chat/forward_options_box.cpp` | `708ae65e92dc435bf798f8c0220b0547f35ab2bf` | complete: both privacy transition directions and callback lifetime map to the same responsibility |
+| `history/view/controls/history_view_forward_panel.h` | `b5847bfe6e651f5e3bc52480192afd664a37c8b8` | pending: entire file read; full draft/thread/reply responsibility mapping remains open |
+| `history/view/controls/history_view_forward_panel.cpp` | `eaa0108dd32dbadc21727ed4583c329d3badc85e` | pending: entire file read; forced provenance, source removal, typed destination, reply/suggestion/cloud-save obligations remain open |
+| `chat_helpers/share_message_phrase_factory.h` | `86865db47439dbce848fc812df2554335d3e004c` | pending: entire file read; precise terminal feedback responsibility remains open |
+| `chat_helpers/share_message_phrase_factory.cpp` | `1437bbfbd86b9d6649faae0bed7eed755e06337e` | pending: entire file read; saved/self/premium/one/two/many feedback and navigation are not fully mapped |
+
+`FillForwardOptions` emits one state snapshot: hiding captions also hides names;
+showing names restores captions. Names/captions controls share the supplied
+lifetime. Fabushi already reuses `ForwardPrivacy::normalized` in the actual
+Session path. ORA-TDRP-FORWARD-INTENT-UI-001/FWD-UI-01..05 adds the missing
+reverse UI transition and freezes this normalized snapshot across partial or
+ambiguous retries in the existing picker. Remote source provenance and source
+eligibility equivalence remain separate open requirements.
+
+The panel read establishes further obligations which this UI batch does not
+close: item removal filters the live draft; topic/sublist destruction clears
+it; options normalize against forced forward-info, rich pages and author
+capability. `ClearDraftReplyTo` preserves the exact thread address, clears the
+matching reply and suggestion, removes a null draft or saves the surviving
+draft, and schedules cloud save only when its thread exists. These obligations
+remain explicitly pending instead of being credited to the narrow privacy row.
+The phrase factory varies settled feedback for saved/self/premium, one, two and
+many recipients; saved-message navigation resolves the session's window.
+Generic recipient counts do not establish complete equivalence.
+
+Scoped callers/consumers were also read, without claiming complete-file reads:
+`boxes/share_box.cpp` (`f4787dbb34cdb5fb2af78a69ae7537e91e06395a`) default-forward
+and submit callbacks; `apiwrap.cpp` forwarding requests/random IDs and settlement;
+`history/history.cpp` forward-draft resolution; `history/history_item_helpers.cpp`
+source restrictions; compose controls, draft options and peer-menu callsites.
+Those reads identify source fences; Fabushi's durable journal/restart behavior
+is independently qualified by the existing Host contracts, not inferred from
+upstream random IDs.
+
+Current production: Transcript → ProductionRenderer/ForwardMessageDialog →
+Session gateway → `ProductionSessionWorkers::forward_human_message` →
+source-conversation `HumanForwardBatch` journal → destination pending/settled
+SandAgentDb rows → authenticated Fabushi native service. Existing account
+lifetime, resource IDs, permissions, Agent machinery and legacy-data retention
+are preserved. FeatureHost and old Telegram paths cannot be treated as this
+desktop action's message authority. The previous interrupted local snapshot
+was not overlaid onto the newer remote Host/schema/lock implementations.
+
+Execution and remaining gates are recorded in
+`projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
+All executable validation is GitHub Actions at the containing H.
+
+## Historical source review
+
 Status: read-complete / responsibility closure open  
 Project: TDRP-001 Revision 9  
 Accepted upstream: `telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47`

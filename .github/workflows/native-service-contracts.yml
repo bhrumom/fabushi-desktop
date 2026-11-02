@@ -10,7 +10,10 @@ on:
       - 'frontend/src/production/ProductionRenderer.tsx'
       - 'desktop/forward-dialog-test.html'
       - 'desktop/forward-dialog-test.ts'
-      - 'frontend/src/production/ForwardMessageDialog.fixture.tsx'
+      - 'frontend/src/production/ForwardMessageDialog*'
+      - 'frontend/src/production/forward-settlement*'
+      - 'frontend/src/production/forward-account-scope.ts'
+      - 'frontend/src/production/forward-recipient-navigation.ts'
       - 'frontend/src/recovered/runtime/coordinator-source.ts'
       - 'source/shared/rpc/coordinator.ts'
       - 'frontend/src/production/coordinator-client.ts'
@@ -468,9 +471,10 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# tests 12' artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# pass 12' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# tests 16' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# pass 16' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
       - name: Preserve exact renderer evidence
         if: always()

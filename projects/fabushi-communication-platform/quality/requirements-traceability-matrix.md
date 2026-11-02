@@ -3,9 +3,33 @@
 Status: active / normative schema  
 Matrix ID: FQT-RTM-001  
 Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
-Updated: 2026-11-03
+Updated: 2026-11-02
 
-## Round 28 — actual forwarding crash tests and persistence repair
+## Task20bf round1 resumed — immutable forward intent
+
+Current input `94dcf7a2213808a8ded6baddaf069562d365c6d7` supersedes the interrupted
+`bb0013e1302c69cbd125bf0c4e64c070688de542` local snapshot. Existing Host journal,
+account fences, source acquisition and schema improvements are retained. The
+earlier production input `59f5fa24827812f78336c464995d161f403dedfb` passed
+run41508537631 attempt1; that is predecessor evidence, not execution of the new
+picker/source-review extension. New Host snapshot and journal guards are
+retained with Human44 and journal12 expectations.
+
+| Requirement / oracle | Existing production owner | Authored check / acceptance boundary |
+| --- | --- | --- |
+| FWD-UI-01 / ORA-TDRP-FORWARD-INTENT-UI-001 | ForwardMessageDialog → Session HumanForwardBatch | Same-ID refresh, partial subset retry, stable nonce/options, duplicate-submit and keyboard target-change fences |
+| FWD-UI-02 | Existing picker and settleForwardProjection | Missing/duplicate/conflicting/unexpected destinations cannot confirm success; search cannot erase send error |
+| FWD-UI-03 | Existing recipient selection; Host bound remains authoritative | 32 unique targets across searches; 33rd refused while selection remains editable |
+| FWD-UI-04 | Existing privacy controls plus shared ForwardPrivacy | Hiding captions hides names; showing names restores captions; first dispatch locks snapshot |
+| FWD-UI-05 | Existing account/dialog lifetime and Session durable recovery | Close while pending retires callback only; late result cannot settle/close reopened presentation |
+| FMEP-SOURCE-01 | Unique source_reviews and existing source candidate checker | Two exact option-source records complete, four fully read panel/phrase records pending decomposition; pending records never counted complete and full acceptance still requires the entire source set |
+
+Existing Chromium12 cases are retained and extended to16, alongside settlement5,
+Transcript16 and current Host/Agent/shipping/Electron/Windows gates. Current-H
+execution is pending at authoring; no local executable verification or independent
+ACCEPT. Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
+
+## Historical round 28 — actual forwarding crash tests and persistence repair
 
 Evidence: `projects/telegram-desktop-rust/evidence/round28-forward-crash-qualification.json`.
 Inspected base H=`65253740c033508ab08a4b500449a5b56727e940`,

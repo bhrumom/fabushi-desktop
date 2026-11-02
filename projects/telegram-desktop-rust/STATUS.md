@@ -1,11 +1,41 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-Date: 2026-11-03  
+Date: 2026-11-02  
 Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Parent: FBCP-001 Revision 8  
 Complete: false
 
-## Current bounded batch (round 28): forwarding crash and persistence qualification
+## Current batch — task20bf round1 resumed, immutable forward intent
+
+Inspected migration H=`94dcf7a2213808a8ded6baddaf069562d365c6d7` and main
+`5528062177e3865eef60a073a066cca144f9e3e8`; fixed U remains
+`f985723b552b30fe1c17d377d57f44e61a15a8c4`. Production predecessor
+`59f5fa24827812f78336c464995d161f403dedfb` passed run41508537631 attempt1;
+this does not execute the new extension. Concurrent Host journal,
+account lifetime, Native/legacy isolation, source acquisition and checker work
+is preserved, including the later accepted acquisition-closure and recursive
+responsibility-membership guards, subsequent immutable attachment snapshots,
+stale-completion fences, complete journal scans and runtime source acquisition.
+Human44 and journal12 expectations are retained. The interrupted old local
+snapshot was not published over it.
+
+The existing shipping ForwardMessageDialog now freezes original nonce/targets/
+normalized privacy, retries only unconfirmed targets, rejects ambiguous
+settlement success, bounds selection to32, restores captions when showing the
+sender, and allows presentation-only close during a durable send. Existing12
+Chromium cases are retained and expanded to16; same-H Actions execution is
+pending at authoring. No local validation or independent ACCEPT.
+
+The unique source ledger now has two complete option-source mappings and four
+explicitly pending panel/phrase decompositions, despite all six bodies having
+been read. Candidate and full-acceptance paths distinguish these states; the
+full16381 Git-only inventory,184 responsibility rows, null global unknown/unread
+and false acceptance flags remain. Full source/legal, remote forward provenance,
+resource retention, live services, supported signed packages, complete visual/
+a11y/temporal/Bot/performance/soak, upgrade/rollback and independent ACCEPT are open.
+Evidence: `projects/telegram-desktop-rust/evidence/task20bf-round1-forward-intent-ui.json`.
+
+## Historical round 28: forwarding crash and persistence qualification
 
 Fixed U=`f985723b552b30fe1c17d377d57f44e61a15a8c4`; inspected checkpoint
 H=`65253740c033508ab08a4b500449a5b56727e940`, live main
