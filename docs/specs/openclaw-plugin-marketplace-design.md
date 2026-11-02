@@ -31,4 +31,17 @@ AC3: R5 supported by signed package checksums, successful packaging acceptance a
 Use main-based PR; bump desktop package metadata consistently. Publish via existing release workflow after checks. Roll back to previous accepted package if install/marketplace regresses. Record exact SHA/run/artifact and outstanding acceptance here; no secret logging.
 
 ## Compliance
-AC1–AC3 pending. No implementation or release acceptance yet.
+AC1: passed for 9d16483f70df9af06db97b17bb02a24dc507e459. Actions 41327393812 captured desktop/narrow/detail screenshots; visual inspection on 2026-11-02 confirmed the layouts. The same run checked search, category selection, install callback and preserved search on return. These are fixture UI checks, not real provider authorization acceptance.
+AC2: renderer build/typecheck, official marketplace contracts and Rust runtime checks passed that source. Signed-package regression acceptance remains pending on main.
+AC3: pending. PR #183 merged as 57fb159d3f7ded37d1aabde384d93d994ff49828; candidate run 41365590244 started. Nothing published or installed yet.
+
+## Release gate trigger closure (2026-11-02)
+
+Problem: immutable promotion requires thirteen checks on the candidate source, but five owning workflows filter out plugin-only/version-only releases. Their absence must not be treated as success or satisfied by older-source checks.
+
+RG1: Apple ticket, Mini App management, publisher, window and Host verifier workflows must run on PR/main changes to desktop/package.json, desktop/package-lock.json and the canonical release workflow. Preserve their jobs, commands, permissions and failure behavior.
+The Rust runtime and Desktop chat workflows must also admit release-workflow changes, so a workflow-only repair cannot produce a candidate lacking the other eight required source checks.
+RG2: a narrowly scoped release-workflow comment binds this integration to a normal main push candidate. Do not substitute a workflow-dispatch build for the main-push artifact required by promotion.
+RG3: inspect trigger diffs and verify the five named checks appear on the final main source. Require all thirteen checks, signed/notarized production acceptance, factory A/B/A and cleanup on that same immutable candidate before public promotion. Missing or failed evidence stops publication; do not weaken the verifier.
+
+Scope is workflow admission only; no runtime, account, signing, trust or test oracle changes. Rollback reverts trigger additions; it cannot relax promotion. Executable checks run only in Actions. Existing passing UI evidence carries forward while UI source remains unchanged; final source gates and packaged acceptance remain bound to the new main SHA. Phase effort uses the inherited session setting; no worker/model override is applied.

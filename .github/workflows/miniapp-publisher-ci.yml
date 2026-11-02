@@ -2,6 +2,9 @@ name: First-party Mini App publisher
 on:
   pull_request:
     paths:
+      - 'desktop/package.json'
+      - 'desktop/package-lock.json'
+      - '.github/workflows/release-macos-main.yml'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
@@ -12,6 +15,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'desktop/package.json'
+      - 'desktop/package-lock.json'
+      - '.github/workflows/release-macos-main.yml'
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
