@@ -1028,6 +1028,22 @@ Actions target and all gates. Independent review and exact-H Actions are
 required; no production behavior, source authority or completion flag changes.
 Rollback restores the test-only scope defect and requires no data migration.
 
+Boundary control `SWA-COMPOSITION-ORACLE-02`: a textual opener is insufficient
+proof of terminality. A completed inline or indented test module followed by a
+production constructor must be refused, including an indented later function;
+neither a later brace nor a second test-module marker can hide that code. The
+test-only reader uses the already locked `syn=2.0.119` parser (`full`, `parsing`,
+default features disabled) to require one final top-level `#[cfg(test)] mod tests`
+with a body. Independently parse the selected prefix, require its actual `main`
+item and matching item count, then retain every existing source predicate.
+Add causal inline/indented/trailing-source, duplicate-marker, missing-close and
+test-only-positive controls. No production dependency or owner is introduced.
+The existing crate checksum and transitive versions stay locked; only the Host
+test dependency edge changes. The pinned upstream Syn manifest and
+`parse_file`/ItemMod/Attribute APIs were inspected at its `2.0.119` tag; its
+MIT-or-Apache-2.0 license and parser feature boundary remain in force. This is
+source-oracle boundary evidence, not a full semantic architecture verifier.
+
 ## Release and rollback
 
 Cloud-agent wake rearming does not settle background work. The existing

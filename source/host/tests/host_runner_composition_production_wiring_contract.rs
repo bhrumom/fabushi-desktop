@@ -5,8 +5,40 @@ const TURN_OWNER: &str = include_str!("../src/runner/production_turn_agent_owner
 const MULTITASK_STATE: &str = include_str!("../src/runner/tools/sand_multitask_todo_tool.rs");
 
 fn production_host_source(source: &str) -> Option<&str> {
-    let (production, _) = source.split_once("\n#[cfg(test)]\nmod tests {")?;
-    production.contains("\nfn main(").then_some(production)
+    const TEST_MODULE: &str = "\n#[cfg(test)]\nmod tests {";
+    let mut boundaries = source.match_indices(TEST_MODULE);
+    let (start, _) = boundaries.next()?;
+    if boundaries.next().is_some() {
+        return None;
+    }
+    // Syntax, rather than indentation or a later closing brace, establishes
+    // that no production item follows the excluded test module.
+    let parsed = syn::parse_file(source).ok()?;
+    let syn::Item::Mod(tests) = parsed.items.last()? else {
+        return None;
+    };
+    if tests.ident != "tests" || tests.content.is_none()
+        || !tests.attrs.iter().any(|attribute| {
+            attribute.path().is_ident("cfg")
+                && attribute.parse_args::<syn::Ident>()
+                    .is_ok_and(|condition| condition == "test")
+        })
+    {
+        return None;
+    }
+    if parsed.items[..parsed.items.len() - 1].iter()
+        .any(|item| matches!(item, syn::Item::Mod(module) if module.ident == "tests"))
+    {
+        return None;
+    }
+    let production = &source[..start];
+    let prefix = syn::parse_file(production).ok()?;
+    if prefix.items.len().checked_add(1) != Some(parsed.items.len()) {
+        return None;
+    }
+    prefix.items.iter()
+        .any(|item| matches!(item, syn::Item::Fn(function) if function.sig.ident == "main"))
+        .then_some(production)
 }
 
 fn shipping_host() -> &'static str {
@@ -18,7 +50,7 @@ fn shipping_host() -> &'static str {
 fn shipping_source_oracle_requires_boundary_and_retains_production_violations() {
     let forbidden = "ProductionTurnAgentOwner::new(composition)";
     let fixture_only = format!(
-        "\nfn main() {{ production_entry(); }}\n#[cfg(test)]\nmod tests {{ {forbidden}; fixture_only_entry(); }}"
+        "\nfn main() {{ production_entry(); }}\n#[cfg(test)]\nmod tests {{ fn fixture() {{ {forbidden}; fixture_only_entry(); }} }}"
     );
     let production = production_host_source(&fixture_only).expect("bounded fixture source");
     assert!(production.contains("production_entry()"));
@@ -32,6 +64,44 @@ fn shipping_source_oracle_requires_boundary_and_retains_production_violations() 
     assert!(production_host_source("\nfn main() {}").is_none());
     assert!(production_host_source("\n#[cfg(test)]\nmod tests { fn main() {} }").is_none());
     assert!(production_host_source("\nfn main() {}\nmod tests {}").is_none());
+}
+
+#[test]
+fn shipping_source_oracle_rejects_production_after_any_test_module_close() {
+    for constructor in [
+        "ProductionTurnAgentOwner::new(composition)",
+        "SandAgentRunner::new(owner)",
+    ] {
+        for tests in [
+            "\n#[cfg(test)]\nmod tests {}\n",
+            "\n#[cfg(test)]\nmod tests {\n    }\n",
+            "\n#[cfg(test)]\nmod tests {\n}\n",
+        ] {
+            for indent in ["", "    "] {
+                let source = format!(
+                    "\nfn main() {{ worker_host_runner_composition.compose_production_runner(); }}{tests}{indent}fn bypass() {{\n{indent}    {constructor};\n{indent}}}\n"
+                );
+                assert!(production_host_source(&source).is_none(),
+                    "a later production constructor must not be hidden: {source}");
+            }
+        }
+    }
+}
+
+#[test]
+fn shipping_source_oracle_refuses_ambiguous_or_incomplete_boundaries() {
+    for source in [
+        "\nfn main() {}\n#[cfg(test)]\nmod tests {",
+        "\nfn main() {}\n#[cfg(test)]\nmod tests {}\n#[cfg(test)]\nmod tests {}",
+        "\nfn main() {}\n#[cfg(test)]\nmod tests {}\n#[cfg(test)]\nmod tests;",
+        "\nconst NOTE: &str = \"fn main(\";\n#[cfg(test)]\nmod tests {}",
+    ] {
+        assert!(production_host_source(source).is_none(),
+            "a missing/ambiguous boundary or test-only main is not shipping evidence: {source}");
+    }
+    let only_test_delegates = "\nfn main() {}\n#[cfg(test)]\nmod tests {\n    fn fixture() { worker_host_runner_composition.compose_production_runner(); }\n}\n";
+    assert!(!production_host_source(only_test_delegates).expect("valid terminal test module")
+        .contains("worker_host_runner_composition.compose_production_runner("));
 }
 
 #[test]

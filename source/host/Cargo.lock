@@ -1845,6 +1845,7 @@ dependencies = [
  "sha1 0.10.7",
  "sha2",
  "subtle",
+ "syn 2.0.119",
  "tar",
  "thiserror 2.0.21",
  "tokio",
