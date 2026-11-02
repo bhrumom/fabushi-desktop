@@ -718,15 +718,54 @@ struct OriginalTurnWireServer {
     origin: String,
     credential: PathBuf,
     requests: Arc<Mutex<Vec<Value>>>,
+    stages: Arc<Mutex<Vec<(usize, &'static str)>>>,
     stop: Arc<AtomicBool>,
     worker: Option<thread::JoinHandle<Result<(), String>>>,
+    outcome: Option<Result<(), String>>,
 }
 
-fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
+fn original_process_stage(token: &str, stage: &str) {
+    eprintln!("checkpoint child token={token} pid={} stage={stage}", std::process::id());
+}
+
+fn original_wire_stage(
+    stages: &Mutex<Vec<(usize, &'static str)>>,
+    ordinal: usize,
+    stage: &'static str,
+) {
+    let mut stages = stages.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if stages.len() < 128 {
+        stages.push((ordinal, stage));
+    } else if let Some(last) = stages.last_mut() {
+        *last = (ordinal, "stage-capture-limit");
+    }
+}
+
+fn original_wire_join_result(
+    joined: thread::Result<Result<(), String>>,
+) -> Result<(), String> {
+    match joined {
+        Ok(result) => result,
+        Err(payload) => {
+            let message = payload.downcast_ref::<&str>().copied()
+                .or_else(|| payload.downcast_ref::<String>().map(String::as_str))
+                .unwrap_or("non-string panic payload");
+            Err(format!("original Responses worker panicked: {}",
+                message.chars().take(1024).collect::<String>()))
+        }
+    }
+}
+
+fn original_wire_request(
+    stream: &mut TcpStream,
+    ordinal: usize,
+    stages: &Mutex<Vec<(usize, &'static str)>>,
+) -> Result<Value, String> {
     // Match the existing model/provider fixtures when accepted sockets inherit
     // the listener's nonblocking mode. Both directions remain timeout-bounded.
     stream.set_nonblocking(false)
         .map_err(|error| format!("original turn request blocking mode: {error}"))?;
+    original_wire_stage(stages, ordinal, "blocking-mode");
     stream.set_read_timeout(Some(Duration::from_secs(2)))
         .map_err(|error| format!("original turn request read timeout: {error}"))?;
     stream.set_write_timeout(Some(Duration::from_secs(2)))
@@ -734,6 +773,7 @@ fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
     let deadline = Instant::now() + Duration::from_secs(4);
     let mut bytes = Vec::new();
     let mut chunk = [0_u8; 4096];
+    original_wire_stage(stages, ordinal, "reading-headers");
     let header_end = loop {
         if Instant::now() >= deadline { return Err("original turn request deadline".into()); }
         let count = stream.read(&mut chunk)
@@ -743,6 +783,7 @@ fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
         if let Some(index) = bytes.windows(4).position(|part| part == b"\r\n\r\n") { break index + 4; }
         if bytes.len() > 64 * 1024 { return Err("oversized original turn headers".into()); }
     };
+    original_wire_stage(stages, ordinal, "headers-complete");
     let headers = std::str::from_utf8(&bytes[..header_end])
         .map_err(|error| format!("original turn request header encoding: {error}"))?;
     let length = headers.lines().find_map(|line| {
@@ -751,6 +792,7 @@ fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
             .then(|| value.trim().parse::<usize>().ok()).flatten()
     }).ok_or("original turn request headers: missing or invalid content length")?;
     if length > 1024 * 1024 { return Err("oversized original turn request".into()); }
+    original_wire_stage(stages, ordinal, "reading-body");
     while bytes.len() < header_end + length {
         if Instant::now() >= deadline { return Err("original turn body deadline".into()); }
         let count = stream.read(&mut chunk)
@@ -758,6 +800,7 @@ fn original_wire_request(stream: &mut TcpStream) -> Result<Value, String> {
         if count == 0 { return Err("closed original turn request body".into()); }
         bytes.extend_from_slice(&chunk[..count]);
     }
+    original_wire_stage(stages, ordinal, "body-complete");
     serde_json::from_slice(&bytes[header_end..header_end + length])
         .map_err(|error| format!("original turn request JSON: {error}"))
 }
@@ -782,6 +825,9 @@ impl OriginalTurnWireServer {
         }).to_string().as_bytes()).expect("write private fixture credential");
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = Arc::clone(&requests);
+        let stages = Arc::new(Mutex::new(Vec::new()));
+        original_wire_stage(&stages, 0, "listener-ready");
+        let worker_stages = Arc::clone(&stages);
         let stop = Arc::new(AtomicBool::new(false));
         let worker_stop = Arc::clone(&stop);
         let worker = thread::spawn(move || {
@@ -796,13 +842,11 @@ impl OriginalTurnWireServer {
                     }
                     Err(error) => return Err(format!("original turn Responses accept: {error}")),
                 };
-                let request = original_wire_request(&mut stream)?;
-                let ordinal = {
-                    let mut requests = captured.lock().map_err(|_| "request capture poisoned")?;
-                    let ordinal = requests.len();
-                    requests.push(request);
-                    ordinal
-                };
+                let ordinal = captured.lock().map_err(|_| "request capture poisoned")?.len();
+                original_wire_stage(&worker_stages, ordinal, "accepted");
+                let request = original_wire_request(&mut stream, ordinal, &worker_stages)?;
+                captured.lock().map_err(|_| "request capture poisoned")?.push(request);
+                original_wire_stage(&worker_stages, ordinal, "request-parsed");
                 let events = if ordinal == 0 {
                     vec![json!({"type":"response.completed", "response":{
                         "id":"original-tool-response", "output":[{
@@ -818,38 +862,62 @@ impl OriginalTurnWireServer {
                     ]
                 };
                 let body = events.iter().map(|event| format!("data: {event}\n\n")).collect::<String>();
+                original_wire_stage(&worker_stages, ordinal, "writing-response");
                 write!(stream,
                     "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                     body.len(),
                 ).map_err(|error| format!("original turn response write: {error}"))?;
+                original_wire_stage(&worker_stages, ordinal, "response-written");
             }
             Ok(())
         });
-        Self { origin, credential, requests, stop, worker: Some(worker) }
+        Self { origin, credential, requests, stages, stop, worker: Some(worker), outcome: None }
+    }
+
+    fn diagnostics(&self) -> String {
+        let requests = self.requests.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).len();
+        let stages = self.stages.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        format!("parsed_requests={requests} stages={stages:?}")
     }
 
     fn finish(&mut self) -> Result<(), String> {
         self.stop.store(true, Ordering::Release);
-        if let Some(worker) = self.worker.as_ref() {
+        if let Some(outcome) = self.outcome.as_ref() {
+            let outcome = outcome.clone();
+            if self.worker.as_ref().is_some_and(|worker| worker.is_finished()) {
+                if let Some(worker) = self.worker.take() {
+                    let late = original_wire_join_result(worker.join());
+                    eprintln!("late original Responses outcome={late:?}; retained outcome={outcome:?}");
+                }
+            }
+            return outcome;
+        }
+        let outcome = if let Some(worker) = self.worker.take() {
             let deadline = Instant::now() + Duration::from_secs(5);
             while !worker.is_finished() && Instant::now() < deadline {
                 thread::sleep(Duration::from_millis(2));
             }
-            if !worker.is_finished() {
-                // Retain this exact handle for the bounded Drop cleanup path.
-                return Err("owned Responses worker did not stop within its bound".into());
+            if worker.is_finished() {
+                original_wire_join_result(worker.join())
+            } else {
+                // Keep the unresolved handle and the failure, without an
+                // unbounded join or replacing a timeout with success in Drop.
+                self.worker = Some(worker);
+                Err("owned Responses worker did not stop within its five-second bound".into())
             }
-            return self.worker.take().expect("observed owned Responses worker")
-                .join().map_err(|_| "original Responses worker panic".to_string())?;
-        }
-        Ok(())
+        } else {
+            Ok(())
+        };
+        self.outcome = Some(outcome.clone());
+        outcome
     }
 }
 
 impl Drop for OriginalTurnWireServer {
     fn drop(&mut self) {
-        if let Err(error) = self.finish() {
-            eprintln!("owned original Responses worker cleanup failed: {error}");
+        let outcome = self.finish();
+        if outcome.is_err() || thread::panicking() {
+            eprintln!("original Responses cleanup outcome={outcome:?} {}", self.diagnostics());
         }
     }
 }
@@ -874,7 +942,8 @@ fn original_turn_wire_reader_clears_forced_nonblocking_and_preserves_json() {
     ).as_bytes()).unwrap();
     client.write_all(&body).unwrap();
 
-    assert_eq!(original_wire_request(&mut stream).expect("bounded original turn reader"), expected);
+    let stages = Mutex::new(Vec::new());
+    assert_eq!(original_wire_request(&mut stream, 0, &stages).expect("bounded original turn reader"), expected);
     let after = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
     assert!(after >= 0);
     assert_eq!(after & libc::O_NONBLOCK, 0, "the actual reader restores blocking I/O");
@@ -897,11 +966,15 @@ fn original_turn_wire_worker_retains_request_error_without_header_contents() {
     assert!(!error.contains("private-fixture-marker"));
     assert!(server.requests.lock().unwrap().is_empty());
     assert!(server.worker.is_none(), "the exact failed worker was joined");
+    assert_eq!(server.finish().expect_err("later cleanup must retain the joined failure"), error);
+    assert!(!server.diagnostics().contains("private-fixture-marker"));
+    assert!(server.worker.is_none(), "repeated finish cannot invent another worker");
 }
 
 struct OriginalEffectBridge {
     receipt: PathBuf,
     calls: Arc<AtomicUsize>,
+    token: String,
 }
 
 impl RoutedToolBridge for OriginalEffectBridge {
@@ -916,14 +989,17 @@ impl RoutedToolBridge for OriginalEffectBridge {
         assert_eq!(tool.name, "b");
         assert_eq!(call_id, "original-terminal-effect");
         assert_eq!(self.calls.fetch_add(1, Ordering::AcqRel), 0, "the actual effect must run once");
+        original_process_stage(&self.token, "effect-write-start");
         fs::OpenOptions::new().write(true).create_new(true).open(&self.receipt)
             .and_then(|mut file| file.write_all(call_id.as_bytes()))
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        original_process_stage(&self.token, "effect-committed");
         Ok(json!({"receipt":"committed"}))
     }
 }
 
 fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) -> ProducedOriginal {
+    original_process_stage(&request.token, "admission-start");
     let root = &request.fixture_root;
     let runtime = ProductionTranscriptRuntime::new(Some(root));
     let args = json!({
@@ -940,6 +1016,7 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
     let original = runtime.bind_original_turn_model(&request.agent_id, ORIGINAL_STREAM, &admission, ORIGINAL_MODEL)
         .expect("same admitted lease model binding").expect("ordinary Native user is eligible");
     assert_eq!(accepted.context.user_message_id.as_deref(), Some(original.user_message_id.as_str()));
+    original_process_stage(&request.token, "admission-and-model-bound");
     if request.original_compaction {
         let entries = sessions.read_agent_transcript_entries(&request.agent_id)
             .expect("actual admitted transcript before same-stream compaction");
@@ -973,10 +1050,14 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
         sessions, root, &request.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
     ).expect("actual production checkpoint composition").expect("canonical main sink");
     assert!(sink.committed_original_turn_observations().expect("new Journal sink log").is_empty());
+    original_process_stage(&request.token, "checkpoint-sink-composed");
     let calls = Arc::new(AtomicUsize::new(0));
     let turn_composition = TurnAgentComposition::new(
         RoutedProvider::Fabushi,
-        Arc::new(OriginalEffectBridge { receipt: root.join("original-effect.txt"), calls: Arc::clone(&calls) }),
+        Arc::new(OriginalEffectBridge {
+            receipt: root.join("original-effect.txt"), calls: Arc::clone(&calls),
+            token: request.token.clone(),
+        }),
         RunnerRequestContextSnapshot {
             context: HostRequestContext {
                 os_version: "original-turn-contract".into(), shell: None, time_zone: Some("UTC".into()),
@@ -1002,6 +1083,7 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
         Some(sink.clone()), Arc::new(AtomicBool::new(false)),
         Arc::new(Mutex::new(SubagentRuntime::default())), None, None, None, None,
     );
+    original_process_stage(&request.token, "runner-composed");
     let messages = vec![ProviderMessage { role: "user".into(), content: USER_TEXT.into() }];
     let options = TurnRunOptions {
         inference_request_id: Some(ORIGINAL_STREAM.into()), message_id: Some(original.user_message_id.clone()),
@@ -1021,8 +1103,19 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
             };
             (shaped.provider_messages, shaped.options)
         };
-        let result = runner.run_routed_provider_with_options(root, &input_messages, input_options, &mut |_, _| {})
-            .expect("actual generated Native invocation completed");
+        original_process_stage(&request.token, &format!("invocation-{invocation}-start"));
+        let mut first_delta = true;
+        let result = runner.run_routed_provider_with_options(
+            root, &input_messages, input_options, &mut |_, _| {
+                if first_delta {
+                    original_process_stage(&request.token, &format!("invocation-{invocation}-first-delta"));
+                    first_delta = false;
+                }
+            },
+        );
+        original_process_stage(&request.token, &format!("invocation-{invocation}-returned-{}",
+            if result.is_ok() { "ok" } else { "error" }));
+        let result = result.expect("actual generated Native invocation completed");
         let finished = runner.last_finished().expect("actual shell terminal");
         assert_eq!(finished.owner.request_id, ORIGINAL_STREAM);
         match runner.last_tool_effect_custody().expect("actual generated custody observation") {
@@ -1038,6 +1131,7 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
         results.push(result);
     }
     assert_eq!(calls.load(Ordering::Acquire), 1);
+    original_process_stage(&request.token, "invocations-and-custody-complete");
     let observations = sink.committed_original_turn_observations().expect("sealed actual Journal commits");
     assert_eq!(observations.len(), request.original_invocations);
     let digest = original_turn_result_digest(results.last().expect("actual final result"));
@@ -1099,7 +1193,9 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
     }
     let proof = prove_completed_original_turn(&original, terminal, digest, 0, false, &custody, &observations)
         .expect("actual completed owner plus sealed matching commits qualify");
+    original_process_stage(&request.token, "proof-qualified");
     assert_eq!(persist_completed_original_turn(sessions, &proof).expect("strict Session terminal commit"), OriginalTurnReceiptCommit::Inserted);
+    original_process_stage(&request.token, "terminal-inserted");
     assert_eq!(persist_completed_original_turn(sessions, &proof).expect("same proof is idempotent"), OriginalTurnReceiptCommit::AlreadyCommitted);
     assert_eq!(reconcile_completed_original_turn(sessions, &original).expect("same-process strict recheck").expect("verified completion").original(), &original);
     assert!(runtime.quiesce_for_upgrade().expect("publish the actual bound lease upgrade marker").quiescing);
@@ -1109,6 +1205,7 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
     assert_eq!(markers[0].agent_id, original.agent_id);
     assert_eq!(markers[0].source.as_deref(), Some("turn"));
     assert_eq!(markers[0].original_work.as_ref(), Some(&original));
+    original_process_stage(&request.token, "original-marker-written");
     runtime.settle_routed_turn(&request.agent_id, ORIGINAL_STREAM, 10).expect("retire actual routed lease");
     let store = sessions.open_agent_store_owner(&request.agent_id).expect("actual final canonical owner");
     let snapshot = store.checkpoint_snapshot_checked().expect("checked final root").expect("committed final state");
@@ -1118,6 +1215,7 @@ fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessio
         critical_blobs: vec![(snapshot.root_blob_id, snapshot.checkpoint_bytes)],
     };
     drop((runner, sink, host, store, runtime));
+    original_process_stage(&request.token, "producer-return");
     ProducedOriginal { original, checkpoint }
 }
 
@@ -1145,6 +1243,7 @@ fn production_checkpoint_restart_child() {
         .expect("decode child request");
     assert_ne!(request.parent_pid, std::process::id(), "fresh OS process required");
     assert!(request.fixture_root.is_absolute());
+    original_process_stage(&request.token, "owners-opening");
     let owners = OpenOwners::new(&request.fixture_root);
     let produced = match request.expectation {
         ReopenExpectation::Ready => { assert_ready(&request, &owners.sessions); None }
@@ -1158,7 +1257,9 @@ fn production_checkpoint_restart_child() {
             panic!("marker acknowledgment must use the bound shipping App executable")
         }
     };
+    original_process_stage(&request.token, "owners-closing");
     owners.close();
+    original_process_stage(&request.token, "owners-closed");
     let receipt = ChildReceipt {
         token: request.token,
         pid: std::process::id(),
@@ -1169,6 +1270,7 @@ fn production_checkpoint_restart_child() {
     fs::write(request_path.parent().expect("private run directory").join("completed.json"),
         serde_json::to_vec(&receipt).expect("serialize completion receipt"))
         .expect("publish completion only after assertions and worker shutdown");
+    original_process_stage(&receipt.token, "completion-receipt-written");
 }
 
 #[test]
@@ -1268,6 +1370,8 @@ fn produced_original_fixture(
     // Capture the server result even when the producer fails, before any panic
     // can transfer cleanup to Drop and hide the request/response failure phase.
     let server_result = server.finish();
+    eprintln!("original Responses producer_pid={} outcome={server_result:?} {}",
+        child.child_pid, server.diagnostics());
     assert!(server_result.is_ok() && child.result.as_ref().is_ok_and(|status| status.success()),
         "original turn producer failed: child={:?}; Responses worker={server_result:?}\n{}",
         child.result, child.logs);

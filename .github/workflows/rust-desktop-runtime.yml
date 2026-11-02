@@ -68,7 +68,7 @@ env:
   EXPECTED_DISPATCH_SHA: ${{ inputs.expected_subject || '' }}
 
 concurrency:
-  group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && format('{0}-{1}', github.ref, github.sha)) || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -268,7 +268,18 @@ jobs:
           from pathlib import Path
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           assert head == os.environ["FABUSHI_TARGET_SHA"]
-          source_paths = [".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock", "projects/openclaw-rust/upstream.lock.json"]
+          source_paths = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "projects/openclaw-rust/upstream.lock.json",
+              "source/host/build.rs",
+              "source/packages/proto/generated/agent/v1/mcp_exec_pb.ts",
+              "source/host/src/runner/generated_agent_turn_stream.rs",
+              "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+              "source/host/tests/generated_occurrence_codec_contract.rs",
+              "source/host/tests/production_checkpoint_restart_contract.rs",
+              "source/host/tests/routed_send_acceptance_contract.rs",
+          ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
               "kind": "ocrm-recovery-command-diagnostics",

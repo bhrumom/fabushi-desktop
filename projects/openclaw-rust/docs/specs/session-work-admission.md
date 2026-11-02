@@ -1684,8 +1684,10 @@ Runner `production_agent_checkpoint.rs`, Transcript `production_runtime.rs`,
 `ack_obligations.rs`, and app `main.rs`.
 Tests extend existing owner/restart/durable-store/manager/HostUpgrade targets and
 the shipping app test module; root integrates shared schema, composition,
-workflow and existing OCRM ledger/RTM. No factory, codec or stream-attempt owner
-expansion is needed. Every criterion above remains unverified until execution.
+workflow and existing OCRM ledger/RTM. The initial ORT scope did not require a
+factory, codec or stream-attempt expansion; ORT-RECOVERY-CODEC-01 below adds
+the existing generated codec after a concrete production failure. Every
+criterion above remains unverified until execution.
 
 There is no new SQLite table migration; absent old slots are unproved. An old
 consumer's refusal of marker v2 alone does not make rollback safe: its ACK worker
@@ -1880,6 +1882,36 @@ PID/token receipts, owner-close ordering, all original state/refusal checks and
 the no-extra-provider-call oracle. Do not widen HTTP protocol support or add
 retries to explain an error whose underlying cause was not captured. Execute
 the complete affected restart target in the same frozen Actions campaign.
+
+
+### ORT-RECOVERY-EVIDENCE-01 — retained worker outcome and frozen-H evidence
+
+Integration base `61dc91843493fd18a059f61ff7aff993b774b21b` preserves the production
+codec fix, all nine producer exclusions, independent `prost-types` wire checks,
+and deterministic forced-nonblocking reader/error controls above. Add the
+reviewed direct frozen-wire and canonical-consumer checks, including invalid
+nonobject Struct refusal, without removing those assertions.
+
+**FIX / TEST_FLAW:** a joined worker error must remain an error on every later
+`finish` and cleanup call. Retain the first outcome, including timeout; a late
+join cannot replace it with success. Extend the real invalid-request control
+to require the same error twice. Keep stage-specific errors free of request
+headers/bodies, a bounded 128-entry request-stage trace, and token/PID producer
+phases. The actual reader retains blocking normalization and I/O bounds.
+Collect both child and worker results before accepting completion; preserve all
+one-effect, original identity/model, custody, marker, ACK and fresh-App controls.
+Historical transport cause and exact per-process abort stages remain unproved.
+
+**FIX / TEST_FLAW:** the migration branch's shared push concurrency group can
+replace an older pending H under GitHub's default single-pending policy even
+with `cancel-in-progress=false`. Bind only this branch's push group to ref plus
+full `github.sha`; retain PR/other grouping and cancellation behavior. Historical
+zero-job cancellation causes remain unknown. This adds no trigger or runner
+guarantee. Reuse the existing Recovery capture, preserving selector order and
+recording the eleven workflow/manifest/lock/schema/Runner/codec/test inputs.
+Obtain the next normal push's actual shared compilation, codec and original
+producer/fresh-App execution on the integrated H; no synthetic push or blind
+rerun. Unfinished/legacy recovery and full migration acceptance remain open.
 
 ## References
 
