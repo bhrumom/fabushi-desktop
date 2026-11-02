@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "AUTO-BACKEND-HISTORY-v2",
+  "purpose": "Immutable source-review and implementation handoff; not execution or acceptance evidence",
+  "fixedUpstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "base": "9004481ef1c34e9c99acf9e6cdab50081193179a",
+  "liveMainObserved": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "reviewedSource": {
+    "repository": "/workspace/scratch/59e3cfc7de75/fabushi-desktop",
+    "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "batch": "AUTO-BACKEND-HISTORY-v2",
+    "base": "9004481ef1c34e9c99acf9e6cdab50081193179a",
+    "startingHead": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+    "baseTree": "5153a756ad5308bd64434583589498fe81c45dd9",
+    "tree": "50b216402b242608ea0589fd4916830dc5150b80",
+    "priorTree": "e37d80e596168f78d1c497136de2df65b987c187",
+    "originalBase": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+    "scopeMode": "complete-18-path-owner-batch-on-media-parent; focused-integration-delta",
+    "diffSha256": "56b2d2b41663bb1791b334445ef83f7faba988902ada473b666f0115863357a4",
+    "paths": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "3b330209de6cacb1a9c02105a0be35c5342e6128",
+        "bytes": 132381,
+        "sha256": "9d2210db791a7f8aff861393e57cb05cbca101883a9542dcfcd060313530c2ca"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "blob": "1bc50b28c052404e6c382d8e64f204f2c0c7eb0f",
+        "bytes": 74726,
+        "sha256": "cf32e6769fc85ea8365f22702b22e054483d0ca0753107f33be4b4e103015ed7"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob": "1b297b2ac79cc4705922189cc1a978c9ede9bb06",
+        "bytes": 1349015,
+        "sha256": "e10c32958adc772cc8fd0c6a7765d1f473b69826573a4c31b54209267b83f912"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "blob": "e491b31b4f264ce8cda504980a99efcd9b6b22bd",
+        "bytes": 99766,
+        "sha256": "c05d283ee97fc856a1bb40cc7c5ca3121e32c6b6d24b82e8d3de4dd8406c6956"
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob": "f7b86f34bf1a129e0882abdbe47f57c0276ded68",
+        "bytes": 954576,
+        "sha256": "0c60f0aee87d07ef7d3a4773a5e7f0f26c45461b631d754d0f1a221dbb18bd44"
+      },
+      {
+        "path": "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+        "blob": "feb592280854721451890840249ed2d6a5c53d2e",
+        "bytes": 74866,
+        "sha256": "7528ff4cb2d800d4940e465d51cdace838b8e8f04023c70cf582c219d9c8a036"
+      },
+      {
+        "path": "source/host/src/automations/automation_store.rs",
+        "blob": "69e02fc90e3866c7e7dfa7e5eb012546f5b74d37",
+        "bytes": 34468,
+        "sha256": "bf8e25f99894ee64a8d12d292441e303224bd9ff036dacf99bb8a614f77909d4"
+      },
+      {
+        "path": "source/host/src/extensions/automations/fire_delivery.rs",
+        "blob": "2a5ed927fa58c8ac5ab7af1860d669522611be0b",
+        "bytes": 18135,
+        "sha256": "2a1759246995a6ed4f4a62e8e10f9fa801b3ea8abf7e4940b4d9d3e069f1ea2e"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_session.rs",
+        "blob": "28ee10def86850322b4b920d23dbbea9d0ac1945",
+        "bytes": 46462,
+        "sha256": "022fc5a2c499dd90a2b035ea16f5233203684e44c6f3f219bbacb38553ef66a3"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob": "70c74210f3e1f479901434040dbd63bc09f3ac93",
+        "bytes": 288956,
+        "sha256": "711485b7052802d1c2df768a4385fd5c2be218685eb00d267ae5d95db55ce861"
+      },
+      {
+        "path": "source/host/src/extensions/transcript/automation_runtime.rs",
+        "blob": "be191ac1c9c20d7bbf1e75d609834a4b5f7d6c2e",
+        "bytes": 43372,
+        "sha256": "736f291002b690242843b2cd6e43ea4ace18127b4796af6001987a24035224c3"
+      },
+      {
+        "path": "source/host/tests/agent_session_contract.rs",
+        "blob": "f8492e36323ecf125f9da803a8a765d6cd17394c",
+        "bytes": 93679,
+        "sha256": "a8554aec367cb33054616c310cbca4b1ed1be6cdda5d755c7cbfe9d27008d3bb"
+      },
+      {
+        "path": "source/host/tests/automation_run_production_wiring_contract.rs",
+        "blob": "cc5785a913a241c18ee02949a0a7b162210f9389",
+        "bytes": 109173,
+        "sha256": "b01076534ee7e7a4160b327bf3254f86d98db94e7d1787aafd55c73238061746"
+      },
+      {
+        "path": "source/host/tests/automation_runtime_contract.rs",
+        "blob": "d53183110694a71acb48c62bd74865d015e29a51",
+        "bytes": 15026,
+        "sha256": "e5d41517a1864ad178167dfd4d97a48b5c4e5990ac807dae5a6331c15cbd5f27"
+      },
+      {
+        "path": "source/host/tests/automation_store_contract.rs",
+        "blob": "041978d2bf5dfa875f18bcfccb57e3956122ecdb",
+        "bytes": 75313,
+        "sha256": "d6adb5fe9152988ea7482a025dbbaf143c3af287415239da16ef659a17331c9c"
+      },
+      {
+        "path": "source/host/tests/automations_backend_contract.rs",
+        "blob": "ff45bad437ad5f981af44bff6b816e64d722b49f",
+        "bytes": 47080,
+        "sha256": "8d19dfe625978274e861c7f3514017c408a4b507ae8c531c5cbefccb792dd065"
+      },
+      {
+        "path": "source/host/tests/automations_fire_delivery_contract.rs",
+        "blob": "eccf6a7dfe2415f9cc002fd8e0833c3b2fc7e18c",
+        "bytes": 27567,
+        "sha256": "aa6f2574804fae70fd05a4b2a8dd507ef56c8f65972feb547041039ea3ff545e"
+      },
+      {
+        "path": "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "blob": "94d77fc80e08708f3426d4fcfeb41bc62817da62",
+        "bytes": 45740,
+        "sha256": "53e314f2e89db8c81de4422049288e05f348e11788a1860d817fef056ff37a07"
+      }
+    ],
+    "evidenceCarrier": "projects/openclaw-rust/evidence/full-fusion-batch-647e0932-20261102.json excluded from immutable product/source review; will only contain completed source reports and pending execution status"
+  },
+  "independentReviews": [
+    {
+      "lens": "integrity-lifetime-security",
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": [],
+      "report": "# AUTO-BACKEND-HISTORY-v2 — independent integrity, lifetime, and security review\n\n## Verdict\n\n**APPROVE, source review only.** I found no concrete actionable regression or contract violation in the complete declared 18-path change from the base below to the candidate tree. This verdict covers the checked discovery/history boundary, durable identity custody, filesystem and deletion admission, callback ownership, backend completion/ACK transitions, relevant concurrency, authored test oracles, and CI source binding.\n\nThis is not a build, test, lint, schema, generated-output, runtime, or CI pass. I ran none of those operations, locally or through htch. The authored assertions and workflow gates described below were inspected as source. Exact-candidate GitHub Actions evidence remains necessary under the repository's verification policy. This review does not promote any global OCRM acceptance flag or close the explicitly deferred scope.\n\n## Immutable identity and review configuration\n\n| Item | Reviewed value |\n| --- | --- |\n| Repository | `/workspace/scratch/59e3cfc7de75/fabushi-desktop` |\n| Review task | `647e0932-bea4-4113-9a61-65ae3db58955` |\n| Batch / scope mode | `AUTO-BACKEND-HISTORY-v2` / `complete-18-path-owner-batch` |\n| Base commit | `3c4bf6963cb30ecf01eb34b905315074886e1972` |\n| Base tree | `313daf015446a9abd40a8a6f1a5d7a5892542bf6` |\n| Candidate tree | `e37d80e596168f78d1c497136de2df65b987c187` |\n| Pinned upstream U | `1440bb1771372334bea23d7642bb52deb7db1845` |\n| Pinned upstream tree | `90c8aab39972da11cfad220361781d49e1bc6700` |\n| Scope manifest | `/workspace/scratch/59e3cfc7de75/automation-review/round-1/manifest.json` |\n| Declared diff SHA-256 | `a3cab50b587635be2a10676b32dd10fe257017438559b76f07abf74e344c748e` — manifest value, not independently recomputed |\n| Reviewer | `/root/automation_review_integrity` |\n| Applied reasoning effort | **xhigh**, actually supplied through `collaboration.spawn_agent.reasoning_effort` with `fork_turns=\"none\"`; parent explicitly confirmed the invocation |\n| Model selection | Model override omitted; configured parent model inherited |\n\nRead-only Git identity and name/status reads confirmed the base tree, candidate tree, and exactly the 18 modified paths below. The immutable diff reports 3,096 insertions and 182 deletions. The review used `git diff BASE TREE` and `git show TREE:path`; it did not rely on mutable working copies for reviewed source. I did not read other reviewers' reports, implementation-worker reports, or runner decisions. I made no repository, index, or branch edits; this report is the only written deliverable.\n\n## Governing material\n\nI read the frozen repository `AGENTS.md`, the applicable authority and ownership provisions of `projects/openclaw-rust/SOURCE_OF_TRUTH.md`, main specification `docs/specs/openclaw-rust-equivalence-migration.md` §17 and its applicable execution-policy provisions, and the applicable Session, Automation, and Storage module-map boundaries.\n\nI read the complete applicable `projects/openclaw-rust/docs/specs/cron-session-reaper.md`, including `AUTO-BACKEND-HISTORY-v2` BH01–BH06 and the preceding fresh-admission, history-retention, alias-custody, cancellation, deadline, redelivery, unknown-effect, strict-settlement/ACK, and owned-fixture requirements. Historical sections were considered with the current authority and explicit supersession rules, not treated as permission to weaken current controls.\n\n## Complete declared scope\n\nEvery declared diff was read. Surrounding implementation was read where needed to establish ownership, callers, consumers, serialization, filesystem behavior, and state transitions; this table does not imply that every unchanged line of every large file was reread.\n\n| Path relative to repository | Reviewed change and evidence |\n| --- | --- |\n| `.github/workflows/rust-desktop-runtime.yml` | Exact-subject checkout, receipt/source inputs, selected integration targets, four shipping-helper app tests, native Linux byte-path oracle, and failure artifact retention. |\n| `projects/openclaw-rust/docs/specs/cron-session-reaper.md` | Full applicable contract, new BH01–BH06 requirements, verification obligations, compatibility boundaries, and explicit open scope. |\n| `projects/openclaw-rust/parity-ledger.json` | Added scoped contract/source/test references; no global completion promotion. |\n| `projects/openclaw-rust/requirements-traceability-matrix.json` | New requirement-to-owner/test references and bounded evidence statements; no broadened acceptance claim. |\n| `source/host/app/src/main.rs` | Shipping dispatcher delegates its returned result to the shared checked-discovery helper; immediate completion and refusal ownership; retained schedule/event launch and provider behavior. |\n| `source/host/app/src/tests/automation_terminal_custody_tests.rs` | Real Session/Runtime/backend and shipping-helper tests, exact child isolation, custody/refusal observations, repair/reopen controls, and callback forwarding. |\n| `source/host/src/automations/automation_store.rs` | Checked targeted discovery, checked configuration, strict whole raw history validation, identity ownership, definition-only result, and compatibility of existing mutation/display paths. |\n| `source/host/src/extensions/automations/fire_delivery.rs` | Mandatory resolver ordering, typed custody validation, Running refusal, terminal replay, and preserved checked-absence policy. |\n| `source/host/src/extensions/session/agent_session.rs` | Existing-owner facade, agent identity propagation, and single delegation into production admission. |\n| `source/host/src/extensions/session/production.rs` | Validated agent path, positive absence, filesystem mutation boundary, fast/durable deletion admission, checked directory ancestry, and preserved existing DB admission. |\n| `source/host/src/extensions/transcript/automation_runtime.rs` | Existing per-agent Runtime boundary delegates to Session; checked target/history reads coexist with unchanged fresh execution admission. |\n| `source/host/tests/agent_session_contract.rs` | Missing and invalid agent behavior, malformed paths/DB, deletion precedence, reopen, and allowed/dangling symlink cases. |\n| `source/host/tests/automation_run_production_wiring_contract.rs` | Actual production backend and reopened ownership against malformed custody; nonregular-file bounded child oracle; retained unknown-effect/capacity/repair controls. |\n| `source/host/tests/automation_runtime_contract.rs` | Checked Runtime discovery and refusal, definition-only results, unchanged persisted state, and repaired Running/alias custody. |\n| `source/host/tests/automation_store_contract.rs` | Whole-image raw/identity matrix, malformed tails, checked targeted discovery, nonregular/missing paths, aliases, native UTF-8 boundary, and retained mutation/fresh-admission tests. |\n| `source/host/tests/automations_backend_contract.rs` | Existing strict backend contract retained; valid terminal fixture rows receive required finite `finishedAt` to isolate the intended negative oracle. |\n| `source/host/tests/automations_fire_delivery_contract.rs` | Typed resolver matrix and ordering, exact identity semantics, Running/terminal outcomes, and checked-absence compatibility. |\n| `source/host/tests/host_runner_composition_production_wiring_contract.rs` | AST-based production-source binding and negative mutations for wrong owner/fire/callback, ignored return, unused closure, comments, legacy-list bypass, and test-only helper. |\n\n## Contract and implementation assessment\n\n### BH01–BH02: authoritative whole-history custody\n\n`FileAutomationStore::read_run_for_delivery` validates the safe local automation ID and nonempty literal requested run ID, requires the checked matching configuration, and reads the entire raw history before selecting a run. In the candidate, the main validation is in `automation_store.rs` around lines 107–169, with the shared raw-image reader around lines 314–349 and duplicate-member JSON visitor around lines 402–458.\n\nThe strict reader rejects malformed JSON, recursive duplicate object members, malformed rows, missing or empty primary IDs, nonfinite or incorrectly typed start/finish times, unsupported status, invalid running/terminal finish semantics, invalid alias containers or elements, and alias counts above 25. It does not silently normalize a bad custody row through the legacy display parser. Its identity map accounts for primary IDs and aliases across **every row**, including rows after a valid apparent match and after the display retention window. Repeated/self aliases within one row remain permitted; cross-row ownership is rejected. Literal whitespace identities remain literal.\n\nOnly a genuinely absent history file under a valid matching configuration is accepted as first-run absence. File metadata checks prevent nonregular history files from reaching a potentially blocking content read. Dangling links and invalid parent/configuration states remain errors. Neither target discovery nor history resolution calls a writing or truncation path.\n\nThe delivery-specific validation is positioned before `parse_stored_run`; metadata retains its existing normalization after custody fields have been proven valid. The existing alias clamp filters empty entries and takes at most 25 without trimming or deduplicating, so valid delivery identities survive it without alteration. The mutation reader retains its previous legacy behavior through the shared raw-image reader's non-delivery mode. Existing strict duplicate-key handling, `begin_fresh_run`, capacity refusal, retention of Running rows, and settled-receipt pinning remain present.\n\nThe authored store tests cover the malformed raw matrix, whole-image collisions in either order, malformed unrelated/tail rows, exact 25-alias boundary, literal aliases, matching and absent queries, unchanged bytes, reopen, configuration failures, and missing-history positive control. Production-wiring tests additionally route malformed raw images through the actual backend, including bounded nonregular-file cases. These are source observations, not executed test results.\n\n### BH03: resolver ordering and typed custody\n\n`prepare_backend_fire` calls the required resolver after matching agent/backend target identity and **before** enabled, revision, slot, trigger, or event policy. Resolver error and malformed typed custody abandon delivery as unavailable. The typed validation around `fire_delivery.rs` lines 161–197 checks the same identity/status/timing/alias requirements and verifies that the returned row actually owns the requested primary or alias identity.\n\nA valid Running row refuses redelivery. A valid terminal row replays its receipt despite stale display runs or later policy changes. A checked absence proceeds to the existing policy branches. The tests exercise malformed typed rows, resolver errors under otherwise policy-rejected configurations, stale display runs, exact alias semantics, Running/terminal precedence, and absence controls. The change does not make display omission authoritative.\n\n### BH04: checked targeted filesystem discovery\n\n`FileAutomationStore::find_for_backend_delivery` around `automation_store.rs` lines 27–74 validates the agent identity, checks root existence, enumerates the directory with propagated errors, requires representable child identity, and compares the existing stable backend hash for safe local IDs. It completes checked enumeration rather than returning early upon the first potential target. An unreadable or unidentifiable entry therefore cannot establish a false absence.\n\nUnrelated configuration contents are not parsed. Only the matching target uses checked configuration reading. A matching child must be a real directory; matching child links, files, and malformed matching definitions fail. A checked root directory link is allowed, while dangling/unreadable root or ancestor state fails. Configuration bytes are required to come from a regular file and pass duplicate-member parsing before the existing configuration parser. The returned record has empty runs, leaving authoritative history to the separate checked history boundary.\n\nThe existing `WatchedDirectory` constructor does not itself start watching or create the root. Its fail-soft display-list behavior is no longer used to decide backend target existence. Tests distinguish genuine absent root/target from malformed or unknown state, include unrelated malformed configuration as a valid targeted-discovery control, and bind the Linux invalid-UTF-8 directory-entry case to a named nonzero-result gate.\n\n### BH05: existing Session and Runtime admission boundaries\n\nThe new facade around `agent_session.rs` lines 890–900 delegates into the existing production Session owner. Production code around lines 1413–1477 obtains the validated agent DB path, acquires the existing per-agent filesystem mutation boundary once, checks deletion admission, distinguishes positive directory absence, and then uses the existing durable work-admission logic before FileStore discovery. The helper's filesystem work stays inside that boundary; it does not recursively call a locking facade.\n\nAdjacent lock/admission code around `production.rs` lines 2275–2460 shows the existing filesystem-lock registry, fast deletion marker, deletion transition, and durable session-work admission. Pending deletion is not bypassed by an absent target or absent agent path. Present agents still require the existing DB path/admission behavior, including lifecycle/session identity checks and durable deletion state. Normal canonical DB opening/recovery remains the established owner behavior; this batch does not create another admission authority.\n\n`AutomationRuntime::find_for_backend_delivery`, around `automation_runtime.rs` lines 620–629, runs under its existing per-agent mutation boundary and calls Session. The history resolver immediately following it uses that same ownership arrangement. The actual execution store still calls `begin_fresh_run` through Session admission around lines 347–368. Checked discovery/resolution has not replaced execution-time fresh admission.\n\nThe source does not make the lookup and later execution admission one atomic cross-owner or cross-process operation. That is an explicitly retained limit, not an introduced exemption. Session tests cover missing-agent nonmaterialization, invalid identity, malformed roots/DBs, deletion precedence including reopen, allowed root/agent links, and dangling-link refusal.\n\n### BH06: shipping Host callback/refusal boundary\n\n`UnifiedGatewayApi::dispatch_production_backend_fire`, around `main.rs` lines 3617–3724, obtains the canonical Runtime from its transcript manager and returns the actual shared helper call. `dispatch_checked_production_backend_fire`, around lines 5729–5773, performs checked target discovery, then invokes `prepare_backend_fire` with the real revision and checked history resolver.\n\nDiscovery failure immediately returns `false` without launching work or invoking the completion callback. `Abandon` also returns `false`. A known immediate completion invokes the actual callback once with its receipt and returns `true`; existing-run replay avoids the dropped-fire report. Schedule/event paths invoke the existing launch closure with the checked target, preserving provider eligibility, thread behavior, Runtime calls, and completion mapping. The helper's synchronous read/admission locks have been released before invoking completion or launch.\n\nThe app tests call this shipping helper with real Session/Runtime objects and forward the callback created by `ProductionAutomationsBackendRuntime`. They count callbacks, launches, executor calls, dropped-fire reports, observations, POSTs, and ACKs rather than treating a manufactured callback as shipping evidence. They cover repeated refusal across original and alias identities, owner reopen, repaired Running refusal, explicit terminal repair/replay, later distinct success, and genuine absence completion. The AST contract independently binds the returned production helper call to the canonical owner, actual fire, and callback, and includes negative source mutations.\n\n## Adjacent lifetime, concurrency, and completion evidence\n\nI traced the consumer side through `extensions/automations/production.rs` and `sand_automation_fire_consumer.rs`. The production polling path collects dispatch work while holding backend state, then releases that mutex before dispatch. Consequently the new synchronous completion path can reacquire backend state without self-deadlocking.\n\nThe backend consumer state remains `Running -> Completed(receipt) -> Reported`. Actual completion first records `Completed`; only successful completion POST changes it to `Reported`. POST failure retains the receipt for retry. ACK candidates come only from `Reported`. A callback with `None`, or a dispatcher returning `false`, abandons the volatile entry without completion or ACK. This is consistent with checked-discovery/history refusal and with later retry after repair.\n\nI also traced the existing automation run and event consumers, including the real `AdmittedAutomationRunStore`, execution in-flight guard, terminal-history settlement, `automation_fire_completion`, and coalesced event batch completion. `RetainedUnsettled` still produces exactly `Ok(None)` before terminal cron/history changes and observations. Coalesced callers retain that absence of completion. Actual terminal outcomes retain cron-before-history ordering and require successful history settlement before terminal observations. Existing backend treatment of other execution errors is unchanged; this batch does not claim to solve unknown effects beyond its established contract.\n\nThe retained source tests still exercise execution-time fresh identity refusal, a full Running-history capacity limit, later distinct success after capacity relief, retention across subsequent settled runs, reopened original/alias custody, and real coalescer `Ok(None)` propagation. Fixture changes to valid terminal rows add finite completion times so their intended collision/malformed-tail predicates remain isolated; they do not remove those predicates.\n\n## CI, authored oracles, and evidence limits\n\nThe workflow still checks out and records the expected subject, rejects an optional mismatched expected SHA, and binds receipts to the subject/tree, pinned upstream, workflow run/attempt, platform, and source inputs. New source paths and contract identifiers cover this batch. Selected integration targets include the affected store, Session, Runtime, run path, event/coalescer, backend, fire delivery, production-wiring, and composition contracts.\n\nThe app step adds the four exact shipping-helper tests whose module paths match the candidate source. Its artifact root is the existing run-owned automation fixture root. Failure upload now covers app-contract failure as well as recovery-contract failure, so the earlier app step cannot lose its owned failure fixtures merely because later integration execution did not occur. The child harness uses an exclusive leaf, exact case selection, a bounded deadline, and a receipt checked after actual child completion; failure retains the fixture.\n\nThe Linux native-path step includes `automation_store_contract` and explicitly requires each named discovery oracle, including the invalid-UTF-8 folder test, to occur exactly once in successful test output. Its receipt also checks command/capture success and exact subject identity. Thus the required native-byte oracle has an explicit nonzero-result check in source. The app selector names, source configuration, artifact routes, and workflow conditions were inspected; no job or binary was run for this review.\n\nLedger and traceability changes add bounded contract and evidence references without upgrading existing global incomplete/false flags. Their descriptions require exact-candidate Actions evidence and do not assert that authored tests have already passed.\n\n## Findings and remaining scope\n\n**Actionable findings: none.** I have no source-supported defect with a concrete triggering scenario that warrants blocking this candidate within the declared batch. No speculative cleanup, unrelated redesign, or already-deferred work is presented as a finding.\n\nThe limits remain those already stated by the specification: external/cross-process replacement and claims, lookup-to-begin races, broader unknown-effect handling, real backend-service acceptance, and full reaper/OCRM equivalence are not accepted by this review. Positive absence and filesystem metadata checks do not constitute a cross-process transaction. The review also cannot establish compilation, executed assertions, actual artifact production, or successful Actions receipts without execution evidence.\n\nThe decision is limited to the exact candidate tree named above. A later source change requires the repository's applicable renewed review and exact-source verification rules. No further source inspection is pending from this reviewer for this frozen scope.\n"
+    },
+    {
+      "lens": "structure-reuse-production-evidence",
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": [],
+      "report": "# AUTO-BACKEND-HISTORY-v2 — independent structure, reuse and production evidence review\n\nVerdict: **APPROVED — source-only; no blocking findings. Actions pending.**\n\nThis verdict covers the complete frozen 18-path batch and the adjacent contracts identified below. It does not certify compilation, executed tests, real backend compatibility, recovery, reaper completion or OCRM acceptance. No concrete integration, ownership, reuse, callback/ACK, test-oracle or workflow-selection defect was found in the reviewed source. There are no preference-only blocking findings.\n\n## Immutable subject and review settings\n\n- Repository: `/workspace/scratch/59e3cfc7de75/fabushi-desktop`.\n- Task: `647e0932-bea4-4113-9a61-65ae3db58955`.\n- Batch: `AUTO-BACKEND-HISTORY-v2`; scope mode: `complete-18-path-owner-batch`.\n- Base and starting HEAD: `3c4bf6963cb30ecf01eb34b905315074886e1972`.\n- Base tree, confirmed by Git: `313daf015446a9abd40a8a6f1a5d7a5892542bf6`.\n- Reviewed tree, confirmed by Git: `e37d80e596168f78d1c497136de2df65b987c187`.\n- Frozen diff SHA-256, independently read with `sha256sum`: `a3cab50b587635be2a10676b32dd10fe257017438559b76f07abf74e344c748e`.\n- Frozen manifest and path status: `round-1/manifest.json`, `round-1/paths-status.txt`; Git's base-to-tree path status agrees with all 18 modified paths.\n- Fixed upstream U remains `1440bb1771372334bea23d7642bb52deb7db1845`; no upstream-read credit is inferred from this target-owner review.\n- Applied model: **`gpt-6.1-sol`**. Applied reasoning effort: **`xhigh`**. The parent confirmed actual launch fields `model=\"gpt-6.1-sol\"`, `reasoning_effort=\"xhigh\"`, `fork_turns=\"none\"`; no host fallback was reported. This scope warrants xhigh because it joins existing owner locks, file authority, immediate backend callbacks and ACK eligibility.\n\nThe review was fresh and independent. I did not read implementation reports, other reviewer reports or the runner's finding decisions. Product source was read through `git show`, `git diff`, `git grep` and `git ls-tree` against the immutable tree, not the mutable checkout. No repository source or real index was edited, staged, committed or pushed. No build, test, lint, formatter, generator, schema check, benchmark or executable validation ran locally or on htch-runtime.\n\n## Complete frozen scope\n\nEvery changed hunk in every listed path was read, including the test changes and all workflow/ledger/RTM deltas. The full feature spec was read. Blob identities are from the frozen manifest and tree.\n\n| Path | Frozen blob | Review disposition |\n| --- | --- | --- |\n| `.github/workflows/rust-desktop-runtime.yml` | `ee4f8e97b9b1aa180ead3f1755085eb897e19edf` | Deep review of changed selection, receipts, failure upload and adjacent job/step conditions |\n| `projects/openclaw-rust/docs/specs/cron-session-reaper.md` | `1bc50b28c052404e6c382d8e64f204f2c0c7eb0f` | Complete read, including predecessor contracts and BH-01–06 |\n| `projects/openclaw-rust/parity-ledger.json` | `a870a536186c8f24bcb570280f394d5d58c8f3a2` | Complete delta; affected responsibility references/contracts and completion flags |\n| `projects/openclaw-rust/requirements-traceability-matrix.json` | `8dd142ce4e5c811794f02e406f390dc1589dfbd9` | Complete delta; evidence-reference additions and completion flags |\n| `source/host/app/src/main.rs` | `f7b86f34bf1a129e0882abdbe47f57c0276ded68` | Complete delta; ingress, helper, launch and callback production callers |\n| `source/host/app/src/tests/automation_terminal_custody_tests.rs` | `feb592280854721451890840249ed2d6a5c53d2e` | Complete delta; real backend/helper/owner oracles and owned child lifecycle |\n| `source/host/src/automations/automation_store.rs` | `69e02fc90e3866c7e7dfa7e5eb012546f5b74d37` | Complete delta and adjacent mutation/parser/retention APIs |\n| `source/host/src/extensions/automations/fire_delivery.rs` | `2a5ed927fa58c8ac5ab7af1860d669522611be0b` | Complete delta and preparation order/typed authority decisions |\n| `source/host/src/extensions/session/agent_session.rs` | `28ee10def86850322b4b920d23dbbea9d0ac1945` | Complete delta and admitted filesystem facade |\n| `source/host/src/extensions/session/production.rs` | `70c74210f3e1f479901434040dbd63bc09f3ac93` | Complete delta and adjacent path, admission, owner-open and deletion locking |\n| `source/host/src/extensions/transcript/automation_runtime.rs` | `be191ac1c9c20d7bbf1e75d609834a4b5f7d6c2e` | Complete delta and adjacent mutation lock, checked read, fresh admission, disposal |\n| `source/host/tests/agent_session_contract.rs` | `f8492e36323ecf125f9da803a8a765d6cd17394c` | Complete delta; absence, malformed agent, durable deletion and link oracles |\n| `source/host/tests/automation_run_production_wiring_contract.rs` | `cc5785a913a241c18ee02949a0a7b162210f9389` | Complete delta and existing bounded fixture/backend/coalescer consumers |\n| `source/host/tests/automation_runtime_contract.rs` | `d53183110694a71acb48c62bd74865d015e29a51` | Complete delta; checked Runtime target and repair oracle |\n| `source/host/tests/automation_store_contract.rs` | `041978d2bf5dfa875f18bcfccb57e3956122ecdb` | Complete delta; raw custody, global identity, links, literal identity, legacy and native filename oracles |\n| `source/host/tests/automations_backend_contract.rs` | `ff45bad437ad5f981af44bff6b816e64d722b49f` | Complete delta; valid terminal fixture finishes retain the intended malformed/ambiguous oracle |\n| `source/host/tests/automations_fire_delivery_contract.rs` | `eccf6a7dfe2415f9cc002fd8e0833c3b2fc7e18c` | Complete delta; typed invalid authority, policy ordering and positive controls |\n| `source/host/tests/host_runner_composition_production_wiring_contract.rs` | `94d77fc80e08708f3426d4fcfeb41bc62817da62` | Complete delta; returned shipping edge and wrong-owner/ignored-result/dead-call controls |\n\nAuthority reads were frozen `AGENTS.md` (`e4682748087759b2d4bb2b3a47916b6148e8a6f2`), the complete `projects/openclaw-rust/SOURCE_OF_TRUTH.md` (`3cce3abde071ec48203398ef3640c1e73c08b6e2`), and main `docs/specs/openclaw-rust-equivalence-migration.md` §17 OCRM-EXEC-02 (`69c9667af2328e20a1fba09ebf80c5aab4d5c336`). The SOT's repeated historical discovery records remain historical, subordinate to its current fixed-U statement and §17. No nested AGENTS applies to these paths in the frozen tree.\n\n## Findings and source evidence\n\n### No blocking findings\n\nThe following are affirmative source conclusions, not executed-test results.\n\n1. **Shipping reuse and callback ownership are concrete.** `UnifiedGatewayApi::dispatch_production_backend_fire` (`main.rs:3617`) obtains the canonical TranscriptManager AutomationRuntime and returns `dispatch_checked_production_backend_fire` with the actual fire and completion callback. The helper (`main.rs:5729`) performs checked targeted discovery, passes the real checked Runtime history resolver to preparation, owns the immediate terminal/refusal match, and calls the launch closure only for prepared schedule/event work. Unknown discovery returns false without invoking the callback; unknown history becomes Abandon and also returns false. Known terminals invoke the supplied callback once. The original provider checks and schedule/event thread execution/completion mappings remain inside their existing launch branches. The production composition still passes this gateway method to the backend (`main.rs:16979`). There is no test-only production helper or duplicate completion state machine.\n\n2. **Checked target discovery does not borrow display history authority.** `FileAutomationStore::find_for_backend_delivery` (`automation_store.rs:27`) completely enumerates checked entry names/metadata, compares the existing stable hash over literal safe folder IDs, and reads only a matching definition. Matching non-directories/child links refuse; dangling root/entry links and invalid UTF-8 identities cannot become absence. Valid root links preserve existing semantics. `read_config_for_delivery` (`:76`) checks regular-file metadata, recursively rejects duplicate JSON members, then reuses `parse_stored_config` for legacy semantics. `record_from_config` (`:175`) is shared with ordinary record construction while targeted discovery returns empty runs, so a display-history read cannot block or manufacture custody on this edge. Unrelated definition contents are not parsed.\n\n3. **Raw history and typed returns fail closed.** `read_run_for_delivery` (`automation_store.rs:107`) validates the whole unique-key image, explicit status, finite times and Running-versus-terminal finish shape before metadata normalization. It tracks every primary and alias owner across all rows, including unrelated queries and tails beyond the display window; only repeated/self aliases in the same row are permitted. Literal identity bytes and the existing 25-alias producer bound are preserved. `read_run_image` (`:314`) distinguishes a genuinely absent history from dangling links/nonregular objects and errors before reading a FIFO. `fire_delivery.rs` additionally requalifies returned typed identity, finite times, status, finish and alias constraints before enabled/revision/slot/event policy; a stale display projection is not consulted for custody.\n\n4. **Existing owner and lock order are preserved.** `AutomationRuntime::find_automation_for_backend_delivery` (`automation_runtime.rs:620`) takes its existing per-agent mutation lock, then delegates through `SandAgentSessionStore` (`agent_session.rs:890`) to `ProductionSessionWorkers` (`production.rs:1413`). Session takes its existing filesystem/deletion mutex once and calls the private locked durable-admission helper, rather than reentering a public locking facade. Agent IDs are validated by the existing session-path owner before lookup. Checked directory absence is distinguished from non-directory/dangling/unavailable paths. Present agents require normal durable admission, including malformed-state and durable deletion refusal. Ordinary DB owner open/recovery remains the existing Session responsibility. Both discovery and history reads return before the helper invokes a backend callback. The actual backend worker releases its fire-state mutex before dispatch (`extensions/automations/production.rs:157–201`), so the synchronous immediate completion callback can reacquire that existing owner.\n\n5. **Fresh admission and compatibility were retained.** The shared mutation-image extraction keeps mutation parsing on `parse_stored_run`, primary-ID uniqueness, sorting and current Running-retention behavior. Ordinary display remains fail-soft and bounded. `begin_fresh_run` and its predecessor regression are present (`automation_store.rs:202`, `automation_store_contract.rs:170`), and the production admitted run-store adapter still calls it (`automation_runtime.rs:347–367`). The existing background identity precheck remains (`:844–867`). Legacy idempotent `begin_run`, old terminal normalization, capacity/receipt policies and read errors were not replaced by the stricter backend-only interpretation.\n\n6. **The strongest new callback/ACK oracle uses shipping code and real owners.** The four app tests (`automation_terminal_custody_tests.rs:1099,1115,1134,1153`) call `crate::dispatch_checked_production_backend_fire`, seed an actual Runtime RetainedUnsettled result, close/reopen real Session/Runtime owners, and use the actual `ProductionAutomationsBackendRuntime` callback with controlled transport. They require zero launch/executor/callback/POST/ACK/observation on invalid definition/history/agent authority, unchanged file/cron state, repeated polls and fresh volatile backend construction. Explicit repair restores Running refusal, error and success replay, a distinct executed run, unrelated-target eligibility and genuine missing-target completion. Test launch/external execution/readiness are controlled seams; this is accurately limited to local owner/protocol behavior. Other contract tests manually compose preparation/backend state for their own narrower oracles; they do not substitute for these shipping-helper cases.\n\n7. **Existing backend ACK and custody consumers remain authoritative.** In adjacent `sand_automation_fire_consumer.rs:183–203,262–307,332–364`, Abandon removes volatile state, Complete transitions through completion POST before Reported, and only Reported IDs enter `ackRunUuids`; failure retains completion for retry. The batch does not alter that state machine. Adjacent `automation_run_path.rs:450–468,531–558` still requires a durable admitted identity and returns `Ok(None)` for RetainedUnsettled before cron/history settlement and observation. Existing coalescer None, deadline, failed history/POST, retained-capacity and fresh-admission controls remain selected and were not weakened by the diff.\n\n8. **Native/nonregular oracles and workflow custody are correctly selected in source.** The Unix FIFO control (`automation_run_production_wiring_contract.rs:1909`) creates an actual unpaired FIFO and calls checked Runtime discovery/history in the existing 45-second owned child; a blocking read fails the deadline rather than skipping. Existing fixture allocation, completion receipt, shutdown-before-retention and success-only cleanup are retained (`:48–154,382–393`). The Linux-only invalid-UTF-8 folder oracle (`automation_store_contract.rs:1267`) uses native bytes and has no runtime skip. The workflow's existing Ubuntu native-path job now runs the actual store contract and requires that exact test plus six portable/link discovery positives exactly once, checks cargo/capture exits and H, and records command/log hash/result (`rust-desktop-runtime.yml:1181–1282`). macOS retains Unix link and FIFO coverage through the selected unfiltered production-wiring target (`:546–622`). The four exact app test names are selected (`:452–455`) and keep their case/PID/nonce completion receipt and 45-second child bound. The app step now receives the owned artifact root (`:363–371`), and the upload checks failure of either the app or integration step (`:668–675`), covering an app failure that skips later integration.\n\n9. **Ledger/RTM claims do not outrun evidence.** The deltas add existing paths and typed-contract/evidence references. They do not change responsibility implementation/wiring/verification/acceptance states, source coverage counts, U or any completion flag. All eight top-level flags in both records remain false. The new spec and ledger wording explicitly require final exact-H Actions and retain real-service and broader reaper limits. Workflow receipt strings are source declarations emitted after successful preceding scoped steps; they are not treated here as an existing passing execution receipt.\n\n## Adjacent evidence inspected\n\nBeyond the complete change scope, the source review inspected the existing FileStore mutation/retention and UniqueJson parser, `automations/automation.rs` (bound and identity-preserving alias clamp), `automation_id.rs` (stable hash), `storage/folder_id.rs`, `watched_directory.rs` (ordinary listing excludes child links and read/write ownership), Session `session_paths.rs`, `existing_session_db_path`, DB owner-open helpers, filesystem/admission/deletion helpers, Runtime admitted store/run preparation/disposal and mutation-lock implementation, the run-path retained result/admitted-ID/settlement branches, production backend dispatch/complete/abandon/ACK/retry/stop consumers, and the actual Host production backend registration. Cargo declarations were read to confirm existing uuid v4 and libc dependencies, with no dependency change. Existing test module inclusion and the wiring oracle's production-source boundary were checked.\n\nNo production owner was introduced. File authority stays in FileAutomationStore, Session owns identity/admission/deletion and its DB, Runtime owns per-agent automation mutation and run admission, and backend completion/ACK remains in the existing backend owners.\n\n## Actions pending and retained limits\n\n**Actions pending:** this review ran no executable validation and reviewed no candidate Actions result. Before claiming this batch verified, freeze the integrated H whose tree contains this reviewed implementation and obtain its exact-subject shipping Host compile, the four named app cases, all selected affected store/fire/backend/Runtime/Session/run-path/production-wiring/coalescer/Spend Guard/custody/deadline/shared contracts, the composition oracle including bypass negatives, and the Ubuntu native-path job's named positive receipt. Inspect actual nonzero test execution, exits, logs, immutable artifacts and retained failed owned fixtures if any check fails. A timeout, missing receipt, zero selected test or skipped dependent step remains non-passing.\n\nThis source-only approval does not accept real backend/service/account semantics, old normalized/deleted history, cross-process claims, lookup-to-begin races, remote effect reconciliation, event-loss/restart custody or full reaper/OCRM completion. Those are documented existing limits and were not used to expand this batch. No additional source check remains necessary for this lens before publication; later accepted fixes require focused re-review of their delta and adjacent consumers.\n"
+    },
+    {
+      "lens": "fresh-concurrent-media-integration",
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": [],
+      "report": "# Independent integration review — AUTO-BACKEND-HISTORY-v2 + MIP-v1\n\n## Result\n\n**NO FINDINGS in the bounded integration scope.** The frozen integration preserves the incoming media batch and the prior Automation batch, including their shared workflow selections, source bindings, evidence declarations, refusal semantics, and unchanged completion flags. No concrete new integration failure or required source correction was established.\n\nThis is a source-only review result, not a compilation, test, schema-validation, runtime, service-compatibility, or acceptance result. Final exact-subject GitHub Actions evidence remains required.\n\n## Reviewer and immutable subject\n\n- Reviewer: fresh independent integration reviewer, task `/root/automation_media_integration_review`.\n- Model: inherited configured model; session label **GPT-6 Astra Pro**. No finer model ID is claimed.\n- Actual effort: **xhigh**, applied by the parent through `collaboration.spawn_agent(fork_turns=\"none\", reasoning_effort=\"xhigh\")`; model override omitted. The parent confirmed this applied configuration. No fallback.\n- Scope reason: shared Actions source binding and owner/evidence integration across independently authored Automation and media changes requires tracing both producer/consumer paths and the execution-evidence conditions.\n- Repository: `/workspace/scratch/59e3cfc7de75/fabushi-desktop`.\n- Task ID: `647e0932-bea4-4113-9a61-65ae3db58955`.\n- Manifest: `/workspace/scratch/59e3cfc7de75/automation-review/round-2/manifest.json`.\n\n| Identity | Exact value |\n| --- | --- |\n| Original base / recorded starting HEAD | `3c4bf6963cb30ecf01eb34b905315074886e1972` |\n| Prior frozen Automation tree | `e37d80e596168f78d1c497136de2df65b987c187` |\n| Incoming media parent commit | `9004481ef1c34e9c99acf9e6cdab50081193179a` |\n| Incoming media parent tree | `5153a756ad5308bd64434583589498fe81c45dd9` |\n| Reviewed integrated tree | `50b216402b242608ea0589fd4916830dc5150b80` |\n| Fixed upstream repository | `openclaw/openclaw` |\n| Fixed upstream commit | `1440bb1771372334bea23d7642bb52deb7db1845` |\n| Fixed upstream tree | `90c8aab39972da11cfad220361781d49e1bc6700` |\n\nThe incoming commit's tree and both frozen tree identities were resolved using read-only Git commands. Source was read directly from the frozen tree with `git show`/`git grep`; mutable working-tree source was not substituted for the review subject. Current repository instructions were read separately as required.\n\n## Scope preservation\n\nThe complete owner batch against the media parent contains the manifest's **18 paths**. The integration focus against the prior Automation tree contains **8 paths**: three shared files and five media-only files. The combined delta against the original base contains **23 paths**, the union of the two batches.\n\nRead-only Git comparisons returned no differences for all five media-only paths against `9004481ef1c34e9c99acf9e6cdab50081193179a`:\n\n| Media-only path | Preserved integrated blob |\n| --- | --- |\n| `projects/openclaw-rust/docs/specs/media-input-policy-admission.md` | `d2f686ace10136f640a7c8bfbabc30c1d3f83fa5` |\n| `projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md` | `d57cb526f487257f1a435e48082d3ae1be587716` |\n| `source/host/src/extensions/attachments/attachments_service.rs` | `bcabbadd6f97b20b1833ed028931f10588a2c540` |\n| `source/host/src/extensions/attachments/input_files.rs` | `ac28577c031a14fa95bf367f4239874135638094` |\n| `source/host/tests/openclaw_input_files_contract.rs` | `0bc78fb6a8f1069656aad703f6509e3d38c032f0` |\n\nRead-only Git comparisons also returned no differences against the prior frozen Automation tree for all fifteen nonshared Automation paths:\n\n1. `projects/openclaw-rust/docs/specs/cron-session-reaper.md`\n2. `source/host/app/src/main.rs`\n3. `source/host/app/src/tests/automation_terminal_custody_tests.rs`\n4. `source/host/src/automations/automation_store.rs`\n5. `source/host/src/extensions/automations/fire_delivery.rs`\n6. `source/host/src/extensions/session/agent_session.rs`\n7. `source/host/src/extensions/session/production.rs`\n8. `source/host/src/extensions/transcript/automation_runtime.rs`\n9. `source/host/tests/agent_session_contract.rs`\n10. `source/host/tests/automation_run_production_wiring_contract.rs`\n11. `source/host/tests/automation_runtime_contract.rs`\n12. `source/host/tests/automation_store_contract.rs`\n13. `source/host/tests/automations_backend_contract.rs`\n14. `source/host/tests/automations_fire_delivery_contract.rs`\n15. `source/host/tests/host_runner_composition_production_wiring_contract.rs`\n\nThe three reconciled shared blobs are:\n\n| Shared path | Reviewed blob |\n| --- | --- |\n| `.github/workflows/rust-desktop-runtime.yml` | `3b330209de6cacb1a9c02105a0be35c5342e6128` |\n| `projects/openclaw-rust/parity-ledger.json` | `1b297b2ac79cc4705922189cc1a978c9ede9bb06` |\n| `projects/openclaw-rust/requirements-traceability-matrix.json` | `e491b31b4f264ce8cda504980a99efcd9b6b22bd` |\n\nI compared their integration hunks with the incoming media changes and the combined original-base delta. The media additions remain present alongside the Automation additions; the integration introduces no third product change outside this union.\n\n## Source assessment\n\n### Actions source binding and execution evidence\n\nThe existing workflow's checkout and `Bind exact tested HEAD` steps bind the actual checkout to `FABUSHI_TARGET_SHA`, including the optional full dispatch SHA check. The scoped diagnostic receipt records the subject commit/tree, fixed upstream identity, run/attempt and input hashes. Its source list retains all Automation inputs and adds the media spec, both attachment implementation files and the integration-test target (`rust-desktop-runtime.yml`, source binding around lines 259–339).\n\nThe scoped macOS lane retains the four exact shipping backend-discovery selectors, their existing app compilation prerequisite, the Runtime/Session/FileStore/fire/backend and composition targets, and the preceding history/custody/deadline controls. All four new app selector strings correspond to actual test functions under `tests::automation_terminal_custody_tests::checked_backend_delivery`; the existing child module is compiled by the shipping app. The app step supplies the owned Automation artifact root, and fixture upload covers failure of either the app step or the later recovery step. Adding the media command does not remove those guards or selectors.\n\nThe media command uses the existing scoped `run_recovery_check` logger and propagates its command exit. The success receipt is downstream of successful scoped execution, and its MIP description retains the precise one-/two-padding guarantee and the longer-malformed-input precedence limit. It does not claim full media or platform acceptance.\n\nIn the existing Linux `sqlite-native-path` job, the Automation target remains added to the recovery command. Its receipt requires exactly one positive result for each of the seven native-path cases and seven checked-delivery cases, including the Linux-only invalid-UTF-8 folder oracle. The subsequent media command has a separate subdirectory and receipt; it requires exactly one positive result for each of the seven MIP test names. Both receipt predicates require successful cargo execution, successful log capture and the expected HEAD. Failure or missing/nonunique named results cannot produce a passed receipt. The media receipt additionally carries subject tree, upstream identity, input hashes and log hash. The parent artifact upload includes both receipts and logs (`rust-desktop-runtime.yml`, approximately lines 1200–1377).\n\nThe manifest and lock inputs are unchanged. The Host manifest uses normal integration-test discovery, so `openclaw_input_files_contract.rs` needs no new target registration. The app remains linked to the same Host crate. The media implementation uses already declared serde/base64 dependencies and adds no feature or native dependency that conflicts with the preserved Automation code.\n\n### Product callers and ownership\n\nThe shared shipping app change remains the prior Automation implementation. Its actual production callback reaches `UnifiedGatewayApi::dispatch_production_backend_fire`, which returns `dispatch_checked_production_backend_fire` with the canonical Runtime, received fire and completion callback. The helper performs checked target discovery, uses the required checked history resolver, consumes immediate completion/refusal, and only then invokes the existing schedule/event launch closure (`main.rs`, lines 3617–3724, 5729–5773 and the production callback around 16981). The associated app oracle calls that same helper and forwards the actual backend completion callback; the composition oracle checks the returned ingress edge and includes bypass/dead-call controls.\n\nThe target lookup flows through `AutomationRuntime`'s existing per-agent mutation lock, `SandAgentSessionStore`, and the single existing Session filesystem/deletion lock. A present agent reaches the locked durable admission check; checked absence and unavailable state stay distinct. History resolution retains its existing admitted Session boundary. No media addition changes these locks, stores, delivery preparation or callbacks. The previously specified lookup-to-begin and cross-process limitations remain limitations.\n\nThe media delta remains in the existing attachment owner. The generic Host dispatcher still calls `AttachmentsService::dispatch_gateway` (`main.rs`, around 14538), independently of the backend-fire path. Both file extraction branches resolve explicit limits before payload decoding or source handling; omitted/null policy still calls the existing resolver, and valid false/zero/empty resolved restrictions pass through. The image path retains its existing explicit-policy behavior and consumes the same corrected source estimator. The estimator's quotient/remainder calculation avoids multiplication overflow and saturates the short-padding subtraction while leaving the subsequent size-before-decode order intact (`attachments_service.rs`, helper around 183 and branches 2112–2154; `input_files.rs`, lines 715 onward).\n\nThe seven added media cases exercise real dispatch for malformed policies, precedence, defaults, restrictive policies, partial configuration resolution, short/long malformed padding and valid padded byte caps. Their invalid URL sentinel reaches syntax refusal before client construction in the adjacent `media_fetch` consumer. The forbidden side-effect ports and empty-root assertions do not replace extraction with a parser mock. Existing PDF/HEIC placeholders and broader URL policy are explicitly outside the new claim; the integration does not turn these fixtures into full compatibility evidence.\n\n### Ledger and RTM\n\nAutomation/Session evidence references and `AUTO-BACKEND-HISTORY-v2` declarations remain intact. The media responsibility receives its spec/test references, corrected actual RPC entrypoints, precise policy/arithmetic invariants and explicit open-scope language. The R24/AC24 additions preserve existing evidence arrays and acceptance status. No changed hunk upgrades a responsibility's verification/acceptance state, source-read count, source lock or global completion status.\n\nAll eight flags are explicitly `false` in both frozen ledger and RTM: `baseline_identity_accepted`, `source_closure_ready`, `responsibility_mapping_complete`, `rust_implementation_complete`, `production_wiring_complete`, `ecosystem_compatibility_accepted`, `ui_accepted`, and `release_accepted`. The unchanged audit consumer still rejects an unproven true flag. Its implementation was read but not executed.\n\n## Read scope and method\n\n- Read the complete current root `AGENTS.md`. A tracked instruction-file inventory found only the root and the unrelated `source/mahayana/codex-rs/tui/src/bottom_pane/AGENTS.md`; no nested instruction governs these paths.\n- Read the applicable current Source of Truth authority/constraint/status sections, relevant owner-map entries, the latest main Spec §17 in full, and the entire frozen `cron-session-reaper.md` (1,123 lines), including BH-01–BH-06 and the retained ACK, admission, recovery, custody and history contracts.\n- Read the full frozen MIP spec, all eight integration-delta paths' changed hunks, and the adjacent media types, resolver, decoder/extractors, extension/generic Host dispatch, URL validation and fixture setup needed to assess those changes.\n- Retained the complete 18-path Automation batch as context through the manifest, original-base and media-parent scope comparisons, exact preservation comparisons, changed production interfaces/callers, selected app/helper and bounded-child oracles, and the affected store/Runtime/Session/fire/backend/composition test changes. This focused round does not claim a new exhaustive audit of every unchanged test body or of the whole application.\n- Read relevant workflow trigger, checkout, cache/dependency, source-binding, command, app selection, recovery, success-receipt and failure-upload sections, the Host/App Cargo declarations, and the existing audit consumer. No validator or generated script was run.\n- No other reviewer/worker report, review-runner decision artifact, or excluded untracked evidence carrier was consulted. Historical contract text embedded in the required source specs/dossier was treated as source context, not as another review's verdict.\n\n## Execution and acceptance limits\n\nOnly read-only source/Git investigation was performed. No local or htch-runtime build, test, lint, generator, schema check, benchmark or acceptance was run. No Actions run was dispatched or represented as passed. No Git staging/mutation or product/source write was performed; this report is the only authored file.\n\nSource inspection supports preservation and consistency of the bounded integration. Actual compilation, selected nonzero tests, source-integrity gates and platform behavior still require the final immutable Actions subject. Controlled transport and owner-reopen tests remain distinct from real backend/service acceptance; full media, reaper, external-effect recovery and all final OCRM gates remain open under their existing specifications.\n"
+    }
+  ],
+  "runnerDecision": {
+    "sourceScope": "Original 18-path source review and focused media-parent integration converged without findings; original 15 unshared Automation blobs and 5 incoming media blobs preserved exactly; shared workflow/ledger/RTM retain both batches",
+    "execution": "pending exact published H Actions; all authored tests unexecuted at publication",
+    "authority": "Source review does not confer scoped unit verification or final OCRM ACCEPT"
+  },
+  "priorHeadEvidence": {
+    "subject": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+    "sourceRun": 41515725259,
+    "sourceConclusion": "success",
+    "sourceRiskTests": 27,
+    "sourceMaterializationTests": 10,
+    "runtimeRun": 41515725332,
+    "hostJob": 125518678337,
+    "hostStatusObserved": "queued",
+    "scope": "Prior CWR/MCP head only; never new-batch test evidence",
+    "observedDuringUtc": "2026-11-02 20:25–20:27 UTC"
+  },
+  "remainingRequirements": {
+    "fullFixedUClosure": "open recursive dependencies/downloads/patches/generator inputs/LFS/resources/legal closure",
+    "globalOcrmFlags": "all eight remain false",
+    "finalAcceptance": "all applicable G01-G12, AC01-AC24, real ecosystem/device/UI/security/performance/soak/platform packages/upgrade/rollback/Fabushi regression and independent ACCEPT remain open"
+  },
+  "nextSourceReconciledGap": {
+    "status": "not implemented in this batch",
+    "path": "source/host/app/src/main.rs",
+    "symbols": [
+      "automation_fire_completion",
+      "dispatch_production_backend_fire"
+    ],
+    "description": "Scheduled Runtime precheck/fresh-history admission errors still become failed completion before this attempt executes; twenty Running rows give a deterministic capacity-refusal trigger. Preserve legacy manual String errors and ACK-05 settlement behavior when repairing via an explicit typed admission disposition. Strict-invalid late mutation inputs and cross-process atomicity remain separate."
+  },
+  "storageIdentity": "This evidence carrier adds no product change to reviewedSource.tree. The immutable reports identify their original/focused subjects; resolve the containing commit for final publication identity. All execution claims here remain pending or explicitly prior-head only.",
+  "originalBase": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+  "priorReviewedSource": {
+    "repository": "/workspace/scratch/59e3cfc7de75/fabushi-desktop",
+    "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "batch": "AUTO-BACKEND-HISTORY-v2",
+    "base": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+    "startingHead": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+    "baseTree": "313daf015446a9abd40a8a6f1a5d7a5892542bf6",
+    "tree": "e37d80e596168f78d1c497136de2df65b987c187",
+    "scopeMode": "complete-18-path-owner-batch",
+    "diffSha256": "a3cab50b587635be2a10676b32dd10fe257017438559b76f07abf74e344c748e",
+    "paths": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "ee4f8e97b9b1aa180ead3f1755085eb897e19edf",
+        "bytes": 126643,
+        "sha256": "bcdbc316ad91532e7991c6fc709d4d6dadcb595569191381ebe6724bafaf4d0c"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "blob": "1bc50b28c052404e6c382d8e64f204f2c0c7eb0f",
+        "bytes": 74726,
+        "sha256": "cf32e6769fc85ea8365f22702b22e054483d0ca0753107f33be4b4e103015ed7"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob": "a870a536186c8f24bcb570280f394d5d58c8f3a2",
+        "bytes": 1347319,
+        "sha256": "7f3550c329383d007cc38ce24ccacffbdff931c29575519043b745026a7a2043"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "blob": "8dd142ce4e5c811794f02e406f390dc1589dfbd9",
+        "bytes": 99488,
+        "sha256": "a880986c11218366c7346b8a5343b8df56ff3d81354aeb02a430230c9b007884"
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob": "f7b86f34bf1a129e0882abdbe47f57c0276ded68",
+        "bytes": 954576,
+        "sha256": "0c60f0aee87d07ef7d3a4773a5e7f0f26c45461b631d754d0f1a221dbb18bd44"
+      },
+      {
+        "path": "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+        "blob": "feb592280854721451890840249ed2d6a5c53d2e",
+        "bytes": 74866,
+        "sha256": "7528ff4cb2d800d4940e465d51cdace838b8e8f04023c70cf582c219d9c8a036"
+      },
+      {
+        "path": "source/host/src/automations/automation_store.rs",
+        "blob": "69e02fc90e3866c7e7dfa7e5eb012546f5b74d37",
+        "bytes": 34468,
+        "sha256": "bf8e25f99894ee64a8d12d292441e303224bd9ff036dacf99bb8a614f77909d4"
+      },
+      {
+        "path": "source/host/src/extensions/automations/fire_delivery.rs",
+        "blob": "2a5ed927fa58c8ac5ab7af1860d669522611be0b",
+        "bytes": 18135,
+        "sha256": "2a1759246995a6ed4f4a62e8e10f9fa801b3ea8abf7e4940b4d9d3e069f1ea2e"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_session.rs",
+        "blob": "28ee10def86850322b4b920d23dbbea9d0ac1945",
+        "bytes": 46462,
+        "sha256": "022fc5a2c499dd90a2b035ea16f5233203684e44c6f3f219bbacb38553ef66a3"
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob": "70c74210f3e1f479901434040dbd63bc09f3ac93",
+        "bytes": 288956,
+        "sha256": "711485b7052802d1c2df768a4385fd5c2be218685eb00d267ae5d95db55ce861"
+      },
+      {
+        "path": "source/host/src/extensions/transcript/automation_runtime.rs",
+        "blob": "be191ac1c9c20d7bbf1e75d609834a4b5f7d6c2e",
+        "bytes": 43372,
+        "sha256": "736f291002b690242843b2cd6e43ea4ace18127b4796af6001987a24035224c3"
+      },
+      {
+        "path": "source/host/tests/agent_session_contract.rs",
+        "blob": "f8492e36323ecf125f9da803a8a765d6cd17394c",
+        "bytes": 93679,
+        "sha256": "a8554aec367cb33054616c310cbca4b1ed1be6cdda5d755c7cbfe9d27008d3bb"
+      },
+      {
+        "path": "source/host/tests/automation_run_production_wiring_contract.rs",
+        "blob": "cc5785a913a241c18ee02949a0a7b162210f9389",
+        "bytes": 109173,
+        "sha256": "b01076534ee7e7a4160b327bf3254f86d98db94e7d1787aafd55c73238061746"
+      },
+      {
+        "path": "source/host/tests/automation_runtime_contract.rs",
+        "blob": "d53183110694a71acb48c62bd74865d015e29a51",
+        "bytes": 15026,
+        "sha256": "e5d41517a1864ad178167dfd4d97a48b5c4e5990ac807dae5a6331c15cbd5f27"
+      },
+      {
+        "path": "source/host/tests/automation_store_contract.rs",
+        "blob": "041978d2bf5dfa875f18bcfccb57e3956122ecdb",
+        "bytes": 75313,
+        "sha256": "d6adb5fe9152988ea7482a025dbbaf143c3af287415239da16ef659a17331c9c"
+      },
+      {
+        "path": "source/host/tests/automations_backend_contract.rs",
+        "blob": "ff45bad437ad5f981af44bff6b816e64d722b49f",
+        "bytes": 47080,
+        "sha256": "8d19dfe625978274e861c7f3514017c408a4b507ae8c531c5cbefccb792dd065"
+      },
+      {
+        "path": "source/host/tests/automations_fire_delivery_contract.rs",
+        "blob": "eccf6a7dfe2415f9cc002fd8e0833c3b2fc7e18c",
+        "bytes": 27567,
+        "sha256": "aa6f2574804fae70fd05a4b2a8dd507ef56c8f65972feb547041039ea3ff545e"
+      },
+      {
+        "path": "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+        "blob": "94d77fc80e08708f3426d4fcfeb41bc62817da62",
+        "bytes": 45740,
+        "sha256": "53e314f2e89db8c81de4422049288e05f348e11788a1860d817fef056ff37a07"
+      }
+    ]
+  },
+  "incomingIntegration": {
+    "base": "3c4bf6963cb30ecf01eb34b905315074886e1972",
+    "incoming": "9004481ef1c34e9c99acf9e6cdab50081193179a",
+    "paths": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "disposition": "resolved additive adjacent source-path list by retaining both complete lists; remaining workflow clean three-way merge"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/media-input-policy-admission.md",
+        "disposition": "exact-incoming-blob"
+      },
+      {
+        "path": "projects/openclaw-rust/dossiers/media-input-files-staged-inputs-scoped.md",
+        "disposition": "exact-incoming-blob"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "disposition": "clean-three-way-merge"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "disposition": "clean-three-way-merge"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/attachments_service.rs",
+        "disposition": "exact-incoming-blob"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/input_files.rs",
+        "disposition": "exact-incoming-blob"
+      },
+      {
+        "path": "source/host/tests/openclaw_input_files_contract.rs",
+        "disposition": "exact-incoming-blob"
+      }
+    ]
+  }
+}

@@ -906,12 +906,13 @@ fn reopened_backend_abandons_unreadable_malformed_and_ambiguous_authority_withou
                     } else {
                         let mut rows: Vec<Value> = serde_json::from_slice(&fixture.baseline.history).unwrap();
                         rows.extend((0..AUTOMATION_MAX_RUN_HISTORY + 1).map(|index| json!({
-                            "id":format!("newer-{index}"),"startedAt":1_000 + index,"status":"ok",
+                            "id":format!("newer-{index}"),"startedAt":1_000 + index,
+                            "finishedAt":2_000 + index,"status":"ok",
                         })));
                         rows.push(match fault {
                             "malformed-tail" => json!({"id":"invalid","startedAt":"unknown"}),
                             "duplicate-primary" => rows[0].clone(),
-                            "ambiguous-alias" => json!({"id":"other-owner","startedAt":0,"status":"ok",
+                            "ambiguous-alias" => json!({"id":"other-owner","startedAt":0,"finishedAt":1,"status":"ok",
                                 "coalescedRunIds":[ORIGINAL_RUN_UUID,COALESCED_RUN_UUID]}),
                             _ => unreachable!(),
                         });

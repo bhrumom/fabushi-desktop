@@ -1,5 +1,6 @@
 use std::fs;use std::io;use std::sync::{Arc,mpsc};use std::time::{Duration,SystemTime,UNIX_EPOCH};
-use mahayana_host_runtime::automations::automation::{AutomationRecord,AutomationRun,AutomationSpec,AUTOMATION_MAX_RUN_HISTORY};
+use mahayana_host_runtime::automations::automation::{AutomationRecord,AutomationRun,AutomationSpec,AUTOMATION_MAX_RUN_HISTORY,MAX_EVENTS_IN_AUTOMATION_WAKE};
+use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::automations::automation_store::{AutomationDefinitionInspectionState,AutomationStoreError,FileAutomationStore,agent_has_automations,inspect_agent_automation_definitions,parse_stored_config,parse_stored_run};
 use mahayana_host_runtime::automations::automation_trigger::{parse_stored_trigger,slack_scope_matches,trigger_schedule};
 use mahayana_host_runtime::automations::routine_notices::{GITHUB_LISTENER_SCOPE,routine_notice_ids_to_raise};
@@ -435,7 +436,7 @@ fn finish_settles_present_old_running_history_and_returns_the_exact_receipt() {
             "id":"run","startedAt":0,"status":"running","coalescedRunIds":["alias"]
         })];
         rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
-            json!({"id":format!("newer-{index}"),"startedAt":index + 1,"status":"ok"})
+            json!({"id":format!("newer-{index}"),"startedAt":index + 1,"finishedAt":index + 2,"status":"ok"})
         }));
         fs::write(store.runs_path(&id), serde_json::to_vec(&rows).unwrap()).unwrap();
         let config = fs::read(store.config_path(&id)).unwrap();
@@ -663,7 +664,7 @@ fn legacy_running_excess_drains_without_growth_or_loss_and_returns_bounded_recei
 fn delivery_lookup_reads_hidden_original_and_aliases_without_rewriting_history() {
     let (root, store, id) = history_store("delivery-hidden");
     let mut rows = (0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
-        json!({"id":format!("newer-{index}"),"startedAt":index + 1,"status":"ok"})
+        json!({"id":format!("newer-{index}"),"startedAt":index + 1,"finishedAt":index + 2,"status":"ok"})
     }).collect::<Vec<_>>();
     rows.push(json!({"id":"  ","startedAt":0,"status":"running","coalescedRunIds":["alias","alias"]}));
     let raw = serde_json::to_vec_pretty(&rows).unwrap();
@@ -686,25 +687,23 @@ fn delivery_lookup_refuses_malformed_tails_and_cross_row_identity_ambiguity() {
         b"[".to_vec(),
         br#"{"id":"run","startedAt":0}"#.to_vec(),
         b"[\xff]".to_vec(),
-        br#"[{"id":"run","startedAt":0},{"id":"bad","startedAt":"invalid"}]"#.to_vec(),
-        br#"[{"id":"run","startedAt":0},{"id":"run","startedAt":1}]"#.to_vec(),
-        br#"[{"id":"a","startedAt":0,"coalescedRunIds":["run"]},{"id":"b","startedAt":1,"coalescedRunIds":["run"]}]"#.to_vec(),
-        br#"[{"id":"run","startedAt":0},{"id":"b","startedAt":1,"coalescedRunIds":["run"]}]"#.to_vec(),
+        br#"[{"id":"run","startedAt":0,"status":"running"},{"id":"bad","startedAt":"invalid","status":"running"}]"#.to_vec(),
+        br#"[{"id":"run","startedAt":0,"status":"running"},{"id":"run","startedAt":1,"status":"running"}]"#.to_vec(),
+        br#"[{"id":"a","startedAt":0,"status":"running","coalescedRunIds":["run"]},{"id":"b","startedAt":1,"status":"running","coalescedRunIds":["run"]}]"#.to_vec(),
+        br#"[{"id":"run","startedAt":0,"status":"running"},{"id":"b","startedAt":1,"status":"running","coalescedRunIds":["run"]}]"#.to_vec(),
     ];
     let mut hidden_tail = (0..AUTOMATION_MAX_RUN_HISTORY + 2).map(|index| {
-        json!({"id":format!("newer-{index}"),"startedAt":100 + index})
+        json!({"id":format!("newer-{index}"),"startedAt":100 + index,"finishedAt":200 + index,"status":"ok"})
     }).collect::<Vec<_>>();
     hidden_tail.push(json!({"id":"run","startedAt":1,"status":"running"}));
-    hidden_tail.push(json!({"id":"bad","startedAt":"invalid"}));
+    hidden_tail.push(json!({"id":"bad","startedAt":"invalid","status":"running"}));
     cases.push(serde_json::to_vec(&hidden_tail).unwrap());
     for (index, raw) in cases.iter().enumerate() {
         let (root, store, id) = history_store(&format!("delivery-invalid-{index}"));
         fs::write(store.runs_path(&id), raw).unwrap();
         let config = fs::read(store.config_path(&id)).unwrap();
         assert!(store.read_run_for_delivery(&id, "run").is_err(), "case {index}");
-        if index < 5 || index == 7 {
-            assert!(store.read_run_for_delivery(&id, "absent").is_err(), "invalid whole input is not absence");
-        }
+        assert!(store.read_run_for_delivery(&id, "absent").is_err(), "invalid whole input is not absence");
         assert_eq!(fs::read(store.runs_path(&id)).unwrap(), *raw);
         assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
         let _ = fs::remove_dir_all(root);
@@ -714,16 +713,600 @@ fn delivery_lookup_refuses_malformed_tails_and_cross_row_identity_ambiguity() {
 #[test]
 fn delivery_lookup_distinguishes_missing_history_from_read_errors_and_unsafe_paths() {
     let (root, store, id) = history_store("delivery-read-boundary");
+    let config = fs::read(store.config_path(&id)).unwrap();
     assert_eq!(store.read_run_for_delivery(&id, "run").unwrap(), None);
     assert!(!store.runs_path(&id).exists());
-    for unsafe_id in ["", "../escape", "/absolute", "nested/folder"] {
+    for unsafe_id in ["", ".", "..", "../escape", "/absolute", "nested/folder", "nested\\folder"] {
         let error = store.read_run_for_delivery(unsafe_id, "run").unwrap_err();
         assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidInput));
     }
+    let error = store.read_run_for_delivery(&id, "").unwrap_err();
+    assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidInput));
+    let error = store.read_run_for_delivery("missing-definition", "run").unwrap_err();
+    assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::NotFound));
+    assert!(!store.get_location().join("missing-definition").exists());
+    assert!(!store.get_location().join("nested").exists());
+    assert!(!root.join("escape").exists());
+    assert!(!store.runs_path(&id).exists());
+    let absent_store = FileAutomationStore::new(root.join("not-created"));
+    assert!(absent_store.read_run_for_delivery("missing", "run").is_err());
+    assert!(!absent_store.get_location().exists());
+    drop(absent_store);
     fs::create_dir(store.runs_path(&id)).unwrap();
     fs::write(store.runs_path(&id).join("sentinel"), b"owned history directory").unwrap();
     assert!(store.read_runs(&id).is_empty(), "display remains fail-soft");
     assert!(matches!(store.read_run_for_delivery(&id, "run"), Err(AutomationStoreError::Io(_))));
     assert_eq!(fs::read(store.runs_path(&id).join("sentinel")).unwrap(), b"owned history directory");
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
     let _ = fs::remove_dir_all(root);
+}
+
+fn assert_delivery_history_refused(label: &str, raw: &[u8]) {
+    let (root, store, id) = history_store(label);
+    let config = fs::read(store.config_path(&id)).unwrap();
+    fs::write(store.runs_path(&id), raw).unwrap();
+    let reopened = FileAutomationStore::new(store.get_location());
+    for reader in [&store, &reopened] {
+        for requested in ["run", "alias", "bad", "other", "unrelated", "new-run"] {
+            reader.read_run_for_delivery(&id, requested)
+                .expect_err(&format!("{label}, requested={requested}"));
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw,
+                "{label}: preserve the complete raw history");
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config,
+                "{label}: preserve the definition");
+        }
+    }
+    drop(reopened);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful owned delivery fixture");
+}
+
+#[test]
+fn delivery_lookup_rejects_raw_custody_fields_before_legacy_normalization() {
+    for (label, raw) in [
+        ("overflow-start", &br#"[{"id":"run","startedAt":1e400,"status":"running"}]"#[..]),
+        ("overflow-finish", &br#"[{"id":"run","startedAt":1,"finishedAt":1e400,"status":"ok"}]"#[..]),
+        ("nonobject-row", &br#"[{"id":"run","startedAt":1,"status":"running","coalescedRunIds":["alias"]},42]"#[..]),
+    ] {
+        assert_delivery_history_refused(label, raw);
+    }
+    let invalid_fields = [
+        ("missing-id", "id", None),
+        ("empty-id", "id", Some(json!(""))),
+        ("null-id", "id", Some(json!(null))),
+        ("numeric-id", "id", Some(json!(7))),
+        ("missing-start", "startedAt", None),
+        ("null-start", "startedAt", Some(json!(null))),
+        ("text-start", "startedAt", Some(json!("1000"))),
+        ("missing-status", "status", None),
+        ("null-status", "status", Some(json!(null))),
+        ("unknown-status", "status", Some(json!("future"))),
+        ("nontext-status", "status", Some(json!(true))),
+        ("running-finished", "finishedAt", Some(json!(1001))),
+        ("running-text-finish", "finishedAt", Some(json!("legacy"))),
+        ("running-false-finish", "finishedAt", Some(json!(false))),
+        ("text-aliases", "coalescedRunIds", Some(json!("alias"))),
+        ("object-aliases", "coalescedRunIds", Some(json!({}))),
+        ("boolean-aliases", "coalescedRunIds", Some(json!(true))),
+        ("empty-alias", "coalescedRunIds", Some(json!(["valid", ""]))),
+        ("numeric-alias", "coalescedRunIds", Some(json!(["valid", 7]))),
+        ("null-alias", "coalescedRunIds", Some(json!(["valid", null]))),
+        ("too-many-aliases", "coalescedRunIds", Some(json!(vec!["same"; MAX_EVENTS_IN_AUTOMATION_WAKE + 1]))),
+    ];
+    for (label, field, replacement) in invalid_fields {
+        let mut invalid = json!({"id":"bad","startedAt":1000,"status":"running"});
+        if let Some(replacement) = replacement {
+            invalid[field] = replacement;
+        } else {
+            invalid.as_object_mut().unwrap().remove(field);
+        }
+        // A valid matching first row cannot hide a later custody defect.
+        let raw = serde_json::to_vec_pretty(&json!([
+            {"id":"run","startedAt":2000,"status":"running","coalescedRunIds":["alias"]},
+            invalid
+        ])).unwrap();
+        assert_delivery_history_refused(label, &raw);
+    }
+    for status in ["ok", "error"] {
+        for (label, finished_at) in [
+            ("missing", None),
+            ("null", Some(json!(null))),
+            ("text", Some(json!("1001"))),
+            ("boolean", Some(json!(true))),
+        ] {
+            let mut row = json!({"id":"bad","startedAt":1000,"status":status});
+            if let Some(finished_at) = finished_at {
+                row["finishedAt"] = finished_at;
+            }
+            let raw = serde_json::to_vec_pretty(&json!([
+                {"id":"run","startedAt":2000,"status":"running","coalescedRunIds":["alias"]},
+                row
+            ])).unwrap();
+            assert_delivery_history_refused(&format!("terminal-{status}-{label}"), &raw);
+        }
+    }
+}
+
+#[test]
+fn delivery_lookup_rejects_global_identity_collisions_in_both_orders() {
+    for (label, first, second) in [
+        ("duplicate-original",
+            json!({"id":"run","startedAt":1,"status":"running"}),
+            json!({"id":"run","startedAt":2,"finishedAt":3,"status":"ok"})),
+        ("original-claimed-as-alias",
+            json!({"id":"run","startedAt":1,"status":"running"}),
+            json!({"id":"other","startedAt":2,"status":"running","coalescedRunIds":["run"]})),
+        ("shared-alias",
+            json!({"id":"run","startedAt":1,"status":"running","coalescedRunIds":["alias"]}),
+            json!({"id":"other","startedAt":2,"status":"running","coalescedRunIds":["alias"]})),
+    ] {
+        for reverse in [false, true] {
+            let mut rows = vec![first.clone(), second.clone()];
+            if reverse {
+                rows.reverse();
+            }
+            rows.insert(0, json!({"id":"unrelated","startedAt":4,"finishedAt":5,"status":"error"}));
+            let raw = serde_json::to_vec_pretty(&rows).unwrap();
+            assert_delivery_history_refused(&format!("{label}-reverse-{reverse}"), &raw);
+        }
+    }
+}
+
+#[test]
+fn delivery_lookup_validates_custody_tails_beyond_the_display_window() {
+    for (label, tail) in [
+        ("missing-status", json!({"id":"tail","startedAt":0,"finishedAt":1})),
+        ("unknown-status", json!({"id":"tail","startedAt":0,"finishedAt":1,"status":"future"})),
+        ("terminal-missing-finish", json!({"id":"tail","startedAt":0,"status":"error"})),
+        ("running-finished", json!({"id":"tail","startedAt":0,"finishedAt":1,"status":"running"})),
+        ("bad-alias", json!({"id":"tail","startedAt":0,"status":"running","coalescedRunIds":[7]})),
+        ("alias-overflow", json!({"id":"tail","startedAt":0,"status":"running","coalescedRunIds":vec!["same"; MAX_EVENTS_IN_AUTOMATION_WAKE + 1]})),
+        ("duplicate", json!({"id":"run","startedAt":0,"status":"running"})),
+        ("primary-as-alias", json!({"id":"tail","startedAt":0,"status":"running","coalescedRunIds":["run"]})),
+        ("cross-row-alias", json!({"id":"tail","startedAt":0,"status":"running","coalescedRunIds":["alias"]})),
+    ] {
+        let (root, store, id) = history_store(&format!("delivery-tail-{label}"));
+        let mut rows = vec![json!({
+            "id":"run","startedAt":10000,"finishedAt":10001,"status":"ok","coalescedRunIds":["alias"]
+        })];
+        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY + 2).map(|index| {
+            json!({"id":format!("visible-{index}"),"startedAt":100 + index,"finishedAt":200 + index,"status":"ok"})
+        }));
+        rows.push(tail);
+        let raw = serde_json::to_vec_pretty(&rows).unwrap();
+        fs::write(store.runs_path(&id), &raw).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        let display = store.read_runs(&id);
+        assert_eq!(display.len(), AUTOMATION_MAX_RUN_HISTORY);
+        assert_eq!(display[0].id, "run");
+        assert!(display.iter().skip(1).all(|run| run.id.starts_with("visible-")));
+        let reopened = FileAutomationStore::new(store.get_location());
+        for reader in [&store, &reopened] {
+            for requested in ["run", "alias", "visible-0", "new-run"] {
+                reader.read_run_for_delivery(&id, requested)
+                    .expect_err(&format!("tail={label}, requested={requested}"));
+                assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+                assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+            }
+        }
+        drop(reopened);
+        drop(store);
+        fs::remove_dir_all(root).expect("remove successful owned tail fixture");
+    }
+}
+
+#[test]
+fn delivery_lookup_preserves_checked_running_terminal_and_same_row_aliases() {
+    let (root, store, id) = history_store("delivery-checked-rows");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let raw = br#"[
+      { "id": "running", "startedAt": 10, "status": "running", "trigger": "legacy", "event": " event ", "extra": true },
+      { "id": "ok", "startedAt": 3, "finishedAt": 4, "status": "ok", "coalescedRunIds": ["ok-alias", "ok-alias", "ok"] },
+      { "id": "error", "startedAt": 1, "finishedAt": 2, "status": "error", "detail": " stored failure ", "coalescedRunIds": ["error-alias"] },
+      { "id": "running-null", "startedAt": 5, "finishedAt": null, "status": "running", "coalescedRunIds": null },
+      { "id": "empty-aliases", "startedAt": 6, "finishedAt": 7, "status": "ok", "coalescedRunIds": [] }
+    ]
+"#;
+    fs::write(store.runs_path(&id), raw).unwrap();
+    let reopened = FileAutomationStore::new(store.get_location());
+    for reader in [&store, &reopened] {
+        for (requested, original, status, finished_at) in [
+            ("running", "running", "running", None),
+            ("running-null", "running-null", "running", None),
+            ("ok", "ok", "ok", Some(4.0)),
+            ("ok-alias", "ok", "ok", Some(4.0)),
+            ("error", "error", "error", Some(2.0)),
+            ("error-alias", "error", "error", Some(2.0)),
+            ("empty-aliases", "empty-aliases", "ok", Some(7.0)),
+        ] {
+            let run = reader.read_run_for_delivery(&id, requested).unwrap().expect("checked persisted row");
+            assert_eq!(run.id, original, "{requested}");
+            assert_eq!(run.status, status, "{requested}");
+            assert_eq!(run.finished_at, finished_at, "{requested}");
+            if original == "running" {
+                assert_eq!(run.trigger, "schedule", "non-custody metadata keeps its legacy parser");
+                assert_eq!(run.event.as_deref(), Some("event"));
+            }
+            if original == "error" {
+                assert_eq!(run.detail.as_deref(), Some("stored failure"));
+            }
+            if original == "ok" {
+                assert_eq!(run.coalesced_run_ids, Some(vec!["ok-alias".into(), "ok-alias".into(), "ok".into()]));
+            }
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        }
+    }
+    drop(reopened);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful owned custody fixture");
+}
+
+#[test]
+fn delivery_lookup_preserves_literal_identities_and_the_exact_alias_bound() {
+    let (root, store, id) = history_store("delivery-literal-identities");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let mut aliases = vec!["  ".to_owned(), " alias ".to_owned(), " alias ".to_owned(), "\t".to_owned()];
+    aliases.extend((aliases.len()..MAX_EVENTS_IN_AUTOMATION_WAKE).map(|index| format!("alias-{index}")));
+    assert_eq!(aliases.len(), MAX_EVENTS_IN_AUTOMATION_WAKE);
+    let raw = serde_json::to_vec_pretty(&json!([
+        {"id":"  ","startedAt":1,"status":"running","coalescedRunIds":aliases},
+        {"id":"alias","startedAt":2,"finishedAt":3,"status":"ok"}
+    ])).unwrap();
+    fs::write(store.runs_path(&id), &raw).unwrap();
+    for requested in &aliases {
+        let run = store.read_run_for_delivery(&id, requested).unwrap().expect("literal original or alias");
+        assert_eq!(run.id, "  ");
+        assert_eq!(run.coalesced_run_ids.as_ref(), Some(&aliases));
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    }
+    assert_eq!(store.read_run_for_delivery(&id, " ").unwrap(), None);
+    let separate = store.read_run_for_delivery(&id, "alias").unwrap().expect("distinct literal identity");
+    assert_eq!(separate.id, "alias");
+    assert_eq!(separate.status, "ok");
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful owned literal fixture");
+}
+
+#[test]
+fn delivery_lookup_preserves_empty_and_nonmatching_history_without_writing() {
+    let (root, store, id) = history_store("delivery-checked-absence");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    for raw in [
+        &b"[ ]\n"[..],
+        &br#"[ { "id": "other", "startedAt": 1000, "status": "running" } ]"#[..],
+    ] {
+        fs::write(store.runs_path(&id), raw).unwrap();
+        let reopened = FileAutomationStore::new(store.get_location());
+        for reader in [&store, &reopened] {
+            assert_eq!(reader.read_run_for_delivery(&id, "run").unwrap(), None);
+            let error = reader.read_run_for_delivery(&id, "").unwrap_err();
+            assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidInput));
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        }
+    }
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful owned absence fixture");
+}
+
+#[test]
+fn delivery_lookup_requires_readable_valid_configuration_for_match_and_absence() {
+    for has_history in [false, true] {
+        for (label, replacement) in [
+            ("missing", None),
+            ("malformed-json", Some(&b"["[..])),
+            ("invalid-fields", Some(&b"{}"[..])),
+            ("invalid-utf8", Some(&b"\xff"[..])),
+            ("duplicate-name", Some(&br#"{"name":"first","name":"second","prompt":"go","schedule":"@hourly"}"#[..])),
+            ("duplicate-nested", Some(&br#"{"name":"valid","prompt":"go","schedule":"@hourly","extra":{"key":1,"key":2}}"#[..])),
+        ] {
+            let (root, store, id) = history_store(&format!("delivery-config-{label}-{has_history}"));
+            let raw = br#"[{"id":"run","startedAt":1,"finishedAt":2,"status":"ok","coalescedRunIds":["alias"]}]"#;
+            if has_history {
+                fs::write(store.runs_path(&id), raw).unwrap();
+            }
+            let config_path = store.config_path(&id);
+            if let Some(replacement) = replacement {
+                fs::write(&config_path, replacement).unwrap();
+            } else {
+                fs::remove_file(&config_path).unwrap();
+            }
+            for requested in ["run", "alias", "new-run"] {
+                let error = store.read_run_for_delivery(&id, requested).expect_err(label);
+                let expected = if replacement.is_none() { io::ErrorKind::NotFound } else { io::ErrorKind::InvalidData };
+                assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == expected), "{label}");
+                if has_history {
+                    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+                } else {
+                    assert!(!store.runs_path(&id).exists());
+                }
+                if let Some(replacement) = replacement {
+                    assert_eq!(fs::read(&config_path).unwrap(), replacement);
+                } else {
+                    assert!(!config_path.exists());
+                }
+            }
+            drop(store);
+            fs::remove_dir_all(root).expect("remove successful owned configuration fixture");
+        }
+    }
+    let (root, store, id) = history_store("delivery-config-directory");
+    let raw = br#"[{"id":"run","startedAt":1,"finishedAt":2,"status":"ok"}]"#;
+    fs::write(store.runs_path(&id), raw).unwrap();
+    let config_path = store.config_path(&id);
+    fs::remove_file(&config_path).unwrap();
+    fs::create_dir(&config_path).unwrap();
+    fs::write(config_path.join("sentinel"), b"preserve unreadable configuration").unwrap();
+    for requested in ["run", "new-run"] {
+        assert!(matches!(store.read_run_for_delivery(&id, requested), Err(AutomationStoreError::Io(_))));
+        assert!(config_path.is_dir());
+        assert_eq!(fs::read(config_path.join("sentinel")).unwrap(), b"preserve unreadable configuration");
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+    }
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful owned unreadable configuration fixture");
+}
+
+#[test]
+fn backend_delivery_discovery_uses_exact_folder_identity_and_ignores_unrelated_definitions() {
+    let (root, store, id) = history_store("delivery-discovery-target");
+    let agent_id = "agent-1";
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let history = br#"[{"id":"run","startedAt":1,"status":"running"}]"#;
+    fs::write(store.runs_path(&id), history).unwrap();
+    let literal_id = " other folder ";
+    fs::create_dir(store.get_location().join(literal_id)).unwrap();
+    fs::write(store.config_path(literal_id), &config).unwrap();
+    let invalid_id = "unrelated-invalid-definition";
+    fs::create_dir(store.get_location().join(invalid_id)).unwrap();
+    fs::write(store.config_path(invalid_id), b"\xff unreadable definition").unwrap();
+    let unreadable_id = "unrelated-definition-directory";
+    fs::create_dir_all(store.config_path(unreadable_id)).unwrap();
+    fs::write(store.config_path(unreadable_id).join("sentinel"), b"unrelated definition").unwrap();
+    let missing_id = "unrelated-missing-definition";
+    fs::create_dir(store.get_location().join(missing_id)).unwrap();
+
+    let reopened = FileAutomationStore::new(store.get_location());
+    for reader in [&store, &reopened] {
+        for local_id in [&id[..], literal_id] {
+            let found = reader.find_for_backend_delivery(
+                agent_id, &stable_automation_id(agent_id, local_id),
+            ).unwrap().expect("exact valid matching definition");
+            assert_eq!(found.id, local_id);
+            assert_eq!(found.name, "History acknowledgment");
+            assert_eq!(found.file_path, store.config_path(local_id));
+            assert!(found.next_run_at.is_some(), "retain the existing record projection");
+            assert!(found.runs.is_empty(), "target discovery carries no display history");
+            assert_eq!(reader.get(local_id).unwrap().runs.len(), if local_id == id { 1 } else { 0 },
+                "ordinary records retain their display projection");
+        }
+        for backend_id in [
+            stable_automation_id("another-agent", &id),
+            stable_automation_id(agent_id, "missing"),
+            stable_automation_id(agent_id, literal_id.trim()),
+        ] {
+            assert_eq!(reader.find_for_backend_delivery(agent_id, &backend_id).unwrap(), None);
+        }
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        assert_eq!(fs::read(store.config_path(literal_id)).unwrap(), config);
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), history);
+        assert_eq!(fs::read(store.config_path(invalid_id)).unwrap(), b"\xff unreadable definition");
+        assert_eq!(fs::read(store.config_path(unreadable_id).join("sentinel")).unwrap(), b"unrelated definition");
+        assert!(!store.config_path(missing_id).exists());
+        assert!(!store.runs_path(literal_id).exists());
+    }
+    drop(reopened);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful targeted discovery fixture");
+}
+
+#[test]
+fn backend_delivery_discovery_refuses_invalid_matching_definitions_without_writes() {
+    for (label, replacement) in [
+        ("missing", None),
+        ("invalid-json", Some(&b"["[..])),
+        ("invalid-fields", Some(&b"{}"[..])),
+        ("invalid-utf8", Some(&b"\xff"[..])),
+        ("duplicate-enabled", Some(&br#"{"name":"valid","prompt":"go","schedule":"@hourly","enabled":false,"enabled":true}"#[..])),
+        ("duplicate-trigger", Some(&br#"{"name":"valid","prompt":"go","trigger":{"type":"cron","schedule":"@daily","schedule":"@hourly"}}"#[..])),
+        ("duplicate-extension", Some(&br#"{"name":"valid","prompt":"go","schedule":"@hourly","extension":[{"id":1,"id":2}]}"#[..])),
+    ] {
+        let (root, store, id) = history_store(&format!("discovery-config-{label}"));
+        let history = br#"[{"id":"run","startedAt":1,"status":"running","coalescedRunIds":["alias"]}]"#;
+        fs::write(store.runs_path(&id), history).unwrap();
+        let path = store.config_path(&id);
+        match replacement {
+            Some(raw) => fs::write(&path, raw).unwrap(),
+            None => fs::remove_file(&path).unwrap(),
+        }
+        let reopened = FileAutomationStore::new(store.get_location());
+        for reader in [&store, &reopened] {
+            let error = reader.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", &id))
+                .expect_err(label);
+            let expected = if replacement.is_none() { io::ErrorKind::NotFound } else { io::ErrorKind::InvalidData };
+            assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == expected), "{label}");
+            assert_eq!(reader.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", "missing"))
+                .unwrap(), None, "unrelated config content is not parsed: {label}");
+            for run_id in ["run", "alias", "new-run"] {
+                assert!(reader.read_run_for_delivery(&id, run_id).is_err(), "shared definition boundary: {label}");
+            }
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), history, "{label}");
+            if let Some(raw) = replacement {
+                assert_eq!(fs::read(&path).unwrap(), raw, "{label}");
+            } else {
+                assert!(!path.exists());
+            }
+        }
+        drop(reopened);
+        drop(store);
+        fs::remove_dir_all(root).expect("remove successful invalid matching definition fixture");
+    }
+
+    let (root, store, id) = history_store("discovery-definition-directory");
+    let path = store.config_path(&id);
+    fs::remove_file(&path).unwrap();
+    fs::create_dir(&path).unwrap();
+    fs::write(path.join("sentinel"), b"matching unreadable definition").unwrap();
+    assert!(store.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", &id)).is_err());
+    assert_eq!(fs::read(path.join("sentinel")).unwrap(), b"matching unreadable definition");
+    assert!(!store.runs_path(&id).exists());
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful matching definition directory fixture");
+}
+
+#[test]
+fn backend_delivery_discovery_distinguishes_confirmed_absence_from_directory_failures() {
+    let root = root("delivery-discovery-absence");
+    fs::create_dir(&root).unwrap();
+    let store = FileAutomationStore::new(root.join("not-created").join("automations"));
+    let backend_id = stable_automation_id("agent-1", "local-1");
+    assert_eq!(store.find_for_backend_delivery("agent-1", &backend_id).unwrap(), None);
+    assert!(!root.join("not-created").exists(), "checked absence cannot materialize a directory");
+    for agent_id in ["", ".", "..", "../escape", "nested/agent", "nested\\agent", "bad\0agent"] {
+        let error = store.find_for_backend_delivery(agent_id, &backend_id).unwrap_err();
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidInput));
+        assert!(!root.join("not-created").exists());
+    }
+    fs::write(root.join("not-created"), b"not a directory").unwrap();
+    assert!(store.find_for_backend_delivery("agent-1", &backend_id).is_err(), "invalid ancestor is not absence");
+    assert_eq!(fs::read(root.join("not-created")).unwrap(), b"not a directory");
+    fs::remove_file(root.join("not-created")).unwrap();
+    fs::create_dir(root.join("not-created")).unwrap();
+    fs::write(store.get_location(), b"unreadable enumeration root").unwrap();
+    assert!(store.find_for_backend_delivery("agent-1", &backend_id).is_err());
+    assert_eq!(fs::read(store.get_location()).unwrap(), b"unreadable enumeration root");
+    fs::remove_file(store.get_location()).unwrap();
+    fs::create_dir(store.get_location()).unwrap();
+    assert_eq!(store.find_for_backend_delivery("agent-1", &backend_id).unwrap(), None);
+    let matched_file = store.get_location().join("local-1");
+    fs::write(&matched_file, b"matching identity is not a folder").unwrap();
+    assert!(store.find_for_backend_delivery("agent-1", &backend_id).is_err());
+    assert_eq!(store.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", "missing"))
+        .unwrap(), None);
+    assert_eq!(fs::read(&matched_file).unwrap(), b"matching identity is not a folder");
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful checked directory fixture");
+}
+
+#[test]
+fn backend_delivery_discovery_retains_valid_legacy_definition_semantics() {
+    let (root, store, id) = history_store("delivery-discovery-legacy-definition");
+    let raw = br#"{"name":"  Legacy   routine ","prompt":" go ","schedule":"@hourly","enabled":null,"createdAt":"legacy","lastRunAt":"legacy","raisedNotices":[7,"unknown"],"extra":{"unique":true}}"#;
+    fs::write(store.config_path(&id), raw).unwrap();
+    let checked = store.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", &id))
+        .unwrap().expect("valid legacy matching definition");
+    let displayed = store.get(&id).expect("existing legacy parser");
+    assert_eq!(checked, displayed);
+    assert_eq!(checked.name, "Legacy routine");
+    assert_eq!(checked.prompt, "go");
+    assert!(checked.is_enabled);
+    assert!(checked.last_run_at.is_none());
+    assert!(checked.raised_notices.is_empty());
+    assert_eq!(store.read_run_for_delivery(&id, "new-run").unwrap(), None);
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), raw);
+    assert!(!store.runs_path(&id).exists());
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful legacy definition fixture");
+}
+
+#[cfg(unix)]
+#[test]
+fn backend_delivery_discovery_checks_root_and_child_link_metadata_without_admitting_child_links() {
+    use std::os::unix::fs::symlink;
+    let (root, store, id) = history_store("delivery-discovery-links");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let history = br#"[{"id":"run","startedAt":1,"status":"running"}]"#;
+    fs::write(store.runs_path(&id), history).unwrap();
+    let backend_id = stable_automation_id("agent-1", &id);
+    let linked_root = root.join("linked-root");
+    symlink(store.get_location(), &linked_root).unwrap();
+    let linked = FileAutomationStore::new(&linked_root);
+    assert_eq!(linked.find_for_backend_delivery("agent-1", &backend_id).unwrap().unwrap().id, id);
+    assert_eq!(linked.read_run_for_delivery(&id, "run").unwrap().unwrap().status, "running");
+
+    let missing_target = root.join("missing-target");
+    let broken_root = root.join("broken-root");
+    symlink(&missing_target, &broken_root).unwrap();
+    for path in [&broken_root, &broken_root.join("automations")] {
+        let broken = FileAutomationStore::new(path);
+        assert!(broken.find_for_backend_delivery("agent-1", &backend_id).is_err());
+        assert_eq!(fs::read_link(&broken_root).unwrap(), missing_target);
+        assert!(!missing_target.exists());
+    }
+
+    let child_id = "linked-child";
+    let child_link = store.get_location().join(child_id);
+    symlink(store.get_location().join(&id), &child_link).unwrap();
+    assert!(store.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", child_id)).is_err());
+    assert!(store.read_run_for_delivery(child_id, "run").is_err());
+    assert!(store.find_for_backend_delivery("agent-1", &backend_id).unwrap().is_some(),
+        "an unrelated valid link does not require parsing its definition");
+    fs::remove_file(&child_link).unwrap();
+    symlink(&missing_target, &child_link).unwrap();
+    for requested in [&backend_id, &stable_automation_id("agent-1", "missing")] {
+        assert!(store.find_for_backend_delivery("agent-1", requested).is_err(),
+            "unavailable metadata invalidates both a different match and absence");
+    }
+    assert_eq!(fs::read_link(&child_link).unwrap(), missing_target);
+    assert!(!missing_target.exists());
+    assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    assert_eq!(fs::read(store.runs_path(&id)).unwrap(), history);
+    drop(linked);
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful checked link fixture");
+}
+
+// Invalid UTF-8 filenames require Linux; macOS APFS does not provide this
+// fixture prerequisite. Content-byte UTF-8 negatives above remain portable.
+#[cfg(target_os = "linux")]
+#[test]
+fn backend_delivery_discovery_refuses_non_utf8_folder_identity_for_match_and_absence() {
+    use std::os::unix::ffi::OsStringExt;
+    let (root, store, id) = history_store("delivery-discovery-byte-identity");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let malformed = store.get_location().join(std::ffi::OsString::from_vec(vec![b'i', 0xff, b'd']));
+    fs::create_dir(&malformed).unwrap();
+    fs::write(malformed.join("sentinel"), b"preserve unknown folder identity").unwrap();
+    for local_id in [&id[..], "missing"] {
+        assert!(store.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", local_id)).is_err());
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        assert_eq!(fs::read(malformed.join("sentinel")).unwrap(), b"preserve unknown folder identity");
+        assert!(!store.runs_path(&id).exists());
+    }
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful byte-identity fixture");
+}
+
+#[cfg(unix)]
+#[test]
+fn delivery_lookup_refuses_dangling_history_and_definition_links_without_creating_targets() {
+    use std::os::unix::fs::symlink;
+    let (root, store, id) = history_store("delivery-file-links");
+    let config = fs::read(store.config_path(&id)).unwrap();
+    let missing_history = root.join("missing-history");
+    symlink(&missing_history, store.runs_path(&id)).unwrap();
+    for requested in ["run", "alias", "new-run"] {
+        assert!(store.read_run_for_delivery(&id, requested).is_err());
+        assert_eq!(fs::read_link(store.runs_path(&id)).unwrap(), missing_history);
+        assert!(!missing_history.exists());
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+    }
+    assert!(store.read_runs(&id).is_empty(), "legacy display remains fail-soft");
+    fs::remove_file(store.runs_path(&id)).unwrap();
+    fs::remove_file(store.config_path(&id)).unwrap();
+    let missing_config = root.join("missing-config");
+    symlink(&missing_config, store.config_path(&id)).unwrap();
+    for requested in ["run", "new-run"] {
+        assert!(store.read_run_for_delivery(&id, requested).is_err());
+        assert!(store.find_for_backend_delivery("agent-1", &stable_automation_id("agent-1", &id)).is_err());
+        assert_eq!(fs::read_link(store.config_path(&id)).unwrap(), missing_config);
+        assert!(!missing_config.exists());
+        assert!(!store.runs_path(&id).exists());
+    }
+    drop(store);
+    fs::remove_dir_all(root).expect("remove successful unavailable file-link fixture");
 }

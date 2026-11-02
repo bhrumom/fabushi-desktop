@@ -887,6 +887,18 @@ impl SandAgentSessionStore {
         self.production.open_automation_store(agent_id)
     }
 
+    pub fn find_automation_for_backend_delivery(
+        &self,
+        agent_id: &str,
+        backend_id: &str,
+    ) -> Result<Option<AgentAutomationEntry>, String> {
+        self.production.find_automation_for_backend_delivery(agent_id, backend_id)
+            .map(|automation| automation.map(|automation| AgentAutomationEntry {
+                agent_id: agent_id.to_string(),
+                automation,
+            }))
+    }
+
     /// Run an external automation-store mutation under the canonical session
     /// filesystem/deletion boundary and its durable work-admission fence.
     /// Callers must keep all FileAutomationStore writes inside this closure.

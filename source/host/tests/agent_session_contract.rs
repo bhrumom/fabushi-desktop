@@ -15,6 +15,7 @@ use mahayana_host_runtime::extensions::inference::typed_replay_serialization::se
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
 use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::workflows::workflow_library::WorkflowSpec;
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
     AwaitingUserResponse, SpendGuardState,
@@ -1014,6 +1015,201 @@ fn session_delete_publishes_and_clears_owner_local_deletion_fence() {
         .deletion_pending);
 
     store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_backend_target_lookup_distinguishes_agent_absence_from_unavailable_state() {
+    let root = temp_root("backend-target-agent-state");
+    fs::create_dir(&root).expect("exclusive fixture root");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&production));
+    let missing_backend = stable_automation_id("missing-agent", "daily");
+    assert!(sessions.find_automation_for_backend_delivery("missing-agent", &missing_backend)
+        .expect("checked missing agent").is_none());
+    assert!(!agents.join("missing-agent").exists());
+
+    for invalid in ["", "..", "../outside", "with/slash", "with\\slash", " spaced "] {
+        assert!(sessions.find_automation_for_backend_delivery(invalid, &missing_backend).is_err(),
+            "unsafe agent identity must refuse: {invalid:?}");
+    }
+    production.begin_agent_delete("missing-agent").unwrap();
+    assert!(sessions.find_automation_for_backend_delivery("missing-agent", &missing_backend)
+        .expect_err("pending deletion precedes missing-agent completion")
+        .contains("deletion cleanup"));
+    production.end_agent_delete("missing-agent").unwrap();
+    assert!(sessions.find_automation_for_backend_delivery("missing-agent", &missing_backend)
+        .unwrap().is_none());
+
+    let malformed_agent = agents.join("not-a-directory");
+    fs::write(&malformed_agent, b"agent path sentinel").unwrap();
+    assert!(production.find_automation_for_backend_delivery("not-a-directory", &missing_backend)
+        .is_err());
+    assert_eq!(fs::read(&malformed_agent).unwrap(), b"agent path sentinel");
+    let no_db = agents.join("missing-db");
+    fs::create_dir(&no_db).unwrap();
+    assert!(sessions.find_automation_for_backend_delivery("missing-db", &missing_backend).is_err());
+    assert!(!no_db.join("store.db").exists(), "lookup must not materialize a missing DB");
+    fs::create_dir(no_db.join("store.db")).unwrap();
+    fs::write(no_db.join("store.db/sentinel"), b"not a database").unwrap();
+    assert!(sessions.find_automation_for_backend_delivery("missing-db", &missing_backend).is_err());
+    assert_eq!(fs::read(no_db.join("store.db/sentinel")).unwrap(), b"not a database");
+
+    let record = sessions.create_session(None, "user", None).unwrap();
+    assert!(sessions.find_automation_for_backend_delivery(&record.id, &missing_backend)
+        .expect("admitted agent with no automations").is_none());
+    let created = sessions.create_agent_automation(&record.id, &AutomationSpec {
+        name: "Checked target".into(),
+        prompt: "Inspect the queue".into(),
+        trigger: serde_json::json!({"type":"cron","schedule":"@daily"}),
+        is_enabled: Some(true),
+    }).unwrap();
+    let automation = &created[0];
+    let backend_id = stable_automation_id(&record.id, &automation.id);
+    let found = sessions.find_automation_for_backend_delivery(&record.id, &backend_id)
+        .unwrap().expect("live target");
+    assert_eq!(found.agent_id, record.id);
+    assert_eq!(found.automation.id, automation.id);
+    let definition_before = fs::read(&automation.file_path).unwrap();
+    let owner = production.open_agent_db_owner(&record.id).unwrap();
+    assert!(owner.write_kv("sessionWorkAdmission", "{unreadable-admission").unwrap());
+    for target in [&backend_id, &missing_backend] {
+        assert!(sessions.find_automation_for_backend_delivery(&record.id, target).is_err(),
+            "malformed durable agent state cannot establish a found or missing target");
+    }
+    assert_eq!(owner.read_kv("sessionWorkAdmission").unwrap().as_deref(),
+        Some("{unreadable-admission"));
+    assert_eq!(fs::read(&automation.file_path).unwrap(), definition_before);
+
+    let invalid_root = root.join("not-an-agents-directory");
+    fs::write(&invalid_root, b"agents root sentinel").unwrap();
+    let invalid_workers = ProductionSessionWorkers::with_agents_root(&invalid_root, 500);
+    assert!(invalid_workers.find_automation_for_backend_delivery("missing-agent", &missing_backend)
+        .is_err());
+    assert_eq!(fs::read(&invalid_root).unwrap(), b"agents root sentinel");
+    invalid_workers.shutdown();
+    production.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn checked_backend_target_lookup_retains_durable_deletion_refusal_after_reopen() {
+    let root = temp_root("backend-target-durable-delete");
+    fs::create_dir(&root).expect("exclusive fixture root");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = sessions.create_session(None, "user", None).unwrap();
+    let created = sessions.create_agent_automation(&record.id, &AutomationSpec {
+        name: "Retained target".into(),
+        prompt: "Inspect retained work".into(),
+        trigger: serde_json::json!({"type":"cron","schedule":"@daily"}),
+        is_enabled: Some(true),
+    }).unwrap();
+    let automation_id = created[0].id.clone();
+    let backend_id = stable_automation_id(&record.id, &automation_id);
+    let missing_backend = stable_automation_id(&record.id, "missing-target");
+    let automation_store = sessions.automation_store_for(&record.id).unwrap();
+    automation_store.begin_run(&automation_id, "schedule", 100.0, None, Some("retained"),
+        Some(&["retained-alias".to_string()])).unwrap().expect("running history");
+    assert!(production.begin_cron_session_run(&record.id, &automation_id, "retained", 100.0)
+        .unwrap());
+    let config_before = fs::read(automation_store.config_path(&automation_id)).unwrap();
+    let history_before = fs::read(automation_store.runs_path(&automation_id)).unwrap();
+    let cron_before = production.list_cron_session_runs(&record.id).unwrap();
+    assert!(sessions.find_automation_for_backend_delivery(&record.id, &backend_id)
+        .unwrap().is_some());
+
+    production.begin_agent_delete(&record.id).unwrap();
+    assert!(sessions.find_automation_for_backend_delivery(&record.id, &backend_id)
+        .expect_err("fast deletion fence").contains("deletion cleanup"));
+    production.clear_agent_delete_fast_path(&record.id);
+    for target in [&backend_id, &missing_backend] {
+        assert!(sessions.find_automation_for_backend_delivery(&record.id, target)
+            .expect_err("durable deletion fence").contains("durable deletion cleanup"));
+    }
+    assert_eq!(production.list_cron_session_runs(&record.id).unwrap(), cron_before);
+    production.shutdown();
+    drop(sessions);
+    drop(production);
+
+    let reopened = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&reopened));
+    assert!(!reopened.is_agent_being_deleted(&record.id), "fresh volatile owner");
+    for target in [&backend_id, &missing_backend] {
+        assert!(sessions.find_automation_for_backend_delivery(&record.id, target)
+            .expect_err("reopened durable deletion fence").contains("durable deletion cleanup"));
+    }
+    assert_eq!(fs::read(automation_store.config_path(&automation_id)).unwrap(), config_before);
+    assert_eq!(fs::read(automation_store.runs_path(&automation_id)).unwrap(), history_before);
+    assert_eq!(reopened.list_cron_session_runs(&record.id).unwrap(), cron_before);
+    reopened.end_agent_delete(&record.id).unwrap();
+    assert_eq!(sessions.find_automation_for_backend_delivery(&record.id, &backend_id)
+        .unwrap().expect("explicitly cleared admission").automation.id, automation_id);
+    assert!(sessions.find_automation_for_backend_delivery(&record.id, &missing_backend)
+        .unwrap().is_none());
+    assert_eq!(fs::read(automation_store.runs_path(&automation_id)).unwrap(), history_before);
+    reopened.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(unix)]
+#[test]
+fn checked_backend_target_lookup_preserves_live_session_links_and_refuses_dangling_paths() {
+    use std::os::unix::fs::symlink;
+
+    let root = temp_root("backend-target-session-links");
+    fs::create_dir(&root).expect("exclusive fixture root");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = sessions.create_session(None, "user", None).unwrap();
+    let created = sessions.create_agent_automation(&record.id, &AutomationSpec {
+        name: "Linked target".into(),
+        prompt: "Inspect linked work".into(),
+        trigger: serde_json::json!({"type":"cron","schedule":"@daily"}),
+        is_enabled: Some(true),
+    }).unwrap();
+    let backend_id = stable_automation_id(&record.id, &created[0].id);
+    let config_before = fs::read(&created[0].file_path).unwrap();
+    production.shutdown();
+    drop(sessions);
+    drop(production);
+
+    let stored_agent = root.join("stored-agent");
+    fs::rename(agents.join(&record.id), &stored_agent).unwrap();
+    symlink(&stored_agent, agents.join(&record.id)).unwrap();
+    let linked_root = root.join("linked-agents");
+    symlink(&agents, &linked_root).unwrap();
+    let reopened = Arc::new(ProductionSessionWorkers::with_agents_root(&linked_root, 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&reopened));
+    let found = sessions.find_automation_for_backend_delivery(&record.id, &backend_id)
+        .unwrap().expect("live root and agent links preserve Session behavior");
+    assert_eq!(found.automation.id, created[0].id);
+    assert_eq!(fs::read(&found.automation.file_path).unwrap(), config_before);
+    assert!(sessions.find_automation_for_backend_delivery("absent-agent", &backend_id)
+        .unwrap().is_none());
+
+    let missing_target = root.join("absent-link-target");
+    symlink(&missing_target, agents.join("dangling-agent")).unwrap();
+    assert!(sessions.find_automation_for_backend_delivery("dangling-agent", &backend_id).is_err());
+    assert_eq!(fs::read_link(agents.join("dangling-agent")).unwrap(), missing_target);
+    for agents_root in [root.join("dangling-root"), root.join("dangling-parent/agents")] {
+        let link = if agents_root.ends_with("agents") {
+            agents_root.parent().unwrap().to_path_buf()
+        } else {
+            agents_root.clone()
+        };
+        symlink(&missing_target, &link).unwrap();
+        let broken = ProductionSessionWorkers::with_agents_root(&agents_root, 500);
+        assert!(broken.find_automation_for_backend_delivery("absent-agent", &backend_id).is_err(),
+            "dangling path must not become absence: {}", agents_root.display());
+        assert_eq!(fs::read_link(&link).unwrap(), missing_target);
+        assert!(!missing_target.exists());
+        broken.shutdown();
+    }
+    reopened.shutdown();
     let _ = fs::remove_dir_all(root);
 }
 

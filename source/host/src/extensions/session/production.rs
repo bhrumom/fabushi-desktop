@@ -87,6 +87,7 @@ use crate::extensions::memory::memory_service::{
 };
 use crate::extensions::memory::agent_state::{MemoryTier, StateWriteResult, MEMORY_NOTE_PREFIX};
 use crate::extensions::memory::project_membership::AgentProjectMembership;
+use crate::automations::automation::AutomationRecord;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
 use crate::extensions::mcp::plugin_skills::{
@@ -1404,6 +1405,75 @@ impl ProductionSessionWorkers {
             &db_path,
             Arc::clone(&self.user_time_zone_resolver),
         ))
+    }
+
+    /// Resolve one backend target under the same Session boundary as its
+    /// writers and deletion owner. Only checked directory absence can bypass
+    /// durable admission; a present agent with unavailable state is an error.
+    pub fn find_automation_for_backend_delivery(
+        &self,
+        agent_id: &str,
+        backend_id: &str,
+    ) -> Result<Option<AutomationRecord>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if self.deleting_agents.lock()
+                .map_err(|_| "agent deletion state is poisoned".to_string())?
+                .contains(agent_id)
+            {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; backend delivery is not admitted"
+                ));
+            }
+            let agent_dir = db_path.parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            if !Self::checked_backend_agent_directory_exists(agent_dir)? {
+                return Ok(None);
+            }
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let store = automation_store_for_db_path_with_time_zone_resolver(
+                &db_path,
+                Arc::clone(&self.user_time_zone_resolver),
+            );
+            store.find_for_backend_delivery(agent_id, backend_id)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    fn checked_backend_agent_directory_exists(agent_dir: &Path) -> Result<bool, String> {
+        let mut missing = false;
+        // A NotFound below a dangling ancestor does not establish absence.
+        // Walk back only after NotFound until a real directory is checked;
+        // existing root/agent links retain their normal followed semantics.
+        for path in agent_dir.ancestors()
+            .filter(|path| !path.as_os_str().is_empty())
+            .chain(std::iter::once(Path::new(".")))
+        {
+            let metadata = match fs::symlink_metadata(path) {
+                Ok(metadata) => metadata,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    missing = true;
+                    continue;
+                }
+                Err(error) => return Err(format!(
+                    "backend delivery agent directory {} is unavailable: {error}", path.display()
+                )),
+            };
+            let metadata = if metadata.file_type().is_symlink() {
+                fs::metadata(path).map_err(|error| format!(
+                    "backend delivery agent directory {} is unavailable: {error}", path.display()
+                ))?
+            } else {
+                metadata
+            };
+            if !metadata.is_dir() {
+                return Err(format!(
+                    "backend delivery agent path {} is not a directory", path.display()
+                ));
+            }
+            return Ok(!missing);
+        }
+        Err("backend delivery agent directory absence could not be established".into())
     }
 
     pub fn agent_has_automations(&self, agent_id: &str) -> Result<bool, String> {

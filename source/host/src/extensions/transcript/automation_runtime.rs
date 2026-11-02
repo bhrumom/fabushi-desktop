@@ -617,6 +617,17 @@ impl AutomationRuntime {
         SandAgentSessionStore::new(Arc::clone(&self.sessions)).list_all_automations()
     }
 
+    pub fn find_automation_for_backend_delivery(
+        &self,
+        agent_id: &str,
+        backend_id: &str,
+    ) -> Result<Option<AgentAutomationEntry>, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            SandAgentSessionStore::new(Arc::clone(&self.sessions))
+                .find_automation_for_backend_delivery(agent_id, backend_id)
+        })
+    }
+
     pub fn read_run_for_delivery(
         &self,
         agent_id: &str,

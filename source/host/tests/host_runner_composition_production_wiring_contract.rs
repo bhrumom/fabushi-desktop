@@ -850,6 +850,99 @@ fn desktop_mcp_dispatch_precedes_host_fallback(source: &str) -> bool {
         && error.path.segments.last().is_some_and(|segment| segment.ident == "Internal")
 }
 
+// Recognize the actual returned ingress edge, not an unused helper reference.
+// Runtime behavior and checked-read error semantics have real-owner oracles.
+fn backend_fire_uses_checked_shipping_boundary(source: &str) -> bool {
+    fn named(expr: &syn::Expr, name: &str) -> bool {
+        matches!(expr, syn::Expr::Path(path) if path.path.is_ident(name))
+    }
+    fn projection(expr: &syn::Expr, receiver: &str, method: &str) -> bool {
+        matches!(expr, syn::Expr::MethodCall(call) if call.method == method
+            && named(&call.receiver, receiver) && call.args.is_empty())
+    }
+    let Some(production) = production_host_source(source) else { return false; };
+    let Ok(parsed) = syn::parse_file(production) else { return false; };
+    let mut helpers = parsed.items.iter().filter_map(|item| {
+        let syn::Item::Fn(function) = item else { return None; };
+        (function.sig.ident == "dispatch_checked_production_backend_fire").then_some(function)
+    });
+    if helpers.next().is_none() || helpers.next().is_some() { return false; }
+    let mut methods = parsed.items.iter().filter_map(|item| {
+        let syn::Item::Impl(owner) = item else { return None; };
+        let syn::Type::Path(path) = owner.self_ty.as_ref() else { return None; };
+        (owner.trait_.is_none() && path.path.is_ident("UnifiedGatewayApi")).then_some(owner)
+    }).flat_map(|owner| owner.items.iter()).filter_map(|item| {
+        let syn::ImplItem::Fn(method) = item else { return None; };
+        (method.sig.ident == "dispatch_production_backend_fire").then_some(method)
+    });
+    let Some(method) = methods.next() else { return false; };
+    if methods.next().is_some() { return false; }
+    let Some((syn::Stmt::Expr(syn::Expr::Call(call), None), before)) = method.block.stmts.split_last()
+        else { return false; };
+    if !named(&call.func, "dispatch_checked_production_backend_fire") || call.args.len() != 6 {
+        return false;
+    }
+    let args = call.args.iter().collect::<Vec<_>>();
+    if !projection(args[0], "runtime", "as_ref")
+        || !matches!(args[1], syn::Expr::Reference(reference)
+            if reference.mutability.is_none() && named(&reference.expr, "fire"))
+        || !projection(args[2], "definition_time_zone", "as_deref")
+        || !projection(args[3], "completion", "as_ref")
+        || !matches!(args[4], syn::Expr::Closure(_))
+        || !matches!(args[5], syn::Expr::Closure(_))
+    {
+        return false;
+    }
+    let mut bindings = before.iter().filter_map(|stmt| {
+        let syn::Stmt::Local(local) = stmt else { return None; };
+        let syn::Pat::Ident(binding) = &local.pat else { return None; };
+        (binding.ident == "runtime").then_some(local)
+    });
+    let Some(binding) = bindings.next() else { return false; };
+    if bindings.next().is_some() { return false; }
+    let Some(init) = &binding.init else { return false; };
+    let syn::Expr::MethodCall(open) = init.expr.as_ref() else { return false; };
+    let syn::Expr::Field(manager) = open.receiver.as_ref() else { return false; };
+    open.method == "automation_runtime" && open.args.is_empty()
+        && named(&manager.base, "self")
+        && matches!(&manager.member, syn::Member::Named(name) if name == "transcript_manager")
+}
+
+#[test]
+fn shipping_backend_fire_returns_checked_owner_discovery_and_callback_boundary() {
+    assert!(backend_fire_uses_checked_shipping_boundary(SHIPPING_HOST),
+        "shipping backend ingress must return the checked production helper with its canonical Runtime, fire and completion callback");
+}
+
+#[test]
+fn checked_backend_fire_wiring_oracle_rejects_bypasses_and_dead_calls() {
+    let open = "let runtime = self.transcript_manager.automation_runtime();";
+    let dispatch = "dispatch_checked_production_backend_fire(runtime.as_ref(), &fire, definition_time_zone.as_deref(), completion.as_ref(), |_| {}, |_, _| true)";
+    let fixture = |body: &str, helper: &str, test_body: &str| format!(
+        "fn main() {{}}\n{helper}\nimpl UnifiedGatewayApi {{ fn dispatch_production_backend_fire(&self, fire: Fire, completion: Callback) -> bool {{ {body} }} }}\n#[cfg(test)]\nmod tests {{ {test_body} }}\n"
+    );
+    let helper = "fn dispatch_checked_production_backend_fire() {}";
+    assert!(backend_fire_uses_checked_shipping_boundary(&fixture(
+        &format!("{open} {dispatch}"), helper, "",
+    )));
+    for body in [
+        format!("{} {dispatch}", open.replace("self.transcript_manager", "self.unbound_manager")),
+        format!("{open} {}", dispatch.replace("&fire", "&another_fire")),
+        format!("{open} {}", dispatch.replace("completion.as_ref()", "another_completion.as_ref()")),
+        format!("{open} let _ = {dispatch}; true"),
+        format!("{open} let _unused = || {{ {dispatch} }}; true"),
+        format!("{open} // {dispatch}\ntrue"),
+        format!("{open} prepare_backend_fire(&runtime.list_all_automations().unwrap(), &fire, revision, history)"),
+    ] {
+        let source = fixture(&body, helper, "");
+        assert!(syn::parse_file(&source).is_ok(), "negative remains syntactically valid");
+        assert!(!backend_fire_uses_checked_shipping_boundary(&source),
+            "bypassed checked shipping boundary: {source}");
+    }
+    let test_only = fixture(&format!("{open} {dispatch}"), "", helper);
+    assert!(!backend_fire_uses_checked_shipping_boundary(&test_only));
+}
+
 #[test]
 fn shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback() {
     assert!(desktop_mcp_dispatch_precedes_host_fallback(SHIPPING_HOST),

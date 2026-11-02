@@ -56,8 +56,11 @@ pub fn prepare_backend_fire(
         Ok(existing) => existing,
         Err(_) => return PreparedBackendFire::Abandon { reason: "run_history_unavailable" },
     };
-    match existing_run_history(existing.as_ref()) {
+    match existing_run_history(existing.as_ref(), &fire.id) {
         ExistingRunHistory::Absent => {}
+        ExistingRunHistory::Unavailable => {
+            return PreparedBackendFire::Abandon { reason: "run_history_unavailable" };
+        }
         ExistingRunHistory::Running => {
             return PreparedBackendFire::Abandon {
                 reason: "existing_run_unsettled",
@@ -150,27 +153,46 @@ fn rejected(reason: &'static str, message: &str) -> PreparedBackendFire {
 
 enum ExistingRunHistory {
     Absent,
+    Unavailable,
     Running,
     Terminal(FireCompletion),
 }
 
-fn existing_run_history(run: Option<&AutomationRun>) -> ExistingRunHistory {
+fn existing_run_history(run: Option<&AutomationRun>, run_id: &str) -> ExistingRunHistory {
     let Some(run) = run else {
         return ExistingRunHistory::Absent;
     };
+    if run.id.is_empty() || !run.started_at.is_finite()
+        || run.coalesced_run_ids.as_ref().is_some_and(|ids| {
+            ids.len() > crate::automations::automation::MAX_EVENTS_IN_AUTOMATION_WAKE
+                || ids.iter().any(String::is_empty)
+        })
+        || !(run.id == run_id || run.coalesced_run_ids.as_ref()
+            .is_some_and(|ids| ids.iter().any(|id| id == run_id)))
+    {
+        return ExistingRunHistory::Unavailable;
+    }
     if run.status == "running" {
+        if run.finished_at.is_some() {
+            return ExistingRunHistory::Unavailable;
+        }
         // A persisted identity is still owed settlement after volatile Host
         // ownership is lost. Revalidation must not execute or fail this run.
         return ExistingRunHistory::Running;
     }
+    if !run.finished_at.is_some_and(f64::is_finite) {
+        return ExistingRunHistory::Unavailable;
+    }
     if run.status == "ok" {
         ExistingRunHistory::Terminal(FireCompletion::succeeded())
-    } else {
+    } else if run.status == "error" {
         ExistingRunHistory::Terminal(FireCompletion::failed(
             run.detail
                 .clone()
                 .unwrap_or_else(|| "Automation run failed on the Sand box".into()),
         ))
+    } else {
+        ExistingRunHistory::Unavailable
     }
 }
 

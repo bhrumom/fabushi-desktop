@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
@@ -268,6 +269,101 @@ fn automation_gateway_commands_use_runtime_owner_and_renderer_shape() {
     )
     .is_none());
 
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn runtime_checked_backend_target_lookup_refuses_definition_and_directory_failures() {
+    let root = root("backend-target-read");
+    fs::create_dir(&root).expect("exclusive fixture root");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).unwrap();
+    let runtime = AutomationRuntime::new(Arc::clone(&workers));
+    let (created, _) = runtime.create_agent_automation(&agent.id, &AutomationSpec {
+        name: "Checked backend target".into(),
+        prompt: "Inspect the queue".into(),
+        trigger: json!({"type":"cron","schedule":"@daily"}),
+        is_enabled: Some(true),
+    }).unwrap();
+    let automation_id = &created[0].id;
+    let backend_id = stable_automation_id(&agent.id, automation_id);
+    let missing_backend = stable_automation_id(&agent.id, "genuinely-absent");
+    let store = sessions.automation_store_for(&agent.id).unwrap();
+    store.begin_run(automation_id, "schedule", 100.0, None, Some("retained-original"),
+        Some(&["retained-alias".to_string()])).unwrap().expect("retained history");
+    assert!(workers.begin_cron_session_run(&agent.id, automation_id, "retained-original", 100.0)
+        .unwrap());
+    let config_path = store.config_path(automation_id);
+    let history_path = store.runs_path(automation_id);
+    let config_before = fs::read(&config_path).unwrap();
+    let history_before = fs::read(&history_path).unwrap();
+    let cron_before = workers.list_cron_session_runs(&agent.id).unwrap();
+    let found = runtime.find_automation_for_backend_delivery(&agent.id, &backend_id)
+        .unwrap().expect("live checked target");
+    assert_eq!(found.agent_id, agent.id);
+    assert_eq!(found.automation.id, *automation_id);
+    assert!(runtime.find_automation_for_backend_delivery(&agent.id, &missing_backend)
+        .unwrap().is_none());
+    assert!(runtime.find_automation_for_backend_delivery("absent-agent", &backend_id)
+        .unwrap().is_none());
+    assert!(runtime.find_automation_for_backend_delivery("../unsafe", &backend_id).is_err());
+
+    for invalid in [b"{".as_slice(), b"{\"name\":null}".as_slice(), &[0xff, 0xfe]] {
+        fs::write(&config_path, invalid).unwrap();
+        assert!(runtime.list_all_automations().unwrap().is_empty(),
+            "the ordinary display list remains fail-soft");
+        assert!(runtime.find_automation_for_backend_delivery(&agent.id, &backend_id).is_err(),
+            "a target omitted from display is still unavailable");
+        assert_eq!(fs::read(&config_path).unwrap(), invalid);
+        assert_eq!(fs::read(&history_path).unwrap(), history_before);
+        assert_eq!(workers.list_cron_session_runs(&agent.id).unwrap(), cron_before);
+    }
+    fs::remove_file(&config_path).unwrap();
+    assert!(runtime.find_automation_for_backend_delivery(&agent.id, &backend_id).is_err(),
+        "a matching folder without its definition is not missing");
+    assert!(!config_path.exists());
+    assert_eq!(fs::read(&history_path).unwrap(), history_before);
+    fs::create_dir(&config_path).unwrap();
+    fs::write(config_path.join("sentinel"), b"definition directory").unwrap();
+    assert!(runtime.find_automation_for_backend_delivery(&agent.id, &backend_id).is_err(),
+        "an unreadable definition object is not missing");
+    assert_eq!(fs::read(config_path.join("sentinel")).unwrap(), b"definition directory");
+    assert_eq!(fs::read(&history_path).unwrap(), history_before);
+    fs::remove_file(config_path.join("sentinel")).unwrap();
+    fs::remove_dir(&config_path).unwrap();
+    fs::write(&config_path, &config_before).unwrap();
+
+    let saved_automations = root.join("saved-automations");
+    fs::rename(store.get_location(), &saved_automations).unwrap();
+    fs::write(store.get_location(), b"unreadable automation directory").unwrap();
+    for target in [&backend_id, &missing_backend] {
+        assert!(runtime.find_automation_for_backend_delivery(&agent.id, target).is_err(),
+            "unknown directory enumeration cannot establish target absence");
+    }
+    assert_eq!(fs::read(store.get_location()).unwrap(), b"unreadable automation directory");
+    assert_eq!(fs::read(saved_automations.join(automation_id).join("automation.json")).unwrap(),
+        config_before);
+    assert_eq!(fs::read(saved_automations.join(automation_id).join("runs.json")).unwrap(),
+        history_before);
+    assert_eq!(workers.list_cron_session_runs(&agent.id).unwrap(), cron_before);
+    fs::remove_file(store.get_location()).unwrap();
+    fs::rename(&saved_automations, store.get_location()).unwrap();
+
+    let repaired = runtime.find_automation_for_backend_delivery(&agent.id, &backend_id)
+        .unwrap().expect("explicit definition/directory repair restores the target");
+    assert_eq!(repaired.automation.id, *automation_id);
+    for run_id in ["retained-original", "retained-alias"] {
+        let retained = runtime.read_run_for_delivery(&agent.id, automation_id, run_id)
+            .unwrap().expect("checked retained history");
+        assert_eq!(retained.id, "retained-original");
+        assert_eq!(retained.status, "running");
+    }
+    assert_eq!(fs::read(&config_path).unwrap(), config_before);
+    assert_eq!(fs::read(&history_path).unwrap(), history_before);
+    assert_eq!(workers.list_cron_session_runs(&agent.id).unwrap(), cron_before);
+    runtime.dispose();
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }

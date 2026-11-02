@@ -68,7 +68,9 @@ use mahayana_host_runtime::runner::sand_subagent_auto_review::{
     review_sand_subagent_action,
 };
 use mahayana_host_runtime::extensions::cloud_agents::cloud_agents_service::SandCloudAgentManager;
-use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::session::agent_session::{
+    AgentAutomationEntry, SandAgentSessionStore,
+};
 use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_paths::{
@@ -174,7 +176,7 @@ use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, AutomationRunFenceSnapshot, FireAutomationOutcome,
 };
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
-    AutomationCommandError, dispatch_automation_command,
+    AutomationCommandError, AutomationRuntime, dispatch_automation_command,
 };
 use mahayana_host_runtime::automations::automation_status_reminder::create_automation_status_reminder;
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
@@ -3618,138 +3620,107 @@ impl UnifiedGatewayApi {
         completion: Arc<dyn Fn(Option<FireCompletion>) + Send + Sync>,
     ) -> bool {
         let runtime = self.transcript_manager.automation_runtime();
-        let Ok(entries) = runtime.list_all_automations() else {
-            return false;
-        };
         let definition_time_zone = self.session_workers.resolve_user_time_zone();
-        match prepare_backend_fire(&entries, &fire, |entry| {
-            let cloud = ScheduledCloudAutomation {
-                id: entry.automation.id.clone(),
-                name: entry.automation.name.clone(),
-                prompt: entry.automation.prompt.clone(),
-                is_enabled: entry.automation.is_enabled,
-                trigger: entry.automation.trigger.clone(),
-            };
-            sand_cloud_definition(
-                &entry.agent_id,
-                &cloud,
-                definition_time_zone.as_deref(),
-            )
-            .map(|definition| definition.hash)
-        }, |entry, run_uuid| {
-            runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, run_uuid)
-        }) {
-            PreparedBackendFire::Complete {
-                completion: terminal,
-                reason,
-            } => {
-                if reason != "existing_run" {
-                    self.report_production_backend_fire_dropped(&fire, reason, None, None);
-                }
-                completion(Some(terminal));
-                true
-            }
-            PreparedBackendFire::Abandon { .. } => false,
-            PreparedBackendFire::Schedule {
-                agent_id,
-                automation_id,
-                run_uuid,
-                scheduled_for_ms,
-            } => {
-                let Some(provider) =
-                    configured_routed_provider(&self.data_dir.join("settings.json"))
-                else {
-                    return false;
-                };
-                if provider == RoutedProvider::Cursor {
-                    return false;
-                }
-                let Some(automation) = entries
-                    .iter()
-                    .find(|entry| {
-                        entry.agent_id == agent_id && entry.automation.id == automation_id
-                    })
-                    .map(|entry| entry.automation.clone())
-                else {
-                    return false;
-                };
-                let deps = self.local_routed_runner_deps();
-                thread::Builder::new()
-                    .name("mahayana-automation-cloud-fire".into())
-                    .spawn(move || {
-                        let result = runtime.run_server_scheduled_automation_with(
-                            &agent_id,
-                            &automation_id,
-                            run_uuid,
-                            scheduled_for_ms.map(|value| value as f64),
-                            |prompt| {
-                                run_local_automation_turn(
-                                    deps,
-                                    provider,
+        let launch_runtime = Arc::clone(&runtime);
+        let launch_completion = Arc::clone(&completion);
+        dispatch_checked_production_backend_fire(
+            runtime.as_ref(),
+            &fire,
+            definition_time_zone.as_deref(),
+            completion.as_ref(),
+            |reason| self.report_production_backend_fire_dropped(&fire, reason, None, None),
+            |prepared, target| {
+                let runtime = launch_runtime;
+                let completion = launch_completion;
+                let automation = target.automation;
+                match prepared {
+                    PreparedBackendFire::Schedule {
+                        agent_id,
+                        automation_id,
+                        run_uuid,
+                        scheduled_for_ms,
+                    } => {
+                        let Some(provider) =
+                            configured_routed_provider(&self.data_dir.join("settings.json"))
+                        else {
+                            return false;
+                        };
+                        if provider == RoutedProvider::Cursor {
+                            return false;
+                        }
+                        let deps = self.local_routed_runner_deps();
+                        thread::Builder::new()
+                            .name("mahayana-automation-cloud-fire".into())
+                            .spawn(move || {
+                                let result = runtime.run_server_scheduled_automation_with(
                                     &agent_id,
                                     &automation_id,
-                                    &automation.name,
-                                    prompt,
-                                )
-                            },
-                        );
-                        completion(automation_fire_completion(result));
-                    })
-                    .is_ok()
-            }
-            PreparedBackendFire::Event {
-                agent_id,
-                automation_id,
-                run_uuid,
-                event,
-            } => {
-                let Some(provider) =
-                    configured_routed_provider(&self.data_dir.join("settings.json"))
-                else {
-                    return false;
-                };
-                if provider == RoutedProvider::Cursor {
-                    return false;
+                                    run_uuid,
+                                    scheduled_for_ms.map(|value| value as f64),
+                                    |prompt| {
+                                        run_local_automation_turn(
+                                            deps,
+                                            provider,
+                                            &agent_id,
+                                            &automation_id,
+                                            &automation.name,
+                                            prompt,
+                                        )
+                                    },
+                                );
+                                completion(automation_fire_completion(result));
+                            })
+                            .is_ok()
+                    }
+                    PreparedBackendFire::Event {
+                        agent_id,
+                        automation_id,
+                        run_uuid,
+                        event,
+                    } => {
+                        let Some(provider) =
+                            configured_routed_provider(&self.data_dir.join("settings.json"))
+                        else {
+                            return false;
+                        };
+                        if provider == RoutedProvider::Cursor {
+                            return false;
+                        }
+                        let deps = self.local_routed_runner_deps();
+                        thread::Builder::new()
+                            .name("mahayana-automation-cloud-event".into())
+                            .spawn(move || {
+                                let execute_deps = deps.clone();
+                                let execute_agent_id = agent_id.clone();
+                                let execute_automation_id = automation_id.clone();
+                                let execute_automation_name = automation.name.clone();
+                                let executor = Arc::new(move |_agent_id: &str, _automation_id: &str, _automation_name: &str, prompt: &str| {
+                                    run_local_automation_turn(
+                                        execute_deps.clone(),
+                                        provider,
+                                        &execute_agent_id,
+                                        &execute_automation_id,
+                                        &execute_automation_name,
+                                        prompt,
+                                    )
+                                });
+                                let result = runtime.enqueue_event_automation_fire_with(
+                                    &agent_id,
+                                    &automation_id,
+                                    event,
+                                    Some(run_uuid),
+                                    executor,
+                                );
+                                completion(automation_fire_completion(result));
+                            })
+                            .is_ok()
+                    }
+                    // Immediate completion and refusal are consumed by the
+                    // checked shipping boundary before this launch closure.
+                    PreparedBackendFire::Complete { .. } | PreparedBackendFire::Abandon { .. } => false,
                 }
-                let Some(automation) = entries
-                    .iter()
-                    .find(|entry| {
-                        entry.agent_id == agent_id && entry.automation.id == automation_id
-                    })
-                    .map(|entry| entry.automation.clone())
-                else {
-                    return false;
-                };
-                let deps = self.local_routed_runner_deps();
-                thread::Builder::new()
-                    .name("mahayana-automation-cloud-event".into())
-                    .spawn(move || {
-                        let execute_deps = deps.clone();
-                        let execute_agent_id = agent_id.clone();
-                        let execute_automation_id = automation_id.clone();
-                        let execute_automation_name = automation.name.clone();
-                        let executor = Arc::new(move |_agent_id: &str, _automation_id: &str, _automation_name: &str, prompt: &str| {
-                            run_local_automation_turn(
-                                execute_deps.clone(),
-                                provider,
-                                &execute_agent_id,
-                                &execute_automation_id,
-                                &execute_automation_name,
-                                prompt,
-                            )
-                        });
-                        let result = runtime.enqueue_event_automation_fire_with(
-                            &agent_id,
-                            &automation_id,
-                            event,
-                            Some(run_uuid),
-                            executor,
-                        );
-                        completion(automation_fire_completion(result));
-                    })
-                    .is_ok()
-            }
-        }
+            },
+        )
     }
 
     fn resume_interrupted_upgrade_turns(&self) -> Result<usize, String> {
@@ -5748,6 +5719,55 @@ fn listener_connection_state_or_disconnected(
                 "[sand:listener-integrations] {platform} connection read degraded to disconnected"
             );
             false
+        }
+    }
+}
+
+/// The shipping backend ingress must distinguish checked absence from a
+/// definition that the display projection could not read. This boundary also
+/// owns the immediate callback/refusal branch used by the actual backend.
+fn dispatch_checked_production_backend_fire(
+    runtime: &AutomationRuntime,
+    fire: &BackendAutomationFire,
+    definition_time_zone: Option<&str>,
+    completion: &(dyn Fn(Option<FireCompletion>) + Send + Sync),
+    report_dropped: impl FnOnce(&'static str),
+    launch: impl FnOnce(PreparedBackendFire, AgentAutomationEntry) -> bool,
+) -> bool {
+    let entries = match runtime.find_automation_for_backend_delivery(
+        &fire.sand_agent_id,
+        &fire.automation_id,
+    ) {
+        Ok(entry) => entry.into_iter().collect::<Vec<_>>(),
+        Err(_) => return false,
+    };
+    let prepared = prepare_backend_fire(&entries, fire, |entry| {
+        let cloud = ScheduledCloudAutomation {
+            id: entry.automation.id.clone(),
+            name: entry.automation.name.clone(),
+            prompt: entry.automation.prompt.clone(),
+            is_enabled: entry.automation.is_enabled,
+            trigger: entry.automation.trigger.clone(),
+        };
+        sand_cloud_definition(&entry.agent_id, &cloud, definition_time_zone)
+            .map(|definition| definition.hash)
+    }, |entry, run_uuid| {
+        runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, run_uuid)
+    });
+    match prepared {
+        PreparedBackendFire::Complete { completion: terminal, reason } => {
+            if reason != "existing_run" {
+                report_dropped(reason);
+            }
+            completion(Some(terminal));
+            true
+        }
+        PreparedBackendFire::Abandon { .. } => false,
+        prepared @ (PreparedBackendFire::Schedule { .. } | PreparedBackendFire::Event { .. }) => {
+            match entries.into_iter().next() {
+                Some(target) => launch(prepared, target),
+                None => false,
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
+use std::cell::Cell;
 use std::path::PathBuf;
 
-use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationRun};
+use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationRun, MAX_EVENTS_IN_AUTOMATION_WAKE};
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::extensions::automations::fire_delivery::{
     PreparedBackendFire, admits_bare_fire, fire_event_matches_trigger, parse_fire_trigger_event,
@@ -386,4 +387,276 @@ fn bare_fire_requires_schedule_and_disambiguates_mixed_triggers() {
     assert!(!admits_bare_fire(&mixed, &backend_fire));
     backend_fire.scheduled_for_ms = Some(100);
     assert!(admits_bare_fire(&mixed, &backend_fire));
+}
+
+fn checked_history_run(status: &str) -> AutomationRun {
+    AutomationRun {
+        id: "run-1".into(),
+        trigger: "schedule".into(),
+        started_at: 1.0,
+        finished_at: (status != "running").then_some(2.0),
+        status: status.into(),
+        detail: (status == "error").then(|| "checked failure".into()),
+        event: None,
+        coalesced_run_ids: None,
+    }
+}
+
+#[test]
+fn checked_history_errors_precede_projection_and_all_fire_validation() {
+    for case in [
+        "eligible", "disabled", "covered-slot", "revision", "unrecognized-event",
+        "changed-trigger", "missing-event-context",
+    ] {
+        let mut target = entry(json!({"type":"group","listeners":[
+            {"type":"cron","schedule":"0 * * * *"},
+            {"type":"github","repo":"openai/repo","events":["pr-opened"]}
+        ]}));
+        // This stale display row would otherwise authorize successful replay.
+        target.automation.runs.push(checked_history_run("ok"));
+        let mut backend_fire = fire(None);
+        backend_fire.scheduled_for_ms = Some(90);
+        match case {
+            "eligible" => {}
+            "disabled" => target.automation.is_enabled = false,
+            "covered-slot" => target.automation.last_run_at = Some(101.0),
+            "revision" => backend_fire.definition_revision = Some("remote-revision".into()),
+            "unrecognized-event" => backend_fire.event = Some(json!({"source":"unknown"})),
+            "changed-trigger" => backend_fire.event = Some(json!({
+                "source":"github","repo":"other/repo","kind":"pr-opened"
+            })),
+            "missing-event-context" => backend_fire.scheduled_for_ms = None,
+            _ => unreachable!(),
+        }
+        let mut unrelated = target.clone();
+        unrelated.agent_id = "other-agent".into();
+        let entries = [unrelated, target];
+        let before = entries.clone();
+        let lookups = Cell::new(0);
+        let prepared = prepare_backend_fire(
+            &entries,
+            &backend_fire,
+            |_| panic!("history refusal must precede revision lookup: {case}"),
+            |matched: &AgentAutomationEntry, requested: &str| -> Result<Option<AutomationRun>, String> {
+                assert_eq!(matched.agent_id, "agent-1");
+                assert_eq!(matched.automation.id, "local-1");
+                assert_eq!(requested, "run-1");
+                lookups.set(lookups.get() + 1);
+                Err("raw run history is unreadable".into())
+            },
+        );
+        assert_eq!(prepared, PreparedBackendFire::Abandon { reason: "run_history_unavailable" }, "{case}");
+        assert_eq!(lookups.get(), 1, "the matched target must reach the checked source: {case}");
+        assert_eq!(entries, before, "preparation is read-only: {case}");
+    }
+}
+
+#[test]
+fn invalid_checked_rows_are_abandoned_before_stale_projection_or_disabled_completion() {
+    for case in [
+        "empty-id", "unrelated-id", "nan-start", "infinite-start", "empty-status",
+        "unknown-status", "running-finished", "ok-unfinished", "error-unfinished",
+        "nan-finish", "infinite-finish", "empty-alias", "too-many-aliases",
+    ] {
+        let mut returned = checked_history_run("ok");
+        match case {
+            "empty-id" => {
+                returned.id.clear();
+                returned.coalesced_run_ids = Some(vec!["run-1".into()]);
+            }
+            "unrelated-id" => returned.id = "another-run".into(),
+            "nan-start" => returned.started_at = f64::NAN,
+            "infinite-start" => returned.started_at = f64::INFINITY,
+            "empty-status" => returned.status.clear(),
+            "unknown-status" => returned.status = "future".into(),
+            "running-finished" => returned.status = "running".into(),
+            "ok-unfinished" => returned.finished_at = None,
+            "error-unfinished" => {
+                returned.status = "error".into();
+                returned.finished_at = None;
+            }
+            "nan-finish" => returned.finished_at = Some(f64::NAN),
+            "infinite-finish" => returned.finished_at = Some(f64::INFINITY),
+            "empty-alias" => returned.coalesced_run_ids = Some(vec!["run-1".into(), String::new()]),
+            "too-many-aliases" => {
+                returned.coalesced_run_ids = Some(vec!["run-1".into(); MAX_EVENTS_IN_AUTOMATION_WAKE + 1]);
+            }
+            _ => unreachable!(),
+        }
+        let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+        target.automation.is_enabled = false;
+        target.automation.runs.push(checked_history_run("ok"));
+        let before = target.clone();
+        let mut backend_fire = fire(None);
+        backend_fire.definition_revision = Some("old-revision".into());
+        let lookups = Cell::new(0);
+        assert_eq!(
+            prepare_backend_fire(
+                std::slice::from_ref(&target),
+                &backend_fire,
+                |_| panic!("invalid checked history must precede revision lookup: {case}"),
+                |matched: &AgentAutomationEntry, requested: &str| -> Result<Option<AutomationRun>, String> {
+                    assert_eq!(matched.agent_id, "agent-1");
+                    assert_eq!(requested, "run-1");
+                    lookups.set(lookups.get() + 1);
+                    Ok(Some(returned.clone()))
+                },
+            ),
+            PreparedBackendFire::Abandon { reason: "run_history_unavailable" },
+            "{case}",
+        );
+        assert_eq!(lookups.get(), 1, "{case}");
+        assert_eq!(target, before, "{case}");
+    }
+}
+
+#[test]
+fn checked_running_and_terminal_rows_override_absent_or_stale_display_history() {
+    for projection_status in [None, Some("running"), Some("ok"), Some("error")] {
+        for checked_status in ["running", "ok", "error"] {
+            for use_alias in [false, true] {
+                let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+                target.automation.is_enabled = false;
+                target.automation.last_run_at = Some(101.0);
+                if let Some(status) = projection_status {
+                    target.automation.runs.push(checked_history_run(status));
+                }
+                let before = target.clone();
+                let mut checked = checked_history_run(checked_status);
+                if use_alias {
+                    checked.id = "  ".into();
+                    checked.coalesced_run_ids = Some(vec!["run-1".into(), "run-1".into(), "  ".into()]);
+                }
+                let mut backend_fire = fire(Some(json!({"source":"unknown"})));
+                backend_fire.definition_revision = Some("old-revision".into());
+                let lookups = Cell::new(0);
+                let prepared = prepare_backend_fire(
+                    std::slice::from_ref(&target),
+                    &backend_fire,
+                    |_| panic!("checked custody must precede revision lookup"),
+                    |matched: &AgentAutomationEntry, requested: &str| -> Result<Option<AutomationRun>, String> {
+                        assert_eq!(matched.agent_id, "agent-1");
+                        assert_eq!(requested, "run-1");
+                        lookups.set(lookups.get() + 1);
+                        Ok(Some(checked.clone()))
+                    },
+                );
+                let expected = match checked_status {
+                    "running" => PreparedBackendFire::Abandon { reason: "existing_run_unsettled" },
+                    "ok" => PreparedBackendFire::Complete {
+                        completion: FireCompletion::succeeded(), reason: "existing_run",
+                    },
+                    "error" => PreparedBackendFire::Complete {
+                        completion: FireCompletion::failed("checked failure"), reason: "existing_run",
+                    },
+                    _ => unreachable!(),
+                };
+                assert_eq!(prepared, expected,
+                    "projection={projection_status:?}, checked={checked_status}, alias={use_alias}");
+                assert_eq!(lookups.get(), 1);
+                assert_eq!(target, before);
+            }
+        }
+    }
+}
+
+#[test]
+fn typed_history_preserves_literal_aliases_at_the_producer_bound() {
+    for status in ["running", "ok", "error"] {
+        let mut checked = checked_history_run(status);
+        checked.id = "  ".into();
+        let mut aliases = vec!["  ".to_string(), " alias ".to_string(), " alias ".to_string()];
+        aliases.extend((aliases.len()..MAX_EVENTS_IN_AUTOMATION_WAKE).map(|index| format!("alias-{index}")));
+        checked.coalesced_run_ids = Some(aliases.clone());
+        let mut target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+        target.automation.is_enabled = false;
+        for run_id in [&checked.id, &aliases[1], aliases.last().unwrap()] {
+            let mut backend_fire = fire(None);
+            backend_fire.id = run_id.clone();
+            let expected = match status {
+                "running" => PreparedBackendFire::Abandon { reason: "existing_run_unsettled" },
+                "ok" => PreparedBackendFire::Complete {
+                    completion: FireCompletion::succeeded(), reason: "existing_run",
+                },
+                "error" => PreparedBackendFire::Complete {
+                    completion: FireCompletion::failed("checked failure"), reason: "existing_run",
+                },
+                _ => unreachable!(),
+            };
+            assert_eq!(prepare_backend_fire(
+                std::slice::from_ref(&target), &backend_fire,
+                |_| panic!("checked custody precedes definition policy"),
+                |_, requested| {
+                    assert_eq!(requested, run_id.as_str());
+                    Ok(Some(checked.clone()))
+                },
+            ), expected, "status={status}, literal identity={run_id:?}");
+        }
+        let mut mismatched = fire(None);
+        mismatched.id = "alias".into();
+        assert_eq!(prepare_backend_fire(
+            &[target], &mismatched, |_| None, |_, _| Ok(Some(checked.clone())),
+        ), PreparedBackendFire::Abandon { reason: "run_history_unavailable" },
+            "trimming cannot manufacture an identity match");
+    }
+}
+
+#[test]
+fn checked_absence_ignores_stale_display_rows_for_eligible_delivery() {
+    for projection_status in ["running", "ok", "error"] {
+        for event_delivery in [false, true] {
+            let mut target = entry(json!({"type":"group","listeners":[
+                {"type":"cron","schedule":"0 * * * *"},
+                {"type":"github","repo":"openai/repo","events":["pr-opened"]}
+            ]}));
+            target.automation.runs.push(checked_history_run(projection_status));
+            let before = target.clone();
+            let mut backend_fire = fire(event_delivery.then(|| json!({
+                "source":"github","repo":"openai/repo","kind":"pr-opened"
+            })));
+            backend_fire.scheduled_for_ms = Some(90);
+            let lookups = Cell::new(0);
+            let prepared = prepare_backend_fire(
+                std::slice::from_ref(&target),
+                &backend_fire,
+                |_| None,
+                |matched: &AgentAutomationEntry, requested: &str| -> Result<Option<AutomationRun>, String> {
+                    assert_eq!(matched.automation.id, "local-1");
+                    assert_eq!(requested, "run-1");
+                    lookups.set(lookups.get() + 1);
+                    Ok(None)
+                },
+            );
+            if event_delivery {
+                assert!(matches!(prepared, PreparedBackendFire::Event {
+                    ref agent_id, ref automation_id, ref run_uuid, ..
+                } if agent_id == "agent-1" && automation_id == "local-1" && run_uuid == "run-1"));
+            } else {
+                assert_eq!(prepared, PreparedBackendFire::Schedule {
+                    agent_id: "agent-1".into(), automation_id: "local-1".into(),
+                    run_uuid: "run-1".into(), scheduled_for_ms: Some(90),
+                });
+            }
+            assert_eq!(lookups.get(), 1, "projection={projection_status}, event={event_delivery}");
+            assert_eq!(target, before);
+        }
+    }
+}
+
+#[test]
+fn missing_target_does_not_probe_an_unrelated_history() {
+    let target = entry(json!({"type":"cron","schedule":"0 * * * *"}));
+    let mut backend_fire = fire(None);
+    backend_fire.sand_agent_id = "another-agent".into();
+    assert!(matches!(
+        prepare_backend_fire(
+            &[target],
+            &backend_fire,
+            |_| panic!("missing target must not resolve a revision"),
+            |_: &AgentAutomationEntry, _: &str| -> Result<Option<AutomationRun>, String> {
+                panic!("missing target must not borrow another agent's history")
+            },
+        ),
+        PreparedBackendFire::Complete { reason: "automation_missing", .. }
+    ));
 }

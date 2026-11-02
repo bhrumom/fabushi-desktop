@@ -1003,3 +1003,121 @@ execution claims, the lookup-to-begin race, direct reuse of an existing UUID,
 evicted terminal receipts, full Spend Guard reconciliation and unknown external
 effects remain open. Rollback reintroduces unsettled eviction/replay risk; no
 stored format changes. Preserve full OCRM scope and all eight global flags.
+
+## Checked backend delivery custody — AUTO-BACKEND-HISTORY-v2
+
+Decision **AUTO-BACKEND-HISTORY-01 — FIX / IMPL_BUG**, before implementation,
+against H `3c4bf6963cb30ecf01eb34b905315074886e1972`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. The existing delivery reader uses
+legacy normalization that can turn missing/unknown status into `ok`, discard
+invalid finishes or aliases, and miss cross-row identity conflicts. Separately,
+the shipping Host discovers targets through a fail-soft display list: an
+unreadable or invalid matching definition is omitted, so preparation can report
+`automation_missing` and the backend can POST/ACK an unsettled original or
+alias without consulting history. These are target-owner implementation gaps;
+this batch adds no upstream reading credit or broader acceptance claim.
+
+### Required behavior and shared interfaces
+
+- BH-01: `FileAutomationStore::read_run_for_delivery` validates the complete raw
+  unique-key history before legacy normalization. Require a safe local ID,
+  nonempty literal requested run ID and a readable valid matching definition.
+  Only a genuinely missing history file under that definition is first-run
+  absence. An unreadable object, dangling link, invalid row or bad unrelated
+  tail refuses both matching and absent queries. Never create paths, truncate,
+  sort away authority or rewrite history during this read.
+- BH-02: Every raw row requires a nonempty literal primary ID, finite startedAt,
+  explicit `running`, `ok` or `error`, and absent/null finishedAt for Running
+  versus finite finishedAt for terminals. Aliases are absent/null or at most
+  `MAX_EVENTS_IN_AUTOMATION_WAKE` nonempty literal strings. Preserve identity
+  bytes, self aliases and repetitions within one row. A primary or alias owned
+  by different rows invalidates the entire image, even for an unrelated query.
+  Metadata retains its existing normalization. Legacy display and mutation
+  APIs retain their contracts, including `begin_fresh_run` and its regression.
+- BH-03: The required resolver in `prepare_backend_fire` remains before all
+  enabled/revision/slot/event policy. Also validate a returned typed run's
+  identity match, times, status and alias constraints. Error or invalid typed
+  authority returns `Abandon { reason: "run_history_unavailable" }`. Known
+  Running retains `existing_run_unsettled`; valid terminals replay stored
+  success/failure; checked absence preserves existing eligibility behavior.
+- BH-04: Checked target discovery is separate from display listing. Add
+  `FileAutomationStore::find_for_backend_delivery(agent_id, backend_id)
+  -> Result<Option<AutomationRecord>, AutomationStoreError>`. Enumerate the
+  existing directory with checked errors, compare the existing stable backend
+  hash of safe local folder identities, and then read the matching definition.
+  Read/entry/metadata/UTF-8/JSON/definition failures are unknown, not absence.
+  An existing matching non-directory or folder with missing config is refusal.
+  Detect duplicate JSON members before the existing definition parser; retain
+  valid legacy definition semantics. Do not parse unrelated definitions. The
+  returned target is definition-only with an empty runs projection; only the
+  required checked history resolver supplies custody. Reuse record construction
+  without invoking display history. Refuse nonregular config/history objects
+  before reading, so a FIFO cannot block this admission boundary. Ordinary
+  display/mutation reads retain their compatibility behavior.
+  A missing automation directory or completed enumeration with no matching safe
+  identity is confirmed absence; a dangling directory link is not absence.
+  Preserve valid root-directory links after checked directory metadata, as the
+  existing directory reader does. A matching child link is refused: ordinary
+  discovery excludes it, so this change cannot newly admit execution through it.
+- BH-05: Expose the target read through existing owners only:
+  `ProductionSessionWorkers::find_automation_for_backend_delivery(agent_id,
+  backend_id) -> Result<Option<AutomationRecord>, String>`, and the same name
+  on `SandAgentSessionStore` and `AutomationRuntime` returning
+  `Result<Option<AgentAutomationEntry>, String>`. Runtime holds its per-agent
+  mutation boundary; Session holds its existing filesystem/deletion boundary
+  exactly once. Validate the agent identity and positively establish directory
+  absence; a malformed/unreadable existing agent or pending deletion is an
+  error. For a present agent, perform existing durable admission before reading
+  FileStore. Do not recursively reacquire the public Session admission lock.
+  Preserve live Session root/agent directory links after checked metadata;
+  dangling links and other path uncertainty remain refusal.
+  Ordinary database owner opening/recovery remains permitted and unchanged.
+- BH-06: The shipping Host uses checked targeted discovery, never the fail-soft
+  list, before preparation. Discovery error takes the existing false/Abandon
+  path with no executor or completion callback; no completion POST or ACK is
+  authorized. Only checked absence can retain the documented missing-target
+  completion. The shared production dispatch helper used by the actual Host
+  must own this preparation and immediate completion/refusal branch, so tests
+  exercise that branch rather than manually reproducing its match statement.
+  Existing scheduling/event launch, telemetry for known dropped fires, provider
+  checks and backend Complete/Reported/ACK state machine remain their owners.
+
+### Verification, integration and limits
+
+Keep ARH capacity/retention, fresh-admission, duplicate-key, legacy mutation,
+Session deletion, terminal custody, coalescer None, deadline and failed-POST
+controls. Add full raw-history and typed-return negatives, cross-row aliases,
+exact producer bound, valid Running/terminal/absence and explicit repair.
+Use actual Runtime/Session/FileStore and backend owners with controlled external
+transport. Through the shipping dispatch helper, repeatedly deliver original
+and alias with malformed/missing/unreadable definitions, unknown directory
+enumeration, then reopen owners: require no execution, callback, POST, ACK or
+observation and unchanged history/config/cron in clean fixtures. Repair must
+restore Running refusal, terminal replay and a distinct new fire; genuine
+missing targets remain a positive documented completion control. This does not
+assert zero database opens or suppress Session's unrelated recovery.
+
+Allowed implementation paths are the existing FileStore, fire preparation,
+Session production/facade, AutomationRuntime and root-owned Host composition;
+tests stay in existing store/fire/backend/runtime/production-wiring and app
+custody homes. The existing Host composition contract also checks that the
+shipping entry returns this helper's result with its real Runtime/fire/callback,
+including wrong-owner, ignored-result and test-only/dead-call negative controls.
+Root serializes this spec, workflow selectors/receipts and the
+existing OCRM ledger/RTM references. No schema, dependency or persistent owner
+is added. Preserve all uncommitted predecessor work; transplant only reconciled
+useful deltas, never overwrite the newer fresh-admission implementation.
+
+Freeze the integrated candidate, obtain independent source review and exact-H
+Actions compile, contracts, shipping wiring and high-risk negative evidence.
+Reuse the existing Linux native-path job for FileStore's invalid-UTF-8 name
+oracle: APFS cannot supply that filename fixture, so a macOS-only pass cannot
+cover it. Bind its exact nonzero positive result in the existing job receipt.
+The app step must pass the existing owned Automation artifact root and the
+existing failure upload must also run when that earlier app step fails, even
+if the later integration step never starts. Keep exact child receipts/deadlines.
+Local or htch-runtime validation is prohibited. Rollback restores the previous
+reader and can reintroduce false completion; disk formats are unchanged. Keep
+all eight completion flags false. Real service compatibility, previously
+normalized/deleted history, lookup-to-begin races, cross-process claims, event
+loss/unknown effects and the full reaper/final OCRM gates remain open.

@@ -23,6 +23,9 @@ use mahayana_host_runtime::extensions::automations::production::{
 use mahayana_host_runtime::extensions::automations::sand_automation_cloud_sync::{
     ScheduledCloudAutomation, sand_cloud_definition,
 };
+use mahayana_host_runtime::extensions::automations::sand_automation_fire_consumer::{
+    AutomationFireBackendRuntime, BackendAutomationFire, FireCompletion,
+};
 use mahayana_host_runtime::extensions::browser_ua::extension::StopSubscription;
 use mahayana_host_runtime::extensions::notify_bus::extension::{
     HostNotifyBusExtension, NotifyBusExperimentsApi, NotifyBusExtensionOptions,
@@ -1240,13 +1243,17 @@ impl CustodyBackend {
     }
 
     fn assert_abandoned_after(&self, earlier_poll: usize) {
+        self.assert_abandoned_with_reason_after(earlier_poll, "existing_run_unsettled");
+    }
+
+    fn assert_abandoned_with_reason_after(&self, earlier_poll: usize, reason: &'static str) {
         let deadline = Instant::now() + CUSTODY_WAIT;
         let mut seen = std::collections::BTreeSet::new();
         while seen.len() < CUSTODY_RUN_UUIDS.len() {
             let receipt = self.dispatches.recv_timeout(deadline.saturating_duration_since(Instant::now()))
                 .expect("each actual backend UUID must redeliver after its None callback");
             assert!(CUSTODY_RUN_UUIDS.contains(&receipt.run_uuid.as_str()));
-            assert_eq!(receipt.prepared, PreparedBackendFire::Abandon { reason: "existing_run_unsettled" });
+            assert_eq!(receipt.prepared, PreparedBackendFire::Abandon { reason });
             if receipt.poll > earlier_poll {
                 seen.insert(receipt.run_uuid);
             }
@@ -1692,6 +1699,390 @@ fn real_full_running_history_refuses_before_cron_or_executor_and_checked_read_ob
                     &fixture.agent_id, &fixture.automation_id, &run.id,
                 ).unwrap().as_ref(), Some(run));
             }
+        },
+    );
+}
+
+#[derive(Debug, Clone, Copy)]
+enum BackendHistoryFault {
+    MissingStatus,
+    FutureStatus,
+    MalformedAlias,
+    DuplicateOriginal,
+    CrossRowAlias,
+    InvalidTail,
+    InvalidJson,
+    InvalidUtf8,
+}
+
+fn seed_backend_history(fixture: &ShippingAutomation) -> CustodyPersistedState {
+    let aliases = CUSTODY_RUN_UUIDS[1..].iter().map(|id| (*id).to_owned()).collect::<Vec<_>>();
+    SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+        .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+            let run = fixture.store.begin_run(
+                &fixture.automation_id, "event", 100.0, None,
+                Some(CUSTODY_RUN_UUIDS[0]), Some(&aliases),
+            ).map_err(|error| error.to_string())?.expect("actual running history admission");
+            assert_eq!(run.status, "running");
+            Ok(())
+        }).expect("admitted actual history owner");
+    assert!(fixture.workers.begin_cron_session_run(
+        &fixture.agent_id, &fixture.automation_id, CUSTODY_RUN_UUIDS[0], 100.0,
+    ).expect("actual cron registration"));
+    CustodyPersistedState::capture(
+        &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+    )
+}
+
+fn raw_backend_history_fault(fault: BackendHistoryFault, admitted: &[u8]) -> Vec<u8> {
+    let mut rows: Vec<Value> = serde_json::from_slice(admitted).expect("actual admitted image");
+    match fault {
+        BackendHistoryFault::MissingStatus => {
+            rows[0].as_object_mut().unwrap().remove("status");
+            rows[0]["finishedAt"] = json!(200);
+        }
+        BackendHistoryFault::FutureStatus => {
+            rows[0]["status"] = json!("future_outcome_unknown");
+            rows[0]["finishedAt"] = json!(200);
+        }
+        BackendHistoryFault::MalformedAlias => {
+            rows[0]["coalescedRunIds"] = json!([CUSTODY_RUN_UUIDS[1], 7, CUSTODY_RUN_UUIDS[2]]);
+        }
+        BackendHistoryFault::DuplicateOriginal => {
+            let mut terminal = rows[0].clone();
+            terminal["startedAt"] = json!(200);
+            terminal["finishedAt"] = json!(201);
+            terminal["status"] = json!("ok");
+            rows.push(terminal);
+        }
+        BackendHistoryFault::CrossRowAlias => rows.push(json!({
+            "id":"other-row", "startedAt":200, "finishedAt":201,
+            "status":"ok", "coalescedRunIds":[CUSTODY_RUN_UUIDS[1]],
+        })),
+        BackendHistoryFault::InvalidTail => {
+            rows[0]["startedAt"] = json!(10_000);
+            rows[0]["finishedAt"] = json!(10_001);
+            rows[0]["status"] = json!("ok");
+            rows.extend((0..AUTOMATION_MAX_RUN_HISTORY + 1).map(|index| json!({
+                "id":format!("valid-sibling-{index}"), "startedAt":200 + index,
+                "finishedAt":300 + index, "status":"ok",
+            })));
+            rows.push(json!({
+                "id":"invalid-tail", "startedAt":1,
+                "finishedAt":2, "status":"future_outcome_unknown",
+            }));
+        }
+        BackendHistoryFault::InvalidJson => return b"[ malformed history".to_vec(),
+        BackendHistoryFault::InvalidUtf8 => return b"[\xff]".to_vec(),
+    }
+    serde_json::to_vec_pretty(&rows).unwrap()
+}
+
+fn backend_history_delivery(fixture: &ShippingAutomation, event: bool, ids: &[&str]) -> Value {
+    let automation = fixture.store.get(&fixture.automation_id).expect("current definition");
+    let revision = sand_cloud_definition(&fixture.agent_id, &ScheduledCloudAutomation {
+        id: automation.id, name: automation.name, prompt: automation.prompt,
+        is_enabled: automation.is_enabled, trigger: automation.trigger,
+    }, None).expect("real revisioned schedule definition").hash;
+    json!({"events":ids.iter().map(|id| json!({
+        "id":id, "sandAgentId":fixture.agent_id,
+        "automationId":stable_automation_id(&fixture.agent_id, &fixture.automation_id),
+        "timestampMs":100, "scheduledForMs":90,
+        "definitionRevision":if event { None } else { Some(revision.clone()) },
+        "event":if event { Some(json!({
+            "source":"github", "repo":"org/repo", "kind":"pr-opened", "timestampMs":100,
+        })) } else { None },
+    })).collect::<Vec<_>>()})
+}
+
+fn backend_history_refusal_case(fault: BackendHistoryFault, event: bool) {
+    let fixture = ShippingAutomation::new(&format!("backend history {fault:?}"));
+    let admitted = seed_backend_history(&fixture);
+    let raw = raw_backend_history_fault(fault, &admitted.history);
+    fs::write(fixture.store.runs_path(&fixture.automation_id), &raw).expect("inject raw custody fault");
+    let display = fixture.store.read_runs(&fixture.automation_id);
+    match fault {
+        BackendHistoryFault::MissingStatus | BackendHistoryFault::FutureStatus => {
+            assert_eq!(display[0].status, "ok", "display compatibility is not custody authority");
+        }
+        BackendHistoryFault::MalformedAlias => assert_eq!(display[0].coalesced_run_ids,
+            Some(CUSTODY_RUN_UUIDS[1..].iter().map(|id| (*id).to_owned()).collect())),
+        BackendHistoryFault::DuplicateOriginal => assert_eq!(display.iter()
+            .filter(|run| run.id == CUSTODY_RUN_UUIDS[0]).count(), 2),
+        BackendHistoryFault::CrossRowAlias => assert_eq!(display.iter().filter(|run|
+            run.coalesced_run_ids.as_ref().is_some_and(|ids|
+                ids.iter().any(|id| id == CUSTODY_RUN_UUIDS[1]))).count(), 2),
+        BackendHistoryFault::InvalidTail => {
+            assert_eq!(display.len(), AUTOMATION_MAX_RUN_HISTORY);
+            assert!(display.iter().all(|run| run.id != "invalid-tail"));
+            assert_eq!(display[0].id, CUSTODY_RUN_UUIDS[0]);
+            assert_eq!(display[0].status, "ok");
+        }
+        BackendHistoryFault::InvalidJson | BackendHistoryFault::InvalidUtf8 => assert!(display.is_empty()),
+    }
+    let baseline = CustodyPersistedState::capture(
+        &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+    );
+    assert_eq!(baseline.config, admitted.config);
+    assert_eq!(baseline.cron, admitted.cron);
+    baseline.preserve_evidence(&fixture.root, "raw-refusal-baseline");
+    let delivery = backend_history_delivery(&fixture, event, &CUSTODY_RUN_UUIDS);
+    fixture.runtime.dispose();
+    fixture.workers.shutdown();
+
+    let executions = Arc::new(AtomicUsize::new(0));
+    for generation in 0..2 {
+        let owners = ReopenedCustodyOwners::open(&fixture.root, &fixture.agent_id);
+        for id in CUSTODY_RUN_UUIDS {
+            assert!(owners.runtime.read_run_for_delivery(
+                &fixture.agent_id, &fixture.automation_id, id,
+            ).is_err(), "raw custody must refuse before a display projection is trusted: {fault:?}");
+        }
+        assert_eq!(owners.workers.active_agent_db_owner_count(), 1,
+            "checked delivery preserves canonical Session admission/open/recovery");
+        let counted = Arc::clone(&executions);
+        let executor: EventBatchExecutor = Arc::new(move |_| {
+            counted.fetch_add(1, Ordering::SeqCst);
+            Err("unavailable backend history reached the executor".into())
+        });
+        let backend = CustodyBackend::start(
+            &fixture.root, &format!("raw-history-{generation}"),
+            &owners.runtime, delivery.clone(), Some(executor),
+        );
+        backend.assert_abandoned_with_reason_after(0, "run_history_unavailable");
+        for _ in 0..2 {
+            let earlier_poll = backend.transport.polls.load(Ordering::SeqCst);
+            backend.runtime.request_reconcile();
+            backend.assert_abandoned_with_reason_after(earlier_poll, "run_history_unavailable");
+            assert_eq!(CustodyPersistedState::capture(
+                &owners.workers, &owners.store, &fixture.agent_id, &fixture.automation_id,
+            ), baseline);
+            assert!(owners.observed.lock().unwrap().is_empty());
+            assert_eq!(executions.load(Ordering::SeqCst), 0);
+            assert!(!owners.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+            assert!(matches!(backend.callbacks.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+        backend.runtime.stop();
+        backend.transport.assert_no_completion_or_ack();
+        assert!(matches!(backend.callbacks.try_recv(), Err(mpsc::TryRecvError::Disconnected)));
+        assert!(owners.observed.lock().unwrap().is_empty());
+        assert_eq!(fs::read(owners.store.runs_path(&fixture.automation_id)).unwrap(), raw);
+        drop(backend);
+        drop(owners);
+    }
+}
+
+#[test]
+fn real_backend_history_status_refusal_survives_reopen_without_completion_or_ack() {
+    bounded_automation_case(
+        "real_backend_history_status_refusal_survives_reopen_without_completion_or_ack", || {
+            backend_history_refusal_case(BackendHistoryFault::MissingStatus, true);
+            backend_history_refusal_case(BackendHistoryFault::FutureStatus, false);
+        },
+    );
+}
+
+#[test]
+fn real_backend_history_alias_ambiguity_survives_reopen_without_completion_or_ack() {
+    bounded_automation_case(
+        "real_backend_history_alias_ambiguity_survives_reopen_without_completion_or_ack", || {
+            backend_history_refusal_case(BackendHistoryFault::MalformedAlias, true);
+            backend_history_refusal_case(BackendHistoryFault::DuplicateOriginal, false);
+            backend_history_refusal_case(BackendHistoryFault::CrossRowAlias, true);
+        },
+    );
+}
+
+#[test]
+fn real_backend_history_invalid_image_and_tail_refuse_without_completion_or_ack() {
+    bounded_automation_case(
+        "real_backend_history_invalid_image_and_tail_refuse_without_completion_or_ack", || {
+            backend_history_refusal_case(BackendHistoryFault::InvalidTail, false);
+            backend_history_refusal_case(BackendHistoryFault::InvalidJson, true);
+            backend_history_refusal_case(BackendHistoryFault::InvalidUtf8, false);
+        },
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn checked_backend_delivery_rejects_nonregular_files_before_reading() {
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::{FileTypeExt, MetadataExt};
+
+    bounded_automation_case(
+        "checked_backend_delivery_rejects_nonregular_files_before_reading", || {
+            for config_fault in [true, false] {
+                let fixture = ShippingAutomation::new("nonregular backend delivery input");
+                let baseline = seed_backend_history(&fixture);
+                let path = if config_fault {
+                    fixture.store.config_path(&fixture.automation_id)
+                } else {
+                    fixture.store.runs_path(&fixture.automation_id)
+                };
+                fs::remove_file(&path).unwrap();
+                let native_path = std::ffi::CString::new(path.as_os_str().as_bytes()).unwrap();
+                // The existing owned child bounds the actual read. If either
+                // checked boundary regresses to display/file reading, no peer
+                // opens this FIFO and the child must fail its original deadline.
+                let result = unsafe { libc::mkfifo(native_path.as_ptr(), 0o600) };
+                assert_eq!(result, 0, "create owned FIFO: {}", io::Error::last_os_error());
+                let before = fs::symlink_metadata(&path).unwrap();
+                assert!(before.file_type().is_fifo());
+                let backend_id = stable_automation_id(&fixture.agent_id, &fixture.automation_id);
+                let target = fixture.runtime.find_automation_for_backend_delivery(
+                    &fixture.agent_id, &backend_id,
+                );
+                if config_fault {
+                    assert!(target.is_err(), "a matching nonregular definition is unavailable");
+                } else {
+                    let target = target.unwrap().expect("definition-only discovery does not read history");
+                    assert_eq!(target.automation.id, fixture.automation_id);
+                    assert!(target.automation.runs.is_empty());
+                }
+                for run_id in [CUSTODY_RUN_UUIDS[0], CUSTODY_RUN_UUIDS[1], CUSTODY_RUN_UUIDS[2], "new-run"] {
+                    assert!(fixture.runtime.read_run_for_delivery(
+                        &fixture.agent_id, &fixture.automation_id, run_id,
+                    ).is_err(), "nonregular custody input cannot prove match or absence");
+                }
+                let after = fs::symlink_metadata(&path).unwrap();
+                assert!(after.file_type().is_fifo());
+                assert_eq!((after.dev(), after.ino()), (before.dev(), before.ino()));
+                if config_fault {
+                    assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(), baseline.history);
+                } else {
+                    assert_eq!(fs::read(fixture.store.config_path(&fixture.automation_id)).unwrap(), baseline.config);
+                }
+                assert_eq!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), baseline.cron);
+                assert!(fixture.observed.lock().unwrap().is_empty());
+                assert!(!fixture.runtime.run_path().is_in_flight(&fixture.agent_id, &fixture.automation_id));
+            }
+        },
+    );
+}
+
+#[test]
+fn real_backend_history_repair_restores_terminal_replay_and_distinct_run() {
+    bounded_automation_case(
+        "real_backend_history_repair_restores_terminal_replay_and_distinct_run", || {
+            struct ReplayTransport { delivery: Value, calls: Mutex<Vec<(String, Value)>> }
+            impl AutomationsBackendTransport for ReplayTransport {
+                fn post_json(&self, path: &str, body: &Value) -> Result<Value, AutomationsBackendError> {
+                    self.calls.lock().unwrap().push((path.into(), body.clone()));
+                    match path {
+                        "/sand/automation-events/poll" if body["ackRunUuids"] == json!([]) => Ok(self.delivery.clone()),
+                        "/sand/automation-events/poll" => Ok(json!({"events":[]})),
+                        "/sand/automation-runs/complete" => Ok(json!({})),
+                        _ => Err(AutomationsBackendError::Transport(format!("unexpected repair request {path}"))),
+                    }
+                }
+            }
+            let fixture = ShippingAutomation::new("explicit backend history repair");
+            let admitted = seed_backend_history(&fixture);
+            let raw = raw_backend_history_fault(BackendHistoryFault::FutureStatus, &admitted.history);
+            fs::write(fixture.store.runs_path(&fixture.automation_id), &raw).unwrap();
+            let refused = CustodyBackend::start(
+                &fixture.root, "before-explicit-repair", &fixture.runtime,
+                backend_history_delivery(&fixture, false, &CUSTODY_RUN_UUIDS), None,
+            );
+            refused.assert_abandoned_with_reason_after(0, "run_history_unavailable");
+            refused.runtime.stop();
+            refused.transport.assert_no_completion_or_ack();
+            assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(), raw);
+            assert!(fixture.observed.lock().unwrap().is_empty());
+            drop(refused);
+
+            // Explicit repair restores the original evidence before the real
+            // owners settle it; repeated/self aliases remain one claimant.
+            let mut repaired: Vec<Value> = serde_json::from_slice(&admitted.history).unwrap();
+            repaired[0]["coalescedRunIds"] = json!([
+                CUSTODY_RUN_UUIDS[0], CUSTODY_RUN_UUIDS[1], CUSTODY_RUN_UUIDS[1], CUSTODY_RUN_UUIDS[2],
+            ]);
+            let repaired_raw = serde_json::to_vec(&repaired).unwrap();
+            fs::write(fixture.store.runs_path(&fixture.automation_id), &repaired_raw).unwrap();
+            let running = CustodyBackend::start(
+                &fixture.root, "explicitly-repaired-running", &fixture.runtime,
+                backend_history_delivery(&fixture, false, &CUSTODY_RUN_UUIDS), None,
+            );
+            running.assert_abandoned_after(0);
+            running.runtime.stop();
+            running.transport.assert_no_completion_or_ack();
+            assert_eq!(fs::read(fixture.store.runs_path(&fixture.automation_id)).unwrap(), repaired_raw);
+            assert_eq!(fixture.workers.list_cron_session_runs(&fixture.agent_id).unwrap(), admitted.cron);
+            assert!(fixture.observed.lock().unwrap().is_empty());
+            drop(running);
+            assert!(fixture.workers.finish_cron_session_run(
+                &fixture.agent_id, &fixture.automation_id, CUSTODY_RUN_UUIDS[0], "ok", 200.0, None,
+            ).unwrap());
+            SandAgentSessionStore::new(Arc::clone(&fixture.workers))
+                .with_admitted_filesystem_mutation(&fixture.agent_id, || {
+                    assert!(fixture.store.finish_run(
+                        &fixture.automation_id, CUSTODY_RUN_UUIDS[0], "ok", 200.0, None,
+                    ).map_err(|error| error.to_string())?.is_some());
+                    Ok(())
+                }).unwrap();
+            let terminal = CustodyPersistedState::capture(
+                &fixture.workers, &fixture.store, &fixture.agent_id, &fixture.automation_id,
+            );
+            terminal.preserve_evidence(&fixture.root, "explicitly-repaired-terminal");
+            const DISTINCT: &str = "00000000-0000-4000-8000-000000000104";
+            let ids = [CUSTODY_RUN_UUIDS[0], CUSTODY_RUN_UUIDS[1], CUSTODY_RUN_UUIDS[2], DISTINCT];
+            let delivery = backend_history_delivery(&fixture, false, &ids);
+            fixture.runtime.dispose();
+            fixture.workers.shutdown();
+            let owners = ReopenedCustodyOwners::open(&fixture.root, &fixture.agent_id);
+            let transport = Arc::new(ReplayTransport { delivery, calls: Mutex::new(Vec::new()) });
+            let mut backend = AutomationFireBackendRuntime::new(transport.clone());
+            let mut fires = Vec::<BackendAutomationFire>::new();
+            assert_eq!(backend.tick(1_000, false, false, |fire| {
+                fires.push(fire.clone()); true
+            }).unwrap(), ids.len());
+            let executions = AtomicUsize::new(0);
+            for fire in fires {
+                let entries = owners.runtime.list_all_automations().unwrap();
+                let prepared = prepare_backend_fire(&entries, &fire, |entry| {
+                    sand_cloud_definition(&entry.agent_id, &ScheduledCloudAutomation {
+                        id: entry.automation.id.clone(), name: entry.automation.name.clone(),
+                        prompt: entry.automation.prompt.clone(), is_enabled: entry.automation.is_enabled,
+                        trigger: entry.automation.trigger.clone(),
+                    }, None).map(|definition| definition.hash)
+                }, |entry, id| owners.runtime.read_run_for_delivery(&entry.agent_id, &entry.automation.id, id));
+                let completion = if fire.id == DISTINCT {
+                    let PreparedBackendFire::Schedule { agent_id, automation_id, run_uuid, scheduled_for_ms } = prepared else {
+                        panic!("repaired history must admit the distinct schedule: {prepared:?}");
+                    };
+                    assert_eq!(owners.runtime.run_server_scheduled_automation_with(
+                        &agent_id, &automation_id, run_uuid, scheduled_for_ms.map(|value| value as f64), |_| {
+                            executions.fetch_add(1, Ordering::SeqCst);
+                            Ok(AutomationExecutionResult::CompletedWithFences { fences: clear_fences() })
+                        },
+                    ), Ok(Some(FireAutomationOutcome::Ok)));
+                    FireCompletion::succeeded()
+                } else {
+                    assert_eq!(prepared, PreparedBackendFire::Complete {
+                        completion: FireCompletion::succeeded(), reason: "existing_run",
+                    });
+                    FireCompletion::succeeded()
+                };
+                backend.complete(&fire.id, completion).unwrap();
+            }
+            assert_eq!(executions.load(Ordering::SeqCst), 1);
+            assert_eq!(backend.tick(1_001, false, false, |_| panic!("ACK poll must not redispatch")).unwrap(), 0);
+            assert_eq!(backend.pending_len(), 0);
+            let calls = transport.calls.lock().unwrap();
+            fs::write(fixture.root.join("repair-backend-requests.json"), serde_json::to_vec_pretty(&*calls).unwrap()).unwrap();
+            assert_eq!(calls.first().unwrap(), &("/sand/automation-events/poll".into(), json!({"ackRunUuids":[]})));
+            assert_eq!(calls.iter().filter(|(path, _)| path == "/sand/automation-runs/complete").count(), ids.len());
+            assert_eq!(calls.last().unwrap(), &("/sand/automation-events/poll".into(), json!({"ackRunUuids":ids})));
+            let observations = owners.observed.lock().unwrap();
+            assert_eq!(observations.len(), 1);
+            assert_eq!(observations[0].automation_run_id.as_deref(), Some(DISTINCT));
+            let rows = owners.workers.list_cron_session_runs(&fixture.agent_id).unwrap();
+            assert_eq!(rows.iter().find(|row| row.run_id == CUSTODY_RUN_UUIDS[0]), terminal.cron.first());
+            assert_eq!(rows.iter().find(|row| row.run_id == DISTINCT).unwrap().state, "terminal");
+            assert_eq!(owners.store.read_runs(&fixture.automation_id).iter()
+                .find(|run| run.id == CUSTODY_RUN_UUIDS[0]).unwrap().coalesced_run_ids,
+                Some(vec![CUSTODY_RUN_UUIDS[0].into(), CUSTODY_RUN_UUIDS[1].into(), CUSTODY_RUN_UUIDS[1].into(), CUSTODY_RUN_UUIDS[2].into()]));
         },
     );
 }
