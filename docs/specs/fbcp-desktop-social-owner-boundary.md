@@ -53,7 +53,9 @@ or replace the existing forwarding requirements.
 
 All executable checks run only in GitHub Actions. No local build, test, lint or
 schema validator is authorized for this batch. The existing
-`native-service-contracts.yml` shipping job remains the execution owner.
+`native-service-contracts.yml` remains the execution owner. Its macOS shipping
+job retains every original platform requirement; the focused Ubuntu job below
+also runs these same platform-independent behavioral harnesses.
 
 | Acceptance ID | Direct oracle and test consumer |
 | --- | --- |
@@ -118,3 +120,45 @@ Root must read the object and receipt, require the fresh canonical ledger blob
 to equal the producer input, then integrate through force=false/expected_sha CAS.
 A changed input requires regeneration. The helper is removed after integration;
 its success is object transport, not schema or product qualification.
+
+
+### Direct behavior execution while macOS shipping awaits a runner
+
+At code83c9/run41524660245 and earlier106/run41523018920, macOS shipping
+remained queued with zero steps. Independent source review confirms that the
+three existing harnesses use explicit surface data, UUID-owned files, real
+SQLite and controlled loopback HTTP, with no macOS-only test gate or actual
+GUI/account requirement. Add `desktop-social-owner-behaviors` to the existing
+workflow on Ubuntu24.04 using Rust1.97.1, the existing native dependencies/cache,
+unchanged default production/local-only features, `--locked`, and one test thread.
+Require Feature10, Runtime9 and HTTP6, each with zero failed/ignored tests.
+Record the exact checkout, source/lock/spec/workflow hashes, toolchain and full
+logs in an immutable artifact, including on failure. No retries or ignored cases
+may turn a missing result into success. This focused execution does not replace
+the macOS AppHost, native handoff, symbol/library, binary-copy or package gates;
+Windows, reconciliation, direct C ABI, Electron/UI and all current jobs remain
+unchanged. NMR-SOCIAL-AC-01/02 stay pending until the containing-H logs prove
+their actual results. Runner queueing remains pending rather than acceptance.
+
+The Ubuntu lane explicitly installs pkg-config, libclang-dev and libsqlite3-dev
+with the existing Linux Computer libraries: bindgen/system-deps and the separate
+Runtime invocation must not depend on incidental runner packages or feature
+unification from another Cargo invocation. It uses two build jobs and its own
+cache key under the existing cache action. Runtime sources and workspace
+Cargo.toml join the existing push paths so isolated policy/feature edits cannot
+miss this gate. The full exact-H logs must name all three added Feature cases.
+
+
+### Observed nocapture oracle recovery
+
+Exactf75ba3b0/run41526236521/job125554566242 executed all ten FeatureHost
+cases successfully, but the separate name check failed: the expected caught
+poisoning panic writes its hook between the case prefix and its final `ok`.
+This is a TEST_FLAW in log interpretation. For that one case, require the exact
+Rust harness case-start prefix together with the unchanged suite result of
+10 passed, zero failed/ignored/measured. Keep the other two case-name/ok checks,
+Cargo pipefail, serial execution, the actual poisoned Mutex and all byte/event
+assertions. The complete successful suite supplies the outcome; the prefix
+proves the named case participated. Do not suppress the panic, delete the test,
+add retries or claim the skipped Runtime9/HTTP6 passed. Re-execute the affected
+Ubuntu job at the corrected containing H and preserve this failed attempt.

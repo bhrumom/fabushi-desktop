@@ -45,25 +45,29 @@ Exact source/oracle/old-failure/execution boundary: `projects/telegram-desktop-r
 
 ## Round31 — canonical reply remote identity and exact execution
 
-NMR-49c / NMR-AC-40: retain the concurrent direct-parent admission guard and
-use the existing strict message-ID parser for both direct and historical reply
-parents. Extend the existing historical-alias test with direct/alias numeric
-negatives and canonical positive controls; retain physical-storage and explicit
-chronological-order oracles. Correct non-message fixtures to valid persisted
-notice entries so the kind guard is exercised. No new owner or test function.
-Containing-H Actions execution remains required; authored scenarios are not pass
-results. Receipt: `projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+NMR-49c / NMR-AC-40: existing Session reply admission now uses the strict
+canonical positive safe-integer message-ID parser for both direct and historical
+parents. Valid local/peer and local-only pending semantics remain. Two existing
+tests cover28 historical/numeric scenarios and17 direct-target scenarios; readable
+notice fixtures exercise the kind guard. Physical rows, independent chronology,
+HTTP refusal/idempotency, sync and reopen are checked without a new owner.
 
-Original06 reconciliation was cancelled without a runner. Exactff6 shipping is
-successful with complete logs; its reconciliation is still unexecuted at the
-last observation. Exact94 CAS evidence is reusable only for unchanged scope;
-its unchanged44/12 totals do not execute later mixed-stale/corruption assertions.
-The Ubuntu exactafb fixture E0382 is TEST_FLAW, already corrected in concurrent
-106bb. Its run41523018920 reconciliation125543545349 actually passes Human62,
-resource3, sharebox1, journal12, Agent4, credential3 and forwardHTTP1, including
-the requested CAS, mixed-stale, corruption and NMR-49 recovery cases. Preserve
-that correction and all current gates. Backend PR137, full source,
-real services, platform packages and independent ACCEPT remain unaccepted.
+Exact H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40`, run41524748572,
+reconciliation125549482711 passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1. The named reply, mixed-stale, dual-SQLite CAS
+and corrupt-journal recovery cases actually passed. UI passed Transcript29,
+cursor17, forward5 and Chromium16; Electron, Windows11 and retained C wrappers
+15-pass/1-live-DC-ignore also passed at this H. Shipping125549483258 remains
+queued at the recorded observation; old ff6 shipping is not a replacement for
+this affected-H result. Complete log hashes and artifact identities are in
+`projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
+
+Original06 reconciliation was cancelled without a runner. Originalff6
+reconciliation remains unexecuted; containing106bb and this4cbd run qualify the
+requested later recovery assertions separately. The afb E0382 fixture failure
+was TEST_FLAW, corrected in concurrent106bb and preserved. Backend PR137 stays
+read-only; full source/legal, real services, signed supported-platform packages,
+full Bot/quality/upgrade/rollback and independent ACCEPT remain open.
 
 ## NMR-49 / NMR-AC-40 — pending-parent reply recovery
 
@@ -536,8 +540,10 @@ exact95 historical gate; containing-H workflow requirements remain authoritative
 
 | Requirement / owner | Actual input or executable case | Evidence and remaining gate |
 | --- | --- | --- |
-| FMEP-SOURCE-01 / existing desktop package builders | Coordinator and box Cargo.lock; network worker go.mod/go.sum; existing npm, Rust CI and macOS release commands require locked/readonly inputs | Capture run41514329200 at565a4639f1b7efbd15937aff93f4e14168322389, job125513870853, artifact13175461007 SHA25685488acba970ec85e92327d8b5e1726061a69ffd1caf6b70c19cc83b8813c18b. Four input files match the original artifact bytes. Capture Mac jobs skipped; pinned-H actual binary/owner verification remains required. |
-| NMR-AC-30 / same Coordinator, Box and network-worker owners | `staged-runtime-source-contracts.yml`: required tracked inputs; actual macOS executables; normal/build dependencies and symbol/library refusals; Coordinator1+1+4, Box13+Host supervisor3, Go13 | Authored containing-H gates, not executed at preparation. No fabricated substitute binaries; actual Box path is supplied to the Host lifecycle fixture. Full signed package, other platforms and dependency source/legal acceptance remain open. |
+| FMEP-SOURCE-01 / existing desktop package builders | Existing Coordinator/box Cargo.lock and worker go.mod/go.sum are pinned; desktop, CI and macOS package commands retain locked/readonly guards | Capture565a/run41514329200/artifact13175461007 remains provenance. Pin e13c34a5/run41519264825 verified tracked inputs and actual Coordinator/box Mach-O arm64 binaries. Original prebuilt generation was recovered from run35281869572 to tailscale6608b9a387513e69ed260e323376a17aa4029084; effective post-install locks, recursive dependency/legal disposition and full source ACCEPT remain open. |
+| NMR-AC-30 / same Coordinator, Box and network-worker owners | Existing staged-runtime source/binary gates retain actual executables, normal/build dependency and symbol/library refusals; Coordinator1+1+4, Box13+Host3, Go18 | Exact e13c34a5 passed Coordinator6 and Box harness13+Host3, but the Box disconnect oracle was invalid (illegal PID probe). Corrected d2771e953a5b3978b3624518e7f07eaf692ee411/run41526069466/job125554615301 actually passed all13 on Ubuntu, including live leader/child/group preconditions and pre-cleanup ESRCH. Corrected macOS Box/Host execution and actual packaged worker remain pending; no signed-package or independent ACCEPT. |
+| FDN-WORKER-LISTEN-01 / FDN-WORKER-LISTEN-AC-01 | Existing Go streamListen -> acceptPeer -> streams: cancellation closes the listener and every unadmitted connection; matching successful admission transfers ownership | Exact e711505dbc44bde087595c10a060f5ae6deb5847/run41523198228: Linux18, macOS18, Windows18 and Host supervisor3 actually passed, zero failed/ignored/skipped. Actual macOS packaged-worker source check, live network and independent acceptance remain required. |
+| FDN-HOST-FRAME-01 / FDN-HOST-FRAME-AC-01 | Existing RemoteComputerTarget service -> private-frame reader -> worker stream_read: one total deadline, shrinking read budgets and rejection after expiry; existing stream-close path retained | Exact0291685eb5f7a5a7b70a11fba8a70a45793b2ae9/run41524923463/job125550076691: six controlled-clock production-reader behaviors and existing enrollment9/IPC3/target10/wiring5 all ran and passed. Full real-network/shutdown and unknown-open-result process retirement are not qualified. |
 | NMR-39 compatibility retention / existing legacy C exports | `providers/telegram-runtime/tests/runtime_ffi.rs`: five direct create/persistent-create/execute/close/free cases, persistent close/reopen, owned response frees, null/UTF-8/key-length/closed-handle refusal | Fifteen non-live tests plus the original one explicitly ignored live-DC test are required by `retained-direct-ffi-compatibility`; authored, not run at preparation. Invalid-length buffers are allocated; all stores/keys are synthetic. This does not qualify a final shared/static library or installed external consumer. |
 
 Concurrent commit `e13c34a5bfc9eddfc5306102e7ad68d4e864bd4e` already
@@ -548,6 +554,10 @@ or claim authorship of the concurrent pin commit.
 
 The authoritative receipt remains
 `projects/telegram-desktop-rust/evidence/round16-apphost-package-boundary.json`.
+Later exact-H executions, original-generation bindings and the Box TEST_FLAW
+correction are recorded in the existing
+`projects/telegram-desktop-rust/evidence/task20bf-round2-auxiliary-input-pin.json`;
+source/ledger acceptance and independent ACCEPT are unchanged.
 The unique ledger's two existing responsibility rows retain source identities,
 review depths, all concurrent source reviews and unaccepted release states.
 Original SQLite/sidecars/keys/readers are preserved. Backend PR137 remains
@@ -593,3 +603,47 @@ soak, upgrade/rollback and independent ACCEPT remain required and unaccepted.
 Exact evidence is recorded in the containing request-round9 receipt; authored
 cases, prerequisite results and actual execution remain distinct. All other
 responsibility rows and current acceptance requirements remain unchanged.
+
+### Round23 desktop Social owner-boundary controls
+
+| Requirement / acceptance | Existing production owner and direct oracle | Execution scope |
+| --- | --- | --- |
+| NMR-SOCIAL-OWNER-01; NMR-SOCIAL-AC-02 | AppHost/Host Production Electron Session policy; ordinary/Codex registry selection and native retained-data handoff | Current composition/native suites; historical59f success is scoped evidence, not all-current approval |
+| NMR-SOCIAL-OWNER-02; NMR-SOCIAL-AC-01 | FeatureHost real execute: exact early refusal before absent runtime, poisoned lock, file or event side effects; explicit Test/non-desktop/unrelated controls | Existing desktop_messaging_boundary_tests: seven retained plus three added, ten required at containing H |
+| NMR-SOCIAL-OWNER-03; NMR-SOCIAL-AC-02 | Runtime real SQLite recovery preserves Social records and continues ordinary Agent work | retained_social_recovery_tests: nine; source-comment ID correction only in this batch |
+| NMR-SOCIAL-OWNER-04; NMR-SOCIAL-AC-02 | Existing session-owned platform client validates actual URL/origin/path before credentials and disallows desktop redirects | session_owned_platform_: six; unchanged production implementation |
+
+See `docs/specs/fbcp-desktop-social-owner-boundary.md` and
+`projects/telegram-desktop-rust/evidence/round23-owner-boundary-recovery.json`.
+H0 Windows hook timeout and later Windows11 success retain their actual run
+identities. Formal publisher, real package install/upgrade/rollback, authenticated
+production pagination, source/legal/full Bot and independent ACCEPT stay open.
+
+The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
+harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
+focused job is not a signed-package, live-service or independent acceptance gate.
+
+## Recovery round 3 — retired protocol ownership correction (2026-11-02)
+
+`TDRP-R9-MTPROTO-BAD-MESSAGE-RECOVERY-001` and
+`TDRP-R9-MTPROTO-SINGLE-RPC-MESSAGE-CONTAINER-001` are reopened as
+`understood / pending / blocked`. The actual desktop Native Session does not
+use their former Telegram lease/runtime chain. Current owner, lifecycle,
+service, composition, capability and UI mappings remain unresolved; original
+values and implementation evidence are retained as historical compatibility.
+The unique ledger records two known unmapped responsibilities. Source identities,
+six scoped source reviews, global null unknown/unread and acceptance are preserved.
+Exact94/run41513767498 protocol122/TCP9 successes qualify compatibility only.
+The corrected containing H must pass existing source/schema/candidate Actions;
+later Native shipping and every selected product gate remain independently required.
+Evidence: `projects/telegram-desktop-rust/evidence/round3-native-owner-recovery-20261102.json`.
+
+### Round29 SQLite CAS qualification — NMR-47e / NMR-AC-38
+
+The existing `FBCP-NMR-001` / Session forward journal remains the owner. Commit `beafc6fcb4ce59ccdd0e5130c3892172cb9dc20a` strengthens only `source/host/src/extensions/session/forward_batch_journal.rs#tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover`: prepare independent owners and valid batches before the barrier; require zero busy callbacks because busy/locked returns `Ok(false)`; independently read raw SQLite metadata; reject the stale loser without changing the row; fresh-merge and reopen with both immutable intents and unrelated metadata intact. This proves concurrent API-call behavior, not every internal scheduler interleaving or multi-AppHost cross-source uniqueness.
+
+Beaf run41522952938/job125543328873 failed inherited reaction-fixture `E0382` before the Human/journal cases executed. The containing one-line fixture repair `106bb95ba97ef7722e9523285783824393039bc0`, run41523018920/job125543545349, actually passed Human62/resource3/sharebox1/journal12/Agent4/credential3/HTTP1, including all five original process/HTTP/SQLite forward cases. Artifact13178302134 digest `sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6` binds the full execution. The later production observed-write helper at `d8789216b6d3278d64cfec69ecafd56e130747f5` also passed these groups in run41524395411/job125548279795; the enhanced concurrent test remains byte-for-byte identical across journal blobs0eb499f and0a5d192. Its separate stale-helper case deterministically rejects old production-write observations.
+
+The canonical evidence append is `558b57bf9730446b08cf40c120d17c988c56ed16`; all other ledger rows, source reviews, execution scalar fields and acceptance remain unchanged. Exact source contract job125557439692 passed158 Node and37 Python schema cases with zero ledger shape errors; candidate125557839138 also passed consistency for16381 source identities/184 responsibilities/six reviews (two complete), retained unknown/unread=null and correctly rejected accepted mode. Full identities and bounded failure/recovery records are in `projects/telegram-desktop-rust/evidence/round29-forward-journal-concurrency.json`.
+
+Later shared SQLite initialization, Session permissions/history and actual renderer changes require their own exactf544/run41526852400 results (Human63, creation12+3, retained Transcript3, journal12, actual ProductionRenderer11+8 and Social). Historical59/106/d878 results do not qualify those changed inputs. Current shipping, real services, complete source/legal closure, signed platform install/upgrade/rollback, full Bot regression and independent ACCEPT remain open. Backend PR137 stays read-only.

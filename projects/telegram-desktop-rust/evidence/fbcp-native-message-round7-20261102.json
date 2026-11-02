@@ -491,5 +491,70 @@
     "active_spec": "docs/specs/fbcp-human-message-retry.md",
     "spec_commit": "1daaf0e248ee5cd75b3549e8df4fe960c0fe28e2",
     "coordination": "Read the complete live retry spec, NMR-UI-01 and expanded NMR26b before claiming further work. Unpublished duplicate contract preparation was not installed; only this existing R7 execution receipt is updated."
+  },
+  "reaction_identity_follow_up": {
+    "integration_base": "5e141b671587c8cf18965cd2c044188911ee227e",
+    "classification": "IMPL_BUG found by static production audit; no observed user-data incident claimed",
+    "finding": "A row id human-server-message:11 with remoteMessageId 12 could dispatch to remote12 and settle row11; a damaged local outbox ID or non-sent row carrying a remote ID also passed the old helper.",
+    "change": "Existing human_reaction_remote_identity now requires exact canonical row ID corresponding to the canonical positive safe remote ID and delivery=sent. The same helper is consumed before staging, before persisted replay HTTP and after HTTP. Complete damaged rows and existing intentions remain retained; numeric remote-ID and canonical peer-nonce compatibility remain.",
+    "authored_cases": {
+      "new_negative_variants": 27,
+      "persisted_restart_negative_variants": 30,
+      "held_response_variants": 19,
+      "held_response_negative_variants": 18,
+      "gateway_negative_variants": 21,
+      "gateway_numeric_positive_controls": 1,
+      "total_variants_in_three_tests": 71,
+      "negative_variants_in_three_tests": 69,
+      "positive_variants_in_three_tests": 2,
+      "new_test_functions": 0
+    },
+    "oracles": "Admission and restart require zero HTTP, whole-row/intent preservation, no mutation and pure reopen. Held response uses a barrier and observes exactly one independent update before release; changed JSON ID remains under original SQL key, matching event subscription prevents false empty-oracle success. No extra settlement or intent deletion on refusal.",
+    "containing_head_validation": "not-run at preparation; retain current Human63 and all inherited gates. Exact containing-H Actions required; historical106 Human62 is not this repair execution.",
+    "local_executable_validation": "not-run",
+    "rollback": "Revert only this helper/test/spec delta if necessary; no user data or schema change.",
+    "remote_parent_reconciled": "ee60f9edf15774c6dba2b1ddee97c3f60ff66558",
+    "independent_static_review": {
+      "result": "No blocking finding in frozen helper/spec/three test tables; no executable validation",
+      "base": "d8789216b6d3278d64cfec69ecafd56e130747f5",
+      "reviewed_helper_blob": "37f11c75c4269fe66b65a541ba895f293d74968e",
+      "reviewed_tests_blob": "837a9aa9fa898e3bf5d850649506f5b8756f07e4",
+      "integration": "Same reviewed three-file delta applied cleanly over5e141b; later ee60 spec only appends unrelated retained-transport qualification and is preserved. Current containing-H execution remains pending."
+    }
+  },
+  "artifact_visual_inspection": {
+    "head": "106bb95ba97ef7722e9523285783824393039bc0",
+    "run": 41523018920,
+    "job": 125543545453,
+    "artifact_id": 13177349232,
+    "artifact_digest": "sha256:50f70023d81daebde007f7ee6aba9b0e6a6353b340c72ea08b88d6b9cd9757ef",
+    "zip_digest_verified": true,
+    "artifact_target_sha_verified": true,
+    "images_viewed": [
+      "forward-light-wide.png",
+      "forward-light-narrow.png",
+      "forward-dark-wide.png",
+      "forward-dark-narrow.png",
+      "forward-immutable-retry-wide.png",
+      "forward-immutable-retry-narrow.png"
+    ],
+    "observed": "Selection/privacy controls, focus indication and actions are visible without obvious clipping at inspected wide/narrow sizes. Partial retry freezes recipient choices, preserves the confirmed-recipient explanation and keeps Close/Forward visible. Six rendered images inspected; 16 browser diagnostic files each contained an empty array.",
+    "scope": "Controlled actual forward dialog only. Not full mounted reaction, packaged-platform visual/a11y or real-service acceptance; image/archive inspection executed no local product test."
+  },
+  "inherited_plugins_execution": {
+    "head": "afb34b49c5964524a887088f1095070b75cfdf8b",
+    "run": 41522324104,
+    "job": 125541192238,
+    "conclusion": "success",
+    "passed": 2,
+    "failed": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "desktop_bundle_assets": 45,
+    "runtime_co_stage": "success",
+    "full_log_characters": 182642,
+    "artifact_id": 13179232191,
+    "artifact_digest": "sha256:5dafe0189e0182af6c524ca3d0d6bb2ddacd344c6442238bd804160a2875c4dd",
+    "scope": "Inherited Plugins preservation evidence, not a new R7 product feature or qualification of later changed inputs."
   }
 }

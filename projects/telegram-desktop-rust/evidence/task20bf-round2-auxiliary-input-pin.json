@@ -204,7 +204,15 @@
         "actual_tests": "network_worker_process_contract: 3 passed, zero failed or ignored; actual child-process IPC/secret/close fixture included",
         "log_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41523198228/job/125544146110"
       },
-      "macos_worker": "125544146314 queued at the observed snapshot; no execution pass claimed",
+      "macos_worker": {
+        "job_id": 125544146314,
+        "conclusion": "success",
+        "toolchain": "go1.27.1 darwin/arm64",
+        "actual_tests": "18 top-level cases passed, including all five connection ownership cases; zero failed or skipped",
+        "other_steps": "Readonly module verification, vet, compile and unchanged tracked inputs passed",
+        "artifact_id": 13179318578,
+        "artifact_digest": "sha256:68af017e2d887b8635c9f415529a17486294ee7aff5147d908c132fa15819569"
+      },
       "staged_inputs": {
         "run_id": 41523198242,
         "job_id": 125544146095,
@@ -213,7 +221,7 @@
         "artifact_digest": "sha256:11aa9f8ce4dbcf181436fdf68b786de92f108b120945a19a81e2d1d98379b937"
       },
       "staged_macos_binaries": "125544910633 (box), 125544910736 (Coordinator), 125544911038 (worker) queued at the observed snapshot",
-      "qualification": "Partial exact-H execution only; no complete cross-platform, actual macOS worker, signed-package or independent acceptance"
+      "qualification": "All three worker platforms and the Host supervisor passed at the same exact H. This does not replace the actual packaged macOS worker source/binary check, live-network, signed-package or independent acceptance"
     },
     "local_or_htch_runtime_execution": "not performed",
     "dependency_versions_changed": false,
@@ -327,9 +335,50 @@
     "failure": "Fixture wrote a single dollar sign instead of a PID; kill -0 reported an illegal process id, and any probe failure was treated as successful process exit",
     "required_oracle": "Prove a real positive leader and child PID are alive in the foreground process group before disconnect. After disconnect, only explicit ESRCH establishes disappearance; verify before daemon cleanup",
     "production_change": "None; retain the existing disconnect monitor, abort signal, process-group termination and owner",
-    "execution": "Pending containing-H Actions; preserve 13 owner cases and existing macOS actual binary/Host gates, with a focused Ubuntu owner execution for early negative verification",
+    "execution": {
+      "head_sha": "d2771e953a5b3978b3624518e7f07eaf692ee411",
+      "test_blob": "f9eb8afca9e3eb80e2fbce7af5712bccca478766",
+      "run_id": 41526069466,
+      "job_id": 125554615301,
+      "conclusion": "success",
+      "actual_tests": "13 owner cases passed, zero failed or ignored, including the corrected real leader/child/group disconnect oracle before daemon cleanup",
+      "artifact_id": 13180391264,
+      "artifact_digest": "sha256:b8f447e4131c2fb9772d820d71d08e63264a8ff45ff3a849861f4fda4d57da7c",
+      "locked_input_job": 125554007352,
+      "locked_input_conclusion": "success",
+      "locked_input_artifact_id": 13179877210,
+      "locked_input_artifact_digest": "sha256:99dde6d77a252f0c8cb61fd18e1eed347ed3131a57ae247c1e76e4dc2720b78d",
+      "remaining": "Corrected macOS box source/binary/Host job125554615515 is queued; Coordinator125554615412 and worker125554615556 are also queued at the recorded snapshot. Linux behavior is not a substitute for those or final package acceptance"
+    },
     "local_or_htch_runtime_execution": "not performed",
     "accepted": false
+  },
+  "unimplemented_open_outcome_recovery_gap": {
+    "review_base": "0291685eb5f7a5a7b70a11fba8a70a45793b2ae9",
+    "classification": "Source-observed implementation gap; no pre-fix execution claimed and no repair implemented in this receipt",
+    "source_blobs": {
+      "source/host/src/network_worker_process.rs": "2fe8c798c25df0e281d6319b48db45bf7bf544fe",
+      "source/host/src/network_enrollment_owner.rs": "df5492db2b5c5e42565f63595283f4ea0e96b7a5",
+      "source/host/src/remote_computer_target.rs": "2a9ca99996c5d05444450ffeca97c44176d94dbc"
+    },
+    "failure": "Host stream_dial/listen loses the new session ID after an unknown IPC outcome; the worker may already own its connection, and a later Running status can discard the late success without closing that stream",
+    "required_boundary": "Distinguish matched definite worker failure from local timeout/EOF/invalid or mismatched response/partial write. Normal idle accept timeout must retain the same worker. Unknown creation must settle the session or retire the existing process generation without reusing it",
+    "retirement_risk": "Current close writes to IPC before waiting, removes Child before fallible wait/termination, and callers ignore close errors. A future retirement fix must retain the unusable child until exit/reap is confirmed and must not start a replacement on the same state directory prematurely",
+    "compatibility": "Keep protocolVersion=1, public stream return types, permissions, operation journal/no replay, persistent enrollment generation and encrypted state. No new owner or state deletion",
+    "verification_needed": "Actual controlled child IPC cases for normal operation failures, late open success, malformed envelopes, EOF, stuck worker termination and no replacement before confirmed old-process exit",
+    "accepted": false
+  },
+  "authority_snapshot": {
+    "read_head": "da219ea9a9e5f143a42912ca9a127c225f36899e",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "upstream_lock_blob": "1ff4f6c700c6f9c5726606257f64ba2be814249e",
+    "tdrp_source_of_truth_blob": "da3455bff35978b41027d940213bf3fc6d9a496a",
+    "fbcp_source_of_truth_blob": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "baseline_ready": false,
+    "accepted": false,
+    "source_review_boundary": "FMEP-SOURCE-01 risk-appropriate review is retained; enumeration, partial dependency review and Actions-executed bounded contracts do not promote complete source or product acceptance",
+    "rtm": "Existing auxiliary rows and the two bounded behavior requirements in projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md; no parallel inventory or ledger and no source-completion counters changed"
   },
   "remaining": [
     "Exact containing-H locked-input verification, actual macOS auxiliary binaries and existing lifecycle tests",

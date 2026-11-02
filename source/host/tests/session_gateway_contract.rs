@@ -6835,8 +6835,11 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
     let legacy_source = legacy_args["sourceConversationId"].as_str().unwrap();
     let legacy_target = legacy_args["destinationConversationIds"][0].as_str().unwrap();
+    let legacy_source_entry_id = legacy_args["sourceEntryId"].as_str().unwrap();
     let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    let legacy_participants = legacy_owner.get_metadata("participantIds").unwrap().unwrap();
     // Reproduce the actual pre-journal production nonce: SHA256 of the
     // request ID, one NUL byte, then this destination conversation ID.
     use sha2::Digest;
@@ -6851,22 +6854,62 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
         "sourceEntryId":legacy_args["sourceEntryId"],
         "privacy":{"dropSenderNames":false,"dropCaptions":false}
     });
-    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap()
-        .append_transcript_entry(&json!({
-            "id":format!("human-message:{legacy_nonce}"),"kind":"message","role":"user",
-            "authorKind":"human","authorId":"1","content":"legacy forward content",
-            "clientNonce":legacy_nonce.as_str(),"timestampMs":1000.0,
-            "delivery":"pending","forwardContext":context
-        })).unwrap());
+    let legacy_pending = json!({
+        "id":format!("human-message:{legacy_nonce}"),"kind":"message","role":"user",
+        "authorKind":"human","authorId":"1","content":"legacy forward content",
+        "clientNonce":legacy_nonce.as_str(),"timestampMs":1000.0,
+        "delivery":"pending","forwardContext":context.clone()
+    });
+    assert!(legacy_target_owner.append_transcript_entry(&legacy_pending).unwrap());
+    assert!(legacy_owner.set_metadata("participantIds", json!(["2", "9"])).unwrap());
+    // Genuine legacy intent has no batch journal to carry a policy denial.
+    // Persist both the old outbox and revoked membership, then use fresh owners
+    // to prove restart cannot turn that readable source into permission to send.
+    legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
+    let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
+    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
+    assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
+    assert_eq!(legacy_owner.get_metadata("participantIds").unwrap(), Some(json!(["2", "9"])));
+    let denied = legacy_runtime.sync_human_conversation(legacy_target)
+        .expect_err("reopened genuine legacy intent must reauthorize source membership");
+    assert!(denied.contains("participant"), "{denied}");
+    assert_eq!(legacy_server.post_count(), 0);
+    assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+
+    assert!(legacy_owner.set_metadata("participantIds", legacy_participants).unwrap());
+    let mut changed_source = legacy_owner.get_transcript_entries().unwrap().into_iter()
+        .find(|entry| entry["id"].as_str() == Some(legacy_source_entry_id)).unwrap();
+    changed_source["content"] = json!("source edited after the legacy intent was persisted");
+    changed_source["protectedContent"] = json!(true);
+    legacy_owner.update_transcript_entry(legacy_source_entry_id, &changed_source).unwrap().unwrap();
+    let denied = legacy_runtime.sync_human_conversation(legacy_target)
+        .expect_err("genuine legacy intent must reauthorize the current source protection");
+    assert!(denied.contains("protected"), "{denied}");
+    assert_eq!(legacy_server.post_count(), 0);
+    assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
+    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+
+    changed_source.as_object_mut().unwrap().remove("protectedContent");
+    legacy_owner.update_transcript_entry(legacy_source_entry_id, &changed_source).unwrap().unwrap();
     let legacy_rows = legacy_runtime.sync_human_conversation(legacy_target)
-        .expect("readable genuine legacy forward remains replayable");
+        .expect("restored source permission resumes the same genuine legacy intent");
     assert_eq!(legacy_server.post_count(), 1);
     assert_eq!(legacy_rows.len(), 1);
     assert_eq!(legacy_rows[0]["delivery"], "sent");
     assert_eq!(legacy_rows[0]["clientNonce"].as_str(), Some(legacy_nonce.as_str()));
     assert_eq!(legacy_rows[0]["forwardContext"], context);
+    assert_eq!(legacy_rows[0]["content"], legacy_pending["content"]);
+    assert_ne!(legacy_rows[0]["content"], changed_source["content"]);
+    let submitted = {
+        let state = legacy_server.state.lock().expect("legacy submitted snapshot");
+        fixture_request_json(state.requests.iter()
+            .find(|request| request.starts_with("POST /api/social/messages ")).unwrap())
+    };
+    assert_eq!(submitted["text"], legacy_pending["content"], "permission restoration cannot replace the saved payload");
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
-    legacy_runtime.shutdown(); drop(legacy_owner); drop(legacy_runtime);
+    legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
     legacy_server.finish(); fs::remove_dir_all(legacy_root).expect("remove genuine legacy fixture");
 }
 
@@ -7198,17 +7241,28 @@ fn shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_a
         "foreign-author", "wrong-kind", "wrong-author-kind",
         "zero-remote", "unsafe-remote", "leading-zero-remote", "padded-remote",
         "zero-target", "unsafe-target", "leading-zero-target", "padded-target", "missing-remote-target",
+        "wrong-canonical-id", "local-outbox-id", "padded-canonical-id",
+        "pending-delivery", "dispatching-delivery", "failed-delivery", "missing-delivery",
+        "null-delivery", "numeric-delivery",
     ];
     for (index, label) in cases.into_iter().enumerate() {
         let root = temp_root(&format!("human-invalid-intent-{label}"));
         let remote_id = 4_100_000 + index as u64;
-        let target_id = format!("human-server-message:{remote_id}");
+        let target_id = match label {
+            "wrong-canonical-id" => format!("human-server-message:{}", remote_id + 10_000),
+            "local-outbox-id" => format!("human-message:reaction-outbox-{remote_id}"),
+            "padded-canonical-id" => format!("human-server-message: {remote_id}"),
+            _ => format!("human-server-message:{remote_id}"),
+        };
         let (url, stop, server) = spawn_human_no_request_fixture();
         let runtime = human_message_fixture_runtime(&root, &url);
         let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
             .as_str().expect("id").to_owned();
         let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
         let mut original = human_local_history_message(remote_id);
+        // Bind the durable intent to the actual damaged row, not a missing ID.
+        // ID-only negatives retain valid remote identity, author and sent state.
+        original["id"] = json!(target_id);
         original["retainedLocalMetadata"] = json!({"case":label,"keep":"complete row"});
         let mut intent = json!({
             "entryId":target_id,"remoteMessageId":remote_id.to_string(),"emoji":"👍","active":true,"localHumanId":"1"
@@ -7235,6 +7289,13 @@ fn shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_a
             "leading-zero-target" => { original["remoteMessageId"] = json!(format!("0{remote_id}")); "Human reaction target has an invalid canonical remote message identity" }
             "padded-target" => { original["remoteMessageId"] = json!(format!(" {remote_id} ")); "Human reaction target has an invalid canonical remote message identity" }
             "missing-remote-target" => { original.as_object_mut().expect("target").remove("remoteMessageId"); "Human reaction target has no canonical remote message identity" }
+            "wrong-canonical-id" | "local-outbox-id" | "padded-canonical-id" => "Human reaction target is not a settled canonical message",
+            "pending-delivery" => { original["delivery"] = json!("pending"); "Human reaction target is not a settled canonical message" }
+            "dispatching-delivery" => { original["delivery"] = json!("dispatching"); "Human reaction target is not a settled canonical message" }
+            "failed-delivery" => { original["delivery"] = json!("failed"); "Human reaction target is not a settled canonical message" }
+            "missing-delivery" => { original.as_object_mut().expect("target").remove("delivery"); "Human reaction target is not a settled canonical message" }
+            "null-delivery" => { original["delivery"] = json!(null); "Human reaction target is not a settled canonical message" }
+            "numeric-delivery" => { original["delivery"] = json!(1); "Human reaction target is not a settled canonical message" }
             _ => unreachable!(),
         };
         assert!(owner.append_transcript_entry(&original).expect("seed target"));
@@ -7272,11 +7333,20 @@ fn shipping_human_reaction_rechecks_current_target_after_http_without_overwritin
     for (index, label) in [
         "newer-metadata", "changed-remote", "wrong-kind", "foreign-author", "wrong-author-kind",
         "zero-remote", "unsafe-remote", "leading-zero-remote", "padded-remote", "missing-remote",
+        "wrong-canonical-id", "local-outbox-id", "padded-canonical-id",
+        "pending-delivery", "dispatching-delivery", "failed-delivery", "missing-delivery",
+        "null-delivery", "numeric-delivery",
     ].into_iter().enumerate()
     {
         let root = temp_root(&format!("human-reaction-current-target-{label}"));
         let remote_id = 4_200_000 + index as u64;
         let target_id = format!("human-server-message:{remote_id}");
+        let updated_target_id = match label {
+            "wrong-canonical-id" => format!("human-server-message:{}", remote_id + 10_000),
+            "local-outbox-id" => format!("human-message:reaction-outbox-{remote_id}"),
+            "padded-canonical-id" => format!("human-server-message: {remote_id}"),
+            _ => target_id.clone(),
+        };
         let (seen, accepted) = std::sync::mpsc::channel();
         let (release, resume) = std::sync::mpsc::channel();
         let summary = json!([{"emoji":"👍","count":1,"reactedByMe":true}]);
@@ -7291,7 +7361,10 @@ fn shipping_human_reaction_rechecks_current_target_after_http_without_overwritin
         let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
         let original = human_local_history_message(remote_id);
         assert!(owner.append_transcript_entry(&original).expect("seed target"));
-        let (events, subscription) = record_human_target_events(&id, &target_id);
+        // Updating the JSON payload does not rekey the physical SQLite row.
+        // Watch its changed payload ID so an erroneous extra settlement event
+        // cannot evade the event oracle, without capturing parallel fixtures.
+        let (events, subscription) = record_human_target_events(&id, &updated_target_id);
         let reacting = {
             let runtime = Arc::clone(&runtime);
             let id = id.clone();
@@ -7308,7 +7381,7 @@ fn shipping_human_reaction_rechecks_current_target_after_http_without_overwritin
         current["readAt"] = json!("2026-10-05T01:05:00Z");
         let expected_error = match label {
             "newer-metadata" => None,
-            "changed-remote" => { current["remoteMessageId"] = json!((remote_id + 100).to_string()); Some("persisted Human reaction remote identity changed") }
+            "changed-remote" => { current["remoteMessageId"] = json!((remote_id + 100).to_string()); Some("Human reaction target is not a settled canonical message") }
             "wrong-kind" => { current["kind"] = json!("notice"); current["text"] = json!("valid notice written while reaction waits"); Some("persisted Human reaction target is outside the selected Human conversation") }
             "foreign-author" => { current["authorId"] = json!("3"); Some("persisted Human reaction target is outside the selected Human conversation") }
             "wrong-author-kind" => { current["authorKind"] = json!("agent"); Some("persisted Human reaction target is outside the selected Human conversation") }
@@ -7317,6 +7390,16 @@ fn shipping_human_reaction_rechecks_current_target_after_http_without_overwritin
             "leading-zero-remote" => { current["remoteMessageId"] = json!(format!("0{remote_id}")); Some("Human reaction target has an invalid canonical remote message identity") }
             "padded-remote" => { current["remoteMessageId"] = json!(format!(" {remote_id} ")); Some("Human reaction target has an invalid canonical remote message identity") }
             "missing-remote" => { current.as_object_mut().expect("target").remove("remoteMessageId"); Some("Human reaction target has no canonical remote message identity") }
+            "wrong-canonical-id" | "local-outbox-id" | "padded-canonical-id" => {
+                current["id"] = json!(updated_target_id);
+                Some("Human reaction target is not a settled canonical message")
+            }
+            "pending-delivery" => { current["delivery"] = json!("pending"); Some("Human reaction target is not a settled canonical message") }
+            "dispatching-delivery" => { current["delivery"] = json!("dispatching"); Some("Human reaction target is not a settled canonical message") }
+            "failed-delivery" => { current["delivery"] = json!("failed"); Some("Human reaction target is not a settled canonical message") }
+            "missing-delivery" => { current.as_object_mut().expect("target").remove("delivery"); Some("Human reaction target is not a settled canonical message") }
+            "null-delivery" => { current["delivery"] = json!(null); Some("Human reaction target is not a settled canonical message") }
+            "numeric-delivery" => { current["delivery"] = json!(1); Some("Human reaction target is not a settled canonical message") }
             _ => unreachable!(),
         };
         let independent_update = owner.update_transcript_entry(&target_id, &current);
@@ -7330,6 +7413,8 @@ fn shipping_human_reaction_rechecks_current_target_after_http_without_overwritin
         released.expect("release reaction response");
         assert_eq!(staged.expect("staged intention"), Some(desired.clone()), "{label}");
         assert_eq!(independent_update.expect("independent durable update"), Some(current.clone()), "{label}");
+        assert_eq!(before_settlement.len(), 1, "observe the independent update before settlement: {label}");
+        assert_eq!(before_settlement[0]["entries"], json!([current.clone()]), "{label}");
 
         let expected = if let Some(error) = expected_error {
             assert_eq!(result.expect_err("changed target cannot be settled"), error, "{label}");
@@ -7370,17 +7455,28 @@ fn shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_stag
         "wrong-kind", "wrong-author-kind", "foreign-author", "zero-number", "zero-string",
         "unsafe-number", "unsafe-string", "leading-zero-remote", "padded-remote", "missing-remote",
         "padded-emoji-leading", "padded-emoji-trailing",
+        "wrong-canonical-id", "local-outbox-id", "padded-canonical-id",
+        "pending-delivery", "dispatching-delivery", "failed-delivery", "missing-delivery",
+        "null-delivery", "numeric-delivery",
     ];
     for (index, label) in cases.into_iter().enumerate() {
         let root = temp_root(&format!("human-reaction-gateway-admission-{label}"));
         let remote_id = 4_300_000 + index as u64;
-        let target_id = format!("human-server-message:{remote_id}");
+        let target_id = match label {
+            "wrong-canonical-id" => format!("human-server-message:{}", remote_id + 10_000),
+            "local-outbox-id" => format!("human-message:reaction-outbox-{remote_id}"),
+            // Internal padding survives required_string's trim, so the gateway
+            // still looks up this row instead of failing on a missing target.
+            "padded-canonical-id" => format!("human-server-message: {remote_id}"),
+            _ => format!("human-server-message:{remote_id}"),
+        };
         let (url, stop, server) = spawn_human_no_request_fixture();
         let runtime = human_message_fixture_runtime(&root, &url);
         let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
             .as_str().expect("id").to_owned();
         let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
         let mut original = human_local_history_message(remote_id);
+        original["id"] = json!(target_id);
         original["retainedLocalMetadata"] = json!({"case":label,"keep":"complete unstaged target"});
         let mut emoji = "👍";
         let expected_error = match label {
@@ -7396,6 +7492,13 @@ fn shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_stag
             "missing-remote" => { original.as_object_mut().expect("target").remove("remoteMessageId"); "Human reaction target has no canonical remote message identity" }
             "padded-emoji-leading" => { emoji = " 👍"; "Fabushi Human reaction emoji must not contain surrounding whitespace" }
             "padded-emoji-trailing" => { emoji = "👍 "; "Fabushi Human reaction emoji must not contain surrounding whitespace" }
+            "wrong-canonical-id" | "local-outbox-id" | "padded-canonical-id" => "Human reaction target is not a settled canonical message",
+            "pending-delivery" => { original["delivery"] = json!("pending"); "Human reaction target is not a settled canonical message" }
+            "dispatching-delivery" => { original["delivery"] = json!("dispatching"); "Human reaction target is not a settled canonical message" }
+            "failed-delivery" => { original["delivery"] = json!("failed"); "Human reaction target is not a settled canonical message" }
+            "missing-delivery" => { original.as_object_mut().expect("target").remove("delivery"); "Human reaction target is not a settled canonical message" }
+            "null-delivery" => { original["delivery"] = json!(null); "Human reaction target is not a settled canonical message" }
+            "numeric-delivery" => { original["delivery"] = json!(1); "Human reaction target is not a settled canonical message" }
             _ => unreachable!(),
         };
         assert!(owner.append_transcript_entry(&original).expect("seed invalid target"));

@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "audit": "linux-social-directness-feasibility-readonly",
+  "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 23,
+  "repository": "bhrumom/fabushi-desktop",
+  "assessed_head": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+  "recorded_at_utc": "2026-11-02 21:05:20 UTC",
+  "operations": {
+    "remote_reads_only": true,
+    "local_build_test_or_validator_executed": false,
+    "workflow_files_modified": false,
+    "dispatch": false,
+    "github_writes": false,
+    "backend_access_for_this_assessment": false
+  },
+  "observed_environment_gap": {
+    "native_run_id": 41524660245,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41524660245",
+    "head_sha": "83c9e3ffbf059556f3a8bce9d84d946c97433345",
+    "shipping_job_id": 125549179025,
+    "shipping_job_status": "queued",
+    "shipping_job_steps": 0,
+    "observation_time_utc": "2026-11-02 21:03:39 UTC",
+    "queued_reason": "No runner-executed steps observed; precise scheduler/capacity cause is not established.",
+    "three_new_feature_cases_compile_or_execution_proven": false
+  },
+  "decision": {
+    "can_add_independent_ubuntu_job": true,
+    "confidence": "Source and existing CI configuration establish Linux reachability; execution remains unverified until GitHub Actions runs the proposed job.",
+    "purpose": "Obtain exact-containing-H compilation and behavior evidence for the unchanged three filters while macOS shipping is queued.",
+    "must_keep_existing_mac_shipping_job_and_gates": true,
+    "no_linux_result_substitution_for_macos_shipping": true,
+    "no_test_feature_reduction": true
+  },
+  "existing_linux_evidence": [
+    {
+      "path": ".github/workflows/miniapp-host-ci.yml",
+      "lines": "35-56 and 90-98",
+      "facts": [
+        "Ubuntu24.04 with Rust1.97.1",
+        "Installs the seven canonical native Computer development packages",
+        "Configures mahayana-platform-client --lib and mahayana-app-host native_desktop_account_handoff cargo tests",
+        "This is a source-read CI configuration precedent; its latest full job execution was not re-qualified in this assessment."
+      ]
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "lines": "190-222",
+      "facts": [
+        "Existing native-message-reconciliation runs Ubuntu24.04",
+        "source/host directly depends on the same mahayana-computer crate",
+        "The existing job installs the same canonical seven Linux development libraries"
+      ]
+    },
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "lines": "137-179",
+      "facts": [
+        "Existing retained-direct-ffi-compatibility already uses this exact Mahayana workspace and committed lock on Ubuntu24.04",
+        "It does not compile/execute the three requested target filters and cannot substitute for them"
+      ]
+    }
+  ],
+  "harness_reachability": [
+    {
+      "package": "mahayana-feature-host",
+      "source": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "anchor": "13772-13774",
+      "gate": "#[cfg(test)] without macOS target restriction",
+      "features": "Use existing default production + local-only; dev-dependency mahayana-host/test-support is exactly the existing shipping test configuration.",
+      "behavior": "All ten selected cases use an explicit SurfacePlatform and test-owned storage. New three construct HostMode::Test first, then require Production/Electron refusal before absent real runtime, state lock, context I/O and events. No actual desktop hardware, display, account or OS keyring acquisition is needed by these fixtures."
+    },
+    {
+      "package": "mahayana-runtime",
+      "source": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+      "anchor": "1950-1951",
+      "gate": "#[cfg(test)] without macOS target restriction",
+      "features": "Use default desktop-full + local-only, unchanged from shipping command.",
+      "behavior": "Nine cases use temporary real SQLite RuntimeStore with controlled Agent/Social providers and bounded runtime recovery; no production service."
+    },
+    {
+      "package": "mahayana-platform-client",
+      "source": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+      "anchor": "3747 onward; session_owned_platform_ tests 3795-3940",
+      "gate": "#[cfg(test)] without macOS target restriction",
+      "features": "Package name differs from its directory: -p mahayana-platform-client is correct; source is mahayana-product.",
+      "behavior": "Six tests use isolated temporary client config, deterministic pre-credential refusal and 127.0.0.1:0 HTTP/redirect fixtures; no external account or production endpoint."
+    }
+  ],
+  "dependencies": {
+    "rust_toolchain": "1.97.1",
+    "runner": "ubuntu-24.04",
+    "canonical_existing_linux_development_packages": [
+      "libwayland-dev",
+      "libpipewire-0.3-dev",
+      "libegl1-mesa-dev",
+      "libegl-dev",
+      "libgbm-dev",
+      "libdrm-dev",
+      "libxkbcommon-dev"
+    ],
+    "explicit_additions_for_narrow_job": [
+      "pkg-config",
+      "libclang-dev",
+      "libsqlite3-dev"
+    ],
+    "rationale": {
+      "computer": "mahayana-feature-host unconditionally depends on mahayana-computer; on Linux that crate selects enigo0.6.1 (wayland) and xcap0.9.8. Keep the established Computer compile dependencies even though no capture/input is invoked.",
+      "bindgen": "Committed lock includes libspa-sys0.10.1 and pipewire-sys0.10.1 with bindgen/system-deps. libclang-dev and pkg-config make those native build prerequisites explicit.",
+      "sqlite": "mahayana-runtime directly selects workspace rusqlite0.39 without bundled. Separate cargo invocations must not rely on FeatureHost's fabushi-messaging-core enabling bundled SQLite in another invocation; install libsqlite3-dev for the independent Runtime9 command.",
+      "compiler": "Use the hosted Ubuntu C/C++ build toolchain. No cross compilation, Apple SDK, signing identity, Electron build, or production fixture is required.",
+      "secrets": "mahayana-platform-client resolves Mahayana-owned auth/secrets; Linux keyring feature is linux-native-async-persistent with crypto-rust. Selected HTTP fixtures deny before credentials or use authenticated=false, so no running desktop secret-service/session bus is part of this contract scope.",
+      "display": "No Xvfb, live PipeWire session, real capture device or desktop display is required for these three test filters; native development libraries are compile-time prerequisites."
+    },
+    "install_command": "sudo apt-get update\nsudo apt-get install -y --no-install-recommends pkg-config libclang-dev libsqlite3-dev libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev"
+  },
+  "groups": [
+    {
+      "label": "FeatureHost desktop messaging boundary",
+      "package": "mahayana-feature-host",
+      "filter": "desktop_messaging_boundary_tests",
+      "expected_pass": 10,
+      "log": "featurehost-messaging-boundary.log",
+      "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1",
+      "new_cases": [
+        "desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+        "desktop_social_refusal_does_not_lock_state_or_touch_retained_context",
+        "social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces"
+      ]
+    },
+    {
+      "label": "Runtime retained Social recovery",
+      "package": "mahayana-runtime",
+      "filter": "retained_social_recovery_tests",
+      "expected_pass": 9,
+      "log": "social-recovery.log",
+      "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib retained_social_recovery_tests -- --nocapture --test-threads=1"
+    },
+    {
+      "label": "Session-owned platform HTTP",
+      "package": "mahayana-platform-client",
+      "source_directory": "mahayana-product",
+      "filter": "session_owned_platform_",
+      "expected_pass": 6,
+      "log": "social-http-owner.log",
+      "command": "cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib session_owned_platform_ -- --nocapture --test-threads=1"
+    }
+  ],
+  "minimum_workflow_change": {
+    "file": ".github/workflows/native-service-contracts.yml",
+    "add_job_only": "native-social-directness-linux",
+    "independent_of_mac_job": true,
+    "needs_mac_job": false,
+    "job_if": "github.event_name == 'push' || inputs.message_batch",
+    "push_path_additions": [
+      "source/mahayana/mahayana-rs/mahayana-runtime/**",
+      "source/mahayana/mahayana-rs/Cargo.toml"
+    ],
+    "path_reason": "Existing paths cover feature-host and mahayana-product but omit runtime-only or workspace manifest changes. These two paths keep the new narrow gate reachable for its direct source inputs.",
+    "preserve_mac_job_in_full": true,
+    "proposed_job_yaml": "  native-social-directness-linux:\n    if: github.event_name == 'push' || inputs.message_batch\n    runs-on: ubuntu-24.04\n    timeout-minutes: 30\n    env:\n      CARGO_BUILD_JOBS: 2\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          ref: ${{ github.sha }}\n          fetch-depth: 1\n          persist-credentials: false\n      - name: Bind exact Linux social contract source\n        shell: bash\n        run: |\n          set -euo pipefail\n          test \"$(git rev-parse HEAD)\" = \"${{ github.sha }}\"\n          mkdir -p artifacts/native-social-directness-linux\n          git rev-parse HEAD > artifacts/native-social-directness-linux/target-sha.txt\n          printf '%s\\n' 'Ubuntu FeatureHost10/Runtime9/HTTP6 contract execution only; no macOS AppHost build, package, signing, real service, production fixture or independent acceptance.' > artifacts/native-social-directness-linux/scope.txt\n          sha256sum source/mahayana/mahayana-rs/Cargo.lock source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs source/mahayana/mahayana-rs/mahayana-product/src/lib.rs > artifacts/native-social-directness-linux/input-sha256.txt\n      - uses: dtolnay/rust-toolchain@stable\n        with:\n          toolchain: 1.97.1\n      - uses: Swatinem/rust-cache@v2\n        with:\n          workspaces: source/mahayana/mahayana-rs -> target\n          shared-key: native-social-directness-ubuntu-1.97.1\n      - name: Install native Linux compile prerequisites\n        shell: bash\n        run: |\n          set -euo pipefail\n          sudo apt-get update\n          sudo apt-get install -y --no-install-recommends pkg-config libclang-dev libsqlite3-dev libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev\n      - name: Execute FeatureHost10 Runtime9 and HTTP6 with committed features\n        shell: bash\n        run: |\n          set -euo pipefail\n          evidence=artifacts/native-social-directness-linux\n          rustc --version > \"$evidence/toolchain.txt\"\n          cargo --version >> \"$evidence/toolchain.txt\"\n          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-feature-host --lib desktop_messaging_boundary_tests -- --nocapture --test-threads=1 2>&1 | tee \"$evidence/featurehost-messaging-boundary.log\"\n          grep -Eq '^test result: ok\\. 10 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;' \"$evidence/featurehost-messaging-boundary.log\"\n          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-runtime --lib retained_social_recovery_tests -- --nocapture --test-threads=1 2>&1 | tee \"$evidence/social-recovery.log\"\n          grep -Eq '^test result: ok\\. 9 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;' \"$evidence/social-recovery.log\"\n          cargo test --locked --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib session_owned_platform_ -- --nocapture --test-threads=1 2>&1 | tee \"$evidence/social-http-owner.log\"\n          grep -Eq '^test result: ok\\. 6 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;' \"$evidence/social-http-owner.log\"\n          grep -Fx 'test implementation::desktop_messaging_boundary_tests::desktop_social_intents_refuse_before_auth_runtime_context_io_and_events ... ok' \"$evidence/featurehost-messaging-boundary.log\"\n          grep -Fx 'test implementation::desktop_messaging_boundary_tests::desktop_social_refusal_does_not_lock_state_or_touch_retained_context ... ok' \"$evidence/featurehost-messaging-boundary.log\"\n          grep -Fx 'test implementation::desktop_messaging_boundary_tests::social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces ... ok' \"$evidence/featurehost-messaging-boundary.log\"\n          git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock\n      - name: Preserve exact Linux social contract evidence\n        if: always()\n        uses: actions/upload-artifact@v4\n        with:\n          name: native-social-directness-linux-${{ github.sha }}\n          path: artifacts/native-social-directness-linux\n          if-no-files-found: error"
+  },
+  "assertion_contract": {
+    "feature_pass": 10,
+    "runtime_pass": 9,
+    "http_pass": 6,
+    "fail": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": "Other unrelated crate unit tests may be filtered; do not assert 0 filtered out for --lib name filters.",
+    "new_feature_case_names_must_appear": [
+      "desktop_social_intents_refuse_before_auth_runtime_context_io_and_events",
+      "desktop_social_refusal_does_not_lock_state_or_touch_retained_context",
+      "social_boundary_keeps_explicit_test_non_desktop_and_other_namespaces"
+    ],
+    "pipefail": true,
+    "committed_lock_must_remain_unchanged": true,
+    "exact_checkout_required": true,
+    "artifact_always_uploaded": true
+  },
+  "not_covered": [
+    "macOS actual AppHost binary compilation, symbols and dynamic library inspection",
+    "native startup/account handoff integration and production composition matrix",
+    "Mac CLI/gateway actual binaries and fresh-state invocation",
+    "real AppHost copy and missing/malformed/mismatched hash packaging negatives",
+    "Windows signing publisher identity or real signed package behavior",
+    "real production services, real accounts and final platform packaging",
+    "independent ACCEPT"
+  ],
+  "remaining_uncertainty": [
+    "No local or GitHub execution of the proposed job has occurred in this read-only assessment.",
+    "A new exact-containing-H Actions run is still required to reveal Linux-specific compilation/linker or fixture defects.",
+    "If the job fails, classify actual compiler/assertion/environment evidence; do not reduce feature flags, skip cases or replace macOS shipping gates."
+  ],
+  "source_identities": [
+    {
+      "path": ".github/workflows/native-service-contracts.yml",
+      "blob_sha": "87a40da25eb5bfb3c49a5c8d5115f96090f6abe5",
+      "bytes": 62210,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/.github/workflows/native-service-contracts.yml"
+    },
+    {
+      "path": ".github/workflows/miniapp-host-ci.yml",
+      "blob_sha": "cfb121ab804241adfe6d321eaf20b7d7e21a6b2f",
+      "bytes": 6156,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/.github/workflows/miniapp-host-ci.yml"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob_sha": "7baaffcde9bae870396a4da36b262028d2a1d7ed",
+      "bytes": 14707,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/.github/workflows/rust-desktop-runtime.yml"
+    },
+    {
+      "path": ".github/workflows/staged-runtime-source-contracts.yml",
+      "blob_sha": "c77c6a6c5bfd9698023b910741f4be24723574f4",
+      "bytes": 17462,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/.github/workflows/staged-runtime-source-contracts.yml"
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "blob_sha": "ebaa0140df01d0221fd35d0213b4ffce48bef9b9",
+      "bytes": 1452,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/host/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/Cargo.toml",
+      "blob_sha": "144c67c76daaf2229e817f9830e678a3e6d4cf3a",
+      "bytes": 8038,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/Cargo.lock",
+      "blob_sha": "48cbb8ba77def31a44a2bf15582a0b18a655b2ee",
+      "bytes": 386557,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/Cargo.lock"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/.cargo/config.toml",
+      "blob_sha": "e0ca678da916dc3ef563adc372cc20b99936a47a",
+      "bytes": 332,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/.cargo/config.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/Cargo.toml",
+      "blob_sha": "63ce5d23c88b90ea6891f2768ea16e3f4e6f4eca",
+      "bytes": 1438,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-feature-host/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/lib.rs",
+      "blob_sha": "a8ef28bd1c99129d0287490ca0086d4aea448de2",
+      "bytes": 529,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-feature-host/src/lib.rs"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs",
+      "blob_sha": "56cc9788ae104e1acce98841efab7274f5548f8b",
+      "bytes": 629835,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs",
+      "blob_sha": "0aebff41e55f58921742440e9f0b896a03d25638",
+      "bytes": 32165,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-feature-host/src/desktop_messaging_boundary_tests.rs"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/Cargo.toml",
+      "blob_sha": "e06b7657a99fb61366c8ee974c035da586a30d2e",
+      "bytes": 869,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-runtime/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs",
+      "blob_sha": "340c330e0f0a0e002ba78a291979290cf71c67e5",
+      "bytes": 90306,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-runtime/src/lib.rs"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs",
+      "blob_sha": "ea8f8e5092e126e62b2dc671438f25b106dce493",
+      "bytes": 20197,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-runtime/src/retained_social_recovery_tests.rs"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-product/Cargo.toml",
+      "blob_sha": "7c5895e323bd5727462a587429ec2c393e36b092",
+      "bytes": 858,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-product/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-product/src/lib.rs",
+      "blob_sha": "f0fdddef00af4e5750b0b498037f611c21856f3f",
+      "bytes": 183418,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-product/src/lib.rs"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-host/Cargo.toml",
+      "blob_sha": "b90bba87f9157b9d3d3153cd7af2cc68260e2213",
+      "bytes": 1705,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-host/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-computer/Cargo.toml",
+      "blob_sha": "6c655664d3cab8620e72f039dcb0b2597b96838a",
+      "bytes": 938,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-computer/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-auth/Cargo.toml",
+      "blob_sha": "6d397d195c74e76b9e548f5b038380a52da102bf",
+      "bytes": 266,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-auth/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-secrets/Cargo.toml",
+      "blob_sha": "e0dfb3bacd6f1eca0ac3def90922219c0efc9ee0",
+      "bytes": 1034,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-secrets/Cargo.toml"
+    },
+    {
+      "path": "source/mahayana/mahayana-rs/mahayana-native-engine/Cargo.toml",
+      "blob_sha": "9fed3f2bb54706a6e47d9f474927bc6be40df54f",
+      "bytes": 612,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/source/mahayana/mahayana-rs/mahayana-native-engine/Cargo.toml"
+    },
+    {
+      "path": "native/mahayana-messaging/Cargo.toml",
+      "blob_sha": "9cbcc72222ca6ba4bc5252fa837756528b3fdee7",
+      "bytes": 705,
+      "url": "https://github.com/bhrumom/fabushi-desktop/blob/83c9e3ffbf059556f3a8bce9d84d946c97433345/native/mahayana-messaging/Cargo.toml"
+    }
+  ]
+}

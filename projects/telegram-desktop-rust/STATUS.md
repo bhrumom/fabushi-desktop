@@ -7,12 +7,19 @@ Complete: false
 
 ## Round31 — canonical reply identity recovery
 
-Retain the concurrent direct-parent guard, Ubuntu reconciliation and corrected
-reaction fixture. This round uses the existing strict message-ID parser for reply
-parents and extends existing real persistence/HTTP cases without changing owners
-or test-function counts. Complete old-H shipping logs and containing106bb recovery
-results are qualified separately; this new patch requires its own containing-H
-execution. Full migration and independent ACCEPT remain blocked. See
+Production H `4cbd7ddbe58ae789db9d2c674e8c9fa73146af40` uses the existing
+strict message-ID parser before direct or historical reply staging/HTTP. Existing
+Session/Transcript owners and valid reply semantics remain. Run41524748572 /
+reconciliation125549482711 actually passed Human62/resource3/sharebox1/journal12/
+Agent4/credential3/forwardHTTP1, including the28-scenario historical reply matrix,
+17 direct-target scenarios, dual SQLite CAS, mixed stale progress and corrupt
+journal restart. UI29/cursor17/forward5/Chromium16, Electron, Windows native11
+and retained C wrappers15-pass/1-live-DC-ignore also passed at this H.
+
+Same-H shipping125549483258 is queued at observation. Originalff6 shipping and
+containing106bb recovery are separate historical evidence. Full migration, real
+services, supported signed packages, complete source/legal/Bot/quality/upgrade/
+rollback and independent ACCEPT remain blocked. See
 `projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json`.
 
 ## Concurrent round16 — pinned package inputs and retained C wrapper qualification
@@ -354,3 +361,29 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
+
+## Round23 resumed: current Social boundary qualification
+
+Fixed U stays `f985723b552b30fe1c17d377d57f44e61a15a8c4`. Exact original
+H44f5203b8475afbeaa37bb049f6c72351ecb76d8 native41484767335 failed only
+Windows fixture setup (11 hook failures, no executed native assertions);
+source41484767424 succeeded. Later exact59f5fa24827812f78336c464995d161f403dedfb
+native41508537631 succeeded including Windows11, controlled28, shipping
+AppHost-copy positive and valid-format wrong-digest negative. Those runs retain
+their own source/input scope. Current106bb95 already contains the concurrent
+reopened-runtime compile fix and later forwarding/reply/pagination work.
+
+This batch contributes three missing Social public-command boundary cases,
+raises only the matching FeatureHost oracle7→10, and uses named Social spec
+IDs without replacing numeric forwarding requirements. Published code H=`83c9e3ffbf059556f3a8bce9d84d946c97433345` was remotely
+read back with all 17 file contents. Native run41524660245 is active; shipping
+job125549179025 remains queued, so Feature10 is not yet executed. The canonical ledger receives append-only
+evidence on existing rows while retaining all concurrent source_reviews and
+acceptance fields. Backend PR137 exact52fb remains draft/open/unmerged; both
+63-case CI jobs passed and production readiness skipped. No merge/deploy or
+production request occurred. Full source/legal/product/platform/Bot, formal
+publisher/real signed packages and independent ACCEPT remain incomplete.
+
+The existing workflow now also runs these same Feature10/Runtime9/HTTP6 behavioral
+harnesses on Ubuntu while retaining the queued macOS shipping requirement. This
+focused job is not a signed-package, live-service or independent acceptance gate.

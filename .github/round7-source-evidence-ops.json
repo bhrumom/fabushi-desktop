@@ -1,0 +1,139 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "path": "projects/telegram-desktop-rust/parity-ledger.json",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 7,
+  "row_id": "FBCP-NMR-001",
+  "source_reviews": [
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/data/data_history_messages.h",
+      "object": "5c8276867846c861baf208d2e1f059f4edeedf3d",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Full interface read: existing HistoryMessages/SparseIdsList owner, range queries and HistoryViewer/HistoryMessagesViewer producers. Full responsibility mapping, migration/merged-history consumers and acceptance remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/data/data_history_messages.cpp",
+      "object": "412f30c67ae3d39442a38dce66ae123d864ab4ac",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire implementation reread: sparse coverage, known/unknown count-only snapshots, local/server message merge, migrated history, nearest anchor, identity rekey and producer lifetime. Existing dossier already records a full read; this is not a first-read claim. Complete target mapping, broader consumers and acceptance remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/storage/storage_sparse_ids_list.h",
+      "object": "2f892a0e11cc4b92d16d82aa9f61dc471a7c0fe2",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Full storage interface read: sorted IDs, explicit noSkipRange, optional count, query/update/remove/invalidate events. Complete target responsibility mapping and acceptance remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/storage/storage_sparse_ids_list.cpp",
+      "object": "cc0e3ed6b2c763326c2c16635a7671a747ef506b",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire implementation read: independent gap-preserving slices, covered range merging, optional counts, countAfter preconditions, removal, complete-empty and bottom invalidation. Source is not proof of Fabushi durable cursor/restart equivalence; complete target mapping and acceptance remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/data/data_sparse_ids.h",
+      "object": "10dbe9037e3221a0d42154d21f84a8af0286c552",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Full declaration read: peer/topic/monoforum/migrated keys, optional counts/skips, builder and producer contracts. Complete mapping of all keyed search/history consumers remains open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/data/data_sparse_ids.cpp",
+      "object": "1f11a0424294023ee486a87e1ba194cabd9bd87a",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire implementation reread: range intersection, sorted unique IDs, optional skipped/count computation, invalidation and directional insufficient-range requests. Existing fixed-U dossier already records a full read; complete migration/consumer mapping and acceptance remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/data/data_search_controller.h",
+      "object": "289a6b7e4e091cbf5ce9424d18a1b5f08396f979",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Full interface read: history/search request/result helpers, query scope, saved state and cache/controller lifetime. Search/media/global/migrated responsibilities extend beyond bounded direct Human history and remain incompletely mapped.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/data/data_search_controller.cpp",
+      "object": "5c1869566dd0551bdf9679aa71c2e1be8392dd93",
+      "category": "product",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending",
+      "rationale": "Entire implementation read, resolving previously unread PrepareHistoryRequest and ParseHistoryResult through ParseSearchResult. History offsets/noSkipRange, scoped search caches, lifetime/cancel and asymmetric request-failure cleanup inspected. Global/media/search/migrated permissions and full target implementation/execution/acceptance remain open.",
+      "evidence": [
+        "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
+      ],
+      "responsibility_ids": []
+    }
+  ],
+  "append": {
+    "test_evidence": [
+      "R7 exact5d38ddd12c2aea3a9e1701221c5ebaf28c652d23: three existing real Host reaction matrices now author71 variants (69negative/2positive), including27 new exact canonical row-ID and sent-state negatives. No new test function; current containing-H Human63 required. Receipt projects/telegram-desktop-rust/evidence/fbcp-native-message-round7-20261102.json."
+    ],
+    "test_execution_evidence": [
+      "R7 exactafb34b49c5964524a887088f1095070b75cfdf8b/run41522324008/job125541192099: failure E0382 fixture lifecycle; zero Human execution, not62 failures. Concurrent106bb95ba97ef7722e9523285783824393039bc0 shutdown receiver repair preserved.",
+      "R7 exact106bb95ba97ef7722e9523285783824393039bc0/run41523018920: Human125543545349 passed62, resource3/sharebox1/journal12/Agent4/credential3/forwardHTTP1; UI125543545453 passed29/17/5/16 and compiled actual renderer. Shipping125543545357 remained queued at2026-11-02T21:12Z. Exact logs/artifacts and six controlled forward-dialog images are bound in the R7 receipt; no later-H or full-package acceptance."
+    ]
+  },
+  "note": "\nRound7 settled-canonical reaction and source review: exact5d38ddd12c2aea3a9e1701221c5ebaf28c652d23 strengthens the existing reaction identity helper before staging/replay and after HTTP: row ID must match canonical remote ID and delivery must be sent. Preserve complete damaged row/intention, numeric remote-ID and canonical peer-nonce compatibility. Three existing admission/restart/held-response tables add27 negative variants without weakening old assertions or changing suite counts; current containing-H execution remains required. Eight fixed-U full texts (six new dossier reads and two explicit rereads) are recorded pending with exact objects and an actual dossier anchor; responsibility mapping, search/media/migrated obligations, all global unknown/unread counters and source/legal/product/independent acceptance remain open. The35fe953 target call closure identifies an unimplemented coverage-driven consumer continuation after32 full pages under stated no-further-trigger conditions, not an executed browser reproduction. Existing HRR retry ownership is preserved."
+}

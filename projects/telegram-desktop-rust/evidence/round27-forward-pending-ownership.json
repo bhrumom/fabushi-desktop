@@ -1501,5 +1501,38 @@
   },
   "source_qualification_rule": "106bb itself changed only the test shutdown receiver and has no source workflow run. Preserve the exactafb source157/schema37/ledger-candidate results in its complete audit; do not label them as execution at106bb or a later receipt commit.",
   "all_applicable_native_jobs_passed": false,
-  "native_workflow_terminal": false
+  "native_workflow_terminal": false,
+  "legacy_source_policy_extension": {
+    "classification": "IMPLEMENTATION_DEFECT",
+    "source_read_head": "106bb95ba97ef7722e9523285783824393039bc0",
+    "source_read_blob": "7b2fd1bd349d6e810fe4af76875af49982d007ef",
+    "integration_reviewed_head": "3ab165561eb9fc7aba7b7bebff492cd105966b1a",
+    "observed_by_source_review": "A real pre-journal pending with correct nonce and readable source but no batch journal could enter generic append after membership removal or source protection, because the strict opener and legacy classification did not call source policy authorization.",
+    "existing_owner_reused": "ProductionSessionWorkers::authorize_forward_source",
+    "repair": "Retain the positive legacy source/entry reference and reauthorize it with the same policy used by new batches immediately before permitting generic replay. Matching journal/explicit ownership branches stay unchanged.",
+    "data_rule": "A denial leaves the complete pending row and source journal absence unchanged, before upload or POST; allowed recovery keeps the old nonce/context/payload rather than substituting edited source text.",
+    "test": "shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources",
+    "new_assertions": [
+      "Persist valid pre-journal pending and revoked membership, then actual shutdown/drop/reopen; sync returns participant error, zero POST, exact unchanged pending, no source journal.",
+      "Restore membership; edit source text and mark protected; sync returns protected error, zero POST and original pending stays unchanged.",
+      "Remove source protection; exactly one actual message POST and canonical sent row preserve original pending body, nonce and context despite newer source text."
+    ],
+    "test_function_count_delta": 0,
+    "expected_human_at_reviewed_base": 63,
+    "execution": "not-run at preparation; exact containing-H GitHub Actions required",
+    "local_product_validation": false,
+    "backend_pr137_modified": false,
+    "acceptance_changed": false,
+    "integration_inputs": {
+      "production": "fafad99ad86d25562c14644343fda58c8506b530",
+      "tests": "42963ba808cb74048f554c1ad4b4e3963a86264f",
+      "workflow": "12027c755f1b6ff9d070b2df2adc59615a035d5e"
+    },
+    "concurrent_work_retained": [
+      "atomic Human creation and retained data recovery",
+      "versioned history coverage and canonical reply identity changes",
+      "renderer optional-field merge repair",
+      "retained direct FFI compatibility gate"
+    ]
+  }
 }

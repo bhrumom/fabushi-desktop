@@ -1057,12 +1057,22 @@ Preserve genuine readable pre-journal replay, existing pinned-byte guarantees
 and NMR-49 reply repair. This compatibility claim binds to the actual 2a007088
 legacy path; it does not promise automatic repair of arbitrary lost provenance.
 
+A readable legacy source and correct old nonce are compatibility evidence only.
+Before allowing generic replay, reuse `authorize_forward_source` to require
+current source membership and an existing settled, unprotected, nonempty source
+message. A policy or storage rejection returns an error before any upload or
+message POST and preserves the complete original pending row; do not create a
+replacement journal or replace its saved payload with newly edited source text.
+After permission is restored, the same nonce and original snapshot may resume.
+
 NMR-AC-38 ownership continuation adds one actual killed-process/SQLite/HTTP
 case: durable marker before first POST; revoked-source pending rows with future
 or missing context version, changed request marker, missing context and retained
 nonce; unavailable source combined with missing/replaced-unrelated context;
 corrupt source refusal; and a readable genuine legacy control using the real
-pre-journal nonce algorithm.
+pre-journal nonce algorithm, with real shutdown/reopen under revoked source
+membership, protected-source refusal, and restored-permission delivery of the
+original pending text after the source text was edited.
 The complete original intent and pending payload must remain retained. Tests
 execute only at exact-H GitHub Actions. NMR-50 retains nonblocking batch recovery;
 this extension does not replace that work or change public commands/service APIs.
@@ -1570,7 +1580,16 @@ is not authority to restore blocking sends or replace current projection owners.
 Before replaying a durable Human reaction intention, require a message whose
 `authorKind` is Human and whose author is the authenticated local Human or the
 selected peer. Require a canonical positive safe-integer remote ID and exact
-untrimmed emoji identity. Reject malformed/foreign/missing/changed targets before
+untrimmed emoji identity. The selected row must also have exactly
+`id = human-server-message:<canonical remoteMessageId>` and `delivery = sent`
+before staging, before replay HTTP and after its response. A numeric remote ID
+remains compatible when it denotes that same canonical ID. A local outbox ID,
+different/padded canonical ID, or missing/non-sent delivery is inconsistent;
+preserve its complete row and any existing intention without dispatching or
+settling it. Existing canonical peer-nonce compatibility remains unchanged.
+Extend the same admission, restart and held-response tables, retaining all old
+cases and the numeric positive control; no new suite-count claim is implied.
+Reject malformed/foreign/missing/changed targets before
 HTTP, preserve the complete row and intention, and publish no mutation. Recheck
 the current target and remote identity after HTTP before replacing reaction
 fields; retain unrelated current metadata. New toggles use the same admission
@@ -1883,3 +1902,26 @@ still queued at that observation. These results cannot qualify a later H.
 The sole round10 evidence file keeps exact SHAs, counts, job logs and artifact
 identities. Fixed U, source/acceptance fields and every full migration gate remain
 unchanged.
+
+### NMR-FFI-LIVE-01 — Retained Rust runtime production transport check
+
+The non-live retained C-wrapper job above deliberately leaves the existing
+`live_runtime_bootstrap_keeps_an_encrypted_transport_session` case ignored.
+Run that unchanged case separately in GitHub Actions at its containing exact
+H, using Rust 1.97.1 and the workspace's locked dependency graph. The scoped
+workflow checks out `github.sha`, records the source/test/lock identities and
+complete command/log, and executes only that named case with
+`--ignored --exact --nocapture --test-threads=1`. Require its actual named
+success and exactly 1 passed, 0 failed, 0 ignored and 15 filtered out; preserve
+failure output and classify any failure before a focused repair or retry.
+
+This invokes the existing Rust client owner: create → bootstrap production DC2
+with a fresh MTProto auth key → encrypted ping → connected status → close.
+It needs no account, API credentials, user data or device; runner network,
+clock and randomness remain real inputs. It does not invoke the exported C
+wrappers, restore a persisted transport, log in, send messages, qualify an
+installed consumer, or restore the retired Telegram production registration.
+Keep the ordinary 15-pass/1-ignored C compatibility gate, native shipping and
+all current message gates intact. Store exact run/job/artifact identities;
+retain all final service, package, migration and independent-ACCEPT gaps.
+The one-purpose workflow may be removed after its immutable evidence is saved.
