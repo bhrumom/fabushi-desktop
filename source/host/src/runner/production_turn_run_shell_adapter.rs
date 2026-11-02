@@ -472,9 +472,10 @@ impl ProductionTurnRunShellAdapter {
                 ProviderSessionError::ToolOutcomeUnknown(_)
                     | ProviderSessionError::Authentication(_)
                     | ProviderSessionError::Configuration(_)
+                    | ProviderSessionError::McpCatalog(_)
             )) {
                 // A simultaneous watchdog must preserve explicit uncertainty
-                // and permanent credential/configuration failures. Custody is
+                // and permanent credential, configuration or catalog failures. Custody is
                 // still checked before retry classification below.
                 result
             } else if timed_out {
@@ -526,6 +527,27 @@ impl ProductionTurnRunShellAdapter {
     ) -> Result<bool, ProviderSessionError> {
         if cancellation.is_cancelled() {
             return Err(cancelled_error(cancellation));
+        }
+        // Known completed effects still forbid replay, but need not erase a
+        // permanent catalog refusal. Pending/unknown custody keeps its existing
+        // stronger fence below; no receipt or checkpoint revision is changed.
+        if matches!(error, ProviderSessionError::McpCatalog(_))
+            && custody.unsettled_reason().is_none()
+        {
+            on_report(&ProviderRetryReport {
+                outcome: ProviderRetryOutcome::GaveUpIneligible,
+                attempt: *attempt,
+                max_attempts: policy.max_attempts,
+                delay_ms: None,
+                server_paced: false,
+                resume_from_checkpoint: false,
+                watchdog_expired,
+                error_type: retry_error_type(error, watchdog_expired).into(),
+                error_code: "SAND-E0405".into(),
+                cause: error.to_string(),
+                error: error.to_string(),
+            });
+            return Ok(false);
         }
         if let Some(reason) = custody.retry_block_reason() {
             let cause = format!(
@@ -719,6 +741,9 @@ fn retry_error_type(
     if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
         return "ToolOutcomeUnknownError";
     }
+    if matches!(error, ProviderSessionError::McpCatalog(_)) {
+        return "McpCatalogError";
+    }
     if watchdog_expired && !matches!(error,
         ProviderSessionError::Authentication(_) | ProviderSessionError::Configuration(_)
     ) {
@@ -730,6 +755,7 @@ fn retry_error_type(
         ProviderSessionError::Configuration(_) => "ConfigurationError",
         ProviderSessionError::Protocol(_) => "ProtocolError",
         ProviderSessionError::Tool(_) => "ToolError",
+        ProviderSessionError::McpCatalog(_) => "McpCatalogError",
         ProviderSessionError::ToolOutcomeUnknown(_) => "ToolOutcomeUnknownError",
         ProviderSessionError::ProviderRefusal(_) => "ProviderRefusalError",
         ProviderSessionError::Transport(_) => "TransportError",
@@ -755,7 +781,7 @@ fn classify_provider_failure(
 ) -> TransientStreamError {
     // A simultaneous watchdog expiry cannot turn an explicit unknown tool
     // outcome into permission to issue a transient provider retry.
-    if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
+    if matches!(error, ProviderSessionError::ToolOutcomeUnknown(_) | ProviderSessionError::McpCatalog(_)) {
         return TransientStreamError {
             kind: StreamFailureKind::Protocol,
             message: error.to_string(),
@@ -792,6 +818,7 @@ fn classify_provider_failure(
         ProviderSessionError::Protocol(_)
         | ProviderSessionError::Tool(_)
         | ProviderSessionError::ToolOutcomeUnknown(_)
+        | ProviderSessionError::McpCatalog(_)
         | ProviderSessionError::ProviderRefusal(_) => {
             TransientStreamError {
                 kind: StreamFailureKind::Protocol,
@@ -885,6 +912,76 @@ mod tests {
         assert!(retries.is_empty());
         assert_eq!(retry_error_type(&error, true), "ToolOutcomeUnknownError");
         assert_eq!(crate::extensions::transcript::turn_runtime::classify_agent_error(&error).code, "SAND-E0407");
+    }
+
+    #[test]
+    fn received_mcp_catalog_permanent_retry_policy_preserves_custody_precedence() {
+        use crate::extensions::inference::provider_session::{
+            McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
+        };
+        let adapter = ProductionTurnRunShellAdapter::default();
+        let error = ProviderSessionError::McpCatalog(McpCatalogRefusal {
+            kind: McpCatalogKind::Tools, row: Some(1),
+            reason: McpCatalogReason::NameMustBeString,
+        });
+        assert_eq!(retry_error_type(&error, true), "McpCatalogError");
+        let classified = classify_provider_failure(&error, true);
+        assert_eq!(classified.kind, StreamFailureKind::Protocol);
+        assert!(!classified.retryable());
+        assert_eq!(crate::extensions::transcript::turn_runtime::classify_agent_error(&error).code,
+            "SAND-E0405");
+
+        // These are policy tuples, not claims that a sequential HTTP worker
+        // can create simultaneous catalog refresh and pending tool effects.
+        for (started_revision, checkpoint_revision, pending_effects, unknown_result) in [
+            (0, 0, 0, None),
+            (1, 0, 0, None),
+            (1, 1, 0, None),
+            (1, 0, 1, None),
+            (1, 0, 0, Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown)),
+        ] {
+            let custody = ToolEffectCustodySnapshot {
+                started_revision, checkpoint_revision, pending_effects, unknown_result,
+            };
+            let before = custody.clone();
+            for watchdog_expired in [false, true] {
+                let mut attempt = 1;
+                let mut retries = Vec::new();
+                let mut reports = Vec::new();
+                let outcome = adapter.retry(
+                    &adapter.policy, &mut attempt, &AttemptProgress::default(),
+                    &custody, &error, watchdog_expired,
+                    &RoutedProviderCancellation::default(), None,
+                    &mut |event| retries.push(event.clone()),
+                    &mut |report| reports.push(report.clone()),
+                );
+                if custody.unsettled_reason().is_some() {
+                    assert!(matches!(outcome, Err(ProviderSessionError::Tool(_))));
+                    assert_eq!(reports[0].error_type, "ToolEffectCustodyError");
+                } else {
+                    assert!(matches!(outcome, Ok(false)));
+                    assert_eq!(reports[0].error_type, "McpCatalogError");
+                    assert_eq!(reports[0].error_code, "SAND-E0405");
+                }
+                assert_eq!(reports.len(), 1);
+                assert_eq!(reports[0].outcome, ProviderRetryOutcome::GaveUpIneligible);
+                assert_eq!(reports[0].watchdog_expired, watchdog_expired);
+                assert!(!reports[0].resume_from_checkpoint);
+                assert_eq!(attempt, 1);
+                assert!(retries.is_empty());
+                assert_eq!(custody, before, "classification cannot change effect receipts");
+            }
+            let cancelled = RoutedProviderCancellation::default();
+            cancelled.cancel("actual user cancellation");
+            let mut reports = Vec::new();
+            let result = adapter.retry(
+                &adapter.policy, &mut 1, &AttemptProgress::default(), &custody, &error,
+                true, &cancelled, None, &mut |_| {},
+                &mut |report| reports.push(report.clone()),
+            );
+            assert!(matches!(result, Err(ProviderSessionError::Cancelled(_))));
+            assert!(reports.is_empty());
+        }
     }
 
     impl RoutedProviderAttemptExecutor for PostToolStallExecutor {

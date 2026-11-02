@@ -391,6 +391,27 @@ jobs:
               "source/host/tests/pending_wake_rearm_contract.rs",
               "source/host/tests/durable_recovery_stores_contract.rs",
               "source/host/tests/transcript_manager_contract.rs",
+              "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+              "source/host/src/extensions/inference/provider_session.rs",
+              "source/host/src/extensions/transcript/turn_runtime.rs",
+              "source/host/src/runner/production_turn_input_projection.rs",
+              "source/host/src/runner/production_turn_run_shell_adapter.rs",
+              "source/host/src/runner/routed_provider_runtime.rs",
+              "source/host/src/runner/tools/turn_toolset.rs",
+              "source/host/src/runner/turn_agent_composition.rs",
+              "source/host/src/connectors/channel_delivery.rs",
+              "source/host/tests/runner_production_bridge_contract.rs",
+              "source/host/tests/production_turn_input_projection_contract.rs",
+              "source/host/tests/turn_toolset_contract.rs",
+              "source/host/tests/runner_routed_provider_contract.rs",
+              "source/host/tests/openclaw_channel_delivery_contract.rs",
+              "source/host/tests/external_machine_tool_contract.rs",
+              "source/host/tests/sand_generate_image_tool_contract.rs",
+              "source/host/tests/sand_multitask_todo_tool_contract.rs",
+              "source/host/tests/sand_web_tools_contract.rs",
+              "source/host/tests/turn_toolset_await_mcp_contract.rs",
+              "source/host/tests/fabushi_responses_credential_context_contract.rs",
+              "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -406,6 +427,163 @@ jobs:
           }
           Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(receipt, indent=2) + "\n")
           PY
+          cat > "$OCRM_RECOVERY_EVIDENCE_DIR/project-log.py" <<'PY'
+          import hashlib, json, os, re, sys
+          from pathlib import Path
+
+          PREFIX = "OCRM_COMMAND "
+          MAX_RECORDS, MAX_BYTES, RESERVE = 12000, 2 * 1024 * 1024, 4096
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = {}
+          check_name = sys.argv[1]
+          ledger_ready = False
+          refusal_path = root / "projection-refused.json"
+
+          def encoded(record):
+              return json.dumps(record, ensure_ascii=True, sort_keys=True).replace(
+                  "##[", r"\u0023\u0023[").replace("::", r"\u003a\u003a")
+
+          def terminal_text(line):
+              return re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", line)
+
+          def harness(line):
+              return re.match(r"^\s*(?:Running |running \d+ tests?\b|test .+ \.\.\. |test result:)",
+                              terminal_text(line)) is not None
+
+          def requires_test_summary(command):
+              return command.startswith("cargo test ") and "--no-run" not in command
+
+          def positive_summary(lines):
+              return any((match := re.search(r"test result: ok\. (\d+) passed;", terminal_text(line)))
+                         and int(match.group(1)) > 0 for line in lines)
+
+          def fits(count, size, extra, terminal=False):
+              return (count < MAX_RECORDS - (0 if terminal else 1)
+                      and size + extra <= MAX_BYTES - (0 if terminal else RESERVE))
+
+          try:
+              # A previous terminal refusal is sticky for this owned evidence root.
+              # Command loops still execute/capture raw results, but do not replay
+              # more projection output after its bounded terminal record.
+              if refusal_path.exists():
+                  sys.exit(86)
+              subject = json.loads((root / "subject.json").read_text(encoding="utf-8"))
+              evidence = root / "console-evidence.jsonl"
+              previous = evidence.read_bytes().splitlines(keepends=True) if evidence.exists() else []
+              count = len(previous)
+              size = sum(len(row) + len(PREFIX) for row in previous)
+              ledger_ready = True
+
+              def emit(record, terminal=False):
+                  global count, size
+                  record = {
+                      "subject_commit": subject["subject_commit"],
+                      "subject_tree": subject["subject_tree"],
+                      "run_id": subject["run_id"], "run_attempt": subject["run_attempt"],
+                      "check_name": check_name, "projection_state": "partial",
+                      "instrument_control": check_name.startswith("control-")
+                          or check_name in {"--controls", "--wrapper-controls"},
+                      **record,
+                  }
+                  text = encoded(record)
+                  data = (text + "\n").encode("ascii")
+                  extra = len(PREFIX) + len(data)
+                  if not fits(count, size, extra, terminal):
+                      raise RuntimeError("projection_budget_exceeded")
+                  with evidence.open("ab") as stream:
+                      stream.write(data)
+                  # Reserve the emission before stdout/flush can fail.
+                  count += 1
+                  size += extra
+                  print(PREFIX + text, flush=True)
+
+              if check_name == "--controls":
+                  canary = {"legacy": "##[error]fixture", "modern": "::error::fixture"}
+                  assert json.loads(encoded(canary)) == canary
+                  assert "##[" not in encoded(canary) and "::" not in encoded(canary)
+                  colored = "\x1b[1m\x1b[32m     Running\x1b[0m tests/example.rs (target/debug/example)"
+                  assert harness(colored)
+                  assert not harness("   Compiling mahayana_host_runtime v0.1.0")
+                  assert positive_summary(["test result: ok. 1 passed; 0 failed;"])
+                  assert not positive_summary(["test result: ok. 0 passed; 0 failed;"])
+                  assert not positive_summary(["test result: FAILED. 1 passed; 1 failed;"])
+                  assert requires_test_summary("cargo test --locked --test example ")
+                  assert not requires_test_summary("cargo test --locked --lib --no-run ")
+                  assert not requires_test_summary("cargo tree --locked --invert serde_json ")
+                  assert not fits(MAX_RECORDS - 1, 0, 1)
+                  assert not fits(0, MAX_BYTES - RESERVE, 1)
+                  assert fits(0, 0, 1)
+                  emit({"kind": "instrument-controls", "product_tests": False,
+                        "controls": ["marker-round-trip", "colored-target", "compiler-noise",
+                                     "positive-summary", "zero-test-refusal", "failed-summary-refusal",
+                                     "test-command", "no-run-exemption", "feature-graph-exemption",
+                                     "record-budget-refusal", "byte-budget-refusal", "budget-positive"],
+                        "canary": canary, "colored_target": colored})
+              elif check_name == "--wrapper-controls":
+                  controls = json.loads((root / "wrapper-controls.json").read_text(encoding="utf-8"))
+                  emit({"kind": "instrument-controls", "product_tests": False, **controls})
+              else:
+                  if not re.fullmatch(r"[A-Za-z0-9_-]+", check_name):
+                      raise RuntimeError("invalid_check_name")
+                  status = int(sys.argv[2])
+                  command_file = check_name + ".command.txt"
+                  log_file = check_name + ".log"
+                  command = (root / command_file).read_text(encoding="utf-8").strip()
+                  raw = (root / log_file).read_bytes()
+                  lines = raw.decode("utf-8").splitlines()
+                  exits = (root / "command-exit-codes.tsv").read_text(encoding="utf-8").splitlines()
+                  if not exits or exits[-1].split("\t") != [check_name, str(status)]:
+                      raise RuntimeError("command_exit_binding_mismatch")
+                  emit({"kind": "command", "command": command, "command_file": command_file,
+                        "exit_file": "command-exit-codes.tsv", "exit_line": len(exits),
+                        "command_exit": status, "raw_file": log_file, "raw_bytes": len(raw),
+                        "raw_lines": len(lines), "raw_sha256": hashlib.sha256(raw).hexdigest()})
+                  selected = {index: "harness" for index, line in enumerate(lines) if harness(line)}
+                  context = set()
+                  if status != 0:
+                      for index, line in enumerate(lines):
+                          if re.search(r"(?:error(?:\[|:)|panicked at|assertion .*failed|fatal runtime error|has overflowed its stack)",
+                                       terminal_text(line)):
+                              context.update(range(max(0, index - 2), min(len(lines), index + 9)))
+                      if not context:
+                          context.update(range(max(0, len(lines) - 40), len(lines)))
+                  optional = sorted(context.difference(selected))
+                  context_omitted = max(0, len(optional) - 240)
+                  for index in optional[:240]:
+                      selected[index] = "failure-context"
+                  if check_name == "feature-graph":
+                      selected.update({index: "feature-graph" for index in range(len(lines))})
+                  for index in sorted(selected):
+                      emit({"kind": selected[index], "file": log_file, "line": index + 1,
+                            "text": lines[index]})
+                  if status == 0 and requires_test_summary(command) and not positive_summary(lines):
+                      raise RuntimeError("missing_positive_test_summary")
+                  emit({"kind": "projection-receipt", "command_projection_complete": True,
+                        "product_verdict": None, "command_exit": status,
+                        "context_omitted": context_omitted, "cumulative_records": count + 1,
+                        "cumulative_bytes_before_receipt": size}, terminal=True)
+          except Exception as error:
+              identity = subject if isinstance(subject, dict) else {}
+              failure = {"kind": "projection-failure", "check_name": check_name,
+                         "subject_commit": identity.get("subject_commit"),
+                         "run_id": os.environ.get("GITHUB_RUN_ID"),
+                         "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+                         "projection_state": "refused", "command_projection_complete": False,
+                         "product_verdict": None, "error_type": type(error).__name__}
+              if isinstance(error, RuntimeError):
+                  failure["reason"] = str(error)
+              try:
+                  # Establish the terminal latch before any final console record.
+                  # An unavailable latch/accounting path fails without unbounded output.
+                  with refusal_path.open("x", encoding="utf-8") as stream:
+                      stream.write(encoded(failure) + "\n")
+                  if ledger_ready:
+                      emit(failure, terminal=True)
+              except Exception:
+                  pass
+              sys.exit(86)
+          PY
+          python3 "$OCRM_RECOVERY_EVIDENCE_DIR/project-log.py" --controls
           cat > "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh" <<'SH'
           run_recovery_check() {
             local check_name="$1"
@@ -414,11 +592,103 @@ jobs:
             printf '%q ' "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
             printf '\n' >> "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.command.txt" || return $?
             "$@" > "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" 2>&1 || check_status=$?
-            printf '%s\t%s\n' "$check_name" "$check_status" >> "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" || return $?
-            cat "$OCRM_RECOVERY_EVIDENCE_DIR/$check_name.log" || return $?
-            return "$check_status"
+            local exit_record_status=0
+            printf '%s\t%s\n' "$check_name" "$check_status" >> "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" || exit_record_status=$?
+            local capture_status=0
+            python3 "$OCRM_RECOVERY_EVIDENCE_DIR/project-log.py" "$check_name" "$check_status" || capture_status=$?
+            if [ "$exit_record_status" -ne 0 ]; then capture_status=86; fi
+            printf '%s\t%s\n' "$check_name" "$capture_status" >> "$OCRM_RECOVERY_EVIDENCE_DIR/capture-exit-codes.tsv" || capture_status=86
+            if [ "$check_status" -ne 0 ]; then return "$check_status"; fi
+            return "$capture_status"
           }
           SH
+          # Exact owned paths exercise projector and post-command bookkeeping failures.
+          # Fixture projections stay in their raw files; only the root's bounded summary
+          # is replayed to the Actions console.
+          projection_root="$OCRM_RECOVERY_EVIDENCE_DIR"
+          for projection_case in nonzero capture both capture-status-zero capture-status-nonzero command-status-zero command-status-nonzero; do
+            (
+              export OCRM_RECOVERY_EVIDENCE_DIR="$projection_root/projection-controls/$projection_case"
+              mkdir -p "$OCRM_RECOVERY_EVIDENCE_DIR"
+              cp "$projection_root/subject.json" "$projection_root/project-log.py" "$OCRM_RECOVERY_EVIDENCE_DIR/"
+              source "$projection_root/run-check.sh"
+              command_status=0
+              case "$projection_case" in nonzero|both|*-nonzero) command_status=17 ;; esac
+              case "$projection_case" in
+                capture|both) mkdir "$OCRM_RECOVERY_EVIDENCE_DIR/console-evidence.jsonl" ;;
+                capture-status-*) mkdir "$OCRM_RECOVERY_EVIDENCE_DIR/capture-exit-codes.tsv" ;;
+                command-status-*) mkdir "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" ;;
+              esac
+              returned_status=0
+              run_recovery_check "control-$projection_case" bash -c \
+                'printf "test looked_ok ... ok\ntest result: ok. 1 passed; 0 failed;\n"; exit "$1"' \
+                -- "$command_status" > "$OCRM_RECOVERY_EVIDENCE_DIR/wrapper-console.log" 2>&1 || returned_status=$?
+              expected_status=86
+              if [ "$command_status" -ne 0 ]; then expected_status="$command_status"; fi
+              test "$returned_status" -eq "$expected_status"
+              expected_capture=86
+              if [ "$projection_case" = nonzero ]; then expected_capture=0; fi
+              case "$projection_case" in
+                command-status-*) test -d "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv" ;;
+                *) test "$(cut -f2 "$OCRM_RECOVERY_EVIDENCE_DIR/command-exit-codes.tsv")" -eq "$command_status" ;;
+              esac
+              case "$projection_case" in
+                capture-status-*) test -d "$OCRM_RECOVERY_EVIDENCE_DIR/capture-exit-codes.tsv" ;;
+                *) test "$(cut -f2 "$OCRM_RECOVERY_EVIDENCE_DIR/capture-exit-codes.tsv")" -eq "$expected_capture" ;;
+              esac
+              test -s "$OCRM_RECOVERY_EVIDENCE_DIR/control-$projection_case.log"
+              test -s "$OCRM_RECOVERY_EVIDENCE_DIR/control-$projection_case.command.txt"
+            )
+          done
+          (
+            export OCRM_RECOVERY_EVIDENCE_DIR="$projection_root/projection-controls/budget"
+            mkdir -p "$OCRM_RECOVERY_EVIDENCE_DIR"
+            cp "$projection_root/subject.json" "$projection_root/project-log.py" "$OCRM_RECOVERY_EVIDENCE_DIR/"
+            source "$projection_root/run-check.sh"
+            first_status=0
+            run_recovery_check control-budget-first python3 -c \
+              'for index in range(12001): print("test padding_" + str(index) + "_" + "x" * 200 + " ... ok")' \
+              > "$OCRM_RECOVERY_EVIDENCE_DIR/first-console.log" 2>&1 || first_status=$?
+            test "$first_status" -eq 86
+            for later_status in 0 17; do
+              returned_status=0
+              run_recovery_check "control-budget-after-$later_status" bash -c 'exit "$1"' -- "$later_status" \
+                > "$OCRM_RECOVERY_EVIDENCE_DIR/after-$later_status-console.log" 2>&1 || returned_status=$?
+              expected_status=86
+              if [ "$later_status" -ne 0 ]; then expected_status="$later_status"; fi
+              test "$returned_status" -eq "$expected_status"
+            done
+            python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          prefix = b"OCRM_COMMAND "
+          output = (root / "first-console.log").read_bytes()
+          rows = output.splitlines(keepends=True)
+          assert rows and len(rows) <= 12000
+          assert 2 * 1024 * 1024 - 8192 <= len(output) <= 2 * 1024 * 1024
+          assert all(row.startswith(prefix) for row in rows)
+          retained = (root / "console-evidence.jsonl").read_bytes().splitlines(keepends=True)
+          assert rows == [prefix + row for row in retained]
+          records = [json.loads(row[len(prefix):]) for row in rows]
+          failures = [record for record in records if record["kind"] == "projection-failure"]
+          assert len(failures) == 1 and records[-1] == failures[0]
+          assert failures[0]["reason"] == "projection_budget_exceeded"
+          assert json.loads((root / "projection-refused.json").read_text())["reason"] == "projection_budget_exceeded"
+          for status in (0, 17):
+              assert (root / f"after-{status}-console.log").read_bytes() == b""
+              assert (root / f"control-budget-after-{status}.log").exists()
+              assert (root / f"control-budget-after-{status}.command.txt").stat().st_size > 0
+          assert (root / "command-exit-codes.tsv").read_text().splitlines() == [
+              "control-budget-first\t0", "control-budget-after-0\t0", "control-budget-after-17\t17"]
+          assert (root / "capture-exit-codes.tsv").read_text().splitlines() == [
+              "control-budget-first\t86", "control-budget-after-0\t86", "control-budget-after-17\t86"]
+          PY
+          )
+          cat > "$projection_root/wrapper-controls.json" <<'JSON'
+          {"controls":["original-nonzero","projector-failure-zero","projector-failure-nonzero","capture-status-write-zero","capture-status-write-nonzero","original-status-write-zero","original-status-write-nonzero","actual-budget-exhaustion","repeated-refusal-silent-zero","repeated-refusal-silent-nonzero"],"result":"passed","raw_directory":"projection-controls"}
+          JSON
+          python3 "$projection_root/project-log.py" --wrapper-controls
       - name: Test OCRM Settings transaction and inference consumers
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         shell: bash
@@ -669,6 +939,8 @@ jobs:
               tests::background_terminal_preserves_failure_waiting_and_stale_generation \
               tests::background_terminal_disconnect_preserves_existing_error_and_release \
               tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate \
+              tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch \
+              tests::received_mcp_catalog_preserves_accepted_wire_values_and_order \
               tests::automation_terminal_event_maps_runner_settlement_without_guessing; do
               run_recovery_check "app-${admission_test//::/_}" cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
                 "$admission_test" -- --exact || admission_status=1
@@ -811,6 +1083,13 @@ jobs:
             --test production_agent_checkpoint_contract \
             --test session_production_contract \
             --test runner_routed_provider_contract \
+            --test turn_toolset_contract \
+            --test external_machine_tool_contract \
+            --test sand_generate_image_tool_contract \
+            --test sand_multitask_todo_tool_contract \
+            --test sand_web_tools_contract \
+            --test turn_toolset_await_mcp_contract \
+            --test openclaw_channel_delivery_contract \
             --test turn_runtime_recovery_contract \
             --test transcript_dispatch_source_contract \
             --test routed_send_acceptance_contract \
@@ -987,6 +1266,7 @@ jobs:
               "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
               "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
               "file_memory_store_append_directory_read_error_is_preserved",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
               "synthesis_create_read_errors_preserve_memory_and_metadata",
               "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
               "synthesis_batch_preflights_later_append_before_earlier_remove",
@@ -1402,7 +1682,7 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "agent_content_search_contract", "roster_search_contract", "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
               "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "original_turn_completion_contract": "ORT-v1",
@@ -1948,7 +2228,7 @@ jobs:
           print(json.dumps(receipt, indent=2))
           sys.exit(0 if accepted else cargo_exit or capture_exit or projection_exit or projection_capture_exit or unicode_exit or unicode_capture_exit or 1)
           PY
-      - name: Test portable recovery, Memory, pairing, palette search and Session claim controls on the existing Linux Host cache
+      - name: Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache
         id: channel_pending_recovery
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
         timeout-minutes: 15
@@ -2025,6 +2305,27 @@ jobs:
               "source/host/tests/openclaw_sessions_and_config_contract.rs",
               "source/host/tests/agent_to_agent_messaging_contract.rs",
               "source/host/tests/background_wakes_production_contract.rs",
+              "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+              "source/host/src/extensions/inference/provider_session.rs",
+              "source/host/src/extensions/transcript/turn_runtime.rs",
+              "source/host/src/runner/production_turn_input_projection.rs",
+              "source/host/src/runner/production_turn_run_shell_adapter.rs",
+              "source/host/src/runner/routed_provider_runtime.rs",
+              "source/host/src/runner/tools/turn_toolset.rs",
+              "source/host/src/runner/turn_agent_composition.rs",
+              "source/host/src/connectors/channel_delivery.rs",
+              "source/host/tests/runner_production_bridge_contract.rs",
+              "source/host/tests/production_turn_input_projection_contract.rs",
+              "source/host/tests/turn_toolset_contract.rs",
+              "source/host/tests/runner_routed_provider_contract.rs",
+              "source/host/tests/openclaw_channel_delivery_contract.rs",
+              "source/host/tests/external_machine_tool_contract.rs",
+              "source/host/tests/sand_generate_image_tool_contract.rs",
+              "source/host/tests/sand_multitask_todo_tool_contract.rs",
+              "source/host/tests/sand_web_tools_contract.rs",
+              "source/host/tests/turn_toolset_await_mcp_contract.rs",
+              "source/host/tests/fabushi_responses_credential_context_contract.rs",
+              "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
           ]
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
@@ -2079,6 +2380,7 @@ jobs:
               "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
               "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
               "file_memory_store_append_directory_read_error_is_preserved",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
               "synthesis_create_read_errors_preserve_memory_and_metadata",
               "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
               "synthesis_batch_preflights_later_append_before_earlier_remove",
@@ -2105,7 +2407,6 @@ jobs:
               "channel_failure_retained_head_does_not_block_other_agents_or_wake_families",
               "channel_failure_wiring_oracle_rejects_cleanup_after_idle_return",
               "channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission",
-              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
           ]
           store_filter = "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests"
           required_store = [store_filter + "::" + name for name in (
@@ -2151,10 +2452,48 @@ jobs:
               ]),
               ("session-claim-integration", claim_integration + ["--", "--test-threads=1"], required_claim_integration),
               ("session-claim-commit-custody", base + ["--lib", fresh_filter, "--", "--test-threads=1"], required_fresh),
+              ("received-catalog-preparation", base + ["--test", "runner_production_bridge_contract", "--", "--test-threads=1"], [
+                  "production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure_continues_preparation",
+              ]),
+              ("received-catalog-projection", base + ["--test", "production_turn_input_projection_contract", "--", "--test-threads=1"], [
+                  "production_turn_agent_projection_preserves_typed_catalog_refusal",
+                  "composition_and_live_toolset_projection_preserve_typed_catalog_refusal",
+                  "live_mcp_projection_preserves_first_seen_grouping_and_complete_descriptors",
+                  "frozen_mcp_projection_keeps_exact_vectors_without_live_discovery",
+              ]),
+              ("received-catalog-toolset", base + ["--test", "turn_toolset_contract", "--", "--test-threads=1"], [
+                  "dynamic_turn_toolset_propagates_catalog_refusal_through_native_wrapper",
+                  "dynamic_turn_toolset_keeps_ordinary_discovery_failure_fallback",
+                  "explicit_empty_subagent_does_not_observe_catalog_discovery_failure",
+              ]),
+              ("received-catalog-runtime", base + ["--test", "runner_routed_provider_contract", "--", "--test-threads=1"], [
+                  "received_catalog::invalid_refresh_clears_old_tools_until_valid_or_empty_recovery",
+                  "received_catalog::ordinary_unavailability_preserves_last_wins_public_alias_and_real_results",
+                  "received_catalog::unresolved_catalog_fault_survives_unavailable_refresh",
+                  "received_catalog::close_observes_entered_invalid_refresh_only_after_join",
+                  "received_catalog::worker_join_failure_cannot_erase_recorded_refusal_or_return_clean_observation",
+                  "received_catalog::claude_process::production_claude_catalog_fault_survives_cli_and_retry_boundaries",
+                  "received_catalog::claude_process::production_claude_catalog_refusal_retains_completed_success_and_server_error_without_replay",
+              ]),
+              ("received-catalog-retry", base + ["--lib", "runner::production_turn_run_shell_adapter::tests::received_mcp_catalog_permanent_retry_policy_preserves_custody_precedence", "--", "--exact", "--test-threads=1"], [
+                  "runner::production_turn_run_shell_adapter::tests::received_mcp_catalog_permanent_retry_policy_preserves_custody_precedence",
+              ]),
+              ("received-catalog-builder-regressions", base + ["--no-fail-fast", "--test", "external_machine_tool_contract", "--test", "sand_generate_image_tool_contract", "--test", "sand_multitask_todo_tool_contract", "--test", "sand_web_tools_contract", "--test", "turn_toolset_await_mcp_contract", "--", "--test-threads=1"], []),
+              ("received-catalog-credential-match", base + ["--test", "fabushi_responses_credential_context_contract", "--", "--test-threads=1"], []),
+              ("channel-transport-chunks", base + ["--test", "openclaw_channel_delivery_contract", "--", "--test-threads=1"], [
+                  "test_channel_splitter_preserves_plain_text_and_scalar_bounds",
+                  "test_channel_splitter_preserves_fenced_payload_and_header_spelling",
+                  "test_channel_splitter_does_not_promote_inline_backticks_to_fences",
+                  "test_channel_splitter_uses_exact_raw_fallback_for_unrepresentable_fences",
+                  "test_channel_router_bounds_chunks_and_preserves_delivery_identity",
+                  "test_channel_router_stops_after_effect_then_error_without_replay",
+                  "test_channel_router_preserves_attachment_and_absent_operation_identity",
+                  "test_ocrm_channel_o06_message_chunking_code_fence_preservation",
+              ]),
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1"],
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -2164,7 +2503,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DPR-v1 executes the complete public pairing contract, requiring file-backed approve/revoke/rotate refusal for invalid or exhausted counters, unchanged raw revision/target rows and token authority, reopen/repair, last valid increment and legacy-decimal controls. It does not establish actual Gateway/device transport or crash/unknown-commit recovery. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DPR-v1 executes the complete public pairing contract, requiring file-backed approve/revoke/rotate refusal for invalid or exhausted counters, unchanged raw revision/target rows and token authority, reopen/repair, last valid increment and legacy-decimal controls. It does not establish actual Gateway/device transport or crash/unknown-commit recovery. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -2492,9 +2831,13 @@ jobs:
               "source/host/src/extensions/automations/fire_delivery.rs",
               "source/host/src/extensions/automations/production.rs",
               "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+              "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+              "source/host/src/extensions/inference/provider_session.rs",
+              "source/host/src/runner/coordinator_tool_relay.rs",
+              "source/host/src/runner/routed_provider_runtime.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/HSA-v1/DPS-v1",
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -2506,7 +2849,7 @@ jobs:
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "commands": [], "cases": [], "result": "failed",
-              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. Actual normal Host startup additionally covers profile custody and durable pairing admission before its existing daemon stop, with file-backed token/revision persistence and fixture-owned storage repair. Full startup, linked production package, live Gateway/device transport, real external provider/backend/client, macOS and whole-platform acceptance remain open. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. MCP cases exercise the actual Coordinator relay list decoder, typed secret-free whole-catalog refusal and accepted-wire compatibility with zero execution/review calls. Actual normal Host startup additionally covers profile custody and durable pairing admission before its existing daemon stop, with file-backed token/revision persistence and fixture-owned storage repair. Full startup, linked production package, live Gateway/device transport, real external provider/backend/client, macOS and whole-platform acceptance remain open. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
           }
           def save():
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -2624,6 +2967,10 @@ jobs:
                   "channel_recovery_worker_read_error_retains_original_queued_marker",
                   "channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata",
               ]]
+              required += [
+                  "tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch",
+                  "tests::received_mcp_catalog_preserves_accepted_wire_values_and_order",
+              ]
               receipt["required_tests"] = required
               save()
               for index, name in enumerate(required):

@@ -1,10 +1,13 @@
 use std::collections::BTreeMap;
+use std::path::Path;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::cursor_backend::SandPrivacyMode;
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
-    RoutedToolDefinition,
+    McpCatalogKind, McpCatalogReason, McpCatalogRefusal, ProviderMessage,
+    ProviderSessionError, RoutedMcpMetaToolDefinition, RoutedProvider,
+    RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
@@ -12,6 +15,8 @@ use mahayana_host_runtime::runner::production_turn_agent_owner::{
     ProductionTurnAgentStaticConfig, ProductionTurnPrivacyModeResolver,
     ProductionTurnSummarizationPrompt,
 };
+use mahayana_host_runtime::runner::production_agent_checkpoint::AgentStateCheckpointSink;
+use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
@@ -23,6 +28,10 @@ use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
     AgentManagementRecord, AgentManagementSink,
 };
 use mahayana_host_runtime::runner::tools::sand_computer_tool::ComputerToolExposure;
+use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
+    ExternalMachineExecutor, ExternalMachineReadArgs, ExternalMachineShellArgs,
+};
+use mahayana_host_runtime::runner::{TerminalOutcome, ToolEffectCustodyObservation};
 use mahayana_host_runtime::runner::tools::sand_mcp_management_tools::{
     McpAuthenticationResult, McpInstalledServer, McpManagementSink, McpPluginDetail,
     McpPluginSummary, McpRemoveServerResult, McpUninstallPluginResult,
@@ -547,4 +556,213 @@ fn production_bridge_binds_the_generated_runner_facade() {
     runner.cancel_quiesce_for_upgrade();
     assert!(!runner.is_quiescing_for_upgrade());
     assert!(!runner.is_awaiting_user_selection());
+}
+
+
+struct PreparationCatalogBridge {
+    refusal: Option<McpCatalogRefusal>,
+    tool_lists: AtomicUsize,
+    meta_lists: AtomicUsize,
+    calls: AtomicUsize,
+}
+
+impl RoutedToolBridge for PreparationCatalogBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.tool_lists.fetch_add(1, Ordering::SeqCst);
+        McpStateBridge.list_tools()
+    }
+
+    fn list_mcp_meta_tools(
+        &self,
+    ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+        self.meta_lists.fetch_add(1, Ordering::SeqCst);
+        match self.refusal {
+            Some(refusal) => Err(ProviderSessionError::McpCatalog(refusal)),
+            None => Err(ProviderSessionError::Tool("discovery unavailable".into())),
+        }
+    }
+
+    fn call_tool(
+        &self,
+        _tool: &RoutedToolDefinition,
+        _args: Value,
+        _tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Null)
+    }
+}
+
+const PREPARATION_STATE_CONTROL: &str = "ordinary discovery reached base-state preparation";
+
+struct PreparationStateTripwire {
+    reads: AtomicUsize,
+}
+
+impl AgentStateCheckpointSink for PreparationStateTripwire {
+    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
+        self.reads.fetch_add(1, Ordering::SeqCst);
+        Err(ProviderSessionError::Protocol(PREPARATION_STATE_CONTROL.into()))
+    }
+}
+
+#[derive(Default)]
+struct PreparationExternalMachine {
+    calls: AtomicUsize,
+}
+
+impl ExternalMachineExecutor for PreparationExternalMachine {
+    fn execute_shell(&self, _args: &ExternalMachineShellArgs) -> Result<Value, ProviderSessionError> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Null)
+    }
+
+    fn execute_read(&self, _args: &ExternalMachineReadArgs) -> Result<Value, ProviderSessionError> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Ok(Value::Null)
+    }
+}
+
+#[test]
+fn production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure_continues_preparation() {
+    let refusal = McpCatalogRefusal {
+        kind: McpCatalogKind::MetaTools,
+        row: Some(1),
+        reason: McpCatalogReason::ToolNameMustBeString,
+    };
+    for received_refusal in [Some(refusal), None] {
+        let bridge = Arc::new(PreparationCatalogBridge {
+            refusal: received_refusal,
+            tool_lists: AtomicUsize::new(0),
+            meta_lists: AtomicUsize::new(0),
+            calls: AtomicUsize::new(0),
+        });
+        let checkpoint = Arc::new(PreparationStateTripwire { reads: AtomicUsize::new(0) });
+        let external = Arc::new(PreparationExternalMachine::default());
+        let reviews = Arc::new(AtomicUsize::new(0));
+        let review_calls = Arc::clone(&reviews);
+        let commits = Arc::new(AtomicUsize::new(0));
+        let profile_commits = Arc::clone(&commits);
+        let cancellation = RoutedProviderCancellation::default();
+        let observation = TurnObservation::shared("catalog-preparation-agent", None);
+        let composition = create_production_runner_composition(
+            ProductionRunnerCompositionInput {
+                provider: RoutedProvider::OpenRouter,
+                fabushi_model: None,
+                fabushi_request_binding: None,
+                bridge: bridge.clone(),
+                cursor_auth: None,
+                request_context: request_context(),
+                cancellation: cancellation.clone(),
+                checkpoint_store: Arc::new(MemoryCheckpointStore),
+                retry_sink: None,
+                retry_report_sink: None,
+                usage_sink: None,
+                spotlight_enabled: false,
+                toolset_role: Default::default(),
+                local_tool_permission: None,
+                box_resources: None,
+                browser_executor: None,
+                web_executor: None,
+                generate_image_executor: None,
+                computer_executor: None,
+                computer_exposure: ComputerToolExposure::Full,
+                file_transfer_executor: None,
+                external_machine_executor: Some(external.clone()),
+                external_shell_review: Some(Arc::new(move |_| {
+                    review_calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(None)
+                })),
+                mcp_management_sink: None,
+                send_message_sink: None,
+                reaction_sink: None,
+                cloud_agent_tool: None,
+                multitask_enabled: false,
+                action_audit: None,
+                observation: Some(Arc::clone(&observation)),
+            },
+        );
+        let build_bindings = ProductionTurnAgentBuildBindings::new(
+            ProductionTurnAgentStaticConfig {
+                model_id: "grok-contract".into(),
+                agent_token_limit: 200_000,
+                conversation_id: "catalog-preparation-agent".into(),
+                is_box_scoped_subagent: false,
+                is_subagent_runner: false,
+                is_shared_room_runner: false,
+                sand_send_message_delivery_owed: true,
+                transcripts_folder_available: true,
+            },
+            Arc::new(|| Some(SandPrivacyMode::NoTraining)),
+            Arc::new(|_, _, _| Ok("summary".into())),
+        );
+        let lifecycle = ProductionTurnAgentLifecycleBindings::new(
+            "catalog-preparation-agent", "catalog-preparation-request",
+        ).with_profile_announcement_commit(Some(Arc::new(move || {
+            profile_commits.fetch_add(1, Ordering::SeqCst);
+        })));
+        let mut runner = create_production_runner(
+            composition,
+            build_bindings,
+            lifecycle,
+            Some(checkpoint.clone()),
+            Arc::new(AtomicBool::new(false)),
+            Arc::new(Mutex::new(SubagentRuntime::default())),
+            Some(observation),
+            None,
+            None,
+            None,
+        );
+        let messages = vec![ProviderMessage {
+            role: "user".into(),
+            content: "prepare the production catalog".into(),
+        }];
+        let turn_input = create_production_turn_input_projection(
+            &json!({}), "catalog-preparation-request", &messages,
+        ).expect("real production turn input");
+        let mut updates = Vec::new();
+        // The tripwire bounds even the ordinary-failure control before any
+        // provider I/O. Only that control may reach the later state read.
+        let error = runner.run_routed_provider_with_projected_turn_input(
+            Path::new("."), &messages, &messages, turn_input,
+            &mut |delta, _| updates.push(delta.to_string()),
+        ).expect_err("preparation refuses before generated execution");
+        let expected_message = match received_refusal {
+            Some(expected) => {
+                assert!(matches!(
+                    &error,
+                    ProviderSessionError::McpCatalog(actual) if *actual == expected
+                ));
+                assert_eq!(checkpoint.reads.load(Ordering::SeqCst), 0);
+                expected.to_string()
+            }
+            None => {
+                assert!(matches!(
+                    &error,
+                    ProviderSessionError::Protocol(message) if message == PREPARATION_STATE_CONTROL
+                ));
+                assert_eq!(checkpoint.reads.load(Ordering::SeqCst), 1);
+                PREPARATION_STATE_CONTROL.to_string()
+            }
+        };
+        assert_eq!(bridge.meta_lists.load(Ordering::SeqCst), 1);
+        assert_eq!(bridge.tool_lists.load(Ordering::SeqCst), 0);
+        assert_eq!(bridge.calls.load(Ordering::SeqCst), 0);
+        assert_eq!(external.calls.load(Ordering::SeqCst), 0);
+        assert_eq!(reviews.load(Ordering::SeqCst), 0);
+        assert_eq!(commits.load(Ordering::SeqCst), 0);
+        assert!(updates.is_empty());
+        assert!(!cancellation.is_cancelled());
+        assert_eq!(
+            runner.last_tool_effect_custody(),
+            Some(&ToolEffectCustodyObservation::NotStarted),
+            "the real production executor must not have entered",
+        );
+        assert_eq!(runner.get_observed_tool_call_count().expect("observed calls"), 0);
+        let finished = runner.last_finished().expect("preparation failure settles this turn");
+        assert!(matches!(
+            &finished.outcome,
+            TerminalOutcome::Failed { retryable: false, message } if message == &expected_message
+        ));
+    }
 }

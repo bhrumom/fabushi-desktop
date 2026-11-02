@@ -82,7 +82,8 @@ fn turn_toolset_exposes_exact_multitask_description_only_when_enabled() {
             multitask_todo_state: Some(Arc::clone(&state)),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     assert!(
         disabled
             .list_tools()
@@ -98,7 +99,8 @@ fn turn_toolset_exposes_exact_multitask_description_only_when_enabled() {
             multitask_todo_state: Some(state),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     let definition = todo_tool(&enabled);
     assert_eq!(
         definition.description.as_deref(),

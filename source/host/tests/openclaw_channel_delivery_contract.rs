@@ -27,6 +27,7 @@ use mahayana_host_runtime::connectors::channel_attachment::{
 use mahayana_host_runtime::connectors::channel_delivery::{
     ChannelDeliveryPort, ChannelDeliveryRouter, ChannelOutboundMessage, ChannelThreadRouter,
     HostChannelDelivery, UnregisteredChannelDeliveryPort,
+    CHANNEL_MAX_MESSAGE_CHARS, split_channel_message,
 };
 use mahayana_host_runtime::extensions::transcript::channel_delivery_unregistered_error::SandChannelDeliveryUnregisteredError;
 
@@ -263,52 +264,6 @@ fn test_ocrm_channel_o05_attachment_50_mib_limit() {
 // ---------------------------------------------------------------------------
 // OCRM-CHANNEL-O06: Outbound Message Chunking & Code Fence Preservation
 // ---------------------------------------------------------------------------
-pub const CHANNEL_MAX_MESSAGE_CHARS: usize = 4_000;
-
-fn split_channel_message(text: &str, limit: usize) -> Vec<String> {
-    if text.len() <= limit {
-        return vec![text.to_string()];
-    }
-
-    let mut chunks = Vec::new();
-    let mut current = String::new();
-    let mut in_code_fence = false;
-    let mut fence_lang = String::new();
-
-    for line in text.lines() {
-        let is_fence = line.trim_start().starts_with("```");
-        if is_fence {
-            if in_code_fence {
-                in_code_fence = false;
-                fence_lang.clear();
-            } else {
-                in_code_fence = true;
-                fence_lang = line.trim_start().trim_start_matches("```").trim().to_string();
-            }
-        }
-
-        if current.len() + line.len() + 1 > limit && !current.is_empty() {
-            if in_code_fence {
-                current.push_str("\n```"); // Close open fence in chunk
-                chunks.push(current);
-                current = format!("```{fence_lang}\n{line}"); // Reopen in next chunk
-            } else {
-                chunks.push(current);
-                current = line.to_string();
-            }
-        } else {
-            if !current.is_empty() {
-                current.push('\n');
-            }
-            current.push_str(line);
-        }
-    }
-    if !current.is_empty() {
-        chunks.push(current);
-    }
-    chunks
-}
-
 #[test]
 fn test_ocrm_channel_o06_message_chunking_code_fence_preservation() {
     assert_eq!(CHANNEL_MAX_MESSAGE_CHARS, 4_000);
@@ -316,19 +271,314 @@ fn test_ocrm_channel_o06_message_chunking_code_fence_preservation() {
     let short_msg = "Hello world";
     assert_eq!(split_channel_message(short_msg, 4_000).len(), 1);
 
-    // Split code block message across 100-character boundary
+    // Split code block message across 80-character boundary
     let code_block = format!(
         "Intro text:\n```rust\n{}\n```\nOutro text",
         "let x = 42;\n".repeat(10)
     );
     let chunks = split_channel_message(&code_block, 80);
     assert!(chunks.len() >= 2);
+    assert_channel_chunks_bounded(&chunks, 80);
 
     // Ensure all chunks maintain balanced code fences
     for chunk in &chunks {
         let fence_count = chunk.lines().filter(|l| l.trim_start().starts_with("```")).count();
         assert_eq!(fence_count % 2, 0, "code fences must be closed in each chunk: {chunk}");
     }
+}
+
+fn assert_channel_chunks_bounded(chunks: &[String], limit: usize) {
+    assert!(!chunks.is_empty(), "the splitter must retain an empty input result");
+    for chunk in chunks {
+        assert!(
+            chunk.chars().count() <= limit.max(1),
+            "the entire provider payload, including wrappers, must fit the scalar limit",
+        );
+    }
+}
+
+#[test]
+fn test_channel_splitter_preserves_plain_text_and_scalar_bounds() {
+    for (text, limit) in [
+        (String::new(), 0),
+        ("short text\r\n".to_string(), 32),
+        ("x".repeat(4_000), 4_000),
+        ("x".repeat(4_001), 4_000),
+        ("🦀é界".repeat(2_667), 4_000),
+        ("one\r\n\r\n two \t\r\nlast\n".to_string(), 7),
+        ("\n\n\n".to_string(), 1),
+        ("a\r\n".to_string(), 0),
+    ] {
+        let chunks = split_channel_message(&text, limit);
+        assert_channel_chunks_bounded(&chunks, limit);
+        assert_eq!(chunks.concat(), text, "every original character stays in order");
+        if text.is_empty() {
+            assert_eq!(chunks, vec![String::new()]);
+        } else {
+            assert!(chunks.iter().all(|chunk| !chunk.is_empty()));
+        }
+        if text.chars().count() <= limit.max(1) {
+            assert_eq!(chunks, vec![text], "the short-text result remains unchanged");
+        }
+    }
+    assert_eq!(
+        split_channel_message("aa\nbbb\ncc\n", 7),
+        vec!["aa\nbbb\n".to_string(), "cc\n".to_string()],
+        "prefer a complete next line when it fits in a fresh chunk",
+    );
+}
+
+fn assert_channel_fence_payload_preserved(text: &str, header: &str, limit: usize) {
+    let chunks = split_channel_message(text, limit);
+    assert!(chunks.len() > 1, "this control must exercise synthetic wrappers");
+    assert_channel_chunks_bounded(&chunks, limit);
+    let reopening = format!("{header}\n");
+    let mut original = String::new();
+    for (index, chunk) in chunks.iter().enumerate() {
+        assert!(!chunk.is_empty());
+        assert_eq!(
+            chunk.lines().filter(|line| line.trim_start().starts_with("```")).count() % 2,
+            0,
+            "normal fences must be balanced in every chunk",
+        );
+        let content = if index == 0 {
+            chunk.as_str()
+        } else {
+            chunk.strip_prefix(reopening.as_str()).expect("preserve the exact opening header spelling")
+        };
+        let content = if index + 1 == chunks.len() {
+            content
+        } else {
+            content.strip_suffix("\n```").expect("a split code payload has a synthetic close")
+        };
+        original.push_str(content);
+    }
+    assert_eq!(original, text, "only the declared synthetic wrappers may be added");
+}
+
+#[test]
+fn test_channel_splitter_preserves_fenced_payload_and_header_spelling() {
+    let closure_overflow = format!("```\n{}\n{}\n```", "x".repeat(3_993), "y".repeat(10));
+    assert_channel_fence_payload_preserved(&closure_overflow, "```", 4_000);
+
+    let header = "  ``` Rust + meta  ";
+    let unicode_crlf = format!(
+        "{header}\r\n{}\r\n\r\n \tlast line  \r\n  ```\r\n",
+        "💡界".repeat(4_001),
+    );
+    assert_channel_fence_payload_preserved(&unicode_crlf, header, 4_000);
+
+    let code = format!("```rust\n{}```\n", "let x = 42;\n".repeat(30));
+    assert_channel_fence_payload_preserved(&code, "```rust", 80);
+}
+
+#[test]
+fn test_channel_splitter_does_not_promote_inline_backticks_to_fences() {
+    let header = "```text";
+    for body in [
+        format!("{}```literal\n", "a".repeat(40)),
+        format!("{}\t  ```literal\r\n", "a".repeat(20)),
+        format!("{}{}\n", "a".repeat(20), "```".repeat(40)),
+    ] {
+        let text = format!("{header}\n{body}```");
+        assert_channel_fence_payload_preserved(&text, header, 32);
+    }
+    for limit in [32, 4_096, 8_192] {
+        let text = format!("{header}\na{}\n```", "`".repeat(24_577));
+        assert_channel_fence_payload_preserved(&text, header, limit);
+    }
+    for limit in [32, CHANNEL_MAX_MESSAGE_CHARS] {
+        for (prefix, inline) in [
+            ("a".repeat(limit), "```literal\n"),
+            ("界".repeat(limit), "\t  ```literal\r\n"),
+        ] {
+            let text = format!("{prefix}{inline}```text\nx\n```\n");
+            let chunks = split_channel_message(&text, limit);
+            assert_channel_chunks_bounded(&chunks, limit);
+            assert_eq!(chunks.concat(), text, "mixed prose and fitting code need no added wrappers");
+            for chunk in chunks {
+                assert!(!chunk.is_empty());
+                assert_eq!(
+                    chunk.lines().filter(|line| line.trim_start().starts_with("```")).count() % 2,
+                    0,
+                    "a prose split must not promote inline payload to a fence",
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn test_channel_splitter_uses_exact_raw_fallback_for_unrepresentable_fences() {
+    let cases = [
+        (format!("prefix\n```rust\n{}", "unclosed ".repeat(10)), 32),
+        ("```\nabcdef\n```".to_string(), 8),
+        ("```\nabcdef\n```".to_string(), 0),
+        (format!("  ```{}\nx\n```", "header".repeat(20)), 32),
+        (format!("```rust\nx\n  ```{}\r\n", "closing".repeat(20)), 32),
+    ];
+    for (text, limit) in cases {
+        let chunks = split_channel_message(&text, limit);
+        assert_channel_chunks_bounded(&chunks, limit);
+        assert!(chunks.iter().all(|chunk| !chunk.is_empty()));
+        assert_eq!(chunks.concat(), text, "fallback adds no formatting characters");
+        assert!(chunks[..chunks.len() - 1].iter().all(|chunk| {
+            chunk.chars().count() == limit.max(1)
+        }), "raw fallback uses deterministic full-size scalar chunks before the tail");
+    }
+    let short_unmatched = "  ```rust\r\n";
+    assert_eq!(
+        split_channel_message(short_unmatched, short_unmatched.chars().count()),
+        vec![short_unmatched.to_string()],
+        "even unmatched short input retains the existing fast path",
+    );
+}
+
+type ChannelChunkRecords = Arc<Mutex<Vec<(String, String, ChannelOutboundMessage)>>>;
+
+struct BoundedChannelDeliveryPort {
+    calls: ChannelChunkRecords,
+    accepted: ChannelChunkRecords,
+    fail_after_accepting: Option<usize>,
+}
+
+impl ChannelDeliveryPort for BoundedChannelDeliveryPort {
+    fn deliver(
+        &self,
+        agent_id: &str,
+        address_token: &str,
+        message: &ChannelOutboundMessage,
+    ) -> Result<(), String> {
+        let record = (agent_id.to_string(), address_token.to_string(), message.clone());
+        self.calls.lock().unwrap().push(record.clone());
+        if let ChannelOutboundMessage::Text { text, .. } = message {
+            if text.chars().count() > CHANNEL_MAX_MESSAGE_CHARS {
+                return Err("controlled provider rejected an oversized text payload".into());
+            }
+        }
+        let accepted_count = {
+            let mut accepted = self.accepted.lock().unwrap();
+            accepted.push(record);
+            accepted.len()
+        };
+        if self.fail_after_accepting == Some(accepted_count) {
+            return Err("controlled acknowledgement error after accepted payload".into());
+        }
+        Ok(())
+    }
+}
+
+fn bounded_channel_delivery(
+    fail_after_accepting: Option<usize>,
+) -> (HostChannelDelivery, ChannelChunkRecords, ChannelChunkRecords) {
+    let router = ChannelDeliveryRouter::new();
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let accepted = Arc::new(Mutex::new(Vec::new()));
+    router.register("fixture", Arc::new(BoundedChannelDeliveryPort {
+        calls: Arc::clone(&calls),
+        accepted: Arc::clone(&accepted),
+        fail_after_accepting,
+    })).expect("real provider registration");
+    (HostChannelDelivery::new(Arc::new(router)), calls, accepted)
+}
+
+#[test]
+fn test_channel_router_bounds_chunks_and_preserves_delivery_identity() {
+    let fenced = format!("```\n{}\n{}\n```", "x".repeat(3_993), "y".repeat(10));
+    for (text, plain) in [
+        ("x".repeat(4_000), true),
+        ("x".repeat(4_001), true),
+        ("🦀é界".repeat(2_667), true),
+        (format!("{}```literal\n```text\nx\n```\n", "a".repeat(CHANNEL_MAX_MESSAGE_CHARS)), true),
+        (fenced, false),
+    ] {
+        let (delivery, calls, accepted) = bounded_channel_delivery(None);
+        delivery.deliver("agent-7", "fixture:room/9", &ChannelOutboundMessage::Text {
+            text: text.clone(),
+            operation_id: Some("persisted-entry-7".into()),
+        }).expect("the actual Host/router must respect the enforcing provider's bound");
+        let calls = calls.lock().unwrap().clone();
+        assert_eq!(calls, *accepted.lock().unwrap(), "every accepted effect has exactly one call");
+        assert!(!calls.is_empty());
+        if text.chars().count() > CHANNEL_MAX_MESSAGE_CHARS {
+            assert!(calls.len() > 1);
+        } else {
+            assert_eq!(calls.len(), 1);
+        }
+        let mut reconstructed = String::new();
+        for (index, (agent_id, address, message)) in calls.iter().enumerate() {
+            assert_eq!(agent_id, "agent-7");
+            assert_eq!(address, "fixture:room/9");
+            let ChannelOutboundMessage::Text { text, operation_id } = message else {
+                panic!("text must remain text at the actual provider boundary");
+            };
+            assert!(!text.is_empty());
+            assert!(text.chars().count() <= CHANNEL_MAX_MESSAGE_CHARS);
+            assert_eq!(
+                text.lines().filter(|line| line.trim_start().starts_with("```")).count() % 2,
+                0,
+                "every normal-fence payload reaching the provider remains balanced",
+            );
+            let expected = format!("persisted-entry-7:chunk-{}", index + 1);
+            assert_eq!(operation_id.as_deref(), Some(expected.as_str()));
+            reconstructed.push_str(text);
+        }
+        if plain {
+            assert_eq!(reconstructed, text, "provider calls preserve original text order");
+        }
+    }
+}
+
+#[test]
+fn test_channel_router_stops_after_effect_then_error_without_replay() {
+    let (delivery, calls, accepted) = bounded_channel_delivery(Some(2));
+    let result = delivery.deliver("agent-7", "fixture:room/9", &ChannelOutboundMessage::Text {
+        text: "x".repeat(9_000),
+        operation_id: Some("persisted-entry-7".into()),
+    });
+    assert_eq!(result, Err("controlled acknowledgement error after accepted payload".into()));
+    let calls = calls.lock().unwrap().clone();
+    assert_eq!(calls.len(), 2, "no third chunk and no retry after an ambiguous effect");
+    assert_eq!(calls, *accepted.lock().unwrap(), "the second effect happened before the error");
+    for (index, (agent_id, address, message)) in calls.iter().enumerate() {
+        assert_eq!(agent_id, "agent-7");
+        assert_eq!(address, "fixture:room/9");
+        assert_eq!(message, &ChannelOutboundMessage::Text {
+            text: "x".repeat(4_000),
+            operation_id: Some(format!("persisted-entry-7:chunk-{}", index + 1)),
+        });
+    }
+}
+
+#[test]
+fn test_channel_router_preserves_attachment_and_absent_operation_identity() {
+    let (delivery, calls, accepted) = bounded_channel_delivery(None);
+    let attachment = ChannelOutboundMessage::Attachment {
+        url: "https://example.invalid/original-attachment".into(),
+        caption: Some("caption".repeat(1_000)),
+        operation_id: Some("attachment-entry".into()),
+    };
+    delivery.deliver("agent-7", "fixture:room/9", &attachment).expect("unchanged attachment dispatch");
+    delivery.deliver("agent-7", "fixture:room/9", &ChannelOutboundMessage::Text {
+        text: "é".repeat(4_001),
+        operation_id: None,
+    }).expect("text without an operation identity still chunks");
+    let calls = calls.lock().unwrap().clone();
+    assert_eq!(calls, *accepted.lock().unwrap());
+    assert_eq!(calls.len(), 3);
+    assert_eq!(calls[0], ("agent-7".into(), "fixture:room/9".into(), attachment));
+    let mut text = String::new();
+    for (agent_id, address, message) in &calls[1..] {
+        assert_eq!(agent_id, "agent-7");
+        assert_eq!(address, "fixture:room/9");
+        let ChannelOutboundMessage::Text { text: chunk, operation_id } = message else {
+            panic!("only the original attachment is an attachment");
+        };
+        assert!(operation_id.is_none(), "do not manufacture an operation identity");
+        assert!(chunk.chars().count() <= CHANNEL_MAX_MESSAGE_CHARS);
+        text.push_str(chunk);
+    }
+    assert_eq!(text, "é".repeat(4_001));
 }
 
 // ---------------------------------------------------------------------------

@@ -247,6 +247,30 @@ impl RoutedProviderCheckpoint {
     }
 }
 
+/// A received catalog is unusable as a whole. These fixed fields deliberately
+/// exclude the rejected payload and account or descriptor values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum McpCatalogKind {
+    Tools,
+    MetaTools,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum McpCatalogReason {
+    ExpectedArray,
+    NameMustBeString,
+    ProviderIdentifierMustBeString,
+    ToolNameMustBeString,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("MCP {kind:?} catalog refused at row {row:?}: {reason:?}")]
+pub struct McpCatalogRefusal {
+    pub kind: McpCatalogKind,
+    pub row: Option<usize>,
+    pub reason: McpCatalogReason,
+}
+
 #[derive(Debug, Error)]
 pub enum ProviderSessionError {
     #[error("{0}")]
@@ -259,6 +283,8 @@ pub enum ProviderSessionError {
     Protocol(String),
     #[error("{0}")]
     Tool(String),
+    #[error("{0}")]
+    McpCatalog(McpCatalogRefusal),
     #[error("tool execution outcome is unknown: {0}")]
     ToolOutcomeUnknown(String),
     #[error("provider refusal: {0:?}")]

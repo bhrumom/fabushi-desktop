@@ -17,7 +17,7 @@ use uuid::Uuid;
 use crate::extensions::inference::cursor_inference_transport::CursorInferenceAuth;
 use crate::extensions::session::typed_replay::TypedReplayEntry;
 use crate::extensions::inference::provider_session::{
-    FabushiResponsesRequestBinding, ProviderMessage, ProviderPartialToolCall,
+    FabushiResponsesRequestBinding, McpCatalogRefusal, ProviderMessage, ProviderPartialToolCall,
     ProviderSessionError, ProviderTokenUsage,
     ProviderToolStepReminderHook, RoutedMcpMetaToolDefinition, RoutedProvider,
     RoutedProviderCheckpoint, RoutedProviderOptions, RoutedToolDefinition,
@@ -421,9 +421,21 @@ impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'
             )
         };
         if let Some(server) = mcp_server.as_mut() {
-            // Retire this attempt's endpoint before the adapter can retry.
-            // Closing the listener is not evidence that detached tools ended.
-            server.close();
+            // Join before observing: an entered list refresh can finish during
+            // close. Admission closure itself is not user cancellation, and
+            // it does not settle detached tool custody.
+            let catalog_result = server.close_and_observe_catalog();
+            if !attempt.is_cancelled()
+                && attempt.effect_custody().unsettled_reason().is_none()
+                && !matches!(
+                    &result,
+                    Err(ProviderSessionError::ToolOutcomeUnknown(_)
+                        | ProviderSessionError::Authentication(_)
+                        | ProviderSessionError::Configuration(_))
+                )
+            {
+                catalog_result?;
+            }
         }
         result
     }
@@ -562,6 +574,8 @@ pub struct RoutedMcpServer {
     url: String,
     stop: Arc<AtomicBool>,
     worker: Option<JoinHandle<()>>,
+    worker_failed: bool,
+    catalog_refusal: Arc<Mutex<Option<McpCatalogRefusal>>>,
     attempt: RoutedProviderAttemptControl,
 }
 
@@ -580,7 +594,24 @@ impl RoutedMcpServer {
                     .and_then(|value| value.split('/').next())
                     .unwrap_or("127.0.0.1:0"),
             );
-            let _ = worker.join();
+            self.worker_failed |= worker.join().is_err();
+        }
+    }
+
+    /// Retire the endpoint and observe its final catalog state. The shared
+    /// refusal survives worker failure; a failed join is never a clean catalog.
+    pub fn close_and_observe_catalog(&mut self) -> Result<(), ProviderSessionError> {
+        self.close();
+        let refusal = *self.catalog_refusal.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(refusal) = refusal {
+            Err(ProviderSessionError::McpCatalog(refusal))
+        } else if self.worker_failed {
+            Err(ProviderSessionError::Protocol(
+                "routed MCP catalog observation failed: worker did not complete".into(),
+            ))
+        } else {
+            Ok(())
         }
     }
 }
@@ -631,6 +662,8 @@ pub fn start_routed_mcp_server_for_attempt(
     let url = format!("http://{}{}", address, path);
     let stop = Arc::new(AtomicBool::new(false));
     let worker_stop = Arc::clone(&stop);
+    let catalog_refusal = Arc::new(Mutex::new(None));
+    let worker_catalog_refusal = Arc::clone(&catalog_refusal);
     let worker_attempt = attempt.clone();
     let worker = thread::Builder::new()
         .name("mahayana-runner-routed-mcp".into())
@@ -651,6 +684,7 @@ pub fn start_routed_mcp_server_for_attempt(
                             stream,
                             &path,
                             &mut tools,
+                            &worker_catalog_refusal,
                             &bridge,
                             &worker_attempt,
                             is_computer_use_subagent,
@@ -671,6 +705,8 @@ pub fn start_routed_mcp_server_for_attempt(
         url,
         stop,
         worker: Some(worker),
+        worker_failed: false,
+        catalog_refusal,
         attempt,
     })
 }
@@ -679,6 +715,7 @@ fn serve_request(
     mut stream: TcpStream,
     expected_path: &str,
     tools: &mut HashMap<String, RoutedToolDefinition>,
+    catalog_refusal: &Mutex<Option<McpCatalogRefusal>>,
     bridge: &Arc<dyn RoutedToolBridge>,
     attempt: &RoutedProviderAttemptControl,
     is_computer_use_subagent: bool,
@@ -763,7 +800,10 @@ fn serve_request(
         }),
         "tools/list" => match bridge.list_tools() {
             Ok(discovered) => {
+                // The sequential worker publishes the whole accepted refresh.
+                // Keep existing public-name aliases and last-wins selection.
                 *tools = discovered.into_iter().map(|tool| (tool.name.clone(), tool)).collect();
+                *catalog_refusal.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
                 json!({
                     "tools": tools.values().map(|tool| json!({
                         "name": tool.name,
@@ -773,6 +813,13 @@ fn serve_request(
                         "inputSchema": tool.input_schema
                     })).collect::<Vec<_>>()
                 })
+            }
+            Err(ProviderSessionError::McpCatalog(refusal)) => {
+                // Received corruption invalidates old descriptors. Availability
+                // failures below retain the current map and unresolved fault.
+                tools.clear();
+                *catalog_refusal.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(refusal);
+                tool_failure(refusal.to_string())
             }
             Err(error) => tool_failure(error.to_string()),
         },

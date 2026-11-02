@@ -1,9 +1,11 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedToolDefinition,
+    McpCatalogKind, McpCatalogReason, McpCatalogRefusal, ProviderSessionError,
+    RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
@@ -142,7 +144,8 @@ fn turn_toolset_composes_host_state_capability_without_hiding_base_tools() {
             state_writer: Some(state_writer),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
 
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().any(|tool| tool.name == SAND_UPDATE_STATE_TOOL_NAME));
@@ -172,7 +175,8 @@ fn turn_toolset_spotlight_fence_preserves_tool_inventory() {
     let bridge = build_turn_toolset(
         Arc::new(BaseBridge),
         TurnToolsetDependencies::default(),
-    );
+    )
+    .expect("turn toolset");
     let fenced = fence_turn_toolset(bridge, true);
     let tools = fenced.list_tools().expect("tools");
     assert_eq!(tools.len(), 1);
@@ -205,7 +209,8 @@ fn ordinary_subagent_without_nested_configs_gets_no_tools() {
             },
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
 
     assert!(bridge.list_tools().expect("tools").is_empty());
 }
@@ -225,7 +230,8 @@ fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
             browser_executor: Some(browser),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
 
     let tools = bridge.list_tools().expect("tools");
     let navigate = tools
@@ -256,7 +262,8 @@ fn turn_toolset_hides_browser_from_non_browser_runner_roles() {
             browser_executor: Some(browser),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
 
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().all(|tool| !tool.name.starts_with("browser_")));
@@ -274,7 +281,8 @@ fn dynamic_turn_toolset_moves_native_tools_behind_cursor_meta_dispatch() {
             },
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
 
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().any(|tool| tool.name == "base_tool"));
@@ -323,7 +331,8 @@ fn turn_toolset_composes_computer_and_screenshot_capabilities_without_hiding_bas
             computer_executor: Some(computer),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
 
     let tools = bridge.list_tools().expect("tools");
     let computer = tools
@@ -353,4 +362,140 @@ fn turn_toolset_composes_computer_and_screenshot_capabilities_without_hiding_bas
         screenshot_result["screenshotPath"],
         "file:///computer-tool-screenshot.webp"
     );
+}
+
+
+struct FirstDiscoveryFailureBridge {
+    failure: Mutex<Option<ProviderSessionError>>,
+    list_calls: AtomicUsize,
+    tool_calls: AtomicUsize,
+}
+
+impl FirstDiscoveryFailureBridge {
+    fn new(error: ProviderSessionError) -> Self {
+        Self {
+            failure: Mutex::new(Some(error)),
+            list_calls: AtomicUsize::new(0),
+            tool_calls: AtomicUsize::new(0),
+        }
+    }
+}
+
+impl RoutedToolBridge for FirstDiscoveryFailureBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.list_calls.fetch_add(1, Ordering::SeqCst);
+        match self.failure.lock().expect("discovery failure").take() {
+            Some(error) => Err(error),
+            None => DynamicBaseBridge.list_tools(),
+        }
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: Value,
+        tool_call_id: &str,
+    ) -> Result<Value, ProviderSessionError> {
+        self.tool_calls.fetch_add(1, Ordering::SeqCst);
+        DynamicBaseBridge.call_tool(tool, args, tool_call_id)
+    }
+}
+
+#[test]
+fn dynamic_turn_toolset_propagates_catalog_refusal_through_native_wrapper() {
+    for kind in [McpCatalogKind::Tools, McpCatalogKind::MetaTools] {
+        let refusal = McpCatalogRefusal {
+            kind,
+            row: Some(1),
+            reason: McpCatalogReason::NameMustBeString,
+        };
+        let base = Arc::new(FirstDiscoveryFailureBridge::new(
+            ProviderSessionError::McpCatalog(refusal),
+        ));
+        let result = build_turn_toolset(
+            base.clone(),
+            TurnToolsetDependencies {
+                role: TurnToolsetRole {
+                    dynamic_tools_enabled: true,
+                    ..TurnToolsetRole::default()
+                },
+                computer_executor: Some(Arc::new(FakeComputerExecutor)),
+                ..TurnToolsetDependencies::default()
+            },
+        );
+        assert!(matches!(
+            result,
+            Err(ProviderSessionError::McpCatalog(actual)) if actual == refusal
+        ), "dynamic construction must not suppress a typed catalog refusal");
+        assert_eq!(base.list_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(base.tool_calls.load(Ordering::SeqCst), 0);
+    }
+}
+
+#[test]
+fn dynamic_turn_toolset_keeps_ordinary_discovery_failure_fallback() {
+    for failure in [
+        ProviderSessionError::Tool("discovery unavailable".into()),
+        ProviderSessionError::Transport("catalog transport unavailable".into()),
+        ProviderSessionError::Protocol(
+            "MCP Tools catalog refused at row Some(1): NameMustBeString".into(),
+        ),
+    ] {
+        let base = Arc::new(FirstDiscoveryFailureBridge::new(failure));
+        let bridge = build_turn_toolset(
+            base.clone(),
+            TurnToolsetDependencies {
+                role: TurnToolsetRole {
+                    dynamic_tools_enabled: true,
+                    ..TurnToolsetRole::default()
+                },
+                computer_executor: Some(Arc::new(FakeComputerExecutor)),
+                ..TurnToolsetDependencies::default()
+            },
+        ).expect("ordinary failure retains the original bridge");
+        assert_eq!(base.list_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(base.tool_calls.load(Ordering::SeqCst), 0);
+        let tools = bridge.list_tools().expect("subsequent valid discovery");
+        assert_eq!(base.list_calls.load(Ordering::SeqCst), 2);
+        assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+        assert!(tools.iter().any(|tool| tool.name == "Computer"));
+        assert!(tools.iter().any(|tool| tool.name == "Screenshot"));
+        assert!(tools.iter().all(|tool| tool.name != "GetMcpTools" && tool.name != "CallMcpTool"));
+        let native = tools.iter().find(|tool| tool.name == "CloudAgent")
+            .expect("fallback keeps native tools directly exposed");
+        let result = bridge.call_tool(native, json!({"prompt":"fallback control"}), "fallback-call")
+            .expect("original dispatch remains usable");
+        assert_eq!(result["tool"], "CloudAgent");
+        assert_eq!(result["args"]["prompt"], "fallback control");
+        assert_eq!(base.tool_calls.load(Ordering::SeqCst), 1);
+    }
+}
+
+#[test]
+fn explicit_empty_subagent_does_not_observe_catalog_discovery_failure() {
+    let base = Arc::new(FirstDiscoveryFailureBridge::new(
+        ProviderSessionError::McpCatalog(McpCatalogRefusal {
+            kind: McpCatalogKind::Tools,
+            row: None,
+            reason: McpCatalogReason::ExpectedArray,
+        }),
+    ));
+    let bridge = build_turn_toolset(
+        base.clone(),
+        TurnToolsetDependencies {
+            role: TurnToolsetRole {
+                is_subagent_runner: true,
+                is_box_scoped_subagent: true,
+                subagent_configs_present: false,
+                dynamic_tools_enabled: true,
+                ..TurnToolsetRole::default()
+            },
+            computer_executor: Some(Arc::new(FakeComputerExecutor)),
+            ..TurnToolsetDependencies::default()
+        },
+    ).expect("explicit empty subagent remains valid");
+    assert!(bridge.list_tools().expect("empty tools").is_empty());
+    assert!(bridge.list_mcp_meta_tools().expect("empty metadata").is_empty());
+    assert_eq!(base.list_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(base.tool_calls.load(Ordering::SeqCst), 0);
 }

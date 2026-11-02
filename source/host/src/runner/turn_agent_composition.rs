@@ -194,12 +194,12 @@ impl SandMcpToolProvider for RoutedBridgeMcpToolProvider<'_> {
 }
 
 struct FrozenRoutedMcpToolProvider<'a> {
-    tools: &'a [RoutedMcpMetaToolDefinition],
+    tools: &'a [RoutedToolDefinition],
 }
 
 impl SandMcpToolProvider for FrozenRoutedMcpToolProvider<'_> {
     fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
-        Ok(self.tools.iter().map(|source| source.tool.clone()).collect())
+        Ok(self.tools.to_vec())
     }
 }
 
@@ -846,7 +846,10 @@ impl TurnAgentComposition {
         if let Some(projected_tools) = self.projected_mcp_tools.as_ref() {
             return Ok(projected_tools.as_ref().clone());
         }
-        let McpStateExecResult::Success(state) = self.execute_mcp_state().map_err(|error| {
+        let tools = self.bridge.list_tools()?;
+        let McpStateExecResult::Success(state) = execute_canonical_mcp_state(
+            &FrozenRoutedMcpToolProvider { tools: &tools },
+        ).map_err(|error| {
             ProviderSessionError::Tool(format!("MCP state projection failed: {error}"))
         })?;
         Ok(state
@@ -883,9 +886,10 @@ impl TurnAgentComposition {
         }
 
         let meta_tools = self.bridge.list_mcp_meta_tools()?;
+        let accepted_tools = meta_tools.iter().map(|source| source.tool.clone()).collect::<Vec<_>>();
         let McpStateExecResult::Success(state) =
             execute_canonical_mcp_state(&FrozenRoutedMcpToolProvider {
-                tools: &meta_tools,
+                tools: &accepted_tools,
             })
             .map_err(|error| {
                 ProviderSessionError::Tool(format!("MCP state projection failed: {error}"))
@@ -1042,7 +1046,7 @@ impl TurnAgentComposition {
                 multitask_todo_state: self.multitask_todo_state.clone(),
                 cloud_agent_tool: self.cloud_agent_tool.clone(),
             },
-        );
+        )?;
         let communicate_sink: Option<Arc<dyn CommunicateInteractionSink>> =
             self.observation.as_ref().map(|observation| {
                 Arc::new(TurnObservationCommunicateSink::new(Arc::clone(observation)))

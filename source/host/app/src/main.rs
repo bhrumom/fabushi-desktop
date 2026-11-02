@@ -210,7 +210,8 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     request_disk_saver_audit, run_created_agent_kickstart,
 };
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    FabushiResponsesRequestBinding, ProviderMessage, ProviderSessionError, RoutedProvider,
+    FabushiResponsesRequestBinding, McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
+    ProviderMessage, ProviderSessionError, RoutedProvider,
     RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
     capture_fabushi_responses_request_binding,
 };
@@ -8097,66 +8098,63 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
     }
 }
 
+fn decode_routed_catalog_row(
+    row: &serde_json::Value,
+    index: usize,
+    kind: McpCatalogKind,
+) -> Result<RoutedToolDefinition, ProviderSessionError> {
+    let required = |field: &str, reason| {
+        row.get(field).and_then(serde_json::Value::as_str)
+            .map(str::to_string)
+            .ok_or_else(|| ProviderSessionError::McpCatalog(McpCatalogRefusal {
+                kind, row: Some(index), reason,
+            }))
+    };
+    Ok(RoutedToolDefinition {
+        name: required("name", McpCatalogReason::NameMustBeString)?,
+        provider_identifier: required(
+            "providerIdentifier", McpCatalogReason::ProviderIdentifierMustBeString,
+        )?,
+        tool_name: required("toolName", McpCatalogReason::ToolNameMustBeString)?,
+        description: row.get("description").and_then(serde_json::Value::as_str).map(str::to_string),
+        input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
+            serde_json::json!({"type":"object","additionalProperties":true})
+        }),
+    })
+}
+
 fn decode_routed_tools(
     value: serde_json::Value,
 ) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+    let kind = McpCatalogKind::Tools;
     let rows = value.as_array().ok_or_else(|| {
-        ProviderSessionError::Protocol("listRoutedMcpTools did not return an array".into())
-    })?;
-    Ok(rows
-        .iter()
-        .filter_map(|row| {
-            Some(RoutedToolDefinition {
-                name: row.get("name")?.as_str()?.to_string(),
-                provider_identifier: row.get("providerIdentifier")?.as_str()?.to_string(),
-                tool_name: row.get("toolName")?.as_str()?.to_string(),
-                description: row.get("description").and_then(serde_json::Value::as_str).map(str::to_string),
-                input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
-                    serde_json::json!({"type":"object","additionalProperties":true})
-                }),
-            })
+        ProviderSessionError::McpCatalog(McpCatalogRefusal {
+            kind, row: None, reason: McpCatalogReason::ExpectedArray,
         })
-        .collect())
+    })?;
+    rows.iter().enumerate()
+        .map(|(index, row)| decode_routed_catalog_row(row, index, kind))
+        .collect()
 }
 
 fn decode_routed_mcp_meta_tools(
     value: serde_json::Value,
 ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
+    let kind = McpCatalogKind::MetaTools;
     let rows = value.as_array().ok_or_else(|| {
-        ProviderSessionError::Protocol("listRoutedMcpTools did not return an array".into())
-    })?;
-    Ok(rows
-        .iter()
-        .filter_map(|row| {
-            Some(RoutedMcpMetaToolDefinition {
-                tool: RoutedToolDefinition {
-                    name: row.get("name")?.as_str()?.to_string(),
-                    provider_identifier: row.get("providerIdentifier")?.as_str()?.to_string(),
-                    tool_name: row.get("toolName")?.as_str()?.to_string(),
-                    description: row
-                        .get("description")
-                        .and_then(serde_json::Value::as_str)
-                        .map(str::to_string),
-                    input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
-                        serde_json::json!({"type":"object","additionalProperties":true})
-                    }),
-                },
-                plugin: row.get("plugin").cloned().filter(|value| !value.is_null()),
-                marketplace: row
-                    .get("marketplace")
-                    .cloned()
-                    .filter(|value| !value.is_null()),
-                plugin_id: row
-                    .get("pluginId")
-                    .and_then(serde_json::Value::as_str)
-                    .map(str::to_string),
-                marketplace_id: row
-                    .get("marketplaceId")
-                    .and_then(serde_json::Value::as_str)
-                    .map(str::to_string),
-            })
+        ProviderSessionError::McpCatalog(McpCatalogRefusal {
+            kind, row: None, reason: McpCatalogReason::ExpectedArray,
         })
-        .collect())
+    })?;
+    rows.iter().enumerate().map(|(index, row)| {
+        Ok(RoutedMcpMetaToolDefinition {
+            tool: decode_routed_catalog_row(row, index, kind)?,
+            plugin: row.get("plugin").cloned().filter(|value| !value.is_null()),
+            marketplace: row.get("marketplace").cloned().filter(|value| !value.is_null()),
+            plugin_id: row.get("pluginId").and_then(serde_json::Value::as_str).map(str::to_string),
+            marketplace_id: row.get("marketplaceId").and_then(serde_json::Value::as_str).map(str::to_string),
+        })
+    }).collect()
 }
 
 fn decode_provider_messages(
@@ -19362,6 +19360,149 @@ mod tests {
             drop(self);
             fs::remove_dir_all(root).expect("remove terminal fixture");
         }
+    }
+
+    fn received_catalog_from_shipping_relay(
+        fixture: &RoutedProviderTerminalFixture,
+        value: serde_json::Value,
+        kind: super::McpCatalogKind,
+    ) -> Result<Vec<super::RoutedMcpMetaToolDefinition>, super::ProviderSessionError> {
+        use mahayana_host_runtime::runner::coordinator_tool_relay::{
+            CoordinatorToolRelay, ROUTED_TOOL_LIST_METHOD,
+        };
+        use super::RoutedToolBridge;
+        use std::sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}};
+        let events = super::GatewayEventHub::default();
+        let relay = Arc::new(CoordinatorToolRelay::with_timeout(
+            events.clone(), std::time::Duration::from_secs(5),
+        ));
+        let weak = Arc::downgrade(&relay);
+        let methods = Arc::new(Mutex::new(Vec::new()));
+        let observed = Arc::clone(&methods);
+        let listener = events.subscribe_listener(move |event| {
+            let payload = &event["payload"];
+            observed.lock().unwrap().push(payload["method"].clone());
+            assert_eq!(payload["method"], ROUTED_TOOL_LIST_METHOD);
+            weak.upgrade().expect("actual relay owner").resolve(&serde_json::json!({
+                "requestId": payload["requestId"], "ok": true, "result": value.clone(),
+            })).expect("resolve actual list waiter");
+        });
+        let reviews = Arc::new(AtomicUsize::new(0));
+        let review_count = Arc::clone(&reviews);
+        let bridge = super::CoordinatorRoutedToolBridge {
+            relay,
+            transcript_runtime: Arc::clone(&fixture.runtime),
+            telemetry_logs: fixture.telemetry.logs.clone(),
+            agent_id: "received-catalog-agent".into(),
+            mcp_review: Some(Arc::new(move |_, _, _| {
+                review_count.fetch_add(1, Ordering::SeqCst);
+                Ok(None)
+            })),
+        };
+        let result = match kind {
+            super::McpCatalogKind::Tools => bridge.list_tools().map(|tools| {
+                tools.into_iter().map(super::RoutedMcpMetaToolDefinition::from).collect()
+            }),
+            super::McpCatalogKind::MetaTools => bridge.list_mcp_meta_tools(),
+        };
+        assert_eq!(*methods.lock().unwrap(), vec![serde_json::json!(ROUTED_TOOL_LIST_METHOD)]);
+        assert_eq!(reviews.load(Ordering::SeqCst), 0, "discovery must not request tool review");
+        assert_eq!(bridge.relay.pending_count(), 0, "the actual list waiter must drain");
+        drop(listener);
+        result
+    }
+
+    #[test]
+    fn received_mcp_catalog_rejects_whole_malformed_response_before_dispatch() {
+        use super::{McpCatalogKind, McpCatalogReason, McpCatalogRefusal, ProviderSessionError};
+        use serde_json::json;
+        let fixture = RoutedProviderTerminalFixture::new();
+        let valid = json!({"name":"public","providerIdentifier":"provider","toolName":"raw"});
+        for kind in [McpCatalogKind::Tools, McpCatalogKind::MetaTools] {
+            for value in [serde_json::Value::Null, json!({"secret":"must-not-leak"}),
+                          json!("must-not-leak"), json!(42)] {
+                let error = received_catalog_from_shipping_relay(&fixture, value, kind)
+                    .expect_err("a non-array cannot become an empty catalog");
+                assert!(matches!(&error, ProviderSessionError::McpCatalog(refusal)
+                    if *refusal == (McpCatalogRefusal {
+                        kind, row: None, reason: McpCatalogReason::ExpectedArray,
+                    })), "{error:?}");
+                assert!(!error.to_string().contains("must-not-leak"));
+            }
+            for (field, reason) in [
+                ("name", McpCatalogReason::NameMustBeString),
+                ("providerIdentifier", McpCatalogReason::ProviderIdentifierMustBeString),
+                ("toolName", McpCatalogReason::ToolNameMustBeString),
+            ] {
+                for row in 0..3 {
+                    for missing in [false, true] {
+                        let mut rows = vec![valid.clone(); 3];
+                        if missing {
+                            rows[row].as_object_mut().unwrap().remove(field);
+                        } else {
+                            rows[row][field] = json!({"secret":"must-not-leak"});
+                        }
+                        let error = received_catalog_from_shipping_relay(
+                            &fixture, json!(rows), kind,
+                        ).expect_err("a malformed row cannot be filtered from a partial catalog");
+                        assert!(matches!(&error, ProviderSessionError::McpCatalog(refusal)
+                            if *refusal == (McpCatalogRefusal { kind, row: Some(row), reason })),
+                            "{field}/{row}/{missing}: {error:?}");
+                        assert!(!format!("{error:?} {error}").contains("must-not-leak"));
+                    }
+                }
+            }
+        }
+        fixture.close();
+    }
+
+    #[test]
+    fn received_mcp_catalog_preserves_accepted_wire_values_and_order() {
+        use super::McpCatalogKind;
+        use serde_json::json;
+        let fixture = RoutedProviderTerminalFixture::new();
+        let values = json!([
+            {"name":"public","providerIdentifier":"server","toolName":"raw",
+             "description":"description","inputSchema":null,
+             "plugin":{"custom":true},"marketplace":["arbitrary"],
+             "pluginId":"plugin-id","marketplaceId":"market-id","unknown":"ignored"},
+            {"name":"public","providerIdentifier":"server","toolName":"raw",
+             "description":false,"inputSchema":["accepted"],"plugin":false,
+             "marketplace":42,"pluginId":42,"marketplaceId":null},
+            {"name":"","providerIdentifier":"","toolName":"","plugin":null,"marketplace":null}
+        ]);
+        for kind in [McpCatalogKind::Tools, McpCatalogKind::MetaTools] {
+            assert!(received_catalog_from_shipping_relay(&fixture, json!([]), kind)
+                .expect("empty is valid").is_empty());
+            let tools = received_catalog_from_shipping_relay(&fixture, values.clone(), kind)
+                .expect("the existing permissive wire language remains accepted");
+            assert_eq!(tools.len(), 3, "duplicates and blank rows are retained");
+            assert_eq!(tools.iter().map(|row| row.tool.name.as_str()).collect::<Vec<_>>(),
+                vec!["public", "public", ""]);
+            assert_eq!(tools[0].tool.provider_identifier, "server");
+            assert_eq!(tools[0].tool.tool_name, "raw");
+            assert_eq!(tools[0].tool.description.as_deref(), Some("description"));
+            assert_eq!(tools[0].tool.input_schema, serde_json::Value::Null);
+            assert_eq!(tools[1].tool.description, None);
+            assert_eq!(tools[1].tool.input_schema, json!(["accepted"]));
+            assert_eq!(tools[2].tool.provider_identifier, "");
+            assert_eq!(tools[2].tool.tool_name, "");
+            assert_eq!(tools[2].tool.input_schema,
+                json!({"type":"object","additionalProperties":true}));
+            if kind == McpCatalogKind::MetaTools {
+                assert_eq!(tools[0].plugin, Some(json!({"custom":true})));
+                assert_eq!(tools[0].marketplace, Some(json!(["arbitrary"])));
+                assert_eq!(tools[0].plugin_id.as_deref(), Some("plugin-id"));
+                assert_eq!(tools[0].marketplace_id.as_deref(), Some("market-id"));
+                assert_eq!(tools[1].plugin, Some(json!(false)));
+                assert_eq!(tools[1].marketplace, Some(json!(42)));
+                assert_eq!(tools[1].plugin_id, None);
+                assert_eq!(tools[1].marketplace_id, None);
+                assert_eq!(tools[2].plugin, None);
+                assert_eq!(tools[2].marketplace, None);
+            }
+        }
+        fixture.close();
     }
 
     #[test]

@@ -74,12 +74,12 @@ use super::sand_subagent_management_tools::{
 };
 
 struct TurnToolsetMcpProvider<'a> {
-    bridge: &'a dyn RoutedToolBridge,
+    tools: &'a [RoutedToolDefinition],
 }
 
 impl SandMcpToolProvider for TurnToolsetMcpProvider<'_> {
     fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
-        self.bridge.list_tools().map_err(|error| error.to_string())
+        Ok(self.tools.to_vec())
     }
 }
 
@@ -102,8 +102,9 @@ impl RoutedToolBridge for TurnToolsetMcpProjectionBridge {
         if let Some(projected_tools) = self.projected_tools.as_ref() {
             return Ok(projected_tools.as_ref().clone());
         }
+        let tools = self.delegate.list_tools()?;
         let McpStateExecResult::Success(state) = execute_canonical_mcp_state(
-            &TurnToolsetMcpProvider { bridge: self.delegate.as_ref() },
+            &TurnToolsetMcpProvider { tools: &tools },
         )
         .map_err(|error| ProviderSessionError::Tool(format!("MCP state projection failed: {error}")))?;
         Ok(state.servers.into_iter().flat_map(|server| server.tools).map(|tool| RoutedToolDefinition {
@@ -644,14 +645,14 @@ impl RoutedToolBridge for SharedRoomToolFilterBridge {
 pub fn build_turn_toolset(
     base: Arc<dyn RoutedToolBridge>,
     dependencies: TurnToolsetDependencies,
-) -> Arc<dyn RoutedToolBridge> {
+) -> Result<Arc<dyn RoutedToolBridge>, ProviderSessionError> {
     let role = dependencies.role;
     if role.is_subagent_runner
         && !role.is_computer_use_subagent
         && !role.is_browser_use_subagent
         && !role.subagent_configs_present
     {
-        return Arc::new(EmptyTurnToolBridge);
+        return Ok(Arc::new(EmptyTurnToolBridge));
     }
     let await_box_resources = role
         .remote_box_available
@@ -837,6 +838,7 @@ pub fn build_turn_toolset(
     {
         match DynamicToolPlacementBridge::new(bridge.clone()) {
             Ok(dynamic) => Arc::new(dynamic),
+            Err(error @ ProviderSessionError::McpCatalog(_)) => return Err(error),
             Err(_) => bridge,
         }
     } else {
@@ -849,14 +851,14 @@ pub fn build_turn_toolset(
         }),
         None => bridge,
     };
-    if role.is_shared_room_runner {
+    Ok(if role.is_shared_room_runner {
         Arc::new(SharedRoomToolFilterBridge {
             delegate: bridge,
             box_tools_enabled: role.shared_room_box_tools_enabled,
         })
     } else {
         bridge
-    }
+    })
 }
 
 pub fn fence_turn_toolset(

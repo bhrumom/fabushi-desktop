@@ -51,8 +51,13 @@ pub fn create_production_turn_agent_input_projection<'a>(
     turn_input: &ProductionTurnInputProjection,
     emit_update: &'a mut dyn FnMut(&str, &str),
 ) -> Result<ProductionTurnAgentInputProjection<'a>, ProviderSessionError> {
-    let (mcp_tools, mcp_meta_tools) =
-        composition.snapshot_mcp_projection().unwrap_or_default();
+    let (mcp_tools, mcp_meta_tools) = match composition.snapshot_mcp_projection() {
+        Ok(snapshot) => snapshot,
+        Err(error @ ProviderSessionError::McpCatalog(_)) => return Err(error),
+        // Discovery availability has historically been optional at this boundary.
+        // A received malformed catalog is a separate, permanent admission failure.
+        Err(_) => Default::default(),
+    };
     let base_state_bytes = match checkpoint_sink {
         Some(sink) => sink.base_state_bytes()?,
         None => Vec::new(),

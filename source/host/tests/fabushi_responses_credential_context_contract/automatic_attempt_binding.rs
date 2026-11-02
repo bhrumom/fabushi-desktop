@@ -350,6 +350,7 @@ impl Invocation {
                     ProviderSessionError::Cancelled(_) => "cancelled",
                     ProviderSessionError::Protocol(_) => "protocol",
                     ProviderSessionError::Tool(_) => "tool",
+                    ProviderSessionError::McpCatalog(_) => "mcp-catalog",
                     ProviderSessionError::ToolOutcomeUnknown(_) => "unknown-tool",
                     ProviderSessionError::ProviderRefusal(_) => "provider-refusal",
                 },

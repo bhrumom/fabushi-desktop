@@ -106,7 +106,8 @@ fn turn_toolset_owns_box_and_external_await_shell_surfaces() {
             external_machine_executor: Some(Arc::new(FakeAwaitExternal)),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     let tools = bridge.list_tools().expect("tools");
     let box_await = tools
         .iter()

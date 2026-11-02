@@ -8,61 +8,179 @@ use subtle::ConstantTimeEq;
 
 pub const CHANNEL_MAX_MESSAGE_CHARS: usize = 4_000;
 
-/// Split outbound text at channel-sized boundaries while keeping every
-/// emitted chunk's markdown code fences balanced. The channel provider remains
-/// responsible for transport-specific limits; this is the shared conservative
-/// limit used by the Host delivery boundary.
+/// Split outbound text at Unicode scalar boundaries, preferring complete lines.
+/// Synthetic code-fence wrappers count toward the same bound as original text.
+/// Unmatched or unrepresentable fences use exact, bounded raw-text chunks.
 pub fn split_channel_message(text: &str, limit: usize) -> Vec<String> {
     let limit = limit.max(1);
     if text.chars().count() <= limit {
         return vec![text.to_string()];
     }
+    if !channel_message_fences_fit(text, limit) {
+        return split_channel_message_raw(text, limit);
+    }
 
     let mut chunks = Vec::new();
     let mut current = String::new();
-    let mut in_code_fence = false;
-    let mut fence_lang = String::new();
+    let mut current_chars = 0;
+    // Preserve the complete opening header, including indentation and spacing.
+    let mut open_fence: Option<(&str, usize)> = None;
 
-    for line in text.lines() {
-        let separator = usize::from(!current.is_empty());
-        let projected = current.chars().count() + separator + line.chars().count();
-        if projected > limit && !current.is_empty() {
-            if in_code_fence {
-                current.push_str("\n```");
-                chunks.push(current);
-                current = if fence_lang.is_empty() {
-                    format!("```\n{line}")
-                } else {
-                    format!("```{fence_lang}\n{line}")
-                };
+    for line in text.split_inclusive('\n') {
+        let line_chars = line.chars().count();
+        if let Some(header) = channel_message_fence_header(line) {
+            let next_fence = if open_fence.is_some() {
+                None
             } else {
-                chunks.push(current);
-                current = line.to_string();
+                Some((header, header.chars().count() + 1))
+            };
+            let closing_chars = if next_fence.is_some() { 4 } else { 0 };
+            if current_chars + line_chars + closing_chars > limit {
+                finish_channel_message_chunk(
+                    &mut chunks, &mut current, &mut current_chars, open_fence,
+                );
             }
-        } else {
-            if !current.is_empty() {
-                current.push('\n');
-            }
+            // The preflight proves this original fence line and its balancing
+            // wrapper fit even when this line starts a new chunk.
             current.push_str(line);
+            current_chars += line_chars;
+            open_fence = next_fence;
+            continue;
         }
 
-        if line.trim_start().starts_with("```") {
-            if in_code_fence {
-                in_code_fence = false;
-                fence_lang.clear();
-            } else {
-                in_code_fence = true;
-                fence_lang = line
-                    .trim_start()
-                    .trim_start_matches("```")
-                    .trim()
-                    .to_string();
+        let closing_chars = if open_fence.is_some() { 4 } else { 0 };
+        let opening_chars = open_fence.map_or(0, |(_, count)| count);
+        let fresh_capacity = limit - opening_chars - closing_chars;
+        if line_chars <= fresh_capacity
+            && current_chars + line_chars + closing_chars > limit
+        {
+            finish_channel_message_chunk(
+                &mut chunks, &mut current, &mut current_chars, open_fence,
+            );
+        }
+
+        let mut remaining = line;
+        let mut remaining_chars = line_chars;
+        while remaining_chars > 0 {
+            let available = limit - current_chars - closing_chars;
+            if available == 0 {
+                finish_channel_message_chunk(
+                    &mut chunks, &mut current, &mut current_chars, open_fence,
+                );
+                continue;
+            }
+            let mut take = 0;
+            let mut end = 0;
+            let mut fence_prefix = current_chars == opening_chars;
+            let mut prefix_backticks = 0;
+            let mut literal_fence = false;
+            // Hard splits can expose inline backticks in prose or code. Stop
+            // before a third leading tick instead of scanning a full chunk
+            // and then consuming only two. Every inspected scalar is consumed
+            // apart from this single lookahead, including whitespace prefixes.
+            for (index, character) in remaining.char_indices().take(available) {
+                if fence_prefix {
+                    if prefix_backticks == 0 && character.is_whitespace() {
+                        // Whitespace still permits an apparent fence opener.
+                    } else if character == '`' {
+                        prefix_backticks += 1;
+                        if prefix_backticks == 3 {
+                            literal_fence = true;
+                            break;
+                        }
+                    } else {
+                        fence_prefix = false;
+                    }
+                }
+                take += 1;
+                end = index + character.len_utf8();
+            }
+            current.push_str(&remaining[..end]);
+            current_chars += take;
+            remaining = &remaining[end..];
+            remaining_chars -= take;
+            if literal_fence && remaining_chars > 0 {
+                finish_channel_message_chunk(
+                    &mut chunks, &mut current, &mut current_chars, open_fence,
+                );
             }
         }
     }
 
     if !current.is_empty() {
         chunks.push(current);
+    }
+    chunks
+}
+
+fn channel_message_fence_header(line: &str) -> Option<&str> {
+    let header = if let Some(line) = line.strip_suffix('\n') {
+        line.strip_suffix('\r').unwrap_or(line)
+    } else {
+        line
+    };
+    header.trim_start().starts_with("```").then_some(header)
+}
+
+fn channel_message_fences_fit(text: &str, limit: usize) -> bool {
+    let mut opening_chars = None;
+    for line in text.split_inclusive('\n') {
+        let Some(header) = channel_message_fence_header(line) else {
+            continue;
+        };
+        let line_chars = line.chars().count();
+        if let Some(reopening_chars) = opening_chars.take() {
+            if line_chars.saturating_add(reopening_chars) > limit {
+                return false;
+            }
+        } else {
+            let reopening_chars = header.chars().count().saturating_add(1);
+            // Both the original opener and a synthetic reopen need a closing
+            // wrapper and room for at least one original content character.
+            if line_chars.saturating_add(4) >= limit
+                || reopening_chars.saturating_add(4) >= limit
+            {
+                return false;
+            }
+            opening_chars = Some(reopening_chars);
+        }
+    }
+    opening_chars.is_none()
+}
+
+fn finish_channel_message_chunk(
+    chunks: &mut Vec<String>,
+    current: &mut String,
+    current_chars: &mut usize,
+    open_fence: Option<(&str, usize)>,
+) {
+    if open_fence.is_some() {
+        current.push_str("\n```");
+    }
+    chunks.push(std::mem::take(current));
+    if let Some((header, opening_chars)) = open_fence {
+        current.push_str(header);
+        current.push('\n');
+        *current_chars = opening_chars;
+    } else {
+        *current_chars = 0;
+    }
+}
+
+fn split_channel_message_raw(text: &str, limit: usize) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut start = 0;
+    let mut count = 0;
+    for (index, _) in text.char_indices() {
+        if count == limit {
+            chunks.push(text[start..index].to_string());
+            start = index;
+            count = 0;
+        }
+        count += 1;
+    }
+    if start < text.len() {
+        chunks.push(text[start..].to_string());
     }
     chunks
 }

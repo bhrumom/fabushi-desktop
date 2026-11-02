@@ -302,3 +302,121 @@ remain open. A follow-up error still cannot prove that external effects were
 rolled back; this batch authorizes no automatic transport retry. No schema
 version is bumped. Rollback retains readable version-1 bytes and restores the
 known recovery defect; no user state may be removed to roll back.
+
+## Native transport chunk bound — `OCRM-CHANNEL-TRANSPORT-CHUNK-v1`
+
+Discovery subject: `0533ca72870a2794c2db32959b9d01427abf325a`.
+Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+This is a separate bounded correction in the existing Host transport owner.
+The earlier route, generation limits and wider acceptance gaps remain recorded.
+
+Decision **TC-BOUND-01 — FIX / IMPL_BUG**, before implementation: the actual
+`connectors/channel_delivery.rs::split_channel_message` leaves a single line
+of 4,001 characters unsplit at limit 4,000. It can also append a four-character
+synthetic fence closure to an already 3,997-character chunk. The real
+`ChannelDeliveryRouter::deliver` passes each returned string directly to its
+registered provider. Both paths violate the existing conservative Host bound.
+
+Decision **TC-ORACLE-01 — FIX / TEST_FLAW**, before implementation: O06 in
+`openclaw_channel_delivery_contract.rs` calls a test-local splitter and constant,
+and measures bytes while the producer counts Unicode scalar values. Bind O06
+to the production function and constant, retaining its short-text and balanced
+fence assertions. Other fixture-local oracles in that file are unchanged and
+must not be counted as production or real-service acceptance.
+
+### Behavior and ownership
+
+- TC-01: every nonempty text chunk returned by the public splitter is at most
+  `limit.max(1)` Unicode scalar values. Every text chunk passed by the real
+  router is at most `CHANNEL_MAX_MESSAGE_CHARS` (4,000). Count all synthetic
+  closing and reopening fence text inside that limit; never truncate payload.
+  Preserve the existing single empty string result for empty input.
+- TC-02: preserve every original character in order, including Unicode, blank
+  lines, CRLF and a trailing newline. Split an oversized individual line only
+  at valid UTF-8 character boundaries. For text with no recognized fence,
+  concatenating the chunks reproduces the exact original string. Prefer
+  existing line boundaries when they fit, without creating empty chunks for
+  nonempty input.
+- TC-03: retain the existing triple-backtick-line fence recognition, including
+  optional indentation and language/header text. For a well-formed input whose
+  opening header plus needed closing/reopening wrapper leaves room for at
+  least one content character, each emitted chunk must have balanced normal
+  fences. Synthetic wrappers are the only added content; preserve the original
+  code payload and header spelling. Define deterministic fallback for an
+  unmatched fence or any recognized fence line that cannot fit atomically with
+  its required balancing wrapper at the effective limit (an opening header must
+  additionally leave room for at least one content character): split the whole
+  original text into bounded raw
+  character chunks, without adding synthetic wrappers. In this explicit
+  fallback, exact concatenation is required and balanced formatting is not.
+  The short-text fast path remains byte-for-byte unchanged.
+- TC-04: use the existing `HostChannelDelivery -> ChannelDeliveryRouter ->
+  ChannelDeliveryPort` chain. Preserve provider order, agent/address values,
+  original operation identity with the existing `:chunk-N` suffix, attachment
+  handling and unregistered errors. Stop on the first provider error and do
+  not retry any successful, failed or unknown transport effect. Add no queue,
+  schema, registration owner, scheduler or permission state.
+- TC-05: the real splitter oracle includes exact-boundary and over-boundary
+  ASCII, long Unicode, newline/CRLF/blank/trailing-newline conservation, normal
+  fenced text including the 3,997-plus-closure witness, long code lines and
+  pathological small limits or oversized headers. The real Host/router test
+  uses a controlled provider that rejects oversized text, checks exact identity
+  and ordering, and injects an error after accepting chunk two to prove no
+  later chunk or retry occurs. This controlled port proves the Host contract;
+  it is not real provider/account/protocol compatibility evidence.
+
+### Scope, source and execution
+
+The independent implementation owner may change only
+`source/host/src/connectors/channel_delivery.rs` and
+`source/host/tests/openclaw_channel_delivery_contract.rs`.
+The integrator owns this existing spec and the existing Runtime workflow's
+selector/receipt index. No shared App main, MCP/model contract, dependency,
+lockfile, inventory, ledger or global flag is changed by this batch.
+
+Discovery read the complete exact target delivery owner (blob
+`98a576cfd4665551756f11728187e0ceef999791`), existing contract target (blob
+`ecd784d718a4514ebb6835f396364849116760f4`) and this prior spec. The new scoped
+fixed-U reading of `src/infra/outbound/message.ts` (blob
+`5032acef657250cbce6b85435f5215237825163b`) covers lines 1–160 and 275–485;
+`src/infra/outbound/deliver-handoff.ts` (blob
+`bf37c6c9456a6535a35aceac19f170d13b08a4f8`) was read in full. These support
+existing delivery ownership/outcome distinctions, not upstream chunking parity.
+Do not replace or upgrade historical read facts above. The native transport
+bound remains distinct from upstream draft-streaming configuration semantics.
+
+Freeze and independently review the complete integrated batch. Select the
+existing `openclaw_channel_delivery_contract` target in the existing locked
+Runtime contract campaign, with actual named-case/positive-count evidence,
+retained Host-lane tests and source authority. All executable validation is
+GitHub Actions only. No current batch execution or acceptance is claimed.
+No persisted format changes; rollback restores the prior bound defect without
+rewriting stored messages. Real registered providers, accounts, transport
+limits, session-generation recovery and full channel/OCRM acceptance stay open.
+
+### Frozen source review decisions — TC-R1
+
+Both independent reviewers inspected the complete two-file candidate
+`644df0ffda8c726192911ba26bd2622dbfd8aed3` before these decisions.
+
+- **TC-R1-G1 — FIX / IMPL_BUG / P2:** after a hard split of prose, an inline
+  triple backtick can become the first characters of the next chunk while no
+  original fence is open. The witness is 32 `a` characters followed by
+  `` ```literal\n```text\nx\n```\n `` at limit 32; the old candidate's second
+  chunk contains three recognized fences. Apply the existing literal-prefix
+  protection both inside and outside original fences. Preserve exact original
+  characters and add the mixed-prose witness through the splitter and the real
+  router at the production limit. Keep the original inside-fence controls.
+- **TC-R1-S1 — FIX / IMPL_BUG / P2:** the prior guard first scans an entire
+  available chunk and then may consume only two backticks. Long inline runs
+  therefore repeatedly rescan overlapping input. Use a bounded forward prefix
+  traversal which stops before a third leading backtick; its inspected input
+  is consumed apart from at most one lookahead character. Do not trim the
+  unbounded remainder. Retain bound, balance and exact-payload assertions with
+  longer runs and different limits; no timing or benchmark pass is inferred.
+
+These are source-established defects, not executed failures. The shared Runtime
+selection is integrated separately and must retain all earlier Host-lane cases.
+Freeze the repair with its complete context for fresh focused source review,
+then obtain exact-H Actions evidence. Neither decision changes fallback scope,
+transport ownership, persistent state or global acceptance.

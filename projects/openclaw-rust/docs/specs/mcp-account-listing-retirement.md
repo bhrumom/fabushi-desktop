@@ -258,3 +258,189 @@ or global flag is promoted. Real remote effects, provider accounts, OAuth,
 durable cross-process revocation, authoritative Rust account/registration
 handoff and all full OCRM/FPM acceptance gates remain open.
 
+
+
+## Received routed catalog integrity — `MCP-RECEIVED-CATALOG-v1`
+
+Discovery base: `4ed7f5184476a39d02856d4d09ba1f8166ea0676`; fixed U is unchanged.
+The actual App decoders currently discard malformed rows, the production turn
+projection converts all discovery failures to empty vectors, live canonical
+projection stringifies failures, and dynamic construction suppresses them.
+Claude's HTTP endpoint retains its previous map on every refresh error, while
+the actual attempt returns only the external CLI result. Correct this one
+received-catalog behavior in the existing Rust App/Runner/inference owners.
+This is not a new registration, policy, account, permission, or runtime owner.
+
+### Admission and compatibility
+
+- RC-01: both actual App list decoders reject the entire response only when
+  its top level is not an array or any row lacks a string `name`,
+  `providerIdentifier`, or `toolName`. Introduce internal
+  `ProviderSessionError::McpCatalog(McpCatalogRefusal)` in the existing error
+  owner. The copyable refusal contains only a `McpCatalogKind` (`Tools` or
+  `MetaTools`), optional zero-based `row`, and `McpCatalogReason`
+  (`ExpectedArray`, `NameMustBeString`, `ProviderIdentifierMustBeString`,
+  `ToolNameMustBeString`). Never include the invalid value, descriptor,
+  account identity or payload in this error.
+- RC-02: retain every currently accepted value: empty arrays, blank required
+  strings, public/raw name differences, duplicate rows and order, arbitrary
+  explicit inputSchema JSON including null, and the existing missing-schema
+  default. Optional non-string descriptions/IDs remain absent; non-null plugin
+  and marketplace JSON and ignored unknown fields retain their current meaning.
+  No uniqueness, normalization, reserved-provider or native-alias rule is added.
+- RC-03: the normal production preparation propagates this specific refusal
+  before provider execution, tool dispatch or review. Preserve the existing
+  ordinary discovery-unavailable -> empty snapshot positive. Live projection
+  obtains the typed vector before passing accepted data to the same canonical
+  grouper; preserve first-seen-provider grouping and within-provider order.
+  Keep the public String-based generic MCP port and Box adapter unchanged.
+  Change the existing toolset builder to return Result: only an observed
+  McpCatalog refusal escapes dynamic construction; ordinary failures retain
+  the prior fallback. Explicit empty-subagent exposure stays empty.
+
+### Attempt lifecycle and effect custody
+
+- RC-04: the existing sequential HTTP worker owns its current map and an
+  attempt-local optional catalog refusal. A valid refresh atomically replaces
+  the map and clears only that refusal, including valid `[]`. Structural
+  refusal clears the map and records the refusal. Ordinary availability
+  failure changes neither state: it preserves a previously valid map and
+  cannot resurrect a map cleared by structural refusal. Calls to removed
+  names must not reach downstream execution or review. Preserve current
+  duplicate last-wins behavior and actual tool success/server-error results.
+- RC-05: the actual Claude attempt closes its owned endpoint and joins its
+  worker before reading the final refusal. Keep the observation independently
+  of a worker return value; a failed join cannot be interpreted as proof of a
+  clean catalog. Preserve actual user cancellation, explicit unknown outcome,
+  and authentication/configuration errors. Preserve true pending/unknown
+  custody before any catalog override. Otherwise an unresolved catalog
+  refusal becomes the typed terminal error even when the CLI returns success,
+  Transport/Protocol, or watchdog cancellation. A later valid refresh permits
+  the original CLI outcome. Do not retract text already emitted by the CLI:
+  a completed CLI response can already have produced text before the attempt
+  observes the catalog terminal. A fresh turn starts a new endpoint/fault state.
+- RC-06: this type is permanently ineligible for automatic retry, including a
+  simultaneous watchdog. In the existing adapter, when custody has no pending
+  or unknown effect, return this refusal without retry even if completed known
+  effects lack a checkpoint. Retain their receipts and revisions; never
+  manufacture a checkpoint, discard a result or authorize replay. True
+  pending/unknown and user cancellation retain the existing owner precedence.
+  All other errors retain their current retry-block policy. Reports and the
+  public Transcript classifier use a fixed permanent protocol classification,
+  before message heuristics, without sensitive values.
+
+### Real-path oracles and scope
+
+- RC-07: actual App CoordinatorToolRelay/GatewayEventHub controls exercise both
+  list methods, malformed first/middle/last rows and non-array responses, typed
+  secret-free refusal, zero tool/review dispatch and drained waiters. Valid
+  controls preserve the full permissive language above. Keep existing
+  downstream ToolOutcomeUnknown and review-denial assertions.
+- RC-08: actual production projection, canonical grouping, dynamic construction
+  and preparation/execute boundaries distinguish structural refusal from
+  ordinary unavailability. Preserve valid frozen snapshots, native wrappers,
+  empty-subagent behavior and all existing builder positives.
+- RC-09: actual HTTP controls exercise valid -> call -> invalid -> old-call
+  refusal -> unavailable -> valid restore -> empty clear; separately retain
+  valid -> unavailable -> old-call success. An entered held list released as
+  invalid during endpoint close proves observation occurs after join.
+- RC-10: exercise the public routed runtime through its real private production
+  attempt, actual CLI launch and HTTP endpoint, using owned child processes and
+  child-scoped CLAUDE_CODE_PATH. Reuse current_exe/--exact/nonce/PID/bounded
+  cleanup conventions; do not mutate HOME/PATH or process-global env, add a
+  dependency, or fake the attempt executor as proof of this connection.
+  Cover CLI success/nonzero, refresh recovery, watchdog, user cancellation,
+  next-turn isolation, and successful or server-error tool result followed by
+  invalid refresh. Require one launch/no retry and exactly one original tool
+  result/call identity. Known completed effects retain revision1/checkpoint0
+  with no pending/unknown effects. Retain existing unknown and delivery-failure
+  tests; an unreachable synthetic custody tuple is only a policy control.
+
+Product scope is App main, provider_session, production_turn_input_projection,
+turn_agent_composition, tools/turn_toolset, routed_provider_runtime,
+production_turn_run_shell_adapter and Transcript turn_runtime. Root serializes
+the error contract, composition, spec and existing Runtime selectors. Extend
+existing App/projection/toolset/routed-provider/adapter tests; adapt the six
+existing builder test callers and the credential automatic-attempt observation
+match without deleting assertions. Existing native list wrappers propagate
+errors and need no policy changes. All executable verification stays in
+Actions, after the shared current product gate, at the final integrated H.
+
+The finite reference search used exact 4ed Host blobs, then semantically read
+matched callers and 18 native wrapper list branches; it is not a full read of
+every fetched file. Fixed-U references retain their precise existing identity:
+plugin-tools-handlers.ts `a4c6ad2286313226007d2527ed5929494dd21aa2`
+(full129 lines) preserves duplicate last-wins and the scheduler alias;
+tools-stdio-server.ts `ef5a603bce25ebe2247966c40932e8539ae80632`
+(full203 lines) supplies lifecycle context. The bounded tools.ts438–746 and
+plugin-tools-serve.test.ts184–215 readings support compatibility only; do not
+promote them to full-file reads. Their inventory links and historical evidence
+remain unchanged. This HTTP/Runner repair does not close stdio wiring, plugin
+SDK compatibility, native provenance, account-cache identity, Settings writers,
+per-tool Rust authority, real services or full OCRM/FPM acceptance. The existing
+OCRM ledger/RTM and eight false global flags remain authoritative.
+
+No persistent data or wire field is added. Rollback restores the permissive
+partial-catalog/erased-error behavior without rewriting user state; it cannot
+undo an already executed tool. Freeze and independently review the complete
+delta, then require the selected exact-H compile, real-path, retry/custody and
+existing regression evidence before claiming this batch's behavioral checks.
+
+### RC-11: direct observation of the new subject's normal campaign
+
+The completed 4ed Host whole-log request returned `Transport closed`; no raw
+output was received. Preserve that unread evidence gap and its successful API
+metadata separately. Large prior consoles and the existing helper's full-log
+`cat` support reducing replayed volume, but do not establish the transport
+failure's cause or a connector byte limit.
+
+Before this batch's normal Actions campaign, retain the existing
+`run_recovery_check` command invocation, complete raw log, quoted command,
+original exit TSV, exact-subject receipt and always-uploaded seven-day artifact.
+Replace only its final console replay with bounded JSON records containing
+original Cargo target/harness lines and bounded failure context with file/line
+provenance. ANSI removal is for recognition only. Encode both `##[` and `::`
+as JSON Unicode escapes; emit a mixed-marker canary through the actual path.
+Keep feature-graph output as a bounded original-line exception. Do not aggregate
+child summaries into parent counts or treat capture completion as product approval.
+
+The cumulative projection budget is 2 MiB / 12,000 records, reserving a terminal
+receipt or refusal. Keep all required harness rows; overflow/missing raw data/
+capture failure is non-passing with full raw artifacts retained. Optional
+failure context is bounded to 240 lines and reports omitted context. A nonzero
+product command retains its original return status even if capture also fails;
+a zero product command requires successful capture. Check these wrapper branches
+with owned normal-campaign instrument fixtures, including nonzero command,
+capture failure and the combined case. Controls also cover colored target
+recognition, compiler-noise rejection, marker round-trip, zero-test refusal,
+non-test cargo-tree/no-run distinction and budget refusal. No product rerun,
+new workflow/job or weaker assertion is introduced. Post-command original-exit
+and capture-status TSV write failures follow the same precedence and have owned
+zero/nonzero controls. Terminal refusal uses the same cumulative accounting and
+persists a refusal latch before console emission; subsequent calls remain
+non-passing without more projection output. If accounting or refusal-latch
+persistence is unavailable, return capture failure without unaccounted output.
+An owned actual-projector control reaches the byte/record boundary and invokes
+it again, checking bounded output, retained raw logs and outcome precedence.
+
+Freeze the new MCP named-case set from the authored App, projection, toolset,
+actual HTTP/CLI and retry-policy tests before the run. Acceptance requires each
+actual passing named row under its correct command/target and positive executed
+counts; absent, ignored, wrongly targeted or zero-run cases remain unmet even
+when another test in the command passes. The projector exposes original
+observations; root applies this batch's named-case oracle before claiming the
+behavior verified. Early Host/App/Native/Coordinator console producers remain
+unchanged, so whole-log retrieval is not guaranteed by this scoped repair.
+
+The existing Linux `sqlite-native-path` job also exercises the same Rust owners
+using its current Host cache and portable case runner. Add separate preparation,
+projection, toolset and routed-runtime targets, the exact retry-policy library
+case, the five other adapted builder targets and the credential-context target.
+Keep all inherited Memory/Session/Automation/media cases. Bind the two App cases
+to the existing uniquely identified shipping App test executable, preserving
+exact listing and one-pass/zero-failed/zero-ignored checks. The fixed 18 new
+named positives must pass under their own command/target; child summaries do
+not replace the parent harness. Retain all raw logs, commands, digests and
+always-uploaded artifacts. This is controlled Linux HTTP/CLI/relay evidence,
+not real provider or packaged platform acceptance. RC-11's projection budget
+still applies only to the existing macOS recovery helper.
