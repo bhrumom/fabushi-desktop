@@ -126,6 +126,87 @@ whose terminal outcome has not yet been committed. If the combined owner
 transaction cannot commit, the run remains non-cleanup-authoritative and the
 failure is explicit.
 
+## Automation history acknowledgment — 2026-11-02
+
+Contract: `OCRM-AUTOMATION-HISTORY-ACK-v1`. Base:
+`76095c27539c2be57e3c1ba0e6b33b8158d92766`; fixed upstream U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`.
+The integration parent is now `3aa679586d76e446f76a1c94700ff7abab623d42`:
+its concurrent compaction continuation independently supplies the equivalent
+ACK-07 SQL token repair and is preserved. ACK-06 must coexist with that owner's
+admission/custody checks; neither branch's valid controls are removed.
+
+The current `FileAutomationStore::finish_run_with` returns `Some` even when
+the requested history row is absent. Its fail-soft projection reader can also
+drop malformed rows before writing the remaining history. The existing
+`AutomationRunPath` interprets `Some` as a committed settlement and may then
+publish a terminal observation. This slice repairs that existing owner
+boundary for both manual and background execution; it does not add an owner.
+
+- ACK-01: both `finish_run` and `finish_run_definition` acknowledge settlement
+  only after finding the requested row and successfully writing its terminal
+  state. Missing configuration, missing history or a valid history without the
+  requested ID returns `None`, without creating or changing history.
+- ACK-02: settlement uses a private strict history read. Invalid JSON, a
+  non-array root, any row rejected by the existing row parser, duplicate run
+  IDs, invalid UTF-8 and non-NotFound I/O errors return an error without a
+  write. Valid legacy row normalization and existing sort/history-window
+  policy remain unchanged; projection reads and run admission are not changed.
+- ACK-03: write failure remains an error. Known pre-write failure preserves
+  history/configuration bytes; the existing filesystem writer's rename and
+  crash guarantees are not expanded. No retry follows an unknown write result.
+- ACK-04: the real `AutomationRuntime` → admitted Session store → run path →
+  file store path propagates a failed acknowledgment and emits no terminal
+  `AutomationRunObservation`. In-flight ownership is released, so a later
+  independently admitted run can execute after storage is repaired. Successful
+  runs still settle and report through the same owner.
+- ACK-05: background cron-row settlement remains before compatibility history.
+  A history failure may therefore leave a terminal cron row and incomplete
+  history; this is explicit failure, not a cross-store transaction or durable
+  recovery claim. The Host may still report a failed `FireCompletion` to its
+  backend. Suppressed successful history telemetry does not mean no backend
+  acknowledgment.
+
+The immutable source review exposed two inherited prerequisites of ACK-04 and
+ACK-05. The same batch therefore also repairs these existing owner boundaries:
+
+- ACK-06: a background run must enter Spend Guard and execution without
+  recursively acquiring the Session filesystem/deletion mutex. Guard reads,
+  card/state mutations and automation-file changes retain existing admission,
+  lifecycle and deletion protection. Use the existing Session/Spend Guard
+  owners and one lock acquisition at each protected boundary; public facades
+  that acquire the mutex must not be called inside an already-held boundary.
+  Retain pause, nudge and widget-answer behavior. A bounded real Runtime
+  control must observe execution or a causal refusal; a timeout is failure.
+  The Session owner provides a crate-private `with_agent_admitted_db_mutation`
+  callback with the already-open `&SandAgentDb`. Runtime retains its own
+  automation mutation mutex; Spend Guard's apply and answer entries acquire
+  the Session callback once. Private guard helpers use that DB owner instead
+  of re-locking public facades. Legacy transcript append uses the existing
+  locked append seam; a card is acknowledged only after actual insertion.
+- ACK-07: cron registration, plain and fenced terminal settlement, fence
+  publication and projection must reach valid SQL in the existing `SandAgentDb`
+  owner. Preserve all identity/lifecycle/running-state predicates, admission
+  checks, BEGIN/COMMIT/ROLLBACK behavior and fail-closed fence semantics. Real
+  database positive and stale/terminal/admission refusal controls remain required.
+
+Implement the file-store boundary, these necessary caller/DB repairs and their
+real caller oracles. Keep
+terminal replay semantics, repeated execution, admission of pre-existing
+corrupt history, pruning of running rows, concurrent/process locking, durable
+reconciliation, delivery, reaper deletion and backend retry policy as open
+work. No new schema, dependency, runtime or storage owner is required.
+
+Exact-H Actions must cover both store entry points: missing/empty/no-match,
+malformed and mixed history, duplicates, unreadable input, deterministic
+pre-write failure, valid legacy normalization, successful persistence and
+definition next-run projection. Production tests alter history after admission
+inside the executor, assert no terminal observation and preserved failure,
+then repair storage and prove a subsequent run can settle. Exercise manual,
+schedule/event and execution-error/interruption branches through their existing
+owners. Existing valid assertions remain. Source review and these checks do not
+establish real backend delivery, crash recovery or full cron equivalence.
+
 ## Verification and Definition of Done
 
 - A source-backed architecture decision names the existing owners and all

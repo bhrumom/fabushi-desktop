@@ -245,3 +245,79 @@ The direct conclusion is unchanged but now bound to the current Rust sources:
 `implementation=not-started`, `wiring=not-wired`, `verification=not-run`, and
 `acceptance=pending`. Existing automation history, session deletion, and
 subagent cleanup must not be combined into a guessed cron reaper owner.
+
+## Fixed-U history acknowledgment review — 2026-11-02
+
+This bounded review uses U `1440bb1771372334bea23d7642bb52deb7db1845`, tree
+`90c8aab39972da11cfad220361781d49e1bc6700`, and target base
+`76095c27539c2be57e3c1ba0e6b33b8158d92766`. It does not relabel the historical
+source identities or reaper conclusions above. An independent xhigh owner
+investigation read the following exact GitHub source files completely:
+
+| Source path | Blob | Lines |
+| --- | --- | --- |
+| `src/cron/service.ts` | `7bd251be33bd30e19407288f2cec099ded5f5f59` | 1–324 |
+| `src/cron/service-contract.ts` | `1226e197de3d4d331f18aa97ce82a13445cc6daf` | 1–90 |
+| `src/cron/service/ops-run.ts` | `475bb8ab9dfe552eeddeefda706d4c7b57f9c41a` | 1–203 |
+| `src/cron/service/run-options.ts` | `81091b599290ea37776e0225825ecabd8bcb49e3` | 1–30 |
+| `src/cron/service/run-queue-execution.ts` | `42045bf23ec71b0bd970f03acf113011be4ddd83` | 1–259 |
+| `src/cron/service/timer-outcome-finalization.ts` | `a346d651c99c6a74228869bc218e4e6bb87f16bf` | 1–215 |
+| `src/cron/service/run-history.ts` | `586db842216dd537f3dcafeb19e11573ab9524d5` | 1–116 |
+| `src/cron/service/run-receipts.ts` | `6e9e5216c04e6511d5715b3eeb9ec7b606149148` | 1–156 |
+| `src/cron/store/run-receipt.types.ts` | `8b1ad063d6ca57dd758dc9b632ca6ed76ffacb9c` | 1–64 |
+| `src/cron/session-reaper.ts` | `5474f33412bd9c3a808e78a42be359f976ee35b5` | 1–327 |
+
+The run-queue facade `src/cron/service/run-queue.ts`, blob
+`e7d9fe5abfa76d3c6568eb5199e84616de07bb52`, was inspected only at its opening
+imports/types/adoption boundary. It is not a full-file read. Unread imported
+worker/store/session implementations remain outside this claim.
+
+`timer-outcome-finalization.ts` emits terminal plans after the worker commit;
+its lost-reply recovery refreshes state without blindly replaying execution.
+`run-history.ts` separately logs history persistence failure; this review does
+not claim every upstream helper has identical history/error semantics. The
+reaper still owns guarded session retention, not compatibility history cleanup.
+
+At the target base, full reads of `automation_store.rs` (blob
+`8ffd2175c7afb65611f65a1d56f3368b79881220`), `automation_run_path.rs`
+(`4f756b9a8917d4a8295c22629b91623094515ae3`), `automation_runtime.rs`
+(`d6925c3ba55af9149b9eaa3cb3ebaf71a70acbef`) and `fire_delivery.rs`
+(`04e3a192e7fa9b1d3bda7ea1757084153679bd79`), plus their actual Host,
+admitted Session and writer callers, establish a narrower concrete defect:
+finish returns `Some` even without a requested history row. The caller treats
+that as committed and may report a terminal observation. A projection read
+also silently drops malformed siblings before a finish write.
+
+The frozen `OCRM-AUTOMATION-HISTORY-ACK-v1` amendment in
+`docs/specs/cron-session-reaper.md` assigns the repair to the same file-store
+owner. Runtime propagation and reporting already fail on `None`/`Err`; no new
+scheduler or store is needed. Background DB settlement remains before history,
+and the Host can still report a failed backend completion. History refusal
+does not mean no backend ACK or atomic rollback of executed effects.
+
+This is source preparation for a bounded production fix, not full transitive
+closure, reaper implementation/acceptance or a machine-ledger status promotion.
+Admission over pre-existing corrupt history, terminal overwrite/replay,
+cross-process locking, pruning active runs and restart reconciliation remain
+open. Tests must inject history faults after admission and preserve actual
+failure evidence. Only exact-H Actions can establish execution results.
+
+The immutable real-path review of tree
+`d1b38ae9c43e745696802caecfeb1a8ea2d1ee4c` found two prerequisites hidden
+by earlier source-pattern coverage. Runtime's admitted filesystem closure
+called Spend Guard public Session APIs that acquire the same mutex; both
+background fire and widget answer were affected. The repair retains Runtime's
+automation serialization and moves one admitted Session/DB callback into each
+Spend Guard entry, with locked transcript projection and actual card insertion
+checks. File enable/disable mutations remain inside deletion custody. The
+review also found SQL continuation token concatenation in all five cron row
+operations. Only token boundaries are repaired; predicates and transactions
+remain. ACK-06/07 freeze these necessary owner repairs before implementation.
+
+New bounded real-owner tests retain history failure and independent-run
+controls, exercise nudge/pause/resume and deletion refusals, and cover cron
+registration, plain/fenced settlement, fence publication, stale generation and
+terminal/deletion refusal. They do not treat source-pattern matches as live
+SQL or lock-progress evidence. The exact child process is killed and reaped on
+timeout; timeout remains failure. These authored cases await the new exact-H
+Actions campaign, without upgrading any responsibility or global flag.

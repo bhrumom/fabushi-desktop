@@ -1,6 +1,6 @@
-use std::fs;use std::sync::{Arc,mpsc};use std::time::{Duration,SystemTime,UNIX_EPOCH};
-use mahayana_host_runtime::automations::automation::{AutomationSpec,AUTOMATION_MAX_RUN_HISTORY};
-use mahayana_host_runtime::automations::automation_store::{AutomationDefinitionInspectionState,FileAutomationStore,agent_has_automations,inspect_agent_automation_definitions,parse_stored_config};
+use std::fs;use std::io;use std::sync::{Arc,mpsc};use std::time::{Duration,SystemTime,UNIX_EPOCH};
+use mahayana_host_runtime::automations::automation::{AutomationRecord,AutomationSpec,AUTOMATION_MAX_RUN_HISTORY};
+use mahayana_host_runtime::automations::automation_store::{AutomationDefinitionInspectionState,AutomationStoreError,FileAutomationStore,agent_has_automations,inspect_agent_automation_definitions,parse_stored_config};
 use mahayana_host_runtime::automations::automation_trigger::{parse_stored_trigger,slack_scope_matches,trigger_schedule};
 use mahayana_host_runtime::automations::routine_notices::{GITHUB_LISTENER_SCOPE,routine_notice_ids_to_raise};
 use serde_json::json;
@@ -39,4 +39,208 @@ fn definition_run_mutations_suppress_next_run_derivation(){
  assert!(definition.next_run_at.is_none());
  assert!(store.get(&record.id).unwrap().next_run_at.is_some());
  let _=fs::remove_dir_all(root);
+}
+
+fn history_store(label: &str) -> (std::path::PathBuf, FileAutomationStore, String) {
+    let root = root(label);
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = store.upsert(&AutomationSpec {
+        name: "History acknowledgment".into(),
+        prompt: "Inspect the queue".into(),
+        trigger: json!({"type":"cron","schedule":"@hourly"}),
+        is_enabled: Some(true),
+    }, 1_000.0).expect("create automation").expect("automation");
+    (root, store, automation.id)
+}
+
+fn finish_history(
+    store: &FileAutomationStore,
+    automation_id: &str,
+    definition_only: bool,
+) -> Result<Option<AutomationRecord>, AutomationStoreError> {
+    if definition_only {
+        store.finish_run_definition(automation_id, "run", "error", 2_000.0, Some(" failed "))
+    } else {
+        store.finish_run(automation_id, "run", "error", 2_000.0, Some(" failed "))
+    }
+}
+
+#[test]
+fn finish_requires_existing_configuration_and_matching_history_for_both_projections() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-missing");
+        let config = fs::read(store.config_path(&id)).expect("configuration bytes");
+        let runs_path = store.runs_path(&id);
+
+        assert!(finish_history(&store, "missing-definition", definition_only).unwrap().is_none());
+        assert!(!store.get_location().join("missing-definition").exists());
+        assert!(finish_history(&store, &id, definition_only).unwrap().is_none());
+        assert!(!runs_path.exists(), "missing history must not be created");
+
+        for raw in [
+            &b"[ ]\n"[..],
+            &br#"[ { "id": "other", "startedAt": 1000, "status": "running", "extra": true } ]
+"#[..],
+        ] {
+            fs::write(&runs_path, raw).expect("history fixture");
+            assert!(finish_history(&store, &id, definition_only).unwrap().is_none());
+            assert_eq!(fs::read(&runs_path).unwrap(), raw);
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        }
+
+        let history = fs::read(&runs_path).unwrap();
+        fs::remove_file(store.config_path(&id)).expect("remove configuration");
+        assert!(finish_history(&store, &id, definition_only).unwrap().is_none());
+        assert!(!store.config_path(&id).exists());
+        assert_eq!(fs::read(&runs_path).unwrap(), history);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn finish_rejects_malformed_and_ambiguous_history_without_salvaging_rows() {
+    let cases: &[(&str, &[u8], bool)] = &[
+        ("invalid-json", b"[", true),
+        ("non-array", br#"{"id":"run","startedAt":1000}"#, true),
+        ("invalid-row", br#"[42]"#, false),
+        ("mixed-row", br#"[{"id":"run","startedAt":1000,"status":"running"},{"id":"bad","startedAt":"invalid"}]"#, false),
+        ("duplicate-id", br#"[{"id":"run","startedAt":1000},{"id":"run","startedAt":2000}]"#, false),
+        ("invalid-utf8", b"[\xff]", false),
+    ];
+    for definition_only in [false, true] {
+        for &(label, raw, json_error) in cases {
+            let (root, store, id) = history_store(label);
+            let config = fs::read(store.config_path(&id)).unwrap();
+            fs::write(store.runs_path(&id), raw).expect("malformed history fixture");
+            if label == "mixed-row" {
+                assert_eq!(store.read_runs(&id).len(), 1, "projection remains fail-soft");
+            }
+            match finish_history(&store, &id, definition_only).expect_err(label) {
+                AutomationStoreError::Json(_) => assert!(json_error, "{label}"),
+                AutomationStoreError::Io(error) => {
+                    assert!(!json_error, "{label}");
+                    assert_eq!(error.kind(), io::ErrorKind::InvalidData, "{label}");
+                }
+            }
+            assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw, "{label}");
+            assert_eq!(fs::read(store.config_path(&id)).unwrap(), config, "{label}");
+            let _ = fs::remove_dir_all(root);
+        }
+    }
+}
+
+#[test]
+fn finish_rejects_duplicate_ids_before_applying_the_history_window() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-duplicate-window");
+        let mut rows = vec![json!({"id":"run","startedAt":1000,"status":"running"})];
+        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
+            json!({"id":format!("other-{index}"),"startedAt":100 + index})
+        }));
+        rows.push(json!({"id":"duplicate","startedAt":1}));
+        rows.push(json!({"id":"duplicate","startedAt":2}));
+        let raw = serde_json::to_vec_pretty(&rows).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        fs::write(store.runs_path(&id), &raw).unwrap();
+        assert!(store.read_runs(&id).iter().all(|run| run.id != "duplicate"));
+        let error = finish_history(&store, &id, definition_only).expect_err("ambiguous history");
+        assert!(matches!(error, AutomationStoreError::Io(ref error) if error.kind() == io::ErrorKind::InvalidData));
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn finish_does_not_acknowledge_a_run_outside_the_existing_history_window() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-window-miss");
+        let mut rows = vec![json!({"id":"run","startedAt":0,"status":"running"})];
+        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY).map(|index| {
+            json!({"id":format!("newer-{index}"),"startedAt":index + 1})
+        }));
+        let raw = serde_json::to_vec_pretty(&rows).unwrap();
+        let config = fs::read(store.config_path(&id)).unwrap();
+        fs::write(store.runs_path(&id), &raw).unwrap();
+        assert!(finish_history(&store, &id, definition_only).unwrap().is_none());
+        assert_eq!(fs::read(store.runs_path(&id)).unwrap(), raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn finish_propagates_history_read_errors_without_writing() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-unreadable");
+        let config = fs::read(store.config_path(&id)).unwrap();
+        let runs_path = store.runs_path(&id);
+        fs::create_dir(&runs_path).expect("unreadable history path");
+        fs::write(runs_path.join("sentinel"), b"preserve directory").unwrap();
+        assert!(store.read_runs(&id).is_empty(), "projection remains fail-soft");
+        let error = finish_history(&store, &id, definition_only).expect_err("history read failure");
+        assert!(matches!(error, AutomationStoreError::Io(_)));
+        assert!(runs_path.is_dir());
+        assert_eq!(fs::read(runs_path.join("sentinel")).unwrap(), b"preserve directory");
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn finish_propagates_prepublication_write_failure_and_preserves_bytes() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-write-failure");
+        let config = fs::read(store.config_path(&id)).unwrap();
+        let raw = br#"[ { "id": "run", "startedAt": 1000, "status": "running" } ]"#;
+        let runs_path = store.runs_path(&id);
+        fs::write(&runs_path, raw).unwrap();
+        // Block the real atomic writer before publication without depending
+        // on permission bits or the test process's privilege level.
+        let temporary = std::path::PathBuf::from(format!(
+            "{}.{}.tmp", runs_path.display(), std::process::id()
+        ));
+        fs::create_dir(&temporary).expect("block temporary file creation");
+        fs::write(temporary.join("sentinel"), b"preserve temporary directory").unwrap();
+        let error = finish_history(&store, &id, definition_only).expect_err("write failure");
+        assert!(matches!(error, AutomationStoreError::Io(_)));
+        assert_eq!(fs::read(&runs_path).unwrap(), raw);
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        assert_eq!(fs::read(temporary.join("sentinel")).unwrap(), b"preserve temporary directory");
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn finish_preserves_valid_legacy_normalization_order_and_projection() {
+    for definition_only in [false, true] {
+        let (root, store, id) = history_store("finish-legacy");
+        let config = fs::read(store.config_path(&id)).unwrap();
+        let mut rows = vec![json!({
+            "id":"run", "startedAt":1000, "finishedAt":"legacy", "event":" event ",
+            "coalescedRunIds":["", "coalesced", 7]
+        })];
+        rows.extend((0..AUTOMATION_MAX_RUN_HISTORY + 3).map(|index| {
+            json!({"id":format!("older-{index}"),"startedAt":index + 1,"trigger":"legacy","status":"legacy"})
+        }));
+        fs::write(store.runs_path(&id), serde_json::to_vec(&rows).unwrap()).unwrap();
+        let record = finish_history(&store, &id, definition_only).unwrap().expect("committed run");
+        assert_eq!(record.next_run_at.is_none(), definition_only);
+        let persisted = store.read_runs(&id);
+        assert_eq!(record.runs, persisted);
+        assert_eq!(persisted.len(), AUTOMATION_MAX_RUN_HISTORY);
+        let run = &persisted[0];
+        assert_eq!(run.id, "run");
+        assert_eq!(run.trigger, "schedule");
+        assert_eq!(run.status, "error");
+        assert_eq!(run.finished_at, Some(2_000.0));
+        assert_eq!(run.detail.as_deref(), Some("failed"));
+        assert_eq!(run.event.as_deref(), Some("event"));
+        assert_eq!(run.coalesced_run_ids, Some(vec!["coalesced".to_string()]));
+        assert!(persisted.windows(2).all(|pair| pair[0].started_at >= pair[1].started_at));
+        assert!(persisted.iter().skip(1).all(|run| run.trigger == "schedule" && run.status == "ok"));
+        assert!(!persisted.iter().any(|run| run.id == "older-0"));
+        assert_eq!(fs::read(store.config_path(&id)).unwrap(), config);
+        let _ = fs::remove_dir_all(root);
+    }
 }

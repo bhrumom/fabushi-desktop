@@ -43,7 +43,61 @@ impl FileAutomationStore{
  pub fn begin_run(&self,id:&str,trigger:&str,at:f64,event:Option<&str>,run_id:Option<&str>,coalesced:Option<&[String]>)->Result<Option<AutomationRun>,AutomationStoreError>{if self.read_config(id).is_none(){return Ok(None);}let mut runs=self.read_runs(id);let run_id=run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);if let Some(found)=runs.iter().find(|r|r.id==run_id){return Ok(Some(found.clone()));}let run=AutomationRun{id:run_id,trigger:match trigger{"manual"|"event"=>trigger.to_string(),_=>"schedule".into()},started_at:at,finished_at:None,status:"running".into(),detail:None,event:clamp_run_detail(event),coalesced_run_ids:clamp_coalesced_run_ids(coalesced)};runs.insert(0,run.clone());runs.truncate(AUTOMATION_MAX_RUN_HISTORY);self.write_runs(id,&runs)?;Ok(Some(run))}
  pub fn finish_run(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>)->Result<Option<AutomationRecord>,AutomationStoreError>{self.finish_run_with(id,run_id,status,at,detail,true)}
  pub fn finish_run_definition(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>)->Result<Option<AutomationRecord>,AutomationStoreError>{self.finish_run_with(id,run_id,status,at,detail,false)}
- fn finish_run_with(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>,derive:bool)->Result<Option<AutomationRecord>,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(None);}let Some(c)=self.read_config(id)else{return Ok(None);};let mut runs=self.read_runs(id);if let Some(run)=runs.iter_mut().find(|r|r.id==run_id){run.finished_at=Some(at);run.status=if status=="error"{"error".into()}else{"ok".into()};run.detail=clamp_run_detail(detail);self.write_runs(id,&runs)?;}Ok(Some(self.to_record(id,c,derive)))}
+ fn finish_run_with(
+     &self,
+     id: &str,
+     run_id: &str,
+     status: &str,
+     at: f64,
+     detail: Option<&str>,
+     derive: bool,
+ ) -> Result<Option<AutomationRecord>, AutomationStoreError> {
+     if !is_safe_folder_id(id) {
+         return Ok(None);
+     }
+     let Some(config) = self.read_config(id) else {
+         return Ok(None);
+     };
+     let mut runs = self.read_runs_for_settlement(id)?;
+     let Some(run) = runs.iter_mut().find(|run| run.id == run_id) else {
+         return Ok(None);
+     };
+     run.finished_at = Some(at);
+     run.status = if status == "error" { "error" } else { "ok" }.into();
+     run.detail = clamp_run_detail(detail);
+     self.write_runs(id, &runs)?;
+     Ok(Some(self.to_record(id, config, derive)))
+ }
+
+ // Projection reads may omit malformed rows, but settlement must never
+ // acknowledge or rewrite a salvaged subset of the persisted history.
+ fn read_runs_for_settlement(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
+     let raw = match fs::read_to_string(self.runs_path(id)) {
+         Ok(raw) => raw,
+         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+         Err(error) => return Err(error.into()),
+     };
+     let items: Vec<Value> = serde_json::from_str(&raw)?;
+     let mut runs = Vec::with_capacity(items.len());
+     let mut ids = std::collections::HashSet::new();
+     for item in &items {
+         let run = parse_stored_run(item).ok_or_else(|| {
+             io::Error::new(io::ErrorKind::InvalidData, "automation run history contains an invalid row")
+         })?;
+         if !ids.insert(run.id.clone()) {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidData,
+                 "automation run history contains duplicate run IDs",
+             ).into());
+         }
+         runs.push(run);
+     }
+     // Validate the complete input before applying the existing projection
+     // window, so truncation cannot hide malformed or ambiguous history.
+     runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
+     runs.truncate(AUTOMATION_MAX_RUN_HISTORY);
+     Ok(runs)
+ }
  pub fn remove(&self,id:&str)->Result<bool,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(false);}let folder=self.dir.get_location().join(id);match fs::metadata(&folder){Ok(m)if m.is_dir()=>{},Ok(_)=>return Ok(false),Err(e)if e.kind()==io::ErrorKind::NotFound=>return Ok(false),Err(e)=>return Err(e.into())}fs::remove_dir_all(folder)?;self.dir.schedule_notify();Ok(true)}
 }
 pub fn get_agent_automations_dir(agent_dir:&Path)->PathBuf{agent_dir.join(AUTOMATIONS_DIRNAME)}

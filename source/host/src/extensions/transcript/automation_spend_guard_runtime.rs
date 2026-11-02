@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde_json::{Map, Value, json};
 
 use crate::automations::automation_store::FileAutomationStore;
+use crate::extensions::session::agent_db::SandAgentDb;
 use crate::extensions::session::agent_db_serde::SpendGuardState;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
@@ -45,10 +46,19 @@ impl AutomationSpendGuardRuntime {
         store: &FileAutomationStore,
         now_ms: f64,
     ) -> Result<SpendGuardEvaluationSnapshot, String> {
-        let unread = self.sessions.get_agent_unread_state(agent_id)?;
-        let state = self
-            .sessions
-            .get_agent_automation_spend_guard_state(agent_id)?;
+        let owner = self.sessions.open_agent_db_owner(agent_id)?;
+        Self::evaluate_with_owner(&owner, store, now_ms)
+    }
+
+    fn evaluate_with_owner(
+        owner: &SandAgentDb,
+        store: &FileAutomationStore,
+        now_ms: f64,
+    ) -> Result<SpendGuardEvaluationSnapshot, String> {
+        let unread = owner.get_unread_state().map_err(|error| error.to_string())?;
+        let state = owner
+            .get_automation_spend_guard_state()
+            .map_err(|error| error.to_string())?;
         let evaluation = SpendGuardEvaluation {
             now_ms,
             last_viewed_at_ms: unread.last_viewed_at,
@@ -74,8 +84,20 @@ impl AutomationSpendGuardRuntime {
         firing_automation_id: &str,
         now_ms: f64,
     ) -> Result<SpendGuardApplyResult, String> {
-        self.sessions.assert_agent_work_admission(agent_id)?;
-        let evaluated = self.evaluate_with_store(agent_id, store, now_ms)?;
+        self.sessions.with_agent_admitted_db_mutation(agent_id, |owner| {
+            self.apply_with_owner(agent_id, owner, store, firing_automation_id, now_ms)
+        })
+    }
+
+    fn apply_with_owner(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+        store: &FileAutomationStore,
+        firing_automation_id: &str,
+        now_ms: f64,
+    ) -> Result<SpendGuardApplyResult, String> {
+        let evaluated = Self::evaluate_with_owner(owner, store, now_ms)?;
         match evaluated.decision {
             SpendGuardDecision::UserActive
             | SpendGuardDecision::OptedOut
@@ -89,6 +111,7 @@ impl AutomationSpendGuardRuntime {
             SpendGuardDecision::AwaitingAck => {
                 let card = self.issue_card_if_none(
                     agent_id,
+                    owner,
                     build_spend_guard_nudge_widget(),
                     now_ms,
                 )?;
@@ -102,6 +125,7 @@ impl AutomationSpendGuardRuntime {
             SpendGuardDecision::Nudge => {
                 let card = self.issue_guard_card_with_state(
                     agent_id,
+                    owner,
                     &build_spend_guard_nudge_widget(),
                     &SpendGuardState {
                         nudged_at_ms: Some(now_ms),
@@ -120,10 +144,10 @@ impl AutomationSpendGuardRuntime {
                 })
             }
             SpendGuardDecision::Pause => {
-                let current = self
-                    .sessions
-                    .get_agent_automation_spend_guard_state(agent_id)?;
-                let recheck = self.evaluate_with_store(agent_id, store, now_ms)?;
+                let current = owner
+                    .get_automation_spend_guard_state()
+                    .map_err(|error| error.to_string())?;
+                let recheck = Self::evaluate_with_owner(owner, store, now_ms)?;
                 if recheck.decision != SpendGuardDecision::Pause {
                     return Ok(SpendGuardApplyResult {
                         paused: firing_is_off(store, firing_automation_id),
@@ -170,16 +194,16 @@ impl AutomationSpendGuardRuntime {
                 if let Some((card_id, entry)) = built_card {
                     self.commit_guard_card(
                         agent_id,
+                        owner,
                         card_id,
                         entry,
                         &next_state,
                         now_ms,
                     )?;
                 } else {
-                    self.sessions.set_agent_automation_spend_guard_state(
-                        agent_id,
-                        &next_state,
-                    )?;
+                    owner
+                        .set_automation_spend_guard_state(&next_state)
+                        .map_err(|error| error.to_string())?;
                 }
                 Ok(SpendGuardApplyResult {
                     paused: true,
@@ -202,10 +226,26 @@ impl AutomationSpendGuardRuntime {
         let Some(answer) = interpret_spend_guard_answer(value) else {
             return Ok(None);
         };
-        self.sessions.assert_agent_work_admission(agent_id)?;
-        let current = self
-            .sessions
-            .get_agent_automation_spend_guard_state(agent_id)?;
+        self.sessions.with_agent_admitted_db_mutation(agent_id, |owner| {
+            self.handle_widget_answer_with_owner(
+                agent_id, owner, store, entry_id, value, answer, now_ms,
+            )
+        })
+    }
+
+    fn handle_widget_answer_with_owner(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+        store: &FileAutomationStore,
+        entry_id: &str,
+        value: &str,
+        answer: SpendGuardAnswer,
+        now_ms: f64,
+    ) -> Result<Option<String>, String> {
+        let current = owner
+            .get_automation_spend_guard_state()
+            .map_err(|error| error.to_string())?;
         if !current.card_entry_ids.iter().any(|id| id == entry_id)
             || !self.is_host_issued_card(agent_id, entry_id, value)?
         {
@@ -236,33 +276,36 @@ impl AutomationSpendGuardRuntime {
             }
             SpendGuardAnswer::StayPaused => {}
         }
-        self.sessions
-            .set_agent_automation_spend_guard_state(agent_id, &next)?;
+        owner
+            .set_automation_spend_guard_state(&next)
+            .map_err(|error| error.to_string())?;
         Ok(Some(render_spend_guard_answer_ack(answer)))
     }
 
     fn issue_card_if_none(
         &self,
         agent_id: &str,
+        owner: &SandAgentDb,
         widget: SpendGuardWidget,
         now_ms: f64,
     ) -> Result<Option<String>, String> {
-        let current = self
-            .sessions
-            .get_agent_automation_spend_guard_state(agent_id)?;
+        let current = owner
+            .get_automation_spend_guard_state()
+            .map_err(|error| error.to_string())?;
         if !current.card_entry_ids.is_empty() {
             return Ok(None);
         }
         let (card, entry) = self.build_guard_card(agent_id, &widget, now_ms)?;
         let mut next = current;
         next.card_entry_ids = vec![card.clone()];
-        self.commit_guard_card(agent_id, card.clone(), entry, &next, now_ms)?;
+        self.commit_guard_card(agent_id, owner, card.clone(), entry, &next, now_ms)?;
         Ok(Some(card))
     }
 
     fn issue_guard_card_with_state(
         &self,
         agent_id: &str,
+        owner: &SandAgentDb,
         widget: &SpendGuardWidget,
         state: &SpendGuardState,
         now_ms: f64,
@@ -272,7 +315,7 @@ impl AutomationSpendGuardRuntime {
         if !next.card_entry_ids.iter().any(|card| card == &id) {
             next.card_entry_ids.push(id.clone());
         }
-        self.commit_guard_card(agent_id, id.clone(), entry, &next, now_ms)?;
+        self.commit_guard_card(agent_id, owner, id.clone(), entry, &next, now_ms)?;
         Ok(id)
     }
 
@@ -282,7 +325,7 @@ impl AutomationSpendGuardRuntime {
         widget: &SpendGuardWidget,
         now_ms: f64,
     ) -> Result<(String, Value), String> {
-        let entries = self.sessions.read_agent_transcript_entries(agent_id)?;
+        let entries = self.sessions.read_agent_transcript_entries_locked(agent_id)?;
         let id = next_entry_id(&entries, TranscriptEntryIdKind::SendMessage);
         let entry = json!({
             "kind": "send-message",
@@ -299,30 +342,43 @@ impl AutomationSpendGuardRuntime {
     fn commit_guard_card(
         &self,
         agent_id: &str,
+        owner: &SandAgentDb,
         _id: String,
         mut entry: Value,
         state: &SpendGuardState,
         now_ms: f64,
     ) -> Result<(), String> {
-        if let Some(session_key) = self
-            .sessions
-            .read_session_work_admission(agent_id)?
+        if let Some(session_key) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
             .map(|record| record.session_key)
             .filter(|value| !value.trim().is_empty())
         {
             entry["sessionKey"] = Value::String(session_key.clone());
-            self.sessions.append_agent_spend_guard_card_if_session_admitted(
-                agent_id,
-                &session_key,
-                &entry,
-                state,
-                now_ms,
-            )?;
+            let inserted = owner
+                .append_spend_guard_card_if_session_admitted(
+                    &session_key,
+                    &entry,
+                    state,
+                    now_ms,
+                )
+                .map_err(|error| error.to_string())?;
+            if !inserted {
+                return Err("spend-guard card was not inserted".into());
+            }
         } else {
-            self.sessions.append_agent_transcript_entries(agent_id, &[entry])?;
-            let _ = self.sessions.mark_agent_activity(agent_id, now_ms)?;
-            self.sessions
-                .set_agent_automation_spend_guard_state(agent_id, state)?;
+            let inserted = self.sessions.append_agent_transcript_entries_locked(
+                agent_id,
+                None,
+                &[entry],
+            )?;
+            if inserted != 1 {
+                return Err("spend-guard card was not inserted".into());
+            }
+            let _ = owner.mark_activity(now_ms).map_err(|error| error.to_string())?;
+            owner
+                .set_automation_spend_guard_state(state)
+                .map_err(|error| error.to_string())?;
         }
         Ok(())
     }
@@ -333,7 +389,7 @@ impl AutomationSpendGuardRuntime {
         entry_id: &str,
         value: &str,
     ) -> Result<bool, String> {
-        let entries = self.sessions.read_agent_transcript_entries(agent_id)?;
+        let entries = self.sessions.read_agent_transcript_entries_locked(agent_id)?;
         let Some(widget) = entries
             .iter()
             .find(|entry| entry.get("id").and_then(Value::as_str) == Some(entry_id))

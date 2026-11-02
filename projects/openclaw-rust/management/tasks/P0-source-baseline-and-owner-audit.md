@@ -8,6 +8,94 @@ Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
 Last updated: 2026-10-31（Asia/Shanghai）
 
+### 2026-11-02 production batch: truthful automation history settlement
+
+Base `76095c27539c2be57e3c1ba0e6b33b8158d92766`; fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`. The existing file-store finish
+owner acknowledges absent history and can rewrite a partially parsed history.
+`OCRM-AUTOMATION-HISTORY-ACK-v1` in `docs/specs/cron-session-reaper.md` freezes
+the repair before implementation: strict finish-only reads, duplicate-ID
+refusal, matching row/write required, and actual admitted Runtime failure/
+observation/recovery controls. Existing owners and backend failure completion
+semantics remain intact. Source identities, read extents and dependency limits
+are recorded in the existing cron dossier; no old read or global flag changes.
+
+The implementation worker runs at actual xhigh effort for the persistence and
+real-caller failure boundary, with only `automation_store.rs`, its contract
+test and `automation_run_production_wiring_contract.rs` writable. The integrator
+owns specs, workflow and this task. No local executable validation is allowed.
+Source review, authored cases, executed checks and whole-unit acceptance remain
+separate. The current source workflow proves tracked structural identity only;
+full source/dependency closure and scoped responsibility acceptance stay open.
+
+The three owned implementation/test paths are now complete in the working
+delta, with no local execution. The private strict reader validates every
+history row and duplicate ID before the existing window; both finish methods
+require a matching write. Seven new store tests cover both entry points;
+three new production tests cover after-admission history faults, manual/
+schedule/event outcomes, real terminal cron-row ordering, suppressed terminal
+observations and an independently admitted later run after repair. The existing
+tests remain. `automation_store_contract` and `automations_fire_delivery_contract`
+join the already selected runtime/run-path/production-wiring targets in the
+existing Actions workflow. Integration parent is
+`81d48636b06d20f8bec551cdc334fe40f31e614b`; that successor only repaired the
+app hidden-resume test seam and did not change these Automation owners. The
+seven-path batch requires independent immutable review and exact-H Actions
+before any execution claim. Global source and final acceptance remain pending.
+
+Immutable review of tree `d1b38ae9c43e745696802caecfeb1a8ea2d1ee4c`
+against parent `81d48636b06d20f8bec551cdc334fe40f31e614b` found no defect
+in the changed strict-history boundary, but the independent real-path oracle
+review identified two inherited production blockers. Arbitration is recorded
+before repair:
+
+- A1 — **FIX / IMPL_BUG**: background Runtime holds the admitted Session
+  filesystem mutex while Spend Guard calls public admission and DB facades
+  that acquire that same non-reentrant mutex. Repair the existing owner call
+  boundary so admission/deletion protection and each mutation remain guarded
+  without recursive acquisition. Retain schedule/event and pause/card coverage;
+  a bounded real Runtime oracle must fail on deadlock rather than bypassing it.
+- A2 — **FIX / IMPL_BUG**: cron registration, plain/fenced settlement, fence
+  publication and projection use Rust continued SQL strings that concatenate
+  identifiers and keywords. Restore SQL token boundaries in `SandAgentDb`;
+  preserve identity, lifecycle, admission and transaction predicates. Keep the
+  new real database assertions and cover the existing refusal controls.
+
+These are source-proven integration defects, not Actions failures or
+environment problems. The previous seven-path review remains history, not
+approval of the expanded production scope. The amended contract below is
+implemented before a new immutable snapshot and focused independent reviews;
+execution evidence is still pending. No test assertion or global gate is waived.
+
+The integration parent now has exact-H positive evidence: Runtime Actions
+`41405911556`, job `125147756907`, passed shipping compilation, 114
+configuration/inference/Runner integration cases, two actual app admission/
+resume cases, 191 recovery integration cases and 51 selected library cases
+(358 distinct cases; the nested model-test child summary is counted once).
+Its artifact `13124026042` has digest
+`sha256:01d9ef2b9c03b02e6d02d3ac82dd561385001c1d2d08f494c040b29128743237`.
+Source Actions `41405911644` passed with artifact `13123217838`, digest
+`sha256:d47e122c8c9390df2c268b3745c9d535900e6e0a5d6a43bc7786689513c9058c`.
+Both bind `81d48636b06d20f8bec551cdc334fe40f31e614b` and fixed U. This
+is retained parent evidence; the changed Automation/Session paths and expanded
+oracles require their own frozen-H run. It does not establish full source
+closure, actual service compatibility, cross-process recovery or final ACCEPT.
+
+Both independent xhigh source reviews converged on the expanded Automation
+tree `d0a2fb1540ab6afa7cf24e3c8cbe21782ef63c5b` (13 paths on H81).
+Before publication, the remote lease found concurrent successor
+`3aa679586d76e446f76a1c94700ff7abab623d42`, tree
+`96e5cab0322a8ef746ef0da87c1353344dcaf1eb`, on the same H81 parent.
+Its 14-path compaction/model continuation is preserved and adopted; root
+re-read its exact GitHub commit and file/blob identities. The same five cron
+SQL repairs are semantically equivalent, so retain the remote spelling and
+its admission/custody compaction changes rather than replace that DB file.
+The workflow keeps both sets of scoped targets; the independent channel delta
+remains outside this Automation candidate. No force push occurred. The new
+integration parent is H3aa; its source/Rust Actions `41407135213`/`41407135148`
+were still running at reconciliation. Fresh review of the shared integration
+and exact-H Actions remain required; the earlier tree approval is not relabeled.
+
 ### 2026-11-02 exact-head recovery evidence
 
 GitHub Actions [run 41381141155](https://github.com/bhrumom/fabushi-desktop/actions/runs/41381141155),
