@@ -4001,7 +4001,8 @@
         "source/host/tests/canonical_checkpoint_recovery_contract.rs",
         "source/host/tests/production_agent_store_contract.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
-        "source/host/tests/runner_effect_custody_contract.rs"
+        "source/host/tests/runner_effect_custody_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -4022,7 +4023,7 @@
       ],
       "id": "OCRM-RESP-AGENT-LOOP-RUNNER-001",
       "integration": {
-        "consumer": "source/host/src/extensions/transcript/production_runtime.rs consumes ProductionTurnDispatch queue admission, active generation, watchdog escape, and settle-and-start-next",
+        "consumer": "source/host/src/extensions/transcript/production_runtime.rs consumes ProductionTurnDispatch queue admission, active generation, watchdog escape, and settle-and-start-next; downstream provider attempts remain owned by StreamAttemptRuntime and ProductionTurnRunShellAdapter: OCRM-RUNNER-EFFECT-CUSTODY-v1 fences retries after pending, unknown, or uncheckpointed effects through the direct Responses tool wrapper and actual Claude MCP endpoint. Authored oracles await exact-H Actions evidence; durable unknown-effect reconciliation and original-turn restart resumption remain open",
         "entrypoint": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch -> source/host/src/extensions/transcript/production_runtime.rs::accept_routed_send/settle_routed_turn",
         "owner": "source/host/src/extensions/transcript/send_turn_dispatch.rs::ProductionTurnDispatch",
         "producer": "ProductionTranscriptRuntime accepts routed sends and enqueues every admitted turn; the scheduler starts the first turn and defers later turns until settlement or watchdog escape"
@@ -4085,7 +4086,10 @@
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o01_active_stream_conflict_rejection",
-        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o02_deferred_supersedes_queue"
+        "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o02_deferred_supersedes_queue",
+        "source/host/tests/runner_effect_custody_contract.rs::production_fabushi_executor_refuses_replay_after_tool_expiry",
+        "source/host/tests/runner_effect_custody_contract.rs::real_mcp_response_loss_refuses_more_effects_on_the_same_attempt",
+        "source/host/tests/routed_send_acceptance_contract.rs::routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal"
       ],
       "typed_contracts": [
         "TurnRunShell::begin_run"

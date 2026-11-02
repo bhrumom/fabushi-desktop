@@ -26,10 +26,13 @@ use crate::host_request_context::HostRequestContext;
 use crate::runner::production_turn_run_shell_adapter::{
     ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryReport,
     RoutedProviderAttemptControl, RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
+    ToolEffectUnknownResult,
 };
 use crate::runner::system_prompt_assembly::render_request_context_system_prompt_with_capabilities;
 use crate::runner::{StreamAttemptPolicy, StreamAttemptRuntime};
-use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
+use crate::runner::tools::mcp_meta_tools::{
+    execute_routed_tool_with_delivery_tracker, execute_routed_tool_with_timeout,
+};
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
@@ -728,6 +731,7 @@ fn serve_request(
         return write_response(&mut stream, 202, None);
     }
     let id = message.get("id").cloned().unwrap_or(Value::Null);
+    let mut tool_result_tracker = None;
     let result = match rpc_method {
         "initialize" => json!({
             "protocolVersion": ROUTED_MCP_PROTOCOL_VERSION,
@@ -760,7 +764,7 @@ fn serve_request(
                     let guard_tool = owned_tool.clone();
                     let guard_args = args.clone();
                     let tool_call_id = Uuid::new_v4().to_string();
-                    match execute_routed_tool_with_timeout(
+                    let (outcome, tracker) = execute_routed_tool_with_delivery_tracker(
                         &guard_tool,
                         &guard_args,
                         is_computer_use_subagent,
@@ -770,7 +774,9 @@ fn serve_request(
                             args,
                             &tool_call_id,
                         ),
-                    ) {
+                    );
+                    tool_result_tracker = tracker;
+                    match outcome {
                         Ok(value) => normalize_tool_result(value),
                         Err(error) => tool_failure(error.to_string()),
                     }
@@ -780,7 +786,13 @@ fn serve_request(
         }
         _ => json!({}),
     };
-    write_json(&mut stream, json!({"jsonrpc":"2.0","id":id,"result":result}))
+    let delivery = write_json(&mut stream, json!({"jsonrpc":"2.0","id":id,"result":result}));
+    if delivery.is_err() {
+        if let Some(tracker) = tool_result_tracker {
+            tracker.mark_unknown(ToolEffectUnknownResult::DiscardedResult);
+        }
+    }
+    delivery
 }
 
 fn normalize_tool_result(value: Value) -> Value {

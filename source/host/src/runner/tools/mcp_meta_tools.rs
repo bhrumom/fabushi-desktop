@@ -11,7 +11,7 @@ use crate::extensions::inference::provider_session::{
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::runner::production_turn_run_shell_adapter::{
-    RoutedProviderAttemptControl, ToolEffectUnknownResult,
+    RoutedProviderAttemptControl, ToolEffectResultTracker, ToolEffectUnknownResult,
 };
 
 pub const GET_MCP_TOOLS_TOOL_NAME: &str = "GetMcpTools";
@@ -138,10 +138,27 @@ pub fn execute_routed_tool_with_timeout<F>(
 where
     F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
 {
+    execute_routed_tool_with_delivery_tracker(
+        tool, args, is_computer_use_subagent, attempt, operation,
+    ).0
+}
+
+/// MCP retains this invocation's tracker until its response is written. Direct
+/// provider callers use the ordinary result through the same execution owner.
+pub(crate) fn execute_routed_tool_with_delivery_tracker<F>(
+    tool: &RoutedToolDefinition,
+    args: &Value,
+    is_computer_use_subagent: bool,
+    attempt: &RoutedProviderAttemptControl,
+    operation: F,
+) -> (Result<Value, ProviderSessionError>, Option<ToolEffectResultTracker>)
+where
+    F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
+{
     let tool_name = effective_meta_invocation_tool_name(tool, args);
     let execution_timeout_ms =
         tool_call_execution_guard_ms(&tool_name, args, is_computer_use_subagent);
-    execute_routed_tool_with_timeout_ms(attempt, tool_name, execution_timeout_ms, operation)
+    execute_with_timeout_ms_tracked(attempt, tool_name, execution_timeout_ms, operation)
 }
 
 /// Execute with an owner-selected deadline. The receipt stays in the worker;
@@ -155,12 +172,27 @@ pub fn execute_routed_tool_with_timeout_ms<F>(
 where
     F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
 {
-    let receipt = attempt.admit_tool()?;
+    execute_with_timeout_ms_tracked(attempt, tool_name, execution_timeout_ms, operation).0
+}
+
+fn execute_with_timeout_ms_tracked<F>(
+    attempt: &RoutedProviderAttemptControl,
+    tool_name: String,
+    execution_timeout_ms: u64,
+    operation: F,
+) -> (Result<Value, ProviderSessionError>, Option<ToolEffectResultTracker>)
+where
+    F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
+{
+    let receipt = match attempt.admit_tool() {
+        Ok(receipt) => receipt,
+        Err(error) => return (Err(error), None),
+    };
     let result_tracker = receipt.result_tracker();
     let worker_result_tracker = result_tracker.clone();
     let worker_attempt = attempt.clone();
     let (sender, receiver) = mpsc::sync_channel(1);
-    let _worker = thread::Builder::new()
+    let worker = thread::Builder::new()
         .name(format!("mahayana-tool-guard-{}", sanitize_thread_label(&tool_name)))
         .spawn(move || {
             let result = worker_attempt.check().and_then(|()| operation());
@@ -168,14 +200,14 @@ where
             if sender.send(result).is_err() {
                 worker_result_tracker.mark_unknown(ToolEffectUnknownResult::DiscardedResult);
             }
-        })
-        .map_err(|error| {
-            ProviderSessionError::Tool(format!(
+        });
+    if let Err(error) = worker {
+        return (Err(ProviderSessionError::Tool(format!(
                 "could not start {tool_name} tool execution guard: {error}"
-            ))
-        })?;
+            ))), Some(result_tracker));
+    }
 
-    match receiver.recv_timeout(Duration::from_millis(execution_timeout_ms)) {
+    let result = match receiver.recv_timeout(Duration::from_millis(execution_timeout_ms)) {
         Ok(result) => result,
         Err(mpsc::RecvTimeoutError::Timeout) => {
             result_tracker.mark_unknown(ToolEffectUnknownResult::TimedOut);
@@ -189,7 +221,8 @@ where
                 format!("{tool_name} tool execution ended without a result; its outcome is unknown"),
             ))
         }
-    }
+    };
+    (result, Some(result_tracker))
 }
 
 fn sanitize_thread_label(value: &str) -> String {

@@ -533,7 +533,7 @@ fn user_cancellation_between_tools_and_during_checkpoint_io_wins_without_retry()
     }
 }
 
-fn post_mcp(url: &str, body: Value) -> Value {
+fn open_mcp_request(url: &str, body: Value) -> TcpStream {
     let (authority, path) = url.strip_prefix("http://").expect("local HTTP").split_once('/')
         .expect("MCP endpoint");
     let address = authority.parse().expect("socket address");
@@ -547,6 +547,11 @@ fn post_mcp(url: &str, body: Value) -> Value {
         body.len(),
     ).expect("MCP headers");
     stream.write_all(&body).expect("MCP payload");
+    stream
+}
+
+fn post_mcp(url: &str, body: Value) -> Value {
+    let mut stream = open_mcp_request(url, body);
     let mut response = String::new();
     stream.read_to_string(&mut response).expect("MCP response");
     serde_json::from_str(response.split_once("\r\n\r\n").expect("HTTP framing").1)
@@ -608,6 +613,12 @@ fn real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects() {
     assert_eq!(mcp_call(old_server.url())["result"]["isError"], true);
     assert_eq!(effects.load(Ordering::Acquire), 0, "old endpoint must not borrow the new attempt");
     post_mcp(current_server.url(), json!({"jsonrpc":"2.0","id":1,"method":"tools/list"}));
+    assert_eq!(post_mcp(current_server.url(), json!({
+        "jsonrpc":"2.0", "id":9, "method":"tools/call",
+        "params":{"name":"unregistered-tool","arguments":{}}
+    }))["result"]["isError"], true);
+    assert_eq!(runtime.effect_custody().started_revision, 0);
+    assert!(runtime.effect_custody().unknown_result.is_none());
     assert_eq!(mcp_call(current_server.url())["result"]["isError"], false);
     assert_eq!(effects.load(Ordering::Acquire), 1);
     assert_eq!(runtime.effect_custody().started_revision, 1);
@@ -618,6 +629,86 @@ fn real_mcp_endpoint_keeps_immutable_attempt_admission_and_counts_effects() {
     assert_eq!(effects.load(Ordering::Acquire), 1);
     old_server.close();
     current_server.close();
+}
+
+/// A real Unix TCP reset forces the shipping response writer to fail after
+/// the tool delegate has performed its effect. Windows needs its own socket
+/// fault instrument in the final platform matrix; this oracle runs on macOS CI.
+#[cfg(unix)]
+#[test]
+fn real_mcp_response_loss_refuses_more_effects_on_the_same_attempt() {
+    use std::os::fd::AsRawFd;
+    use std::sync::mpsc;
+
+    struct GatedBridge {
+        effects: Arc<AtomicUsize>,
+        entered: mpsc::Sender<()>,
+        gate: Arc<ReleaseGate>,
+    }
+
+    impl RoutedToolBridge for GatedBridge {
+        fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+            Ok(vec![RoutedToolDefinition {
+                name: "effect".into(), provider_identifier: "custody-contract".into(),
+                tool_name: "effect".into(), description: None,
+                input_schema: json!({"type":"object"}),
+            }])
+        }
+
+        fn call_tool(&self, _tool: &RoutedToolDefinition, _args: Value, _call_id: &str)
+            -> Result<Value, ProviderSessionError>
+        {
+            self.effects.fetch_add(1, Ordering::AcqRel);
+            self.entered.send(()).expect("observe actual tool execution");
+            self.gate.wait();
+            Ok(json!({"effect":"performed", "output":"x".repeat(256 * 1024)}))
+        }
+    }
+
+    let runtime = Arc::new(StreamAttemptRuntime::new(policy(WATCHDOG)));
+    let attempt = RoutedProviderAttemptControl::new(
+        Arc::clone(&runtime), runtime.begin_attempt(), RoutedProviderCancellation::default(),
+    );
+    let effects = Arc::new(AtomicUsize::new(0));
+    let gate = Arc::new(ReleaseGate::default());
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let mut server = start_routed_mcp_server_for_attempt(Arc::new(GatedBridge {
+        effects: Arc::clone(&effects), entered: entered_tx, gate: Arc::clone(&gate),
+    }), attempt.clone(), false).expect("real MCP response-loss endpoint");
+    // Drop the release guard before the server if an assertion unwinds.
+    let _release = ReleaseOnDrop(Arc::clone(&gate));
+    post_mcp(server.url(), json!({"jsonrpc":"2.0","id":1,"method":"tools/list"}));
+    let stream = open_mcp_request(server.url(), json!({
+        "jsonrpc":"2.0", "id":2, "method":"tools/call",
+        "params":{"name":"effect","arguments":{}}
+    }));
+    entered_rx.recv_timeout(BOUND).expect("non-idempotent effect reached its result gate");
+    assert_eq!(runtime.effect_custody().pending_effects, 1);
+    let linger = libc::linger { l_onoff: 1, l_linger: 0 };
+    // SAFETY: a live owned socket and correctly sized initialized option are
+    // passed synchronously; the socket is closed only after setsockopt returns.
+    let reset = unsafe {
+        libc::setsockopt(
+            stream.as_raw_fd(), libc::SOL_SOCKET, libc::SO_LINGER,
+            (&linger as *const libc::linger).cast(),
+            std::mem::size_of::<libc::linger>() as libc::socklen_t,
+        )
+    };
+    assert_eq!(reset, 0, "configure owned peer reset: {}", std::io::Error::last_os_error());
+    drop(stream);
+    gate.release();
+    wait_until("observed failed MCP response delivery", || {
+        runtime.effect_custody().unknown_result == Some(ToolEffectUnknownResult::DiscardedResult)
+    });
+    let custody = runtime.effect_custody();
+    assert_eq!(custody.started_revision, 1);
+    assert_eq!(custody.pending_effects, 0);
+    assert_eq!(custody.checkpoint_revision, 0);
+    assert_eq!(effects.load(Ordering::Acquire), 1);
+    assert!(attempt.admit_tool().is_err());
+    assert_eq!(mcp_call(server.url())["result"]["isError"], true);
+    assert_eq!(effects.load(Ordering::Acquire), 1, "known result loss must block another effect");
+    server.close();
 }
 
 struct McpExecutor {

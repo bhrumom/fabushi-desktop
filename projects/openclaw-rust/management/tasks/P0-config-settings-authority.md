@@ -42,6 +42,14 @@ so it does not add that unrelated timing-dependent target. Retain its existing
 assertions; replace the sleep with causal synchronization before relying on it
 for full acceptance. This is an open oracle repair, not a production exemption.
 
+Queue oracle recovery `CS-ORACLE-QUEUE-02` — **FIX / TEST_FLAW**, on base
+`c7fc0decf452f7c5a34580479bc05e2fc9d070d1`: replace that scheduling assumption
+with the existing `accept_routed_send_with_queue_observers` admission event.
+Wait for the actual second queue admission, retain all lease/count/terminal
+assertions, and assert its Agent, User lane and active predecessor. No production
+API or scheduling policy changes. Select this contract in the existing scoped
+Actions and receipt; independent review and exact-H execution remain required.
+
 ## Atomic closed behavior
 
 Configuration reads and mutations enter through canonical Fabushi settings API → check immutability / deployment mode guards → acquire serial writer mutex → traverse or update properties along safe dot notation paths with prototype pollution defense → persist atomically via temporary staging files and sync → notify subscribers of effective field changes.

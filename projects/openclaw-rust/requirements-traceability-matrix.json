@@ -202,7 +202,8 @@
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/canonical_checkpoint_recovery_contract.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
-        "source/host/tests/runner_effect_custody_contract.rs"
+        "source/host/tests/runner_effect_custody_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R05",
@@ -1208,7 +1209,8 @@
         "projects/openclaw-rust/docs/specs/session-work-admission.md",
         "source/host/tests/canonical_checkpoint_recovery_contract.rs",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
-        "source/host/tests/runner_effect_custody_contract.rs"
+        "source/host/tests/runner_effect_custody_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC05",

@@ -165,6 +165,10 @@ schema, scheduler, second tool ledger or provider loop is introduced.
   disposition independently of error text. Keep the worker's completion receipt
   alive until actual return; a late return cannot clear a recorded result loss.
   Do not claim that a timeout terminated the tool or automatically replay it.
+  The real MCP producer retains that same effect's result tracker through its
+  HTTP response write; a known delivery failure marks the result discarded
+  before another call can be admitted. Failed non-effect requests do not create
+  tool custody, and successful delivery retains ordinary endpoint behavior.
 - REC-04: Capture the effect revision, persist the checkpoint, then accept it
   only if the same attempt remains current, cancellation has not won, the
   revision is unchanged and no pending or unknown effect remains. Failure,

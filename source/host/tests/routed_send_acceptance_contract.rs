@@ -192,6 +192,7 @@ fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
 
     let second_runtime = Arc::clone(&runtime);
     let (tx, rx) = mpsc::channel();
+    let (queued_tx, queued_rx) = mpsc::channel();
     let join = std::thread::spawn(move || {
         let args = serde_json::json!({
             "agentId": "agent-a",
@@ -199,18 +200,25 @@ fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
             "clientNonce": "nonce-b",
             "streamId": "stream-b"
         });
-        let result = second_runtime.accept_routed_send(&args, |_| {
+        let result = second_runtime.accept_routed_send_with_queue_observers(&args, |_| {
             Ok::<_, ProductionSendError>(PersistedSendContext {
                 echo_entry_id: Some("user-message:2".into()),
                 user_message_id: Some("user-message:2".into()),
                 recent_user_messages: vec![],
                 ..PersistedSendContext::default()
             })
-        });
+        }, |_| false, |event| {
+            queued_tx.send(event.clone()).expect("publish actual queue admission");
+        }, |_| {});
         tx.send(result).expect("send second admission");
     });
 
-    std::thread::sleep(Duration::from_millis(30));
+    let queued = queued_rx.recv_timeout(Duration::from_secs(5))
+        .expect("second turn reached the real queue admission boundary");
+    assert_eq!(queued.agent_id, "agent-a");
+    assert_eq!(queued.lane,
+        mahayana_host_runtime::extensions::transcript::run_scheduler::RunLane::User);
+    assert!(queued.has_active, "the first Runner still owns its active lease");
     assert!(matches!(rx.try_recv(), Err(mpsc::TryRecvError::Empty)));
     assert_eq!(runtime.in_flight_run_count("agent-a"), 2);
     assert_eq!(runtime.queued_turn_count("agent-a"), 1);
