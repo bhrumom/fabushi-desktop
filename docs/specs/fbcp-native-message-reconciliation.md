@@ -1588,3 +1588,44 @@ Reuse `transcript-projection.ts`, the current read buffers/cursor cache, and one
 Transcript. Preserve all existing tests and validate only in exact-H Actions.
 No full source, backend deployment, package, visual/a11y or independent ACCEPT
 is implied by these bounded cases.
+
+### Request round 9 resumed qualification — durable coverage and full renderer
+
+Current reviewed base is `afb34b49c5964524a887088f1095070b75cfdf8b`;
+later independent commits remain part of the integration base. Fixed U and every
+existing NMR contract remain unchanged.
+
+- **NMR-23a:** Persist new `humanHistoryCoverage` values with `version: 1`.
+  A structurally valid legacy value without a version is unqualified and starts
+  again at `afterId=0`; retain its original metadata and transcript until a
+  matching `historyCursor` page has been durably applied. Reject unknown,
+  nonnumeric, null or malformed versions and unsafe/noninteger cursor values.
+  Validate coverage after the current identity/credential check and before
+  replaying that conversation's reaction or pending-send intentions. Preserve
+  independent forwarding recovery. A denied old Worker response must leave
+  legacy state intact across reopen; a qualified page upgrades the checkpoint,
+  and the next reopen resumes from that qualified cursor. Retain the existing
+  6,400-row/32-full-page and short/empty-32nd-page tests without duplicate cases.
+- **NMR-26a:** Exercise the actual existing `ProductionRenderer` through its
+  Coordinator client and feed. Preserve `HumanReactionSettlement`, opaque
+  history cursors, failed-page overlays and viewport-anchor ownership. Canonical
+  Human empty text or explicit empty attachments clear that field; an omitted
+  field retains it. Composed updates and identity remaps must stay consistent
+  in root, loaded older-page and in-flight caches. Nonces are qualified by Human
+  author/domain; peer or authorless rows cannot remove local pending sends.
+  Retain original Agent incremental and authorless echo behavior.
+- **NMR-26b:** Delayed send and reaction results may only update their original
+  account lifetime and conversation, and cannot overwrite a newer canonical
+  feed result. An initial clear starts a fresh read while fencing the old one.
+  An offline queued send drains exactly once only after the existing transport
+  state becomes connected; repeated connected events do not redispatch it.
+  Retain all current dialog, pagination, Electron and shipping gates. Add ten
+  real Chromium renderer scenarios, with no retries or skipped cases, complete
+  JSON result assertions and inspectable screenshots/traces. Controlled
+  browser/service fixtures do not constitute deployed-service, signed-package,
+  visual/a11y or independent acceptance.
+
+All new and retained behavior is qualified only by GitHub Actions at the exact
+containing commit. Preserve the observed afb reconciliation compile failure
+(run41522324008/job125541192099, E0382) and repair only the incorrect shutdown
+receiver in its restart test before executing the new candidate.
