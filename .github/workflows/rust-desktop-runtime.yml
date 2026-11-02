@@ -333,6 +333,10 @@ jobs:
               "source/host/tests/transcript_manager_contract.rs",
               "source/host/tests/memory_gateway_authorization_contract.rs",
               "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+              "projects/openclaw-rust/docs/specs/channel-gateway-credential-authorization.md",
+              "source/host/tests/channel_gateway_authorization_contract.rs",
+              "source/host/src/extensions/session/connector_secret_store.rs",
+              "source/host/src/extensions/session/channel_store.rs",
               "source/host/src/extensions/content_search/agent_content_search.rs",
               "source/host/src/extensions/transcript/roster_search.rs",
               "source/host/src/extensions/session/gateway.rs",
@@ -431,6 +435,59 @@ jobs:
           }
           Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "subject.json").write_text(json.dumps(receipt, indent=2) + "\n")
           PY
+          cat > "$OCRM_RECOVERY_EVIDENCE_DIR/command-evidence.py" <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          def command_evidence(label, command_rows, capture_rows):
+              commands = [row for row in command_rows if row and row[0] == label]
+              captures = [row for row in capture_rows if row and row[0] == label]
+              return {"command_exit_records": commands, "capture_exit_records": captures,
+                  "accepted": commands == [[label, "0"]] and captures == [[label, "0"]]}
+
+          def read_command_evidence(root, label):
+              def rows(name):
+                  path = root / name
+                  return [line.split("\t") for line in path.read_text().splitlines()] if path.is_file() else []
+              return command_evidence(label, rows("command-exit-codes.tsv"), rows("capture-exit-codes.tsv"))
+
+          if __name__ == "__main__":
+              root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+              subject = json.loads((root / "subject.json").read_text())
+              label, other = "integration-contracts", "unrelated-command"
+              zero = [[label, "0"]]
+              cases = [
+                  ("both-zero", zero, zero, True),
+                  ("unrelated-failures-retain-scoped-zero", zero + [[other, "17"]], zero + [[other, "86"]], True),
+                  ("command-missing", [], zero, False),
+                  ("command-duplicate", zero + zero, zero, False),
+                  ("command-nonzero", [[label, "101"]], zero, False),
+                  ("command-malformed", [[label, "0", "extra"]], zero, False),
+                  ("capture-missing", zero, [], False),
+                  ("capture-duplicate", zero, zero + zero, False),
+                  ("capture-nonzero", zero, [[label, "86"]], False),
+                  ("capture-malformed", zero, [[label, "0", "extra"]], False),
+                  ("capture-without-status", zero, [[label]], False),
+                  ("wrong-command-label", [[other, "0"]], zero, False),
+                  ("wrong-capture-label", zero, [[other, "0"]], False),
+              ]
+              controls = []
+              for name, command_rows, capture_rows, expected in cases:
+                  observed = command_evidence(label, command_rows, capture_rows)
+                  controls.append({"case": name, "expected_acceptance": expected,
+                      **observed, "control_passed": observed["accepted"] == expected})
+              accepted = all(control["control_passed"] for control in controls)
+              receipt = {key: subject[key] for key in (
+                  "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+              receipt.update({"contract": "OCRM-SCOPED-COMMAND-CAPTURE-v1", "controls": controls,
+                  "helper_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                  "result": "passed" if accepted else "failed", "product_verdict": None})
+              (root / "command-capture-controls.json").write_text(json.dumps(receipt, indent=2) + "\n")
+              print(json.dumps({"contract": receipt["contract"], "subject_commit": subject["subject_commit"],
+                  "control_count": len(controls), "result": receipt["result"], "product_verdict": None}))
+              raise SystemExit(0 if accepted else 1)
+          PY
+          python3 "$OCRM_RECOVERY_EVIDENCE_DIR/command-evidence.py"
           cat > "$OCRM_RECOVERY_EVIDENCE_DIR/project-log.py" <<'PY'
           import hashlib, json, os, re, sys
           from pathlib import Path
@@ -1120,6 +1177,7 @@ jobs:
             --test durable_recovery_stores_contract \
             --test transcript_manager_contract \
             --test memory_gateway_authorization_contract \
+            --test channel_gateway_authorization_contract \
             --test agent_content_search_contract \
             --test roster_search_contract \
             --test palette_message_gateway_contract \
@@ -1226,11 +1284,11 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib, json, os, re, subprocess
+          import hashlib, json, os, re, runpy, subprocess
           from pathlib import Path
           root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
           subject = json.loads((root / "subject.json").read_text())
-          all_exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()]
+          read_command_evidence = runpy.run_path(str(root / "command-evidence.py"))["read_command_evidence"]
           core_names = [
               "channel_failure_readiness_on_either_side_of_pause_retries_latest_filtered_head_once",
               "channel_failure_targeted_readiness_preserves_other_tickets_paused_heads_and_raw_tails",
@@ -1276,11 +1334,12 @@ jobs:
               raw = log_path.read_bytes() if log_path.is_file() else b""
               command = command_path.read_text().strip() if command_path.is_file() else ""
               passed = re.findall(r"^test (\S+) \.\.\. ok$", raw.decode("utf-8", errors="replace"), re.MULTILINE)
-              exits = [row for row in all_exits if row[0] == label]
+              evidence = read_command_evidence(root, label)
               missing = [name for name in required if passed.count(name) != 1]
-              accepted = exits == [[label, "0"]] and bool(command) and not missing
+              accepted = evidence["accepted"] and bool(command) and not missing
               executions.append({"case": label, "required_positive_names": required,
-                  "command": command, "command_exit_records": exits,
+                  "command": command, "command_exit_records": evidence["command_exit_records"],
+                  "capture_exit_records": evidence["capture_exit_records"],
                   "missing_or_nonunique_positive_results": missing,
                   "log_sha256": hashlib.sha256(raw).hexdigest(), "oracle_accepted": accepted})
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
@@ -1298,20 +1357,20 @@ jobs:
           print(json.dumps(receipt, indent=2))
           raise SystemExit(0 if accepted else 1)
           PY
-      - name: Require Memory, device pairing, roster search and palette positives from scoped macOS commands
+      - name: Require Memory and channel authorization, device pairing, roster search and palette positives from scoped macOS commands
         if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib, json, os, re, subprocess
+          import hashlib, json, os, re, runpy, subprocess
           from pathlib import Path
           root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
           subject = json.loads((root / "subject.json").read_text())
+          read_command_evidence = runpy.run_path(str(root / "command-evidence.py"))["read_command_evidence"]
           raw = (root / "integration-contracts.log").read_bytes()
           command = (root / "integration-contracts.command.txt").read_text().strip()
-          exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
-                   if line.split("\t")[0] == "integration-contracts"]
+          integration_evidence = read_command_evidence(root, "integration-contracts")
           required = [
               "memory_gateway_rejects_path_selectors_before_external_memory_read",
               "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
@@ -1324,6 +1383,12 @@ jobs:
               "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
               "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
               "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+              "channel_gateway_rejects_read_node_and_unknown_roles_before_owner",
+              "channel_gateway_headers_and_unrelated_grants_cannot_authorize_credential_writes",
+              "channel_gateway_write_and_admin_credentials_persist_through_reopen",
+              "channel_gateway_native_credentials_and_header_ceilings_preserve_compatibility",
+              "channel_gateway_explicit_bad_or_revoked_credentials_never_regain_ambient_authority",
+              "channel_gateway_registry_origin_and_memory_controls_remain_intact",
               "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
               "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
               "unicode_snippet_keeps_character_windows_and_whitespace_contract",
@@ -1342,14 +1407,16 @@ jobs:
           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
           accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
-              and tree == subject["subject_tree"] and exits == [["integration-contracts", "0"]] and not missing)
+              and tree == subject["subject_tree"] and bool(command) and integration_evidence["accepted"] and not missing)
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          receipt.update({"contract": "MGS-v1/MGA-v1/RSU-v1/PMS-v1-Rust-producer", "command": command, "command_exit_records": exits,
+          receipt.update({"contract": "MGS-v1/MGA-v1/CGWA-v1/RSU-v1/PMS-v1-Rust-producer", "command": command,
+              "command_exit_records": integration_evidence["command_exit_records"],
+              "capture_exit_records": integration_evidence["capture_exit_records"],
               "required_tests": required, "observed_passed_test_names": passed,
               "missing_or_nonunique_positive_results": missing, "log_sha256": hashlib.sha256(raw).hexdigest(),
               "result": "passed" if accepted else "failed",
-              "scope": "Actual TranscriptManager Memory read selector with real inside/outside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and mutation/snapshot control. RSU uses the existing Session gateway and persisted transcripts to preserve Unicode match spans across index fallback/reopen, with existing typed-character and roster-byte context windows plus ready-index controls. MGA uses actual HTTP, issued/revoked pairing credentials and the same Memory/Session owner: role/scope and no-ambient-fallback refusals precede payload/dispatch; native/write/admin positives retain mutations, prompt invalidation and durable reopen. PMS adds persisted/reopened Session search replies, original Unicode snippets and Host order; the Node consumer runs separately on Linux. Not symlink, cross-account, rendered UI, Windows, indexed-backend equivalence or whole-Memory acceptance."})
+              "scope": "Actual TranscriptManager Memory read selector with real inside/outside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and mutation/snapshot control. RSU uses the existing Session gateway and persisted transcripts to preserve Unicode match spans across index fallback/reopen, with existing typed-character and roster-byte context windows plus ready-index controls. MGA uses actual HTTP, issued/revoked pairing credentials and the same Memory/Session owner: role/scope and no-ambient-fallback refusals precede payload/dispatch; native/write/admin positives retain mutations, prompt invalidation and durable reopen. CGWA applies that permission owner to native channel credential writes, with zero denied dispatch, exact unchanged secret/metadata bytes, native/write/admin controls and real Session persistence/reopen. It does not establish real channel registration or atomic multi-file mutation. PMS adds persisted/reopened Session search replies, original Unicode snippets and Host order; the Node consumer runs separately on Linux. Not symlink, cross-account, rendered UI, Windows, indexed-backend equivalence or whole-Memory acceptance."})
           (root / "memory-gateway-selector.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
           print(json.dumps(receipt, indent=2))
           append_required = [
@@ -1383,8 +1450,7 @@ jobs:
           synthesis_raw = synthesis_log.read_bytes() if synthesis_log.is_file() else b""
           synthesis_command_path = root / (synthesis_label + ".command.txt")
           synthesis_command = synthesis_command_path.read_text().strip() if synthesis_command_path.is_file() else None
-          synthesis_exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
-                             if line.split("\t")[0] == synthesis_label]
+          synthesis_evidence = read_command_evidence(root, synthesis_label)
           synthesis_required = [
               "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
               "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
@@ -1392,13 +1458,14 @@ jobs:
           synthesis_passed = re.findall(r"^test (\S+) \.\.\. ok$", synthesis_raw.decode("utf-8", errors="replace"), re.MULTILINE)
           synthesis_missing = [name for name in synthesis_required if synthesis_passed.count(name) != 1]
           append_accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
-              and tree == subject["subject_tree"] and exits == [["integration-contracts", "0"]]
+              and tree == subject["subject_tree"] and bool(command) and integration_evidence["accepted"]
               and not append_missing and synthesis_command
-              and synthesis_exits == [[synthesis_label, "0"]] and not synthesis_missing)
+              and synthesis_evidence["accepted"] and not synthesis_missing)
           append_receipt = dict(receipt, contract="MWR-v1/MEA-v1", required_tests=append_required,
               missing_or_nonunique_positive_results=append_missing,
               production_synthesis_command=synthesis_command,
-              production_synthesis_exit_records=synthesis_exits,
+              production_synthesis_exit_records=synthesis_evidence["command_exit_records"],
+              production_synthesis_capture_records=synthesis_evidence["capture_exit_records"],
               production_synthesis_required_tests=synthesis_required,
               production_synthesis_observed_passed_names=synthesis_passed,
               production_synthesis_missing_or_nonunique=synthesis_missing,
@@ -1412,8 +1479,7 @@ jobs:
           pairing_raw = pairing_log.read_bytes() if pairing_log.is_file() else b""
           pairing_command_path = root / (pairing_label + ".command.txt")
           pairing_command = pairing_command_path.read_text().strip() if pairing_command_path.is_file() else None
-          pairing_exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()
-                           if line.split("\t")[0] == pairing_label]
+          pairing_evidence = read_command_evidence(root, pairing_label)
           pairing_required = [
               "revision_admission::pairing_revision_refuses_corrupt_counters_without_committing_mutations",
               "revision_admission::pairing_revision_last_increment_is_durable_and_exhaustion_retains_authority",
@@ -1443,12 +1509,13 @@ jobs:
               r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", pairing_text)]
           pairing_accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
               and tree == subject["subject_tree"] and pairing_command
-              and pairing_exits == [[pairing_label, "0"]] and not pairing_missing
+              and pairing_evidence["accepted"] and not pairing_missing
               and pairing_counts == [(len(pairing_required), 0, 0)])
           pairing_receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           pairing_receipt.update({"contract": "DPR-v1", "command": pairing_command,
-              "command_exit_records": pairing_exits, "required_tests": pairing_required,
+              "command_exit_records": pairing_evidence["command_exit_records"],
+              "capture_exit_records": pairing_evidence["capture_exit_records"], "required_tests": pairing_required,
               "observed_passed_test_names": pairing_passed,
               "missing_or_nonunique_positive_results": pairing_missing,
               "summaries_passed_failed_ignored": pairing_counts,
@@ -1831,7 +1898,7 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
               "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "original_turn_completion_contract": "ORT-v1",
@@ -2446,6 +2513,10 @@ jobs:
               "source/host/tests/transcript_manager_contract.rs",
               "source/host/tests/memory_gateway_authorization_contract.rs",
               "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs",
+              "projects/openclaw-rust/docs/specs/channel-gateway-credential-authorization.md",
+              "source/host/tests/channel_gateway_authorization_contract.rs",
+              "source/host/src/extensions/session/connector_secret_store.rs",
+              "source/host/src/extensions/session/channel_store.rs",
               "source/host/tests/memory_service_contract.rs",
               "source/host/src/runner/turn_memory.rs",
               "source/host/tests/turn_memory_contract.rs",
@@ -2484,7 +2555,7 @@ jobs:
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
           for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
-                         "transcript_manager_contract", "memory_gateway_authorization_contract", "cloud_agent_pending_wake_rearm_production_contract",
+                         "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "cloud_agent_pending_wake_rearm_production_contract",
                          "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract",
                          "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract",
                          "background_wakes_production_contract"):
@@ -2518,6 +2589,12 @@ jobs:
               "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
               "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
               "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+              "channel_gateway_rejects_read_node_and_unknown_roles_before_owner",
+              "channel_gateway_headers_and_unrelated_grants_cannot_authorize_credential_writes",
+              "channel_gateway_write_and_admin_credentials_persist_through_reopen",
+              "channel_gateway_native_credentials_and_header_ceilings_preserve_compatibility",
+              "channel_gateway_explicit_bad_or_revoked_credentials_never_regain_ambient_authority",
+              "channel_gateway_registry_origin_and_memory_controls_remain_intact",
               "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
               "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
               "unicode_snippet_keeps_character_windows_and_whitespace_contract",
@@ -2670,7 +2747,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1"],
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -2680,7 +2757,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label

@@ -647,16 +647,17 @@ fn check_and_record_nonce(nonce: &str) -> Result<(), &'static str> {
 }
 
 #[derive(Clone, Copy)]
-enum MemoryGatewayAccess {
+enum NativeGatewayAccess {
     Read,
     Write,
 }
 
-impl MemoryGatewayAccess {
-    fn for_method(method: &str) -> Option<Self> {
+impl NativeGatewayAccess {
+    fn for_method(method: &str) -> Option<(Self, &'static str)> {
         match method {
-            "getAgentMemories" => Some(Self::Read),
-            "deleteAgentMemory" | "clearAgentMemories" => Some(Self::Write),
+            "getAgentMemories" => Some((Self::Read, "Memory")),
+            "deleteAgentMemory" | "clearAgentMemories" => Some((Self::Write, "Memory")),
+            "connectChannel" | "disconnectChannel" => Some((Self::Write, "Channel credential")),
             _ => None,
         }
     }
@@ -1358,8 +1359,8 @@ fn handle_connection(
     }
 
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
-    if let Some(access) = MemoryGatewayAccess::for_method(method) {
-        // Memory uses the existing pairing grant, or the native gateway's
+    if let Some((access, family)) = NativeGatewayAccess::for_method(method) {
+        // Native data operations use the pairing grant, or the gateway's
         // authority. An explicit failed credential must not regain ambient
         // access on a listener without a configured token.
         if device_authorization.is_none()
@@ -1377,7 +1378,7 @@ fn handle_connection(
             return respond_error(
                 &mut stream,
                 403,
-                "ROLE_MISMATCH: Memory methods require operator role",
+                format!("ROLE_MISMATCH: {family} methods require operator role"),
             );
         }
         let grant_allows = device_authorization.as_ref().is_none_or(|authorization| {
@@ -1391,7 +1392,7 @@ fn handle_connection(
             return respond_error(
                 &mut stream,
                 403,
-                format!("INSUFFICIENT_SCOPE: Memory access is not granted for method: {method}"),
+                format!("INSUFFICIENT_SCOPE: {family} access is not granted for method: {method}"),
             );
         }
     }
