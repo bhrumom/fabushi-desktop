@@ -850,7 +850,45 @@
     "accepted": false,
     "baseline_ready": false,
     "contract": "FMEP-SOURCE-01 is implemented by parity-ledger.schema.json, tdrp-source-review.mjs and validate-tdrp-revision9-authority.mjs; no concrete conflict found in scope. Git-only cppgir tree acquisition is already evidenced; external/build/generated/LFS/legal and semantic/product closure remain open.",
-    "observed_ledger_blob": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b"
+    "observed_ledger_blob": "cc1a1682aa5174053809c557eaf9c2a3f079fd4b",
+    "actual_candidate_report": {
+      "status": "unaccepted-candidate-consistent",
+      "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_entries_total": 16381,
+      "root_source_entries_total": 6895,
+      "responsibility_rows": 184,
+      "authored_source_review_records": 6,
+      "completed_source_review_records": 2,
+      "unknown": null,
+      "unread": null,
+      "lexical_observations": 333,
+      "counts_by_scope": {
+        "pinned-cmake-component": 2,
+        "legacy-root-paths": 331
+      },
+      "text_files_read": 203,
+      "opaque_inputs_unread": 2,
+      "unresolved_ref_observations": 76,
+      "baseline_accepted": false,
+      "source_closure_ready": false,
+      "product_accepted": false,
+      "independent_acceptance": false,
+      "target_commit": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+      "reused_git_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+        "artifact_id": 13118749668,
+        "run_id": 41397005716,
+        "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+      },
+      "reused_build_input_artifact": {
+        "repository": "bhrumom/fabushi-desktop",
+        "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+        "artifact_id": 13121721589,
+        "run_id": 41401970993,
+        "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+      }
+    }
   },
   "implementation": {
     "classification": "IMPL_BUG — source-observed numeric admission gap. Native send currently trims reply IDs without enforcing numeric canonical form, so generic target parsing can admit malformed IDs before staging and HTTP. Pre-fix runtime reproduction not claimed.",
@@ -1101,7 +1139,7 @@
     },
     "current_output_remote_readback": true,
     "current_control": "Read output blob by SHA, remove exactly declared note and evidence append, and compare entire remaining JSON to input; identical",
-    "integration_status": "This evidence and its containing commit attach only the verified scoped output blob and remove the temporary helper. Fresh input equality and expected_sha prevent overwriting concurrent work.",
+    "integration_status": "Committed at c3684607f6aa6c9da864e4fa68ea604c7f1b6d76 and full remote contents verified. Helper removed. Same-H source contract and candidate checks subsequently passed without granting acceptance.",
     "superseded_output": {
       "bytes": 3616453,
       "head_sha": "4cbd7ddbe58ae789db9d2c674e8c9fa73146af40",
@@ -1169,6 +1207,16 @@
       "scope": "FBCP-NMR-001 notes and test_evidence append only",
       "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
       "disposition": "not integrated because ledger input changed"
+    },
+    "integration_delivery": {
+      "sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+      "parent": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+      "force": false,
+      "expected_sha": "3949d54a79c9e22710ce8f66abea0aaf05908174",
+      "remote_full_commit_and_file_content_readback": true,
+      "ledger_blob": "0a1b4387538129e45ecaca86dab55727f08cb772",
+      "evidence_blob": "011065618ec2e6a8ccf2caedbc40fe8bd7c03d7c",
+      "temporary_helper_removed": true
     }
   },
   "backend_read_only": {
@@ -1188,7 +1236,15 @@
     "production_readiness": "skipped",
     "modified": false,
     "merged_by_this_task": false,
-    "deployed_by_this_task": false
+    "deployed_by_this_task": false,
+    "final_readback": {
+      "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+      "base": "687718ce9e0083aa124d29005bcce4051d357919",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "modified_by_this_task": false
+    }
   },
   "verification": {
     "permitted_environment": "GitHub Actions only",
@@ -1218,10 +1274,15 @@
     },
     "shipping": {
       "job": 125549483258,
+      "head_sha": "4cbd7ddbe58ae789db9d2c674e8c9fa73146af40",
       "status": "queued",
-      "runner_assigned": false
+      "conclusion": null,
+      "runner_id": 0,
+      "steps": 0,
+      "classification": "Execution not assigned; no implementation or oracle failure",
+      "last_observed_at_utc": "2026-11-02T21:18:04.234Z"
     },
-    "source_ledger_contract": "Narrow record integration pending; source-review workflow required if triggered",
+    "source_ledger_contract": "PASS at c3684607f6aa6c9da864e4fa68ea604c7f1b6d76/run41526396840: contract158JS/37schema and fixed-source-candidate jobs completed/success; source and product acceptance remain false.",
     "observed_at_utc": "2026-11-02T21:07:15Z"
   },
   "remaining_blockers": [
@@ -1241,7 +1302,7 @@
   "requirements_review": [
     {
       "requirement": "Current AGENTS, FBCP/TDRP SOT, both main specs, FMEP batch verification/FMEP-SOURCE-01",
-      "state": "Read current authorities; AGENTS blob9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89 unchanged in latest observed tree. FMEP-SOURCE-01 schema/validators present; six source reviews2complete4pending, full closure incomplete."
+      "state": "Both main specs/SOT and AGENTS checked; latest FMEP01dc632975eca100c9bdc80746efdc2b0b044a57 reread fully after drift. New real-CLI acquisition negative is implemented and actually passed at c368; no schema/validator conflict found. Full source closure still false."
     },
     {
       "requirement": "Live main/checkpoint/branches/uncommitted state; existing migration line, source lock/inventory/ledger/RTM",
@@ -1277,7 +1338,7 @@
     },
     {
       "requirement": "Unique inventory/ledger/RTM, distinguish source/implementation/wiring/tests/execution/independent acceptance",
-      "state": "Only FBCP-NMR-001 note/evidence append; inputcc1a1682aa5174053809c557eaf9c2a3f079fd4b/output0a1b4387538129e45ecaca86dab55727f08cb772 fully read and inverse-compared; every other field preserved."
+      "state": "Existing FBCP-NMR-001 note/evidence only, integrated at c368 and complete remote output readback. Every other input field preserved. STATUS/RTM results updated and remotely read at ee60f9edf15774c6dba2b1ddee97c3f60ff66558."
     },
     {
       "requirement": "Backend PR137 read-only",
@@ -1285,7 +1346,7 @@
     },
     {
       "requirement": "force=false expected_sha CAS; remote commit/file/full-SHA readback",
-      "state": "Production4cbd7ddbe58ae789db9d2c674e8c9fa73146af40 published with force=false expected_sha51625ae750b56313a274a09f15c32b7767244eaa; remote commit, all eight changed file contents and full SHA read back."
+      "state": "Production4cbd, scoped ledger/evidencec368 and STATUS/RTMee60f9 committed with force=false fresh expected_sha CAS and full-SHA/file-content readback. Concurrent advances were rebased without overwrite."
     },
     {
       "requirement": "Final shipping H/artifacts, real service/platform/quality/Bot/upgrade/rollback and independent ACCEPT",
@@ -2557,5 +2618,216 @@
     "test_blob": "42963ba808cb74048f554c1ad4b4e3963a86264f",
     "exact_reviewed_normalizer_and_both_test_functions_retained": true,
     "scope": "Later concurrent file changes are preserved. Only the reviewed scopes are byte-identical; no whole-current-head pass is inferred."
+  },
+  "final_authority_identity_readback": {
+    "head": "bf1a59c657f2671c7f7f9b3ffeb9a9ef3992c815",
+    "files": [
+      {
+        "path": "AGENTS.md",
+        "sha": "9fe4010e3624d468c2eb23b1e1ab5e90ebf8be89"
+      },
+      {
+        "path": "docs/specs/fabushi-bot-communication-platform.md",
+        "sha": "93c543fafda43a0f84ecc13808dba9dd2ef71b42"
+      },
+      {
+        "path": "docs/specs/fabushi-deferred-ci-migration.md",
+        "sha": "01dc632975eca100c9bdc80746efdc2b0b044a57"
+      },
+      {
+        "path": "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "sha": "2b3873eb34a5e31ed2460c1a9f6b72df51583694"
+      },
+      {
+        "path": "docs/specs/telegram-file-transfer-socket-buffer-tuning.md",
+        "sha": "fd493a83b465c985ec4f8999655e29a7f3090e17"
+      },
+      {
+        "path": "docs/specs/telegram-proxy-settings-state-persistence.md",
+        "sha": "ee9bc5e4666ee48b9aaa74162823a89f418e4306"
+      },
+      {
+        "path": "docs/specs/telegram-socks5-http-selectable-proxy-carrier.md",
+        "sha": "17e42e6671a2bd553bf6a04610348815124b7e26"
+      },
+      {
+        "path": "docs/specs/telegram-special-config-acquisition-application-composition.md",
+        "sha": "eeacc5daa397a487a4f9c6ffcb4f18005fbdeda9"
+      },
+      {
+        "path": "docs/specs/telegram-tcp-socket-lifecycle-fencing.md",
+        "sha": "449cfa61c2b3b20c5fd42838a627a8e5330f8bb4"
+      },
+      {
+        "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "sha": "3f1408a1460a589eeffceba3c3404c0c151d1bfa"
+      },
+      {
+        "path": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "sha": "da3455bff35978b41027d940213bf3fc6d9a496a"
+      }
+    ],
+    "fmep_latest_blob": "01dc632975eca100c9bdc80746efdc2b0b044a57",
+    "fmep_reread_in_full": true,
+    "new_contract": "Actual accepted-mode CLI subprocess must refuse unclosed acquisition after removing earlier ledger candidate guards."
+  },
+  "status_delivery": {
+    "sha": "ee60f9edf15774c6dba2b1ddee97c3f60ff66558",
+    "parent": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+    "force": false,
+    "expected_sha": "f40a6e8f911c366627bf81ebdd4c32d6d8d1445d",
+    "remote_readback": true,
+    "files": [
+      {
+        "path": "projects/fabushi-communication-platform/STATUS.md",
+        "blob": "02d4c0f4b4039d8294892c228d0a36f0c437199a",
+        "content_equal": true
+      },
+      {
+        "path": "projects/telegram-desktop-rust/STATUS.md",
+        "blob": "dc0ab8c58a328653f6ef5a1b46212c5bb56e7d20",
+        "content_equal": true
+      },
+      {
+        "path": "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md",
+        "blob": "17404f83f85b55b9789a662b47a44615616526a6",
+        "content_equal": true
+      }
+    ]
+  },
+  "source_contract_execution": {
+    "head_sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+    "run_id": 41526396840,
+    "run_status": "completed",
+    "run_conclusion": "success",
+    "contract": {
+      "job_id": 125555120589,
+      "status": "completed",
+      "conclusion": "success",
+      "javascript": {
+        "tests": 158,
+        "passed": 158,
+        "failed": 0,
+        "skipped": 0
+      },
+      "python_schema": {
+        "tests": 37,
+        "result": "OK"
+      },
+      "canonical_ledger_schema_errors": 0,
+      "complete_log": {
+        "file": "round31-source-contract-125555120589.log",
+        "decoded_utf8_bytes": 90250,
+        "sha256": "35fb1ca8f3f32b9248053473821d4b77345707c9b5cc75dfbeb79d05b47e8fd0"
+      },
+      "artifact": {
+        "id": 13178509980,
+        "name": "tdrp-source-review-contract-c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+        "size_in_bytes": 6828,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178509980",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178509980/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:14:21Z",
+        "expires_at": "2027-01-31T21:13:40Z",
+        "updated_at": "2026-11-02T21:14:21Z",
+        "digest": "sha256:bcddd63312744d8ef8a0080a9868477af19b125cbd64e8bbec4cc5bc924a79eb",
+        "workflow_run": {
+          "id": 41526396840,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76"
+        }
+      }
+    },
+    "actual_cli_negative": {
+      "test_name": "authority CLI enforces actual acquisition closure before later checks or network access",
+      "command": "node --import <forbid-network> scripts/validate-tdrp-revision9-authority.mjs --require-accepted",
+      "logged_result": "ok 25",
+      "test_blob": "3ef07bee2d0eb93126c26317d9007c2f4e6a4008",
+      "authority_blob": "2b828d3f4f86128c53f4962fb39a5341a87234f7",
+      "source_helper_blob": "ad5d07125850d2050020f66f0e515e889ad8b8c7",
+      "workflow_blob": "48d98b0aaeb53877de67f3d51cb1d9a1e9e1c3b5",
+      "behavior": "Fixture removes ledger rebaseline_candidate; a closed acquisition control reaches the next schema sentinel. Seven actual acquisition/lock negatives are rejected by the real CLI acquisition guard, not candidate/schema/network errors. No helper-only result is substituted.",
+      "source_review": "Independent current-entrypoint source review and root complete Actions log read; no missing implementation/test contract found.",
+      "comparison_head": "bf1a59c657f2671c7f7f9b3ffeb9a9ef3992c815",
+      "comparison": "All four files retained identical blobs; execution attributed only to c368."
+    },
+    "fixed_source_candidate": {
+      "job_id": 125555741136,
+      "status": "completed",
+      "conclusion": "success",
+      "complete_log": {
+        "file": "round31-fixed-source-125555741136.log",
+        "decoded_utf8_bytes": 146046,
+        "sha256": "7178c6e08517ee0b86f0d6e03d6c52c926c8994c5a02ce0b8c05582cb1498408"
+      },
+      "report": {
+        "status": "unaccepted-candidate-consistent",
+        "upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "counts_by_scope": {
+          "pinned-cmake-component": 2,
+          "legacy-root-paths": 331
+        },
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false,
+        "target_commit": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+        "reused_git_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "9f77bb2389cba6a65d589eb309d1392501ed308d",
+          "artifact_id": 13118749668,
+          "run_id": 41397005716,
+          "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60"
+        },
+        "reused_build_input_artifact": {
+          "repository": "bhrumom/fabushi-desktop",
+          "head_sha": "1cd59bb01513624d26e12f77bfab66729ab72694",
+          "artifact_id": 13121721589,
+          "run_id": 41401970993,
+          "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc"
+        }
+      },
+      "artifact": {
+        "id": 13178359991,
+        "name": "tdrp-source-candidate-c3684607f6aa6c9da864e4fa68ea604c7f1b6d76",
+        "size_in_bytes": 79137,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178359991",
+        "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13178359991/zip",
+        "expired": false,
+        "created_at": "2026-11-02T21:15:38Z",
+        "expires_at": "2027-01-31T21:13:40Z",
+        "updated_at": "2026-11-02T21:15:38Z",
+        "digest": "sha256:c0d818ece9f3d06a80499294e7f25200ed4fe19aca1ae10689d682ff12454c01",
+        "workflow_run": {
+          "id": 41526396840,
+          "repository_id": 1375312893,
+          "head_repository_id": 1375312893,
+          "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+          "head_sha": "c3684607f6aa6c9da864e4fa68ea604c7f1b6d76"
+        }
+      },
+      "accepted_mode_control": "The real current unaccepted candidate is still refused: accepted source accounting cannot contain a rebaseline candidate."
+    },
+    "acceptance_granted": false
+  },
+  "final_result": {
+    "status": "next",
+    "completed_scope": "Exact4cbd strict reply-ID production admission, 28/17 scenario oracles and core recovery/UI/Electron/Windows/retained-FFI verification; current ledger/schema/source-candidate consistency recorded with no acceptance promotion.",
+    "remaining": "Same-H shipping remains unassigned. Originalff6 reconciliation remains queued; original06 was cancelled before execution. Full source/legal/real service/signed platform/quality/Bot/upgrade/rollback/independent ACCEPT remain open.",
+    "backend_pr_137": "Read-only, open Draft unmerged52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23.",
+    "recovery_artifact": "projects/telegram-desktop-rust/evidence/round31-reply-identity-recovery.json"
   }
 }
