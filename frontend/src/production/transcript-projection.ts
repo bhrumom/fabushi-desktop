@@ -44,23 +44,30 @@ export function mergeAuthoritativeTranscriptMessage(
 ): TranscriptMessage {
   if (isCanonicalHumanSend(current) && isLocalSendPlaceholder(incoming)
     && transcriptEntriesCorrelate(current, incoming)) {
+    const attachments = current.attachments ?? incoming.attachments;
     return {
       ...incoming,
       ...current,
-      attachments: current.attachments ?? incoming.attachments,
+      ...(attachments === undefined ? {} : { attachments }),
     };
   }
   // A Human snapshot can explicitly clear content/resources. Omitted optional
   // fields retain their partial-update meaning; Agent attachment echoes extend.
   const human = incoming.authorKind === "human";
+  const attachments = human
+    ? incoming.attachments ?? current.attachments
+    : current.attachments === undefined && incoming.attachments === undefined
+      ? undefined : mergeTranscriptAttachments(current.attachments, incoming.attachments);
+  const clientNonce = incoming.clientNonce ?? current.clientNonce;
+  const delivery = options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery;
   return {
     ...current,
     ...incoming,
     id: options.preserveCurrentId ? current.id : incoming.id,
     text: human || incoming.text.length > 0 ? incoming.text : current.text,
-    attachments: human ? incoming.attachments ?? current.attachments : mergeTranscriptAttachments(current.attachments, incoming.attachments),
-    clientNonce: incoming.clientNonce ?? current.clientNonce,
-    delivery: options.preserveCurrentId ? current.delivery : incoming.delivery ?? current.delivery,
+    ...(attachments === undefined ? {} : { attachments }),
+    ...(clientNonce === undefined ? {} : { clientNonce }),
+    ...(delivery === undefined && incoming.delivery === undefined ? {} : { delivery }),
   };
 }
 
