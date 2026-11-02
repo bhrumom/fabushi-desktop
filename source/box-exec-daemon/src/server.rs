@@ -2733,6 +2733,17 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn disconnect_aborts_foreground_shell_process_group() {
+        fn is_alive(target: libc::pid_t) -> Result<bool, String> {
+            if unsafe { libc::kill(target, 0) } == 0 {
+                return Ok(true);
+            }
+            let error = std::io::Error::last_os_error();
+            if error.raw_os_error() == Some(libc::ESRCH) {
+                return Ok(false);
+            }
+            Err(format!("process probe for {target} failed: {error}"))
+        }
+
         let root = tempfile::tempdir().expect("root");
         let workspace = root.path().join("workspace");
         fs::create_dir_all(&workspace).expect("workspace");
@@ -2749,7 +2760,15 @@ mod tests {
             id: 77,
             exec_id: "abort-wire".into(),
             message: Some(exec_server_message::Message::ShellArgs(ShellArgs {
-                command: "echo $ > abort-pid.txt; sleep 10".into(),
+                // The trap only reaps the child. Killing the leader alone must
+                // leave the child alive and fail the disconnect observation.
+                command: r#"sleep 30 &
+child=$!
+trap 'wait "$child"' TERM
+printf '%s %s\n' "$$" "$child" > abort-pids.tmp
+mv abort-pids.tmp abort-pids.txt
+wait "$child""#
+                    .into(),
                 working_directory: "/workspace".into(),
                 timeout: 0,
                 tool_call_id: "abort-tool".into(),
@@ -2760,47 +2779,87 @@ mod tests {
             })),
         };
         let body = request.encode_to_vec();
-        let mut stream = TcpStream::connect(("127.0.0.1", handle.port)).expect("connect");
-        write!(
-            stream,
-            "POST /agent.v1.ExecService/Exec HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-            body.len()
-        )
-        .expect("headers");
-        stream.write_all(&body).expect("body");
-        stream.flush().expect("flush");
+        let cancellation_result = (|| -> Result<(), String> {
+            let mut stream = TcpStream::connect(("127.0.0.1", handle.port))
+                .map_err(|error| format!("connect: {error}"))?;
+            write!(
+                stream,
+                "POST /agent.v1.ExecService/Exec HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .map_err(|error| format!("headers: {error}"))?;
+            stream
+                .write_all(&body)
+                .map_err(|error| format!("body: {error}"))?;
+            stream.flush().map_err(|error| format!("flush: {error}"))?;
 
-        let pid_path = workspace.join("abort-pid.txt");
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while !pid_path.exists() {
-            assert!(Instant::now() < deadline, "foreground shell never started");
-            thread::sleep(Duration::from_millis(10));
-        }
-        let pid = fs::read_to_string(&pid_path)
-            .expect("pid")
-            .trim()
-            .to_string();
-        drop(stream);
-
-        let deadline = Instant::now() + Duration::from_secs(3);
-        let mut exited = false;
-        while Instant::now() < deadline {
-            let alive = Command::new("kill")
-                .args(["-0", &pid])
-                .status()
-                .map(|status| status.success())
-                .unwrap_or(false);
-            if !alive {
-                exited = true;
-                break;
+            let pid_path = workspace.join("abort-pids.txt");
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while !pid_path.exists() {
+                if Instant::now() >= deadline {
+                    return Err("foreground shell and child never became ready".into());
+                }
+                thread::sleep(Duration::from_millis(10));
             }
-            thread::sleep(Duration::from_millis(20));
-        }
-        if !exited {
-            let _ = handle.stop();
-        }
-        assert!(exited, "client disconnect did not abort foreground process group");
-        handle.stop().expect("stop");
+            let ready = fs::read_to_string(&pid_path)
+                .map_err(|error| format!("read ready process IDs: {error}"))?;
+            let ids = ready.split_whitespace().collect::<Vec<_>>();
+            if ids.len() != 2 {
+                return Err(format!("expected exactly two ready process IDs: {ready:?}"));
+            }
+            let leader = ids[0]
+                .parse::<libc::pid_t>()
+                .map_err(|error| format!("invalid leader PID: {error}"))?;
+            let child = ids[1]
+                .parse::<libc::pid_t>()
+                .map_err(|error| format!("invalid child PID: {error}"))?;
+            if leader <= 1 || child <= 1 || leader == child {
+                return Err(format!("invalid leader/child PID pair: {leader}/{child}"));
+            }
+            for pid in [leader, child] {
+                if !is_alive(pid)? {
+                    return Err(format!("process {pid} exited before client disconnect"));
+                }
+                let group = unsafe { libc::getpgid(pid) };
+                if group == -1 {
+                    return Err(format!(
+                        "getpgid({pid}) failed: {}",
+                        std::io::Error::last_os_error()
+                    ));
+                }
+                if group != leader {
+                    return Err(format!(
+                        "process {pid} belongs to group {group}, expected leader {leader}"
+                    ));
+                }
+            }
+            if !is_alive(-leader)? {
+                return Err("foreground group exited before client disconnect".into());
+            }
+            drop(stream);
+
+            let deadline = Instant::now() + Duration::from_secs(3);
+            loop {
+                let leader_alive = is_alive(leader)?;
+                let child_alive = is_alive(child)?;
+                let group_alive = is_alive(-leader)?;
+                if Instant::now() >= deadline {
+                    return Err(format!(
+                        "disconnect did not settle group {leader}: leader={leader_alive}, child={child_alive}, group={group_alive}"
+                    ));
+                }
+                if !leader_alive && !child_alive && !group_alive {
+                    return Ok(());
+                }
+                thread::sleep(Duration::from_millis(20));
+            }
+        })();
+
+        // Capture the disconnect outcome before cleanup; shutdown must not
+        // turn a failed observation into a passing cancellation test.
+        let cleanup_result = handle.stop();
+        cancellation_result.expect("client disconnect must abort the foreground process group");
+        cleanup_result.expect("stop");
     }
 
     #[test]

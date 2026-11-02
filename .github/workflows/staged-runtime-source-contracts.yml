@@ -112,6 +112,52 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  box-process-contracts:
+    needs: acquire-inputs
+    if: needs.acquire-inputs.outputs.input_mode == 'locked'
+    name: Box process contracts / Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.FABUSHI_TARGET_SHA }}
+          fetch-depth: 1
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/box-exec-daemon -> target
+          shared-key: box-process-contracts-ubuntu-1.97.1
+      - name: Exercise real disconnect process-group ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$FABUSHI_TARGET_SHA"
+          evidence=artifacts/box-process-contracts
+          mkdir -p "$evidence"
+          printf '%s\n' "$FABUSHI_TARGET_SHA" > "$evidence/target-sha.txt"
+          { rustc -Vv; cargo -V; uname -a; } > "$evidence/toolchain.txt"
+          cargo test --locked --profile ci --manifest-path source/box-exec-daemon/Cargo.toml --lib -- --nocapture --test-threads=1 2>&1 | tee "$evidence/owner-contracts.log"
+          grep -Eq '^test result: ok\. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;' "$evidence/owner-contracts.log"
+          grep -Fx 'test server::tests::disconnect_aborts_foreground_shell_process_group ... ok' "$evidence/owner-contracts.log"
+          printf '%s\n' 'Linux owner behavior only; macOS actual binary, signed package and independent acceptance remain required.' > "$evidence/scope.txt"
+      - name: Preserve tracked Box dependency inputs
+        if: always()
+        shell: bash
+        run: git diff --exit-code HEAD -- source/box-exec-daemon/Cargo.toml source/box-exec-daemon/Cargo.lock
+      - name: Preserve actual Box process evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: box-process-contracts-ubuntu-${{ env.FABUSHI_TARGET_SHA }}
+          path: artifacts/box-process-contracts
+          if-no-files-found: error
+          retention-days: 90
+
   rust-auxiliary:
     needs: acquire-inputs
     if: needs.acquire-inputs.outputs.input_mode == 'locked'
