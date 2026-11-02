@@ -122,6 +122,11 @@ fn ipv6_in_subnet(address: Ipv6Addr, network: Ipv6Addr, prefix: u32) -> bool {
 }
 
 pub fn is_blocked_link_preview_ip(address: IpAddr) -> bool {
+    if let IpAddr::V6(ip) = address {
+        if let Some(ipv4) = ip.to_ipv4_mapped() {
+            return is_blocked_link_preview_ip(IpAddr::V4(ipv4));
+        }
+    }
     match address {
         IpAddr::V4(ip) => [
             (Ipv4Addr::new(0, 0, 0, 0), 8),

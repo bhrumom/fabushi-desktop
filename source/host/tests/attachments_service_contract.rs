@@ -5,10 +5,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use serde_json::json;
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 use mahayana_host_runtime::extensions::attachments::attachments_service::{
-    AttachmentTextPreview, AttachmentsBox, AttachmentsService,
+    AttachmentTextPreview, AttachmentsBox, AttachmentsService, LINK_CACHE_DIRNAME,
+    LINK_CACHE_TTL_MS, LINK_CACHE_VERSION, LinkMetadata,
 };
 use mahayana_host_runtime::extensions::attachments::extension::{
     ATTACHMENTS_DEPENDENCIES, ATTACHMENTS_EXTENSION_ID,
@@ -238,6 +240,143 @@ fn text_preview_marks_known_binary_extensions_and_embedded_nul_as_binary() {
         service.read_text(&nul_text, None),
         Some(AttachmentTextPreview::Binary { bytes: 7 })
     );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache() {
+    let root = temp_dir("mapped-ip-cache");
+    let cache_dir = root.join("preview-cache");
+    let records_dir = cache_dir.join(LINK_CACHE_DIRNAME);
+    fs::create_dir_all(&records_dir).expect("link cache directory");
+    let service = AttachmentsService::new(
+        root.clone(),
+        Arc::new(TestAuth),
+        Arc::new(TestBox::running()),
+        None,
+    );
+
+    for (label, raw_url, blocked) in [
+        (
+            "public-host",
+            "https://PREVIEW.example.test:443/a/../public?fixture=host",
+            false,
+        ),
+        (
+            "public-mapped",
+            "https://[::ffff:1.1.1.1]:443/a/../public?fixture=mapped",
+            false,
+        ),
+        (
+            "private-dotted",
+            "https://[::ffff:127.0.0.1]/private?fixture=dotted",
+            true,
+        ),
+        (
+            "private-hex",
+            "https://[::ffff:7f00:1]/private?fixture=hex",
+            true,
+        ),
+        (
+            "private-lan",
+            "https://[::ffff:10.1.2.3]/private?fixture=lan",
+            true,
+        ),
+    ] {
+        // Ordinary URL canonicalization must not prequalify the fixture through
+        // the admission policy being tested. Each case gets a canonical cache key.
+        let canonical = url::Url::parse(raw_url).expect("cache URL fixture");
+        let fetched_at = u64::try_from(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("cache fixture clock")
+                .as_millis(),
+        )
+        .expect("cache fixture timestamp");
+        let metadata = LinkMetadata {
+            url: canonical.to_string(),
+            canonical_url: format!("{}#canonical-{label}", canonical.as_str()),
+            title: format!("LPIP cached title {label}"),
+            description: format!("Distinct cached description for {label}"),
+            site_name: format!("LPIP site {label}"),
+            hostname: canonical.host_str().expect("cache hostname").to_string(),
+            image_data_url: Some(
+                concat!(
+                    "data:image/png;base64,",
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8",
+                    "AAwMCAO+aVBEAAAAASUVORK5CYII="
+                )
+                .to_string(),
+            ),
+            favicon_data_url: None,
+            fetched_at,
+        };
+        let expected_metadata = serde_json::to_value(&metadata).expect("typed metadata JSON");
+        let mut cache_record = expected_metadata.clone();
+        cache_record
+            .as_object_mut()
+            .expect("metadata object")
+            .insert("cacheVersion".into(), json!(LINK_CACHE_VERSION));
+        let cache_bytes = serde_json::to_vec_pretty(&cache_record).expect("cache bytes");
+        let cache_path = records_dir.join(format!(
+            "{:x}.json",
+            Sha256::digest(canonical.as_str().as_bytes())
+        ));
+        fs::write(&cache_path, &cache_bytes).expect("seed fresh preview cache");
+
+        // Verify the written bytes, typed fields, version and freshness before
+        // gateway dispatch can reach the real network fallback.
+        let saved_bytes = fs::read(&cache_path).expect("read seeded cache");
+        assert_eq!(saved_bytes, cache_bytes);
+        let saved_record: Value = serde_json::from_slice(&saved_bytes).expect("valid cache JSON");
+        assert_eq!(saved_record["cacheVersion"], json!(LINK_CACHE_VERSION));
+        assert_eq!(saved_record["fetchedAt"], json!(fetched_at));
+        assert_eq!(saved_record["canonicalUrl"], expected_metadata["canonicalUrl"]);
+        let saved_metadata: LinkMetadata =
+            serde_json::from_slice(&saved_bytes).expect("complete typed cache metadata");
+        assert_eq!(saved_metadata, metadata);
+        let now = u64::try_from(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("cache admission clock")
+                .as_millis(),
+        )
+        .expect("cache admission timestamp");
+        let age = now
+            .checked_sub(saved_metadata.fetched_at)
+            .expect("nonfuture cache timestamp");
+        assert!(
+            age < LINK_CACHE_TTL_MS,
+            "fixture must be fresh before dispatch"
+        );
+
+        let result = service
+            .dispatch_gateway(
+                "fetchLinkMetadata",
+                &json!({ "cacheDir": cache_dir.to_string_lossy(), "url": raw_url }),
+            )
+            .expect("real link metadata gateway method")
+            .expect("link metadata gateway result");
+        assert_eq!(
+            fs::read(&cache_path).expect("cache remains readable"),
+            cache_bytes,
+            "gateway admission must not rewrite the {label} cache record"
+        );
+        if blocked {
+            assert_eq!(
+                result,
+                Value::Null,
+                "a fresh {label} cache record cannot authorize a private mapped preview"
+            );
+        } else {
+            assert_eq!(
+                result,
+                expected_metadata,
+                "the real gateway must return exact cached metadata for {label}"
+            );
+        }
+    }
 
     let _ = fs::remove_dir_all(root);
 }
