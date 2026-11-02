@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
@@ -14,6 +15,7 @@ use crate::gateway_command_error::GatewayCommandError;
 pub struct DevicePairingOwner {
     conn: Mutex<Connection>,
     db_path: Option<PathBuf>,
+    token_proof_issuer: Arc<()>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,6 +23,145 @@ pub struct DeviceTokenAuthorization {
     pub device_id: String,
     pub role: String,
     pub scopes: Vec<String>,
+    proof: DeviceTokenProof,
+}
+
+// Request evidence issued at the original bearer comparison, not a second
+// permission store. Only this owner can construct it. Public projections above
+// are retained for existing consumers; bound mutations use these sealed facts.
+#[derive(Clone)]
+struct DeviceTokenProof {
+    issuer: Arc<()>,
+    device_id: String,
+    role: String,
+    token_sha256: [u8; 32],
+    admitted_scopes: Vec<String>,
+}
+
+impl std::fmt::Debug for DeviceTokenProof {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("DeviceTokenProof(<redacted>)")
+    }
+}
+
+impl PartialEq for DeviceTokenProof {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.issuer, &other.issuer)
+            && self.device_id == other.device_id
+            && self.role == other.role
+            && bool::from(self.token_sha256.ct_eq(&other.token_sha256))
+            && self.admitted_scopes == other.admitted_scopes
+    }
+}
+
+impl Eq for DeviceTokenProof {}
+
+fn token_fingerprint(token: &str) -> [u8; 32] {
+    Sha256::digest(token.as_bytes()).into()
+}
+
+fn invalid_stored_authority() -> GatewayCommandError {
+    GatewayCommandError::Internal("stored pairing authority is invalid".into())
+}
+
+fn normalized_authority_strings(value: &Value) -> Option<Vec<String>> {
+    let values = value.as_array()?;
+    let mut normalized = Vec::new();
+    for value in values {
+        let value = value.as_str()?.trim();
+        if !value.is_empty() && !normalized.iter().any(|known| known == value) {
+            normalized.push(value.to_owned());
+        }
+    }
+    Some(normalized)
+}
+
+fn stored_authority_strings(raw: Option<&str>) -> Result<Vec<String>, GatewayCommandError> {
+    let value = raw.and_then(|raw| serde_json::from_str::<Value>(raw).ok())
+        .ok_or_else(invalid_stored_authority)?;
+    normalized_authority_strings(&value).ok_or_else(invalid_stored_authority)
+}
+
+// The fixed source's operator implications are deliberately enumerated. Write
+// does not imply pairing, approvals, arbitrary operator permissions or admin.
+fn role_scope_allows(role: &str, requested: &str, granted: &[String]) -> bool {
+    let requested = requested.trim();
+    if requested.is_empty() {
+        return true;
+    }
+    let has = |scope: &str| granted.iter().any(|grant| grant.trim() == scope);
+    if role != "operator" {
+        let prefix = format!("{role}.");
+        return requested.starts_with(prefix.as_str()) && has(requested);
+    }
+    requested.starts_with("operator.")
+        && (has(requested)
+            || has("operator.admin")
+            || (matches!(requested,
+                "operator.read" | "operator.talk" | "operator.cron"
+                    | "operator.sessions.read" | "operator.sessions.write")
+                && has("operator.write"))
+            || (requested == "operator.sessions.read"
+                && (has("operator.read") || has("operator.sessions.write"))))
+}
+
+struct RotationRecord {
+    roles: Option<String>,
+    scopes: Option<String>,
+    approved_scopes: Option<String>,
+    tokens: String,
+}
+
+struct PairedRotationAuthority<'a> {
+    proof: &'a DeviceTokenProof,
+    live_scopes: Vec<String>,
+    approved_scopes: Vec<String>,
+    header_ceiling: Option<Vec<String>>,
+}
+
+impl PairedRotationAuthority<'_> {
+    fn allows(&self, scope: &str) -> bool {
+        role_scope_allows("operator", scope, &self.proof.admitted_scopes)
+            && role_scope_allows("operator", scope, &self.live_scopes)
+            && role_scope_allows("operator", scope, &self.approved_scopes)
+            && self.header_ceiling.as_ref().is_none_or(|ceiling| {
+                role_scope_allows("operator", scope, ceiling)
+            })
+    }
+}
+
+impl RotationRecord {
+    fn approved_roles(&self) -> Result<Vec<String>, GatewayCommandError> {
+        stored_authority_strings(self.roles.as_deref())
+    }
+
+    fn approved_baseline(&self) -> Result<Vec<String>, GatewayCommandError> {
+        stored_authority_strings(self.approved_scopes.as_deref().or(self.scopes.as_deref()))
+    }
+
+    fn token_entries(&self) -> Result<serde_json::Map<String, Value>, GatewayCommandError> {
+        match serde_json::from_str::<Value>(&self.tokens) {
+            Ok(Value::Object(entries)) => Ok(entries),
+            _ => Err(invalid_stored_authority()),
+        }
+    }
+}
+
+fn rotation_record(
+    conn: &Connection,
+    device_id: &str,
+) -> Result<Option<RotationRecord>, GatewayCommandError> {
+    conn.query_row(
+        "SELECT roles_json, scopes_json, approved_scopes_json, tokens_json
+         FROM device_pairing_paired WHERE device_id = ?1",
+        params![device_id],
+        |row| Ok(RotationRecord {
+            roles: row.get(0)?,
+            scopes: row.get(1)?,
+            approved_scopes: row.get(2)?,
+            tokens: row.get(3)?,
+        }),
+    ).optional().map_err(|_| invalid_stored_authority())
 }
 
 const PENDING_PAIRING_TTL_MS: i64 = 900_000;
@@ -171,6 +312,7 @@ impl DevicePairingOwner {
         let owner = Self {
             conn: Mutex::new(conn),
             db_path: Some(path),
+            token_proof_issuer: Arc::new(()),
         };
         owner.init_schema().map_err(|e| e.to_string())?;
         Ok(owner)
@@ -181,6 +323,7 @@ impl DevicePairingOwner {
         let owner = Self {
             conn: Mutex::new(conn),
             db_path: None,
+            token_proof_issuer: Arc::new(()),
         };
         owner.init_schema().map_err(|e| e.to_string())?;
         Ok(owner)
@@ -364,7 +507,7 @@ impl DevicePairingOwner {
                 let Some(role) = entry.get("role").and_then(Value::as_str) else {
                     continue;
                 };
-                let scopes = entry
+                let scopes: Vec<String> = entry
                     .get("scopes")
                     .and_then(Value::as_array)
                     .map(|values| {
@@ -376,6 +519,13 @@ impl DevicePairingOwner {
                     })
                     .unwrap_or_default();
                 return Ok(Some(DeviceTokenAuthorization {
+                    proof: DeviceTokenProof {
+                        issuer: Arc::clone(&self.token_proof_issuer),
+                        device_id: device_id.clone(),
+                        role: role.to_string(),
+                        token_sha256: token_fingerprint(token),
+                        admitted_scopes: scopes.clone(),
+                    },
                     device_id,
                     role: role.to_string(),
                     scopes,
@@ -918,122 +1068,230 @@ impl DevicePairingOwner {
         }))
     }
 
-    pub fn handle_pair_rotate_token(&self, args: &Value) -> Result<Value, GatewayCommandError> {
-        let device_id = args
-            .get("deviceId")
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .ok_or_else(|| {
-                GatewayCommandError::BadRequest("device.pair.rotateToken requires deviceId".into())
-            })?;
-
-        let role = args
-            .get("role")
-            .and_then(Value::as_str)
-            .unwrap_or("operator");
-        let mut conn = self.conn.lock().unwrap();
-
-        let (roles_json, scopes_json, existing_tokens_json): (
-            Option<String>,
-            Option<String>,
-            String,
-        ) = conn
-            .query_row(
-                "SELECT roles_json, scopes_json, tokens_json
-                 FROM device_pairing_paired WHERE device_id = ?1",
-                params![device_id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-            )
-            .map_err(|_| {
-                GatewayCommandError::BadRequest(format!("unknown deviceId: {device_id}"))
-            })?;
-
-        let approved_roles = roles_json
-            .as_deref()
-            .map(serde_json::from_str::<Value>)
-            .transpose()
-            .map_err(|error| {
-                GatewayCommandError::Internal(format!("invalid approved device roles: {error}"))
-            })?
-            .and_then(|value| value.as_array().cloned())
-            .unwrap_or_default();
-        if !approved_roles
-            .iter()
-            .filter_map(Value::as_str)
-            .any(|approved| approved == role)
-        {
-            return Err(GatewayCommandError::BadRequest(format!(
-                "role {role} is not approved for deviceId: {device_id}"
-            )));
+    /// Admit the credential accepted by HTTP against the same transaction that
+    /// will mutate the target. Never substitute a successor token or trust the
+    /// authorization's public projection as retained permission truth.
+    fn admit_paired_rotation<'a>(
+        &self,
+        conn: &Connection,
+        authorization: &'a DeviceTokenAuthorization,
+        scope_ceiling: Option<&str>,
+    ) -> Result<PairedRotationAuthority<'a>, GatewayCommandError> {
+        let stale = || GatewayCommandError::Unauthorized(
+            "paired credential is no longer current".into(),
+        );
+        let proof = &authorization.proof;
+        if !Arc::ptr_eq(&proof.issuer, &self.token_proof_issuer) {
+            return Err(stale());
         }
-        let role_scopes = scopes_for_role(scopes_json.as_deref(), role)?;
+        let caller = rotation_record(conn, &proof.device_id)?.ok_or_else(stale)?;
+        let roles = caller.approved_roles()?;
+        if !roles.iter().any(|role| role == &proof.role) {
+            return Err(stale());
+        }
+        let tokens = caller.token_entries()?;
+        let entry = tokens.get(&proof.role).ok_or_else(stale)?;
+        let token = entry.get("token").and_then(Value::as_str).ok_or_else(stale)?;
+        if entry.get("role").and_then(Value::as_str) != Some(proof.role.as_str())
+            || entry.get("revokedAtMs")
+                .is_some_and(|value| !value.is_null() && value.as_i64() != Some(0))
+            || !bool::from(token_fingerprint(token).ct_eq(&proof.token_sha256))
+        {
+            return Err(stale());
+        }
+        if proof.role != "operator" {
+            return Err(GatewayCommandError::Forbidden(
+                "token rotation requires an operator credential".into(),
+            ));
+        }
+        let live_scopes = entry.get("scopes").and_then(normalized_authority_strings)
+            .ok_or_else(invalid_stored_authority)?;
+        let approved_scopes = caller.approved_baseline()?;
+        if !live_scopes.iter().all(|scope| {
+            role_scope_allows("operator", scope, &approved_scopes)
+        }) {
+            return Err(stale());
+        }
+        let header_ceiling = scope_ceiling.map(|scope| vec![scope.trim().to_owned()]);
+        // Blank headers are explicit empty ceilings, never "no restriction".
+        if header_ceiling.as_ref().is_some_and(|ceiling| ceiling[0].is_empty()) {
+            return Err(GatewayCommandError::Forbidden(
+                "token rotation scope ceiling is empty".into(),
+            ));
+        }
+        let authority = PairedRotationAuthority {
+            proof, live_scopes, approved_scopes, header_ceiling,
+        };
+        if !authority.allows("operator.write") {
+            return Err(GatewayCommandError::Forbidden(
+                "token rotation requires operator write authority".into(),
+            ));
+        }
+        Ok(authority)
+    }
 
+    /// Trusted native rotation retains its established response and body flag.
+    pub fn handle_pair_rotate_token(&self, args: &Value) -> Result<Value, GatewayCommandError> {
+        self.rotate_token(args, None)
+    }
+
+    /// Paired HTTP rotation binds caller identity, current grants and mutation
+    /// to this one durable owner. The bearer itself never crosses this API.
+    pub fn rotate_token_for_authenticated_device(
+        &self,
+        args: &Value,
+        authorization: &DeviceTokenAuthorization,
+        scope_ceiling: Option<&str>,
+    ) -> Result<Value, GatewayCommandError> {
+        self.rotate_token(args, Some((authorization, scope_ceiling)))
+    }
+
+    fn rotate_token(
+        &self,
+        args: &Value,
+        paired: Option<(&DeviceTokenAuthorization, Option<&str>)>,
+    ) -> Result<Value, GatewayCommandError> {
+        let device_id = args.get("deviceId").and_then(Value::as_str)
+            .map(str::trim).filter(|id| !id.is_empty())
+            .ok_or_else(|| GatewayCommandError::BadRequest(
+                "device.pair.rotateToken requires deviceId".into(),
+            ))?;
+        let role = if paired.is_some() {
+            match args.get("role") {
+                None => "operator",
+                Some(value) => value.as_str().map(str::trim)
+                    .filter(|role| !role.is_empty())
+                    .ok_or_else(|| GatewayCommandError::BadRequest(
+                        "device.pair.rotateToken requires a nonempty role".into(),
+                    ))?,
+            }
+        } else {
+            args.get("role").and_then(Value::as_str).unwrap_or("operator")
+        };
+        if paired.is_some()
+            && args.get("crossDevice").is_some_and(|value| !value.is_boolean())
+        {
+            return Err(GatewayCommandError::BadRequest(
+                "token rotation crossDevice must be a boolean".into(),
+            ));
+        }
+        let mut conn = self.conn.lock().unwrap();
+        // Fence another connection to this file as well as same-owner callers.
+        // All decisive caller/target reads follow the write-transaction begin.
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|error| GatewayCommandError::Internal(format!(
+                "Failed to begin token rotation transaction: {error}",
+            )))?;
+        let authority = paired.map(|(authorization, ceiling)| {
+            self.admit_paired_rotation(&tx, authorization, ceiling)
+        }).transpose()?;
+        if let Some(caller) = authority.as_ref() {
+            if (caller.proof.device_id != device_id || role != "operator")
+                && !caller.allows("operator.admin")
+            {
+                return Err(GatewayCommandError::Forbidden(
+                    "token rotation target requires operator admin authority".into(),
+                ));
+            }
+        }
+        let target = rotation_record(&tx, device_id)?.ok_or_else(|| {
+            GatewayCommandError::BadRequest(format!("unknown deviceId: {device_id}"))
+        })?;
+        let mut token_entries = target.token_entries()?;
+        let role_scopes = if let Some(caller) = authority.as_ref() {
+            if !target.approved_roles()?.iter().any(|approved| approved == role) {
+                return Err(GatewayCommandError::Forbidden(
+                    "token rotation role is not approved".into(),
+                ));
+            }
+            let baseline = target.approved_baseline()?;
+            let existing_scopes = token_entries.get(role).map(|entry| {
+                if entry.get("role").and_then(Value::as_str) != Some(role)
+                    || entry.get("token").and_then(Value::as_str)
+                        .is_none_or(|token| token.is_empty())
+                {
+                    return Err(invalid_stored_authority());
+                }
+                entry.get("scopes").and_then(normalized_authority_strings)
+                    .ok_or_else(invalid_stored_authority)
+            }).transpose()?;
+            let desired = match args.get("scopes") {
+                Some(value) => normalized_authority_strings(value).ok_or_else(|| {
+                    GatewayCommandError::BadRequest(
+                        "token rotation scopes must be an array of strings".into(),
+                    )
+                })?,
+                None => existing_scopes.unwrap_or_else(|| {
+                    let prefix = format!("{role}.");
+                    baseline.iter().filter(|scope| scope.starts_with(prefix.as_str()))
+                        .cloned().collect()
+                }),
+            };
+            if !desired.iter().all(|scope| role_scope_allows(role, scope, &baseline)) {
+                return Err(GatewayCommandError::Forbidden(
+                    "token rotation scopes exceed target approval".into(),
+                ));
+            }
+            if role == "operator" && !desired.iter().all(|scope| caller.allows(scope)) {
+                return Err(GatewayCommandError::Forbidden(
+                    "token rotation scopes exceed caller authority".into(),
+                ));
+            }
+            Value::Array(desired.into_iter().map(Value::String).collect())
+        } else {
+            // Preserve the trusted native role/default-scope contract.
+            let approved_roles = target.roles.as_deref()
+                .map(serde_json::from_str::<Value>).transpose()
+                .map_err(|_| invalid_stored_authority())?
+                .and_then(|value| value.as_array().cloned()).unwrap_or_default();
+            if !approved_roles.iter().filter_map(Value::as_str).any(|approved| approved == role) {
+                return Err(GatewayCommandError::BadRequest(format!(
+                    "role {role} is not approved for deviceId: {device_id}",
+                )));
+            }
+            scopes_for_role(target.scopes.as_deref(), role)?
+        };
         let now = now_ms();
         let new_token = new_device_token()?;
-        let mut token_entries = serde_json::from_str::<Value>(&existing_tokens_json)
-            .map_err(|error| {
-                GatewayCommandError::Internal(format!("invalid stored device tokens: {error}"))
-            })?
-            .as_object()
-            .cloned()
-            .ok_or_else(|| {
-                GatewayCommandError::Internal("stored device tokens are not an object".into())
-            })?;
-        token_entries.insert(
-            role.to_string(),
-            json!({
-                "token": new_token,
-                "role": role,
-                "scopes": role_scopes,
-                "createdAtMs": now,
-                "rotatedAtMs": now
-            }),
-        );
-        let tokens_json = Value::Object(token_entries).to_string();
-
-        let tx = conn.transaction().map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to begin token rotation transaction: {e}"))
-        })?;
-
-        tx.execute(
+        token_entries.insert(role.to_owned(), json!({
+            "token": new_token,
+            "role": role,
+            "scopes": role_scopes,
+            "createdAtMs": now,
+            "rotatedAtMs": now
+        }));
+        let updated = tx.execute(
             "UPDATE device_pairing_paired
              SET tokens_json = ?1, node_surface_json = NULL, pending_node_surface_json = NULL
              WHERE device_id = ?2",
-            params![tokens_json, device_id],
-        )
-        .map_err(|e| GatewayCommandError::Internal(format!("Failed to update tokens: {e}")))?;
-
-        let new_rev = bump_revision(&tx).map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to bump pairing revision: {e}"))
-        })?;
-        tx.commit().map_err(|e| {
-            GatewayCommandError::Internal(format!("Failed to commit token rotation transaction: {e}"))
-        })?;
-
-        let is_cross_device = args
-            .get("crossDevice")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-
-        if is_cross_device {
-            Ok(json!({
-                "deviceId": device_id,
-                "role": role,
-                "rotatedAtMs": now,
-                "tokenDelivery": "withheld-cross-device",
-                "revision": new_rev
-            }))
-        } else {
-            Ok(json!({
-                "deviceId": device_id,
-                "role": role,
-                "token": new_token,
-                "rotatedAtMs": now,
-                "tokenDelivery": "in-band",
-                "revision": new_rev
-            }))
+            params![Value::Object(token_entries).to_string(), device_id],
+        ).map_err(|error| GatewayCommandError::Internal(format!(
+            "Failed to update tokens: {error}",
+        )))?;
+        if updated != 1 {
+            return Err(GatewayCommandError::Internal(
+                "token rotation target changed before commit".into(),
+            ));
         }
+        let new_rev = bump_revision(&tx).map_err(|error| GatewayCommandError::Internal(format!(
+            "Failed to bump pairing revision: {error}",
+        )))?;
+        tx.commit().map_err(|error| GatewayCommandError::Internal(format!(
+            "Failed to commit token rotation transaction: {error}",
+        )))?;
+        let cross_device = authority.as_ref().map(|caller| caller.proof.device_id != device_id)
+            .unwrap_or_else(|| args.get("crossDevice").and_then(Value::as_bool).unwrap_or(false));
+        let mut reply = json!({
+            "deviceId": device_id,
+            "role": role,
+            "rotatedAtMs": now,
+            "tokenDelivery": if cross_device { "withheld-cross-device" } else { "in-band" },
+            "revision": new_rev
+        });
+        if !cross_device {
+            reply["token"] = Value::String(new_token);
+        }
+        Ok(reply)
     }
 
     pub fn handle_pair_setup_code(&self, args: &Value) -> Result<Value, GatewayCommandError> {

@@ -12984,6 +12984,21 @@ impl GatewayApi for UnifiedGatewayApi {
         self.device_pairing.authenticate_device_token(token)
     }
 
+    fn rotate_paired_device_token(
+        &self,
+        args: serde_json::Value,
+        authorization: &mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization,
+        scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        self.transcript_runtime
+            .session_runtime()
+            .note_desktop_contact(started_at_ms() as f64);
+        self.device_pairing.rotate_token_for_authenticated_device(
+            &args, authorization, scope_ceiling,
+        )
+    }
+
     fn authorize_device_token_request(
         &self,
         authorization: &mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization,

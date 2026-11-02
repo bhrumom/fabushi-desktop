@@ -328,6 +328,9 @@ jobs:
               "source/host/src/storage/folder_id.rs",
               "source/host/src/device_pairing_owner.rs",
               "source/host/tests/device_pairing_contract.rs",
+              "source/host/tests/device_pairing_rotation_authority_contract.rs",
+              "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
               "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
               "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
               "source/host/tests/transcript_manager_contract.rs",
@@ -1302,6 +1305,8 @@ jobs:
             --test agent_to_agent_messaging_contract \
             --test session_gateway_contract || recovery_status=1
           run_recovery_check device-pairing-contract cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_contract -- --test-threads=1 || recovery_status=1
+          run_recovery_check device-pairing-rotation-authority cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_rotation_authority_contract -- --test-threads=1 || recovery_status=1
+          run_recovery_check device-pairing-rotation-gateway cargo test --locked --manifest-path source/host/Cargo.toml --test device_pairing_rotation_gateway_contract -- --test-threads=1 || recovery_status=1
           if run_recovery_check library-build cargo test --locked --manifest-path source/host/Cargo.toml --lib --no-run; then
             for recovery_filter in \
               host_lock::physical_guard_tests \
@@ -1606,7 +1611,69 @@ jobs:
               "scope": "Existing file-backed DevicePairingOwner dispatch: approval, revocation and rotation refuse corrupt or exhausted revision state with rollback of target rows, raw counter, prior tokens and node surfaces; same-owner/reopened refusal, controlled repair, absent/legacy decimal controls and the final representable increment. All existing pairing contract controls remain required. Not HTTP transport, real devices, unknown commit outcomes or whole-pairing/package acceptance."})
           (root / "device-pairing-revision.receipt.json").write_text(json.dumps(pairing_receipt, indent=2) + "\n")
           print(json.dumps(pairing_receipt, indent=2))
-          raise SystemExit(0 if accepted and append_accepted and pairing_accepted else 1)
+          rotation_owner_required = [
+              "paired_rotation_proofs_bind_owner_and_sealed_projection",
+              "paired_rotation_operator_permissions_follow_fixed_scope_implications",
+              "paired_rotation_header_ceiling_and_body_flags_cannot_gain_authority",
+              "paired_rotation_desired_scopes_preserve_narrow_tokens_and_explicit_empty",
+              "paired_rotation_live_credentials_and_approval_narrow_prior_proofs",
+              "paired_rotation_stored_corruption_and_bad_requests_preserve_all_rows",
+              "paired_rotation_revision_failure_rolls_back_and_recovers_durably",
+              "paired_rotation_replacement_revocation_and_reopen_retire_proofs",
+              "paired_rotation_admin_other_roles_require_literal_prefixed_baseline",
+          ]
+          rotation_http_required = [
+              "paired_http_self_rotation_derives_delivery_from_identity_and_survives_reopen",
+              "paired_http_write_cannot_rotate_other_devices_roles_or_forge_authority",
+              "paired_http_admin_only_rotates_operator_and_node_with_identity_bound_disclosure",
+              "paired_http_read_node_unknown_and_unrelated_grants_cannot_gain_rotation_authority",
+              "paired_http_explicit_failed_credentials_never_become_native_and_public_controls_remain",
+              "paired_http_default_bound_hook_refuses_without_legacy_native_dispatch",
+              "paired_http_rechecks_retirement_after_authentication_with_live_and_unrelated_controls",
+              "paired_http_two_admitted_self_rotations_commit_exactly_one_replacement",
+          ]
+          rotation_cases = []
+          for label, required in [
+              ("device-pairing-rotation-authority", rotation_owner_required),
+              ("device-pairing-rotation-gateway", rotation_http_required),
+          ]:
+              path = root / (label + ".log")
+              raw = path.read_bytes() if path.is_file() else b""
+              command_path = root / (label + ".command.txt")
+              command = command_path.read_text().strip() if command_path.is_file() else ""
+              evidence = read_command_evidence(root, label)
+              text = raw.decode("utf-8", errors="replace")
+              names = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+              missing = [name for name in required if names.count(name) != 1]
+              counts = [tuple(map(int, count)) for count in re.findall(
+                  r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
+              rotation_cases.append({"case": label, "command": command,
+                  "command_exit_records": evidence["command_exit_records"],
+                  "capture_exit_records": evidence["capture_exit_records"], "required_tests": required,
+                  "observed_passed_test_names": names, "missing_or_nonunique_positive_results": missing,
+                  "summaries_passed_failed_ignored": counts, "log_sha256": hashlib.sha256(raw).hexdigest(),
+                  "oracle_accepted": bool(command) and evidence["accepted"]
+                      and not missing and counts == [(len(required), 0, 0)]})
+          node_binding_command = (root / "integration-contracts.command.txt").read_text().strip()
+          node_binding_control = (passed.count("gateway_binds_node_token_to_the_addressed_node_before_dispatch") == 1
+              and bool(node_binding_command) and integration_evidence["accepted"])
+          rotation_accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"]
+              and str(subject["run_id"]) == os.environ["GITHUB_RUN_ID"]
+              and str(subject["run_attempt"]) == os.environ["GITHUB_RUN_ATTEMPT"]
+              and node_binding_control and all(case["oracle_accepted"] for case in rotation_cases))
+          rotation_receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          rotation_receipt.update({"contract": "DPA-v1", "executions": rotation_cases,
+              "existing_node_binding_positive": node_binding_control,
+              "existing_node_binding_command": node_binding_command,
+              "existing_node_binding_command_exit_records": integration_evidence["command_exit_records"],
+              "existing_node_binding_capture_exit_records": integration_evidence["capture_exit_records"],
+              "result": "passed" if rotation_accepted else "failed",
+              "scope": "Actual file-backed pairing owner and real HTTP server through thin owner delegates: sealed credential identity, current grants, scope ceilings, identity-derived secret delivery, no ambient fallback, atomic revision rollback, credential retirement and concurrent self rotation, plus native and reopen controls. Shipping App override is compiled and source-reviewed; these HTTP adapters do not run that full App or establish other pairing management isolation, websocket/device compatibility or release acceptance."})
+          (root / "device-pairing-rotation.receipt.json").write_text(json.dumps(rotation_receipt, indent=2) + "\n")
+          print(json.dumps(rotation_receipt, indent=2))
+          raise SystemExit(0 if accepted and append_accepted and pairing_accepted and rotation_accepted else 1)
           PY
       - name: Preserve failed owned Automation fixtures
         if: ${{ failure() && (steps.ocrm_recovery.outcome == 'failure' || steps.ocrm_app_contracts.outcome == 'failure') }}
@@ -2587,6 +2654,9 @@ jobs:
               "source/host/src/storage/agent_paths.rs", "source/host/src/storage/folder_id.rs",
               "source/host/src/device_pairing_owner.rs",
               "source/host/tests/device_pairing_contract.rs",
+              "source/host/tests/device_pairing_rotation_authority_contract.rs",
+              "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+              "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
               "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
               "source/host/src/extensions/session/production.rs",
               "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
@@ -2799,6 +2869,27 @@ jobs:
               "test_ocrm_pair_o17_join_code_registration_and_single_use_redeem",
               "test_ocrm_pair_o18_join_code_expiry_and_payload_bounds_fail_closed",
           ]
+          rotation_owner_required = [
+              "paired_rotation_proofs_bind_owner_and_sealed_projection",
+              "paired_rotation_operator_permissions_follow_fixed_scope_implications",
+              "paired_rotation_header_ceiling_and_body_flags_cannot_gain_authority",
+              "paired_rotation_desired_scopes_preserve_narrow_tokens_and_explicit_empty",
+              "paired_rotation_live_credentials_and_approval_narrow_prior_proofs",
+              "paired_rotation_stored_corruption_and_bad_requests_preserve_all_rows",
+              "paired_rotation_revision_failure_rolls_back_and_recovers_durably",
+              "paired_rotation_replacement_revocation_and_reopen_retire_proofs",
+              "paired_rotation_admin_other_roles_require_literal_prefixed_baseline",
+          ]
+          rotation_http_required = [
+              "paired_http_self_rotation_derives_delivery_from_identity_and_survives_reopen",
+              "paired_http_write_cannot_rotate_other_devices_roles_or_forge_authority",
+              "paired_http_admin_only_rotates_operator_and_node_with_identity_bound_disclosure",
+              "paired_http_read_node_unknown_and_unrelated_grants_cannot_gain_rotation_authority",
+              "paired_http_explicit_failed_credentials_never_become_native_and_public_controls_remain",
+              "paired_http_default_bound_hook_refuses_without_legacy_native_dispatch",
+              "paired_http_rechecks_retirement_after_authentication_with_live_and_unrelated_controls",
+              "paired_http_two_admitted_self_rotations_commit_exactly_one_replacement",
+          ]
           cases = [
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
               ("checked-store", base + ["--lib", store_filter, "--", "--test-threads=1"], required_store),
@@ -2820,6 +2911,8 @@ jobs:
               ("session-claim-integration", claim_integration + ["--", "--test-threads=1"], required_claim_integration),
               ("session-claim-commit-custody", base + ["--lib", fresh_filter, "--", "--test-threads=1"], required_fresh),
               ("device-pairing", base + ["--test", "device_pairing_contract", "--", "--test-threads=1"], pairing_required),
+              ("device-pairing-rotation-authority", base + ["--test", "device_pairing_rotation_authority_contract", "--", "--test-threads=1"], rotation_owner_required),
+              ("device-pairing-rotation-gateway", base + ["--test", "device_pairing_rotation_gateway_contract", "--", "--test-threads=1"], rotation_http_required),
               ("received-catalog-preparation", base + ["--test", "runner_production_bridge_contract", "--", "--test-threads=1"], [
                   "production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure_continues_preparation",
               ]),
@@ -2861,7 +2954,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1"],
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -2871,7 +2964,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -2892,7 +2985,7 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               receipt["executions"].append({
                   "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
@@ -3451,6 +3544,7 @@ jobs:
               "source/electron-main/coordinator/coordinator-main-port-client.ts",
           ]
           host_names = [
+              "gateway_binds_node_token_to_the_addressed_node_before_dispatch",
               "native_link_preview_registration_keeps_inventory_and_owner",
               "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
               "native_link_preview_configured_secret_cannot_be_replaced_by_headers",

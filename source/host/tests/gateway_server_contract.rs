@@ -97,9 +97,27 @@ impl GatewayApi for TestApi {
     }
 }
 
-#[derive(Default)]
 struct NodeTokenApi {
+    owner: DevicePairingOwner,
+    token: String,
     calls: Mutex<Vec<(String, Value)>>,
+}
+
+impl Default for NodeTokenApi {
+    fn default() -> Self {
+        let owner = DevicePairingOwner::in_memory().expect("node pairing owner");
+        let pending = owner.handle_pair_request(&json!({
+            "deviceId": "node-1", "publicKey": "node-contract-key",
+            "role": "node", "roles": ["node"], "scopes": [],
+        })).expect("node pairing request");
+        owner.handle_pair_approve(&json!({"requestId": pending["requestId"]}))
+            .expect("node pairing approval");
+        let rotated = owner.handle_pair_rotate_token(&json!({
+            "deviceId": "node-1", "role": "node",
+        })).expect("node token issuance");
+        let token = rotated["token"].as_str().expect("issued node token").to_owned();
+        Self { owner, token, calls: Mutex::new(Vec::new()) }
+    }
 }
 
 impl GatewayApi for NodeTokenApi {
@@ -107,11 +125,7 @@ impl GatewayApi for NodeTokenApi {
         &self,
         token: &str,
     ) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
-        Ok((token == "node-token").then(|| DeviceTokenAuthorization {
-            device_id: "node-1".into(),
-            role: "node".into(),
-            scopes: vec![],
-        }))
+        self.owner.authenticate_device_token(token)
     }
 
     fn authorize_device_token_request(
@@ -206,7 +220,8 @@ fn gateway_binds_node_token_to_the_addressed_node_before_dispatch() {
         request(
             port,
             &format!(
-                "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer node-token\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                api.token,
                 body.len(),
             ),
         )

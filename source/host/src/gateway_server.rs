@@ -177,6 +177,21 @@ pub trait GatewayApi: Send + Sync + 'static {
         Ok(())
     }
 
+    /// A recognized paired bearer must retain its owner-issued credential
+    /// identity through the rotation transaction. Legacy adapters fail closed;
+    /// they must not silently route this request through the native call path.
+    fn rotate_paired_device_token(
+        &self,
+        _args: Value,
+        _authorization: &DeviceTokenAuthorization,
+        _scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        Err(GatewayCommandError::Forbidden(
+            "paired token rotation is not supported by this gateway adapter".into(),
+        ))
+    }
+
     fn call_with_context(
         &self,
         method: &str,
@@ -1359,6 +1374,16 @@ fn handle_connection(
     }
 
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
+    if method == "device.pair.rotateToken"
+        && device_authorization.is_none()
+        && deps.config.auth_token.is_none()
+        && (request.headers.contains_key("authorization")
+            || !is_loopback_host(&deps.config.host))
+    {
+        // Absence on the native loopback listener is an explicit mode. A bad
+        // or retired credential is not absence, even with a spoofed Host.
+        return respond_error(&mut stream, 401, "unauthorized");
+    }
     if let Some((access, family)) = NativeGatewayAccess::for_method(method) {
         // Native data operations use the pairing grant, or the gateway's
         // authority. An explicit failed credential must not regain ambient
@@ -1448,6 +1473,9 @@ fn handle_connection(
         }
         if authorization.role == "operator"
             && is_mutating_openclaw_command(method)
+            // The bound owner below applies the current role/approval and
+            // operator implications atomically, including admin-only grants.
+            && method != "device.pair.rotateToken"
             && !authorization
                 .scopes
                 .iter()
@@ -1573,7 +1601,18 @@ fn handle_connection(
     }
     let started = Instant::now();
     let command_context = gateway_command_context(&request, authenticated, started);
-    match deps.api.call_with_context(method, args, &command_context) {
+    let result = match device_authorization.as_ref() {
+        Some(authorization) if method == "device.pair.rotateToken" => {
+            deps.api.rotate_paired_device_token(
+                args,
+                authorization,
+                request.headers.get("x-sand-scope").map(String::as_str),
+                &command_context,
+            )
+        }
+        _ => deps.api.call_with_context(method, args, &command_context),
+    };
+    match result {
         Ok(value) => {
             deps.api
                 .on_command_complete(command_report(&request, method, started, 200, None, None));
