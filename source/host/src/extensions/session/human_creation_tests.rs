@@ -717,7 +717,18 @@ fn directory_file_bytes(path: &Path) -> Vec<(String, Vec<u8>)> {
 
 #[test]
 fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings() {
-    for corruption in ["notadb", "short-header", "truncated-header", "notadb-full-header", "schema", "data-page-delete-mode"] {
+    for (corruption, retained_header_length) in [
+        ("notadb", None),
+        ("short-header", Some(6)),
+        ("truncated-header", None),
+        ("notadb-full-header", None),
+        ("schema", None),
+        ("data-page-delete-mode", None),
+        ("short-header-1", Some(1)),
+        ("short-header-15", Some(15)),
+        ("truncated-header-16", Some(16)),
+        ("truncated-header-99", Some(99)),
+    ] {
         let root = test_root("corrupt-store-refusal");
         let mut workers = test_workers(&root);
         let (locked, observed) = mpsc::channel();
@@ -764,16 +775,18 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
             bytes[damage_offset] = 0; // Invalid B-tree type, with a valid SQLite header.
             fs::write(&path, bytes).unwrap();
         } else {
-            let retained_bytes: &[u8] = if corruption == "short-header" {
-                b"SQLite"
+            let retained_bytes = if let Some(length) = retained_header_length {
+                let mut bytes = b"SQLite format 3\0".to_vec();
+                bytes.resize(length, 0);
+                bytes
             } else if corruption == "truncated-header" {
                 // Valid magic must not admit an incomplete main-file header.
-                b"SQLite format 3\0retained truncated database header"
+                b"SQLite format 3\0retained truncated database header".to_vec()
             } else if corruption == "notadb-full-header" {
                 // Full length alone must not admit a non-SQLite main file.
-                &[b'X'; 100]
+                vec![b'X'; 100]
             } else {
-                b"retained NOTADB bytes; never quarantine or replace"
+                b"retained NOTADB bytes; never quarantine or replace".to_vec()
             };
             fs::write(&path, retained_bytes).unwrap();
             for suffix in ["-wal", "-shm", "-journal"] {
@@ -788,16 +801,16 @@ fn corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings(
         assert!(!error.is_empty());
         assert!(cached_owner(&workers, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption}: original files must survive refusal");
         workers.create_human_conversation(PEER, "Retry must preserve corrupt data").expect_err("same-worker refusal");
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption}: original files must survive refusal");
         workers.shutdown();
         drop(workers);
         let restarted = test_workers(&root);
         restarted.create_human_conversation(PEER, "Reopen must preserve corrupt data").expect_err("reopened refusal");
         assert!(cached_owner(&restarted, &id).is_none());
         assert_eq!(live_db_handle_count(&path), 0);
-        assert_eq!(directory_file_bytes(directory), saved);
+        assert_eq!(directory_file_bytes(directory), saved, "{corruption}: original files must survive refusal");
         restarted.shutdown();
         drop(restarted);
         fs::remove_dir_all(root).unwrap();

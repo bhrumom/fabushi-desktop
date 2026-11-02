@@ -38,7 +38,7 @@ jobs:
           import assert from 'node:assert/strict';
           const gitHash = bytes => crypto.createHash('sha1').update(Buffer.from('blob ' + bytes.length + '\0')).update(bytes).digest('hex');
           const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-          const allowedKeys = new Set(['fabushi_target_paths', 'ui_functional_case_ids', 'test_evidence', 'test_environment_ids', 'requirement_ids']);
+          const allowedKeys = new Set(['fabushi_target_paths', 'ui_functional_case_ids', 'test_evidence', 'test_execution_evidence', 'test_environment_ids', 'requirement_ids']);
           const opsBytes = fs.readFileSync('.github/checkpoint-ledger-ops-round10.json');
           const ops = JSON.parse(opsBytes);
           assert.equal(process.env.GITHUB_REPOSITORY, 'bhrumom/fabushi-desktop');
