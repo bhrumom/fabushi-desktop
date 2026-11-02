@@ -114,7 +114,13 @@ def add_existing_fs2_edges(data):
             continue
         if block.count("dependencies = [\n") != 1:
             raise RuntimeError("Unexpected dependency list: " + name)
-        changed = block.replace("dependencies = [\n", 'dependencies = [\n "fs2",\n', 1)
+        lines = block.splitlines(keepends=True)
+        first = lines.index("dependencies = [\n") + 1
+        last = lines.index("]\n", first)
+        edge = ' "fs2",\n'
+        position = next((i for i in range(first, last) if lines[i] > edge), last)
+        lines.insert(position, edge)
+        changed = "".join(lines)
         text = text[:start] + changed + text[end:]
     return text.encode("utf-8")
 
